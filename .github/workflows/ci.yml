@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  quality:
+    name: Format and lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85.0
+        with:
+          components: clippy,rustfmt
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Lint all targets
+        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+
+  test:
+    name: Linux x86_64 tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - name: Debug tests
+        run: cargo test --locked --all-targets --all-features
+      - name: Release tests
+        run: cargo test --locked --release --all-targets --all-features
+      - name: Live patching stress
+        run: >-
+          cargo test --locked --release --test stress live_probe_stress_matrix
+          -- --ignored --exact --nocapture
+      - name: Active-hook callback loop
+        env:
+          LITEINST_BENCH_ITERATIONS: "1000000"
+        run: >-
+          cargo test --locked --release --test stress probe_overhead_benchmark
+          -- --ignored --exact --nocapture
