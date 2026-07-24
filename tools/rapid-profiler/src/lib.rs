@@ -4,7 +4,6 @@
 
 use core::ffi::c_void;
 use core::ptr;
-use core::sync::atomic::{AtomicBool, AtomicPtr, AtomicU64, Ordering};
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs;
@@ -13,8 +12,13 @@ use std::time::{Duration, Instant};
 
 use liteinst2::rapid::{RapidProbe, RapidTogglePlan};
 use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::HookContext;
 use object::{Object, ObjectSection, ObjectSymbol};
+
+mod interval;
+mod pmu;
+
+pub use interval::{EpochReport, FunctionCount, MetricSummary, SampleClassSummary};
+use interval::{FunctionEntry, ProfilerState, count_function};
 
 /// Default maximum samples retained for one function in one epoch.
 pub const DEFAULT_SAMPLE_LIMIT: u64 = 1_000;
@@ -26,111 +30,7 @@ const EXECUTABLE_BASE: usize = 0x4000_0000_0000;
 const EXECUTABLE_STRIDE: usize = 0x2000_0000;
 const EXECUTABLE_ATTEMPTS: usize = 32;
 
-type BoxError = Box<dyn Error + Send + Sync + 'static>;
-
-/// One function's result for a completed profiling epoch.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct FunctionCount {
-    /// ELF symbol naming the function.
-    pub function: String,
-    /// Saturating sample count for this epoch.
-    pub count: u64,
-    /// Whether the function reached the limit and disabled its own probe.
-    pub self_disabled: bool,
-}
-
-/// Results from one profiling epoch.
-#[derive(Clone, Debug, Eq, PartialEq)]
-pub struct EpochReport {
-    /// One-based epoch number.
-    pub epoch: usize,
-    /// Value returned by the configured workload function.
-    pub workload_result: u64,
-    /// Function counts sorted by function name.
-    pub functions: Vec<FunctionCount>,
-}
-
-struct FunctionEntry {
-    name: String,
-    address: u64,
-    count: AtomicU64,
-    self_disabled: AtomicBool,
-    probe: RapidProbe,
-}
-
-struct ProfilerState {
-    entries: Vec<FunctionEntry>,
-    limit: u64,
-}
-
-impl ProfilerState {
-    fn record(&self, instruction_pointer: u64) {
-        let Ok(index) = self
-            .entries
-            .binary_search_by_key(&instruction_pointer, |entry| entry.address)
-        else {
-            return;
-        };
-        let entry = &self.entries[index];
-        if increment_saturating(&entry.count, self.limit) {
-            entry.self_disabled.store(true, Ordering::Release);
-            entry.probe.disable();
-        }
-    }
-
-    fn rearm(&self) {
-        for entry in &self.entries {
-            entry.count.store(0, Ordering::Release);
-            entry.self_disabled.store(false, Ordering::Release);
-            entry.probe.enable();
-        }
-    }
-
-    fn disable_all(&self) {
-        for entry in &self.entries {
-            entry.probe.disable();
-        }
-    }
-
-    fn report(&self) -> Vec<FunctionCount> {
-        let mut functions = self
-            .entries
-            .iter()
-            .map(|entry| FunctionCount {
-                function: entry.name.clone(),
-                count: entry.count.load(Ordering::Acquire),
-                self_disabled: entry.self_disabled.load(Ordering::Acquire),
-            })
-            .collect::<Vec<_>>();
-        functions.sort_by(|left, right| left.function.cmp(&right.function));
-        functions
-    }
-}
-
-fn increment_saturating(counter: &AtomicU64, limit: u64) -> bool {
-    matches!(
-        counter.fetch_update(Ordering::AcqRel, Ordering::Acquire, |current| {
-            (current < limit).then_some(current + 1)
-        }),
-        Ok(previous) if previous + 1 == limit
-    )
-}
-
-static ACTIVE_PROFILER: AtomicPtr<ProfilerState> = AtomicPtr::new(ptr::null_mut());
-
-unsafe extern "C" fn count_function(context: *const HookContext) {
-    if context.is_null() {
-        return;
-    }
-    let profiler = ACTIVE_PROFILER.load(Ordering::Acquire);
-    if profiler.is_null() {
-        return;
-    }
-    // SAFETY: run_epoch publishes both pointers only while the boxed state and
-    // trampoline-owned context are live. Entries are immutable apart from atomics.
-    let (profiler, context) = unsafe { (&*profiler, &*context) };
-    profiler.record(context.instruction_pointer);
-}
+pub(crate) type BoxError = Box<dyn Error + Send + Sync + 'static>;
 
 struct LoadedText {
     _writable: *mut u8,
@@ -354,44 +254,22 @@ impl RapidProfiler {
             if function.name == workload {
                 workload_address = Some(address);
             }
-            entries.push(FunctionEntry {
-                name: function.name,
-                address,
-                count: AtomicU64::new(0),
-                self_disabled: AtomicBool::new(false),
-                probe,
-            });
+            entries.push(FunctionEntry::new(function.name, address, probe));
         }
         entries.sort_by_key(|entry| entry.address);
         let workload_address = workload_address
             .ok_or_else(|| format!("workload symbol {workload:?} was not found"))?;
         Ok(Self {
             _mapping: mapping,
-            state: Box::new(ProfilerState { entries, limit }),
+            state: Box::new(ProfilerState::new(entries, limit)),
             workload_address,
         })
     }
 
     /// Resets, rearms, and runs one `extern "C" fn(u64) -> u64` workload epoch.
     pub fn run_epoch(&self, epoch: usize, iterations: u64) -> Result<EpochReport, BoxError> {
-        let state = ptr::from_ref(self.state.as_ref()).cast_mut();
-        ACTIVE_PROFILER
-            .compare_exchange(ptr::null_mut(), state, Ordering::AcqRel, Ordering::Acquire)
-            .map_err(|_| "another rapid profiler epoch is active")?;
-        self.state.rearm();
-        // SAFETY: load validated the named symbol as an entry inside the copied
-        // executable image. Phase 1 requires this documented workload signature.
-        let workload: unsafe extern "C" fn(u64) -> u64 =
-            unsafe { core::mem::transmute(self.workload_address as usize) };
-        // SAFETY: the fixture contract supplies the required workload signature.
-        let workload_result = unsafe { workload(iterations) };
-        self.state.disable_all();
-        ACTIVE_PROFILER.store(ptr::null_mut(), Ordering::Release);
-        Ok(EpochReport {
-            epoch,
-            workload_result,
-            functions: self.state.report(),
-        })
+        self.state
+            .run_epoch(epoch, iterations, self.workload_address)
     }
 
     /// Runs epochs whose start times are separated by at least `interval`.
@@ -441,19 +319,4 @@ fn validate_trampoline_pages(
         }
     }
     Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::increment_saturating;
-    use core::sync::atomic::{AtomicU64, Ordering};
-
-    #[test]
-    fn sample_count_saturates_and_identifies_the_kth_hit() {
-        let count = AtomicU64::new(998);
-        assert!(!increment_saturating(&count, 1_000));
-        assert!(increment_saturating(&count, 1_000));
-        assert!(!increment_saturating(&count, 1_000));
-        assert_eq!(count.load(Ordering::Relaxed), 1_000);
-    }
 }

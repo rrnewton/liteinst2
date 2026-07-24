@@ -88,10 +88,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "perf-event-open-sys"
+version = "4.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7c44fb1c7651a45a3652c4afc6e754e40b3d6e6556f1487e2b230bfc4f33c2a8"
+dependencies = [
+ "libc",
+]
+
+[[package]]
 name = "rapid-profiler"
 version = "0.1.0"
 dependencies = [
  "libc",
  "liteinst2",
  "object",
+ "perf-event-open-sys",
 ]

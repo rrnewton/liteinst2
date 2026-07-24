@@ -1,21 +1,21 @@
 typedef unsigned long long u64;
 
-__attribute__((noinline, used)) u64 leaf_even(u64 value) {
+#define PROFILED __attribute__((noinline, used, optnone))
+
+PROFILED u64 leaf_even(u64 value) {
   return value + 1;
 }
 
-__attribute__((noinline, used)) u64 leaf_odd(u64 value) {
+PROFILED u64 leaf_odd(u64 value) {
   return value * 3 + 7;
 }
 
-__attribute__((noinline, used)) u64 branch(u64 value) {
-  if ((value & 1) == 0) {
-    return leaf_even(value);
-  }
-  return leaf_odd(value);
+PROFILED u64 branch(u64 value) {
+  return leaf_even(value) + leaf_even(value + 1) + leaf_odd(value) +
+         leaf_odd(value + 1);
 }
 
-__attribute__((noinline, used)) u64 workload(u64 iterations) {
+PROFILED u64 workload(u64 iterations) {
   u64 total = 0;
   for (u64 index = 0; index < iterations; ++index) {
     total += branch(index);

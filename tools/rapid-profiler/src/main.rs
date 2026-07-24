@@ -3,7 +3,7 @@ use std::error::Error;
 use std::path::PathBuf;
 use std::time::Duration;
 
-use rapid_profiler::{DEFAULT_SAMPLE_LIMIT, RapidProfiler};
+use rapid_profiler::{DEFAULT_SAMPLE_LIMIT, MetricSummary, RapidProfiler};
 
 struct Options {
     image: PathBuf,
@@ -35,10 +35,39 @@ fn run() -> Result<(), Box<dyn Error + Send + Sync>> {
             report.epoch, report.workload_result
         );
         for function in report.functions {
-            println!("{}\t{}", function.function, function.count);
+            println!(
+                "{}\t{}\tleaf={}\tnon_leaf={}\tleaf_instructions={}\tnon_leaf_instructions={}\tleaf_branches={}\tnon_leaf_branches={}\tleaf_l2_misses={}\tnon_leaf_l2_misses={}\tleaf_ticks={}\tnon_leaf_ticks={}\tnon_leaf_other_samples={}\tlast_return={}",
+                function.function,
+                function.count,
+                function.leaf.samples,
+                function.non_leaf.samples,
+                metric(function.leaf.instructions),
+                metric(function.non_leaf.instructions),
+                metric(function.leaf.branches),
+                metric(function.non_leaf.branches),
+                metric(function.leaf.l2_misses),
+                metric(function.non_leaf.l2_misses),
+                metric(function.leaf.elapsed_ticks),
+                metric(function.non_leaf.elapsed_ticks),
+                metric(function.non_leaf.other_samples),
+                function.last_return_value,
+            );
         }
     }
     Ok(())
+}
+
+fn metric(summary: MetricSummary) -> String {
+    if summary.samples == 0 {
+        return "unavailable".to_owned();
+    }
+    format!(
+        "n{}/min{}/avg{}/max{}",
+        summary.samples,
+        summary.min,
+        summary.average(),
+        summary.max
+    )
 }
 
 fn parse_options(arguments: impl Iterator<Item = String>) -> Result<Options, String> {
