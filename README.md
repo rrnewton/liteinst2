@@ -10,7 +10,7 @@ correctness boundaries:
 - `scanner`: fail-closed x86-64 decoding and cache-line crossing discovery.
 - `patcher`: direct-jump planning and atomic WordPatch++ publication.
 - `probe`: idempotent probe lifecycle state.
-- `trampoline`: checked planning and, later, relocation-aware code generation.
+- `trampoline`: near W^X allocation, relocation, hook dispatch, and return.
 
 The implementation will preserve five invariants established before the port:
 
