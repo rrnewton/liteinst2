@@ -72,7 +72,15 @@ fn metric(summary: MetricSummary) -> String {
 
 fn parse_options(arguments: impl Iterator<Item = String>) -> Result<Options, String> {
     let mut arguments = arguments;
-    let image = arguments.next().map(PathBuf::from).ok_or_else(usage)?;
+    // With no positional ELF, fall back to the fixture that build.rs compiled at
+    // build time, so `cargo run --release -p rapid-profiler` Just Works.
+    let image = match arguments.next() {
+        Some(path) => PathBuf::from(path),
+        None => match option_env!("RAPID_PROFILER_DEFAULT_FIXTURE") {
+            Some(path) => PathBuf::from(path),
+            None => return Err(usage()),
+        },
+    };
     let mut options = Options {
         image,
         workload: "workload".to_owned(),
@@ -107,5 +115,6 @@ where
 }
 
 fn usage() -> String {
-    "usage: rapid-profiler <linked-elf> [--workload SYMBOL] [--iterations N] [--limit K] [--epochs N] [--epoch-ms N]".to_owned()
+    "usage: rapid-profiler [linked-elf] [--workload SYMBOL] [--iterations N] [--limit K] [--epochs N] [--epoch-ms N]\n\
+     (the linked-elf argument is optional: with none, the built-in fixture compiled by build.rs is profiled)".to_owned()
 }
