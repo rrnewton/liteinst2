@@ -1,0 +1,13 @@
+[package]
+name = "liteinst2"
+version = "0.1.0"
+edition = "2024"
+description = "Online x86-64 instrumentation using instruction punning"
+repository = "https://github.com/rrnewton/liteinst2"
+rust-version = "1.85"
+
+[dependencies]
+iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "block_encoder", "code_asm"] }
+libc = "0.2.186"
+memmap2 = "0.9.11"
+nix = { version = "0.31.3", features = ["mman", "process", "signal"] }
