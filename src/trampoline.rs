@@ -17,6 +17,7 @@ use iced_x86::{
     },
 };
 
+use crate::cfg::SelectedPatchSite;
 use crate::patcher::{JumpPatchPlan, LiveJumpPatch, PatchError, StalenessBudget};
 use crate::scanner::{InstructionScanner, ScanResult};
 
@@ -659,6 +660,28 @@ impl<'a> HookSite<'a> {
             writable_address,
         }
     }
+
+    /// Describes a CFG-selected executable instruction and its writable alias.
+    ///
+    /// `writable_address` must alias [`SelectedPatchSite::patch_address`], not
+    /// the originally requested address when selection backtracked.
+    pub const fn from_cfg_selection(
+        scanner: &'a InstructionScanner,
+        scan: &'a ScanResult,
+        code: &'a [u8],
+        region_base: u64,
+        selection: SelectedPatchSite,
+        writable_address: *mut u8,
+    ) -> Self {
+        Self::new(
+            scanner,
+            scan,
+            code,
+            region_base,
+            selection.patch_address(),
+            writable_address,
+        )
+    }
 }
 /// A generated trampoline bound to the M2 live patcher.
 pub struct InstalledHook {
@@ -1230,6 +1253,7 @@ mod tests {
         use std::time::{Duration, Instant};
 
         use super::{HookContext, InstructionScanner};
+        use crate::cfg::FunctionCfg;
         use crate::patcher::StalenessBudget;
         use crate::trampoline::{HookSite, InstalledHook};
 
@@ -1449,6 +1473,53 @@ mod tests {
             let permissions = mapping_permissions(hook.trampoline().address());
             assert!(permissions.contains('x'));
             assert!(!permissions.contains('w'));
+        }
+
+        #[test]
+        fn cfg_selected_hook_backtracks_within_the_function_block() {
+            let _guard = serial_guard();
+            CALLBACKS.store(0, Ordering::Relaxed);
+            LAST_IP.store(0, Ordering::Relaxed);
+
+            let mapping = DualMapping::new();
+            let function_offset = 192;
+            // mov eax, 7; nop (requested); ret; trailing patch-window padding
+            let code = [0xB8, 7, 0, 0, 0, 0x90, 0xC3, 0x90];
+            mapping.write(function_offset, &code);
+            let scanner = InstructionScanner::default();
+            let function_address = mapping.executable_address(function_offset);
+            let scan = scanner.scan(&code, function_address).unwrap();
+            let cfg = FunctionCfg::analyze(&scan, function_address, function_address + 7).unwrap();
+            let selection = cfg.select_patch_site(function_address + 5).unwrap();
+            assert_eq!(selection.patch_address(), function_address);
+
+            // SAFETY: both aliases intentionally live for the process lifetime,
+            // and the writable pointer aliases the CFG-selected instruction.
+            let hook = unsafe {
+                InstalledHook::install(
+                    HookSite::from_cfg_selection(
+                        &scanner,
+                        &scan,
+                        &code,
+                        function_address,
+                        selection,
+                        mapping.writable_address(function_offset),
+                    ),
+                    record_hook,
+                    StalenessBudget::new(STALENESS_TICKS).unwrap(),
+                )
+                .unwrap()
+            };
+            // SAFETY: fixture bytes implement extern C fn() -> u32.
+            let function: unsafe extern "C" fn() -> u32 =
+                unsafe { core::mem::transmute(function_address as usize) };
+
+            assert!(hook.activate().unwrap());
+            assert_eq!(unsafe { function() }, 7);
+            assert_eq!(CALLBACKS.load(Ordering::Relaxed), 1);
+            assert_eq!(LAST_IP.load(Ordering::Relaxed), selection.patch_address());
+            assert!(hook.deactivate().unwrap());
+            assert_eq!(unsafe { function() }, 7);
         }
 
         #[test]

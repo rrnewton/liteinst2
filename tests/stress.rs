@@ -9,6 +9,7 @@ use std::sync::{Arc, Barrier};
 use std::thread;
 use std::time::{Duration, Instant};
 
+use liteinst2::cfg::FunctionCfg;
 use liteinst2::patcher::{JumpPatchPlan, StalenessBudget};
 use liteinst2::rapid::{RapidProbe, RapidTogglePlan};
 use liteinst2::scanner::{InstructionScanner, ScanResult};
@@ -392,6 +393,16 @@ fn random_rips_and_real_libc_windows_never_panic() {
                     site.address(),
                     record_hook,
                 );
+            }
+            if let Ok(cfg) = FunctionCfg::analyze(&scan, base, base + bytes.len() as u64) {
+                for &address in scan.sites().keys() {
+                    if let Ok(selected) = cfg.select_patch_site(address) {
+                        assert!(selected.block().contains(selected.patch_address()));
+                        assert!(selected.patch_end() <= selected.block().end());
+                        assert!(selected.block().end() <= cfg.function_end());
+                        assert!(selected.patch_address() <= selected.requested_address());
+                    }
+                }
             }
         }
     }

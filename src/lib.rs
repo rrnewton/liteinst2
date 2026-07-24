@@ -9,6 +9,7 @@
 #![warn(missing_docs)]
 
 pub mod cache_line;
+pub mod cfg;
 pub mod patcher;
 pub mod probe;
 pub mod rapid;
