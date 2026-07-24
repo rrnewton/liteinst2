@@ -7,6 +7,7 @@ The repository is at the foundation stage. Its modules separate the main
 correctness boundaries:
 
 - `cache_line`: overflow-safe patch-span classification.
+- `scanner`: fail-closed x86-64 decoding and cache-line crossing discovery.
 - `patcher`: atomic publication strategy and, later, WordPatch state machines.
 - `probe`: idempotent probe lifecycle state.
 - `trampoline`: checked planning and, later, relocation-aware code generation.
