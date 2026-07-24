@@ -11,6 +11,7 @@
 pub mod cache_line;
 pub mod patcher;
 pub mod probe;
+pub mod rapid;
 pub mod scanner;
 pub mod trampoline;
 mod trap;

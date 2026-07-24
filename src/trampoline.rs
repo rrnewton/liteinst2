@@ -60,10 +60,10 @@ impl ExtendedState {
             let state = unsafe { __cpuid_count(0xD, 0) };
             if mask != 0 {
                 let rounded = state.ebx.checked_add(63).map(|bytes| bytes & !63);
-                if let Some(bytes) = rounded.and_then(|bytes| i32::try_from(bytes).ok())
-                    && bytes >= 576
-                {
-                    return Self::XSave { bytes, mask };
+                if let Some(bytes) = rounded.and_then(|bytes| i32::try_from(bytes).ok()) {
+                    if bytes >= 576 {
+                        return Self::XSave { bytes, mask };
+                    }
                 }
             }
         }
@@ -253,6 +253,11 @@ pub enum TrampolineError {
     },
     /// No free page could be mapped within signed rel32 reach.
     NoReachableMapping,
+    /// The exact instruction-pun destination is already occupied or unavailable.
+    ExactAddressUnavailable {
+        /// Required trampoline entry address.
+        address: u64,
+    },
     /// Emitted code does not fit in its executable allocation.
     CodeTooLarge {
         /// Emitted code bytes.
@@ -303,6 +308,12 @@ impl fmt::Display for TrampolineError {
             }
             Self::NoReachableMapping => {
                 formatter.write_str("no free executable page is within signed rel32 reach")
+            }
+            Self::ExactAddressUnavailable { address } => {
+                write!(
+                    formatter,
+                    "exact trampoline address {address:#x} is unavailable"
+                )
             }
             Self::CodeTooLarge {
                 code_len,
@@ -527,6 +538,7 @@ fn absolute_indirect_jump(target: u64) -> [u8; ABSOLUTE_JUMP_BYTES] {
 pub struct ExecutableTrampoline {
     address: u64,
     allocation_len: usize,
+    mapping_address: u64,
     code_len: usize,
     layout: TrampolineLayout,
 }
@@ -550,7 +562,37 @@ impl ExecutableTrampoline {
                     allocation_len: mapping.len,
                 });
             }
-            mapping.publish(&image)
+            mapping.publish_at(&image, 0)
+        }
+    }
+
+    /// Allocates the trampoline at one exact instruction-pun destination.
+    ///
+    /// The complete emitted image is backed by a fresh RX mapping claimed with
+    /// MAP_FIXED_NOREPLACE. Existing mappings are never replaced.
+    pub fn allocate_at(plan: &TrampolinePlan, address: u64) -> Result<Self, TrampolineError> {
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            let _ = (plan, address);
+            return Err(TrampolineError::UnsupportedPlatform);
+        }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            let image = plan.emit_at(address)?;
+            let page_size = page_size()?;
+            let native_address = usize::try_from(address)
+                .map_err(|_| TrampolineError::AddressNotRepresentable { address })?;
+            let mapping_start = align_down(native_address, page_size);
+            let entry_offset = native_address - mapping_start;
+            let required = entry_offset
+                .checked_add(image.bytes.len())
+                .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+            let mapping_len = required
+                .checked_add(page_size - 1)
+                .map(|value| align_down(value, page_size))
+                .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+            let mapping = PendingMapping::allocate_exact(mapping_start, mapping_len, address)?;
+            mapping.publish_at(&image, entry_offset)
         }
     }
 
@@ -574,13 +616,13 @@ impl ExecutableTrampoline {
         self.layout
     }
 
-    fn discard(self) {
+    pub(crate) fn discard(self) {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
             // SAFETY: this unpublished object exclusively owns the RX mapping.
             unsafe {
                 libc::munmap(
-                    self.address as usize as *mut libc::c_void,
+                    self.mapping_address as usize as *mut libc::c_void,
                     self.allocation_len,
                 );
             }
@@ -744,13 +786,7 @@ struct PendingMapping {
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 impl PendingMapping {
-    fn allocate_near(execute_address: u64) -> Result<Self, TrampolineError> {
-        let page_size = page_size()?;
-        let len = TRAMPOLINE_ALLOCATION_BYTES.max(page_size);
-        let len = len
-            .checked_add(page_size - 1)
-            .map(|value| value & !(page_size - 1))
-            .ok_or(TrampolineError::InvalidPageSize)?;
+    fn new(len: usize) -> Result<Self, TrampolineError> {
         let name = b"liteinst2-trampoline\0";
         // SAFETY: valid NUL-terminated name and supported memfd flags.
         let fd = unsafe {
@@ -788,44 +824,91 @@ impl PendingMapping {
             return Err(os_error("mmap writable alias"));
         }
         mapping.writable = writable;
+        Ok(mapping)
+    }
 
+    fn try_map_executable(&mut self, address: usize) -> bool {
+        // SAFETY: MAP_FIXED_NOREPLACE never replaces an existing VMA.
+        let executable = unsafe {
+            libc::mmap(
+                address as *mut libc::c_void,
+                self.len,
+                libc::PROT_READ | libc::PROT_EXEC,
+                libc::MAP_SHARED | libc::MAP_FIXED_NOREPLACE,
+                self.fd,
+                0,
+            )
+        };
+        if executable == libc::MAP_FAILED {
+            return false;
+        }
+        if executable as usize != address {
+            // SAFETY: executable is the mapping just returned by mmap.
+            unsafe { libc::munmap(executable, self.len) };
+            return false;
+        }
+        self.executable = executable;
+        true
+    }
+
+    fn allocate_exact(
+        mapping_start: usize,
+        len: usize,
+        entry_address: u64,
+    ) -> Result<Self, TrampolineError> {
+        let mut mapping = Self::new(len)?;
+        if !mapping.try_map_executable(mapping_start) {
+            return Err(TrampolineError::ExactAddressUnavailable {
+                address: entry_address,
+            });
+        }
+        Ok(mapping)
+    }
+
+    fn allocate_near(execute_address: u64) -> Result<Self, TrampolineError> {
+        let page_size = page_size()?;
+        let len = TRAMPOLINE_ALLOCATION_BYTES.max(page_size);
+        let len = len
+            .checked_add(page_size - 1)
+            .map(|value| value & !(page_size - 1))
+            .ok_or(TrampolineError::InvalidPageSize)?;
+        let mut mapping = Self::new(len)?;
         let next_ip = execute_address
             .checked_add(crate::patcher::NEAR_JUMP_BYTES as u64)
             .ok_or(TrampolineError::AddressNotRepresentable {
                 address: execute_address,
             })?;
         for candidate in near_candidates(next_ip, len, page_size)? {
-            // SAFETY: MAP_FIXED_NOREPLACE never replaces an existing VMA.
-            let executable = unsafe {
-                libc::mmap(
-                    candidate as *mut libc::c_void,
-                    len,
-                    libc::PROT_READ | libc::PROT_EXEC,
-                    libc::MAP_SHARED | libc::MAP_FIXED_NOREPLACE,
-                    fd,
-                    0,
-                )
-            };
-            if executable == libc::MAP_FAILED {
-                continue;
+            if mapping.try_map_executable(candidate) {
+                return Ok(mapping);
             }
-            if executable as usize != candidate {
-                // SAFETY: executable is the mapping just returned by mmap.
-                unsafe { libc::munmap(executable, len) };
-                continue;
-            }
-            mapping.executable = executable;
-            return Ok(mapping);
         }
         Err(TrampolineError::NoReachableMapping)
     }
 
-    fn publish(mut self, image: &TrampolineImage) -> Result<ExecutableTrampoline, TrampolineError> {
-        // SAFETY: the writable alias is large enough and does not overlap bytes.
+    fn publish_at(
+        mut self,
+        image: &TrampolineImage,
+        entry_offset: usize,
+    ) -> Result<ExecutableTrampoline, TrampolineError> {
+        let initialized_end =
+            entry_offset
+                .checked_add(image.bytes.len())
+                .ok_or(TrampolineError::CodeTooLarge {
+                    code_len: image.bytes.len(),
+                    allocation_len: self.len,
+                })?;
+        if initialized_end > self.len {
+            return Err(TrampolineError::CodeTooLarge {
+                code_len: initialized_end,
+                allocation_len: self.len,
+            });
+        }
+        // SAFETY: the writable alias contains the complete destination range.
         unsafe {
             core::ptr::copy_nonoverlapping(
                 image.bytes.as_ptr(),
-                self.writable.cast::<u8>(),
+                self.writable.cast::<u8>().add(entry_offset),
                 image.bytes.len(),
             );
         }
@@ -840,10 +923,16 @@ impl PendingMapping {
             return Err(os_error("close trampoline memfd"));
         }
         self.fd = -1;
-        let address = self.executable as usize as u64;
+        let mapping_address = self.executable as usize as u64;
+        let address = mapping_address.checked_add(entry_offset as u64).ok_or(
+            TrampolineError::AddressNotRepresentable {
+                address: mapping_address,
+            },
+        )?;
         self.executable = core::ptr::null_mut();
         Ok(ExecutableTrampoline {
             address,
+            mapping_address,
             allocation_len: self.len,
             code_len: image.bytes.len(),
             layout: image.layout,
