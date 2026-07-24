@@ -13,3 +13,4 @@ pub mod patcher;
 pub mod probe;
 pub mod scanner;
 pub mod trampoline;
+mod trap;
