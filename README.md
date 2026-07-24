@@ -35,6 +35,18 @@ cargo test --release --test stress live_probe_stress_matrix -- --ignored --exact
 cargo test --release --test stress probe_overhead_benchmark -- --ignored --exact --nocapture
 ```
 
+The host-gated real-binary matrix scans the requested executables and their
+dynamic dependency closures, counts decoded `SYSCALL`, `CPUID`, and `RDTSC`
+sites, and verifies that same-layout code changes invalidate old plans:
+
+```console
+cargo test --release --test real_binaries -- --ignored --nocapture --test-threads=1
+```
+
+Its patched/missed counts describe direct `JumpPatchPlan` support. The current
+single-instruction contract rejects these two-byte instructions rather than
+claiming unsafe coverage.
+
 `LITEINST_STRESS_RAPID_FUNCTIONS`, `LITEINST_STRESS_RAPID_ITERATIONS`,
 `LITEINST_STRESS_GENERAL_FUNCTIONS`, `LITEINST_STRESS_GENERAL_CYCLES`, and
 `LITEINST_STRESS_SIGNAL_ROUNDS` scale the matrix without changing source.

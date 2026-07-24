@@ -11,3 +11,6 @@ iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "d
 libc = "0.2.186"
 memmap2 = "0.9.11"
 nix = { version = "0.31.3", features = ["mman", "process", "signal"] }
+
+[dev-dependencies]
+goblin = "0.10.7"

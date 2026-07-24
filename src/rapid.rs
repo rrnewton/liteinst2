@@ -214,7 +214,7 @@ impl RapidTogglePlan {
         let verified = scanner
             .scan(code, region_base)
             .map_err(|source| RapidToggleError::InvalidCodeRegion { source })?;
-        if !scans_match(scan, &verified) {
+        if !scan.matches_snapshot(&verified) {
             return Err(RapidToggleError::RegionMismatch {
                 address: execute_address,
             });
@@ -343,19 +343,6 @@ fn direct_near_branch_target(instruction: &Instruction) -> Option<u64> {
         }
         _ => None,
     }
-}
-
-fn scans_match(expected: &ScanResult, current: &ScanResult) -> bool {
-    expected.sites() == current.sites()
-        && expected.instructions().len() == current.instructions().len()
-        && expected
-            .instructions()
-            .iter()
-            .zip(current.instructions())
-            .all(|(expected, current)| {
-                expected.offset() == current.offset()
-                    && expected.instruction() == current.instruction()
-            })
 }
 
 /// Installed probe whose hot path changes one atomic opcode byte.

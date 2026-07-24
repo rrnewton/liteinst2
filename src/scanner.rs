@@ -187,6 +187,20 @@ impl ScanResult {
         self.sites.get(&address)
     }
 
+    /// Returns whether both scans describe the same decoded code snapshot.
+    pub(crate) fn matches_snapshot(&self, other: &Self) -> bool {
+        self.sites == other.sites
+            && self.instructions.len() == other.instructions.len()
+            && self
+                .instructions
+                .iter()
+                .zip(&other.instructions)
+                .all(|(expected, current)| {
+                    expected.offset() == current.offset()
+                        && expected.instruction() == current.instruction()
+                })
+    }
+
     /// Iterates over cache-line-crossing candidates in address order.
     pub fn crossing_sites(&self) -> impl Iterator<Item = &PatchableSite> {
         self.sites
