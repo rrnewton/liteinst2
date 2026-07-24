@@ -7,9 +7,11 @@ The repository is at the foundation stage. Its modules separate the main
 correctness boundaries:
 
 - `cache_line`: overflow-safe patch-span classification.
-- `patcher`: atomic publication strategy and, later, WordPatch state machines.
+- `scanner`: fail-closed x86-64 decoding and cache-line crossing discovery.
+- `patcher`: direct-jump planning and atomic WordPatch++ publication.
+- `rapid`: exact instruction-pun planning and atomic opcode toggling.
 - `probe`: idempotent probe lifecycle state.
-- `trampoline`: checked planning and, later, relocation-aware code generation.
+- `trampoline`: near W^X allocation, relocation, hook dispatch, and return.
 
 The implementation will preserve five invariants established before the port:
 
@@ -25,3 +27,14 @@ The implementation will preserve five invariants established before the port:
 cargo test
 cargo clippy --all-targets --all-features -- -D warnings
 ```
+
+The live stress matrix and overhead benchmark are opt-in:
+
+```console
+cargo test --release --test stress live_probe_stress_matrix -- --ignored --exact --nocapture
+cargo test --release --test stress probe_overhead_benchmark -- --ignored --exact --nocapture
+```
+
+`LITEINST_STRESS_RAPID_FUNCTIONS`, `LITEINST_STRESS_RAPID_ITERATIONS`,
+`LITEINST_STRESS_GENERAL_FUNCTIONS`, `LITEINST_STRESS_GENERAL_CYCLES`, and
+`LITEINST_STRESS_SIGNAL_ROUNDS` scale the matrix without changing source.
