@@ -1,0 +1,11 @@
+[package]
+name = "rapid-profiler"
+version = "0.1.0"
+edition = "2024"
+publish = false
+rust-version = "1.85"
+
+[dependencies]
+libc = "0.2.186"
+liteinst2 = { path = "../.." }
+object = { version = "0.36.7", default-features = false, features = ["elf", "read_core", "std"] }
