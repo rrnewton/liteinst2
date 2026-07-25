@@ -375,7 +375,9 @@ impl RapidProbe {
     ///
     /// writable_address must alias the complete five-byte executable window at
     /// plan.execute_address, share its cache-line offset, permit atomic stores
-    /// to its first byte, and remain mapped for the process lifetime. No
+    /// to its first byte, and remain mapped for the process lifetime. During
+    /// installation, the caller must exclude unregistered writers; registered
+    /// overlaps are rejected before the window is read. After installation, no
     /// unregistered writer may modify any byte in that window. The executable
     /// site and hook callback must also remain valid for the process lifetime.
     pub unsafe fn install(
@@ -404,6 +406,15 @@ impl RapidProbe {
             {
                 return Err(RapidToggleError::AliasAlignmentMismatch);
             }
+            let reservation_end = execute_address.checked_add(NEAR_JUMP_BYTES).ok_or(
+                RapidToggleError::TargetOutOfRange {
+                    address: plan.execute_address,
+                    displacement: 0,
+                },
+            )?;
+            let pending =
+                crate::trap::reserve(execute_address, execute_address, reservation_end, 0)
+                    .map_err(map_trap_error)?;
             // SAFETY: the caller supplies a live, atomically addressable byte.
             let opcode = unsafe { &*writable_address.cast::<AtomicU8>() };
             let mut observed_window = [0_u8; NEAR_JUMP_BYTES];
@@ -428,20 +439,13 @@ impl RapidProbe {
 
             let trampoline =
                 ExecutableTrampoline::allocate_at(&plan.trampoline, plan.target_address)?;
-            let reservation_end = execute_address.checked_add(NEAR_JUMP_BYTES).ok_or(
-                RapidToggleError::TargetOutOfRange {
-                    address: plan.execute_address,
-                    displacement: 0,
-                },
-            )?;
-            let reservation =
-                match crate::trap::register(execute_address, execute_address, reservation_end, 0) {
-                    Ok(reservation) => reservation,
-                    Err(error) => {
-                        trampoline.discard();
-                        return Err(map_trap_error(error));
-                    }
-                };
+            let reservation = match pending.commit() {
+                Ok(reservation) => reservation,
+                Err(error) => {
+                    trampoline.discard();
+                    return Err(map_trap_error(error));
+                }
+            };
 
             Ok(Self {
                 plan,
@@ -605,7 +609,7 @@ mod tests {
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     mod live {
-        use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+        use core::sync::atomic::{AtomicBool, AtomicU8, AtomicU64, Ordering};
         use std::sync::{Arc, Barrier, Mutex, MutexGuard};
         use std::thread;
         use std::time::{Duration, Instant};
@@ -924,20 +928,32 @@ mod tests {
         fn tail_overlap_failure_discards_non_page_aligned_trampoline() {
             let _guard = serial_guard();
             let mapping = DualMapping::new();
-            let (plan, placeholder, _code, _expected) = plan_fixture(&mapping);
+            let (plan, placeholder, code, _expected) = plan_fixture(&mapping);
             let target_address = plan.target_address();
             placeholder.release();
             let execute_address = usize::try_from(mapping.executable_address(SITE_OFFSET)).unwrap();
             let tail_address = execute_address + NEAR_JUMP_BYTES - 1;
-            crate::trap::register(tail_address, tail_address, tail_address + 1, 0).unwrap();
+            let blocker =
+                crate::trap::register(tail_address, tail_address, tail_address + 1, 0).unwrap();
+            blocker.begin().unwrap();
+            let tail = mapping
+                .writable_address(SITE_OFFSET + NEAR_JUMP_BYTES - 1)
+                .cast::<AtomicU8>();
+            let original_tail = code[NEAR_JUMP_BYTES - 1];
+            // SAFETY: blocker owns this registered tail byte while WRITING.
+            unsafe { &*tail }.store(original_tail ^ 0xff, Ordering::Release);
 
             // SAFETY: the mapping contract is valid; the trap registry rejects
-            // the plan because its five-byte reservation includes the tail.
+            // the plan before reading because an active registered writer owns
+            // the tail byte.
             let error =
                 match unsafe { RapidProbe::install(plan, mapping.writable_address(SITE_OFFSET)) } {
                     Err(error) => error,
                     Ok(_) => panic!("overlapping rapid probe unexpectedly installed"),
                 };
+            // SAFETY: blocker still owns the tail byte until finish.
+            unsafe { &*tail }.store(original_tail, Ordering::Release);
+            blocker.finish();
             assert!(matches!(error, RapidToggleError::OverlappingPatchSite));
             assert_eq!(permissions(target_address), None);
         }

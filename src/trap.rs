@@ -12,6 +12,7 @@ mod imp {
     const WRITING: u8 = 1;
 
     static HEAD: AtomicPtr<TrapSite> = AtomicPtr::new(ptr::null_mut());
+    static PENDING_HEAD: AtomicPtr<PendingReservation> = AtomicPtr::new(ptr::null_mut());
     static REGISTRY_LOCK: Mutex<()> = Mutex::new(());
     static INSTALL_RESULT: OnceLock<Result<(), i32>> = OnceLock::new();
     static PREVIOUS_ACTION: OnceLock<PreviousAction> = OnceLock::new();
@@ -41,6 +42,20 @@ mod imp {
     // is atomic and nodes are never freed.
     unsafe impl Sync for TrapSite {}
 
+    struct PendingReservation {
+        execute_address: usize,
+        reservation_start: usize,
+        reservation_end: usize,
+        guard_mask: u8,
+        next: AtomicPtr<PendingReservation>,
+    }
+
+    // AUTONOMOUS-BOT-IMPLEMENTED
+    // TODO-HUMAN-REVIEW(#7): Review transactional overlap ownership and lock scope.
+    pub(crate) struct PendingTrapSite {
+        pending: Option<Box<PendingReservation>>,
+    }
+
     #[derive(Clone, Copy, Debug, Eq, PartialEq)]
     pub(crate) enum TrapError {
         Contended,
@@ -67,6 +82,88 @@ mod imp {
         }
     }
 
+    impl PendingTrapSite {
+        pub(crate) fn commit(mut self) -> Result<&'static TrapSite, TrapError> {
+            ensure_installed()?;
+            let pending = self.pending.as_ref().expect("pending reservation missing");
+            let mut site = Box::new(TrapSite {
+                execute_address: pending.execute_address,
+                reservation_start: pending.reservation_start,
+                reservation_end: pending.reservation_end,
+                guard_mask: pending.guard_mask,
+                phase: AtomicU8::new(IDLE),
+                handled: AtomicU64::new(0),
+                next: ptr::null_mut(),
+            });
+
+            let _guard = REGISTRY_LOCK
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let mut pending = self.pending.take().expect("pending reservation missing");
+            // SAFETY: the registry mutex serializes all pending-list access.
+            unsafe { remove_pending(&mut *pending) };
+            site.next = HEAD.load(Ordering::Relaxed);
+            let site = Box::into_raw(site);
+            HEAD.store(site, Ordering::Release);
+            drop(_guard);
+            drop(pending);
+            // SAFETY: registry nodes are intentionally never freed.
+            Ok(unsafe { &*site })
+        }
+    }
+
+    impl Drop for PendingTrapSite {
+        fn drop(&mut self) {
+            let Some(mut pending) = self.pending.take() else {
+                return;
+            };
+            let guard = REGISTRY_LOCK
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            // SAFETY: the registry mutex serializes all pending-list access.
+            unsafe { remove_pending(&mut *pending) };
+            drop(guard);
+        }
+    }
+
+    pub(crate) fn reserve(
+        execute_address: usize,
+        reservation_start: usize,
+        reservation_end: usize,
+        guard_mask: u8,
+    ) -> Result<PendingTrapSite, TrapError> {
+        let mut pending = Box::new(PendingReservation {
+            execute_address,
+            reservation_start,
+            reservation_end,
+            guard_mask,
+            next: AtomicPtr::new(ptr::null_mut()),
+        });
+        let _guard = REGISTRY_LOCK
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut current = HEAD.load(Ordering::Acquire);
+        while !current.is_null() {
+            // SAFETY: published nodes are process-lifetime allocations.
+            let site = unsafe { &*current };
+            if reservation_start < site.reservation_end && site.reservation_start < reservation_end
+            {
+                return Err(TrapError::Overlap);
+            }
+            current = site.next;
+        }
+        if pending_overlaps(reservation_start, reservation_end) {
+            return Err(TrapError::Overlap);
+        }
+        pending
+            .next
+            .store(PENDING_HEAD.load(Ordering::Relaxed), Ordering::Relaxed);
+        PENDING_HEAD.store(&mut *pending, Ordering::Relaxed);
+        Ok(PendingTrapSite {
+            pending: Some(pending),
+        })
+    }
+
     pub(crate) fn register(
         execute_address: usize,
         reservation_start: usize,
@@ -74,6 +171,15 @@ mod imp {
         guard_mask: u8,
     ) -> Result<&'static TrapSite, TrapError> {
         ensure_installed()?;
+        let mut candidate = Box::new(TrapSite {
+            execute_address,
+            reservation_start,
+            reservation_end,
+            guard_mask,
+            phase: AtomicU8::new(IDLE),
+            handled: AtomicU64::new(0),
+            next: ptr::null_mut(),
+        });
         let _guard = REGISTRY_LOCK
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -95,20 +201,52 @@ mod imp {
             }
             current = site.next;
         }
+        if pending_overlaps(reservation_start, reservation_end) {
+            return Err(TrapError::Overlap);
+        }
 
-        let site = Box::new(TrapSite {
-            execute_address,
-            reservation_start,
-            reservation_end,
-            guard_mask,
-            phase: AtomicU8::new(IDLE),
-            handled: AtomicU64::new(0),
-            next: HEAD.load(Ordering::Relaxed),
-        });
-        let site = Box::into_raw(site);
+        candidate.next = HEAD.load(Ordering::Relaxed);
+        let site = Box::into_raw(candidate);
         HEAD.store(site, Ordering::Release);
         // SAFETY: registry nodes are intentionally never freed.
         Ok(unsafe { &*site })
+    }
+
+    fn pending_overlaps(reservation_start: usize, reservation_end: usize) -> bool {
+        let mut current = PENDING_HEAD.load(Ordering::Relaxed);
+        while !current.is_null() {
+            // SAFETY: the registry mutex is held, so pending nodes remain live.
+            let pending = unsafe { &*current };
+            if reservation_start < pending.reservation_end
+                && pending.reservation_start < reservation_end
+            {
+                return true;
+            }
+            current = pending.next.load(Ordering::Relaxed);
+        }
+        false
+    }
+
+    unsafe fn remove_pending(target: *mut PendingReservation) {
+        let mut previous: *mut PendingReservation = ptr::null_mut();
+        let mut current = PENDING_HEAD.load(Ordering::Relaxed);
+        while !current.is_null() {
+            if current == target {
+                // SAFETY: current is a live node protected by the registry mutex.
+                let next = unsafe { (*current).next.load(Ordering::Relaxed) };
+                if previous.is_null() {
+                    PENDING_HEAD.store(next, Ordering::Relaxed);
+                } else {
+                    // SAFETY: previous is a live node protected by the registry mutex.
+                    unsafe { (*previous).next.store(next, Ordering::Relaxed) };
+                }
+                return;
+            }
+            previous = current;
+            // SAFETY: current is a live node protected by the registry mutex.
+            current = unsafe { (*current).next.load(Ordering::Relaxed) };
+        }
+        debug_assert!(false, "pending trap reservation was not registered");
     }
 
     fn ensure_installed() -> Result<(), TrapError> {
@@ -219,10 +357,62 @@ mod imp {
             unsafe { handler(signal) };
         }
     }
+    #[cfg(test)]
+    mod tests {
+        use std::thread;
+
+        use super::{TrapError, register, reserve};
+
+        #[test]
+        fn pending_reservation_blocks_only_overlapping_registrations() {
+            let storage = Box::leak(Box::new([0_u8; 32]));
+            let base = storage.as_ptr() as usize;
+            let pending = reserve(base, base, base + 8, 0).unwrap();
+
+            let disjoint = register(base + 16, base + 16, base + 24, 0);
+            assert!(disjoint.is_ok());
+            assert!(matches!(
+                register(base + 4, base + 4, base + 12, 0),
+                Err(TrapError::Overlap)
+            ));
+
+            drop(pending);
+            assert!(
+                register(base, base, base + 8, 0).is_ok(),
+                "dropping a pending token must release its reservation"
+            );
+        }
+
+        #[test]
+        fn concurrent_pending_commit_and_drop_preserve_the_list() {
+            let storage = Box::leak(Box::new([0_u8; 32]));
+            let base = storage.as_ptr() as usize;
+            let dropped = reserve(base, base, base + 8, 0).unwrap();
+            let committed = reserve(base + 16, base + 16, base + 24, 0).unwrap();
+
+            let dropper = thread::spawn(move || drop(dropped));
+            let committer = thread::spawn(move || committed.commit());
+            dropper.join().unwrap();
+            assert!(committer.join().unwrap().is_ok());
+            assert!(
+                register(base, base, base + 8, 0).is_ok(),
+                "concurrent middle/head removal must not leak a reservation"
+            );
+        }
+    }
 }
 
 #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
 mod imp {
+    #[allow(dead_code)]
+    pub(crate) struct PendingTrapSite;
+
+    #[allow(dead_code)]
+    impl PendingTrapSite {
+        pub(crate) fn commit(self) -> Result<&'static TrapSite, TrapError> {
+            unreachable!("pending trap sites are unavailable on this target")
+        }
+    }
     pub(crate) struct TrapSite;
 
     #[allow(dead_code)]
@@ -245,7 +435,15 @@ mod imp {
             0
         }
     }
-
+    #[allow(dead_code)]
+    pub(crate) fn reserve(
+        _execute_address: usize,
+        _reservation_start: usize,
+        _reservation_end: usize,
+        _guard_mask: u8,
+    ) -> Result<PendingTrapSite, TrapError> {
+        Err(TrapError::Unsupported)
+    }
     pub(crate) fn register(
         _execute_address: usize,
         _reservation_start: usize,
@@ -256,4 +454,4 @@ mod imp {
     }
 }
 
-pub(crate) use imp::{TrapError, TrapSite, register};
+pub(crate) use imp::{TrapError, TrapSite, register, reserve};
