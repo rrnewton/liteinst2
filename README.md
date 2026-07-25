@@ -28,6 +28,25 @@ cargo test
 cargo clippy --all-targets --all-features -- -D warnings
 ```
 
+GitHub Actions runs these blocking checks on Linux x86-64:
+
+- `cargo fmt --all -- --check` and Clippy with warnings denied check source
+  formatting and every library/test target.
+- Debug and release `cargo test --all-targets --all-features` cover decoding,
+  cache-line planning, jump publication, trap routing, relocation, context
+  preservation, and concurrent toggling using synthetic dual-mapped functions.
+- `live_probe_stress_matrix` exercises 128 rapid probes, one million opcode
+  stores, 16 guarded jump probes, 10,000 activation cycles, and concurrent
+  signal delivery at its default scale.
+- `probe_overhead_benchmark` is used only as a functional active-hook loop: CI
+  requires one callback per call but does not enforce its host-dependent timing.
+
+These checks do not establish arbitrary-binary or probe-anywhere support. The
+live fixtures engineer five-byte `mov eax, imm32` sites and free exact
+trampoline destinations. In particular, rapid installation currently validates
+only the opcode byte rather than the complete five-byte pun window; this is
+tracked in [issue #2](https://github.com/rrnewton/liteinst2/issues/2).
+
 The live stress matrix and overhead benchmark are opt-in:
 
 ```console
