@@ -4,6 +4,7 @@ use core::ffi::c_void;
 use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::ffi::CString;
 use std::hint::black_box;
+use std::process::Command;
 use std::ptr;
 use std::sync::{Arc, Barrier};
 use std::thread;
@@ -27,6 +28,28 @@ static HOOK_CALLS: AtomicU64 = AtomicU64::new(0);
 static EXECUTED_CALLS: AtomicU64 = AtomicU64::new(0);
 static TRAP_SIGNALS: AtomicU64 = AtomicU64::new(0);
 static USER_SIGNALS: AtomicU64 = AtomicU64::new(0);
+
+const ISOLATED_STRESS_ENV: &str = "LITEINST_ISOLATED_STRESS_TEST";
+
+// AUTONOMOUS-BOT-IMPLEMENTED
+// TODO-HUMAN-REVIEW(#10): Review the subprocess boundary for global signal state.
+fn run_isolated(test_name: &str, body: fn()) {
+    if std::env::var(ISOLATED_STRESS_ENV).as_deref() == Ok(test_name) {
+        body();
+        return;
+    }
+
+    let executable = std::env::current_exe().expect("failed to locate stress test executable");
+    let status = Command::new(executable)
+        .args(["--exact", test_name, "--ignored", "--nocapture"])
+        .env(ISOLATED_STRESS_ENV, test_name)
+        .status()
+        .expect("failed to launch isolated stress test");
+    assert!(
+        status.success(),
+        "isolated stress test {test_name} failed: {status}"
+    );
+}
 
 unsafe extern "C" fn record_hook(_context: *const HookContext) {
     HOOK_CALLS.fetch_add(1, Ordering::Relaxed);
@@ -463,6 +486,10 @@ fn executable_mapping_end(maps: &str, address: usize) -> Option<usize> {
 #[test]
 #[ignore = "long-running M5 live stress matrix"]
 fn live_probe_stress_matrix() {
+    run_isolated("live_probe_stress_matrix", live_probe_stress_matrix_body);
+}
+
+fn live_probe_stress_matrix_body() {
     install_counting_handler(libc::SIGTRAP);
     install_counting_handler(libc::SIGUSR1);
     HOOK_CALLS.store(0, Ordering::Relaxed);
@@ -647,6 +674,10 @@ fn probe_index(probe: &RapidProbe, executable_base: usize) -> usize {
 #[test]
 #[ignore = "release-mode M5 overhead benchmark"]
 fn probe_overhead_benchmark() {
+    run_isolated("probe_overhead_benchmark", probe_overhead_benchmark_body);
+}
+
+fn probe_overhead_benchmark_body() {
     HOOK_CALLS.store(0, Ordering::Relaxed);
     let scanner = InstructionScanner::default();
     let (mapping, mut specs, expected) = build_rapid_image(&scanner, 1);
