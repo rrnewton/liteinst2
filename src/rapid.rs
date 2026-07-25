@@ -8,6 +8,8 @@
 use core::fmt;
 use core::sync::atomic::{AtomicU8, Ordering};
 
+use iced_x86::{Instruction, OpKind};
+
 use crate::patcher::{NEAR_JUMP_BYTES, NEAR_JUMP_OPCODE};
 use crate::scanner::{InstructionScanner, ScanError, ScanResult};
 use crate::trampoline::{ExecutableTrampoline, HookCallback, TrampolineError, TrampolinePlan};
@@ -46,6 +48,22 @@ pub enum RapidToggleError {
     NullWritableAddress,
     /// Writable and executable aliases have different cache-line offsets.
     AliasAlignmentMismatch,
+    /// Another instruction begins inside the five-byte pun window.
+    PatchWindowContainsInstructionHead {
+        /// Requested executable address.
+        address: u64,
+        /// Interior instruction head discovered by iced-x86.
+        instruction_head: u64,
+    },
+    /// A decoded direct branch targets the interior of the pun window.
+    PatchWindowContainsBranchTarget {
+        /// Requested executable address.
+        address: u64,
+        /// Address of the branch instruction.
+        branch_address: u64,
+        /// Interior branch target that would become displacement data.
+        target_address: u64,
+    },
     /// The writable alias does not contain the planned inactive opcode.
     ExpectedOpcodeMismatch {
         /// Planned inactive opcode.
@@ -53,7 +71,14 @@ pub enum RapidToggleError {
         /// Byte observed through the writable alias.
         observed: u8,
     },
-    /// Another live patch owns the opcode byte.
+    /// The writable alias does not contain the planned five-byte pun window.
+    ExpectedWindowMismatch {
+        /// Complete five-byte window captured during planning.
+        expected: [u8; NEAR_JUMP_BYTES],
+        /// Complete five-byte window observed during installation.
+        observed: [u8; NEAR_JUMP_BYTES],
+    },
+    /// Another live patch owns part of the five-byte pun window.
     OverlappingPatchSite,
     /// Registering process-wide ownership raced an active writer.
     ReservationContended,
@@ -100,12 +125,31 @@ impl fmt::Display for RapidToggleError {
             Self::AliasAlignmentMismatch => {
                 formatter.write_str("writable and executable aliases have different line offsets")
             }
+            Self::PatchWindowContainsInstructionHead {
+                address,
+                instruction_head,
+            } => write!(
+                formatter,
+                "five-byte pun at {address:#x} contains instruction head {instruction_head:#x}"
+            ),
+            Self::PatchWindowContainsBranchTarget {
+                address,
+                branch_address,
+                target_address,
+            } => write!(
+                formatter,
+                "direct branch at {branch_address:#x} targets {target_address:#x} inside five-byte pun at {address:#x}"
+            ),
             Self::ExpectedOpcodeMismatch { expected, observed } => write!(
                 formatter,
                 "writable opcode is {observed:#04x}, expected {expected:#04x}"
             ),
+            Self::ExpectedWindowMismatch { expected, observed } => write!(
+                formatter,
+                "writable five-byte pun window is {observed:02x?}, expected {expected:02x?}"
+            ),
             Self::OverlappingPatchSite => {
-                formatter.write_str("another live patch owns the opcode byte")
+                formatter.write_str("another live patch owns the five-byte pun window")
             }
             Self::ReservationContended => {
                 formatter.write_str("patch-site reservation is contended")
@@ -143,6 +187,7 @@ pub struct RapidTogglePlan {
     trampoline: TrampolinePlan,
     execute_address: u64,
     target_address: u64,
+    original_window: [u8; NEAR_JUMP_BYTES],
     inactive_opcode: u8,
     cache_line_bytes: usize,
 }
@@ -153,6 +198,11 @@ impl RapidTogglePlan {
     /// Original bytes 1 through 4 are interpreted as a signed rel32. The
     /// trampoline must be mapped at that exact implied address, leaving those
     /// bytes unchanged in both inactive and active states.
+    ///
+    /// Planning rejects instruction heads and decoded direct branch targets in
+    /// bytes 1 through 4. The caller must provide a code-only region containing
+    /// every direct branch whose target can enter the window and must separately
+    /// exclude indirect or external entries that a linear scan cannot discover.
     pub fn from_scan(
         scanner: &InstructionScanner,
         scan: &ScanResult,
@@ -199,23 +249,54 @@ impl RapidTogglePlan {
             .ok_or(RapidToggleError::PatchWindowOutOfRange {
                 address: execute_address,
             })?;
-        let inactive_opcode = window[0];
+        let original_window: [u8; NEAR_JUMP_BYTES] =
+            window
+                .try_into()
+                .map_err(|_| RapidToggleError::PatchWindowOutOfRange {
+                    address: execute_address,
+                })?;
+        let interior_start =
+            execute_address
+                .checked_add(1)
+                .ok_or(RapidToggleError::PatchWindowOutOfRange {
+                    address: execute_address,
+                })?;
+        let window_end = execute_address.checked_add(NEAR_JUMP_BYTES as u64).ok_or(
+            RapidToggleError::PatchWindowOutOfRange {
+                address: execute_address,
+            },
+        )?;
+        if let Some(instruction_head) = verified.sites().range(interior_start..window_end).next() {
+            return Err(RapidToggleError::PatchWindowContainsInstructionHead {
+                address: execute_address,
+                instruction_head: *instruction_head.0,
+            });
+        }
+        for scanned in verified.instructions() {
+            let Some(target_address) = direct_near_branch_target(scanned.instruction()) else {
+                continue;
+            };
+            if (interior_start..window_end).contains(&target_address) {
+                return Err(RapidToggleError::PatchWindowContainsBranchTarget {
+                    address: execute_address,
+                    branch_address: scanned.address(),
+                    target_address,
+                });
+            }
+        }
+
+        let inactive_opcode = original_window[0];
         if inactive_opcode == NEAR_JUMP_OPCODE {
             return Err(RapidToggleError::AlreadyNearJump {
                 address: execute_address,
             });
         }
-        let displacement = i32::from_le_bytes(window[1..].try_into().map_err(|_| {
+        let displacement = i32::from_le_bytes(original_window[1..].try_into().map_err(|_| {
             RapidToggleError::PatchWindowOutOfRange {
                 address: execute_address,
             }
         })?);
-        let next_ip = execute_address.checked_add(NEAR_JUMP_BYTES as u64).ok_or(
-            RapidToggleError::TargetOutOfRange {
-                address: execute_address,
-                displacement,
-            },
-        )?;
+        let next_ip = window_end;
         let target = i128::from(next_ip) + i128::from(displacement);
         let target_address =
             u64::try_from(target).map_err(|_| RapidToggleError::TargetOutOfRange {
@@ -228,6 +309,7 @@ impl RapidTogglePlan {
             trampoline,
             execute_address,
             target_address,
+            original_window,
             inactive_opcode,
             cache_line_bytes: scanner.cache_line_size().get(),
         })
@@ -246,6 +328,20 @@ impl RapidTogglePlan {
     /// Returns the opcode restored by deactivation.
     pub const fn inactive_opcode(&self) -> u8 {
         self.inactive_opcode
+    }
+
+    /// Returns the immutable five-byte pun window captured during planning.
+    pub const fn original_window(&self) -> [u8; NEAR_JUMP_BYTES] {
+        self.original_window
+    }
+}
+
+fn direct_near_branch_target(instruction: &Instruction) -> Option<u64> {
+    match instruction.op0_kind() {
+        OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64 => {
+            Some(instruction.near_branch_target())
+        }
+        _ => None,
     }
 }
 
@@ -277,11 +373,13 @@ impl RapidProbe {
     ///
     /// # Safety
     ///
-    /// writable_address must alias the executable byte at plan.execute_address,
-    /// share its cache-line offset, permit atomic byte stores, and remain mapped
-    /// for the process lifetime. No unregistered writer may modify that byte.
-    /// The executable site and hook callback must also remain valid for the
-    /// process lifetime.
+    /// writable_address must alias the complete five-byte executable window at
+    /// plan.execute_address, share its cache-line offset, permit atomic stores
+    /// to its first byte, and remain mapped for the process lifetime. During
+    /// installation, the caller must exclude unregistered writers; registered
+    /// overlaps are rejected before the window is read. After installation, no
+    /// unregistered writer may modify any byte in that window. The executable
+    /// site and hook callback must also remain valid for the process lifetime.
     pub unsafe fn install(
         plan: RapidTogglePlan,
         writable_address: *mut u8,
@@ -308,33 +406,46 @@ impl RapidProbe {
             {
                 return Err(RapidToggleError::AliasAlignmentMismatch);
             }
+            let reservation_end = execute_address.checked_add(NEAR_JUMP_BYTES).ok_or(
+                RapidToggleError::TargetOutOfRange {
+                    address: plan.execute_address,
+                    displacement: 0,
+                },
+            )?;
+            let pending =
+                crate::trap::reserve(execute_address, execute_address, reservation_end, 0)
+                    .map_err(map_trap_error)?;
             // SAFETY: the caller supplies a live, atomically addressable byte.
             let opcode = unsafe { &*writable_address.cast::<AtomicU8>() };
-            let observed = opcode.load(Ordering::Acquire);
-            if observed != plan.inactive_opcode {
+            let mut observed_window = [0_u8; NEAR_JUMP_BYTES];
+            observed_window[0] = opcode.load(Ordering::Acquire);
+            for (offset, observed) in observed_window.iter_mut().enumerate().skip(1) {
+                // SAFETY: the caller guarantees the complete five-byte alias
+                // remains mapped and is not concurrently modified.
+                *observed = unsafe { writable_address.add(offset).read_volatile() };
+            }
+            if observed_window[0] != plan.inactive_opcode {
                 return Err(RapidToggleError::ExpectedOpcodeMismatch {
                     expected: plan.inactive_opcode,
-                    observed,
+                    observed: observed_window[0],
+                });
+            }
+            if observed_window != plan.original_window {
+                return Err(RapidToggleError::ExpectedWindowMismatch {
+                    expected: plan.original_window,
+                    observed: observed_window,
                 });
             }
 
             let trampoline =
                 ExecutableTrampoline::allocate_at(&plan.trampoline, plan.target_address)?;
-            let reservation_end =
-                execute_address
-                    .checked_add(1)
-                    .ok_or(RapidToggleError::TargetOutOfRange {
-                        address: plan.execute_address,
-                        displacement: 0,
-                    })?;
-            let reservation =
-                match crate::trap::register(execute_address, execute_address, reservation_end, 0) {
-                    Ok(reservation) => reservation,
-                    Err(error) => {
-                        trampoline.discard();
-                        return Err(map_trap_error(error));
-                    }
-                };
+            let reservation = match pending.commit() {
+                Ok(reservation) => reservation,
+                Err(error) => {
+                    trampoline.discard();
+                    return Err(map_trap_error(error));
+                }
+            };
 
             Ok(Self {
                 plan,
@@ -422,6 +533,7 @@ mod tests {
             plan.target_address(),
             (i128::from(base + 5) + i128::from(displacement)) as u64
         );
+        assert_eq!(plan.original_window(), code);
     }
 
     #[test]
@@ -455,15 +567,55 @@ mod tests {
         ));
     }
 
+    #[test]
+    fn rejects_an_instruction_head_inside_the_pun_window() {
+        let scanner = InstructionScanner::default();
+        let base = 0x40_0000_u64;
+        let code = [0x90; 5];
+        let scan = scanner.scan(&code, base).unwrap();
+        let error =
+            RapidTogglePlan::from_scan(&scanner, &scan, &code, base, base, noop_hook).unwrap_err();
+
+        assert!(matches!(
+            error,
+            RapidToggleError::PatchWindowContainsInstructionHead {
+                address,
+                instruction_head,
+            } if address == base && instruction_head == base + 1
+        ));
+    }
+
+    #[test]
+    fn rejects_a_direct_branch_target_inside_the_pun_window() {
+        let scanner = InstructionScanner::default();
+        let base = 0x50_0000_u64;
+        // mov eax, 0; jmp base+1
+        let code = [0xB8, 0, 0, 0, 0, 0xEB, 0xFA];
+        let scan = scanner.scan(&code, base).unwrap();
+        let error =
+            RapidTogglePlan::from_scan(&scanner, &scan, &code, base, base, noop_hook).unwrap_err();
+
+        assert!(matches!(
+            error,
+            RapidToggleError::PatchWindowContainsBranchTarget {
+                address,
+                branch_address,
+                target_address,
+            } if address == base
+                && branch_address == base + 5
+                && target_address == base + 1
+        ));
+    }
+
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     mod live {
-        use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+        use core::sync::atomic::{AtomicBool, AtomicU8, AtomicU64, Ordering};
         use std::sync::{Arc, Barrier, Mutex, MutexGuard};
         use std::thread;
         use std::time::{Duration, Instant};
 
         use super::{HookContext, InstructionScanner, RapidToggleError, RapidTogglePlan};
-        use crate::patcher::NEAR_JUMP_OPCODE;
+        use crate::patcher::{NEAR_JUMP_BYTES, NEAR_JUMP_OPCODE};
         use crate::rapid::RapidProbe;
         use crate::trampoline::TrampolineError;
 
@@ -730,22 +882,78 @@ mod tests {
         }
 
         #[test]
-        fn overlap_failure_discards_non_page_aligned_trampoline() {
+        fn install_rejects_each_mutated_window_byte() {
+            let _guard = serial_guard();
+
+            for window_offset in 0..NEAR_JUMP_BYTES {
+                let mapping = DualMapping::new();
+                let (plan, placeholder, code, _expected) = plan_fixture(&mapping);
+                let target_address = plan.target_address();
+                placeholder.release();
+                let expected: [u8; NEAR_JUMP_BYTES] = code[..NEAR_JUMP_BYTES].try_into().unwrap();
+                let mut observed = expected;
+                observed[window_offset] = observed[window_offset].wrapping_add(1);
+                mapping.write(SITE_OFFSET + window_offset, &[observed[window_offset]]);
+
+                // SAFETY: the mapping contract is valid. The intentionally
+                // stale window must be rejected before allocating a trampoline.
+                let error = match unsafe {
+                    RapidProbe::install(plan, mapping.writable_address(SITE_OFFSET))
+                } {
+                    Err(error) => error,
+                    Ok(_) => panic!("mutated window byte {window_offset} was accepted"),
+                };
+                if window_offset == 0 {
+                    assert!(matches!(
+                        error,
+                        RapidToggleError::ExpectedOpcodeMismatch {
+                            expected: expected_opcode,
+                            observed: observed_opcode,
+                        } if expected_opcode == expected[0] && observed_opcode == observed[0]
+                    ));
+                } else {
+                    assert!(matches!(
+                        error,
+                        RapidToggleError::ExpectedWindowMismatch {
+                            expected: error_expected,
+                            observed: error_observed,
+                        } if error_expected == expected && error_observed == observed
+                    ));
+                }
+                assert_eq!(permissions(target_address), None);
+            }
+        }
+
+        #[test]
+        fn tail_overlap_failure_discards_non_page_aligned_trampoline() {
             let _guard = serial_guard();
             let mapping = DualMapping::new();
-            let (plan, placeholder, _code, _expected) = plan_fixture(&mapping);
+            let (plan, placeholder, code, _expected) = plan_fixture(&mapping);
             let target_address = plan.target_address();
             placeholder.release();
             let execute_address = usize::try_from(mapping.executable_address(SITE_OFFSET)).unwrap();
-            crate::trap::register(execute_address, execute_address - 8, execute_address + 8, 0)
-                .unwrap();
+            let tail_address = execute_address + NEAR_JUMP_BYTES - 1;
+            let blocker =
+                crate::trap::register(tail_address, tail_address, tail_address + 1, 0).unwrap();
+            blocker.begin().unwrap();
+            let tail = mapping
+                .writable_address(SITE_OFFSET + NEAR_JUMP_BYTES - 1)
+                .cast::<AtomicU8>();
+            let original_tail = code[NEAR_JUMP_BYTES - 1];
+            // SAFETY: blocker owns this registered tail byte while WRITING.
+            unsafe { &*tail }.store(original_tail ^ 0xff, Ordering::Release);
 
-            // SAFETY: the mapping contract is valid; the trap registry rejects this site.
+            // SAFETY: the mapping contract is valid; the trap registry rejects
+            // the plan before reading because an active registered writer owns
+            // the tail byte.
             let error =
                 match unsafe { RapidProbe::install(plan, mapping.writable_address(SITE_OFFSET)) } {
                     Err(error) => error,
                     Ok(_) => panic!("overlapping rapid probe unexpectedly installed"),
                 };
+            // SAFETY: blocker still owns the tail byte until finish.
+            unsafe { &*tail }.store(original_tail, Ordering::Release);
+            blocker.finish();
             assert!(matches!(error, RapidToggleError::OverlappingPatchSite));
             assert_eq!(permissions(target_address), None);
         }
