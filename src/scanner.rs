@@ -167,6 +167,9 @@ impl PatchableSite {
 /// Complete result of scanning one contiguous code region.
 #[derive(Clone, Debug, Default)]
 pub struct ScanResult {
+    // AUTONOMOUS-BOT-IMPLEMENTED
+    // TODO-HUMAN-REVIEW(#11): Review exact snapshot retention and comparison.
+    snapshot: Vec<u8>,
     instructions: Vec<ScannedInstruction>,
     sites: BTreeMap<u64, PatchableSite>,
 }
@@ -185,6 +188,21 @@ impl ScanResult {
     /// Returns the candidate at `address`, when it is an instruction head.
     pub fn site(&self, address: u64) -> Option<&PatchableSite> {
         self.sites.get(&address)
+    }
+
+    /// Returns whether both scans represent the same exact code snapshot.
+    pub(crate) fn matches_snapshot(&self, other: &Self) -> bool {
+        self.snapshot == other.snapshot
+            && self.sites == other.sites
+            && self.instructions.len() == other.instructions.len()
+            && self
+                .instructions
+                .iter()
+                .zip(&other.instructions)
+                .all(|(expected, current)| {
+                    expected.offset() == current.offset()
+                        && expected.instruction() == current.instruction()
+                })
     }
 
     /// Iterates over cache-line-crossing candidates in address order.
@@ -354,6 +372,7 @@ impl InstructionScanner {
         }
 
         Ok(ScanResult {
+            snapshot: code.to_vec(),
             instructions,
             sites,
         })

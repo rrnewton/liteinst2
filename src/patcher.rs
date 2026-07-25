@@ -275,7 +275,7 @@ impl JumpPatchPlan {
         let verified_scan = scanner
             .scan(code, region_base)
             .map_err(|source| PatchError::InvalidCodeRegion { source })?;
-        if verified_scan.sites() != scan.sites() {
+        if !scan.matches_snapshot(&verified_scan) {
             return Err(PatchError::RegionMismatch {
                 address: execute_address,
             });
@@ -827,6 +827,19 @@ mod tests {
         let original = [0xB8, 1, 0, 0, 0, 0xC3, 0x90, 0x90];
         let stale_scan = scanner.scan(&original, 60).unwrap();
         let changed = [0x48, 0x89, 0xC0, 0x90, 0x90, 0x90, 0x90, 0x90];
+
+        let error =
+            JumpPatchPlan::from_scan(&scanner, &stale_scan, &changed, 60, 60, 0x1000).unwrap_err();
+
+        assert_eq!(error, PatchError::RegionMismatch { address: 60 });
+    }
+
+    #[test]
+    fn rejects_semantically_equivalent_byte_staleness() {
+        let scanner = InstructionScanner::default();
+        let original = [0x40, 0x05, 1, 0, 0, 0, 0xC3, 0x90];
+        let stale_scan = scanner.scan(&original, 60).unwrap();
+        let changed = [0x42, 0x05, 1, 0, 0, 0, 0xC3, 0x90];
 
         let error =
             JumpPatchPlan::from_scan(&scanner, &stale_scan, &changed, 60, 60, 0x1000).unwrap_err();
