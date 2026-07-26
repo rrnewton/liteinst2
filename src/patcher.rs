@@ -15,6 +15,8 @@ use core::num::NonZeroU64;
 #[cfg(target_arch = "x86_64")]
 use core::sync::atomic::{AtomicU64, Ordering, compiler_fence};
 
+use iced_x86::{Instruction, OpKind};
+
 use crate::cache_line::CacheLineSize;
 use crate::scanner::{InstructionScanner, ScanError, ScanResult};
 use crate::trap::{TrapError, TrapSite};
@@ -124,6 +126,15 @@ pub enum PatchError {
         /// Decoded instruction length.
         instruction_len: usize,
     },
+    /// A decoded direct branch can enter the displaced window after its head.
+    PatchWindowContainsBranchTarget {
+        /// Requested executable address.
+        address: u64,
+        /// Address of the branch instruction.
+        branch_address: u64,
+        /// Interior target that would bypass the installed hook.
+        target_address: u64,
+    },
     /// The region does not contain the complete eight-byte patch window.
     PatchWindowOutOfRange {
         /// Instruction address.
@@ -191,6 +202,14 @@ impl fmt::Display for PatchError {
                 formatter,
                 "instruction at {address:#x} is {instruction_len} bytes; a direct jump needs {NEAR_JUMP_BYTES}"
             ),
+            Self::PatchWindowContainsBranchTarget {
+                address,
+                branch_address,
+                target_address,
+            } => write!(
+                formatter,
+                "direct branch at {branch_address:#x} targets {target_address:#x} inside displaced window at {address:#x}"
+            ),
             Self::PatchWindowOutOfRange { address } => {
                 write!(
                     formatter,
@@ -246,11 +265,12 @@ impl std::error::Error for PatchError {
     }
 }
 
-/// Immutable plan for redirecting one instruction to a trampoline.
+/// Immutable plan for redirecting one or more complete instructions.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct JumpPatchPlan {
     execute_address: u64,
     target_address: u64,
+    displaced_len: usize,
     original: [u8; WORD_PATCH_BYTES],
     replacement: [u8; WORD_PATCH_BYTES],
     strategy: PatchStrategy,
@@ -259,11 +279,12 @@ pub struct JumpPatchPlan {
 }
 
 impl JumpPatchPlan {
-    /// Plans a direct jump using an M1 scan of `code`.
+    /// Plans a direct jump using an M1 scan of the supplied code.
     ///
-    /// The first instruction must be at least five bytes. This avoids
-    /// overwriting a later instruction head with unconstrained displacement
-    /// bytes; shorter instructions require a future punning/relocation plan.
+    /// Complete consecutive instructions are displaced until the window can
+    /// contain a five-byte near jump. Direct branches into the interior are
+    /// rejected because they could bypass the hook while the patch is active.
+    /// Callers must separately exclude hidden indirect or external entries.
     pub fn from_scan(
         scanner: &InstructionScanner,
         scan: &ScanResult,
@@ -281,9 +302,11 @@ impl JumpPatchPlan {
             });
         }
 
-        let site = scan.site(execute_address).ok_or(PatchError::SiteNotFound {
-            address: execute_address,
-        })?;
+        let site = verified_scan
+            .site(execute_address)
+            .ok_or(PatchError::SiteNotFound {
+                address: execute_address,
+            })?;
         let relative =
             execute_address
                 .checked_sub(region_base)
@@ -298,11 +321,51 @@ impl JumpPatchPlan {
                 address: execute_address,
             });
         }
-        if site.instruction_len() < NEAR_JUMP_BYTES {
+
+        let start_index = verified_scan
+            .instructions()
+            .iter()
+            .position(|instruction| instruction.address() == execute_address)
+            .ok_or(PatchError::SiteNotFound {
+                address: execute_address,
+            })?;
+        let mut displaced_len = 0_usize;
+        for instruction in &verified_scan.instructions()[start_index..] {
+            let expected = execute_address
+                .checked_add(displaced_len as u64)
+                .ok_or(PatchError::AddressRangeOverflow)?;
+            if instruction.address() != expected {
+                return Err(PatchError::RegionMismatch {
+                    address: execute_address,
+                });
+            }
+            displaced_len = displaced_len
+                .checked_add(instruction.len())
+                .ok_or(PatchError::AddressRangeOverflow)?;
+            if displaced_len >= NEAR_JUMP_BYTES {
+                break;
+            }
+        }
+        if displaced_len < NEAR_JUMP_BYTES {
             return Err(PatchError::InstructionTooShort {
                 address: execute_address,
-                instruction_len: site.instruction_len(),
+                instruction_len: displaced_len,
             });
+        }
+        let displaced_end = execute_address
+            .checked_add(displaced_len as u64)
+            .ok_or(PatchError::AddressRangeOverflow)?;
+        for instruction in verified_scan.instructions() {
+            let Some(target_address) = direct_near_branch_target(instruction.instruction()) else {
+                continue;
+            };
+            if execute_address < target_address && target_address < displaced_end {
+                return Err(PatchError::PatchWindowContainsBranchTarget {
+                    address: execute_address,
+                    branch_address: instruction.address(),
+                    target_address,
+                });
+            }
         }
 
         let patch_end =
@@ -361,7 +424,7 @@ impl JumpPatchPlan {
                     .checked_add(front_len as u64)
                     .ok_or(PatchError::AddressRangeOverflow)?;
                 let mut mask = 0_u8;
-                for (&address, _) in scan.sites().range(execute_address..boundary) {
+                for (&address, _) in verified_scan.sites().range(execute_address..boundary) {
                     let relative = address - execute_address;
                     let relative =
                         usize::try_from(relative).map_err(|_| PatchError::RegionMismatch {
@@ -388,6 +451,7 @@ impl JumpPatchPlan {
         Ok(Self {
             execute_address,
             target_address,
+            displaced_len,
             original,
             replacement,
             strategy,
@@ -404,6 +468,11 @@ impl JumpPatchPlan {
     /// Returns the trampoline target address.
     pub const fn target_address(&self) -> u64 {
         self.target_address
+    }
+
+    /// Returns the number of complete application bytes displaced by the jump.
+    pub const fn displaced_len(&self) -> usize {
+        self.displaced_len
     }
 
     /// Returns the original eight-byte window.
@@ -424,6 +493,15 @@ impl JumpPatchPlan {
     /// Iterates over instruction-head offsets guarded during publication.
     pub fn guarded_instruction_offsets(&self) -> impl Iterator<Item = usize> + '_ {
         (0..WORD_PATCH_BYTES).filter(|offset| self.guard_mask & (1 << offset) != 0)
+    }
+}
+
+fn direct_near_branch_target(instruction: &Instruction) -> Option<u64> {
+    match instruction.op0_kind() {
+        OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64 => {
+            Some(instruction.near_branch_target())
+        }
+        _ => None,
     }
 }
 
@@ -586,6 +664,14 @@ impl LiveJumpPatch {
         self.trap_site.finish();
         result
     }
+}
+
+/// Installs the process-wide guard-trap router before signal-driven patching.
+///
+/// Calling this before a restrictive seccomp filter avoids attempting
+/// sigaction from the first instrumentation signal.
+pub fn prepare_live_patching() -> Result<(), PatchError> {
+    crate::trap::prepare().map_err(map_trap_error)
 }
 
 fn map_trap_error(error: TrapError) -> PatchError {
@@ -808,15 +894,28 @@ mod tests {
     }
 
     #[test]
-    fn rejects_instruction_too_short_for_direct_jump() {
+    fn plans_jump_across_multiple_short_instructions() {
         let code = [0x48, 0x89, 0xC0, 0x90, 0x90, 0x90, 0x90, 0x90];
-        let error = plan_for(&code, 60, 0x1000).unwrap_err();
+        let plan = plan_for(&code, 60, 0x1000).unwrap();
+
+        assert_eq!(plan.displaced_len(), 5);
+        assert_eq!(
+            plan.guarded_instruction_offsets().collect::<Vec<_>>(),
+            vec![0, 3]
+        );
+    }
+
+    #[test]
+    fn rejects_a_direct_branch_into_the_displaced_window() {
+        let code = [0x0F, 0x05, 0x90, 0x90, 0x90, 0xEB, 0xFA, 0x90];
+        let error = plan_for(&code, 0x1000, 0x2000).unwrap_err();
 
         assert_eq!(
             error,
-            PatchError::InstructionTooShort {
-                address: 60,
-                instruction_len: 3,
+            PatchError::PatchWindowContainsBranchTarget {
+                address: 0x1000,
+                branch_address: 0x1005,
+                target_address: 0x1001,
             }
         );
     }
@@ -868,13 +967,28 @@ mod tests {
         use std::thread;
 
         use super::JumpPatchPlan;
-        use crate::patcher::{LiveJumpPatch, StalenessBudget};
+        use crate::patcher::{LiveJumpPatch, PatchError, StalenessBudget};
         use crate::scanner::InstructionScanner;
 
         const PAGE_BYTES: usize = 4096;
         const FUNCTION_OFFSET: usize = 56;
         const SITE_OFFSET: usize = 60;
         const TARGET_OFFSET: usize = 128;
+
+        unsafe fn bind_retry(
+            plan: JumpPatchPlan,
+            writable_address: *mut u8,
+            staleness: StalenessBudget,
+        ) -> LiveJumpPatch {
+            loop {
+                // SAFETY: caller upholds LiveJumpPatch::bind requirements.
+                match unsafe { LiveJumpPatch::bind(plan.clone(), writable_address, staleness) } {
+                    Ok(patch) => return patch,
+                    Err(PatchError::Contended) => thread::yield_now(),
+                    Err(error) => panic!("bind failed: {error}"),
+                }
+            }
+        }
 
         struct DualMapping {
             writable: *mut u8,
@@ -990,8 +1104,7 @@ mod tests {
             let plan = mapping.plan();
             let budget = StalenessBudget::new(10_000).unwrap();
             // SAFETY: dual mappings alias and intentionally remain mapped.
-            let patch =
-                unsafe { LiveJumpPatch::bind(plan, mapping.writable_site(), budget) }.unwrap();
+            let patch = unsafe { bind_retry(plan, mapping.writable_site(), budget) };
 
             // SAFETY: fixture mappings satisfy the bind contract.
             unsafe { patch.apply() }.unwrap();
@@ -1062,9 +1175,7 @@ mod tests {
 
                 let budget = StalenessBudget::new(10_000).unwrap();
                 // SAFETY: dual mappings alias and intentionally remain mapped.
-                let patch =
-                    unsafe { LiveJumpPatch::bind(plan, mapping.writable.add(site_offset), budget) }
-                        .unwrap();
+                let patch = unsafe { bind_retry(plan, mapping.writable.add(site_offset), budget) };
                 // SAFETY: fixture mappings satisfy the bind contract.
                 unsafe { patch.apply() }.unwrap();
                 assert_eq!(function(), 2);
@@ -1082,8 +1193,7 @@ mod tests {
             let plan = mapping.plan();
             let budget = StalenessBudget::new(20_000).unwrap();
             // SAFETY: dual mappings alias and intentionally remain mapped.
-            let patch =
-                unsafe { LiveJumpPatch::bind(plan, mapping.writable_site(), budget) }.unwrap();
+            let patch = unsafe { bind_retry(plan, mapping.writable_site(), budget) };
 
             let running = Arc::new(AtomicBool::new(true));
             let calls = Arc::new(AtomicU64::new(0));
@@ -1185,8 +1295,7 @@ mod tests {
 
             let budget = StalenessBudget::new(20_000).unwrap();
             // SAFETY: dual mappings alias and intentionally remain mapped.
-            let patch =
-                unsafe { LiveJumpPatch::bind(plan, mapping.writable.add(SITE), budget) }.unwrap();
+            let patch = unsafe { bind_retry(plan, mapping.writable.add(SITE), budget) };
 
             let running = Arc::new(AtomicBool::new(true));
             let calls = Arc::new(AtomicU64::new(0));

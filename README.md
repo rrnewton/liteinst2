@@ -3,29 +3,50 @@
 `liteinst2` is a Rust implementation of online x86-64 instrumentation using
 the instruction-punning techniques from PLDI 2016 and PLDI 2017.
 
-The repository is at the foundation stage. Its modules separate the main
-correctness boundaries:
+The crate is a standalone patching engine. It has no Hermit or Reverie
+dependency and contains no syscall, process-lifecycle, or tool policy. Its
+modules separate the main correctness boundaries:
 
 - `cache_line`: overflow-safe patch-span classification.
 - `scanner`: fail-closed x86-64 decoding and cache-line crossing discovery.
-- `patcher`: direct-jump planning and atomic WordPatch++ publication.
+- `patcher`: multi-instruction jump planning and atomic WordPatch++ publication.
+- `planner`: rapid, relocated, and client-trap fallback selection.
 - `rapid`: exact instruction-pun planning and atomic opcode toggling.
 - `probe`: idempotent probe lifecycle state.
-- `trampoline`: near W^X allocation, relocation, hook dispatch, and return.
+- `trampoline`: near dual-mapped allocation, relocation, hook dispatch, and return.
 
-The implementation will preserve five invariants established before the port:
+The implementation preserves five invariants established before the port:
 
 1. A cross-cache-line patch must never fall back to a tearing store.
 2. Probe installation publishes state only after planning and allocation pass.
 3. Trampoline sizing and emission use the same checked plan.
 4. Signal handlers use only async-signal-safe, pre-published data.
-5. Executable mappings follow W^X rather than remaining writable and executable.
+5. Trampolines never use one RWX mapping; arena mode instead retains separate
+   RW and RX aliases and therefore does not provide strict W^X.
+
+## Examples
+
+`replace_first` installs a hook over a two-byte instruction, mutates its saved
+register context, relocates the rest of the five-byte patch window, and toggles
+the hook off again:
+
+```console
+cargo run --example replace_first
+```
+
+The separate `examples/preload-consumer` cdylib shows how a consumer can own
+LD_PRELOAD delivery while depending on the policy-free core:
+
+```console
+cargo build --manifest-path examples/preload-consumer/Cargo.toml
+```
 
 ## Development
 
 ```console
-cargo test
-cargo clippy --all-targets --all-features -- -D warnings
+cargo test --all-targets --all-features --locked
+cargo clippy --all-targets --all-features --locked -- -D warnings
+cargo package --locked
 ```
 
 GitHub Actions runs these blocking checks on Linux x86-64:
@@ -41,11 +62,15 @@ GitHub Actions runs these blocking checks on Linux x86-64:
 - `probe_overhead_benchmark` is used only as a functional active-hook loop: CI
   requires one callback per call but does not enforce its host-dependent timing.
 
-These checks do not establish arbitrary-binary or probe-anywhere support. The
-live fixtures engineer five-byte `mov eax, imm32` sites and free exact
-trampoline destinations. In particular, rapid installation currently validates
-only the opcode byte rather than the complete five-byte pun window; this is
-tracked in [issue #2](https://github.com/rrnewton/liteinst2/issues/2).
+These checks do not establish arbitrary-binary or probe-anywhere support.
+Generic hooks can now displace several complete instructions, replace a short
+first instruction such as `syscall`, mutate the saved integer context, and use
+a dual-mapped arena prepared before signal-driven registration. Exact one-byte rapid
+puns still require the original bytes to encode a free trampoline destination.
+Clients must provide a trustworthy code region, writable access to the live
+patch word, mapping-lifecycle ownership, proof that no control-flow entry can
+target the interior of a relocated window, and a trap fallback when the
+planner returns `PunPlan::TrapRequired`.
 
 The live stress matrix and overhead benchmark are opt-in:
 
