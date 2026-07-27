@@ -7,7 +7,7 @@
 //! within signed rel32 reach and is never writable through its RX alias.
 
 use core::fmt;
-use core::sync::atomic::{AtomicU8, Ordering, compiler_fence};
+use core::sync::atomic::{AtomicU8, AtomicUsize, Ordering, compiler_fence};
 
 use iced_x86::{
     BlockEncoder, BlockEncoderOptions, Instruction, InstructionBlock,
@@ -117,11 +117,13 @@ impl ExtendedState {
 /// the System V AMD64 ABI and must not unwind through generated machine code.
 /// The frame preserves x87 through AVX-512 plus PKRU; callbacks must not modify
 /// permission-gated AMX or other extended state outside that contract.
-pub type HookCallback = unsafe extern "C" fn(*const HookContext);
+pub type HookCallback = unsafe extern "C" fn(*mut HookContext);
 
-/// Register snapshot observed at the instrumented instruction.
+/// Mutable integer-register snapshot at the instrumented instruction.
 ///
-/// SIMD state is preserved transparently rather than exposed to callbacks.
+/// Callback changes to saved GPRs and RFLAGS are restored into application
+/// state. The instruction and stack-pointer fields are metadata. SIMD state is
+/// preserved transparently rather than exposed to callbacks.
 #[repr(C)]
 #[derive(Clone, Copy, Debug)]
 pub struct HookContext {
@@ -258,6 +260,10 @@ pub enum TrampolineError {
         /// Required trampoline entry address.
         address: u64,
     },
+    /// A trampoline arena must contain at least one checked slot.
+    InvalidArenaCapacity,
+    /// Every slot in a prepared trampoline arena has been reserved.
+    ArenaFull,
     /// Emitted code does not fit in its executable allocation.
     CodeTooLarge {
         /// Emitted code bytes.
@@ -315,6 +321,10 @@ impl fmt::Display for TrampolineError {
                     "exact trampoline address {address:#x} is unavailable"
                 )
             }
+            Self::InvalidArenaCapacity => {
+                formatter.write_str("trampoline arena capacity must be non-zero")
+            }
+            Self::ArenaFull => formatter.write_str("trampoline arena has no free slots"),
             Self::CodeTooLarge {
                 code_len,
                 allocation_len,
@@ -346,72 +356,120 @@ impl From<PatchError> for TrampolineError {
     }
 }
 
-/// Immutable relocation and dispatch plan for one instruction.
+/// Immutable relocation and dispatch plan for a complete patch window.
 #[derive(Clone, Debug)]
 pub struct TrampolinePlan {
     execute_address: u64,
     return_address: u64,
     hook: HookCallback,
-    instruction: Instruction,
+    instructions: Vec<Instruction>,
+    relocated_start: usize,
 }
 
 impl TrampolinePlan {
-    /// Builds a one-instruction plan from an M1 scan.
+    /// Builds an observing plan from an instruction scan.
     ///
-    /// Lengths from 5 through x86's 15-byte maximum are accepted. Shorter
-    /// instructions are rejected rather than overwriting a later entry point.
+    /// Complete consecutive instructions are displaced until their combined
+    /// length can contain a five-byte near jump. The hook runs before all
+    /// displaced instructions are relocated and executed.
     pub fn from_scan(
         scan: &ScanResult,
         execute_address: u64,
         hook: HookCallback,
     ) -> Result<Self, TrampolineError> {
-        let site = scan
-            .site(execute_address)
-            .ok_or(TrampolineError::SiteNotFound {
-                address: execute_address,
-            })?;
-        if site.instruction_len() < 5 {
-            return Err(TrampolineError::InstructionTooShort {
-                address: execute_address,
-                instruction_len: site.instruction_len(),
-            });
-        }
-        let instruction = scan
+        Self::from_scan_mode(scan, execute_address, hook, 0)
+    }
+
+    /// Builds a plan whose hook replaces the first displaced instruction.
+    ///
+    /// Instructions after the first one are still relocated and executed.
+    /// This supports short operations such as the two-byte x86-64 syscall:
+    /// the hook emulates the operation, the trampoline executes any tail
+    /// instructions consumed by the five-byte patch, and control resumes after
+    /// the complete displaced window.
+    pub fn from_scan_replacing_first(
+        scan: &ScanResult,
+        execute_address: u64,
+        hook: HookCallback,
+    ) -> Result<Self, TrampolineError> {
+        Self::from_scan_mode(scan, execute_address, hook, 1)
+    }
+
+    fn from_scan_mode(
+        scan: &ScanResult,
+        execute_address: u64,
+        hook: HookCallback,
+        relocated_start: usize,
+    ) -> Result<Self, TrampolineError> {
+        let start_index = scan
             .instructions()
             .iter()
-            .find(|instruction| instruction.address() == execute_address)
+            .position(|instruction| instruction.address() == execute_address)
             .ok_or(TrampolineError::SiteNotFound {
                 address: execute_address,
-            })?
-            .instruction()
-            .to_owned();
-        let return_address = execute_address
-            .checked_add(site.instruction_len() as u64)
-            .ok_or(TrampolineError::ReturnAddressOverflow {
-                address: execute_address,
-                instruction_len: site.instruction_len(),
             })?;
+        let mut displaced_len = 0_usize;
+        let mut instructions = Vec::new();
+        for scanned in &scan.instructions()[start_index..] {
+            let expected = execute_address.checked_add(displaced_len as u64).ok_or(
+                TrampolineError::ReturnAddressOverflow {
+                    address: execute_address,
+                    instruction_len: displaced_len,
+                },
+            )?;
+            if scanned.address() != expected {
+                break;
+            }
+            displaced_len = displaced_len.checked_add(scanned.len()).ok_or(
+                TrampolineError::ReturnAddressOverflow {
+                    address: execute_address,
+                    instruction_len: displaced_len,
+                },
+            )?;
+            instructions.push(scanned.instruction().to_owned());
+            if displaced_len >= crate::patcher::NEAR_JUMP_BYTES {
+                break;
+            }
+        }
+        if displaced_len < crate::patcher::NEAR_JUMP_BYTES {
+            return Err(TrampolineError::InstructionTooShort {
+                address: execute_address,
+                instruction_len: displaced_len,
+            });
+        }
+        let return_address = execute_address.checked_add(displaced_len as u64).ok_or(
+            TrampolineError::ReturnAddressOverflow {
+                address: execute_address,
+                instruction_len: displaced_len,
+            },
+        )?;
         Ok(Self {
             execute_address,
             return_address,
             hook,
-            instruction,
+            instructions,
+            relocated_start,
         })
     }
 
-    /// Returns the displaced instruction address.
+    /// Returns the first displaced instruction address.
     pub const fn execute_address(&self) -> u64 {
         self.execute_address
     }
 
-    /// Returns the first application address after the displaced instruction.
+    /// Returns the first application address after the displaced window.
     pub const fn return_address(&self) -> u64 {
         self.return_address
     }
 
-    /// Returns the displaced instruction length.
-    pub const fn displaced_len(&self) -> usize {
-        self.instruction.len()
+    /// Returns the number of complete application bytes displaced.
+    pub fn displaced_len(&self) -> usize {
+        self.instructions.iter().map(Instruction::len).sum()
+    }
+
+    /// Returns whether the first displaced instruction is replaced by the hook.
+    pub const fn replaces_first(&self) -> bool {
+        self.relocated_start == 1
     }
 
     /// Emits this plan at an exact executable address.
@@ -432,13 +490,18 @@ impl TrampolinePlan {
             let relocated_address = restore_address
                 .checked_add(restore.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
-            let relocated = BlockEncoder::encode(
-                64,
-                InstructionBlock::new(core::slice::from_ref(&self.instruction), relocated_address),
-                BlockEncoderOptions::NONE,
-            )
-            .map_err(encoding_error)?
-            .code_buffer;
+            let relocated_instructions = &self.instructions[self.relocated_start..];
+            let relocated = if relocated_instructions.is_empty() {
+                Vec::new()
+            } else {
+                BlockEncoder::encode(
+                    64,
+                    InstructionBlock::new(relocated_instructions, relocated_address),
+                    BlockEncoderOptions::NONE,
+                )
+                .map_err(encoding_error)?
+                .code_buffer
+            };
             let return_jump = absolute_indirect_jump(self.return_address);
             let layout = TrampolineLayout {
                 instrumentation_len: instrumentation.len(),
@@ -530,6 +593,104 @@ fn absolute_indirect_jump(target: u64) -> [u8; ABSOLUTE_JUMP_BYTES] {
     bytes
 }
 
+/// Process-lifetime dual-mapped trampoline storage prepared before instrumentation.
+///
+/// An arena keeps separate RW and RX aliases to the same backing pages and
+/// reserves fixed-size slots without issuing syscalls. This avoids an RWX VMA,
+/// but it is not strict W^X because executable bytes remain writable through
+/// the separate RW alias. Clients that need a stronger write-after-publish
+/// boundary must not use this arena API.
+pub struct TrampolineArena {
+    writable: *mut u8,
+    executable: *mut u8,
+    len: usize,
+    next: AtomicUsize,
+}
+
+// SAFETY: slots are reserved atomically and never reused; the mappings live for
+// the process lifetime.
+unsafe impl Send for TrampolineArena {}
+// SAFETY: see Send; writers receive disjoint slots before publishing bytes.
+unsafe impl Sync for TrampolineArena {}
+
+impl TrampolineArena {
+    /// Allocates process-lifetime trampoline slots near an address.
+    pub fn allocate_near(address: u64, slots: usize) -> Result<Self, TrampolineError> {
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            let _ = (address, slots);
+            return Err(TrampolineError::UnsupportedPlatform);
+        }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            if slots == 0 {
+                return Err(TrampolineError::InvalidArenaCapacity);
+            }
+            let len = slots
+                .checked_mul(TRAMPOLINE_ALLOCATION_BYTES)
+                .ok_or(TrampolineError::InvalidArenaCapacity)?;
+            PendingMapping::allocate_near_len(address, len)?.into_arena()
+        }
+    }
+
+    /// Returns whether every slot in this arena is reachable from an address.
+    pub fn can_reach(&self, address: u64) -> bool {
+        let Some(next_ip) = address.checked_add(crate::patcher::NEAR_JUMP_BYTES as u64) else {
+            return false;
+        };
+        let start = self.executable as usize as u64;
+        let Some(end) = start.checked_add(self.len.saturating_sub(1) as u64) else {
+            return false;
+        };
+        i32::try_from(i128::from(start) - i128::from(next_ip)).is_ok()
+            && i32::try_from(i128::from(end) - i128::from(next_ip)).is_ok()
+    }
+
+    /// Emits one checked plan into a freshly reserved arena slot.
+    pub fn allocate(&self, plan: &TrampolinePlan) -> Result<ExecutableTrampoline, TrampolineError> {
+        if !self.can_reach(plan.execute_address()) {
+            return Err(TrampolineError::NoReachableMapping);
+        }
+        let offset = self
+            .next
+            .fetch_add(TRAMPOLINE_ALLOCATION_BYTES, Ordering::AcqRel);
+        let end = offset
+            .checked_add(TRAMPOLINE_ALLOCATION_BYTES)
+            .ok_or(TrampolineError::ArenaFull)?;
+        if end > self.len {
+            return Err(TrampolineError::ArenaFull);
+        }
+        let address = (self.executable as usize).checked_add(offset).ok_or(
+            TrampolineError::AddressNotRepresentable {
+                address: self.executable as usize as u64,
+            },
+        )? as u64;
+        let image = plan.emit_at(address)?;
+        if image.bytes.len() > TRAMPOLINE_ALLOCATION_BYTES {
+            return Err(TrampolineError::CodeTooLarge {
+                code_len: image.bytes.len(),
+                allocation_len: TRAMPOLINE_ALLOCATION_BYTES,
+            });
+        }
+        // SAFETY: this thread exclusively owns the reserved slot.
+        unsafe {
+            core::ptr::copy_nonoverlapping(
+                image.bytes.as_ptr(),
+                self.writable.add(offset),
+                image.bytes.len(),
+            );
+        }
+        compiler_fence(Ordering::SeqCst);
+        Ok(ExecutableTrampoline {
+            address,
+            allocation_len: TRAMPOLINE_ALLOCATION_BYTES,
+            mapping_address: 0,
+            code_len: image.bytes.len(),
+            layout: image.layout,
+        })
+    }
+}
+
 /// Process-lifetime executable trampoline mapping.
 ///
 /// The writable alias is removed before construction returns. The RX page is
@@ -611,6 +772,15 @@ impl ExecutableTrampoline {
         self.code_len
     }
 
+    /// Returns the entry that executes only relocated tail instructions.
+    ///
+    /// A signal handler that already emulated a replace-first instruction can
+    /// resume here after publishing the hook. The interrupted register context
+    /// must already contain the emulated result.
+    pub const fn relocated_tail_address(&self) -> u64 {
+        self.address + self.layout.instrumentation_len as u64 + self.layout.restore_len as u64
+    }
+
     /// Returns the emitted section lengths.
     pub const fn layout(&self) -> TrampolineLayout {
         self.layout
@@ -619,12 +789,14 @@ impl ExecutableTrampoline {
     pub(crate) fn discard(self) {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
-            // SAFETY: this unpublished object exclusively owns the RX mapping.
-            unsafe {
-                libc::munmap(
-                    self.mapping_address as usize as *mut libc::c_void,
-                    self.allocation_len,
-                );
+            if self.mapping_address != 0 {
+                // SAFETY: this unpublished object exclusively owns the RX mapping.
+                unsafe {
+                    libc::munmap(
+                        self.mapping_address as usize as *mut libc::c_void,
+                        self.allocation_len,
+                    );
+                }
             }
         }
     }
@@ -668,21 +840,89 @@ pub struct InstalledHook {
 }
 
 impl InstalledHook {
-    /// Generates and binds an initially inactive hook.
+    /// Generates and binds an initially inactive observing hook.
     ///
     /// # Safety
     ///
     /// The writable alias in site must satisfy LiveJumpPatch::bind and remain
     /// valid for the process lifetime. Its code and scan must describe the
-    /// executable region. The callback must remain callable for the
-    /// process lifetime and must not unwind across its C ABI boundary.
+    /// executable region. The callback must remain callable for the process
+    /// lifetime and must not unwind across its C ABI boundary. The caller must
+    /// also prove that no direct or indirect control-flow entry can target the
+    /// interior of the displaced instruction window.
     pub unsafe fn install(
         site: HookSite<'_>,
         hook: HookCallback,
         staleness: StalenessBudget,
     ) -> Result<Self, TrampolineError> {
-        let trampoline_plan = TrampolinePlan::from_scan(site.scan, site.execute_address, hook)?;
-        let trampoline = ExecutableTrampoline::allocate(&trampoline_plan)?;
+        let plan = TrampolinePlan::from_scan(site.scan, site.execute_address, hook)?;
+        let trampoline = ExecutableTrampoline::allocate(&plan)?;
+        // SAFETY: forwarded from this method's mapping-lifetime contract.
+        unsafe { Self::bind(site, plan, trampoline, staleness) }
+    }
+
+    /// Generates a hook that replaces the first displaced instruction.
+    ///
+    /// # Safety
+    ///
+    /// The same requirements as install apply, including excluding every
+    /// interior entry into the displaced window. The callback must implement
+    /// the skipped instruction's effects in the mutable HookContext.
+    pub unsafe fn install_replacing_first(
+        site: HookSite<'_>,
+        hook: HookCallback,
+        staleness: StalenessBudget,
+    ) -> Result<Self, TrampolineError> {
+        let plan =
+            TrampolinePlan::from_scan_replacing_first(site.scan, site.execute_address, hook)?;
+        let trampoline = ExecutableTrampoline::allocate(&plan)?;
+        // SAFETY: forwarded from this method's mapping-lifetime contract.
+        unsafe { Self::bind(site, plan, trampoline, staleness) }
+    }
+
+    /// Generates an observing hook in preallocated trampoline storage.
+    ///
+    /// # Safety
+    ///
+    /// The same requirements as install apply. The arena must remain alive
+    /// for the process lifetime.
+    pub unsafe fn install_in_arena(
+        site: HookSite<'_>,
+        hook: HookCallback,
+        staleness: StalenessBudget,
+        arena: &TrampolineArena,
+    ) -> Result<Self, TrampolineError> {
+        let plan = TrampolinePlan::from_scan(site.scan, site.execute_address, hook)?;
+        let trampoline = arena.allocate(&plan)?;
+        // SAFETY: forwarded from this method's mapping-lifetime contract.
+        unsafe { Self::bind(site, plan, trampoline, staleness) }
+    }
+
+    /// Generates a replace-first hook in preallocated trampoline storage.
+    ///
+    /// # Safety
+    ///
+    /// The same requirements as install_replacing_first apply. The arena
+    /// must remain alive for the process lifetime.
+    pub unsafe fn install_replacing_first_in_arena(
+        site: HookSite<'_>,
+        hook: HookCallback,
+        staleness: StalenessBudget,
+        arena: &TrampolineArena,
+    ) -> Result<Self, TrampolineError> {
+        let plan =
+            TrampolinePlan::from_scan_replacing_first(site.scan, site.execute_address, hook)?;
+        let trampoline = arena.allocate(&plan)?;
+        // SAFETY: forwarded from this method's mapping-lifetime contract.
+        unsafe { Self::bind(site, plan, trampoline, staleness) }
+    }
+
+    unsafe fn bind(
+        site: HookSite<'_>,
+        trampoline_plan: TrampolinePlan,
+        trampoline: ExecutableTrampoline,
+        staleness: StalenessBudget,
+    ) -> Result<Self, TrampolineError> {
         let patch_plan = match JumpPatchPlan::from_scan(
             site.scanner,
             site.scan,
@@ -691,13 +931,20 @@ impl InstalledHook {
             site.execute_address,
             trampoline.address,
         ) {
-            Ok(plan) => plan,
+            Ok(plan) if plan.displaced_len() == trampoline_plan.displaced_len() => plan,
+            Ok(_) => {
+                trampoline.discard();
+                return Err(PatchError::RegionMismatch {
+                    address: site.execute_address,
+                }
+                .into());
+            }
             Err(error) => {
                 trampoline.discard();
                 return Err(error.into());
             }
         };
-        // SAFETY: forwarded from this method's mapping-lifetime contract.
+        // SAFETY: forwarded from the public installation method.
         let patch =
             match unsafe { LiveJumpPatch::bind(patch_plan, site.writable_address, staleness) } {
                 Ok(patch) => patch,
@@ -868,6 +1115,11 @@ impl PendingMapping {
     fn allocate_near(execute_address: u64) -> Result<Self, TrampolineError> {
         let page_size = page_size()?;
         let len = TRAMPOLINE_ALLOCATION_BYTES.max(page_size);
+        Self::allocate_near_len(execute_address, len)
+    }
+
+    fn allocate_near_len(execute_address: u64, len: usize) -> Result<Self, TrampolineError> {
+        let page_size = page_size()?;
         let len = len
             .checked_add(page_size - 1)
             .map(|value| value & !(page_size - 1))
@@ -884,6 +1136,23 @@ impl PendingMapping {
             }
         }
         Err(TrampolineError::NoReachableMapping)
+    }
+
+    fn into_arena(mut self) -> Result<TrampolineArena, TrampolineError> {
+        // SAFETY: fd is live; both mappings retain their backing object.
+        if unsafe { libc::close(self.fd) } != 0 {
+            return Err(os_error("close trampoline arena memfd"));
+        }
+        self.fd = -1;
+        let arena = TrampolineArena {
+            writable: self.writable.cast(),
+            executable: self.executable.cast(),
+            len: self.len,
+            next: AtomicUsize::new(0),
+        };
+        self.writable = core::ptr::null_mut();
+        self.executable = core::ptr::null_mut();
+        Ok(arena)
     }
 
     fn publish_at(
@@ -1098,7 +1367,7 @@ mod tests {
     use super::{HookContext, TrampolineError, TrampolineLayout, TrampolinePlan};
     use crate::scanner::InstructionScanner;
 
-    unsafe extern "C" fn noop_hook(_context: *const HookContext) {}
+    unsafe extern "C" fn noop_hook(_context: *mut HookContext) {}
 
     fn plan(code: &[u8], base: u64) -> Result<TrampolinePlan, TrampolineError> {
         let scan = InstructionScanner::default()
@@ -1129,8 +1398,17 @@ mod tests {
     }
 
     #[test]
-    fn rejects_short_instruction_without_consuming_next_head() {
+    fn relocates_multiple_short_instructions_as_one_patch_window() {
+        let plan = plan(&[0x48, 0x89, 0xF8, 0x90, 0x90], 0x1000).unwrap();
+
+        assert_eq!(plan.displaced_len(), 5);
+        assert_eq!(plan.return_address(), 0x1005);
+    }
+
+    #[test]
+    fn rejects_a_short_region_without_five_complete_bytes() {
         let error = plan(&[0x48, 0x89, 0xF8], 0x1000).unwrap_err();
+
         assert!(matches!(
             error,
             TrampolineError::InstructionTooShort {
@@ -1138,6 +1416,21 @@ mod tests {
                 instruction_len: 3
             }
         ));
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn replace_first_omits_a_two_byte_syscall_but_relocates_its_tail() {
+        let base = 0x20_0000;
+        let code = [0x0F, 0x05, 0x48, 0x83, 0xC0, 0x01];
+        let scan = InstructionScanner::default().scan(&code, base).unwrap();
+        let plan = TrampolinePlan::from_scan_replacing_first(&scan, base, noop_hook).unwrap();
+        let image = plan.emit_at(base + 0x10_0000).unwrap();
+
+        assert!(plan.replaces_first());
+        assert_eq!(plan.displaced_len(), 6);
+        assert_eq!(plan.return_address(), base + 6);
+        assert!(image.layout().relocated_len > 0);
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -1246,7 +1539,7 @@ mod tests {
         }
         static LAST_RDI: AtomicU64 = AtomicU64::new(0);
 
-        unsafe extern "C" fn record_hook(context: *const HookContext) {
+        unsafe extern "C" fn record_hook(context: *mut HookContext) {
             // SAFETY: generated code passes a live HookContext for this call.
             let context = unsafe { &*context };
             LAST_IP.store(context.instruction_pointer, Ordering::Relaxed);
@@ -1254,7 +1547,15 @@ mod tests {
             CALLBACKS.fetch_add(1, Ordering::Relaxed);
         }
 
-        unsafe extern "C" fn clobber_flags_hook(_context: *const HookContext) {
+        unsafe extern "C" fn replace_first_hook(context: *mut HookContext) {
+            // SAFETY: generated code passes a unique mutable snapshot.
+            unsafe {
+                (*context).rax = 40;
+            }
+            CALLBACKS.fetch_add(1, Ordering::Relaxed);
+        }
+
+        unsafe extern "C" fn clobber_flags_hook(_context: *mut HookContext) {
             let mut scratch: u64;
             // SAFETY: deliberately clobbers caller-saved RAX and arithmetic flags.
             unsafe {
@@ -1269,7 +1570,7 @@ mod tests {
             CALLBACKS.fetch_add(1, Ordering::Relaxed);
         }
 
-        unsafe extern "C" fn clobber_xmm_hook(_context: *const HookContext) {
+        unsafe extern "C" fn clobber_xmm_hook(_context: *mut HookContext) {
             // SAFETY: XMM0 is caller-saved; the trampoline must restore it.
             unsafe {
                 asm!("pxor xmm0, xmm0", out("xmm0") _, options(nostack, preserves_flags));
@@ -1277,7 +1578,7 @@ mod tests {
             CALLBACKS.fetch_add(1, Ordering::Relaxed);
         }
 
-        unsafe extern "C" fn clobber_ymm_hook(_context: *const HookContext) {
+        unsafe extern "C" fn clobber_ymm_hook(_context: *mut HookContext) {
             // SAFETY: YMM1 is caller-saved; XSAVE must restore its upper lane.
             unsafe {
                 asm!(
@@ -1371,7 +1672,7 @@ mod tests {
             function_offset: usize,
             code: &[u8],
             site_offset: usize,
-            hook: unsafe extern "C" fn(*const HookContext),
+            hook: unsafe extern "C" fn(*mut HookContext),
         ) -> InstalledHook {
             mapping.write(function_offset, code);
             let scanner = InstructionScanner::default();
@@ -1449,6 +1750,49 @@ mod tests {
             let permissions = mapping_permissions(hook.trampoline().address());
             assert!(permissions.contains('x'));
             assert!(!permissions.contains('w'));
+        }
+
+        #[test]
+        fn arena_hook_replaces_a_short_first_instruction_and_runs_the_tail() {
+            let _guard = serial_guard();
+            CALLBACKS.store(0, Ordering::Relaxed);
+
+            let mapping = DualMapping::new();
+            let offset = 256;
+            // xor eax,eax; inc eax; nop; ret; padding
+            let code = [0x31, 0xC0, 0xFF, 0xC0, 0x90, 0xC3, 0x90, 0x90];
+            mapping.write(offset, &code);
+            let scanner = InstructionScanner::default();
+            let address = mapping.executable_address(offset);
+            let scan = scanner.scan(&code, address).unwrap();
+            let arena = crate::trampoline::TrampolineArena::allocate_near(address, 2).unwrap();
+            // SAFETY: the dual aliases and arena are process-lifetime mappings.
+            let hook = unsafe {
+                InstalledHook::install_replacing_first_in_arena(
+                    HookSite::new(
+                        &scanner,
+                        &scan,
+                        &code,
+                        address,
+                        address,
+                        mapping.writable_address(offset),
+                    ),
+                    replace_first_hook,
+                    StalenessBudget::new(STALENESS_TICKS).unwrap(),
+                    &arena,
+                )
+                .unwrap()
+            };
+            // SAFETY: fixture bytes implement extern C fn() -> u32.
+            let function: unsafe extern "C" fn() -> u32 =
+                unsafe { core::mem::transmute(address as usize) };
+
+            assert_eq!(unsafe { function() }, 1);
+            assert!(hook.activate().unwrap());
+            assert_eq!(unsafe { function() }, 41);
+            assert_eq!(CALLBACKS.load(Ordering::Relaxed), 1);
+            assert!(hook.deactivate().unwrap());
+            assert_eq!(unsafe { function() }, 1);
         }
 
         #[test]

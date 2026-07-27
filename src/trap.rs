@@ -180,9 +180,7 @@ mod imp {
             handled: AtomicU64::new(0),
             next: ptr::null_mut(),
         });
-        let _guard = REGISTRY_LOCK
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
+        let _guard = REGISTRY_LOCK.try_lock().map_err(|_| TrapError::Contended)?;
 
         let mut current = HEAD.load(Ordering::Acquire);
         while !current.is_null() {
@@ -247,6 +245,10 @@ mod imp {
             current = unsafe { (*current).next.load(Ordering::Relaxed) };
         }
         debug_assert!(false, "pending trap reservation was not registered");
+    }
+
+    pub(crate) fn prepare() -> Result<(), TrapError> {
+        ensure_installed()
     }
 
     fn ensure_installed() -> Result<(), TrapError> {
@@ -444,6 +446,10 @@ mod imp {
     ) -> Result<PendingTrapSite, TrapError> {
         Err(TrapError::Unsupported)
     }
+    pub(crate) fn prepare() -> Result<(), TrapError> {
+        Err(TrapError::Unsupported)
+    }
+
     pub(crate) fn register(
         _execute_address: usize,
         _reservation_start: usize,
@@ -454,4 +460,4 @@ mod imp {
     }
 }
 
-pub(crate) use imp::{TrapError, TrapSite, register, reserve};
+pub(crate) use imp::{TrapError, TrapSite, prepare, register, reserve};
