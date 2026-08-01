@@ -1,10 +1,4 @@
-//! Online x86-64 instrumentation using instruction punning.
-//!
-//! The crate is intentionally split along correctness boundaries: cache-line
-//! classification, instruction scanning, patch publication, probe state, and
-//! trampoline generation. Unsafe code mutation will stay behind those
-//! boundaries as the implementation is built out.
-
+#![doc = include_str!("../README.md")]
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![warn(missing_docs)]
 

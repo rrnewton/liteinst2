@@ -1,6 +1,6 @@
 //! Minimal consumer-owned LD_PRELOAD entry point.
 //!
-//! Build this crate as a cdylib and put the resulting shared object in
+//! Build this example as a cdylib and put the resulting shared object in
 //! LD_PRELOAD. Real consumers add their own site discovery and policy; the
 //! standalone liteinst2 dependency only prepares patching machinery.
 

@@ -42,6 +42,15 @@ jobs:
         run: cargo test --locked --all-targets --all-features
       - name: Release tests
         run: cargo test --locked --release --all-targets --all-features
+      - name: Verify published package consumer
+        run: |
+          package_root="$(mktemp -d)"
+          cargo package --locked
+          package_archive="$(find target/package -maxdepth 1 -name 'liteinst2-*.crate' -print -quit)"
+          tar -xf "$package_archive" -C "$package_root"
+          package_dir="$(find "$package_root" -mindepth 1 -maxdepth 1 -type d -name 'liteinst2-*' -print -quit)"
+          cd "$package_dir"
+          cargo build --locked --example preload_consumer
       - name: Live patching stress
         run: >-
           cargo test --locked --release --test stress live_probe_stress_matrix
