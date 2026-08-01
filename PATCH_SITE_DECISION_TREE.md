@@ -12,12 +12,13 @@ decoded, current logical instruction head
 +-- exact five-byte pun is safe and its exact trampoline is available?
 |   `-- yes: DIRECT_PUN -- one-byte opcode publication at the logical site
 |
-`-- no: find a non-straddling upstream physical site and a relocatable
+`-- no: search at or before the logical site for the nearest non-straddling
+    physical site and a relocatable
     whole-instruction interval that contains the logical site
     |
     +-- proof succeeds and a near trampoline is available?
-    |   `-- yes: UPSTREAM_RELOCATED -- patch upstream, run the hook at the
-    |            logical PC inside the relocated stream, then return
+    |   `-- yes: RELOCATED -- patch the selected physical site, run the hook
+    |            at the logical PC inside the relocated stream, then return
     |
     +-- logical/physical candidate is a cache-line straddler?
     |   `-- yes: PTRACE_STRADDLER_BAIL -- do not patch; retain ptrace
@@ -47,7 +48,11 @@ Registration allocates and validates first. Publication changes only the first
 opcode byte. If exact trampoline allocation races or collides, continue to the
 upstream-relocation branch; do not partially publish the pun.
 
-## 2. `UPSTREAM_RELOCATED`
+## 2. `RELOCATED` (same-site or upstream)
+
+A zero-distance selection is the current same-site relocation path. A
+positive-distance selection is the PLDI'17 upstream optimization; both are one
+safe relocation action and one statistics outcome.
 
 When a direct pun is unavailable, scan backward over complete decoded
 instructions without crossing the permitted function/basic-block boundary.
@@ -109,7 +114,7 @@ One distinct logical RIP contributes exactly once to one outcome counter:
 | Counter | Decision-tree outcome |
 | --- | --- |
 | `direct_pun_patched` | branch 1 |
-| `upstream_relocated_patched` | branch 2 |
+| `relocated_patched` | branch 2 (zero-distance now; upstream when implemented) |
 | `ptrace_straddler_bail` | branch 3 |
 | `ptrace_other_fallback` | branch 4 |
 
