@@ -6,7 +6,7 @@ mod imp {
     use core::mem::MaybeUninit;
     use core::ptr;
     use core::sync::atomic::{AtomicPtr, AtomicU8, AtomicU64, Ordering};
-    use std::sync::{Mutex, OnceLock};
+    use std::sync::{Mutex, MutexGuard, OnceLock};
 
     const IDLE: u8 = 0;
     const WRITING: u8 = 1;
@@ -180,7 +180,7 @@ mod imp {
             handled: AtomicU64::new(0),
             next: ptr::null_mut(),
         });
-        let _guard = REGISTRY_LOCK.try_lock().map_err(|_| TrapError::Contended)?;
+        let _guard = lock_registry_for_registration()?;
 
         let mut current = HEAD.load(Ordering::Acquire);
         while !current.is_null() {
@@ -208,6 +208,25 @@ mod imp {
         HEAD.store(site, Ordering::Release);
         // SAFETY: registry nodes are intentionally never freed.
         Ok(unsafe { &*site })
+    }
+
+    fn lock_registry_for_registration() -> Result<MutexGuard<'static, ()>, TrapError> {
+        #[cfg(test)]
+        {
+            // The unit-test binary exercises the process-wide registry from
+            // otherwise independent tests in parallel. Wait for those tests
+            // here so their incidental lock ownership cannot masquerade as a
+            // registration failure in overlap and pending-list assertions.
+            Ok(REGISTRY_LOCK
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner))
+        }
+        #[cfg(not(test))]
+        {
+            // Runtime registration remains fail-fast: a caller must never
+            // wait on a lock that could be owned by interrupted code.
+            REGISTRY_LOCK.try_lock().map_err(|_| TrapError::Contended)
+        }
     }
 
     fn pending_overlaps(reservation_start: usize, reservation_end: usize) -> bool {
@@ -361,9 +380,12 @@ mod imp {
     }
     #[cfg(test)]
     mod tests {
+        use std::sync::{Arc, Barrier};
         use std::thread;
 
-        use super::{TrapError, register, reserve};
+        use super::{REGISTRY_LOCK, TrapError, pending_overlaps, register, reserve};
+
+        const PENDING_LIST_RACE_ITERATIONS: usize = 64;
 
         #[test]
         fn pending_reservation_blocks_only_overlapping_registrations() {
@@ -387,19 +409,40 @@ mod imp {
 
         #[test]
         fn concurrent_pending_commit_and_drop_preserve_the_list() {
-            let storage = Box::leak(Box::new([0_u8; 32]));
-            let base = storage.as_ptr() as usize;
-            let dropped = reserve(base, base, base + 8, 0).unwrap();
-            let committed = reserve(base + 16, base + 16, base + 24, 0).unwrap();
+            for iteration in 0..PENDING_LIST_RACE_ITERATIONS {
+                let storage = Box::leak(Box::new([0_u8; 32]));
+                let base = storage.as_ptr() as usize;
+                let dropped = reserve(base, base, base + 8, 0).unwrap();
+                let committed = reserve(base + 16, base + 16, base + 24, 0).unwrap();
+                let start = Arc::new(Barrier::new(3));
 
-            let dropper = thread::spawn(move || drop(dropped));
-            let committer = thread::spawn(move || committed.commit());
-            dropper.join().unwrap();
-            assert!(committer.join().unwrap().is_ok());
-            assert!(
-                register(base, base, base + 8, 0).is_ok(),
-                "concurrent middle/head removal must not leak a reservation"
-            );
+                let drop_start = Arc::clone(&start);
+                let dropper = thread::spawn(move || {
+                    drop_start.wait();
+                    drop(dropped);
+                });
+                let commit_start = Arc::clone(&start);
+                let committer = thread::spawn(move || {
+                    commit_start.wait();
+                    committed.commit()
+                });
+                start.wait();
+
+                dropper.join().unwrap();
+                committer.join().unwrap().unwrap();
+
+                let _guard = REGISTRY_LOCK
+                    .lock()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                assert!(
+                    !pending_overlaps(base, base + 8),
+                    "iteration {iteration}: dropping a pending token leaked its reservation"
+                );
+                assert!(
+                    !pending_overlaps(base + 16, base + 24),
+                    "iteration {iteration}: committing a pending token leaked its reservation"
+                );
+            }
         }
     }
 }

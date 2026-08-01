@@ -34,11 +34,11 @@ the hook off again:
 cargo run --example replace_first
 ```
 
-The separate `examples/preload-consumer` cdylib shows how a consumer can own
-LD_PRELOAD delivery while depending on the policy-free core:
+The `preload_consumer` cdylib example shows how a consumer can own LD_PRELOAD
+delivery while depending on the policy-free core:
 
 ```console
-cargo build --manifest-path examples/preload-consumer/Cargo.toml
+cargo build --example preload_consumer
 ```
 
 ## Development

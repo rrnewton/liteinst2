@@ -9,6 +9,22 @@ license = "BSD-2-Clause"
 keywords = ["instrumentation", "x86-64", "patching", "trampoline"]
 categories = ["development-tools", "os::linux-apis"]
 rust-version = "1.85"
+include = [
+    "Cargo.lock",
+    "Cargo.toml",
+    "LICENSE",
+    "README.md",
+    "examples/preload_consumer.rs",
+    "examples/replace_first.rs",
+    "src/**",
+    "tests/**",
+]
+
+[[example]]
+name = "preload_consumer"
+path = "examples/preload_consumer.rs"
+crate-type = ["cdylib"]
+test = false
 
 [dependencies]
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "block_encoder", "code_asm"] }
