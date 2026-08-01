@@ -15,6 +15,10 @@ modules separate the main correctness boundaries:
 - `probe`: idempotent probe lifecycle state.
 - `trampoline`: near dual-mapped allocation, relocation, hook dispatch, and return.
 
+Clients with a ptrace slow path follow the exhaustive
+[patch-site decision tree](PATCH_SITE_DECISION_TREE.md): direct pun, proved
+upstream relocation, safe straddler bailout, or explicit ptrace fallback.
+
 The implementation preserves five invariants established before the port:
 
 1. A cross-cache-line patch must never fall back to a tearing store.
