@@ -1153,7 +1153,7 @@ impl InstalledHook {
         let plan = TrampolinePlan::from_scan(site.scan, site.execute_address, hook)?;
         let trampoline = ExecutableTrampoline::allocate(&plan)?;
         // SAFETY: forwarded from this method's mapping-lifetime contract.
-        unsafe { Self::bind(site, plan, trampoline, staleness) }
+        unsafe { Self::bind(site, plan, trampoline, Some(staleness)) }
     }
 
     /// Generates a hook that replaces the first displaced instruction.
@@ -1172,7 +1172,28 @@ impl InstalledHook {
             TrampolinePlan::from_scan_replacing_first(site.scan, site.execute_address, hook)?;
         let trampoline = ExecutableTrampoline::allocate(&plan)?;
         // SAFETY: forwarded from this method's mapping-lifetime contract.
-        unsafe { Self::bind(site, plan, trampoline, staleness) }
+        unsafe { Self::bind(site, plan, trampoline, Some(staleness)) }
+    }
+
+    /// Generates a quiescent hook that replaces the first displaced instruction.
+    ///
+    /// The returned hook must be toggled only with
+    /// [`Self::activate_quiescent`] and [`Self::deactivate_quiescent`].
+    ///
+    /// # Safety
+    ///
+    /// The same mapping and callback requirements as
+    /// [`Self::install_replacing_first`] apply. Each quiescent toggle additionally
+    /// requires its documented no-other-thread proof.
+    pub unsafe fn install_replacing_first_quiescent(
+        site: HookSite<'_>,
+        hook: HookCallback,
+    ) -> Result<Self, TrampolineError> {
+        let plan =
+            TrampolinePlan::from_scan_replacing_first(site.scan, site.execute_address, hook)?;
+        let trampoline = ExecutableTrampoline::allocate(&plan)?;
+        // SAFETY: forwarded from this method's mapping-lifetime contract.
+        unsafe { Self::bind(site, plan, trampoline, None) }
     }
 
     /// Generates an observing hook in preallocated trampoline storage.
@@ -1190,7 +1211,7 @@ impl InstalledHook {
         let plan = TrampolinePlan::from_scan(site.scan, site.execute_address, hook)?;
         let trampoline = arena.allocate(&plan)?;
         // SAFETY: forwarded from this method's mapping-lifetime contract.
-        unsafe { Self::bind(site, plan, trampoline, staleness) }
+        unsafe { Self::bind(site, plan, trampoline, Some(staleness)) }
     }
 
     /// Generates a replace-first hook in preallocated trampoline storage.
@@ -1209,14 +1230,36 @@ impl InstalledHook {
             TrampolinePlan::from_scan_replacing_first(site.scan, site.execute_address, hook)?;
         let trampoline = arena.allocate(&plan)?;
         // SAFETY: forwarded from this method's mapping-lifetime contract.
-        unsafe { Self::bind(site, plan, trampoline, staleness) }
+        unsafe { Self::bind(site, plan, trampoline, Some(staleness)) }
+    }
+
+    /// Generates a quiescent replace-first hook in preallocated storage.
+    ///
+    /// The returned hook must be toggled only with
+    /// [`Self::activate_quiescent`] and [`Self::deactivate_quiescent`].
+    ///
+    /// # Safety
+    ///
+    /// The same requirements as [`Self::install_replacing_first_in_arena`]
+    /// apply. Each quiescent toggle additionally requires its documented
+    /// no-other-thread proof.
+    pub unsafe fn install_replacing_first_in_arena_quiescent(
+        site: HookSite<'_>,
+        hook: HookCallback,
+        arena: &TrampolineArena,
+    ) -> Result<Self, TrampolineError> {
+        let plan =
+            TrampolinePlan::from_scan_replacing_first(site.scan, site.execute_address, hook)?;
+        let trampoline = arena.allocate(&plan)?;
+        // SAFETY: forwarded from this method's mapping-lifetime contract.
+        unsafe { Self::bind(site, plan, trampoline, None) }
     }
 
     unsafe fn bind(
         site: HookSite<'_>,
         trampoline_plan: TrampolinePlan,
         trampoline: ExecutableTrampoline,
-        staleness: StalenessBudget,
+        staleness: Option<StalenessBudget>,
     ) -> Result<Self, TrampolineError> {
         let patch_plan = match JumpPatchPlan::from_scan(
             site.scanner,
@@ -1240,14 +1283,19 @@ impl InstalledHook {
             }
         };
         // SAFETY: forwarded from the public installation method.
-        let patch =
-            match unsafe { LiveJumpPatch::bind(patch_plan, site.writable_address, staleness) } {
-                Ok(patch) => patch,
-                Err(error) => {
-                    trampoline.discard();
-                    return Err(error.into());
-                }
-            };
+        let patch = match unsafe {
+            if let Some(staleness) = staleness {
+                LiveJumpPatch::bind(patch_plan, site.writable_address, staleness)
+            } else {
+                LiveJumpPatch::bind_quiescent(patch_plan, site.writable_address)
+            }
+        } {
+            Ok(patch) => patch,
+            Err(error) => {
+                trampoline.discard();
+                return Err(error.into());
+            }
+        };
         trampoline.publish_program_counter_mappings();
         Ok(Self {
             trampoline,
@@ -1266,27 +1314,52 @@ impl InstalledHook {
         self.state.load(Ordering::Acquire) == STATE_ACTIVE
     }
 
+    /// Returns the number of concurrent-publication guard traps handled.
+    pub fn handled_guard_traps(&self) -> u64 {
+        self.patch.handled_guard_traps()
+    }
+
     /// Activates the hook, returning whether code bytes changed.
     pub fn activate(&self) -> Result<bool, TrampolineError> {
+        self.activate_with(|| {
+            // SAFETY: install captured the concurrent binding contract.
+            unsafe { self.patch.apply() }
+        })
+    }
+
+    /// Activates the hook without concurrent-reader publication protection.
+    ///
+    /// # Safety
+    ///
+    /// No other process thread, signal handler, or code writer may fetch, read,
+    /// or modify the patch window until this call returns.
+    pub unsafe fn activate_quiescent(&self) -> Result<bool, TrampolineError> {
+        self.activate_with(|| {
+            // SAFETY: forwarded from this method's caller-verified quiescence.
+            unsafe { self.patch.apply_quiescent() }
+        })
+    }
+
+    fn activate_with(
+        &self,
+        publish: impl FnOnce() -> Result<(), PatchError>,
+    ) -> Result<bool, TrampolineError> {
         match self.state.compare_exchange(
             STATE_INACTIVE,
             STATE_TRANSITIONING,
             Ordering::AcqRel,
             Ordering::Acquire,
         ) {
-            Ok(_) => {
-                // SAFETY: install captured the process-lifetime binding contract.
-                match unsafe { self.patch.apply() } {
-                    Ok(()) => {
-                        self.state.store(STATE_ACTIVE, Ordering::Release);
-                        Ok(true)
-                    }
-                    Err(error) => {
-                        self.state.store(STATE_INACTIVE, Ordering::Release);
-                        Err(error.into())
-                    }
+            Ok(_) => match publish() {
+                Ok(()) => {
+                    self.state.store(STATE_ACTIVE, Ordering::Release);
+                    Ok(true)
                 }
-            }
+                Err(error) => {
+                    self.state.store(STATE_INACTIVE, Ordering::Release);
+                    Err(error.into())
+                }
+            },
             Err(STATE_ACTIVE) => Ok(false),
             Err(_) => Err(TrampolineError::TransitionInProgress),
         }
@@ -1294,25 +1367,44 @@ impl InstalledHook {
 
     /// Deactivates the hook, returning whether code bytes changed.
     pub fn deactivate(&self) -> Result<bool, TrampolineError> {
+        self.deactivate_with(|| {
+            // SAFETY: install captured the concurrent binding contract.
+            unsafe { self.patch.revert() }
+        })
+    }
+
+    /// Deactivates the hook without concurrent-reader publication protection.
+    ///
+    /// # Safety
+    ///
+    /// The same quiescence proof as [`Self::activate_quiescent`] is required.
+    pub unsafe fn deactivate_quiescent(&self) -> Result<bool, TrampolineError> {
+        self.deactivate_with(|| {
+            // SAFETY: forwarded from this method's caller-verified quiescence.
+            unsafe { self.patch.revert_quiescent() }
+        })
+    }
+
+    fn deactivate_with(
+        &self,
+        publish: impl FnOnce() -> Result<(), PatchError>,
+    ) -> Result<bool, TrampolineError> {
         match self.state.compare_exchange(
             STATE_ACTIVE,
             STATE_TRANSITIONING,
             Ordering::AcqRel,
             Ordering::Acquire,
         ) {
-            Ok(_) => {
-                // SAFETY: install captured the process-lifetime binding contract.
-                match unsafe { self.patch.revert() } {
-                    Ok(()) => {
-                        self.state.store(STATE_INACTIVE, Ordering::Release);
-                        Ok(true)
-                    }
-                    Err(error) => {
-                        self.state.store(STATE_ACTIVE, Ordering::Release);
-                        Err(error.into())
-                    }
+            Ok(_) => match publish() {
+                Ok(()) => {
+                    self.state.store(STATE_INACTIVE, Ordering::Release);
+                    Ok(true)
                 }
-            }
+                Err(error) => {
+                    self.state.store(STATE_ACTIVE, Ordering::Release);
+                    Err(error.into())
+                }
+            },
             Err(STATE_INACTIVE) => Ok(false),
             Err(_) => Err(TrampolineError::TransitionInProgress),
         }
@@ -1890,8 +1982,10 @@ mod tests {
         use std::time::{Duration, Instant};
 
         use super::{HookContext, InstructionScanner};
-        use crate::patcher::StalenessBudget;
-        use crate::trampoline::{HookSite, InstalledHook, translate_program_counter};
+        use crate::patcher::{PatchError, StalenessBudget};
+        use crate::trampoline::{
+            HookSite, InstalledHook, TrampolineError, translate_program_counter,
+        };
 
         const PAGE_BYTES: usize = 4096;
         const STALENESS_TICKS: u64 = 3_000;
@@ -2168,6 +2262,57 @@ mod tests {
             assert_eq!(unsafe { function() }, 41);
             assert_eq!(CALLBACKS.load(Ordering::Relaxed), 1);
             assert!(hook.deactivate().unwrap());
+            assert_eq!(unsafe { function() }, 1);
+        }
+
+        #[test]
+        fn quiescent_arena_hook_patches_a_cache_line_straddler() {
+            let _guard = serial_guard();
+            CALLBACKS.store(0, Ordering::Relaxed);
+
+            let mapping = DualMapping::new();
+            let offset = 63;
+            // xor eax,eax; inc eax; nop; ret; padding
+            let code = [0x31, 0xC0, 0xFF, 0xC0, 0x90, 0xC3, 0x90, 0x90];
+            mapping.write(offset, &code);
+            let scanner = InstructionScanner::default();
+            let address = mapping.executable_address(offset);
+            let scan = scanner.scan(&code, address).unwrap();
+            let arena = crate::trampoline::TrampolineArena::allocate_near(address, 2).unwrap();
+            // SAFETY: the dual aliases and arena are process-lifetime mappings.
+            let hook = unsafe {
+                InstalledHook::install_replacing_first_in_arena_quiescent(
+                    HookSite::new(
+                        &scanner,
+                        &scan,
+                        &code,
+                        address,
+                        address,
+                        mapping.writable_address(offset),
+                    ),
+                    replace_first_hook,
+                    &arena,
+                )
+                .unwrap()
+            };
+            // SAFETY: fixture bytes implement extern C fn() -> u32.
+            let function: unsafe extern "C" fn() -> u32 =
+                unsafe { core::mem::transmute(address as usize) };
+
+            assert_eq!(unsafe { function() }, 1);
+            assert!(matches!(
+                hook.activate(),
+                Err(TrampolineError::Patch(
+                    PatchError::QuiescentPublicationRequired
+                ))
+            ));
+            // SAFETY: the test is single-threaded and runs no signal handlers.
+            assert!(unsafe { hook.activate_quiescent() }.unwrap());
+            assert_eq!(unsafe { function() }, 41);
+            assert_eq!(CALLBACKS.load(Ordering::Relaxed), 1);
+            assert_eq!(hook.handled_guard_traps(), 0);
+            // SAFETY: the test is single-threaded and runs no signal handlers.
+            assert!(unsafe { hook.deactivate_quiescent() }.unwrap());
             assert_eq!(unsafe { function() }, 1);
         }
 

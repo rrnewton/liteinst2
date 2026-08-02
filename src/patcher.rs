@@ -174,6 +174,8 @@ pub enum PatchError {
     Contended,
     /// Live code does not match the state expected by apply or revert.
     ExpectedBytesMismatch,
+    /// A quiescent binding was passed to the concurrent publication entrypoint.
+    QuiescentPublicationRequired,
     /// Installing the SIGTRAP guard handler failed.
     SignalHandlerInstall {
         /// Operating-system error number.
@@ -243,6 +245,9 @@ impl fmt::Display for PatchError {
             Self::ExpectedBytesMismatch => {
                 formatter.write_str("live code does not match the expected patch state")
             }
+            Self::QuiescentPublicationRequired => formatter.write_str(
+                "this patch requires the caller-verified quiescent publication entrypoint",
+            ),
             Self::SignalHandlerInstall { errno } => {
                 write!(
                     formatter,
@@ -511,8 +516,16 @@ fn direct_near_branch_target(instruction: &Instruction) -> Option<u64> {
 pub struct LiveJumpPatch {
     plan: JumpPatchPlan,
     writable_address: *mut u8,
-    staleness: StalenessBudget,
-    trap_site: &'static TrapSite,
+    publication: PatchPublication,
+}
+
+#[derive(Clone, Copy)]
+enum PatchPublication {
+    Concurrent {
+        staleness: StalenessBudget,
+        trap_site: &'static TrapSite,
+    },
+    Quiescent,
 }
 
 impl LiveJumpPatch {
@@ -530,6 +543,36 @@ impl LiveJumpPatch {
         writable_address: *mut u8,
         staleness: StalenessBudget,
     ) -> Result<Self, PatchError> {
+        // SAFETY: forwarded from this method's public contract.
+        unsafe { Self::bind_inner(plan, writable_address, Some(staleness)) }
+    }
+
+    /// Binds a plan for caller-verified quiescent publication.
+    ///
+    /// Unlike [`Self::bind`], this entrypoint does not install a SIGTRAP guard,
+    /// reserve aligned words around a split, or require a staleness budget.
+    /// Planning and expected-byte validation remain unchanged.
+    ///
+    /// # Safety
+    ///
+    /// `writable_address` must alias the complete eight-byte executable patch
+    /// window and remain valid while this object can be toggled. Before every
+    /// call to `apply_quiescent` or `revert_quiescent`, the caller must prove
+    /// that no other process thread, signal handler, or code writer can fetch,
+    /// read, or modify the patch window until publication returns.
+    pub unsafe fn bind_quiescent(
+        plan: JumpPatchPlan,
+        writable_address: *mut u8,
+    ) -> Result<Self, PatchError> {
+        // SAFETY: forwarded from this method's public contract.
+        unsafe { Self::bind_inner(plan, writable_address, None) }
+    }
+
+    unsafe fn bind_inner(
+        plan: JumpPatchPlan,
+        writable_address: *mut u8,
+        staleness: Option<StalenessBudget>,
+    ) -> Result<Self, PatchError> {
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         {
             let _ = (plan, writable_address, staleness);
@@ -546,52 +589,59 @@ impl LiveJumpPatch {
                     address: plan.execute_address,
                 }
             })?;
-            let writable = writable_address as usize;
-            let line_size = plan.cache_line.get();
-            if execute_address % line_size != writable % line_size {
-                return Err(PatchError::AliasAlignmentMismatch);
-            }
-
-            let (reservation_start, reservation_end) = match plan.strategy {
-                PatchStrategy::AtomicWord => {
-                    let end = execute_address
-                        .checked_add(WORD_PATCH_BYTES)
-                        .ok_or(PatchError::AddressRangeOverflow)?;
-                    (execute_address, end)
+            let publication = if let Some(staleness) = staleness {
+                let writable = writable_address as usize;
+                let line_size = plan.cache_line.get();
+                if execute_address % line_size != writable % line_size {
+                    return Err(PatchError::AliasAlignmentMismatch);
                 }
-                PatchStrategy::GuardedSplit { front_len, .. } => {
-                    let boundary = execute_address
-                        .checked_add(front_len)
-                        .ok_or(PatchError::AddressRangeOverflow)?;
-                    let start = boundary
-                        .checked_sub(WORD_PATCH_BYTES)
-                        .ok_or(PatchError::AddressRangeOverflow)?;
-                    let end = boundary
-                        .checked_add(WORD_PATCH_BYTES)
-                        .ok_or(PatchError::AddressRangeOverflow)?;
-                    let writable_boundary = writable
-                        .checked_add(front_len)
-                        .ok_or(PatchError::AddressRangeOverflow)?;
-                    if writable_boundary % WORD_PATCH_BYTES != 0 {
-                        return Err(PatchError::AliasAlignmentMismatch);
+
+                let (reservation_start, reservation_end) = match plan.strategy {
+                    PatchStrategy::AtomicWord => {
+                        let end = execute_address
+                            .checked_add(WORD_PATCH_BYTES)
+                            .ok_or(PatchError::AddressRangeOverflow)?;
+                        (execute_address, end)
                     }
-                    (start, end)
-                }
-            };
+                    PatchStrategy::GuardedSplit { front_len, .. } => {
+                        let boundary = execute_address
+                            .checked_add(front_len)
+                            .ok_or(PatchError::AddressRangeOverflow)?;
+                        let start = boundary
+                            .checked_sub(WORD_PATCH_BYTES)
+                            .ok_or(PatchError::AddressRangeOverflow)?;
+                        let end = boundary
+                            .checked_add(WORD_PATCH_BYTES)
+                            .ok_or(PatchError::AddressRangeOverflow)?;
+                        let writable_boundary = writable
+                            .checked_add(front_len)
+                            .ok_or(PatchError::AddressRangeOverflow)?;
+                        if writable_boundary % WORD_PATCH_BYTES != 0 {
+                            return Err(PatchError::AliasAlignmentMismatch);
+                        }
+                        (start, end)
+                    }
+                };
 
-            let trap_site = crate::trap::register(
-                execute_address,
-                reservation_start,
-                reservation_end,
-                plan.guard_mask,
-            )
-            .map_err(map_trap_error)?;
+                let trap_site = crate::trap::register(
+                    execute_address,
+                    reservation_start,
+                    reservation_end,
+                    plan.guard_mask,
+                )
+                .map_err(map_trap_error)?;
+                PatchPublication::Concurrent {
+                    staleness,
+                    trap_site,
+                }
+            } else {
+                PatchPublication::Quiescent
+            };
 
             Ok(Self {
                 plan,
                 writable_address,
-                staleness,
-                trap_site,
+                publication,
             })
         }
     }
@@ -603,7 +653,15 @@ impl LiveJumpPatch {
 
     /// Returns the number of guard traps handled for this site.
     pub fn handled_guard_traps(&self) -> u64 {
-        self.trap_site.handled_traps()
+        match self.publication {
+            PatchPublication::Concurrent { trap_site, .. } => trap_site.handled_traps(),
+            PatchPublication::Quiescent => 0,
+        }
+    }
+
+    /// Returns whether publication requires the quiescent entrypoint.
+    pub const fn requires_quiescence(&self) -> bool {
+        matches!(self.publication, PatchPublication::Quiescent)
     }
 
     /// Publishes the trampoline redirect.
@@ -614,7 +672,7 @@ impl LiveJumpPatch {
     /// and no unregistered writer may modify the atomic write envelope.
     pub unsafe fn apply(&self) -> Result<(), PatchError> {
         // SAFETY: upheld by the caller and bind contract.
-        unsafe { self.publish(self.plan.original, self.plan.replacement) }
+        unsafe { self.publish_concurrent(self.plan.original, self.plan.replacement) }
     }
 
     /// Restores the original instruction bytes.
@@ -625,15 +683,56 @@ impl LiveJumpPatch {
     /// and no unregistered writer may modify the atomic write envelope.
     pub unsafe fn revert(&self) -> Result<(), PatchError> {
         // SAFETY: upheld by the caller and bind contract.
-        unsafe { self.publish(self.plan.replacement, self.plan.original) }
+        unsafe { self.publish_concurrent(self.plan.replacement, self.plan.original) }
     }
 
-    unsafe fn publish(
+    /// Publishes the trampoline redirect without concurrent-reader protection.
+    ///
+    /// # Safety
+    ///
+    /// The mappings supplied to bind must remain valid. The caller must prove
+    /// that no other process thread, signal handler, or code writer can fetch,
+    /// read, or modify the patch window until this call returns.
+    pub unsafe fn apply_quiescent(&self) -> Result<(), PatchError> {
+        // SAFETY: upheld by the caller's quiescence proof.
+        unsafe {
+            publish_quiescent(
+                self.writable_address,
+                self.plan.original,
+                self.plan.replacement,
+            )
+        }
+    }
+
+    /// Restores original bytes without concurrent-reader protection.
+    ///
+    /// # Safety
+    ///
+    /// The same quiescence proof as [`Self::apply_quiescent`] is required.
+    pub unsafe fn revert_quiescent(&self) -> Result<(), PatchError> {
+        // SAFETY: upheld by the caller's quiescence proof.
+        unsafe {
+            publish_quiescent(
+                self.writable_address,
+                self.plan.replacement,
+                self.plan.original,
+            )
+        }
+    }
+
+    unsafe fn publish_concurrent(
         &self,
         expected: [u8; WORD_PATCH_BYTES],
         replacement: [u8; WORD_PATCH_BYTES],
     ) -> Result<(), PatchError> {
-        self.trap_site.begin().map_err(map_trap_error)?;
+        let PatchPublication::Concurrent {
+            staleness,
+            trap_site,
+        } = self.publication
+        else {
+            return Err(PatchError::QuiescentPublicationRequired);
+        };
+        trap_site.begin().map_err(map_trap_error)?;
 
         let result = match self.plan.strategy {
             PatchStrategy::AtomicWord => {
@@ -653,13 +752,13 @@ impl LiveJumpPatch {
                         self.plan.guard_mask,
                         expected,
                         replacement,
-                        self.staleness,
+                        staleness,
                     )
                 }
             }
         };
 
-        self.trap_site.finish();
+        trap_site.finish();
         result
     }
 }
@@ -679,6 +778,26 @@ fn map_trap_error(error: TrapError) -> PatchError {
         TrapError::Install(errno) => PatchError::SignalHandlerInstall { errno },
         TrapError::Unsupported => PatchError::UnsupportedPlatform,
     }
+}
+
+#[cfg(target_arch = "x86_64")]
+unsafe fn publish_quiescent(
+    address: *mut u8,
+    expected: [u8; WORD_PATCH_BYTES],
+    replacement: [u8; WORD_PATCH_BYTES],
+) -> Result<(), PatchError> {
+    // SAFETY: the caller guarantees a readable quiescent patch window.
+    let current = unsafe { load_unaligned_word(address.cast_const()) };
+    if current != u64::from_le_bytes(expected) {
+        return Err(PatchError::ExpectedBytesMismatch);
+    }
+
+    compiler_fence(Ordering::SeqCst);
+    // SAFETY: no concurrent instruction fetch or data access can observe a
+    // partial cross-line store under the caller's quiescence proof.
+    unsafe { store_unaligned_word(address, u64::from_le_bytes(replacement)) };
+    compiler_fence(Ordering::SeqCst);
+    Ok(())
 }
 
 #[cfg(target_arch = "x86_64")]
@@ -788,8 +907,9 @@ unsafe fn load_unaligned_word(address: *const u8) -> u64 {
 
 #[cfg(target_arch = "x86_64")]
 unsafe fn store_unaligned_word(address: *mut u8, value: u64) {
-    // SAFETY: caller provides a writable eight-byte window wholly within one
-    // cache line. One MOV is required so the compiler cannot split the store.
+    // SAFETY: caller provides a writable eight-byte window. Concurrent callers
+    // additionally prove it lies in one cache line; quiescent callers exclude
+    // every concurrent reader. One MOV prevents compiler-level splitting.
     unsafe {
         core::arch::asm!(
             "mov qword ptr [{address}], {value}",
@@ -798,6 +918,15 @@ unsafe fn store_unaligned_word(address: *mut u8, value: u64) {
             options(nostack, preserves_flags),
         );
     }
+}
+
+#[cfg(not(target_arch = "x86_64"))]
+unsafe fn publish_quiescent(
+    _address: *mut u8,
+    _expected: [u8; WORD_PATCH_BYTES],
+    _replacement: [u8; WORD_PATCH_BYTES],
+) -> Result<(), PatchError> {
+    Err(PatchError::UnsupportedPlatform)
 }
 
 #[cfg(not(target_arch = "x86_64"))]
@@ -1184,6 +1313,67 @@ mod tests {
                 // SAFETY: fixture mappings satisfy the bind contract.
                 unsafe { patch.revert() }.unwrap();
                 assert_eq!(function(), 1);
+            }
+        }
+
+        #[test]
+        fn quiescent_entrypoint_redirects_every_split_without_guard_traps() {
+            let scanner = InstructionScanner::default();
+            let entry = [0xF3, 0x0F, 0x1E, 0xFA];
+            let original = [0xB8, 1, 0, 0, 0, 0xC3, 0x90, 0x90];
+            let target_code = [0xB8, 2, 0, 0, 0, 0xC3];
+
+            for site_offset in 57..64 {
+                let mapping = DualMapping::new();
+                let entry_offset = site_offset - entry.len();
+                // SAFETY: all fixture ranges are within the writable mapping.
+                unsafe {
+                    core::ptr::copy_nonoverlapping(
+                        entry.as_ptr(),
+                        mapping.writable.add(entry_offset),
+                        entry.len(),
+                    );
+                    core::ptr::copy_nonoverlapping(
+                        original.as_ptr(),
+                        mapping.writable.add(site_offset),
+                        original.len(),
+                    );
+                    core::ptr::copy_nonoverlapping(
+                        target_code.as_ptr(),
+                        mapping.writable.add(TARGET_OFFSET),
+                        target_code.len(),
+                    );
+                }
+
+                let site = mapping.executable as u64 + site_offset as u64;
+                let target = mapping.executable as u64 + TARGET_OFFSET as u64;
+                let scan = scanner.scan(&original, site).unwrap();
+                let plan = JumpPatchPlan::from_scan(&scanner, &scan, &original, site, site, target)
+                    .unwrap();
+                // SAFETY: this test is single-threaded and both aliases remain mapped.
+                let patch = unsafe {
+                    LiveJumpPatch::bind_quiescent(plan, mapping.writable.add(site_offset))
+                }
+                .unwrap();
+                assert!(patch.requires_quiescence());
+                // SAFETY: verifies that the concurrent API rejects this binding.
+                assert_eq!(
+                    unsafe { patch.apply() },
+                    Err(PatchError::QuiescentPublicationRequired)
+                );
+
+                let function_address = mapping.executable as usize + entry_offset;
+                // SAFETY: fixture starts with a valid function at entry_offset.
+                let function: extern "C" fn() -> u32 =
+                    unsafe { core::mem::transmute(function_address) };
+                assert_eq!(function(), 1);
+                // SAFETY: no other thread can fetch the test function.
+                unsafe { patch.apply_quiescent() }.unwrap();
+                assert_eq!(function(), 2);
+                // SAFETY: no other thread can fetch the test function.
+                unsafe { patch.revert_quiescent() }.unwrap();
+                assert_eq!(function(), 1);
+                assert_eq!(patch.handled_guard_traps(), 0);
             }
         }
 
