@@ -742,12 +742,15 @@ fn push_program_counter_mapping(
     if generated_start >= generated_end {
         return;
     }
-    if let Some(previous) = mappings.last_mut()
-        && previous.generated_end == generated_start
-        && previous.logical_address == logical_address
-    {
-        previous.generated_end = generated_end;
-        return;
+    match mappings.last_mut() {
+        Some(previous)
+            if previous.generated_end == generated_start
+                && previous.logical_address == logical_address =>
+        {
+            previous.generated_end = generated_end;
+            return;
+        }
+        _ => {}
     }
     mappings.push(ProgramCounterMapping {
         generated_start,
