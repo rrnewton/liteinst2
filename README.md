@@ -17,12 +17,14 @@ modules separate the main correctness boundaries:
   return, and async-signal-safe reverse-PC lookup.
 
 Clients with a ptrace slow path follow the exhaustive
-[patch-site decision tree](PATCH_SITE_DECISION_TREE.md): direct pun, proved
-upstream relocation, safe straddler bailout, or explicit ptrace fallback.
+[patch-site decision tree](PATCH_SITE_DECISION_TREE.md): choose quiescent or
+concurrent publication, then select a direct pun, proved relocation, safe
+straddler bailout, or explicit ptrace fallback.
 
 The implementation preserves six invariants established before the port:
 
-1. A cross-cache-line patch must never fall back to a tearing store.
+1. A cross-cache-line patch must use guarded publication unless the caller
+   proves that no concurrent instruction fetch or data access is possible.
 2. Probe installation publishes state only after planning and allocation pass.
 3. Trampoline sizing and emission use the same checked plan.
 4. Signal handlers use only async-signal-safe, pre-published data.
@@ -84,10 +86,19 @@ Signal handlers and unwind front ends can call
 `trampoline::translate_program_counter` without allocation or locks before
 reporting or unwinding a relocated fault. This translates the logical PC; it
 does not install a signal handler or synthesize DWARF call-frame metadata.
-WordPatch++ guards every byte before a cache-line split as specified by PLDI
-2017, but callers must still supply a machine/topology-qualified
-`StalenessBudget`. A consumer without that calibration should route split sites
-to its ptrace/trap fallback instead of selecting `GuardedSplit`.
+The ordinary `LiveJumpPatch` and `InstalledHook` entrypoints use concurrent-safe
+publication. WordPatch++ guards every byte before a cache-line split as
+specified by PLDI 2017, but callers must still supply a
+machine/topology-qualified `StalenessBudget`. A consumer without that
+calibration should route split sites to its ptrace/trap fallback instead of
+selecting `GuardedSplit`.
+
+The unsafe `bind_quiescent`, `install_replacing_first_quiescent`, and matching
+activation entrypoints retain the same planning and relocation but skip trap
+registration and guarded split publication. They are valid only when the caller
+can exclude every other thread, signal handler, instruction fetch, and code
+writer for the complete publication call. They must not be used as a faster
+default for threaded applications.
 
 The live stress matrix and overhead benchmark are opt-in:
 
