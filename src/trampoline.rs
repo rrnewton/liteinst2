@@ -1714,9 +1714,20 @@ fn near_candidates(
         len,
         page_size,
     );
-    candidates.sort_unstable_by_key(|candidate| candidate.abs_diff(next_ip));
+    order_near_candidates(&mut candidates, next_ip);
     candidates.dedup();
     Ok(candidates)
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn order_near_candidates(candidates: &mut [usize], next_ip: usize) {
+    // A mapping above the program image can begin exactly where [heap] ends,
+    // permanently capping future brk growth. Lower gaps cannot obstruct the
+    // upward-growing heap, and every candidate is already within rel32 reach.
+    candidates.sort_unstable_by_key(|candidate| {
+        let is_above = *candidate > next_ip;
+        (is_above, candidate.abs_diff(next_ip))
+    });
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -1760,6 +1771,23 @@ mod tests {
     use crate::scanner::InstructionScanner;
 
     unsafe extern "C" fn noop_hook(_context: *mut HookContext) {}
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn reachable_mapping_order_preserves_upward_heap_growth() {
+        let next_ip = 0x401005;
+        let below_image = 0x380000;
+        let immediately_above_heap = 0x426000;
+        let farther_below_image = 0x300000;
+        let mut candidates = [immediately_above_heap, farther_below_image, below_image];
+
+        super::order_near_candidates(&mut candidates, next_ip);
+
+        assert_eq!(
+            candidates,
+            [below_image, farther_below_image, immediately_above_heap]
+        );
+    }
 
     fn plan(code: &[u8], base: u64) -> Result<TrampolinePlan, TrampolineError> {
         let scan = InstructionScanner::default()
