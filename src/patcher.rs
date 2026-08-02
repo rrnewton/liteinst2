@@ -2,9 +2,9 @@
 //!
 //! A patch is planned without touching executable memory, then bound to a
 //! process-lifetime writable alias of the executable mapping. Cross-line words
-//! use WordPatch++: atomically guard every reachable front-line instruction
-//! head, wait for bounded instruction-fetch staleness, publish the aligned back
-//! word, wait again, and finally publish the aligned front word.
+//! use WordPatch++: atomically guard every byte before the cache-line split,
+//! wait for bounded instruction-fetch staleness, publish the aligned back word,
+//! wait again, and finally publish the aligned front word.
 //!
 //! Intel does not architecturally guarantee instruction-fetch coherence for
 //! this protocol. Callers must provide a staleness budget calibrated for every
@@ -24,7 +24,7 @@ use crate::trap::{TrapError, TrapSite};
 /// x86 near-jump opcode used to redirect execution to a trampoline.
 pub const NEAR_JUMP_OPCODE: u8 = 0xE9;
 
-/// Trap opcode used to guard instruction heads during cross-line publication.
+/// Trap opcode used to guard front-fragment bytes during cross-line publication.
 pub const BREAKPOINT_OPCODE: u8 = 0xCC;
 
 /// Number of bytes in an x86 near jump with a signed 32-bit displacement.
@@ -423,28 +423,20 @@ impl JumpPatchPlan {
                 let boundary = execute_address
                     .checked_add(front_len as u64)
                     .ok_or(PatchError::AddressRangeOverflow)?;
-                let mut mask = 0_u8;
                 for (&address, _) in verified_scan.sites().range(execute_address..boundary) {
                     let relative = address - execute_address;
                     let relative =
                         usize::try_from(relative).map_err(|_| PatchError::RegionMismatch {
                             address: execute_address,
                         })?;
-                    if relative < front_len {
-                        if original[relative] == BREAKPOINT_OPCODE
-                            || replacement[relative] == BREAKPOINT_OPCODE
-                        {
-                            return Err(PatchError::GuardByteConflict { address });
-                        }
-                        mask |= 1 << relative;
+                    if relative < front_len
+                        && (original[relative] == BREAKPOINT_OPCODE
+                            || replacement[relative] == BREAKPOINT_OPCODE)
+                    {
+                        return Err(PatchError::GuardByteConflict { address });
                     }
                 }
-                if mask & 1 == 0 {
-                    return Err(PatchError::RegionMismatch {
-                        address: execute_address,
-                    });
-                }
-                mask
+                ((1_u16 << front_len) - 1) as u8
             }
         };
 
@@ -490,9 +482,15 @@ impl JumpPatchPlan {
         self.strategy
     }
 
-    /// Iterates over instruction-head offsets guarded during publication.
-    pub fn guarded_instruction_offsets(&self) -> impl Iterator<Item = usize> + '_ {
+    /// Iterates over every front-fragment byte guarded during publication.
+    pub fn guarded_byte_offsets(&self) -> impl Iterator<Item = usize> + '_ {
         (0..WORD_PATCH_BYTES).filter(|offset| self.guard_mask & (1 << offset) != 0)
+    }
+
+    /// Iterates over every front-fragment byte guarded during publication.
+    #[deprecated(note = "use guarded_byte_offsets; WordPatch++ guards all front-fragment bytes")]
+    pub fn guarded_instruction_offsets(&self) -> impl Iterator<Item = usize> + '_ {
+        self.guarded_byte_offsets()
     }
 }
 
@@ -873,8 +871,8 @@ mod tests {
         );
         assert_eq!(plan.replacement_bytes()[0], NEAR_JUMP_OPCODE);
         assert_eq!(
-            plan.guarded_instruction_offsets().collect::<Vec<_>>(),
-            vec![0]
+            plan.guarded_byte_offsets().collect::<Vec<_>>(),
+            vec![0, 1, 2, 3]
         );
     }
 
@@ -900,8 +898,8 @@ mod tests {
 
         assert_eq!(plan.displaced_len(), 5);
         assert_eq!(
-            plan.guarded_instruction_offsets().collect::<Vec<_>>(),
-            vec![0, 3]
+            plan.guarded_byte_offsets().collect::<Vec<_>>(),
+            vec![0, 1, 2, 3]
         );
     }
 
@@ -1166,6 +1164,10 @@ mod tests {
                         back_len: site_offset - 56,
                     }
                 );
+                assert_eq!(
+                    plan.guarded_byte_offsets().collect::<Vec<_>>(),
+                    (0..64 - site_offset).collect::<Vec<_>>()
+                );
 
                 let function_address = mapping.executable as usize + entry_offset;
                 // SAFETY: fixture starts with a valid function at entry_offset.
@@ -1233,7 +1235,7 @@ mod tests {
         }
 
         #[test]
-        fn secondary_guarded_instruction_head_waits_and_retries() {
+        fn secondary_guarded_byte_waits_and_retries() {
             const ENTRY: usize = 53;
             const SITE: usize = 57;
             const SECONDARY: usize = 62;
@@ -1281,8 +1283,8 @@ mod tests {
             let scan = scanner.scan(code, site).unwrap();
             let plan = JumpPatchPlan::from_scan(&scanner, &scan, code, site, site, target).unwrap();
             assert_eq!(
-                plan.guarded_instruction_offsets().collect::<Vec<_>>(),
-                vec![0, 5]
+                plan.guarded_byte_offsets().collect::<Vec<_>>(),
+                vec![0, 1, 2, 3, 4, 5, 6]
             );
 
             let primary_address = mapping.executable as usize + ENTRY;

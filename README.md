@@ -9,17 +9,18 @@ modules separate the main correctness boundaries:
 
 - `cache_line`: overflow-safe patch-span classification.
 - `scanner`: fail-closed x86-64 decoding and cache-line crossing discovery.
-- `patcher`: multi-instruction jump planning and atomic WordPatch++ publication.
+- `patcher`: multi-instruction jump planning and all-front-byte WordPatch++ publication.
 - `planner`: rapid, relocated, and client-trap fallback selection.
 - `rapid`: exact instruction-pun planning and atomic opcode toggling.
 - `probe`: idempotent probe lifecycle state.
-- `trampoline`: near dual-mapped allocation, relocation, hook dispatch, and return.
+- `trampoline`: near dual-mapped allocation, relocation, hook dispatch, CET-safe
+  return, and async-signal-safe reverse-PC lookup.
 
 Clients with a ptrace slow path follow the exhaustive
 [patch-site decision tree](PATCH_SITE_DECISION_TREE.md): direct pun, proved
 upstream relocation, safe straddler bailout, or explicit ptrace fallback.
 
-The implementation preserves five invariants established before the port:
+The implementation preserves six invariants established before the port:
 
 1. A cross-cache-line patch must never fall back to a tearing store.
 2. Probe installation publishes state only after planning and allocation pass.
@@ -27,6 +28,8 @@ The implementation preserves five invariants established before the port:
 4. Signal handlers use only async-signal-safe, pre-published data.
 5. Trampolines never use one RWX mapping; arena mode instead retains separate
    RW and RX aliases and therefore does not provide strict W^X.
+6. Trampoline continuation uses a direct jump when reachable, with a CET NOTRACK
+   indirect fallback, so an application continuation need not begin with ENDBR64.
 
 ## Examples
 
@@ -75,6 +78,16 @@ Clients must provide a trustworthy code region, writable access to the live
 patch word, mapping-lifecycle ownership, proof that no control-flow entry can
 target the interior of a relocated window, and a trap fallback when the
 planner returns `PunPlan::TrapRequired`.
+
+Installed trampolines publish immutable generated-to-application PC ranges.
+Signal handlers and unwind front ends can call
+`trampoline::translate_program_counter` without allocation or locks before
+reporting or unwinding a relocated fault. This translates the logical PC; it
+does not install a signal handler or synthesize DWARF call-frame metadata.
+WordPatch++ guards every byte before a cache-line split as specified by PLDI
+2017, but callers must still supply a machine/topology-qualified
+`StalenessBudget`. A consumer without that calibration should route split sites
+to its ptrace/trap fallback instead of selecting `GuardedSplit`.
 
 The live stress matrix and overhead benchmark are opt-in:
 

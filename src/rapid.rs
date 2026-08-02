@@ -433,6 +433,7 @@ impl RapidProbe {
                     return Err(map_trap_error(error));
                 }
             };
+            trampoline.publish_program_counter_mappings();
 
             Ok(Self {
                 plan,

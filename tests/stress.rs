@@ -13,7 +13,9 @@ use std::time::{Duration, Instant};
 use liteinst2::patcher::{JumpPatchPlan, StalenessBudget};
 use liteinst2::rapid::{RapidProbe, RapidTogglePlan};
 use liteinst2::scanner::{InstructionScanner, ScanResult};
-use liteinst2::trampoline::{HookContext, HookSite, InstalledHook, TrampolinePlan};
+use liteinst2::trampoline::{
+    HookContext, HookSite, InstalledHook, TrampolinePlan, translate_program_counter,
+};
 
 const PAGE_BYTES: usize = 4096;
 const CACHE_LINE_BYTES: usize = 64;
@@ -26,6 +28,8 @@ static HOOK_CALLS: AtomicU64 = AtomicU64::new(0);
 static EXECUTED_CALLS: AtomicU64 = AtomicU64::new(0);
 static TRAP_SIGNALS: AtomicU64 = AtomicU64::new(0);
 static USER_SIGNALS: AtomicU64 = AtomicU64::new(0);
+static FAULT_ORIGINAL_PC: AtomicU64 = AtomicU64::new(0);
+static FAULT_GENERATED_PC: AtomicU64 = AtomicU64::new(0);
 
 const ISOLATED_STRESS_ENV: &str = "LITEINST_ISOLATED_STRESS_TEST";
 
@@ -73,6 +77,36 @@ fn install_counting_handler(signal: libc::c_int) {
         action.sa_flags = libc::SA_RESTART;
         libc::sigemptyset(&mut action.sa_mask);
         assert_eq!(libc::sigaction(signal, &action, ptr::null_mut()), 0);
+    }
+}
+
+extern "C" fn translate_fault_pc(
+    signal: libc::c_int,
+    _info: *mut libc::siginfo_t,
+    context: *mut c_void,
+) {
+    if signal != libc::SIGSEGV || context.is_null() {
+        // SAFETY: _exit is async-signal-safe and terminates this isolated child.
+        unsafe { libc::_exit(100) };
+    }
+    // SAFETY: Linux supplies a live ucontext_t to an SA_SIGINFO handler.
+    let context = unsafe { &*context.cast::<libc::ucontext_t>() };
+    let generated = context.uc_mcontext.gregs[libc::REG_RIP as usize] as u64;
+    let translated = translate_program_counter(generated);
+    let matches = generated == FAULT_GENERATED_PC.load(Ordering::Relaxed)
+        && translated == Some(FAULT_ORIGINAL_PC.load(Ordering::Relaxed));
+    // SAFETY: _exit is async-signal-safe and terminates this isolated child.
+    unsafe { libc::_exit(if matches { 0 } else { 101 }) };
+}
+
+fn install_fault_handler() {
+    // SAFETY: the action is fully initialized before sigaction publishes it.
+    unsafe {
+        let mut action: libc::sigaction = core::mem::zeroed();
+        action.sa_sigaction = translate_fault_pc as *const () as usize;
+        action.sa_flags = libc::SA_SIGINFO;
+        libc::sigemptyset(&mut action.sa_mask);
+        assert_eq!(libc::sigaction(libc::SIGSEGV, &action, ptr::null_mut()), 0);
     }
 }
 
@@ -142,6 +176,13 @@ impl DualMapping {
         // SAFETY: fixture mappings are sized for the complete code image.
         unsafe {
             ptr::copy_nonoverlapping(bytes.as_ptr(), self.writable, bytes.len());
+        }
+    }
+
+    fn write_at(&self, offset: usize, bytes: &[u8]) {
+        // SAFETY: fixtures keep the write within the mapping.
+        unsafe {
+            ptr::copy_nonoverlapping(bytes.as_ptr(), self.writable.add(offset), bytes.len());
         }
     }
 }
@@ -299,6 +340,57 @@ fn build_general_image(
     let scan = scanner.scan(&code, mapping.executable_address(0)).unwrap();
     assert_eq!(scan.crossing_sites().count(), functions);
     (mapping, code, scan, expected)
+}
+
+fn relocated_fault_pc_translation_body() {
+    const FAULT_OFFSET: usize = 128;
+    let mapping = DualMapping::new(PAGE_BYTES);
+    let code = [0x48, 0xA1, 0, 0, 0, 0, 0, 0, 0, 0, 0xC3];
+    mapping.write_at(FAULT_OFFSET, &code);
+
+    let scanner = InstructionScanner::default();
+    let execute_address = mapping.executable_address(FAULT_OFFSET);
+    let scan = scanner.scan(&code, execute_address).unwrap();
+    // SAFETY: both aliases and the callback remain valid until the isolated
+    // child exits from its SIGSEGV handler.
+    let hook = unsafe {
+        InstalledHook::install(
+            HookSite::new(
+                &scanner,
+                &scan,
+                &code,
+                execute_address,
+                execute_address,
+                mapping.writable.add(FAULT_OFFSET),
+            ),
+            record_hook,
+            StalenessBudget::new(10_000).unwrap(),
+        )
+        .unwrap()
+    };
+    FAULT_ORIGINAL_PC.store(execute_address, Ordering::Relaxed);
+    FAULT_GENERATED_PC.store(
+        hook.trampoline().relocated_tail_address(),
+        Ordering::Relaxed,
+    );
+    install_fault_handler();
+    hook.activate().unwrap();
+
+    // SAFETY: the fixture is a valid no-argument function whose relocated load
+    // intentionally faults before returning.
+    let function: extern "C" fn() =
+        unsafe { core::mem::transmute(mapping.executable_address(FAULT_OFFSET) as usize) };
+    function();
+    panic!("faulting relocated instruction unexpectedly returned");
+}
+
+#[test]
+#[ignore = "isolated intentional SIGSEGV regression test"]
+fn relocated_fault_pc_translation() {
+    run_isolated(
+        "relocated_fault_pc_translation",
+        relocated_fault_pc_translation_body,
+    );
 }
 
 fn next_random(state: &mut u64) -> u64 {
