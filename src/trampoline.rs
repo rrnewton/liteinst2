@@ -7,10 +7,11 @@
 //! within signed rel32 reach and is never writable through its RX alias.
 
 use core::fmt;
-use core::sync::atomic::{AtomicU8, AtomicUsize, Ordering, compiler_fence};
+use core::sync::atomic::{AtomicBool, AtomicPtr, AtomicU8, AtomicUsize, Ordering, compiler_fence};
 
 use iced_x86::{
-    BlockEncoder, BlockEncoderOptions, Instruction, InstructionBlock,
+    BlockEncoder, BlockEncoderOptions, Decoder, DecoderOptions, Instruction, InstructionBlock,
+    Mnemonic, OpKind,
     code_asm::{
         CodeAssembler, eax, edx, qword_ptr, r8, r9, r10, r11, r12, r13, r14, r15, rax, rbp, rbx,
         rcx, rdi, rdx, rsi, rsp,
@@ -25,7 +26,8 @@ const SAVED_INTEGER_BYTES: i32 = 16 * 8;
 const HOOK_METADATA_BYTES: i32 = 2 * 8;
 const FXSAVE_BYTES: i32 = 512;
 const FXSAVE_ALIGNMENT: i32 = 16;
-const ABSOLUTE_JUMP_BYTES: usize = 14;
+const NEAR_RETURN_JUMP_BYTES: usize = 5;
+const NOTRACK_ABSOLUTE_JUMP_BYTES: usize = 15;
 const TRAMPOLINE_ALLOCATION_BYTES: usize = 4096;
 
 const STATE_INACTIVE: u8 = 0;
@@ -193,6 +195,7 @@ impl TrampolineLayout {
 pub struct TrampolineImage {
     bytes: Vec<u8>,
     layout: TrampolineLayout,
+    program_counters: Vec<ProgramCounterMapping>,
 }
 
 impl TrampolineImage {
@@ -204,6 +207,98 @@ impl TrampolineImage {
     /// Returns the checked section lengths.
     pub const fn layout(&self) -> TrampolineLayout {
         self.layout
+    }
+
+    /// Returns generated ranges and their corresponding application PCs.
+    pub fn program_counter_mappings(&self) -> &[ProgramCounterMapping] {
+        &self.program_counters
+    }
+}
+
+/// One half-open generated-code range and its logical application PC.
+///
+/// A signal handler or unwind front end can translate a PC in this range before
+/// reporting or unwinding it. The mapping does not itself install a signal
+/// handler or provide call-frame information.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ProgramCounterMapping {
+    generated_start: u64,
+    generated_end: u64,
+    logical_address: u64,
+}
+
+impl ProgramCounterMapping {
+    /// Returns the first generated PC in this mapping.
+    pub const fn generated_start(&self) -> u64 {
+        self.generated_start
+    }
+
+    /// Returns the first generated PC after this mapping.
+    pub const fn generated_end(&self) -> u64 {
+        self.generated_end
+    }
+
+    /// Returns the application PC represented by this generated range.
+    pub const fn logical_address(&self) -> u64 {
+        self.logical_address
+    }
+
+    /// Translates a generated PC covered by this mapping.
+    pub const fn translate(&self, program_counter: u64) -> Option<u64> {
+        if self.generated_start <= program_counter && program_counter < self.generated_end {
+            Some(self.logical_address)
+        } else {
+            None
+        }
+    }
+}
+
+struct ProgramCounterMapNode {
+    mappings: Box<[ProgramCounterMapping]>,
+    next: *mut ProgramCounterMapNode,
+}
+
+static PROGRAM_COUNTER_MAP_HEAD: AtomicPtr<ProgramCounterMapNode> =
+    AtomicPtr::new(core::ptr::null_mut());
+
+/// Translates a PC in a published trampoline to its application instruction.
+///
+/// Published mappings live for the process lifetime. This lookup performs only
+/// atomic loads and immutable reads, so it can be called from a signal handler.
+/// Returning `None` means the PC is not in a LiteInst2 trampoline.
+pub fn translate_program_counter(program_counter: u64) -> Option<u64> {
+    let mut node = PROGRAM_COUNTER_MAP_HEAD.load(Ordering::Acquire);
+    while !node.is_null() {
+        // SAFETY: nodes and their mapping arrays are leaked after publication.
+        let published = unsafe { &*node };
+        for mapping in &published.mappings {
+            if let Some(logical_address) = mapping.translate(program_counter) {
+                return Some(logical_address);
+            }
+        }
+        node = published.next;
+    }
+    None
+}
+
+fn register_program_counter_mappings(mappings: &[ProgramCounterMapping]) {
+    let node = Box::into_raw(Box::new(ProgramCounterMapNode {
+        mappings: mappings.to_vec().into_boxed_slice(),
+        next: core::ptr::null_mut(),
+    }));
+    let mut head = PROGRAM_COUNTER_MAP_HEAD.load(Ordering::Acquire);
+    loop {
+        // SAFETY: node is private to this publisher until the release CAS.
+        unsafe { (*node).next = head };
+        match PROGRAM_COUNTER_MAP_HEAD.compare_exchange_weak(
+            head,
+            node,
+            Ordering::Release,
+            Ordering::Acquire,
+        ) {
+            Ok(_) => return,
+            Err(observed) => head = observed,
+        }
     }
 }
 
@@ -491,18 +586,21 @@ impl TrampolinePlan {
                 .checked_add(restore.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let relocated_instructions = &self.instructions[self.relocated_start..];
-            let relocated = if relocated_instructions.is_empty() {
-                Vec::new()
+            let (relocated, relocated_offsets) = if relocated_instructions.is_empty() {
+                (Vec::new(), Vec::new())
             } else {
-                BlockEncoder::encode(
+                let encoded = BlockEncoder::encode(
                     64,
                     InstructionBlock::new(relocated_instructions, relocated_address),
-                    BlockEncoderOptions::NONE,
+                    BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS,
                 )
-                .map_err(encoding_error)?
-                .code_buffer
+                .map_err(encoding_error)?;
+                (encoded.code_buffer, encoded.new_instruction_offsets)
             };
-            let return_jump = absolute_indirect_jump(self.return_address);
+            let return_jump_address = relocated_address
+                .checked_add(relocated.len() as u64)
+                .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+            let return_jump = encode_return_jump(return_jump_address, self.return_address)?;
             let layout = TrampolineLayout {
                 instrumentation_len: instrumentation.len(),
                 relocated_len: relocated.len(),
@@ -519,7 +617,37 @@ impl TrampolinePlan {
             bytes.extend_from_slice(&relocated);
             bytes.extend_from_slice(&return_jump);
             debug_assert_eq!(bytes.len(), total_len);
-            Ok(TrampolineImage { bytes, layout })
+
+            let mut program_counters = Vec::new();
+            push_program_counter_mapping(
+                &mut program_counters,
+                address,
+                relocated_address,
+                self.execute_address,
+            );
+            append_relocated_program_counter_mappings(
+                &mut program_counters,
+                relocated_address,
+                &relocated,
+                relocated_instructions,
+                &relocated_offsets,
+            )?;
+            let return_jump_end = return_jump_address
+                .checked_add(return_jump.len() as u64)
+                .ok_or(TrampolineError::AddressNotRepresentable {
+                    address: return_jump_address,
+                })?;
+            push_program_counter_mapping(
+                &mut program_counters,
+                return_jump_address,
+                return_jump_end,
+                self.return_address,
+            );
+            Ok(TrampolineImage {
+                bytes,
+                layout,
+                program_counters,
+            })
         }
     }
 
@@ -586,11 +714,147 @@ fn encoding_error(error: iced_x86::IcedError) -> TrampolineError {
     }
 }
 
-fn absolute_indirect_jump(target: u64) -> [u8; ABSOLUTE_JUMP_BYTES] {
-    let mut bytes = [0_u8; ABSOLUTE_JUMP_BYTES];
-    bytes[..6].copy_from_slice(&[0xFF, 0x25, 0, 0, 0, 0]);
-    bytes[6..].copy_from_slice(&target.to_le_bytes());
-    bytes
+fn encode_return_jump(address: u64, target: u64) -> Result<Vec<u8>, TrampolineError> {
+    let next_ip = address
+        .checked_add(NEAR_RETURN_JUMP_BYTES as u64)
+        .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+    if let Ok(displacement) = i32::try_from(i128::from(target) - i128::from(next_ip)) {
+        let mut bytes = Vec::with_capacity(NEAR_RETURN_JUMP_BYTES);
+        bytes.push(0xE9);
+        bytes.extend_from_slice(&displacement.to_le_bytes());
+        return Ok(bytes);
+    }
+
+    // The DS prefix is CET's NOTRACK override. It makes the rare indirect
+    // fallback independent of an ENDBR64 at the application continuation.
+    let mut bytes = Vec::with_capacity(NOTRACK_ABSOLUTE_JUMP_BYTES);
+    bytes.extend_from_slice(&[0x3E, 0xFF, 0x25, 0, 0, 0, 0]);
+    bytes.extend_from_slice(&target.to_le_bytes());
+    Ok(bytes)
+}
+
+fn push_program_counter_mapping(
+    mappings: &mut Vec<ProgramCounterMapping>,
+    generated_start: u64,
+    generated_end: u64,
+    logical_address: u64,
+) {
+    if generated_start >= generated_end {
+        return;
+    }
+    if let Some(previous) = mappings.last_mut()
+        && previous.generated_end == generated_start
+        && previous.logical_address == logical_address
+    {
+        previous.generated_end = generated_end;
+        return;
+    }
+    mappings.push(ProgramCounterMapping {
+        generated_start,
+        generated_end,
+        logical_address,
+    });
+}
+
+fn append_relocated_program_counter_mappings(
+    mappings: &mut Vec<ProgramCounterMapping>,
+    relocated_address: u64,
+    code: &[u8],
+    instructions: &[Instruction],
+    offsets: &[u32],
+) -> Result<(), TrampolineError> {
+    debug_assert_eq!(instructions.len(), offsets.len());
+    let mut cursor = 0_usize;
+    let mut index = 0_usize;
+    while index < instructions.len() {
+        let offset = offsets[index];
+        if offset == u32::MAX {
+            let instruction_address = relocated_address + cursor as u64;
+            let separately_encoded = BlockEncoder::encode(
+                64,
+                InstructionBlock::new(&instructions[index..=index], instruction_address),
+                BlockEncoderOptions::RETURN_RELOC_INFOS,
+            )
+            .map_err(encoding_error)?;
+            let data_start = separately_encoded
+                .reloc_infos
+                .iter()
+                .map(|relocation| relocation.address.saturating_sub(instruction_address))
+                .min()
+                .and_then(|len| usize::try_from(len).ok())
+                .unwrap_or(separately_encoded.code_buffer.len());
+            let mut decoder = Decoder::with_ip(
+                64,
+                &separately_encoded.code_buffer[..data_start],
+                instruction_address,
+                DecoderOptions::NONE,
+            );
+            let mut emitted_len = 0_usize;
+            while decoder.can_decode() {
+                let generated = decoder.decode();
+                emitted_len += generated.len();
+                if matches!(generated.mnemonic(), Mnemonic::Jmp | Mnemonic::Call)
+                    && generated.op0_kind() == OpKind::Memory
+                {
+                    break;
+                }
+            }
+            if emitted_len == 0 {
+                emitted_len = data_start;
+            }
+            let instruction_end = cursor.saturating_add(emitted_len).min(code.len());
+            push_program_counter_mapping(
+                mappings,
+                instruction_address,
+                relocated_address + instruction_end as u64,
+                instructions[index].ip(),
+            );
+            cursor = instruction_end;
+            index += 1;
+            continue;
+        }
+
+        let instruction_start = offset as usize;
+        if cursor < instruction_start {
+            let logical_address = instructions[index.saturating_sub(1)].ip();
+            push_program_counter_mapping(
+                mappings,
+                relocated_address + cursor as u64,
+                relocated_address + instruction_start as u64,
+                logical_address,
+            );
+        }
+        let mut decoder = Decoder::with_ip(
+            64,
+            &code[instruction_start..],
+            relocated_address + instruction_start as u64,
+            DecoderOptions::NONE,
+        );
+        let emitted_len = decoder.decode().len();
+        let instruction_end = instruction_start
+            .saturating_add(emitted_len)
+            .min(code.len());
+        push_program_counter_mapping(
+            mappings,
+            relocated_address + instruction_start as u64,
+            relocated_address + instruction_end as u64,
+            instructions[index].ip(),
+        );
+        cursor = instruction_end;
+        index += 1;
+    }
+    if cursor < code.len() {
+        let logical_address = instructions
+            .last()
+            .map_or(relocated_address, Instruction::ip);
+        push_program_counter_mapping(
+            mappings,
+            relocated_address + cursor as u64,
+            relocated_address + code.len() as u64,
+            logical_address,
+        );
+    }
+    Ok(())
 }
 
 /// Process-lifetime dual-mapped trampoline storage prepared before instrumentation.
@@ -687,6 +951,8 @@ impl TrampolineArena {
             mapping_address: 0,
             code_len: image.bytes.len(),
             layout: image.layout,
+            program_counters: image.program_counters.into_boxed_slice(),
+            program_counters_published: AtomicBool::new(false),
         })
     }
 }
@@ -702,6 +968,8 @@ pub struct ExecutableTrampoline {
     mapping_address: u64,
     code_len: usize,
     layout: TrampolineLayout,
+    program_counters: Box<[ProgramCounterMapping]>,
+    program_counters_published: AtomicBool,
 }
 
 impl ExecutableTrampoline {
@@ -786,7 +1054,31 @@ impl ExecutableTrampoline {
         self.layout
     }
 
+    /// Returns generated ranges and their corresponding application PCs.
+    pub fn program_counter_mappings(&self) -> &[ProgramCounterMapping] {
+        &self.program_counters
+    }
+
+    /// Translates a PC within this trampoline to an application instruction.
+    pub fn translate_program_counter(&self, program_counter: u64) -> Option<u64> {
+        self.program_counters
+            .iter()
+            .find_map(|mapping| mapping.translate(program_counter))
+    }
+
+    /// Publishes this trampoline to the process-wide reverse-PC lookup.
+    ///
+    /// Installed hooks call this automatically after binding succeeds. Direct
+    /// users of `ExecutableTrampoline::allocate` can call it after making the
+    /// trampoline reachable. Publication is idempotent and process-lifetime.
+    pub fn publish_program_counter_mappings(&self) {
+        if !self.program_counters_published.swap(true, Ordering::AcqRel) {
+            register_program_counter_mappings(&self.program_counters);
+        }
+    }
+
     pub(crate) fn discard(self) {
+        debug_assert!(!self.program_counters_published.load(Ordering::Relaxed));
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
             if self.mapping_address != 0 {
@@ -953,6 +1245,7 @@ impl InstalledHook {
                     return Err(error.into());
                 }
             };
+        trampoline.publish_program_counter_mappings();
         Ok(Self {
             trampoline,
             patch,
@@ -1205,6 +1498,8 @@ impl PendingMapping {
             allocation_len: self.len,
             code_len: image.bytes.len(),
             layout: image.layout,
+            program_counters: image.program_counters.clone().into_boxed_slice(),
+            program_counters_published: AtomicBool::new(false),
         })
     }
 }
@@ -1364,7 +1659,9 @@ fn align_up(value: usize, alignment: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::{HookContext, TrampolineError, TrampolineLayout, TrampolinePlan};
+    use super::{
+        HookContext, TrampolineError, TrampolineLayout, TrampolinePlan, encode_return_jump,
+    };
     use crate::scanner::InstructionScanner;
 
     unsafe extern "C" fn noop_hook(_context: *mut HookContext) {}
@@ -1418,6 +1715,15 @@ mod tests {
         ));
     }
 
+    #[test]
+    fn out_of_range_return_uses_cet_notrack_indirect_jump() {
+        let target = 0x1_0000_0000;
+        let jump = encode_return_jump(0, target).unwrap();
+
+        assert_eq!(&jump[..7], &[0x3E, 0xFF, 0x25, 0, 0, 0, 0]);
+        assert_eq!(&jump[7..], &target.to_le_bytes());
+    }
+
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     #[test]
     fn replace_first_omits_a_two_byte_syscall_but_relocates_its_tail() {
@@ -1448,10 +1754,34 @@ mod tests {
             assert_eq!(plan.displaced_len(), code.len());
             assert_eq!(plan.return_address(), base + code.len() as u64);
             assert_eq!(image.layout().total_len(), Some(image.bytes().len()));
-            assert_eq!(image.layout().return_len, 14);
+            assert_eq!(image.layout().return_len, 5);
+            let return_offset = image.bytes().len() - image.layout().return_len;
+            let return_address = base + 0x10_0000 + return_offset as u64;
+            let jump = &image.bytes()[return_offset..];
+            assert_eq!(jump[0], 0xE9);
+            let displacement = i32::from_le_bytes(jump[1..].try_into().unwrap());
             assert_eq!(
-                &image.bytes()[image.bytes().len() - 8..],
-                &plan.return_address().to_le_bytes()
+                i128::from(return_address + 5) + i128::from(displacement),
+                i128::from(plan.return_address())
+            );
+
+            let relocated_address = base
+                + 0x10_0000
+                + image.layout().instrumentation_len as u64
+                + image.layout().restore_len as u64;
+            assert_eq!(
+                image
+                    .program_counter_mappings()
+                    .iter()
+                    .find_map(|mapping| mapping.translate(relocated_address)),
+                Some(base)
+            );
+            assert_eq!(
+                image
+                    .program_counter_mappings()
+                    .iter()
+                    .find_map(|mapping| mapping.translate(return_address)),
+                Some(plan.return_address())
             );
         }
     }
@@ -1514,6 +1844,40 @@ mod tests {
         let branch_image = branch_plan.emit_at(0x2_0000_0000).unwrap();
         assert!(branch_image.layout().relocated_len > branch.len());
     }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn maps_each_consecutive_expanded_branch_to_its_original_pc() {
+        let base = 0x40_0000_u64;
+        for (branches, expanded_len) in [
+            ([0x74, 0x80, 0x75, 0x80, 0x74, 0x80], 8_u64),
+            ([0xEB, 0x80, 0xEB, 0x80, 0xEB, 0x80], 6_u64),
+        ] {
+            let trampoline_address = 0x2_0000_0000;
+            let plan = plan(&branches, base).unwrap();
+            let image = plan.emit_at(trampoline_address).unwrap();
+            let relocated_address = trampoline_address
+                + image.layout().instrumentation_len as u64
+                + image.layout().restore_len as u64;
+            let second = image
+                .program_counter_mappings()
+                .iter()
+                .find(|mapping| mapping.logical_address() == base + 2)
+                .unwrap();
+            let third = image
+                .program_counter_mappings()
+                .iter()
+                .find(|mapping| mapping.logical_address() == base + 4)
+                .unwrap();
+
+            assert_eq!(second.generated_start(), relocated_address + expanded_len);
+            assert_eq!(
+                third.generated_start(),
+                relocated_address + 2 * expanded_len
+            );
+        }
+    }
+
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     mod live {
         use core::arch::asm;
@@ -1524,7 +1888,7 @@ mod tests {
 
         use super::{HookContext, InstructionScanner};
         use crate::patcher::StalenessBudget;
-        use crate::trampoline::{HookSite, InstalledHook};
+        use crate::trampoline::{HookSite, InstalledHook, translate_program_counter};
 
         const PAGE_BYTES: usize = 4096;
         const STALENESS_TICKS: u64 = 3_000;
@@ -1722,6 +2086,15 @@ mod tests {
             let offset = 60;
             let code = [0xB8, 7, 0, 0, 0, 0x01, 0xF8, 0xC3];
             let hook = install(&mapping, offset, &code, 0, record_hook);
+            assert_eq!(
+                hook.trampoline()
+                    .translate_program_counter(hook.trampoline().relocated_tail_address()),
+                Some(mapping.executable_address(offset))
+            );
+            assert_eq!(
+                translate_program_counter(hook.trampoline().relocated_tail_address()),
+                Some(mapping.executable_address(offset))
+            );
             // SAFETY: executable bytes implement extern C fn(u32) -> u32.
             let function: unsafe extern "C" fn(u32) -> u32 =
                 unsafe { core::mem::transmute(mapping.executable_address(offset) as usize) };
