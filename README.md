@@ -1,11 +1,62 @@
 # liteinst2
 
-`liteinst2` is a Rust implementation of online x86-64 instrumentation using
-the instruction-punning techniques from PLDI 2016 and PLDI 2017.
+`liteinst2` is a Rust library for **hooking machine code in a running program**.
+It lets you intercept a chosen point in already-loaded x86-64 code — redirecting
+execution into your own function and then back — by rewriting instructions in
+place while the program keeps running, with no recompilation and no need to stop
+every thread. This is a form of *dynamic binary instrumentation*: you would reach
+for it to trace, profile, intercept, or modify a program's behaviour at runtime.
+A common use is hooking a `syscall` instruction to observe or redirect the call.
 
-The crate is a standalone patching engine. It has no Hermit or Reverie
-dependency and contains no syscall, process-lifecycle, or tool policy. Its
-modules separate the main correctness boundaries:
+It is a standalone library: you link it into your own program (or into an
+`LD_PRELOAD` shim) and drive it yourself. It has no runtime framework and makes
+no policy decisions about processes, signals, or syscalls — those belong to the
+client that embeds it.
+
+## Instruction punning
+
+Overwriting live code is dangerous: another thread can fetch an instruction
+mid-edit and execute half of the old bytes and half of the new. `liteinst2`
+avoids this with *instruction punning* — a technique for x86-64 where a patch is
+published as a single atomic store that reuses ("puns") existing bytes so that
+every possible concurrent instruction fetch sees either the complete old
+instruction or the complete new one, never a torn mix. Split sites that cannot be
+covered by one atomic store use the guarded cross-modification protocol
+(WordPatch++) instead.
+
+The techniques come from two papers and from the original C++ library that
+introduced them:
+
+- Original implementation (C++): [iu-parfunc/liteinst](https://github.com/iu-parfunc/liteinst).
+- *Instruction Punning: Lightweight Instrumentation for x86-64* (PLDI 2016) —
+  the single-store punning technique.
+- *Living on the Edge: Rapid-Toggling Probes with Cross-Modification on x86*
+  (PLDI 2017,
+  [doi:10.1145/3062341.3062344](https://doi.org/10.1145/3062341.3062344)) — the
+  guarded split-site (WordPatch++) protocol.
+
+`liteinst2` is a Rust reimplementation of that work.
+
+## A first hook
+
+`replace_first` installs a hook over a two-byte instruction, mutates the saved
+register context, relocates the rest of the five-byte patch window, and toggles
+the hook off again:
+
+```console
+cargo run --example replace_first
+```
+
+The `preload_consumer` cdylib example shows how a consumer can own `LD_PRELOAD`
+delivery while depending on the policy-free core:
+
+```console
+cargo build --example preload_consumer
+```
+
+## How the crate is organised
+
+Each module owns one correctness boundary:
 
 - `cache_line`: overflow-safe patch-span classification.
 - `scanner`: fail-closed x86-64 decoding and cache-line crossing discovery.
@@ -16,12 +67,14 @@ modules separate the main correctness boundaries:
 - `trampoline`: near dual-mapped allocation, relocation, hook dispatch, CET-safe
   return, and async-signal-safe reverse-PC lookup.
 
-Clients with a ptrace slow path follow the exhaustive
+Clients that keep a ptrace slow path follow the exhaustive
 [patch-site decision tree](PATCH_SITE_DECISION_TREE.md): choose quiescent or
-concurrent publication, then select a direct pun, proved relocation, safe
-straddler bailout, or explicit ptrace fallback.
+concurrent publication, then select a direct pun, a proved relocation, a safe
+straddler bailout, or an explicit ptrace fallback.
 
-The implementation preserves six invariants established before the port:
+## Safety invariants
+
+The implementation maintains six invariants:
 
 1. A cross-cache-line patch must use guarded publication unless the caller
    proves that no concurrent instruction fetch or data access is possible.
@@ -33,22 +86,36 @@ The implementation preserves six invariants established before the port:
 6. Trampoline continuation uses a direct jump when reachable, with a CET NOTRACK
    indirect fallback, so an application continuation need not begin with ENDBR64.
 
-## Examples
+## What clients must provide
 
-`replace_first` installs a hook over a two-byte instruction, mutates its saved
-register context, relocates the rest of the five-byte patch window, and toggles
-the hook off again:
+These checks do not establish arbitrary-binary or probe-anywhere support.
+Generic hooks can displace several complete instructions, replace a short first
+instruction such as `syscall`, mutate the saved integer context, and use a
+dual-mapped arena prepared before signal-driven registration. Exact one-byte
+rapid puns still require the original bytes to encode a free trampoline
+destination. Clients must provide a trustworthy code region, writable access to
+the live patch word, mapping-lifecycle ownership, proof that no control-flow
+entry can target the interior of a relocated window, and a trap fallback when the
+planner returns `PunPlan::TrapRequired`.
 
-```console
-cargo run --example replace_first
-```
+Installed trampolines publish immutable generated-to-application PC ranges.
+Signal handlers and unwind front ends can call
+`trampoline::translate_program_counter` without allocation or locks before
+reporting or unwinding a relocated fault. This translates the logical PC; it
+does not install a signal handler or synthesize DWARF call-frame metadata.
+The ordinary `LiveJumpPatch` and `InstalledHook` entrypoints use concurrent-safe
+publication. WordPatch++ guards every byte before a cache-line split as
+specified by PLDI 2017, but callers must still supply a
+machine/topology-qualified `StalenessBudget`. A consumer without that
+calibration should route split sites to its ptrace/trap fallback instead of
+selecting `GuardedSplit`.
 
-The `preload_consumer` cdylib example shows how a consumer can own LD_PRELOAD
-delivery while depending on the policy-free core:
-
-```console
-cargo build --example preload_consumer
-```
+The unsafe `bind_quiescent`, `install_replacing_first_quiescent`, and matching
+activation entrypoints retain the same planning and relocation but skip trap
+registration and guarded split publication. They are valid only when the caller
+can exclude every other thread, signal handler, instruction fetch, and code
+writer for the complete publication call. They must not be used as a faster
+default for threaded applications.
 
 ## Development
 
@@ -70,35 +137,6 @@ GitHub Actions runs these blocking checks on Linux x86-64:
   signal delivery at its default scale.
 - `probe_overhead_benchmark` is used only as a functional active-hook loop: CI
   requires one callback per call but does not enforce its host-dependent timing.
-
-These checks do not establish arbitrary-binary or probe-anywhere support.
-Generic hooks can now displace several complete instructions, replace a short
-first instruction such as `syscall`, mutate the saved integer context, and use
-a dual-mapped arena prepared before signal-driven registration. Exact one-byte rapid
-puns still require the original bytes to encode a free trampoline destination.
-Clients must provide a trustworthy code region, writable access to the live
-patch word, mapping-lifecycle ownership, proof that no control-flow entry can
-target the interior of a relocated window, and a trap fallback when the
-planner returns `PunPlan::TrapRequired`.
-
-Installed trampolines publish immutable generated-to-application PC ranges.
-Signal handlers and unwind front ends can call
-`trampoline::translate_program_counter` without allocation or locks before
-reporting or unwinding a relocated fault. This translates the logical PC; it
-does not install a signal handler or synthesize DWARF call-frame metadata.
-The ordinary `LiveJumpPatch` and `InstalledHook` entrypoints use concurrent-safe
-publication. WordPatch++ guards every byte before a cache-line split as
-specified by PLDI 2017, but callers must still supply a
-machine/topology-qualified `StalenessBudget`. A consumer without that
-calibration should route split sites to its ptrace/trap fallback instead of
-selecting `GuardedSplit`.
-
-The unsafe `bind_quiescent`, `install_replacing_first_quiescent`, and matching
-activation entrypoints retain the same planning and relocation but skip trap
-registration and guarded split publication. They are valid only when the caller
-can exclude every other thread, signal handler, instruction fetch, and code
-writer for the complete publication call. They must not be used as a faster
-default for threaded applications.
 
 The live stress matrix and overhead benchmark are opt-in:
 
