@@ -29,7 +29,7 @@ jobs:
       - name: Check formatting
         run: cargo fmt --all -- --check
       - name: Lint all targets
-        run: cargo clippy --locked --all-targets --all-features -- -D warnings
+        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
 
   test:
     name: Linux x86_64 tests
@@ -39,9 +39,9 @@ jobs:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.85.0
       - name: Debug tests
-        run: cargo test --locked --all-targets --all-features
+        run: cargo test --locked --workspace --all-targets --all-features
       - name: Release tests
-        run: cargo test --locked --release --all-targets --all-features
+        run: cargo test --locked --release --workspace --all-targets --all-features
       - name: Verify published package consumer
         run: |
           package_root="$(mktemp -d)"
