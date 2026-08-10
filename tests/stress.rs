@@ -13,9 +13,7 @@ use std::time::{Duration, Instant};
 use liteinst2::patcher::{JumpPatchPlan, StalenessBudget};
 use liteinst2::rapid::{RapidProbe, RapidTogglePlan};
 use liteinst2::scanner::{InstructionScanner, ScanResult};
-use liteinst2::trampoline::{
-    HookContext, HookSite, InstalledHook, TrampolineError, TrampolinePlan,
-};
+use liteinst2::trampoline::{HookContext, HookSite, InstalledHook, TrampolinePlan};
 
 const PAGE_BYTES: usize = 4096;
 const CACHE_LINE_BYTES: usize = 64;
@@ -51,7 +49,7 @@ fn run_isolated(test_name: &str, body: fn()) {
     );
 }
 
-unsafe extern "C" fn record_hook(_context: *const HookContext) {
+unsafe extern "C" fn record_hook(_context: *mut HookContext) {
     HOOK_CALLS.fetch_add(1, Ordering::Relaxed);
 }
 
@@ -422,14 +420,9 @@ fn random_rips_and_real_libc_windows_never_panic() {
     let tiny_base = 0x20_003E_u64;
     let tiny = [0x48, 0x89, 0xF8, 0xC3, 0x90, 0x90, 0x90, 0x90];
     let tiny_scan = scanner.scan(&tiny, tiny_base).unwrap();
-    let error = TrampolinePlan::from_scan(&tiny_scan, tiny_base, record_hook).unwrap_err();
-    assert!(matches!(
-        error,
-        TrampolineError::InstructionTooShort {
-            instruction_len: 3,
-            ..
-        }
-    ));
+    let tiny_plan = TrampolinePlan::from_scan(&tiny_scan, tiny_base, record_hook).unwrap();
+    assert_eq!(tiny_plan.displaced_len(), 5);
+    assert_eq!(tiny_plan.return_address(), tiny_base + 5);
     assert!(tiny_scan.site(tiny_base + 1).is_none());
 
     let symbols = [
