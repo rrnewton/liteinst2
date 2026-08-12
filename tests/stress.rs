@@ -1,3 +1,4 @@
+#![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 
 use core::ffi::c_void;
