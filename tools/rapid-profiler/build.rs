@@ -1,3 +1,4 @@
+#![deny(warnings)]
 //! Auto-compile the profiler's punning fixture so `cargo run -p rapid-profiler`
 //! Just Works with no manual clang step.
 //!

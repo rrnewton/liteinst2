@@ -1,3 +1,4 @@
+#![deny(warnings)]
 //! Minimal consumer-owned LD_PRELOAD entry point.
 //!
 //! Build this example as a cdylib and put the resulting shared object in

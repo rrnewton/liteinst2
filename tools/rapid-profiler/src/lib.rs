@@ -1,3 +1,4 @@
+#![deny(warnings)]
 //! Bounded rapid-probe profiling for compiler-marked x86-64 functions.
 
 #![forbid(unsafe_op_in_unsafe_fn)]
