@@ -25,6 +25,7 @@ mod native {
     const LIMIT: Duration = Duration::from_secs(5);
     static TRACK: AtomicBool = AtomicBool::new(false);
     static META: AtomicUsize = AtomicUsize::new(0);
+    static META_PROT: AtomicI32 = AtomicI32::new(-1);
     static META_UNMAPS: AtomicUsize = AtomicUsize::new(0);
     static META_ABSENT: AtomicBool = AtomicBool::new(false);
     static CLOSE_ERROR: AtomicBool = AtomicBool::new(false);
@@ -61,6 +62,7 @@ mod native {
             && flags == (libc::MAP_SHARED | libc::MAP_ANONYMOUS)
         {
             META.store(result as usize, Ordering::Relaxed);
+            META_PROT.store(prot, Ordering::Relaxed);
         }
         if TRACK.load(Ordering::Relaxed)
             && result != libc::MAP_FAILED
@@ -596,6 +598,11 @@ mod native {
                 "wrong constructor failure: {error}"
             );
             assert_eq!(REAL_CLOSE_RESULT.load(Ordering::Relaxed), 0);
+            assert_eq!(
+                META_PROT.load(Ordering::Relaxed),
+                libc::PROT_READ | libc::PROT_WRITE,
+                "arena metadata must remain non-executable"
+            );
             let replacement = REPLACEMENT.load(Ordering::Relaxed);
             assert_eq!(replacement, original_fd);
             assert!(replacement >= 0);
