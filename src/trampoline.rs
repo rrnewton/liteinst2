@@ -867,15 +867,20 @@ fn append_relocated_program_counter_mappings(
 /// but it is not strict W^X because executable bytes remain writable through
 /// the separate RW alias. Clients that need a stronger write-after-publish
 /// boundary must not use this arena API.
+///
+/// Fork-related processes share the reservation cursor and the configured slot
+/// budget. A separate non-executable shared metadata page prevents their code
+/// publications from reusing the same slot after a copy-on-write fork. That
+/// page, like the code aliases, remains mapped for the process lifetime.
 pub struct TrampolineArena {
     writable: *mut u8,
     executable: *mut u8,
     len: usize,
-    next: AtomicUsize,
+    next: *const AtomicUsize,
 }
 
-// SAFETY: slots are reserved atomically and never reused; the mappings live for
-// the process lifetime.
+// SAFETY: the initialized cursor is process-shared, slots are reserved atomically
+// and never reused, and all three mappings live for the process lifetime.
 unsafe impl Send for TrampolineArena {}
 // SAFETY: see Send; writers receive disjoint slots before publishing bytes.
 unsafe impl Sync for TrampolineArena {}
@@ -918,15 +923,9 @@ impl TrampolineArena {
         if !self.can_reach(plan.execute_address()) {
             return Err(TrampolineError::NoReachableMapping);
         }
-        let offset = self
-            .next
-            .fetch_add(TRAMPOLINE_ALLOCATION_BYTES, Ordering::AcqRel);
-        let end = offset
-            .checked_add(TRAMPOLINE_ALLOCATION_BYTES)
-            .ok_or(TrampolineError::ArenaFull)?;
-        if end > self.len {
-            return Err(TrampolineError::ArenaFull);
-        }
+        // SAFETY: successful construction initialized this shared atomic and
+        // transferred its mapping to process-lifetime ownership.
+        let offset = reserve_arena_slot(unsafe { &*self.next }, self.len)?;
         let address = (self.executable as usize).checked_add(offset).ok_or(
             TrampolineError::AddressNotRepresentable {
                 address: self.executable as usize as u64,
@@ -958,6 +957,17 @@ impl TrampolineArena {
             program_counters_published: AtomicBool::new(false),
         })
     }
+}
+
+fn reserve_arena_slot(next: &AtomicUsize, len: usize) -> Result<usize, TrampolineError> {
+    // This reserves exclusive storage; it does not publish completed code.
+    // Saturation prevents failed reservations from wrapping and reusing bytes.
+    next.fetch_update(Ordering::AcqRel, Ordering::Acquire, |offset| {
+        offset
+            .checked_add(TRAMPOLINE_ALLOCATION_BYTES)
+            .filter(|end| *end <= len)
+    })
+    .map_err(|_| TrampolineError::ArenaFull)
 }
 
 /// Process-lifetime executable trampoline mapping.
@@ -1412,6 +1422,46 @@ impl InstalledHook {
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+struct PendingReservation {
+    address: *mut AtomicUsize,
+    len: usize,
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+impl PendingReservation {
+    fn new() -> Result<Self, TrampolineError> {
+        let len = page_size()?;
+        // SAFETY: a fresh page-aligned shared mapping is large enough for the
+        // atomic. It has no executable alias and no owner can see it yet.
+        let address = unsafe {
+            libc::mmap(
+                core::ptr::null_mut(),
+                len,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_SHARED | libc::MAP_ANONYMOUS,
+                -1,
+                0,
+            )
+        };
+        if address == libc::MAP_FAILED {
+            return Err(os_error("mmap shared arena reservation"));
+        }
+        let address = address.cast::<AtomicUsize>();
+        // SAFETY: this constructor uniquely owns aligned, writable storage.
+        unsafe { address.write(AtomicUsize::new(0)) };
+        Ok(Self { address, len })
+    }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+impl Drop for PendingReservation {
+    fn drop(&mut self) {
+        // SAFETY: the guard still owns this unpublished metadata mapping.
+        unsafe { libc::munmap(self.address.cast(), self.len) };
+    }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 struct PendingMapping {
     fd: libc::c_int,
     writable: *mut libc::c_void,
@@ -1527,19 +1577,25 @@ impl PendingMapping {
     }
 
     fn into_arena(mut self) -> Result<TrampolineArena, TrampolineError> {
+        let next = PendingReservation::new()?;
+        // Linux may release a descriptor even when close reports an error.
+        // Disarm ownership before attempting close so Drop cannot close a
+        // subsequently reused descriptor number. Both mapping guards remain
+        // live through this last fallible construction operation.
+        let fd = core::mem::replace(&mut self.fd, -1);
         // SAFETY: fd is live; both mappings retain their backing object.
-        if unsafe { libc::close(self.fd) } != 0 {
+        if unsafe { libc::close(fd) } != 0 {
             return Err(os_error("close trampoline arena memfd"));
         }
-        self.fd = -1;
         let arena = TrampolineArena {
             writable: self.writable.cast(),
             executable: self.executable.cast(),
             len: self.len,
-            next: AtomicUsize::new(0),
+            next: next.address,
         };
         self.writable = core::ptr::null_mut();
         self.executable = core::ptr::null_mut();
+        core::mem::forget(next);
         Ok(arena)
     }
 
@@ -1771,6 +1827,73 @@ mod tests {
     use crate::scanner::InstructionScanner;
 
     unsafe extern "C" fn noop_hook(_context: *mut HookContext) {}
+
+    #[test]
+    fn exhausted_arena_reservation_cannot_wrap_and_reuse_storage() {
+        use core::sync::atomic::{AtomicUsize, Ordering};
+        let near_wrap = usize::MAX - (super::TRAMPOLINE_ALLOCATION_BYTES - 1);
+        let last_start = near_wrap - super::TRAMPOLINE_ALLOCATION_BYTES;
+        let cursor = AtomicUsize::new(last_start);
+        assert_eq!(
+            super::reserve_arena_slot(&cursor, usize::MAX).unwrap(),
+            last_start
+        );
+        assert_eq!(cursor.load(Ordering::Acquire), near_wrap);
+        for _ in 0..32 {
+            assert!(matches!(
+                super::reserve_arena_slot(&cursor, usize::MAX),
+                Err(TrampolineError::ArenaFull)
+            ));
+            assert_eq!(cursor.load(Ordering::Acquire), near_wrap);
+        }
+        let cursor = AtomicUsize::new(super::TRAMPOLINE_ALLOCATION_BYTES);
+        assert!(matches!(
+            super::reserve_arena_slot(&cursor, super::TRAMPOLINE_ALLOCATION_BYTES),
+            Err(TrampolineError::ArenaFull)
+        ));
+        assert_eq!(
+            cursor.load(Ordering::Acquire),
+            super::TRAMPOLINE_ALLOCATION_BYTES
+        );
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn failed_emission_consumes_its_slot_without_overwriting_published_bytes() {
+        let address = noop_hook as *const () as usize as u64;
+        let scan = InstructionScanner::default()
+            .scan(&[0xb8, 11, 0, 0, 0, 0xc3], address)
+            .unwrap();
+        let plan = TrampolinePlan::from_scan(&scan, address, noop_hook).unwrap();
+        let arena = super::TrampolineArena::allocate_near(address, 3).unwrap();
+        let first = arena.allocate(&plan).unwrap().address();
+        let first_image = plan.emit_at(first).unwrap();
+        // Public plan construction rejects malformed input. Construct an invalid
+        // instruction here to exercise the real encoder error after reservation.
+        let mut malformed = plan.clone();
+        malformed.instructions[0] = iced_x86::Instruction::default();
+        assert!(matches!(
+            arena.allocate(&malformed),
+            Err(TrampolineError::Encoding { .. })
+        ));
+        let third = arena.allocate(&plan).unwrap().address();
+        assert_eq!(third - first, 2 * super::TRAMPOLINE_ALLOCATION_BYTES as u64);
+        assert!(matches!(
+            arena.allocate(&plan),
+            Err(TrampolineError::ArenaFull)
+        ));
+        // SAFETY: these are process-lifetime RX mappings of three real slots.
+        let retained =
+            unsafe { core::slice::from_raw_parts(first as *const u8, first_image.bytes().len()) };
+        assert_eq!(retained, first_image.bytes());
+        let failed_slot = unsafe {
+            core::slice::from_raw_parts(
+                (first as usize + super::TRAMPOLINE_ALLOCATION_BYTES) as *const u8,
+                super::TRAMPOLINE_ALLOCATION_BYTES,
+            )
+        };
+        assert!(failed_slot.iter().all(|byte| *byte == 0));
+    }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     #[test]

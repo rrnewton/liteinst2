@@ -36,3 +36,7 @@ iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "d
 libc = "0.2.186"
 memmap2 = "0.9.11"
 nix = { version = "0.31.3", features = ["mman", "process", "signal"] }
+
+[[bin]]
+name = "liteinst2-arena-fork-fixture"
+path = "tests/support/arena_fork_fixture.rs"
