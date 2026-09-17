@@ -10,8 +10,8 @@ use core::fmt;
 use core::sync::atomic::{AtomicBool, AtomicPtr, AtomicU8, AtomicUsize, Ordering, compiler_fence};
 
 use iced_x86::{
-    BlockEncoder, BlockEncoderOptions, Decoder, DecoderOptions, Instruction, InstructionBlock,
-    Mnemonic, OpKind,
+    BlockEncoder, BlockEncoderOptions, BlockEncoderResult, Decoder, DecoderOptions, Instruction,
+    InstructionBlock, Mnemonic, OpKind,
     code_asm::{
         CodeAssembler, eax, edx, qword_ptr, r8, r9, r10, r11, r12, r13, r14, r15, rax, rbp, rbx,
         rcx, rdi, rdx, rsi, rsp,
@@ -172,7 +172,7 @@ pub struct HookContext {
 pub struct TrampolineLayout {
     /// Context-save and instrumentation-call bytes.
     pub instrumentation_len: usize,
-    /// Relocated application instruction bytes.
+    /// Relocated instructions, including any jump over encoder padding and literals.
     pub relocated_len: usize,
     /// Context-restore bytes.
     pub restore_len: usize,
@@ -209,7 +209,8 @@ impl TrampolineImage {
         self.layout
     }
 
-    /// Returns generated ranges and their corresponding application PCs.
+    /// Returns executable ranges and their corresponding application PCs.
+    /// Encoder padding and literal data have no application PC mapping.
     pub fn program_counter_mappings(&self) -> &[ProgramCounterMapping] {
         &self.program_counters
     }
@@ -265,7 +266,8 @@ static PROGRAM_COUNTER_MAP_HEAD: AtomicPtr<ProgramCounterMapNode> =
 ///
 /// Published mappings live for the process lifetime. This lookup performs only
 /// atomic loads and immutable reads, so it can be called from a signal handler.
-/// Returning `None` means the PC is not in a LiteInst2 trampoline.
+/// Returning `None` means the PC is not in a published executable range;
+/// trampoline padding and literal data are not executable ranges.
 pub fn translate_program_counter(program_counter: u64) -> Option<u64> {
     let mut node = PROGRAM_COUNTER_MAP_HEAD.load(Ordering::Acquire);
     while !node.is_null() {
@@ -586,17 +588,9 @@ impl TrampolinePlan {
                 .checked_add(restore.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let relocated_instructions = &self.instructions[self.relocated_start..];
-            let (relocated, relocated_offsets) = if relocated_instructions.is_empty() {
-                (Vec::new(), Vec::new())
-            } else {
-                let encoded = BlockEncoder::encode(
-                    64,
-                    InstructionBlock::new(relocated_instructions, relocated_address),
-                    BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS,
-                )
-                .map_err(encoding_error)?;
-                (encoded.code_buffer, encoded.new_instruction_offsets)
-            };
+            let (encoded, terminal_jump_offset) =
+                encode_relocated_block(relocated_instructions, relocated_address)?;
+            let relocated = encoded.code_buffer;
             let return_jump_address = relocated_address
                 .checked_add(relocated.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
@@ -628,10 +622,25 @@ impl TrampolinePlan {
             append_relocated_program_counter_mappings(
                 &mut program_counters,
                 relocated_address,
-                &relocated,
+                &relocated[..terminal_jump_offset.unwrap_or(relocated.len())],
                 relocated_instructions,
-                &relocated_offsets,
+                &encoded.new_instruction_offsets,
             )?;
+            if let Some(offset) = terminal_jump_offset {
+                // The terminal transfer represents the continuation. Padding
+                // and pointers after it are data, not displaced instructions.
+                push_program_counter_mapping(
+                    &mut program_counters,
+                    relocated_address + offset as u64,
+                    relocated_address + offset as u64 + NEAR_RETURN_JUMP_BYTES as u64,
+                    self.return_address,
+                );
+            }
+            let return_code_len = if return_jump.len() == NOTRACK_ABSOLUTE_JUMP_BYTES {
+                return_jump.len() - core::mem::size_of::<u64>()
+            } else {
+                return_jump.len()
+            };
             let return_jump_end = return_jump_address
                 .checked_add(return_jump.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable {
@@ -640,7 +649,7 @@ impl TrampolinePlan {
             push_program_counter_mapping(
                 &mut program_counters,
                 return_jump_address,
-                return_jump_end,
+                return_jump_end - (return_jump.len() - return_code_len) as u64,
                 self.return_address,
             );
             Ok(TrampolineImage {
@@ -708,7 +717,7 @@ fn encode_restore(address: u64, extended_state: ExtendedState) -> Result<Vec<u8>
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-fn encoding_error(error: iced_x86::IcedError) -> TrampolineError {
+fn encoding_error(error: impl fmt::Display) -> TrampolineError {
     TrampolineError::Encoding {
         message: error.to_string(),
     }
@@ -757,6 +766,86 @@ fn push_program_counter_mapping(
         generated_end,
         logical_address,
     });
+}
+
+// A block encoder appends aligned pointer data after its instructions. A far
+// conditional branch's fallthrough, or a far CALL's return, must not enter that
+// data. Reserve a fixed-width terminal E9 *inside* the encoded block, then patch
+// its displacement to the existing return stub after the complete buffer.
+// No bytes are inserted after encoding: all RIP-relative fixups retain their
+// encoder-computed locations. Blocks without pointer data keep their layout.
+fn encode_relocated_block(
+    instructions: &[Instruction],
+    address: u64,
+) -> Result<(BlockEncoderResult, Option<usize>), TrampolineError> {
+    let options = BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS
+        | BlockEncoderOptions::RETURN_RELOC_INFOS;
+    let mut encoded =
+        BlockEncoder::encode(64, InstructionBlock::new(instructions, address), options)
+            .map_err(encoding_error)?;
+    if encoded.reloc_infos.is_empty() {
+        return Ok((encoded, None));
+    }
+
+    const TERMINAL_JUMP: [u8; NEAR_RETURN_JUMP_BYTES] = [0xE9, 0, 0, 0, 0];
+    let mut terminal = Instruction::with_declare_byte(&TERMINAL_JUMP).map_err(encoding_error)?;
+    // Give this encoder directive an unused original IP. Otherwise the encoder
+    // could redirect an application branch or RIP-relative operand to it.
+    // Each displaced instruction excludes at most three values, so this search
+    // ends after at most three times the number of instructions plus one.
+    let mut terminal_ip = 0_u64;
+    while instructions.iter().any(|instruction| {
+        instruction.ip() == terminal_ip
+            || instruction.near_branch_target() == terminal_ip
+            || (instruction.is_ip_rel_memory_operand()
+                && instruction.ip_rel_memory_address() == terminal_ip)
+    }) {
+        terminal_ip = terminal_ip
+            .checked_add(1)
+            .ok_or_else(|| encoding_error("no unused terminal instruction IP"))?;
+    }
+    terminal.set_ip(terminal_ip);
+    let mut terminated = instructions.to_vec();
+    terminated.push(terminal);
+    encoded = BlockEncoder::encode(64, InstructionBlock::new(&terminated, address), options)
+        .map_err(encoding_error)?;
+    // DeclareByte is a fixed-size encoder directive, not an optimizable branch.
+    // Its returned offset is the executable/data boundary, without decoding any
+    // pointer bytes (which can themselves look like valid instructions).
+    let offset = encoded
+        .new_instruction_offsets
+        .pop()
+        .filter(|offset| *offset != u32::MAX)
+        .ok_or_else(|| encoding_error("missing terminal jump offset"))? as usize;
+    let end = offset
+        .checked_add(TERMINAL_JUMP.len())
+        .ok_or_else(|| encoding_error("terminal jump offset overflow"))?;
+    if encoded.code_buffer.get(offset..end) != Some(TERMINAL_JUMP.as_slice()) {
+        return Err(encoding_error(
+            "terminal jump reservation was not preserved",
+        ));
+    }
+    address
+        .checked_add(encoded.code_buffer.len() as u64)
+        .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+    if encoded
+        .reloc_infos
+        .iter()
+        .any(|info| info.address < address + end as u64)
+    {
+        return Err(encoding_error(
+            "encoder literal overlaps executable instructions",
+        ));
+    }
+    let data_len = encoded
+        .code_buffer
+        .len()
+        .checked_sub(end)
+        .ok_or_else(|| encoding_error("terminal jump exceeds encoded block"))?;
+    let displacement = i32::try_from(data_len)
+        .map_err(|_| encoding_error("encoder literal table exceeds signed rel32 reach"))?;
+    encoded.code_buffer[offset + 1..end].copy_from_slice(&displacement.to_le_bytes());
+    Ok((encoded, Some(offset)))
 }
 
 fn append_relocated_program_counter_mappings(
@@ -2122,6 +2211,112 @@ mod tests {
                 relocated_address + 2 * expanded_len
             );
         }
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn far_tail_code_and_data_have_distinct_pc_mappings() {
+        let base = 0x1_8000_0000_u64;
+        let target = 0x1_1000_0000_u64;
+        for call in [false, true] {
+            let mut code = if call {
+                vec![0xE8]
+            } else {
+                vec![0x85, 0xFF, 0x0F, 0x84]
+            };
+            let original_len = if call { 5 } else { 8 };
+            let displacement =
+                i32::try_from(i128::from(target) - i128::from(base + original_len)).unwrap();
+            code.extend_from_slice(&displacement.to_le_bytes());
+            let plan = plan(&code, base).unwrap();
+            for start in [base + 0x7000_0000, 0x4_0000_0000] {
+                // Exercise every pointer-table alignment, for both final returns.
+                for alignment in 0..8 {
+                    let address = start + alignment;
+                    let image = plan.emit_at(address).unwrap();
+                    let layout = image.layout();
+                    let relocated = layout.instrumentation_len + layout.restore_len;
+                    let return_offset = relocated + layout.relocated_len;
+                    let terminal = relocated + if call { 6 } else { 10 };
+                    let translate = |offset: usize| {
+                        image
+                            .program_counter_mappings()
+                            .iter()
+                            .find_map(|mapping| mapping.translate(address + offset as u64))
+                    };
+                    for offset in relocated..terminal {
+                        let logical = if call || offset < relocated + 2 {
+                            base
+                        } else {
+                            base + 2
+                        };
+                        assert_eq!(translate(offset), Some(logical));
+                    }
+                    assert_eq!(image.bytes()[terminal], 0xE9);
+                    let displacement = i32::from_le_bytes(
+                        image.bytes()[terminal + 1..terminal + 5]
+                            .try_into()
+                            .unwrap(),
+                    );
+                    assert_eq!(
+                        i128::from(address + terminal as u64 + 5) + i128::from(displacement),
+                        i128::from(address + return_offset as u64)
+                    );
+                    for offset in terminal..terminal + 5 {
+                        assert_eq!(translate(offset), Some(plan.return_address()));
+                    }
+                    for offset in terminal + 5..return_offset {
+                        assert_eq!(translate(offset), None, "data offset {offset}");
+                    }
+                    assert_eq!(
+                        &image.bytes()[return_offset - 8..return_offset],
+                        &target.to_le_bytes()
+                    );
+                    assert!(
+                        image.bytes()[terminal + 5..return_offset - 8]
+                            .iter()
+                            .all(|byte| *byte == 0xCC)
+                    );
+                    let return_code_len = if layout.return_len == 5 { 5 } else { 7 };
+                    assert_eq!(
+                        layout.return_len,
+                        if start == base + 0x7000_0000 { 5 } else { 15 }
+                    );
+                    for offset in return_offset..return_offset + return_code_len {
+                        assert_eq!(translate(offset), Some(plan.return_address()));
+                    }
+                    for offset in return_offset + return_code_len..image.bytes().len() {
+                        assert_eq!(
+                            translate(offset),
+                            None,
+                            "final return literal offset {offset}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn terminal_instruction_does_not_capture_low_application_targets() {
+        let mut branch =
+            iced_x86::Instruction::with_branch(iced_x86::Code::Jne_rel8_64, 1).unwrap();
+        branch.set_ip(0);
+        let mut jump = iced_x86::Instruction::with_branch(iced_x86::Code::Jmp_rel8_64, 2).unwrap();
+        jump.set_ip(3);
+        let address = 0x4_0000_0000;
+        let (encoded, terminal) = super::encode_relocated_block(&[branch, jump], address).unwrap();
+        assert!(terminal.is_some());
+        let targets: Vec<_> = encoded
+            .reloc_infos
+            .iter()
+            .map(|info| {
+                let offset = (info.address - address) as usize;
+                u64::from_le_bytes(encoded.code_buffer[offset..offset + 8].try_into().unwrap())
+            })
+            .collect();
+        assert_eq!(targets, [1, 2]);
+        assert_eq!(encoded.new_instruction_offsets, [u32::MAX, u32::MAX]);
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
