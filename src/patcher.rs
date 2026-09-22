@@ -13,13 +13,27 @@
 use core::fmt;
 use core::num::NonZeroU64;
 #[cfg(target_arch = "x86_64")]
-use core::sync::atomic::{AtomicU64, Ordering, compiler_fence};
+use core::sync::atomic::AtomicU64;
+#[cfg(target_arch = "x86_64")]
+use core::sync::atomic::Ordering;
+#[cfg(target_arch = "x86_64")]
+use core::sync::atomic::compiler_fence;
 
-use iced_x86::{Instruction, OpKind};
+use iced_x86::Instruction;
+use iced_x86::OpKind;
 
 use crate::cache_line::CacheLineSize;
-use crate::scanner::{InstructionScanner, ScanError, ScanResult};
-use crate::trap::{TrapError, TrapSite};
+use crate::scanner::InstructionScanner;
+use crate::scanner::ScanError;
+use crate::scanner::ScanResult;
+pub use crate::trap::GuardDefaultRestorer;
+pub use crate::trap::GuardSignalAction;
+pub use crate::trap::GuardSignalHandler;
+pub use crate::trap::GuardSignalInstaller;
+pub use crate::trap::GuardSignalRuntime;
+pub use crate::trap::GuardSignalUnblocker;
+use crate::trap::TrapError;
+use crate::trap::TrapSite;
 
 /// x86 near-jump opcode used to redirect execution to a trampoline.
 pub const NEAR_JUMP_OPCODE: u8 = 0xE9;
@@ -78,7 +92,8 @@ impl StalenessBudget {
 
     #[cfg(target_arch = "x86_64")]
     fn wait(self) {
-        use core::arch::x86_64::{_mm_lfence, _rdtsc};
+        use core::arch::x86_64::_mm_lfence;
+        use core::arch::x86_64::_rdtsc;
         use core::hint::spin_loop;
 
         compiler_fence(Ordering::SeqCst);
@@ -771,6 +786,29 @@ pub fn prepare_live_patching() -> Result<(), PatchError> {
     crate::trap::prepare().map_err(map_trap_error)
 }
 
+/// Installs the process-wide guard router through host-owned exact signal
+/// operations.
+///
+/// Use this before a syscall filter that permits signal return only at a
+/// runtime-owned restorer. During single-threaded preparation, the installer
+/// must retain a blocked SIGTRAP mask until the matching callback restores it
+/// after prior-action publication. The callbacks also preserve default-action
+/// chaining without issuing libc-site syscalls from inside the guard handler.
+///
+/// # Safety
+///
+/// Every callback must satisfy the complete contract on its public type,
+/// including initialization of the prior-action output on success, exact
+/// signal-mask retention/restoration, async-signal safety where documented,
+/// and no unwinding across the callback boundary. Preparation must occur while
+/// the process is single-threaded and before installing the restrictive filter.
+pub unsafe fn prepare_live_patching_with_signal_runtime(
+    runtime: GuardSignalRuntime,
+) -> Result<(), PatchError> {
+    // SAFETY: forwarded from this function's callback and lifecycle contract.
+    unsafe { crate::trap::prepare_with_signal_runtime(runtime) }.map_err(map_trap_error)
+}
+
 fn map_trap_error(error: TrapError) -> PatchError {
     match error {
         TrapError::Contended => PatchError::Contended,
@@ -953,7 +991,11 @@ unsafe fn publish_cross_line(
 
 #[cfg(test)]
 mod tests {
-    use super::{JumpPatchPlan, NEAR_JUMP_OPCODE, PatchError, PatchStrategy, classify_word_patch};
+    use super::JumpPatchPlan;
+    use super::NEAR_JUMP_OPCODE;
+    use super::PatchError;
+    use super::PatchStrategy;
+    use super::classify_word_patch;
     use crate::cache_line::CacheLineSize;
     use crate::scanner::InstructionScanner;
 
@@ -1089,12 +1131,16 @@ mod tests {
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     mod live {
-        use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+        use core::sync::atomic::AtomicBool;
+        use core::sync::atomic::AtomicU64;
+        use core::sync::atomic::Ordering;
         use std::sync::Arc;
         use std::thread;
 
         use super::JumpPatchPlan;
-        use crate::patcher::{LiveJumpPatch, PatchError, StalenessBudget};
+        use crate::patcher::LiveJumpPatch;
+        use crate::patcher::PatchError;
+        use crate::patcher::StalenessBudget;
         use crate::scanner::InstructionScanner;
 
         const PAGE_BYTES: usize = 4096;

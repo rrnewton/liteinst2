@@ -2,21 +2,30 @@
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 
 use core::ffi::c_void;
-use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use core::sync::atomic::AtomicBool;
+use core::sync::atomic::AtomicU64;
+use core::sync::atomic::Ordering;
 use std::ffi::CString;
 use std::hint::black_box;
 use std::process::Command;
 use std::ptr;
-use std::sync::{Arc, Barrier};
+use std::sync::Arc;
+use std::sync::Barrier;
 use std::thread;
-use std::time::{Duration, Instant};
+use std::time::Duration;
+use std::time::Instant;
 
-use liteinst2::patcher::{JumpPatchPlan, StalenessBudget};
-use liteinst2::rapid::{RapidProbe, RapidTogglePlan};
-use liteinst2::scanner::{InstructionScanner, ScanResult};
-use liteinst2::trampoline::{
-    HookContext, HookSite, InstalledHook, TrampolinePlan, translate_program_counter,
-};
+use liteinst2::patcher::JumpPatchPlan;
+use liteinst2::patcher::StalenessBudget;
+use liteinst2::rapid::RapidProbe;
+use liteinst2::rapid::RapidTogglePlan;
+use liteinst2::scanner::InstructionScanner;
+use liteinst2::scanner::ScanResult;
+use liteinst2::trampoline::HookContext;
+use liteinst2::trampoline::HookSite;
+use liteinst2::trampoline::InstalledHook;
+use liteinst2::trampoline::TrampolinePlan;
+use liteinst2::trampoline::translate_program_counter;
 
 const PAGE_BYTES: usize = 4096;
 const CACHE_LINE_BYTES: usize = 64;
@@ -24,10 +33,11 @@ const SITE_OFFSET: usize = 60;
 const TARGET_OFFSET: usize = 128;
 const EXECUTOR_THREADS: usize = 4;
 const TOGGLER_THREADS: usize = 4;
+const ISOLATED_FAULT_TIMEOUT: Duration = Duration::from_secs(30);
+const ISOLATED_BODY_SUCCESS_EXIT: libc::c_int = 102;
 
 static HOOK_CALLS: AtomicU64 = AtomicU64::new(0);
 static EXECUTED_CALLS: AtomicU64 = AtomicU64::new(0);
-static TRAP_SIGNALS: AtomicU64 = AtomicU64::new(0);
 static USER_SIGNALS: AtomicU64 = AtomicU64::new(0);
 static FAULT_ORIGINAL_PC: AtomicU64 = AtomicU64::new(0);
 static FAULT_GENERATED_PC: AtomicU64 = AtomicU64::new(0);
@@ -36,21 +46,53 @@ const ISOLATED_STRESS_ENV: &str = "LITEINST_ISOLATED_STRESS_TEST";
 
 // AUTONOMOUS-BOT-IMPLEMENTED
 // TODO-HUMAN-REVIEW(#10): Review the subprocess boundary for global signal state.
-fn run_isolated(test_name: &str, body: fn()) {
+fn run_isolated(test_name: &str, timeout: Option<Duration>, body: fn()) {
     if std::env::var(ISOLATED_STRESS_ENV).as_deref() == Ok(test_name) {
         body();
-        return;
+        // SAFETY: this process exists only to isolate the selected test body.
+        unsafe { libc::_exit(ISOLATED_BODY_SUCCESS_EXIT) };
     }
 
     let executable = std::env::current_exe().expect("failed to locate stress test executable");
-    let status = Command::new(executable)
-        .args(["--exact", test_name, "--ignored", "--nocapture"])
+    let mut command = Command::new(executable);
+    command.args(["--exact", test_name, "--include-ignored", "--nocapture"]);
+    let mut child = command
         .env(ISOLATED_STRESS_ENV, test_name)
-        .status()
+        .spawn()
         .expect("failed to launch isolated stress test");
-    assert!(
-        status.success(),
-        "isolated stress test {test_name} failed: {status}"
+    let status = if let Some(timeout) = timeout {
+        let deadline = Instant::now() + timeout;
+        loop {
+            match child.try_wait() {
+                Ok(Some(status)) => break status,
+                Ok(None) if Instant::now() < deadline => {
+                    thread::sleep(Duration::from_millis(10));
+                }
+                Ok(None) => {
+                    child
+                        .kill()
+                        .expect("failed to kill timed-out isolated stress test");
+                    child
+                        .wait()
+                        .expect("failed to reap timed-out isolated stress test");
+                    panic!("isolated stress test {test_name} timed out after {timeout:?}");
+                }
+                Err(error) => {
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    panic!("failed to poll isolated stress test {test_name}: {error}");
+                }
+            }
+        }
+    } else {
+        child
+            .wait()
+            .expect("failed to wait for isolated stress test")
+    };
+    assert_eq!(
+        status.code(),
+        Some(ISOLATED_BODY_SUCCESS_EXIT),
+        "isolated stress test {test_name} did not return its authenticated body receipt: {status}"
     );
 }
 
@@ -59,14 +101,8 @@ unsafe extern "C" fn record_hook(_context: *mut HookContext) {
 }
 
 extern "C" fn count_signal(signal: libc::c_int) {
-    match signal {
-        libc::SIGTRAP => {
-            TRAP_SIGNALS.fetch_add(1, Ordering::Relaxed);
-        }
-        libc::SIGUSR1 => {
-            USER_SIGNALS.fetch_add(1, Ordering::Relaxed);
-        }
-        _ => {}
+    if signal == libc::SIGUSR1 {
+        USER_SIGNALS.fetch_add(1, Ordering::Relaxed);
     }
 }
 
@@ -79,6 +115,19 @@ fn install_counting_handler(signal: libc::c_int) {
         libc::sigemptyset(&mut action.sa_mask);
         assert_eq!(libc::sigaction(signal, &action, ptr::null_mut()), 0);
     }
+}
+
+fn install_ignored_handler(signal: libc::c_int) {
+    // SAFETY: every field consumed by sigaction is initialized below.
+    let mut action: libc::sigaction = unsafe { core::mem::zeroed() };
+    action.sa_sigaction = libc::SIG_IGN;
+    // SAFETY: action owns a valid signal set.
+    assert_eq!(unsafe { libc::sigemptyset(&mut action.sa_mask) }, 0);
+    // SAFETY: action is fully initialized for the requested signal.
+    assert_eq!(
+        unsafe { libc::sigaction(signal, &action, core::ptr::null_mut()) },
+        0
+    );
 }
 
 extern "C" fn translate_fault_pc(
@@ -97,7 +146,13 @@ extern "C" fn translate_fault_pc(
     let matches = generated == FAULT_GENERATED_PC.load(Ordering::Relaxed)
         && translated == Some(FAULT_ORIGINAL_PC.load(Ordering::Relaxed));
     // SAFETY: _exit is async-signal-safe and terminates this isolated child.
-    unsafe { libc::_exit(if matches { 0 } else { 101 }) };
+    unsafe {
+        libc::_exit(if matches {
+            ISOLATED_BODY_SUCCESS_EXIT
+        } else {
+            101
+        })
+    };
 }
 
 fn install_fault_handler() {
@@ -386,10 +441,10 @@ fn relocated_fault_pc_translation_body() {
 }
 
 #[test]
-#[ignore = "isolated intentional SIGSEGV regression test"]
 fn relocated_fault_pc_translation() {
     run_isolated(
         "relocated_fault_pc_translation",
+        Some(ISOLATED_FAULT_TIMEOUT),
         relocated_fault_pc_translation_body,
     );
 }
@@ -444,10 +499,13 @@ fn join_threads(threads: Vec<thread::JoinHandle<()>>) {
 fn spawn_signal_flood(rounds: usize) -> thread::JoinHandle<()> {
     thread::spawn(move || {
         for iteration in 0..rounds {
-            // SAFETY: both signals have process-lifetime counting dispositions.
+            // SAFETY: SIGTRAP's prior SIG_IGN disposition is admitted by the
+            // guard router, which must delegate every unrelated trap to it.
             assert_eq!(unsafe { libc::raise(libc::SIGTRAP) }, 0);
             if iteration % 8 == 0 {
-                // SAFETY: getpid returns this process and SIGUSR1 is handled.
+                // SAFETY: getpid returns this process and SIGUSR1 has a
+                // process-lifetime counting disposition. Process-directed
+                // delivery lets an executor or toggler receive the signal.
                 assert_eq!(unsafe { libc::kill(libc::getpid(), libc::SIGUSR1) }, 0);
             }
         }
@@ -572,15 +630,18 @@ fn executable_mapping_end(maps: &str, address: usize) -> Option<usize> {
 #[test]
 #[ignore = "long-running M5 live stress matrix"]
 fn live_probe_stress_matrix() {
-    run_isolated("live_probe_stress_matrix", live_probe_stress_matrix_body);
+    run_isolated(
+        "live_probe_stress_matrix",
+        None,
+        live_probe_stress_matrix_body,
+    );
 }
 
 fn live_probe_stress_matrix_body() {
-    install_counting_handler(libc::SIGTRAP);
+    install_ignored_handler(libc::SIGTRAP);
     install_counting_handler(libc::SIGUSR1);
     HOOK_CALLS.store(0, Ordering::Relaxed);
     EXECUTED_CALLS.store(0, Ordering::Relaxed);
-    TRAP_SIGNALS.store(0, Ordering::Relaxed);
     USER_SIGNALS.store(0, Ordering::Relaxed);
 
     let rapid_functions = env_count("LITEINST_STRESS_RAPID_FUNCTIONS", 128, 1024);
@@ -627,14 +688,9 @@ fn live_probe_stress_matrix_body() {
     install_stop.store(true, Ordering::Release);
     join_threads(install_workers);
 
-    let before_trap = TRAP_SIGNALS.load(Ordering::Relaxed);
-    // SAFETY: the rapid registry must delegate this unrelated software signal.
+    // SAFETY: this unrelated trap must still reach the admitted prior SIG_IGN
+    // disposition after the router has been installed.
     assert_eq!(unsafe { libc::raise(libc::SIGTRAP) }, 0);
-    assert_eq!(
-        TRAP_SIGNALS.load(Ordering::Relaxed),
-        before_trap + 1,
-        "unknown SIGTRAP was not delegated"
-    );
     assert!(USER_SIGNALS.load(Ordering::Relaxed) > 0);
 
     let probes = Arc::new(probes);
@@ -760,7 +816,11 @@ fn probe_index(probe: &RapidProbe, executable_base: usize) -> usize {
 #[test]
 #[ignore = "release-mode M5 overhead benchmark"]
 fn probe_overhead_benchmark() {
-    run_isolated("probe_overhead_benchmark", probe_overhead_benchmark_body);
+    run_isolated(
+        "probe_overhead_benchmark",
+        None,
+        probe_overhead_benchmark_body,
+    );
 }
 
 fn probe_overhead_benchmark_body() {

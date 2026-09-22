@@ -13,6 +13,7 @@ include = [
     "Cargo.lock",
     "Cargo.toml",
     "LICENSE",
+    "PATCH_SITE_DECISION_TREE.md",
     "README.md",
     "examples/preload_consumer.rs",
     "examples/replace_first.rs",
