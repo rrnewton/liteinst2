@@ -7,108 +7,459 @@
 //! within signed rel32 reach and is never writable through its RX alias.
 
 use core::fmt;
-use core::sync::atomic::{AtomicBool, AtomicPtr, AtomicU8, AtomicUsize, Ordering, compiler_fence};
+use core::sync::atomic::AtomicBool;
+use core::sync::atomic::AtomicPtr;
+use core::sync::atomic::AtomicU8;
+use core::sync::atomic::AtomicUsize;
+use core::sync::atomic::Ordering;
+use core::sync::atomic::compiler_fence;
 
-use iced_x86::{
-    BlockEncoder, BlockEncoderOptions, BlockEncoderResult, Decoder, DecoderOptions, Instruction,
-    InstructionBlock, Mnemonic, OpKind,
-    code_asm::{
-        CodeAssembler, eax, edx, qword_ptr, r8, r9, r10, r11, r12, r13, r14, r15, rax, rbp, rbx,
-        rcx, rdi, rdx, rsi, rsp,
-    },
-};
+use iced_x86::BlockEncoder;
+use iced_x86::BlockEncoderOptions;
+use iced_x86::BlockEncoderResult;
+use iced_x86::Decoder;
+use iced_x86::DecoderOptions;
+use iced_x86::Instruction;
+use iced_x86::InstructionBlock;
+use iced_x86::Mnemonic;
+use iced_x86::OpKind;
+use iced_x86::code_asm::CodeAssembler;
+use iced_x86::code_asm::eax;
+use iced_x86::code_asm::edx;
+use iced_x86::code_asm::qword_ptr;
+use iced_x86::code_asm::r8;
+use iced_x86::code_asm::r9;
+use iced_x86::code_asm::r10;
+use iced_x86::code_asm::r11;
+use iced_x86::code_asm::r12;
+use iced_x86::code_asm::r13;
+use iced_x86::code_asm::r14;
+use iced_x86::code_asm::r15;
+use iced_x86::code_asm::rax;
+use iced_x86::code_asm::rbp;
+use iced_x86::code_asm::rbx;
+use iced_x86::code_asm::rcx;
+use iced_x86::code_asm::rdi;
+use iced_x86::code_asm::rdx;
+use iced_x86::code_asm::rsi;
+use iced_x86::code_asm::rsp;
 
-use crate::patcher::{JumpPatchPlan, LiveJumpPatch, PatchError, StalenessBudget};
-use crate::scanner::{InstructionScanner, ScanResult};
+use crate::patcher::JumpPatchPlan;
+use crate::patcher::LiveJumpPatch;
+use crate::patcher::PatchError;
+use crate::patcher::StalenessBudget;
+use crate::scanner::InstructionScanner;
+use crate::scanner::ScanResult;
 
 const SYSTEM_V_RED_ZONE_BYTES: i32 = 128;
 const SAVED_INTEGER_BYTES: i32 = 16 * 8;
 const HOOK_METADATA_BYTES: i32 = 2 * 8;
+const SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES: i32 = 4 * 8;
 const FXSAVE_BYTES: i32 = 512;
 const FXSAVE_ALIGNMENT: i32 = 16;
+/// Bytes below entry RSP occupied before the extended-state save allocation.
+///
+/// For ptrace-owned stacks, the HookContext base (live R12) is exactly this far
+/// below the controller-supplied stack top.
+pub const HOOK_CONTEXT_STACK_PREFIX_BYTES: usize = (SYSTEM_V_RED_ZONE_BYTES
+    + SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES
+    + SAVED_INTEGER_BYTES
+    + HOOK_METADATA_BYTES) as usize;
+const _: () = assert!(HOOK_CONTEXT_STACK_PREFIX_BYTES == 304);
+/// Maximum non-legacy xfeatures described by one emitted trampoline.
+///
+/// The current preservation mask has five such bits. Keeping spare entries
+/// permits conservative growth while construction still fails rather than
+/// truncating whenever an exact mask cannot fit.
+pub const SAVED_EXTENDED_STATE_COMPONENT_CAPACITY: usize = 8;
 const NEAR_RETURN_JUMP_BYTES: usize = 5;
 const NOTRACK_ABSOLUTE_JUMP_BYTES: usize = 15;
+const PTRACE_STOP_BYTES: [u8; 1] = [0xcc];
 const TRAMPOLINE_ALLOCATION_BYTES: usize = 4096;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+const MAX_PROCESS_MAPS_BYTES: usize = 2 * 1024 * 1024;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+const MIN_PROCESS_MAP_RECORD_BYTES: usize = 40;
 
 const STATE_INACTIVE: u8 = 0;
 const STATE_ACTIVE: u8 = 1;
 const STATE_TRANSITIONING: u8 = 2;
 
-#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-#[derive(Clone, Copy)]
-enum ExtendedState {
-    FxSave,
-    XSave { bytes: i32, mask: u64 },
+/// Stable wire tag describing the instruction that produced a saved state area.
+///
+/// This is a transparent integer rather than a Rust enum because the descriptor
+/// crosses an instrumentation/controller memory boundary. Every bit pattern is
+/// therefore safe to read; consumers must admit only the named constants.
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct SavedExtendedStateFormat(u64);
+
+impl SavedExtendedStateFormat {
+    /// No saved extended-state image is available.
+    pub const UNAVAILABLE: Self = Self(0);
+    /// Legacy 512-byte `FXSAVE64` image aligned to 16 bytes.
+    pub const FXSAVE64: Self = Self(1);
+    /// Standard, non-compacted `XSAVE64` image aligned to 64 bytes.
+    pub const XSAVE64_STANDARD: Self = Self(2);
+
+    /// Returns the stable integer carried by the cross-process ABI.
+    pub const fn raw(self) -> u64 {
+        self.0
+    }
+
+    /// Returns the required saved-area alignment for an admitted format.
+    pub const fn required_alignment(self) -> Option<u64> {
+        if self.0 == Self::FXSAVE64.0 {
+            Some(FXSAVE_ALIGNMENT as u64)
+        } else if self.0 == Self::XSAVE64_STANDARD.0 {
+            Some(64)
+        } else {
+            None
+        }
+    }
 }
 
+/// One standard-format XSAVE component selected by a trampoline.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct SavedExtendedStateComponent {
+    xfeature: u64,
+    offset: u64,
+    size: u64,
+}
+
+impl SavedExtendedStateComponent {
+    const UNAVAILABLE: Self = Self {
+        xfeature: 0,
+        offset: 0,
+        size: 0,
+    };
+
+    const fn new(xfeature: u64, offset: u64, size: u64) -> Self {
+        Self {
+            xfeature,
+            offset,
+            size,
+        }
+    }
+
+    /// Returns the one-hot xfeature bit represented by this entry.
+    pub const fn xfeature(self) -> u64 {
+        self.xfeature
+    }
+
+    /// Returns the component's offset in a standard XSAVE image.
+    pub const fn offset(self) -> u64 {
+        self.offset
+    }
+
+    /// Returns the component's architectural byte length.
+    pub const fn size(self) -> u64 {
+        self.size
+    }
+}
+
+/// Per-trampoline extended-state save layout and authenticated component map.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct SavedExtendedStateLayout {
+    allocation_len: u64,
+    image_len: u64,
+    mask: u64,
+    format: SavedExtendedStateFormat,
+    component_count: u64,
+    components: [SavedExtendedStateComponent; SAVED_EXTENDED_STATE_COMPONENT_CAPACITY],
+}
+
+impl SavedExtendedStateLayout {
+    /// Explicit absence used by contexts that did not originate in a trampoline.
+    pub const UNAVAILABLE: Self = Self {
+        allocation_len: 0,
+        image_len: 0,
+        mask: 0,
+        format: SavedExtendedStateFormat::UNAVAILABLE,
+        component_count: 0,
+        components: [SavedExtendedStateComponent::UNAVAILABLE;
+            SAVED_EXTENDED_STATE_COMPONENT_CAPACITY],
+    };
+
+    const FXSAVE64: Self = Self {
+        allocation_len: FXSAVE_BYTES as u64,
+        image_len: FXSAVE_BYTES as u64,
+        mask: 0b11,
+        format: SavedExtendedStateFormat::FXSAVE64,
+        component_count: 0,
+        components: [SavedExtendedStateComponent::UNAVAILABLE;
+            SAVED_EXTENDED_STATE_COMPONENT_CAPACITY],
+    };
+
+    const fn standard_xsave64(
+        allocation_len: u64,
+        image_len: u64,
+        mask: u64,
+        component_count: u64,
+        components: [SavedExtendedStateComponent; SAVED_EXTENDED_STATE_COMPONENT_CAPACITY],
+    ) -> Self {
+        Self {
+            allocation_len,
+            image_len,
+            mask,
+            format: SavedExtendedStateFormat::XSAVE64_STANDARD,
+            component_count,
+            components,
+        }
+    }
+
+    /// Returns the allocated saved-area length.
+    pub const fn len(self) -> u64 {
+        self.allocation_len
+    }
+
+    /// Returns whether no saved extended-state image is available.
+    pub const fn is_empty(self) -> bool {
+        self.allocation_len == 0
+    }
+
+    /// Returns the logical standard-image extent before allocation padding.
+    pub const fn image_len(self) -> u64 {
+        self.image_len
+    }
+
+    /// Returns the exact mask supplied to `XSAVE64`/`XRSTOR64`.
+    ///
+    /// `FXSAVE64` uses the architectural x87/SSE mask `0b11`.
+    pub const fn mask(self) -> u64 {
+        self.mask
+    }
+
+    /// Returns the stable saved-image format tag.
+    pub const fn format(self) -> SavedExtendedStateFormat {
+        self.format
+    }
+
+    /// Returns the exact non-legacy standard-format component table.
+    pub fn components(&self) -> &[SavedExtendedStateComponent] {
+        &self.components[..self.component_count as usize]
+    }
+}
+
+/// One invocation's saved extended-state image.
+///
+/// The first field is the actual address established by the emitted alignment
+/// and allocation instructions. The remaining fields must exactly equal the
+/// layout published for the trampoline that supplied the enclosing context.
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct SavedExtendedStateDescriptor {
+    address: u64,
+    len: u64,
+    mask: u64,
+    format: SavedExtendedStateFormat,
+}
+
+impl SavedExtendedStateDescriptor {
+    /// Explicit absence used by contexts that did not originate in a trampoline.
+    pub const UNAVAILABLE: Self = Self {
+        address: 0,
+        len: 0,
+        mask: 0,
+        format: SavedExtendedStateFormat::UNAVAILABLE,
+    };
+
+    /// Returns the saved area's tracee virtual address.
+    pub const fn address(self) -> u64 {
+        self.address
+    }
+
+    /// Returns the allocated saved-area length.
+    pub const fn len(self) -> u64 {
+        self.len
+    }
+
+    /// Returns whether this descriptor carries no saved image.
+    pub const fn is_empty(self) -> bool {
+        self.len == 0
+    }
+
+    /// Returns the exact mask supplied to `XSAVE64`/`XRSTOR64`.
+    pub const fn mask(self) -> u64 {
+        self.mask
+    }
+
+    /// Returns the stable saved-image format tag.
+    pub const fn format(self) -> SavedExtendedStateFormat {
+        self.format
+    }
+
+    /// Checks the descriptor fields that are repeated in an authenticated layout.
+    pub fn matches_layout(self, layout: SavedExtendedStateLayout) -> bool {
+        self.len == layout.len() && self.mask == layout.mask() && self.format == layout.format()
+    }
+}
+
+const _: () = assert!(core::mem::size_of::<SavedExtendedStateFormat>() == 8);
+const _: () = assert!(core::mem::size_of::<SavedExtendedStateComponent>() == 24);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateComponent, xfeature) == 0);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateComponent, offset) == 8);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateComponent, size) == 16);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateLayout, allocation_len) == 0);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateLayout, image_len) == 8);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateLayout, mask) == 16);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateLayout, format) == 24);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateLayout, component_count) == 32);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateLayout, components) == 40);
+const _: () = assert!(core::mem::size_of::<SavedExtendedStateLayout>() == 232);
+const _: () = assert!(core::mem::size_of::<SavedExtendedStateDescriptor>() == 32);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateDescriptor, address) == 0);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateDescriptor, len) == 8);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateDescriptor, mask) == 16);
+const _: () = assert!(core::mem::offset_of!(SavedExtendedStateDescriptor, format) == 24);
+
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-impl ExtendedState {
+impl SavedExtendedStateLayout {
+    /// Detects the exact tracee-side layout used by newly emitted trampolines.
+    ///
+    /// Runtime stack sizing and trampoline emission share this single CPUID/
+    /// XGETBV implementation. Callers must still require exact equality before
+    /// publishing a hook in case the per-thread enabled state changed.
     #[allow(unused_unsafe)]
-    fn detect() -> Self {
-        use core::arch::x86_64::{__cpuid, __cpuid_count, _xgetbv};
+    pub fn detect() -> Result<Self, TrampolineError> {
+        use core::arch::x86_64::__cpuid;
+        use core::arch::x86_64::__cpuid_count;
+        use core::arch::x86_64::_xgetbv;
 
         // SAFETY: CPUID is available in x86-64 mode.
         let features = unsafe { __cpuid(1) };
         let has_xsave = features.ecx & (1 << 26) != 0;
         let has_osxsave = features.ecx & (1 << 27) != 0;
-        if has_xsave && has_osxsave {
-            // SAFETY: OSXSAVE proves XGETBV is enabled for XCR0.
-            // Linux can expose AMX in XCR0 while denying this thread tile-state
-            // permission through XFD. Preserve the universally usable user
-            // components through PKRU and leave AMX to its explicit owner.
-            const USER_STATE_MASK: u64 = 0b10_1110_0111;
-            let mask = unsafe { _xgetbv(0) } & USER_STATE_MASK;
-            // SAFETY: CPUID leaf D is available when XSAVE is present.
-            let state = unsafe { __cpuid_count(0xD, 0) };
-            if mask != 0 {
-                let rounded = state.ebx.checked_add(63).map(|bytes| bytes & !63);
-                if let Some(bytes) = rounded.and_then(|bytes| i32::try_from(bytes).ok()) {
-                    if bytes >= 576 {
-                        return Self::XSave { bytes, mask };
-                    }
-                }
-            }
+        if !has_xsave || !has_osxsave {
+            return Ok(Self::FXSAVE64);
         }
-        Self::FxSave
-    }
 
-    fn encode_save(self, assembler: &mut CodeAssembler) -> Result<(), TrampolineError> {
-        let (alignment, bytes) = match self {
-            Self::FxSave => (FXSAVE_ALIGNMENT, FXSAVE_BYTES),
-            Self::XSave { bytes, .. } => (64, bytes),
+        // SAFETY: OSXSAVE proves XGETBV is enabled for XCR0. Linux can expose
+        // AMX in XCR0 while denying this thread tile-state permission through
+        // XFD. Preserve the universally usable user components through PKRU
+        // and leave AMX to its explicit owner.
+        const USER_STATE_MASK: u64 = 0b10_1110_0111;
+        let mask = unsafe { _xgetbv(0) } & USER_STATE_MASK;
+        let root = unsafe { __cpuid_count(0xD, 0) };
+        let supported = u64::from(root.eax) | (u64::from(root.edx) << 32);
+        if mask & 0b11 != 0b11 || mask & !supported != 0 {
+            return Err(TrampolineError::InvalidExtendedStateLayout {
+                message: "XCR0 preservation mask is incomplete or unsupported",
+            });
+        }
+
+        let mut components =
+            [SavedExtendedStateComponent::UNAVAILABLE; SAVED_EXTENDED_STATE_COMPONENT_CAPACITY];
+        let mut component_count = 0_usize;
+        let mut image_len = 576_u64;
+        for index in 2..64_u32 {
+            let xfeature = 1_u64 << index;
+            if mask & xfeature == 0 {
+                continue;
+            }
+            if component_count == components.len() {
+                return Err(TrampolineError::InvalidExtendedStateLayout {
+                    message: "XSAVE component table capacity is insufficient",
+                });
+            }
+            let leaf = unsafe { __cpuid_count(0xD, index) };
+            let offset = u64::from(leaf.ebx);
+            let size = u64::from(leaf.eax);
+            let Some(end) = offset.checked_add(size) else {
+                return Err(TrampolineError::InvalidExtendedStateLayout {
+                    message: "XSAVE component extent overflows",
+                });
+            };
+            if size == 0 || offset < 576 || leaf.ecx & 1 != 0 {
+                return Err(TrampolineError::InvalidExtendedStateLayout {
+                    message: "XSAVE component lacks a standard user-state layout",
+                });
+            }
+            if components[..component_count].iter().any(|component| {
+                let prior_end = component.offset + component.size;
+                offset < prior_end && component.offset < end
+            }) {
+                return Err(TrampolineError::InvalidExtendedStateLayout {
+                    message: "XSAVE component extents overlap",
+                });
+            }
+            components[component_count] = SavedExtendedStateComponent::new(xfeature, offset, size);
+            component_count += 1;
+            image_len = image_len.max(end);
+        }
+        let allocation_len = image_len
+            .checked_add(63)
+            .map(|value| value & !63)
+            .and_then(|value| i32::try_from(value).ok())
+            .filter(|value| *value >= 576)
+            .ok_or(TrampolineError::InvalidExtendedStateLayout {
+                message: "XSAVE image allocation is not representable",
+            })?;
+        Ok(Self::standard_xsave64(
+            allocation_len as u64,
+            image_len,
+            mask,
+            component_count as u64,
+            components,
+        ))
+    }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+impl SavedExtendedStateLayout {
+    fn encode_save(&self, assembler: &mut CodeAssembler) -> Result<(), TrampolineError> {
+        let (alignment, bytes) = if self.format() == SavedExtendedStateFormat::FXSAVE64 {
+            (FXSAVE_ALIGNMENT, FXSAVE_BYTES)
+        } else if self.format() == SavedExtendedStateFormat::XSAVE64_STANDARD {
+            let bytes = i32::try_from(self.len()).map_err(|_| {
+                TrampolineError::InvalidExtendedStateLayout {
+                    message: "XSAVE allocation length is not representable",
+                }
+            })?;
+            (64, bytes)
+        } else {
+            return Err(TrampolineError::InvalidExtendedStateLayout {
+                message: "saved-state format is unavailable",
+            });
         };
         assembler.and(rsp, -alignment).map_err(encoding_error)?;
         assembler.sub(rsp, bytes).map_err(encoding_error)?;
-        match self {
-            Self::FxSave => assembler.fxsave64(rsp.into()).map_err(encoding_error),
-            Self::XSave { mask, .. } => {
-                // XSAVE does not initialize every reserved header byte, while
-                // XRSTOR requires them to be zero or raises #GP.
-                assembler.xor(eax, eax).map_err(encoding_error)?;
-                for offset in (512..576).step_by(8) {
-                    assembler
-                        .mov(qword_ptr(rsp + offset), rax)
-                        .map_err(encoding_error)?;
-                }
-                assembler.mov(eax, mask as u32).map_err(encoding_error)?;
+        if self.format() == SavedExtendedStateFormat::FXSAVE64 {
+            assembler.fxsave64(rsp.into()).map_err(encoding_error)
+        } else {
+            let mask = self.mask();
+            // XSAVE does not initialize every reserved header byte, while
+            // XRSTOR requires them to be zero or raises #GP.
+            assembler.xor(eax, eax).map_err(encoding_error)?;
+            for offset in (512..576).step_by(8) {
                 assembler
-                    .mov(edx, (mask >> 32) as u32)
+                    .mov(qword_ptr(rsp + offset), rax)
                     .map_err(encoding_error)?;
-                assembler.xsave64(rsp.into()).map_err(encoding_error)
             }
+            assembler.mov(eax, mask as u32).map_err(encoding_error)?;
+            assembler
+                .mov(edx, (mask >> 32) as u32)
+                .map_err(encoding_error)?;
+            assembler.xsave64(rsp.into()).map_err(encoding_error)
         }
     }
 
-    fn encode_restore(self, assembler: &mut CodeAssembler) -> Result<(), TrampolineError> {
-        match self {
-            Self::FxSave => assembler.fxrstor64(rsp.into()).map_err(encoding_error),
-            Self::XSave { mask, .. } => {
-                assembler.mov(eax, mask as u32).map_err(encoding_error)?;
-                assembler
-                    .mov(edx, (mask >> 32) as u32)
-                    .map_err(encoding_error)?;
-                assembler.xrstor64(rsp.into()).map_err(encoding_error)
-            }
+    fn encode_restore(&self, assembler: &mut CodeAssembler) -> Result<(), TrampolineError> {
+        if self.format() == SavedExtendedStateFormat::FXSAVE64 {
+            assembler.fxrstor64(rsp.into()).map_err(encoding_error)
+        } else if self.format() == SavedExtendedStateFormat::XSAVE64_STANDARD {
+            let mask = self.mask();
+            assembler.mov(eax, mask as u32).map_err(encoding_error)?;
+            assembler
+                .mov(edx, (mask >> 32) as u32)
+                .map_err(encoding_error)?;
+            assembler.xrstor64(rsp.into()).map_err(encoding_error)
+        } else {
+            Err(TrampolineError::InvalidExtendedStateLayout {
+                message: "saved-state format is unavailable",
+            })
         }
     }
 }
@@ -127,7 +478,7 @@ pub type HookCallback = unsafe extern "C" fn(*mut HookContext);
 /// state. The instruction and stack-pointer fields are metadata. SIMD state is
 /// preserved transparently rather than exposed to callbacks.
 #[repr(C)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub struct HookContext {
     /// Address of the displaced instruction.
     pub instruction_pointer: u64,
@@ -165,27 +516,52 @@ pub struct HookContext {
     pub rax: u64,
     /// Saved RFLAGS.
     pub rflags: u64,
+    /// Trampoline-owned descriptor for the saved extended-state image.
+    ///
+    /// Callbacks must treat this as read-only. Contexts synthesized outside a
+    /// generated trampoline report [`SavedExtendedStateDescriptor::UNAVAILABLE`].
+    saved_extended_state: SavedExtendedStateDescriptor,
 }
 
-/// Checked byte lengths for the sections of one trampoline.
+impl HookContext {
+    /// Returns the generated trampoline's per-invocation saved-state descriptor.
+    pub const fn saved_extended_state(&self) -> SavedExtendedStateDescriptor {
+        self.saved_extended_state
+    }
+}
+
+const _: () = assert!(core::mem::offset_of!(HookContext, instruction_pointer) == 0);
+const _: () = assert!(core::mem::offset_of!(HookContext, rflags) == 136);
+const _: () = assert!(core::mem::offset_of!(HookContext, saved_extended_state) == 144);
+const _: () = assert!(core::mem::size_of::<HookContext>() == 176);
+
+/// Checked byte lengths and saved-state layout for one trampoline.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct TrampolineLayout {
+    /// Optional INT3 reached with the untouched application register state.
+    pub entry_stop_len: usize,
     /// Context-save and instrumentation-call bytes.
     pub instrumentation_len: usize,
+    /// Optional INT3 reached after the complete application-state restore.
+    pub completion_stop_len: usize,
     /// Relocated instructions, including any jump over encoder padding and literals.
     pub relocated_len: usize,
     /// Context-restore bytes.
     pub restore_len: usize,
     /// Control-transfer bytes returning to application code.
     pub return_len: usize,
+    /// Exact format, allocation length, and mask used for extended state.
+    pub saved_extended_state: SavedExtendedStateLayout,
 }
 
 impl TrampolineLayout {
     /// Returns the total allocation size, or None if the sum overflows.
     pub fn total_len(self) -> Option<usize> {
-        self.instrumentation_len
-            .checked_add(self.relocated_len)?
+        self.entry_stop_len
+            .checked_add(self.instrumentation_len)?
             .checked_add(self.restore_len)?
+            .checked_add(self.completion_stop_len)?
+            .checked_add(self.relocated_len)?
             .checked_add(self.return_len)
     }
 }
@@ -368,6 +744,11 @@ pub enum TrampolineError {
         /// Available allocation bytes.
         allocation_len: usize,
     },
+    /// The tracee CPU's enabled standard XSAVE layout cannot be encoded exactly.
+    InvalidExtendedStateLayout {
+        /// Fail-closed layout diagnostic.
+        message: &'static str,
+    },
     /// A hook toggle raced another toggle on the same site.
     TransitionInProgress,
     /// M2 rejected patch planning, binding, or publication.
@@ -429,6 +810,9 @@ impl fmt::Display for TrampolineError {
                 formatter,
                 "{code_len}-byte trampoline exceeds {allocation_len}-byte allocation"
             ),
+            Self::InvalidExtendedStateLayout { message } => {
+                write!(formatter, "invalid extended-state layout: {message}")
+            }
             Self::TransitionInProgress => {
                 formatter.write_str("another thread is toggling this hook")
             }
@@ -461,6 +845,7 @@ pub struct TrampolinePlan {
     hook: HookCallback,
     instructions: Vec<Instruction>,
     relocated_start: usize,
+    ptrace_stops: bool,
 }
 
 impl TrampolinePlan {
@@ -474,7 +859,7 @@ impl TrampolinePlan {
         execute_address: u64,
         hook: HookCallback,
     ) -> Result<Self, TrampolineError> {
-        Self::from_scan_mode(scan, execute_address, hook, 0)
+        Self::from_scan_mode(scan, execute_address, hook, 0, false)
     }
 
     /// Builds a plan whose hook replaces the first displaced instruction.
@@ -489,7 +874,28 @@ impl TrampolinePlan {
         execute_address: u64,
         hook: HookCallback,
     ) -> Result<Self, TrampolineError> {
-        Self::from_scan_mode(scan, execute_address, hook, 1)
+        Self::from_scan_mode(scan, execute_address, hook, 1, false)
+    }
+
+    /// Builds a replace-first plan bracketed by two tracer-owned INT3 stops.
+    ///
+    /// The entry stop executes before any instrumentation code with the
+    /// application register file untouched. Before suppressing it, the external
+    /// ptrace controller must write the application RSP at `owned_top - 8` and
+    /// replace RSP with `owned_top`, where the complete downward-growing owned
+    /// stack is controller-authenticated. Instrumentation then saves and calls
+    /// entirely on that owned stack while retaining the application RSP in
+    /// [`HookContext`]. At the completion stop every explicitly saved GPR,
+    /// RFLAGS, and extended-state component has been restored. RSP deliberately
+    /// remains `owned_top`; the authenticated controller must restore the
+    /// application RSP before exposing the relocated tail. Executing this mode
+    /// without a controller that performs both pivots is unsupported.
+    pub fn from_scan_replacing_first_with_ptrace_stops(
+        scan: &ScanResult,
+        execute_address: u64,
+        hook: HookCallback,
+    ) -> Result<Self, TrampolineError> {
+        Self::from_scan_mode(scan, execute_address, hook, 1, true)
     }
 
     fn from_scan_mode(
@@ -497,6 +903,7 @@ impl TrampolinePlan {
         execute_address: u64,
         hook: HookCallback,
         relocated_start: usize,
+        ptrace_stops: bool,
     ) -> Result<Self, TrampolineError> {
         let start_index = scan
             .instructions()
@@ -546,6 +953,7 @@ impl TrampolinePlan {
             hook,
             instructions,
             relocated_start,
+            ptrace_stops,
         })
     }
 
@@ -578,14 +986,31 @@ impl TrampolinePlan {
         }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
-            let extended_state = ExtendedState::detect();
-            let instrumentation = self.encode_instrumentation(address, extended_state)?;
-            let restore_address = address
+            let extended_state = SavedExtendedStateLayout::detect()?;
+            let entry_stop: &[u8] = if self.ptrace_stops {
+                PTRACE_STOP_BYTES.as_slice()
+            } else {
+                &[]
+            };
+            let instrumentation_address = address
+                .checked_add(entry_stop.len() as u64)
+                .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+            let instrumentation =
+                self.encode_instrumentation(instrumentation_address, &extended_state)?;
+            let restore_address = instrumentation_address
                 .checked_add(instrumentation.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
-            let restore = encode_restore(restore_address, extended_state)?;
-            let relocated_address = restore_address
+            let restore = encode_restore(restore_address, &extended_state)?;
+            let completion_stop_address = restore_address
                 .checked_add(restore.len() as u64)
+                .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+            let completion_stop: &[u8] = if self.ptrace_stops {
+                PTRACE_STOP_BYTES.as_slice()
+            } else {
+                &[]
+            };
+            let relocated_address = completion_stop_address
+                .checked_add(completion_stop.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let relocated_instructions = &self.instructions[self.relocated_start..];
             let (encoded, terminal_jump_offset) =
@@ -596,18 +1021,23 @@ impl TrampolinePlan {
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let return_jump = encode_return_jump(return_jump_address, self.return_address)?;
             let layout = TrampolineLayout {
+                entry_stop_len: entry_stop.len(),
                 instrumentation_len: instrumentation.len(),
-                relocated_len: relocated.len(),
                 restore_len: restore.len(),
+                completion_stop_len: completion_stop.len(),
+                relocated_len: relocated.len(),
                 return_len: return_jump.len(),
+                saved_extended_state: extended_state,
             };
             let total_len = layout.total_len().ok_or(TrampolineError::CodeTooLarge {
                 code_len: usize::MAX,
                 allocation_len: TRAMPOLINE_ALLOCATION_BYTES,
             })?;
             let mut bytes = Vec::with_capacity(total_len);
+            bytes.extend_from_slice(entry_stop);
             bytes.extend_from_slice(&instrumentation);
             bytes.extend_from_slice(&restore);
+            bytes.extend_from_slice(completion_stop);
             bytes.extend_from_slice(&relocated);
             bytes.extend_from_slice(&return_jump);
             debug_assert_eq!(bytes.len(), total_len);
@@ -664,11 +1094,17 @@ impl TrampolinePlan {
     fn encode_instrumentation(
         &self,
         address: u64,
-        extended_state: ExtendedState,
+        extended_state: &SavedExtendedStateLayout,
     ) -> Result<Vec<u8>, TrampolineError> {
         let mut assembler = CodeAssembler::new(64).map_err(encoding_error)?;
         assembler
             .lea(rsp, rsp - SYSTEM_V_RED_ZONE_BYTES)
+            .map_err(encoding_error)?;
+        // Reserve the descriptor immediately below the untouched application
+        // red zone. Flags and GPR pushes below it retain every pre-existing
+        // HookContext offset, while the descriptor becomes its 32-byte tail.
+        assembler
+            .lea(rsp, rsp - SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES)
             .map_err(encoding_error)?;
         assembler.pushfq().map_err(encoding_error)?;
         for register in [
@@ -676,9 +1112,34 @@ impl TrampolinePlan {
         ] {
             assembler.push(register).map_err(encoding_error)?;
         }
-        assembler
-            .lea(rax, rsp + SYSTEM_V_RED_ZONE_BYTES + SAVED_INTEGER_BYTES)
-            .map_err(encoding_error)?;
+        if self.ptrace_stops {
+            // The authenticated entry controller placed the application RSP in
+            // the last word of the owned stack. Saving flags and fifteen GPRs
+            // after the descriptor and red zone leaves RSP exactly 288 bytes
+            // below owned_top. This slot is 280 bytes above the current frame
+            // and has not been overwritten. No instruction before this load
+            // dereferences the application stack.
+            assembler
+                .mov(
+                    rax,
+                    qword_ptr(
+                        rsp + SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES
+                            + SYSTEM_V_RED_ZONE_BYTES
+                            + SAVED_INTEGER_BYTES
+                            - core::mem::size_of::<u64>() as i32,
+                    ),
+                )
+                .map_err(encoding_error)?;
+        } else {
+            assembler
+                .lea(
+                    rax,
+                    rsp + SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES
+                        + SYSTEM_V_RED_ZONE_BYTES
+                        + SAVED_INTEGER_BYTES,
+                )
+                .map_err(encoding_error)?;
+        }
         assembler.push(rax).map_err(encoding_error)?;
         assembler
             .mov(rax, self.execute_address)
@@ -686,6 +1147,35 @@ impl TrampolinePlan {
         assembler.push(rax).map_err(encoding_error)?;
         assembler.mov(r12, rsp).map_err(encoding_error)?;
         extended_state.encode_save(&mut assembler)?;
+        let descriptor_offset = core::mem::offset_of!(HookContext, saved_extended_state) as i32;
+        assembler
+            .mov(
+                qword_ptr(
+                    r12 + descriptor_offset
+                        + core::mem::offset_of!(SavedExtendedStateDescriptor, address) as i32,
+                ),
+                rsp,
+            )
+            .map_err(encoding_error)?;
+        for (offset, value) in [
+            (
+                core::mem::offset_of!(SavedExtendedStateDescriptor, len),
+                extended_state.len(),
+            ),
+            (
+                core::mem::offset_of!(SavedExtendedStateDescriptor, mask),
+                extended_state.mask(),
+            ),
+            (
+                core::mem::offset_of!(SavedExtendedStateDescriptor, format),
+                extended_state.format().raw(),
+            ),
+        ] {
+            assembler.mov(rax, value).map_err(encoding_error)?;
+            assembler
+                .mov(qword_ptr(r12 + descriptor_offset + offset as i32), rax)
+                .map_err(encoding_error)?;
+        }
         assembler.cld().map_err(encoding_error)?;
         assembler.mov(rdi, r12).map_err(encoding_error)?;
         assembler
@@ -697,7 +1187,10 @@ impl TrampolinePlan {
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-fn encode_restore(address: u64, extended_state: ExtendedState) -> Result<Vec<u8>, TrampolineError> {
+fn encode_restore(
+    address: u64,
+    extended_state: &SavedExtendedStateLayout,
+) -> Result<Vec<u8>, TrampolineError> {
     let mut assembler = CodeAssembler::new(64).map_err(encoding_error)?;
     extended_state.encode_restore(&mut assembler)?;
     assembler.mov(rsp, r12).map_err(encoding_error)?;
@@ -710,6 +1203,9 @@ fn encode_restore(address: u64, extended_state: ExtendedState) -> Result<Vec<u8>
         assembler.pop(register).map_err(encoding_error)?;
     }
     assembler.popfq().map_err(encoding_error)?;
+    assembler
+        .lea(rsp, rsp + SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES)
+        .map_err(encoding_error)?;
     assembler
         .lea(rsp, rsp + SYSTEM_V_RED_ZONE_BYTES)
         .map_err(encoding_error)?;
@@ -966,6 +1462,7 @@ pub struct TrampolineArena {
     executable: *mut u8,
     len: usize,
     next: *const AtomicUsize,
+    reservation_len: usize,
 }
 
 // SAFETY: the initialized cursor is process-shared, slots are reserved atomically
@@ -1005,6 +1502,24 @@ impl TrampolineArena {
         };
         i32::try_from(i128::from(start) - i128::from(next_ip)).is_ok()
             && i32::try_from(i128::from(end) - i128::from(next_ip)).is_ok()
+    }
+
+    /// Returns the process-lifetime RW code alias.
+    pub fn writable_range(&self) -> core::ops::Range<usize> {
+        let start = self.writable as usize;
+        start..start + self.len
+    }
+
+    /// Returns the process-lifetime RX code alias.
+    pub fn executable_range(&self) -> core::ops::Range<usize> {
+        let start = self.executable as usize;
+        start..start + self.len
+    }
+
+    /// Returns the process-shared reservation-cursor page.
+    pub fn reservation_range(&self) -> core::ops::Range<usize> {
+        let start = self.next as usize;
+        start..start + self.reservation_len
     }
 
     /// Emits one checked plan into a freshly reserved arena slot.
@@ -1142,13 +1657,48 @@ impl ExecutableTrampoline {
         self.code_len
     }
 
+    /// Returns the RIP reported after the optional entry INT3.
+    ///
+    /// `None` identifies an ordinary trampoline with no tracer-owned stops.
+    pub const fn ptrace_entry_stop_rip(&self) -> Option<u64> {
+        if self.layout.entry_stop_len == PTRACE_STOP_BYTES.len() {
+            Some(self.address + PTRACE_STOP_BYTES.len() as u64)
+        } else {
+            None
+        }
+    }
+
+    /// Returns the RIP reported after the optional post-restore INT3.
+    ///
+    /// This is also the first byte of the relocated tail. At this stop every
+    /// explicitly saved application GPR, RFLAGS, and extended-state component
+    /// is restored, but RSP intentionally remains at the controller-owned stack
+    /// top. No relocated application instruction has executed yet.
+    pub const fn ptrace_completion_stop_rip(&self) -> Option<u64> {
+        if self.layout.completion_stop_len == PTRACE_STOP_BYTES.len() {
+            Some(
+                self.address
+                    + self.layout.entry_stop_len as u64
+                    + self.layout.instrumentation_len as u64
+                    + self.layout.restore_len as u64
+                    + PTRACE_STOP_BYTES.len() as u64,
+            )
+        } else {
+            None
+        }
+    }
+
     /// Returns the entry that executes only relocated tail instructions.
     ///
     /// A signal handler that already emulated a replace-first instruction can
     /// resume here after publishing the hook. The interrupted register context
     /// must already contain the emulated result.
     pub const fn relocated_tail_address(&self) -> u64 {
-        self.address + self.layout.instrumentation_len as u64 + self.layout.restore_len as u64
+        self.address
+            + self.layout.entry_stop_len as u64
+            + self.layout.instrumentation_len as u64
+            + self.layout.restore_len as u64
+            + self.layout.completion_stop_len as u64
     }
 
     /// Returns the emitted section lengths.
@@ -1170,9 +1720,11 @@ impl ExecutableTrampoline {
 
     /// Publishes this trampoline to the process-wide reverse-PC lookup.
     ///
-    /// Installed hooks call this automatically after binding succeeds. Direct
-    /// users of `ExecutableTrampoline::allocate` can call it after making the
-    /// trampoline reachable. Publication is idempotent and process-lifetime.
+    /// Ordinary `InstalledHook` entrypoints call this automatically after
+    /// binding succeeds. The controller-owned ptrace-stop entrypoint leaves it
+    /// explicit. Direct users of `ExecutableTrampoline::allocate` can call it
+    /// after making the trampoline reachable. Publication is idempotent and
+    /// process-lifetime.
     pub fn publish_program_counter_mappings(&self) {
         if !self.program_counters_published.swap(true, Ordering::AcqRel) {
             register_program_counter_mappings(&self.program_counters);
@@ -1233,6 +1785,12 @@ pub struct InstalledHook {
     state: AtomicU8,
 }
 
+#[derive(Clone, Copy)]
+enum ProgramCounterPublication {
+    Automatic,
+    Explicit,
+}
+
 impl InstalledHook {
     /// Generates and binds an initially inactive observing hook.
     ///
@@ -1252,7 +1810,15 @@ impl InstalledHook {
         let plan = TrampolinePlan::from_scan(site.scan, site.execute_address, hook)?;
         let trampoline = ExecutableTrampoline::allocate(&plan)?;
         // SAFETY: forwarded from this method's mapping-lifetime contract.
-        unsafe { Self::bind(site, plan, trampoline, Some(staleness)) }
+        unsafe {
+            Self::bind(
+                site,
+                plan,
+                trampoline,
+                Some(staleness),
+                ProgramCounterPublication::Automatic,
+            )
+        }
     }
 
     /// Generates a hook that replaces the first displaced instruction.
@@ -1271,7 +1837,15 @@ impl InstalledHook {
             TrampolinePlan::from_scan_replacing_first(site.scan, site.execute_address, hook)?;
         let trampoline = ExecutableTrampoline::allocate(&plan)?;
         // SAFETY: forwarded from this method's mapping-lifetime contract.
-        unsafe { Self::bind(site, plan, trampoline, Some(staleness)) }
+        unsafe {
+            Self::bind(
+                site,
+                plan,
+                trampoline,
+                Some(staleness),
+                ProgramCounterPublication::Automatic,
+            )
+        }
     }
 
     /// Generates a quiescent hook that replaces the first displaced instruction.
@@ -1292,7 +1866,15 @@ impl InstalledHook {
             TrampolinePlan::from_scan_replacing_first(site.scan, site.execute_address, hook)?;
         let trampoline = ExecutableTrampoline::allocate(&plan)?;
         // SAFETY: forwarded from this method's mapping-lifetime contract.
-        unsafe { Self::bind(site, plan, trampoline, None) }
+        unsafe {
+            Self::bind(
+                site,
+                plan,
+                trampoline,
+                None,
+                ProgramCounterPublication::Automatic,
+            )
+        }
     }
 
     /// Generates an observing hook in preallocated trampoline storage.
@@ -1310,7 +1892,15 @@ impl InstalledHook {
         let plan = TrampolinePlan::from_scan(site.scan, site.execute_address, hook)?;
         let trampoline = arena.allocate(&plan)?;
         // SAFETY: forwarded from this method's mapping-lifetime contract.
-        unsafe { Self::bind(site, plan, trampoline, Some(staleness)) }
+        unsafe {
+            Self::bind(
+                site,
+                plan,
+                trampoline,
+                Some(staleness),
+                ProgramCounterPublication::Automatic,
+            )
+        }
     }
 
     /// Generates a replace-first hook in preallocated trampoline storage.
@@ -1329,7 +1919,15 @@ impl InstalledHook {
             TrampolinePlan::from_scan_replacing_first(site.scan, site.execute_address, hook)?;
         let trampoline = arena.allocate(&plan)?;
         // SAFETY: forwarded from this method's mapping-lifetime contract.
-        unsafe { Self::bind(site, plan, trampoline, Some(staleness)) }
+        unsafe {
+            Self::bind(
+                site,
+                plan,
+                trampoline,
+                Some(staleness),
+                ProgramCounterPublication::Automatic,
+            )
+        }
     }
 
     /// Generates a quiescent replace-first hook in preallocated storage.
@@ -1351,7 +1949,55 @@ impl InstalledHook {
             TrampolinePlan::from_scan_replacing_first(site.scan, site.execute_address, hook)?;
         let trampoline = arena.allocate(&plan)?;
         // SAFETY: forwarded from this method's mapping-lifetime contract.
-        unsafe { Self::bind(site, plan, trampoline, None) }
+        unsafe {
+            Self::bind(
+                site,
+                plan,
+                trampoline,
+                None,
+                ProgramCounterPublication::Automatic,
+            )
+        }
+    }
+
+    /// Generates a quiescent replace-first hook bracketed by tracer stops.
+    ///
+    /// The returned hook must be toggled only with
+    /// [`Self::activate_quiescent`] and [`Self::deactivate_quiescent`]. Its
+    /// entry and completion INT3 instructions must be authenticated and
+    /// suppressed by an external ptrace controller on every execution.
+    ///
+    /// # Safety
+    ///
+    /// The same requirements as [`Self::install_replacing_first_in_arena`]
+    /// apply. Each quiescent toggle additionally requires its documented
+    /// no-other-thread proof, and the caller must guarantee that the controller
+    /// owns both generated breakpoint stops before this hook becomes reachable.
+    /// This controller-owned mode does not publish process-global reverse-PC
+    /// metadata automatically. A caller that needs the global lookup must call
+    /// [`ExecutableTrampoline::publish_program_counter_mappings`] explicitly
+    /// after binding and retain its process-lifetime publication semantics.
+    pub unsafe fn install_replacing_first_in_arena_quiescent_with_ptrace_stops(
+        site: HookSite<'_>,
+        hook: HookCallback,
+        arena: &TrampolineArena,
+    ) -> Result<Self, TrampolineError> {
+        let plan = TrampolinePlan::from_scan_replacing_first_with_ptrace_stops(
+            site.scan,
+            site.execute_address,
+            hook,
+        )?;
+        let trampoline = arena.allocate(&plan)?;
+        // SAFETY: forwarded from this method's mapping-lifetime contract.
+        unsafe {
+            Self::bind(
+                site,
+                plan,
+                trampoline,
+                None,
+                ProgramCounterPublication::Explicit,
+            )
+        }
     }
 
     unsafe fn bind(
@@ -1359,6 +2005,7 @@ impl InstalledHook {
         trampoline_plan: TrampolinePlan,
         trampoline: ExecutableTrampoline,
         staleness: Option<StalenessBudget>,
+        publication: ProgramCounterPublication,
     ) -> Result<Self, TrampolineError> {
         let patch_plan = match JumpPatchPlan::from_scan(
             site.scanner,
@@ -1395,7 +2042,9 @@ impl InstalledHook {
                 return Err(error.into());
             }
         };
-        trampoline.publish_program_counter_mappings();
+        if matches!(publication, ProgramCounterPublication::Automatic) {
+            trampoline.publish_program_counter_mappings();
+        }
         Ok(Self {
             trampoline,
             patch,
@@ -1559,6 +2208,31 @@ struct PendingMapping {
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+const ARENA_REQUIRED_SEALS: libc::c_int =
+    libc::F_SEAL_FUTURE_WRITE | libc::F_SEAL_SHRINK | libc::F_SEAL_GROW | libc::F_SEAL_SEAL;
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn seal_arena_backing(fd: libc::c_int) -> Result<(), TrampolineError> {
+    if unsafe { libc::fcntl(fd, libc::F_ADD_SEALS, ARENA_REQUIRED_SEALS) } != 0 {
+        return Err(os_error("seal trampoline arena memfd"));
+    }
+    let observed_seals = unsafe { libc::fcntl(fd, libc::F_GET_SEALS) };
+    if observed_seals != ARENA_REQUIRED_SEALS {
+        return Err(TrampolineError::BackingStore {
+            operation: "verify trampoline arena memfd seals",
+            errno: if observed_seals < 0 {
+                std::io::Error::last_os_error()
+                    .raw_os_error()
+                    .unwrap_or(libc::EIO)
+            } else {
+                libc::EIO
+            },
+        });
+    }
+    Ok(())
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 impl PendingMapping {
     fn new(len: usize) -> Result<Self, TrampolineError> {
         let name = b"liteinst2-trampoline\0";
@@ -1567,7 +2241,7 @@ impl PendingMapping {
             libc::syscall(
                 libc::SYS_memfd_create,
                 name.as_ptr().cast::<libc::c_char>(),
-                libc::MFD_CLOEXEC,
+                libc::MFD_CLOEXEC | 0x0002, // MFD_ALLOW_SEALING
             ) as libc::c_int
         };
         if fd < 0 {
@@ -1667,6 +2341,10 @@ impl PendingMapping {
 
     fn into_arena(mut self) -> Result<TrampolineArena, TrampolineError> {
         let next = PendingReservation::new()?;
+        // FUTURE_WRITE preserves the existing RW alias while preventing any
+        // subsequently reopened descriptor or mapping from changing the code
+        // backing. Geometry and policy are then locked for the arena lifetime.
+        seal_arena_backing(self.fd)?;
         // Linux may release a descriptor even when close reports an error.
         // Disarm ownership before attempting close so Drop cannot close a
         // subsequently reused descriptor number. Both mapping guards remain
@@ -1681,6 +2359,7 @@ impl PendingMapping {
             executable: self.executable.cast(),
             len: self.len,
             next: next.address,
+            reservation_len: next.len,
         };
         self.writable = core::ptr::null_mut();
         self.executable = core::ptr::null_mut();
@@ -1796,12 +2475,22 @@ fn near_candidates(
     if low > high {
         return Err(TrampolineError::NoReachableMapping);
     }
-    let maps = std::fs::read_to_string("/proc/self/maps").map_err(|error| {
-        TrampolineError::ProcessMaps {
-            message: error.to_string(),
-        }
-    })?;
+    let maps = read_process_maps_bounded()?;
+    let record_count = maps.lines().count();
+    let max_records = MAX_PROCESS_MAPS_BYTES / MIN_PROCESS_MAP_RECORD_BYTES + 1;
+    if record_count > max_records {
+        return Err(TrampolineError::ProcessMaps {
+            message: format!(
+                "/proc/self/maps contains {record_count} records; limit is {max_records}"
+            ),
+        });
+    }
     let mut ranges = Vec::new();
+    ranges
+        .try_reserve_exact(record_count)
+        .map_err(|error| TrampolineError::ProcessMaps {
+            message: format!("could not reserve bounded process-map ranges: {error}"),
+        })?;
     for line in maps.lines() {
         let field = line
             .split_whitespace()
@@ -1827,6 +2516,11 @@ fn near_candidates(
     }
     ranges.sort_unstable();
     let mut candidates = Vec::new();
+    candidates
+        .try_reserve_exact(ranges.len().saturating_add(1))
+        .map_err(|error| TrampolineError::ProcessMaps {
+            message: format!("could not reserve bounded near-map candidates: {error}"),
+        })?;
     let mut cursor = low;
     for (start, end) in ranges {
         if end <= cursor {
@@ -1862,6 +2556,50 @@ fn near_candidates(
     order_near_candidates(&mut candidates, next_ip);
     candidates.dedup();
     Ok(candidates)
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn read_process_maps_bounded() -> Result<String, TrampolineError> {
+    let file =
+        std::fs::File::open("/proc/self/maps").map_err(|error| TrampolineError::ProcessMaps {
+            message: error.to_string(),
+        })?;
+    read_process_maps_from(file)
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn read_process_maps_from(mut reader: impl std::io::Read) -> Result<String, TrampolineError> {
+    let mut bytes = Vec::new();
+    bytes
+        .try_reserve_exact(MAX_PROCESS_MAPS_BYTES)
+        .map_err(|error| TrampolineError::ProcessMaps {
+            message: format!("could not reserve bounded process-map bytes: {error}"),
+        })?;
+    let mut chunk = [0_u8; 4096];
+    loop {
+        let amount = reader
+            .read(&mut chunk)
+            .map_err(|error| TrampolineError::ProcessMaps {
+                message: error.to_string(),
+            })?;
+        if amount == 0 {
+            break;
+        }
+        let Some(new_length) = bytes.len().checked_add(amount) else {
+            return Err(TrampolineError::ProcessMaps {
+                message: "/proc/self/maps byte length overflowed".to_owned(),
+            });
+        };
+        if new_length > MAX_PROCESS_MAPS_BYTES {
+            return Err(TrampolineError::ProcessMaps {
+                message: format!("/proc/self/maps exceeds its {MAX_PROCESS_MAPS_BYTES}-byte limit"),
+            });
+        }
+        bytes.extend_from_slice(&chunk[..amount]);
+    }
+    String::from_utf8(bytes).map_err(|error| TrampolineError::ProcessMaps {
+        message: format!("/proc/self/maps is not UTF-8: {error}"),
+    })
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -1910,16 +2648,115 @@ fn align_up(value: usize, alignment: usize) -> usize {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        HookContext, TrampolineError, TrampolineLayout, TrampolinePlan, encode_return_jump,
-    };
+    use super::HookContext;
+    use super::SavedExtendedStateLayout;
+    use super::TrampolineError;
+    use super::TrampolineLayout;
+    use super::TrampolinePlan;
+    use super::encode_return_jump;
     use crate::scanner::InstructionScanner;
 
     unsafe extern "C" fn noop_hook(_context: *mut HookContext) {}
 
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn process_maps_reader_accepts_the_exact_cap_and_rejects_one_extra_byte() {
+        let exact = vec![b'x'; super::MAX_PROCESS_MAPS_BYTES];
+        assert_eq!(
+            super::read_process_maps_from(std::io::Cursor::new(exact))
+                .unwrap()
+                .len(),
+            super::MAX_PROCESS_MAPS_BYTES
+        );
+        let oversized = vec![b'x'; super::MAX_PROCESS_MAPS_BYTES + 1];
+        assert!(matches!(
+            super::read_process_maps_from(std::io::Cursor::new(oversized)),
+            Err(TrampolineError::ProcessMaps { .. })
+        ));
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn arena_seals_preserve_existing_writer_and_close_external_mutation_paths() {
+        let name = b"liteinst2-seal-test\0";
+        let fd = unsafe {
+            libc::syscall(
+                libc::SYS_memfd_create,
+                name.as_ptr().cast::<libc::c_char>(),
+                libc::MFD_CLOEXEC | 0x0002,
+            ) as libc::c_int
+        };
+        assert!(fd >= 0);
+        let page = 4096_usize;
+        assert_eq!(unsafe { libc::ftruncate(fd, page as libc::off_t) }, 0);
+        let writable = unsafe {
+            libc::mmap(
+                core::ptr::null_mut(),
+                page,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_SHARED,
+                fd,
+                0,
+            )
+        };
+        let executable = unsafe {
+            libc::mmap(
+                core::ptr::null_mut(),
+                page,
+                libc::PROT_READ | libc::PROT_EXEC,
+                libc::MAP_SHARED,
+                fd,
+                0,
+            )
+        };
+        assert_ne!(writable, libc::MAP_FAILED);
+        assert_ne!(executable, libc::MAP_FAILED);
+        let held = unsafe { libc::dup(fd) };
+        assert!(held >= 0);
+
+        super::seal_arena_backing(fd).unwrap();
+        assert_eq!(
+            unsafe { libc::fcntl(held, libc::F_GET_SEALS) },
+            super::ARENA_REQUIRED_SEALS
+        );
+        unsafe { writable.cast::<u8>().write_volatile(0x5a) };
+        assert_eq!(unsafe { executable.cast::<u8>().read_volatile() }, 0x5a);
+
+        let byte = 0xa5_u8;
+        assert_eq!(
+            unsafe { libc::pwrite(held, (&raw const byte).cast(), 1, 0) },
+            -1
+        );
+        assert_eq!(
+            unsafe { libc::ftruncate(held, (2 * page) as libc::off_t) },
+            -1
+        );
+        assert_eq!(
+            unsafe { libc::ftruncate(held, (page / 2) as libc::off_t) },
+            -1
+        );
+        let new_writer = unsafe {
+            libc::mmap(
+                core::ptr::null_mut(),
+                page,
+                libc::PROT_READ | libc::PROT_WRITE,
+                libc::MAP_SHARED,
+                held,
+                0,
+            )
+        };
+        assert_eq!(new_writer, libc::MAP_FAILED);
+
+        assert_eq!(unsafe { libc::munmap(writable, page) }, 0);
+        assert_eq!(unsafe { libc::munmap(executable, page) }, 0);
+        assert_eq!(unsafe { libc::close(held) }, 0);
+        assert_eq!(unsafe { libc::close(fd) }, 0);
+    }
+
     #[test]
     fn exhausted_arena_reservation_cannot_wrap_and_reuse_storage() {
-        use core::sync::atomic::{AtomicUsize, Ordering};
+        use core::sync::atomic::AtomicUsize;
+        use core::sync::atomic::Ordering;
         let near_wrap = usize::MAX - (super::TRAMPOLINE_ALLOCATION_BYTES - 1);
         let last_start = near_wrap - super::TRAMPOLINE_ALLOCATION_BYTES;
         let cursor = AtomicUsize::new(last_start);
@@ -2011,12 +2848,15 @@ mod tests {
     #[test]
     fn total_length_includes_every_section() {
         let layout = TrampolineLayout {
+            entry_stop_len: 1,
             instrumentation_len: 32,
+            completion_stop_len: 1,
             relocated_len: 12,
             restore_len: 16,
             return_len: 5,
+            saved_extended_state: SavedExtendedStateLayout::UNAVAILABLE,
         };
-        assert_eq!(layout.total_len(), Some(65));
+        assert_eq!(layout.total_len(), Some(67));
     }
 
     #[test]
@@ -2072,6 +2912,116 @@ mod tests {
         assert_eq!(plan.displaced_len(), 6);
         assert_eq!(plan.return_address(), base + 6);
         assert!(image.layout().relocated_len > 0);
+        assert_eq!(image.layout().entry_stop_len, 0);
+        assert_eq!(image.layout().completion_stop_len, 0);
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn ptrace_stops_restore_saved_state_but_leave_rsp_at_owned_top() {
+        let base = 0x20_0000;
+        let trampoline = base + 0x10_0000;
+        let code = [0x0F, 0x05, 0x48, 0x83, 0xC0, 0x01];
+        let scan = InstructionScanner::default().scan(&code, base).unwrap();
+        let plan =
+            TrampolinePlan::from_scan_replacing_first_with_ptrace_stops(&scan, base, noop_hook)
+                .unwrap();
+        let image = plan.emit_at(trampoline).unwrap();
+        let layout = image.layout();
+        let completion_offset =
+            layout.entry_stop_len + layout.instrumentation_len + layout.restore_len;
+        let relocated_offset = completion_offset + layout.completion_stop_len;
+
+        assert_eq!(layout.entry_stop_len, 1);
+        assert_eq!(layout.completion_stop_len, 1);
+        assert_eq!(image.bytes()[0], 0xcc);
+        assert_eq!(image.bytes()[completion_offset], 0xcc);
+        let instrumentation_start = layout.entry_stop_len;
+        let instrumentation_end = instrumentation_start + layout.instrumentation_len;
+        let mut decoder = iced_x86::Decoder::with_ip(
+            64,
+            &image.bytes()[instrumentation_start..instrumentation_end],
+            trampoline + instrumentation_start as u64,
+            iced_x86::DecoderOptions::NONE,
+        );
+        let mut instructions = Vec::new();
+        while decoder.can_decode() {
+            instructions.push(decoder.decode());
+        }
+        assert!(instructions.iter().any(|instruction| {
+            instruction.mnemonic() == iced_x86::Mnemonic::Mov
+                && instruction.op0_register() == iced_x86::Register::RAX
+                && instruction.op1_kind() == iced_x86::OpKind::Memory
+                && instruction.memory_base() == iced_x86::Register::RSP
+                && instruction.memory_displacement64() == 280
+        }));
+        assert!(!instructions.iter().any(|instruction| {
+            instruction.mnemonic() == iced_x86::Mnemonic::Lea
+                && instruction.op0_register() == iced_x86::Register::RAX
+                && instruction.memory_base() == iced_x86::Register::RSP
+                && instruction.memory_displacement64() == 288
+        }));
+        let restore_start = instrumentation_end;
+        let restore_end = restore_start + layout.restore_len;
+        let mut restore_decoder = iced_x86::Decoder::with_ip(
+            64,
+            &image.bytes()[restore_start..restore_end],
+            trampoline + restore_start as u64,
+            iced_x86::DecoderOptions::NONE,
+        );
+        let mut restore_instructions = Vec::new();
+        while restore_decoder.can_decode() {
+            restore_instructions.push(restore_decoder.decode());
+        }
+        assert!(restore_instructions.iter().any(|instruction| {
+            instruction.mnemonic() == iced_x86::Mnemonic::Mov
+                && instruction.op0_register() == iced_x86::Register::RSP
+                && instruction.op1_register() == iced_x86::Register::R12
+        }));
+        let final_restore = restore_instructions.last().unwrap();
+        assert_eq!(final_restore.mnemonic(), iced_x86::Mnemonic::Lea);
+        assert_eq!(final_restore.op0_register(), iced_x86::Register::RSP);
+        assert_eq!(final_restore.memory_base(), iced_x86::Register::RSP);
+        assert_eq!(final_restore.memory_displacement64(), 128);
+        let owned_top = 0x7100_0000_u64;
+        let context_base = owned_top - super::HOOK_CONTEXT_STACK_PREFIX_BYTES as u64;
+        assert_eq!(
+            context_base + super::HOOK_CONTEXT_STACK_PREFIX_BYTES as u64,
+            owned_top
+        );
+        assert_ne!(owned_top, 0x7fff_0000_u64, "RSP is not yet application RSP");
+        let executable = super::ExecutableTrampoline {
+            address: trampoline,
+            allocation_len: super::TRAMPOLINE_ALLOCATION_BYTES,
+            mapping_address: 0,
+            code_len: image.bytes().len(),
+            layout,
+            program_counters: Box::new([]),
+            program_counters_published: std::sync::atomic::AtomicBool::new(false),
+        };
+        assert_eq!(executable.ptrace_entry_stop_rip(), Some(trampoline + 1));
+        assert_eq!(
+            executable.ptrace_completion_stop_rip(),
+            Some(trampoline + relocated_offset as u64)
+        );
+        assert_eq!(
+            executable.relocated_tail_address(),
+            trampoline + relocated_offset as u64
+        );
+        assert_eq!(
+            image
+                .program_counter_mappings()
+                .iter()
+                .find_map(|mapping| mapping.translate(trampoline)),
+            Some(base)
+        );
+        assert_eq!(
+            image
+                .program_counter_mappings()
+                .iter()
+                .find_map(|mapping| mapping.translate(trampoline + relocated_offset as u64)),
+            Some(base + 2)
+        );
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -2124,7 +3074,8 @@ mod tests {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     #[test]
     fn reencodes_rip_relative_memory_for_the_trampoline_address() {
-        use iced_x86::{Decoder, DecoderOptions};
+        use iced_x86::Decoder;
+        use iced_x86::DecoderOptions;
 
         let base = 0x20_0000;
         let code = [0x8B, 0x05, 0x34, 0x12, 0, 0];
@@ -2150,7 +3101,8 @@ mod tests {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     #[test]
     fn relocates_relative_calls_and_expands_out_of_range_branches() {
-        use iced_x86::{Decoder, DecoderOptions};
+        use iced_x86::Decoder;
+        use iced_x86::DecoderOptions;
 
         let call_base = 0x30_0000_u64;
         let call_target = call_base + 0x2000;
@@ -2322,22 +3274,49 @@ mod tests {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     mod live {
         use core::arch::asm;
-        use core::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-        use std::sync::{Arc, Barrier, Mutex, MutexGuard};
+        use core::sync::atomic::AtomicBool;
+        use core::sync::atomic::AtomicU64;
+        use core::sync::atomic::Ordering;
+        use std::os::fd::AsRawFd;
+        use std::os::fd::FromRawFd;
+        use std::os::fd::OwnedFd;
+        use std::process::Child;
+        use std::process::Command;
+        use std::process::ExitStatus;
+        use std::sync::Arc;
+        use std::sync::Barrier;
+        use std::sync::Mutex;
+        use std::sync::MutexGuard;
         use std::thread;
-        use std::time::{Duration, Instant};
+        use std::time::Duration;
+        use std::time::Instant;
 
-        use super::{HookContext, InstructionScanner};
-        use crate::patcher::{PatchError, StalenessBudget};
-        use crate::trampoline::{
-            HookSite, InstalledHook, TrampolineError, translate_program_counter,
-        };
+        use super::HookContext;
+        use super::InstructionScanner;
+        use crate::patcher::PatchError;
+        use crate::patcher::StalenessBudget;
+        use crate::trampoline::HOOK_CONTEXT_STACK_PREFIX_BYTES;
+        use crate::trampoline::HookSite;
+        use crate::trampoline::InstalledHook;
+        use crate::trampoline::SavedExtendedStateDescriptor;
+        use crate::trampoline::TrampolineError;
+        use crate::trampoline::translate_program_counter;
 
         const PAGE_BYTES: usize = 4096;
         const STALENESS_TICKS: u64 = 3_000;
+        const PTRACE_CHILD_ENV: &str = "LITEINST2_PTRACE_STOP_CHILD_FD";
+        const PTRACE_CHILD_TEST: &str =
+            "trampoline::tests::live::ptrace_stopped_hook_executes_on_owned_stack";
+        const PTRACE_EVENT_TIMEOUT: Duration = Duration::from_secs(10);
+        const OWNED_STACK_BYTES: usize = 64 * 1024;
+        const NT_X86_XSTATE: usize = 0x202;
         static TEST_LOCK: Mutex<()> = Mutex::new(());
         static CALLBACKS: AtomicU64 = AtomicU64::new(0);
         static LAST_IP: AtomicU64 = AtomicU64::new(0);
+        static LAST_EXTENDED_ADDRESS: AtomicU64 = AtomicU64::new(0);
+        static LAST_EXTENDED_LEN: AtomicU64 = AtomicU64::new(0);
+        static LAST_EXTENDED_MASK: AtomicU64 = AtomicU64::new(0);
+        static LAST_EXTENDED_FORMAT: AtomicU64 = AtomicU64::new(0);
 
         fn serial_guard() -> MutexGuard<'static, ()> {
             TEST_LOCK
@@ -2349,8 +3328,13 @@ mod tests {
         unsafe extern "C" fn record_hook(context: *mut HookContext) {
             // SAFETY: generated code passes a live HookContext for this call.
             let context = unsafe { &*context };
+            let extended = context.saved_extended_state();
             LAST_IP.store(context.instruction_pointer, Ordering::Relaxed);
             LAST_RDI.store(context.rdi, Ordering::Relaxed);
+            LAST_EXTENDED_ADDRESS.store(extended.address(), Ordering::Relaxed);
+            LAST_EXTENDED_LEN.store(extended.len(), Ordering::Relaxed);
+            LAST_EXTENDED_MASK.store(extended.mask(), Ordering::Relaxed);
+            LAST_EXTENDED_FORMAT.store(extended.format().raw(), Ordering::Relaxed);
             CALLBACKS.fetch_add(1, Ordering::Relaxed);
         }
 
@@ -2360,6 +3344,14 @@ mod tests {
                 (*context).rax = 40;
             }
             CALLBACKS.fetch_add(1, Ordering::Relaxed);
+        }
+
+        unsafe extern "C" fn ptrace_replace_first_hook(context: *mut HookContext) {
+            // SAFETY: generated code passes a unique mutable snapshot.
+            unsafe {
+                (*context).rax = 40;
+                asm!("pxor xmm0, xmm0", out("xmm0") _, options(nostack, preserves_flags));
+            }
         }
 
         unsafe extern "C" fn clobber_flags_hook(_context: *mut HookContext) {
@@ -2395,6 +3387,384 @@ mod tests {
                 );
             }
             CALLBACKS.fetch_add(1, Ordering::Relaxed);
+        }
+
+        #[repr(C)]
+        #[derive(Clone, Copy, Debug, Default)]
+        struct PtraceStopControl {
+            entry_rip: u64,
+            completion_rip: u64,
+            owned_stack_top: u64,
+            tracee_tid: u64,
+            execute_address: u64,
+            saved_extended_state: super::SavedExtendedStateLayout,
+        }
+
+        struct PtraceChild {
+            child: Child,
+            tracee_tid: Option<libc::pid_t>,
+        }
+
+        impl PtraceChild {
+            fn new(child: Child) -> Self {
+                Self {
+                    child,
+                    tracee_tid: None,
+                }
+            }
+
+            fn set_tracee_tid(&mut self, tracee_tid: libc::pid_t) {
+                assert!(tracee_tid > 0);
+                self.tracee_tid = Some(tracee_tid);
+            }
+
+            fn wait_for_exit(&mut self) -> ExitStatus {
+                let deadline = Instant::now() + PTRACE_EVENT_TIMEOUT;
+                loop {
+                    match self.child.try_wait().unwrap() {
+                        Some(status) => return status,
+                        None if Instant::now() < deadline => {
+                            thread::sleep(Duration::from_millis(5));
+                        }
+                        None => panic!("ptrace child process did not exit after tracee exit"),
+                    }
+                }
+            }
+        }
+
+        impl Drop for PtraceChild {
+            fn drop(&mut self) {
+                if matches!(self.child.try_wait(), Ok(Some(_))) {
+                    return;
+                }
+                let _ = self.child.kill();
+                let deadline = Instant::now() + PTRACE_EVENT_TIMEOUT;
+                while Instant::now() < deadline {
+                    if let Some(tracee_tid) = self.tracee_tid {
+                        let mut status = 0;
+                        // SAFETY: tracee_tid, when present, came from this
+                        // owned child. Drain any terminal ptrace notification
+                        // so the process leader can become waitable.
+                        let _ = unsafe {
+                            libc::waitpid(tracee_tid, &mut status, libc::WNOHANG | libc::__WALL)
+                        };
+                    }
+                    match self.child.try_wait() {
+                        Ok(Some(_)) | Err(_) => return,
+                        Ok(None) => thread::sleep(Duration::from_millis(5)),
+                    }
+                }
+            }
+        }
+
+        fn write_all_fd(fd: libc::c_int, bytes: &[u8]) {
+            let mut written = 0;
+            while written < bytes.len() {
+                // SAFETY: bytes names a live readable slice and fd is the
+                // inherited control-pipe writer.
+                let result = unsafe {
+                    libc::write(fd, bytes[written..].as_ptr().cast(), bytes.len() - written)
+                };
+                assert!(result > 0, "control-pipe write failed");
+                written += result as usize;
+            }
+        }
+
+        fn read_control_fd(fd: libc::c_int) -> PtraceStopControl {
+            let mut control = PtraceStopControl::default();
+            // SAFETY: control is plain repr(C) integer storage.
+            let bytes = unsafe {
+                core::slice::from_raw_parts_mut(
+                    (&raw mut control).cast::<u8>(),
+                    core::mem::size_of::<PtraceStopControl>(),
+                )
+            };
+            let deadline = Instant::now() + PTRACE_EVENT_TIMEOUT;
+            let mut received = 0;
+            while received < bytes.len() {
+                if Instant::now() >= deadline {
+                    panic!("ptrace child did not publish its control record");
+                }
+                let mut pollfd = libc::pollfd {
+                    fd,
+                    events: libc::POLLIN,
+                    revents: 0,
+                };
+                // SAFETY: pollfd names one initialized descriptor record.
+                let polled = unsafe { libc::poll(&mut pollfd, 1, 20) };
+                assert!(polled >= 0, "control-pipe poll failed");
+                if polled == 0 {
+                    continue;
+                }
+                // SAFETY: the remaining slice is writable and fd is readable.
+                let amount = unsafe {
+                    libc::read(
+                        fd,
+                        bytes[received..].as_mut_ptr().cast(),
+                        bytes.len() - received,
+                    )
+                };
+                if amount == 0 {
+                    panic!("ptrace child closed its control pipe early");
+                }
+                assert!(amount > 0, "control-pipe read failed");
+                received += amount as usize;
+            }
+            control
+        }
+
+        fn waitpid_event(
+            tracee_tid: libc::pid_t,
+            phase: &str,
+            allow_not_yet_traced: bool,
+        ) -> libc::c_int {
+            let deadline = Instant::now() + PTRACE_EVENT_TIMEOUT;
+            loop {
+                let mut status = 0;
+                // SAFETY: tracee_tid names the ptraced child thread and status
+                // is writable. __WALL is required because Rust's test harness
+                // runs each test in a non-leader thread.
+                let result =
+                    unsafe { libc::waitpid(tracee_tid, &mut status, libc::WNOHANG | libc::__WALL) };
+                if result == tracee_tid {
+                    return status;
+                }
+                if result == -1
+                    && allow_not_yet_traced
+                    && std::io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD)
+                {
+                    thread::sleep(Duration::from_millis(5));
+                    continue;
+                }
+                assert_eq!(result, 0, "waitpid failed during {phase}");
+                if Instant::now() >= deadline {
+                    panic!("ptrace child timed out during {phase}");
+                }
+                thread::sleep(Duration::from_millis(5));
+            }
+        }
+
+        fn ptrace_getregs(pid: libc::pid_t) -> libc::user_regs_struct {
+            // SAFETY: zero is a valid initial byte pattern for the output.
+            let mut registers: libc::user_regs_struct = unsafe { core::mem::zeroed() };
+            // SAFETY: child is ptrace-stopped and registers is writable.
+            let result = unsafe {
+                libc::ptrace(
+                    libc::PTRACE_GETREGS,
+                    pid,
+                    core::ptr::null_mut::<libc::c_void>(),
+                    (&raw mut registers).cast::<libc::c_void>(),
+                )
+            };
+            assert_eq!(result, 0, "PTRACE_GETREGS failed");
+            registers
+        }
+
+        fn ptrace_peek_u64(pid: libc::pid_t, address: u64) -> u64 {
+            assert_eq!(address % core::mem::size_of::<u64>() as u64, 0);
+            // SAFETY: errno is thread-local and setting it to zero is required
+            // to distinguish a valid all-ones word from PTRACE_PEEKDATA error.
+            unsafe { *libc::__errno_location() = 0 };
+            // SAFETY: the child is ptrace-stopped and address is an aligned
+            // word in its authenticated owned-stack mapping.
+            let word = unsafe {
+                libc::ptrace(
+                    libc::PTRACE_PEEKDATA,
+                    pid,
+                    address as usize as *mut libc::c_void,
+                    core::ptr::null_mut::<libc::c_void>(),
+                )
+            };
+            let errno = std::io::Error::last_os_error().raw_os_error().unwrap_or(0);
+            assert!(word != -1 || errno == 0, "PTRACE_PEEKDATA failed");
+            word as u64
+        }
+
+        fn ptrace_setregs(pid: libc::pid_t, registers: &libc::user_regs_struct) {
+            // SAFETY: child is ptrace-stopped and registers names a complete set.
+            let result = unsafe {
+                libc::ptrace(
+                    libc::PTRACE_SETREGS,
+                    pid,
+                    core::ptr::null_mut::<libc::c_void>(),
+                    (registers as *const libc::user_regs_struct)
+                        .cast_mut()
+                        .cast::<libc::c_void>(),
+                )
+            };
+            assert_eq!(result, 0, "PTRACE_SETREGS failed");
+        }
+
+        fn ptrace_get_xstate(pid: libc::pid_t) -> Vec<u8> {
+            let mut bytes = vec![0_u8; 64 * 1024];
+            let mut iov = libc::iovec {
+                iov_base: bytes.as_mut_ptr().cast(),
+                iov_len: bytes.len(),
+            };
+            // SAFETY: child is ptrace-stopped and iov names writable storage.
+            let result = unsafe {
+                libc::ptrace(
+                    libc::PTRACE_GETREGSET,
+                    pid,
+                    NT_X86_XSTATE as *mut libc::c_void,
+                    (&raw mut iov).cast::<libc::c_void>(),
+                )
+            };
+            assert_eq!(result, 0, "PTRACE_GETREGSET NT_X86_XSTATE failed");
+            assert!(iov.iov_len >= 576 && iov.iov_len <= bytes.len());
+            bytes.truncate(iov.iov_len);
+            bytes
+        }
+
+        fn ptrace_set_xstate(pid: libc::pid_t, bytes: &mut [u8]) {
+            let mut iov = libc::iovec {
+                iov_base: bytes.as_mut_ptr().cast(),
+                iov_len: bytes.len(),
+            };
+            // SAFETY: child is ptrace-stopped and iov names the complete image.
+            let result = unsafe {
+                libc::ptrace(
+                    libc::PTRACE_SETREGSET,
+                    pid,
+                    NT_X86_XSTATE as *mut libc::c_void,
+                    (&raw mut iov).cast::<libc::c_void>(),
+                )
+            };
+            assert_eq!(result, 0, "PTRACE_SETREGSET NT_X86_XSTATE failed");
+            assert_eq!(iov.iov_len, bytes.len());
+        }
+
+        fn ptrace_continue(pid: libc::pid_t) {
+            // SAFETY: child is ptrace-stopped; null data suppresses the stop signal.
+            let result = unsafe {
+                libc::ptrace(
+                    libc::PTRACE_CONT,
+                    pid,
+                    core::ptr::null_mut::<libc::c_void>(),
+                    core::ptr::null_mut::<libc::c_void>(),
+                )
+            };
+            assert_eq!(result, 0, "PTRACE_CONT failed");
+        }
+
+        fn assert_completion_registers(
+            entry: &libc::user_regs_struct,
+            completion: &libc::user_regs_struct,
+            expected_rip: u64,
+            expected_rsp: u64,
+        ) {
+            assert_eq!(completion.rip, expected_rip);
+            assert_eq!(completion.rsp, expected_rsp);
+            assert_eq!(completion.rax, 40);
+            assert_eq!(completion.r15, entry.r15);
+            assert_eq!(completion.r14, entry.r14);
+            assert_eq!(completion.r13, entry.r13);
+            assert_eq!(completion.r12, entry.r12);
+            assert_eq!(completion.rbp, entry.rbp);
+            assert_eq!(completion.rbx, entry.rbx);
+            assert_eq!(completion.r11, entry.r11);
+            assert_eq!(completion.r10, entry.r10);
+            assert_eq!(completion.r9, entry.r9);
+            assert_eq!(completion.r8, entry.r8);
+            assert_eq!(completion.rcx, entry.rcx);
+            assert_eq!(completion.rdx, entry.rdx);
+            assert_eq!(completion.rsi, entry.rsi);
+            assert_eq!(completion.rdi, entry.rdi);
+            assert_eq!(completion.orig_rax, entry.orig_rax);
+            assert_eq!(completion.eflags, entry.eflags);
+            assert_eq!(completion.cs, entry.cs);
+            assert_eq!(completion.ss, entry.ss);
+            assert_eq!(completion.ds, entry.ds);
+            assert_eq!(completion.es, entry.es);
+            assert_eq!(completion.fs, entry.fs);
+            assert_eq!(completion.gs, entry.gs);
+            assert_eq!(completion.fs_base, entry.fs_base);
+            assert_eq!(completion.gs_base, entry.gs_base);
+        }
+
+        fn ptrace_stopped_child(control_fd: libc::c_int) -> ! {
+            let mapping = DualMapping::new();
+            let offset = 448;
+            let code = [0x31, 0xC0, 0xFF, 0xC0, 0x90, 0xC3, 0x90, 0x90];
+            mapping.write(offset, &code);
+            let scanner = InstructionScanner::default();
+            let address = mapping.executable_address(offset);
+            let scan = scanner.scan(&code, address).unwrap();
+            let arena = crate::trampoline::TrampolineArena::allocate_near(address, 2).unwrap();
+            // SAFETY: this child owns both aliases, has no competing accessor,
+            // and its parent will authenticate both generated stops.
+            let hook = unsafe {
+                InstalledHook::install_replacing_first_in_arena_quiescent_with_ptrace_stops(
+                    HookSite::new(
+                        &scanner,
+                        &scan,
+                        &code,
+                        address,
+                        address,
+                        mapping.writable_address(offset),
+                    ),
+                    ptrace_replace_first_hook,
+                    &arena,
+                )
+                .unwrap()
+            };
+            // SAFETY: no other thread accesses the synthetic code mapping.
+            assert!(unsafe { hook.activate_quiescent() }.unwrap());
+            // SAFETY: anonymous stack mapping with no fixed address.
+            let owned_stack = unsafe {
+                libc::mmap(
+                    core::ptr::null_mut(),
+                    OWNED_STACK_BYTES,
+                    libc::PROT_READ | libc::PROT_WRITE,
+                    libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | libc::MAP_STACK,
+                    -1,
+                    0,
+                )
+            };
+            assert_ne!(owned_stack, libc::MAP_FAILED);
+            let owned_stack_top = owned_stack as usize + OWNED_STACK_BYTES;
+            assert_eq!(owned_stack_top % 64, 0);
+            let control = PtraceStopControl {
+                entry_rip: hook.trampoline().ptrace_entry_stop_rip().unwrap(),
+                completion_rip: hook.trampoline().ptrace_completion_stop_rip().unwrap(),
+                owned_stack_top: owned_stack_top as u64,
+                // SAFETY: gettid has no pointer arguments and cannot fail for
+                // the calling thread.
+                tracee_tid: unsafe { libc::syscall(libc::SYS_gettid) as u64 },
+                execute_address: address,
+                saved_extended_state: hook.trampoline().layout().saved_extended_state,
+            };
+            // SAFETY: control is plain initialized repr(C) integer storage.
+            let bytes = unsafe {
+                core::slice::from_raw_parts(
+                    (&raw const control).cast::<u8>(),
+                    core::mem::size_of::<PtraceStopControl>(),
+                )
+            };
+            write_all_fd(control_fd, bytes);
+            // SAFETY: the complete control record is now in the pipe and the
+            // child no longer needs its inherited writer.
+            assert_eq!(unsafe { libc::close(control_fd) }, 0);
+            // SAFETY: the subprocess's direct parent is the intended tracer.
+            assert_eq!(
+                unsafe {
+                    libc::ptrace(
+                        libc::PTRACE_TRACEME,
+                        0,
+                        core::ptr::null_mut::<libc::c_void>(),
+                        core::ptr::null_mut::<libc::c_void>(),
+                    )
+                },
+                0
+            );
+            // SAFETY: SIGSTOP establishes the parent's initial ptrace stop.
+            assert_eq!(unsafe { libc::raise(libc::SIGSTOP) }, 0);
+            // SAFETY: the active synthetic bytes implement extern C fn() -> u32.
+            let function: unsafe extern "C" fn() -> u32 =
+                unsafe { core::mem::transmute(address as usize) };
+            let result = unsafe { function() };
+            // SAFETY: the isolated child reports the exact execution result.
+            unsafe { libc::_exit(if result == 41 { 41 } else { 121 }) }
         }
         struct DualMapping {
             writable: *mut u8,
@@ -2524,6 +3894,10 @@ mod tests {
             CALLBACKS.store(0, Ordering::Relaxed);
             LAST_IP.store(0, Ordering::Relaxed);
             LAST_RDI.store(0, Ordering::Relaxed);
+            LAST_EXTENDED_ADDRESS.store(0, Ordering::Relaxed);
+            LAST_EXTENDED_LEN.store(0, Ordering::Relaxed);
+            LAST_EXTENDED_MASK.store(0, Ordering::Relaxed);
+            LAST_EXTENDED_FORMAT.store(0, Ordering::Relaxed);
 
             let mapping = DualMapping::new();
             let offset = 60;
@@ -2554,6 +3928,41 @@ mod tests {
                 mapping.executable_address(offset)
             );
             assert_eq!(LAST_RDI.load(Ordering::Relaxed), 5);
+            let extended_layout = hook.trampoline().layout().saved_extended_state;
+            assert!(!extended_layout.is_empty());
+            assert_eq!(
+                LAST_EXTENDED_LEN.load(Ordering::Relaxed),
+                extended_layout.len()
+            );
+            assert_eq!(
+                LAST_EXTENDED_MASK.load(Ordering::Relaxed),
+                extended_layout.mask()
+            );
+            assert_eq!(
+                LAST_EXTENDED_FORMAT.load(Ordering::Relaxed),
+                extended_layout.format().raw()
+            );
+            let saved_address = LAST_EXTENDED_ADDRESS.load(Ordering::Relaxed);
+            let alignment = extended_layout
+                .format()
+                .required_alignment()
+                .expect("generated trampoline must publish an admitted saved-state format");
+            assert_ne!(saved_address, 0);
+            assert_eq!(saved_address % alignment, 0);
+            assert!(extended_layout.image_len() <= extended_layout.len());
+            for (index, component) in extended_layout.components().iter().enumerate() {
+                assert!(component.xfeature().is_power_of_two());
+                assert_ne!(extended_layout.mask() & component.xfeature(), 0);
+                assert!(component.offset() >= 576);
+                assert!(component.size() > 0);
+                assert!(component.offset() + component.size() <= extended_layout.image_len());
+                for prior in &extended_layout.components()[..index] {
+                    assert!(
+                        component.offset() >= prior.offset() + prior.size()
+                            || prior.offset() >= component.offset() + component.size()
+                    );
+                }
+            }
             assert!(hook.deactivate().unwrap());
             assert!(!hook.deactivate().unwrap());
             assert!(!hook.is_active());
@@ -2609,6 +4018,226 @@ mod tests {
             assert_eq!(CALLBACKS.load(Ordering::Relaxed), 1);
             assert!(hook.deactivate().unwrap());
             assert_eq!(unsafe { function() }, 1);
+        }
+
+        #[test]
+        fn ptrace_stopped_hook_leaves_global_pc_publication_explicit() {
+            let _guard = serial_guard();
+
+            let mapping = DualMapping::new();
+            let offset = 384;
+            let code = [0x31, 0xC0, 0xFF, 0xC0, 0x90, 0xC3, 0x90, 0x90];
+            mapping.write(offset, &code);
+            let scanner = InstructionScanner::default();
+            let address = mapping.executable_address(offset);
+            let scan = scanner.scan(&code, address).unwrap();
+            let arena = crate::trampoline::TrampolineArena::allocate_near(address, 2).unwrap();
+            // SAFETY: both dual aliases and the arena live for the process, and
+            // the test never activates the controller-owned breakpoint path.
+            let hook = unsafe {
+                InstalledHook::install_replacing_first_in_arena_quiescent_with_ptrace_stops(
+                    HookSite::new(
+                        &scanner,
+                        &scan,
+                        &code,
+                        address,
+                        address,
+                        mapping.writable_address(offset),
+                    ),
+                    replace_first_hook,
+                    &arena,
+                )
+                .unwrap()
+            };
+            let relocated = hook.trampoline().relocated_tail_address();
+            assert!(
+                !hook
+                    .trampoline()
+                    .program_counters_published
+                    .load(Ordering::Acquire)
+            );
+            assert_eq!(translate_program_counter(relocated), None);
+
+            hook.trampoline().publish_program_counter_mappings();
+            assert!(
+                hook.trampoline()
+                    .program_counters_published
+                    .load(Ordering::Acquire)
+            );
+            assert_eq!(translate_program_counter(relocated), Some(address + 2));
+        }
+
+        #[test]
+        fn ptrace_stopped_hook_executes_on_owned_stack() {
+            if let Some(control_fd) = std::env::var_os(PTRACE_CHILD_ENV) {
+                let control_fd = control_fd.to_str().unwrap().parse::<libc::c_int>().unwrap();
+                ptrace_stopped_child(control_fd);
+            }
+
+            let mut pipe = [-1; 2];
+            // SAFETY: pipe names two writable descriptor slots.
+            assert_eq!(unsafe { libc::pipe(pipe.as_mut_ptr()) }, 0);
+            let child = Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    PTRACE_CHILD_TEST,
+                    "--nocapture",
+                    "--test-threads=1",
+                ])
+                .env(PTRACE_CHILD_ENV, pipe[1].to_string())
+                .spawn()
+                .unwrap();
+            let mut child = PtraceChild::new(child);
+            // SAFETY: pipe[0] is the parent's unique readable control-pipe
+            // descriptor and is transferred to this guard.
+            let control_reader = unsafe { OwnedFd::from_raw_fd(pipe[0]) };
+            // SAFETY: the parent no longer writes the control pipe.
+            assert_eq!(unsafe { libc::close(pipe[1]) }, 0);
+            let control = read_control_fd(control_reader.as_raw_fd());
+            let tracee_tid = libc::pid_t::try_from(control.tracee_tid).unwrap();
+            child.set_tracee_tid(tracee_tid);
+            drop(control_reader);
+
+            let initial_status = waitpid_event(tracee_tid, "initial SIGSTOP", true);
+            assert!(libc::WIFSTOPPED(initial_status));
+            assert_eq!(libc::WSTOPSIG(initial_status), libc::SIGSTOP);
+            // SAFETY: the tracee is stopped and the option is an integer mask.
+            assert_eq!(
+                unsafe {
+                    libc::ptrace(
+                        libc::PTRACE_SETOPTIONS,
+                        tracee_tid,
+                        core::ptr::null_mut::<libc::c_void>(),
+                        libc::PTRACE_O_EXITKILL as usize as *mut libc::c_void,
+                    )
+                },
+                0
+            );
+            ptrace_continue(tracee_tid);
+
+            let entry_status = waitpid_event(tracee_tid, "entry stop", false);
+            assert!(libc::WIFSTOPPED(entry_status));
+            assert_eq!(libc::WSTOPSIG(entry_status), libc::SIGTRAP);
+            let entry_registers = ptrace_getregs(tracee_tid);
+            assert_eq!(entry_registers.rip, control.entry_rip);
+            let application_rsp = entry_registers.rsp;
+            let mut entry_xstate = ptrace_get_xstate(tracee_tid);
+            entry_xstate[160..176].fill(0xa5);
+            ptrace_set_xstate(tracee_tid, &mut entry_xstate);
+            let entry_xstate = ptrace_get_xstate(tracee_tid);
+            assert!(entry_xstate[160..176].iter().all(|byte| *byte == 0xa5));
+
+            // SAFETY: owned_stack_top - 8 is mapped writable tracee memory and
+            // POKEDATA carries the application RSP as one machine word.
+            assert_eq!(
+                unsafe {
+                    libc::ptrace(
+                        libc::PTRACE_POKEDATA,
+                        tracee_tid,
+                        (control.owned_stack_top - 8) as usize as *mut libc::c_void,
+                        application_rsp as usize as *mut libc::c_void,
+                    )
+                },
+                0
+            );
+            let mut callback_registers = entry_registers;
+            callback_registers.rsp = control.owned_stack_top;
+            ptrace_setregs(tracee_tid, &callback_registers);
+            assert_eq!(ptrace_getregs(tracee_tid).rsp, control.owned_stack_top);
+            assert_eq!(ptrace_get_xstate(tracee_tid), entry_xstate);
+            ptrace_continue(tracee_tid);
+
+            let completion_status = waitpid_event(tracee_tid, "completion stop", false);
+            assert!(libc::WIFSTOPPED(completion_status));
+            assert_eq!(libc::WSTOPSIG(completion_status), libc::SIGTRAP);
+            let mut completion_registers = ptrace_getregs(tracee_tid);
+            assert_completion_registers(
+                &entry_registers,
+                &completion_registers,
+                control.completion_rip,
+                control.owned_stack_top,
+            );
+            assert_eq!(ptrace_get_xstate(tracee_tid), entry_xstate);
+
+            let context_address = control.owned_stack_top - HOOK_CONTEXT_STACK_PREFIX_BYTES as u64;
+            assert_eq!(
+                ptrace_peek_u64(
+                    tracee_tid,
+                    context_address
+                        + core::mem::offset_of!(HookContext, instruction_pointer) as u64,
+                ),
+                control.execute_address
+            );
+            assert_eq!(
+                ptrace_peek_u64(
+                    tracee_tid,
+                    context_address + core::mem::offset_of!(HookContext, stack_pointer) as u64,
+                ),
+                application_rsp
+            );
+            let descriptor_address =
+                context_address + core::mem::offset_of!(HookContext, saved_extended_state) as u64;
+            let saved_address = ptrace_peek_u64(
+                tracee_tid,
+                descriptor_address
+                    + core::mem::offset_of!(SavedExtendedStateDescriptor, address) as u64,
+            );
+            assert_eq!(
+                ptrace_peek_u64(
+                    tracee_tid,
+                    descriptor_address
+                        + core::mem::offset_of!(SavedExtendedStateDescriptor, len) as u64,
+                ),
+                control.saved_extended_state.len()
+            );
+            assert_eq!(
+                ptrace_peek_u64(
+                    tracee_tid,
+                    descriptor_address
+                        + core::mem::offset_of!(SavedExtendedStateDescriptor, mask) as u64,
+                ),
+                control.saved_extended_state.mask()
+            );
+            assert_eq!(
+                ptrace_peek_u64(
+                    tracee_tid,
+                    descriptor_address
+                        + core::mem::offset_of!(SavedExtendedStateDescriptor, format) as u64,
+                ),
+                control.saved_extended_state.format().raw()
+            );
+            let alignment = control
+                .saved_extended_state
+                .format()
+                .required_alignment()
+                .unwrap();
+            assert_eq!(saved_address % alignment, 0);
+            assert!(
+                saved_address
+                    >= control.owned_stack_top - u64::try_from(OWNED_STACK_BYTES).unwrap()
+            );
+            assert!(
+                saved_address + control.saved_extended_state.len() <= context_address,
+                "saved-state image escaped the authenticated owned-stack frame"
+            );
+            assert_eq!(
+                ptrace_peek_u64(tracee_tid, saved_address + 160),
+                u64::from_ne_bytes([0xa5; 8])
+            );
+            assert_eq!(
+                ptrace_peek_u64(tracee_tid, saved_address + 168),
+                u64::from_ne_bytes([0xa5; 8])
+            );
+
+            completion_registers.rsp = application_rsp;
+            ptrace_setregs(tracee_tid, &completion_registers);
+            assert_eq!(ptrace_getregs(tracee_tid).rsp, application_rsp);
+            ptrace_continue(tracee_tid);
+
+            let exit_status = waitpid_event(tracee_tid, "tracee exit", false);
+            assert!(libc::WIFEXITED(exit_status));
+            assert_eq!(libc::WEXITSTATUS(exit_status), 41);
+            assert_eq!(child.wait_for_exit().code(), Some(41));
         }
 
         #[test]
@@ -2791,7 +4420,10 @@ mod tests {
 
         #[test]
         fn preserves_avx_upper_lane_across_a_clobbering_callback() {
-            use iced_x86::code_asm::{CodeAssembler, rax, xmm0, ymm1};
+            use iced_x86::code_asm::CodeAssembler;
+            use iced_x86::code_asm::rax;
+            use iced_x86::code_asm::xmm0;
+            use iced_x86::code_asm::ymm1;
 
             if !std::is_x86_feature_detected!("avx2") {
                 return;

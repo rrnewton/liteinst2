@@ -65,7 +65,8 @@ Each module owns one correctness boundary:
 - `rapid`: exact instruction-pun planning and atomic opcode toggling.
 - `probe`: idempotent probe lifecycle state.
 - `trampoline`: near dual-mapped allocation, relocation, hook dispatch, CET-safe
-  return, and async-signal-safe reverse-PC lookup.
+  return, exact extended-state preservation, controller-owned stop points, and
+  async-signal-safe reverse-PC lookup.
 
 Clients that keep a ptrace slow path follow the exhaustive
 [patch-site decision tree](PATCH_SITE_DECISION_TREE.md): choose quiescent or
@@ -103,6 +104,38 @@ Signal handlers and unwind front ends can call
 `trampoline::translate_program_counter` without allocation or locks before
 reporting or unwinding a relocated fault. This translates the logical PC; it
 does not install a signal handler or synthesize DWARF call-frame metadata.
+Existing `InstalledHook` entrypoints continue to publish these ranges
+automatically. The explicitly controller-owned ptrace-stop entrypoint leaves
+process-global publication opt-in; its owner can call
+`ExecutableTrampoline::publish_program_counter_mappings` after binding when it
+needs the global lookup and accepts process-lifetime metadata.
+
+Callbacks can inspect `HookContext::saved_extended_state` together with the
+authenticated `TrampolineLayout::saved_extended_state` to locate the exact
+FXSAVE64 or standard XSAVE64 image. The layout includes every admitted
+non-legacy component extent and fails closed if the enabled x86 state cannot be
+represented exactly. The controller-owned trampoline form brackets the callback
+with entry and post-restore `INT3` stops and requires the external controller to
+perform both documented RSP pivots; using that entrypoint without such a
+controller is unsupported.
+
+Concurrent WordPatch++ installation owns the process SIGTRAP router. Standalone
+installation admits only prior `SIG_DFL` or `SIG_IGN` dispositions and refuses a
+custom SIGTRAP handler without replacing it. A filtered host can instead call
+`prepare_live_patching_with_signal_runtime` with exact installation and default
+redelivery callbacks, subject to the same prior-disposition rule. The host
+installer retains a blocked SIGTRAP mask until LiteInst2 publishes the prior
+action and asks the host to restore the exact mask. This avoids pretending that
+a direct Rust call can reproduce kernel signal-mask,
+alternate-stack, reset, and restart semantics. The preparation entrypoint is
+unsafe because the host callbacks must initialize their outputs and uphold
+those signal and no-unwind contracts.
+
+Trampoline arenas retain their original RW alias but seal the memfd against new
+writable mappings, positional writes, resizing, and policy changes. Arena
+creation therefore fails closed when the backing store cannot provide the
+required seal set. Near-allocation discovery also bounds `/proc/self/maps` at
+2 MiB and refuses malformed, oversized, or unreservable input.
 The ordinary `LiveJumpPatch` and `InstalledHook` entrypoints use concurrent-safe
 publication. WordPatch++ guards every byte before a cache-line split as
 specified by PLDI 2017, but callers must still supply a
@@ -132,17 +165,26 @@ GitHub Actions runs these blocking checks on Linux x86-64:
 - Debug and release `cargo test --all-targets --all-features` cover decoding,
   cache-line planning, jump publication, trap routing, relocation, context
   preservation, and concurrent toggling using synthetic dual-mapped functions.
+- `relocated_fault_pc_translation` runs in the normal suite but delegates its
+  intentional SIGSEGV to a bounded child process so it cannot mutate the test
+  harness's signal state.
+
+The following host-scale checks are opt-in rather than part of the blocking
+workspace runs:
+
 - `live_probe_stress_matrix` exercises 128 rapid probes, one million opcode
   stores, 16 guarded jump probes, 10,000 activation cycles, and concurrent
   signal delivery at its default scale.
-- `probe_overhead_benchmark` is used only as a functional active-hook loop: CI
-  requires one callback per call but does not enforce its host-dependent timing.
-
-The live stress matrix and overhead benchmark are opt-in:
+- `probe_overhead_benchmark` is used only as a functional active-hook loop. When
+  run, it requires one callback per call but does not enforce host-dependent
+  timing.
+- `benchmark_single_byte_toggle_latency` is the separate host-timing benchmark
+  for the one-byte rapid-patch operation.
 
 ```console
 cargo test --release --test stress live_probe_stress_matrix -- --ignored --exact --nocapture
 cargo test --release --test stress probe_overhead_benchmark -- --ignored --exact --nocapture
+cargo test --release --lib rapid::tests::live::benchmark_single_byte_toggle_latency -- --ignored --exact --nocapture
 ```
 
 `LITEINST_STRESS_RAPID_FUNCTIONS`, `LITEINST_STRESS_RAPID_ITERATIONS`,
