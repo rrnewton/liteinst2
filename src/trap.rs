@@ -64,6 +64,22 @@ pub struct GuardSignalRuntime {
     pub restore_default: GuardDefaultRestorer,
 }
 
+#[cfg_attr(
+    not(all(target_os = "linux", target_arch = "x86_64")),
+    allow(dead_code)
+)]
+#[derive(Debug)]
+pub(crate) enum JumpError {
+    Registry(TrapError),
+    ExpectedBytesMismatch,
+}
+
+impl From<TrapError> for JumpError {
+    fn from(error: TrapError) -> Self {
+        Self::Registry(error)
+    }
+}
+
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod imp {
     use core::ffi::c_void;
@@ -72,6 +88,7 @@ mod imp {
     use core::sync::atomic::AtomicPtr;
     use core::sync::atomic::AtomicU8;
     use core::sync::atomic::AtomicU64;
+    use core::sync::atomic::AtomicUsize;
     use core::sync::atomic::Ordering;
     use std::sync::Mutex;
     use std::sync::MutexGuard;
@@ -106,6 +123,8 @@ mod imp {
         reservation_start: usize,
         reservation_end: usize,
         guard_mask: u8,
+        displaced_end: AtomicUsize,
+        word: Option<WordSite>,
         phase: AtomicU8,
         handled: AtomicU64,
         next: *mut TrapSite,
@@ -117,6 +136,18 @@ mod imp {
     // SAFETY: immutable fields are published before HEAD's release store; phase
     // is atomic and nodes are never freed.
     unsafe impl Sync for TrapSite {}
+
+    // Only single-cache-line MOV publishers participate in shared envelopes.
+    // Split-word guards and Rapid's independent byte stores remain exclusive.
+    struct WordSite {
+        original: [u8; 8],
+        committed: AtomicU64,
+    }
+
+    struct JumpRegistration {
+        displaced_end: usize,
+        original: Option<[u8; 8]>,
+    }
 
     struct PendingReservation {
         execute_address: usize,
@@ -153,6 +184,65 @@ mod imp {
             self.phase.store(IDLE, Ordering::Release);
         }
 
+        pub(crate) fn begin_jump(
+            &self,
+            expected: &mut [u8; 8],
+            replacement: &mut [u8; 8],
+        ) -> Result<(), super::JumpError> {
+            if self.word.is_none() {
+                return self.begin().map_err(Into::into);
+            }
+            // This lock is released before touching live code. A signal that
+            // interrupted a registrar must fail fast, never wait for itself.
+            let _guard = lock_registry_for_registration()?;
+            let mut current = HEAD.load(Ordering::Acquire);
+            while !current.is_null() {
+                // SAFETY: registry nodes are immutable and never freed.
+                let other = unsafe { &*current };
+                if overlaps(
+                    self.reservation_start,
+                    self.reservation_end,
+                    other.reservation_start,
+                    other.reservation_end,
+                ) {
+                    if other.phase.load(Ordering::Acquire) == WRITING {
+                        return Err(TrapError::Contended.into());
+                    }
+                    if other.execute_address > self.execute_address {
+                        // Registration proved that only a disjoint neighbor's
+                        // jump bytes can occupy our tail, and authenticated the
+                        // binding's original tail against that neighbor.
+                        let word = other.word.as_ref().expect("shared word site");
+                        let bytes = word.committed.load(Ordering::Relaxed).to_le_bytes();
+                        let offset = other.execute_address - self.execute_address;
+                        let count = (8 - offset).min(5);
+                        // A neighbor may have registered after this particular
+                        // handle was bound. Do not let its arrival authenticate
+                        // a stale tail from a same-site rebind retroactively.
+                        if expected[offset..offset + count] != word.original[..count] {
+                            return Err(super::JumpError::ExpectedBytesMismatch);
+                        }
+                        expected[offset..offset + count].copy_from_slice(&bytes[..count]);
+                        replacement[offset..offset + count].copy_from_slice(&bytes[..count]);
+                    }
+                }
+                current = other.next;
+            }
+            // Holding the registry lock makes the overlap check and lease
+            // acquisition indivisible with other writers and registrations.
+            self.begin().map_err(Into::into)
+        }
+
+        pub(crate) fn finish_jump(&self, published: Option<[u8; 8]>) {
+            if let (Some(word), Some(bytes)) = (&self.word, published) {
+                word.committed
+                    .store(u64::from_le_bytes(bytes), Ordering::Relaxed);
+            }
+            // Committed bytes become visible before any neighbor may compose
+            // its next complete expected word. A failed write changes no state.
+            self.finish();
+        }
+
         pub(crate) fn handled_traps(&self) -> u64 {
             self.handled.load(Ordering::Relaxed)
         }
@@ -167,6 +257,8 @@ mod imp {
                 reservation_start: pending.reservation_start,
                 reservation_end: pending.reservation_end,
                 guard_mask: pending.guard_mask,
+                displaced_end: AtomicUsize::new(pending.reservation_end),
+                word: None,
                 phase: AtomicU8::new(IDLE),
                 handled: AtomicU64::new(0),
                 next: ptr::null_mut(),
@@ -222,8 +314,13 @@ mod imp {
         while !current.is_null() {
             // SAFETY: published nodes are process-lifetime allocations.
             let site = unsafe { &*current };
-            if reservation_start < site.reservation_end && site.reservation_start < reservation_end
-            {
+            if overlaps(
+                reservation_start,
+                reservation_end,
+                site.reservation_start.min(site.execute_address),
+                site.reservation_end
+                    .max(site.displaced_end.load(Ordering::Relaxed)),
+            ) {
                 return Err(TrapError::Overlap);
             }
             current = site.next;
@@ -240,50 +337,165 @@ mod imp {
         })
     }
 
+    #[cfg(test)]
     pub(crate) fn register(
         execute_address: usize,
         reservation_start: usize,
         reservation_end: usize,
         guard_mask: u8,
     ) -> Result<&'static TrapSite, TrapError> {
-        ensure_installed()?;
-        let mut candidate = Box::new(TrapSite {
+        register_inner(
             execute_address,
             reservation_start,
             reservation_end,
             guard_mask,
-            phase: AtomicU8::new(IDLE),
-            handled: AtomicU64::new(0),
-            next: ptr::null_mut(),
-        });
-        let _guard = lock_registry_for_registration()?;
+            None,
+        )
+        .map(|(site, _)| site)
+    }
 
+    pub(crate) fn register_jump(
+        execute_address: usize,
+        reservation_start: usize,
+        reservation_end: usize,
+        guard_mask: u8,
+        displaced_end: usize,
+        original: Option<[u8; 8]>,
+    ) -> Result<(&'static TrapSite, Option<[u8; 8]>), TrapError> {
+        register_inner(
+            execute_address,
+            reservation_start,
+            reservation_end,
+            guard_mask,
+            Some(JumpRegistration {
+                displaced_end,
+                original,
+            }),
+        )
+    }
+
+    fn register_inner(
+        execute_address: usize,
+        reservation_start: usize,
+        reservation_end: usize,
+        guard_mask: u8,
+        jump: Option<JumpRegistration>,
+    ) -> Result<(&'static TrapSite, Option<[u8; 8]>), TrapError> {
+        ensure_installed()?;
+        let _guard = lock_registry_for_registration()?;
+        let mut original = jump.as_ref().and_then(|jump| jump.original);
+        let mut displaced_end = jump
+            .as_ref()
+            .map_or(reservation_end, |jump| jump.displaced_end);
+        let mut existing = None;
         let mut current = HEAD.load(Ordering::Acquire);
         while !current.is_null() {
-            // SAFETY: published nodes are process-lifetime allocations.
+            // SAFETY: registry nodes are immutable and never freed.
             let site = unsafe { &*current };
             if site.execute_address == execute_address
                 && site.reservation_start == reservation_start
                 && site.reservation_end == reservation_end
                 && site.guard_mask == guard_mask
+                && site.word.is_some() == original.is_some()
             {
-                return Ok(site);
-            }
-            if reservation_start < site.reservation_end && site.reservation_start < reservation_end
-            {
-                return Err(TrapError::Overlap);
+                existing = Some(site);
+                displaced_end = displaced_end.max(site.displaced_end.load(Ordering::Relaxed));
+                if site.word.is_some() && site.phase.load(Ordering::Acquire) == WRITING {
+                    return Err(TrapError::Contended);
+                }
+                // Same-site handles may preplan a redirect over a future E9.
+                // Binding does not authenticate or publish their own prefix:
+                // each operation still compares that exact expected prefix.
+                break;
             }
             current = site.next;
         }
-        if pending_overlaps(reservation_start, reservation_end) {
+
+        current = HEAD.load(Ordering::Acquire);
+        while !current.is_null() {
+            // SAFETY: registry nodes are immutable and never freed.
+            let site = unsafe { &*current };
+            if existing.is_some_and(|old| ptr::eq(old, site)) {
+                current = site.next;
+                continue;
+            }
+            if overlaps(
+                execute_address,
+                displaced_end,
+                site.execute_address,
+                site.displaced_end.load(Ordering::Relaxed),
+            ) {
+                return Err(TrapError::Overlap);
+            }
+            if overlaps(
+                reservation_start,
+                reservation_end,
+                site.reservation_start,
+                site.reservation_end,
+            ) {
+                let (Some(bytes), Some(word)) = (&mut original, &site.word) else {
+                    return Err(TrapError::Overlap);
+                };
+                if site.phase.load(Ordering::Acquire) == WRITING {
+                    return Err(TrapError::Contended);
+                }
+                if execute_address < site.execute_address {
+                    let offset = site.execute_address - execute_address;
+                    let count = 8 - offset;
+                    let committed = word.committed.load(Ordering::Relaxed).to_le_bytes();
+                    let tail = &bytes[offset..];
+                    if tail != &word.original[..count] && tail != &committed[..count] {
+                        return Err(TrapError::Overlap);
+                    }
+                    // Remember the proof even if this neighbor changes state
+                    // before the binding's first apply. Public plan bytes stay
+                    // untouched; only the binding receives this canonical tail.
+                    bytes[offset..].copy_from_slice(&word.original[..count]);
+                } else {
+                    let offset = execute_address - site.execute_address;
+                    let canonical = existing
+                        .and_then(|old| old.word.as_ref())
+                        .map_or(*bytes, |old| old.original);
+                    if canonical[..8 - offset] != word.original[offset..] {
+                        return Err(TrapError::Overlap);
+                    }
+                }
+            }
+            current = site.next;
+        }
+        if pending_overlaps(
+            reservation_start.min(execute_address),
+            reservation_end.max(displaced_end),
+        ) {
             return Err(TrapError::Overlap);
         }
-
-        candidate.next = HEAD.load(Ordering::Relaxed);
-        let site = Box::into_raw(candidate);
+        if let Some(site) = existing {
+            // Replanning an active E9 must never shrink the original relocated
+            // instruction interval. Expansion was checked against every owner.
+            site.displaced_end.store(displaced_end, Ordering::Relaxed);
+            return Ok((site, original));
+        }
+        let site = Box::new(TrapSite {
+            execute_address,
+            reservation_start,
+            reservation_end,
+            guard_mask,
+            displaced_end: AtomicUsize::new(displaced_end),
+            word: original.map(|bytes| WordSite {
+                original: bytes,
+                committed: AtomicU64::new(u64::from_le_bytes(bytes)),
+            }),
+            phase: AtomicU8::new(IDLE),
+            handled: AtomicU64::new(0),
+            next: HEAD.load(Ordering::Relaxed),
+        });
+        let site = Box::leak(site);
         HEAD.store(site, Ordering::Release);
-        // SAFETY: registry nodes are intentionally never freed.
-        Ok(unsafe { &*site })
+        Ok((site, original))
+    }
+
+    fn overlaps(a_start: usize, a_end: usize, b_start: usize, b_end: usize) -> bool {
+        a_start < b_end && b_start < a_end
     }
 
     fn lock_registry_for_registration() -> Result<MutexGuard<'static, ()>, TrapError> {
@@ -952,6 +1164,81 @@ mod imp {
         }
 
         #[test]
+        fn atomic_word_admission_preserves_pending_and_complete_displacement_ownership() {
+            for pending_first in [false, true] {
+                for offset in [5, 10] {
+                    let storage = Box::leak(Box::new([0x90_u8; 128]));
+                    let base = storage.as_ptr() as usize;
+                    if pending_first {
+                        let pending =
+                            reserve(base + offset, base + offset, base + offset + 5, 0).unwrap();
+                        assert!(matches!(
+                            super::register_jump(
+                                base,
+                                base,
+                                base + 8,
+                                0,
+                                base + 12,
+                                Some([0x90; 8])
+                            ),
+                            Err(TrapError::Overlap)
+                        ));
+                        drop(pending);
+                        assert!(
+                            super::register_jump(
+                                base,
+                                base,
+                                base + 8,
+                                0,
+                                base + 12,
+                                Some([0x90; 8])
+                            )
+                            .is_ok()
+                        );
+                    } else {
+                        let (site, _) = super::register_jump(
+                            base,
+                            base,
+                            base + 8,
+                            0,
+                            base + 12,
+                            Some([0x90; 8]),
+                        )
+                        .unwrap();
+                        assert!(matches!(
+                            reserve(base + offset, base + offset, base + offset + 5, 0),
+                            Err(TrapError::Overlap)
+                        ));
+                        // A five-byte active-E9 replan cannot shrink twelve
+                        // bytes of complete original instruction ownership.
+                        let (rebound, _) = super::register_jump(
+                            base,
+                            base,
+                            base + 8,
+                            0,
+                            base + 5,
+                            Some([0x90; 8]),
+                        )
+                        .unwrap();
+                        assert!(std::ptr::eq(site, rebound));
+                        assert!(matches!(
+                            super::register_jump(
+                                base + offset,
+                                base + offset,
+                                base + offset + 8,
+                                0,
+                                base + offset + 5,
+                                Some([0x90; 8])
+                            ),
+                            Err(TrapError::Overlap)
+                        ));
+                        assert!(reserve(base + 12, base + 12, base + 17, 0).is_ok());
+                    }
+                }
+            }
+        }
+
+        #[test]
         fn pending_reservation_blocks_only_overlapping_registrations() {
             let storage = Box::leak(Box::new([0_u8; 32]));
             let base = storage.as_ptr() as usize;
@@ -1034,11 +1321,15 @@ mod imp {
     }
 
     impl TrapSite {
-        pub(crate) fn begin(&self) -> Result<(), TrapError> {
-            Err(TrapError::Unsupported)
+        pub(crate) fn begin_jump(
+            &self,
+            _expected: &mut [u8; 8],
+            _replacement: &mut [u8; 8],
+        ) -> Result<(), super::JumpError> {
+            Err(TrapError::Unsupported.into())
         }
 
-        pub(crate) fn finish(&self) {}
+        pub(crate) fn finish_jump(&self, _published: Option<[u8; 8]>) {}
 
         pub(crate) fn handled_traps(&self) -> u64 {
             0
@@ -1063,12 +1354,14 @@ mod imp {
         Err(TrapError::Unsupported)
     }
 
-    pub(crate) fn register(
+    pub(crate) fn register_jump(
         _execute_address: usize,
         _reservation_start: usize,
         _reservation_end: usize,
         _guard_mask: u8,
-    ) -> Result<&'static TrapSite, TrapError> {
+        _displaced_end: usize,
+        _original: Option<[u8; 8]>,
+    ) -> Result<(&'static TrapSite, Option<[u8; 8]>), TrapError> {
         Err(TrapError::Unsupported)
     }
 }
@@ -1077,5 +1370,7 @@ pub(crate) use imp::TrapError;
 pub(crate) use imp::TrapSite;
 pub(crate) use imp::prepare;
 pub(crate) use imp::prepare_with_signal_runtime;
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 pub(crate) use imp::register;
+pub(crate) use imp::register_jump;
 pub(crate) use imp::reserve;
