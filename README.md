@@ -143,6 +143,17 @@ machine/topology-qualified `StalenessBudget`. A consumer without that
 calibration should route split sites to its ptrace/trap fallback instead of
 selecting `GuardedSplit`.
 
+Concurrent single-cache-line jump patches may share the unchanged tail of their
+8-byte stores when their complete displaced instruction intervals are disjoint.
+For example, two 5-byte sites five bytes apart no longer conflict solely because
+their stores overlap. Registration authenticates shared snapshot bytes; each
+publication compares all eight live bytes with an exact image containing the
+neighbor's committed jump bytes, then preserves those bytes in its store.
+Overlapping writers and registration fail with `Contended` while a publication
+is in progress. Split-word, Rapid, pending, and actual displaced-instruction
+conflicts remain refused. Concurrent-bound objects also maintain this state
+when used through the unsafe quiescent publication methods.
+
 The unsafe `bind_quiescent`, `install_replacing_first_quiescent`, and matching
 activation entrypoints retain the same planning and relocation but skip trap
 registration and guarded split publication. They are valid only when the caller

@@ -183,9 +183,9 @@ pub enum PatchError {
     AliasAlignmentMismatch,
     /// Address arithmetic overflowed while reserving atomic write words.
     AddressRangeOverflow,
-    /// Another patch owns an overlapping atomic write envelope.
+    /// Another patch owns an incompatible displacement or atomic write envelope.
     OverlappingPatchSite,
-    /// Another writer is already publishing at this site.
+    /// Registry admission or an overlapping writer is busy.
     Contended,
     /// Live code does not match the state expected by apply or revert.
     ExpectedBytesMismatch,
@@ -254,7 +254,7 @@ impl fmt::Display for PatchError {
             }
             Self::AddressRangeOverflow => formatter.write_str("patch address range overflowed"),
             Self::OverlappingPatchSite => {
-                formatter.write_str("patch atomic-write envelope overlaps another registered site")
+                formatter.write_str("patch overlaps an incompatible registered site")
             }
             Self::Contended => formatter.write_str("another writer is patching this site"),
             Self::ExpectedBytesMismatch => {
@@ -539,12 +539,20 @@ enum PatchPublication {
     Concurrent {
         staleness: StalenessBudget,
         trap_site: &'static TrapSite,
+        canonical_tail: [u8; 3],
     },
     Quiescent,
 }
 
 impl LiveJumpPatch {
     /// Binds a plan to a writable alias of its executable mapping.
+    ///
+    /// Single-cache-line patches can share write-envelope bytes when their
+    /// complete displaced instruction intervals are disjoint. Binding validates
+    /// a shared tail against the neighbor's original or committed bytes; each
+    /// publication checks an exact composite eight-byte image and preserves
+    /// that neighbor. The immutable public plan retains its supplied snapshot.
+    /// Split-word and Rapid reservations remain exclusive.
     ///
     /// # Safety
     ///
@@ -638,16 +646,22 @@ impl LiveJumpPatch {
                     }
                 };
 
-                let trap_site = crate::trap::register(
+                let displaced_end = execute_address
+                    .checked_add(plan.displaced_len)
+                    .ok_or(PatchError::AddressRangeOverflow)?;
+                let (trap_site, canonical) = crate::trap::register_jump(
                     execute_address,
                     reservation_start,
                     reservation_end,
                     plan.guard_mask,
+                    displaced_end,
+                    matches!(plan.strategy, PatchStrategy::AtomicWord).then_some(plan.original),
                 )
                 .map_err(map_trap_error)?;
                 PatchPublication::Concurrent {
                     staleness,
                     trap_site,
+                    canonical_tail: canonical.unwrap_or(plan.original)[5..].try_into().unwrap(),
                 }
             } else {
                 PatchPublication::Quiescent
@@ -687,7 +701,7 @@ impl LiveJumpPatch {
     /// and no unregistered writer may modify the atomic write envelope.
     pub unsafe fn apply(&self) -> Result<(), PatchError> {
         // SAFETY: upheld by the caller and bind contract.
-        unsafe { self.publish_concurrent(self.plan.original, self.plan.replacement) }
+        unsafe { self.publish_bound(self.plan.original, self.plan.replacement, false) }
     }
 
     /// Restores the original instruction bytes.
@@ -698,7 +712,7 @@ impl LiveJumpPatch {
     /// and no unregistered writer may modify the atomic write envelope.
     pub unsafe fn revert(&self) -> Result<(), PatchError> {
         // SAFETY: upheld by the caller and bind contract.
-        unsafe { self.publish_concurrent(self.plan.replacement, self.plan.original) }
+        unsafe { self.publish_bound(self.plan.replacement, self.plan.original, false) }
     }
 
     /// Publishes the trampoline redirect without concurrent-reader protection.
@@ -710,13 +724,7 @@ impl LiveJumpPatch {
     /// read, or modify the patch window until this call returns.
     pub unsafe fn apply_quiescent(&self) -> Result<(), PatchError> {
         // SAFETY: upheld by the caller's quiescence proof.
-        unsafe {
-            publish_quiescent(
-                self.writable_address,
-                self.plan.original,
-                self.plan.replacement,
-            )
-        }
+        unsafe { self.publish_bound(self.plan.original, self.plan.replacement, true) }
     }
 
     /// Restores original bytes without concurrent-reader protection.
@@ -726,54 +734,69 @@ impl LiveJumpPatch {
     /// The same quiescence proof as [`Self::apply_quiescent`] is required.
     pub unsafe fn revert_quiescent(&self) -> Result<(), PatchError> {
         // SAFETY: upheld by the caller's quiescence proof.
-        unsafe {
-            publish_quiescent(
-                self.writable_address,
-                self.plan.replacement,
-                self.plan.original,
-            )
-        }
+        unsafe { self.publish_bound(self.plan.replacement, self.plan.original, true) }
     }
 
-    unsafe fn publish_concurrent(
+    unsafe fn publish_bound(
         &self,
-        expected: [u8; WORD_PATCH_BYTES],
-        replacement: [u8; WORD_PATCH_BYTES],
+        mut expected: [u8; WORD_PATCH_BYTES],
+        mut replacement: [u8; WORD_PATCH_BYTES],
+        quiescent: bool,
     ) -> Result<(), PatchError> {
         let PatchPublication::Concurrent {
             staleness,
             trap_site,
+            canonical_tail,
         } = self.publication
         else {
-            return Err(PatchError::QuiescentPublicationRequired);
+            return if quiescent {
+                // SAFETY: the caller excludes all accesses to the patch word.
+                unsafe { publish_quiescent(self.writable_address, expected, replacement) }
+            } else {
+                Err(PatchError::QuiescentPublicationRequired)
+            };
         };
-        trap_site.begin().map_err(map_trap_error)?;
+        expected[5..].copy_from_slice(&canonical_tail);
+        replacement[5..].copy_from_slice(&canonical_tail);
+        trap_site
+            .begin_jump(&mut expected, &mut replacement)
+            .map_err(|error| match error {
+                crate::trap::JumpError::Registry(error) => map_trap_error(error),
+                crate::trap::JumpError::ExpectedBytesMismatch => PatchError::ExpectedBytesMismatch,
+            })?;
 
-        let result = match self.plan.strategy {
-            PatchStrategy::AtomicWord => {
-                // SAFETY: bind validated the complete writable patch window.
-                unsafe { publish_single_line(self.writable_address, expected, replacement) }
-            }
-            PatchStrategy::GuardedSplit {
-                front_len,
-                back_len,
-            } => {
-                // SAFETY: bind validated both aligned writable words.
-                unsafe {
-                    publish_cross_line(
-                        self.writable_address,
-                        front_len,
-                        back_len,
-                        self.plan.guard_mask,
-                        expected,
-                        replacement,
-                        staleness,
-                    )
+        let result = if quiescent {
+            // Concurrent bindings must keep neighbor state synchronized even
+            // when this particular publication has a caller-proved exclusion.
+            // SAFETY: the caller excludes all accesses to the patch word.
+            unsafe { publish_quiescent(self.writable_address, expected, replacement) }
+        } else {
+            match self.plan.strategy {
+                PatchStrategy::AtomicWord => {
+                    // SAFETY: bind validated the complete writable patch window.
+                    unsafe { publish_single_line(self.writable_address, expected, replacement) }
+                }
+                PatchStrategy::GuardedSplit {
+                    front_len,
+                    back_len,
+                } => {
+                    // SAFETY: bind validated both aligned writable words.
+                    unsafe {
+                        publish_cross_line(
+                            self.writable_address,
+                            front_len,
+                            back_len,
+                            self.plan.guard_mask,
+                            expected,
+                            replacement,
+                            staleness,
+                        )
+                    }
                 }
             }
         };
 
-        trap_site.finish();
+        trap_site.finish_jump(result.as_ref().ok().map(|()| replacement));
         result
     }
 }
@@ -1264,6 +1287,131 @@ mod tests {
             fn writable_site(&self) -> *mut u8 {
                 // SAFETY: SITE_OFFSET is within the writable mapping.
                 unsafe { self.writable.add(SITE_OFFSET) }
+            }
+        }
+
+        #[test]
+        fn overlapping_writers_and_registration_hold_an_exclusive_lease() {
+            use crate::patcher::PatchPublication;
+            use std::sync::Barrier;
+
+            for held_offset in [24, 29] {
+                let mapping = DualMapping::new();
+                // SAFETY: initialize the mapped fixture before publication.
+                unsafe { core::ptr::write_bytes(mapping.writable, 0x90, PAGE_BYTES) };
+                let scanner = InstructionScanner::default();
+                let code = [0x90; 16];
+                let make_plan = |offset: usize| {
+                    let site = mapping.executable as u64 + offset as u64;
+                    let scan = scanner.scan(&code, site).unwrap();
+                    JumpPatchPlan::from_scan(
+                        &scanner,
+                        &scan,
+                        &code,
+                        site,
+                        site,
+                        mapping.executable as u64 + TARGET_OFFSET as u64,
+                    )
+                    .unwrap()
+                };
+                let other_offset = if held_offset == 24 { 29 } else { 24 };
+                let held_plan = make_plan(held_offset);
+                let other_plan = make_plan(other_offset);
+                let budget = StalenessBudget::new(1).unwrap();
+                // SAFETY: process-lifetime dual mappings cover every envelope.
+                let held = unsafe {
+                    bind_retry(held_plan.clone(), mapping.writable.add(held_offset), budget)
+                };
+                let barrier = Arc::new(Barrier::new(2));
+                let worker_barrier = Arc::clone(&barrier);
+                let other_address = mapping.writable as usize + other_offset;
+                let worker_plan = other_plan.clone();
+                let worker = thread::spawn(move || {
+                    // SAFETY: the parent keeps the shared mappings alive.
+                    let other =
+                        unsafe { bind_retry(worker_plan, other_address as *mut u8, budget) };
+                    worker_barrier.wait();
+                    worker_barrier.wait();
+                    // SAFETY: registered writers own the aliased code windows.
+                    unsafe { other.apply() }
+                });
+                barrier.wait();
+                let PatchPublication::Concurrent { trap_site, .. } = held.publication else {
+                    unreachable!()
+                };
+                let mut expected = held_plan.original_bytes();
+                let mut replacement = held_plan.replacement_bytes();
+                trap_site
+                    .begin_jump(&mut expected, &mut replacement)
+                    .unwrap();
+                barrier.wait();
+                assert_eq!(worker.join().unwrap(), Err(PatchError::Contended));
+                // Even a new handle cannot enter this shared envelope while
+                // the first writer is paused between snapshot and publication.
+                assert!(matches!(
+                    unsafe {
+                        LiveJumpPatch::bind(other_plan.clone(), other_address as *mut u8, budget)
+                    },
+                    Err(PatchError::Contended)
+                ));
+                // A disjoint writer is not held for the lifetime of this lease.
+                let independent =
+                    unsafe { bind_retry(make_plan(96), mapping.writable.add(96), budget) };
+                unsafe { independent.apply() }.unwrap();
+                unsafe { independent.revert() }.unwrap();
+                assert_eq!(
+                    unsafe { core::slice::from_raw_parts(mapping.writable.add(24), 13) },
+                    &[0x90; 13]
+                );
+                // SAFETY: the held lease excludes every overlapping writer.
+                let result = unsafe {
+                    crate::patcher::publish_single_line(
+                        mapping.writable.add(held_offset),
+                        expected,
+                        replacement,
+                    )
+                };
+                trap_site.finish_jump(result.as_ref().ok().map(|()| replacement));
+                result.unwrap();
+                let other =
+                    unsafe { bind_retry(other_plan.clone(), other_address as *mut u8, budget) };
+                unsafe { other.apply() }.unwrap();
+                let mut both = [0x90; 13];
+                both[held_offset - 24..held_offset - 19]
+                    .copy_from_slice(&held_plan.replacement_bytes()[..5]);
+                both[other_offset - 24..other_offset - 19]
+                    .copy_from_slice(&other_plan.replacement_bytes()[..5]);
+                assert_eq!(
+                    unsafe { core::slice::from_raw_parts(mapping.writable.add(24), 13) },
+                    both
+                );
+                unsafe { held.revert() }.unwrap();
+                unsafe { other.revert() }.unwrap();
+                assert_eq!(
+                    unsafe { core::slice::from_raw_parts(mapping.writable.add(24), 13) },
+                    &[0x90; 13]
+                );
+                // A failed upper publication must not advertise bytes that
+                // were never stored to a lower neighbor's next transaction.
+                let (lower, upper) = if held_offset == 24 {
+                    (&held, &other)
+                } else {
+                    (&other, &held)
+                };
+                // SAFETY: no executor or writer remains; deliberately corrupt
+                // the unowned tail byte, then restore it after the refusal.
+                unsafe { mapping.writable.add(36).write(0x91) };
+                assert_eq!(
+                    unsafe { upper.apply() },
+                    Err(PatchError::ExpectedBytesMismatch)
+                );
+                unsafe { mapping.writable.add(36).write(0x90) };
+                unsafe { lower.apply() }.unwrap();
+                unsafe { lower.revert() }.unwrap();
+                assert_eq!(
+                    unsafe { core::slice::from_raw_parts(mapping.writable.add(24), 13) },
+                    &[0x90; 13]
+                );
             }
         }
 

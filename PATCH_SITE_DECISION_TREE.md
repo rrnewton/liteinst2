@@ -114,6 +114,13 @@ split, publish the back and front words in the WordPatch++ order, and wait out
 the caller-supplied staleness interval before removing the guards. This remains
 the default for ordinary threaded applications.
 
+Concurrent single-cache-line jump envelopes may overlap only for disjoint
+complete displaced intervals with authenticated shared bytes. A writer leases
+its full store envelope and compares an exact eight-byte image composed from
+its own expected bytes and any registered neighbor's committed jump prefix.
+Split-word, Rapid, pending and genuine displaced-interval overlaps remain
+exclusive.
+
 `LiveJumpPatch::bind_quiescent` and the quiescent `InstalledHook` constructors
 select the quiescent contract. Planning, expected-byte checks, punning, and
 relocation are unchanged, including for a cache-line straddler. Activation and
