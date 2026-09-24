@@ -33,6 +33,13 @@ pub type GuardSignalHandler =
 /// emulate the kernel's mask, reset, alternate-stack, or restart semantics for
 /// a directly invoked custom handler.
 ///
+/// The installed router must receive the requested `SA_SIGINFO` ABI with
+/// non-null native `siginfo_t` and `ucontext_t` pointers. For genuine Linux
+/// x86-64 `INT3` (`#BP`) delivery, preserve `si_code == SI_KERNEL` and the saved
+/// `uc_mcontext.gregs[REG_TRAPNO] == 3`. Synthetic or reinjected deliveries
+/// without this metadata are delegated to the prior disposition rather than
+/// retried as guards.
+///
 /// The callback runs during single-threaded runtime preparation, before the
 /// restrictive syscall filter is installed.
 pub type GuardSignalInstaller = unsafe fn(
@@ -54,6 +61,9 @@ pub type GuardDefaultRestorer = unsafe fn(libc::c_int, &GuardSignalAction) -> Re
 
 /// Host-owned signal operations required by the guard router after a
 /// restrictive syscall filter is active.
+///
+/// [`Self::install_blocked`] must preserve the native guard-delivery metadata
+/// required by [`GuardSignalInstaller`].
 #[derive(Clone, Copy)]
 pub struct GuardSignalRuntime {
     /// Exact-restorer installation callback that returns with SIGTRAP blocked.
@@ -686,28 +696,41 @@ mod imp {
         unsafe { handle_trap(signal, info, context) };
     }
 
-    unsafe fn handle_trap(signal: libc::c_int, _info: *mut libc::siginfo_t, context: *mut c_void) {
-        if signal == libc::SIGTRAP && !context.is_null() {
+    unsafe fn handle_trap(signal: libc::c_int, info: *mut libc::siginfo_t, context: *mut c_void) {
+        if signal == libc::SIGTRAP && !info.is_null() && !context.is_null() {
+            // SAFETY: SA_SIGINFO supplies initialized signal metadata.
+            let info = unsafe { &*info };
             // SAFETY: SA_SIGINFO supplies a mutable ucontext_t.
             let context = unsafe { &mut *context.cast::<libc::ucontext_t>() };
-            let rip = context.uc_mcontext.gregs[libc::REG_RIP as usize] as usize;
-            let trap_address = rip.wrapping_sub(1);
+            // Linux x86 INT3 delivers SI_KERNEL with exception vector 3 (#BP).
+            // TRAP_BRKPT can instead describe #DB (for example ICEBP). The
+            // vector alone is insufficient: an asynchronous application signal
+            // can carry the thread's stale trap number from an earlier #BP.
+            if info.si_code == libc::SI_KERNEL
+                && context.uc_mcontext.gregs[libc::REG_TRAPNO as usize] == 3
+            {
+                let rip = context.uc_mcontext.gregs[libc::REG_RIP as usize] as usize;
+                let trap_address = rip.wrapping_sub(1);
 
-            let mut current = HEAD.load(Ordering::Acquire);
-            while !current.is_null() {
-                // SAFETY: published registry nodes are never freed.
-                let site = unsafe { &*current };
-                let relative = trap_address.wrapping_sub(site.execute_address);
-                if relative < 8 && site.guard_mask & (1 << relative) != 0 {
-                    site.handled.fetch_add(1, Ordering::Relaxed);
-                    while site.phase.load(Ordering::Acquire) == WRITING {
-                        core::hint::spin_loop();
+                let mut current = HEAD.load(Ordering::Acquire);
+                while !current.is_null() {
+                    // SAFETY: published registry nodes are never freed.
+                    let site = unsafe { &*current };
+                    let relative = trap_address.wrapping_sub(site.execute_address);
+                    if relative < 8 && site.guard_mask & (1 << relative) != 0 {
+                        site.handled.fetch_add(1, Ordering::Relaxed);
+                        while site.phase.load(Ordering::Acquire) == WRITING {
+                            core::hint::spin_loop();
+                        }
+                        // A genuine guard trap can arrive after publication
+                        // finished, so neither IDLE nor restored live bytes
+                        // invalidate its saved breakpoint origin.
+                        context.uc_mcontext.gregs[libc::REG_RIP as usize] =
+                            trap_address as libc::greg_t;
+                        return;
                     }
-                    context.uc_mcontext.gregs[libc::REG_RIP as usize] =
-                        trap_address as libc::greg_t;
-                    return;
+                    current = site.next;
                 }
-                current = site.next;
             }
         }
 
@@ -750,6 +773,7 @@ mod imp {
     }
     #[cfg(test)]
     mod tests {
+        use core::ptr;
         use std::os::unix::process::ExitStatusExt;
         use std::process::Command;
         use std::process::Output;
@@ -986,6 +1010,7 @@ mod imp {
                     "runtime-ignore",
                     "runtime-install-window",
                     "concurrent-modes",
+                    "origin-and-late-retry",
                 ] {
                     let output = run_admission_child(mode);
                     let stdout = String::from_utf8_lossy(&output.stdout);
@@ -1052,6 +1077,95 @@ mod imp {
                     assert_eq!(installed.handler, trap_handler as *const () as usize);
                     assert_ne!(installed.flags & libc::SA_SIGINFO as libc::c_ulong, 0);
                     assert_ne!(installed.flags & libc::SA_RESTART as libc::c_ulong, 0);
+                }
+                "origin-and-late-retry" => {
+                    set_sigtrap_action(libc::SIG_IGN, 0, 0);
+                    assert_eq!(prepare(), Ok(()));
+                    let storage = Box::leak(Box::new([0x90_u8; 64]));
+                    let address = storage.as_ptr() as usize;
+                    let site = register(address, address, address + 8, 0b1111).unwrap();
+                    // Synthetic signal frames isolate routing semantics. Real
+                    // kernel guard delivery remains covered by the concurrent
+                    // and secondary-byte publication tests in patcher.rs.
+                    let mut info: libc::siginfo_t = unsafe { core::mem::zeroed() };
+                    let mut context: libc::ucontext_t = unsafe { core::mem::zeroed() };
+                    info.si_signo = libc::SIGTRAP;
+                    for (code, vector) in [
+                        (libc::SI_TKILL, 3),
+                        (libc::SI_USER, 3),
+                        (libc::SI_QUEUE, 3),
+                        (libc::SI_TIMER, 3),
+                        (libc::SI_KERNEL, 1),
+                        (libc::TRAP_BRKPT, 1),
+                        (libc::TRAP_BRKPT, 3),
+                        (libc::TRAP_TRACE, 1),
+                        (libc::TRAP_HWBKPT, 1),
+                        (6, 3), // Linux TRAP_PERF, even with a stale #BP vector.
+                    ] {
+                        info.si_code = code;
+                        context.uc_mcontext.gregs[libc::REG_TRAPNO as usize] = vector;
+                        context.uc_mcontext.gregs[libc::REG_RIP as usize] = (address + 2) as _;
+                        // SAFETY: both pointers refer to initialized test frames.
+                        unsafe {
+                            super::handle_trap(
+                                libc::SIGTRAP,
+                                &mut info,
+                                ptr::from_mut(&mut context).cast(),
+                            );
+                        }
+                        assert_eq!(
+                            context.uc_mcontext.gregs[libc::REG_RIP as usize],
+                            (address + 2) as _,
+                            "code={code}, vector={vector}"
+                        );
+                        assert_eq!(site.handled_traps(), 0, "code={code}, vector={vector}");
+                    }
+                    info.si_code = libc::SI_KERNEL;
+                    context.uc_mcontext.gregs[libc::REG_TRAPNO as usize] = 3;
+                    context.uc_mcontext.gregs[libc::REG_RIP as usize] = (address + 2) as _;
+                    // Missing metadata must not authorize a retry either.
+                    unsafe {
+                        super::handle_trap(
+                            libc::SIGTRAP,
+                            ptr::null_mut(),
+                            ptr::from_mut(&mut context).cast(),
+                        );
+                        super::handle_trap(libc::SIGTRAP, &mut info, ptr::null_mut());
+                    }
+                    assert_eq!(
+                        context.uc_mcontext.gregs[libc::REG_RIP as usize],
+                        (address + 2) as _
+                    );
+                    assert_eq!(site.handled_traps(), 0);
+                    // Model a valid saved #BP delivered after the writer has
+                    // restored the live NOP and already published IDLE.
+                    assert_eq!(site.phase.load(Ordering::Acquire), super::IDLE);
+                    assert_eq!(storage[1], 0x90);
+                    unsafe {
+                        super::handle_trap(
+                            libc::SIGTRAP,
+                            &mut info,
+                            ptr::from_mut(&mut context).cast(),
+                        );
+                    }
+                    assert_eq!(
+                        context.uc_mcontext.gregs[libc::REG_RIP as usize],
+                        (address + 1) as _
+                    );
+                    assert_eq!(site.handled_traps(), 1);
+                    context.uc_mcontext.gregs[libc::REG_RIP as usize] = (address + 32) as _;
+                    unsafe {
+                        super::handle_trap(
+                            libc::SIGTRAP,
+                            &mut info,
+                            ptr::from_mut(&mut context).cast(),
+                        );
+                    }
+                    assert_eq!(
+                        context.uc_mcontext.gregs[libc::REG_RIP as usize],
+                        (address + 32) as _
+                    );
+                    assert_eq!(site.handled_traps(), 1);
                 }
                 "default-redelivery" => {
                     set_sigtrap_action(libc::SIG_DFL, 0, 0);
