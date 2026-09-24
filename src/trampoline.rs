@@ -23,6 +23,7 @@ use iced_x86::Instruction;
 use iced_x86::InstructionBlock;
 use iced_x86::Mnemonic;
 use iced_x86::OpKind;
+use iced_x86::RelocKind;
 use iced_x86::code_asm::CodeAssembler;
 use iced_x86::code_asm::eax;
 use iced_x86::code_asm::edx;
@@ -74,6 +75,7 @@ const _: () = assert!(HOOK_CONTEXT_STACK_PREFIX_BYTES == 304);
 pub const SAVED_EXTENDED_STATE_COMPONENT_CAPACITY: usize = 8;
 const NEAR_RETURN_JUMP_BYTES: usize = 5;
 const NOTRACK_ABSOLUTE_JUMP_BYTES: usize = 15;
+const ENTRY_RELAY_CODE: [u8; 11] = [0xf3, 0x0f, 0x1e, 0xfa, 0x3e, 0xff, 0x25, 0, 0, 0, 0];
 const PTRACE_STOP_BYTES: [u8; 1] = [0xcc];
 const TRAMPOLINE_ALLOCATION_BYTES: usize = 4096;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -1014,7 +1016,11 @@ impl TrampolinePlan {
                 .checked_add(completion_stop.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let relocated_instructions = &self.instructions[self.relocated_start..];
-            let (encoded, terminal_jump_offset) = encode_relocated_block(
+            let RelocatedBlock {
+                encoded,
+                terminal_jump_offset,
+                entry_relay_offset,
+            } = encode_relocated_block(
                 relocated_instructions,
                 relocated_address,
                 (!self.replaces_first()).then_some(self.execute_address),
@@ -1069,6 +1075,16 @@ impl TrampolinePlan {
                     relocated_address + offset as u64,
                     relocated_address + offset as u64 + NEAR_RETURN_JUMP_BYTES as u64,
                     self.return_address,
+                );
+            }
+            if let Some(offset) = entry_relay_offset {
+                // ENDBR64 and the NOTRACK jump represent the application entry.
+                // The following absolute target is data and remains unmapped.
+                push_program_counter_mapping(
+                    &mut program_counters,
+                    relocated_address + offset as u64,
+                    relocated_address + offset as u64 + ENTRY_RELAY_CODE.len() as u64,
+                    self.execute_address,
                 );
             }
             let return_code_len = if return_jump.len() == NOTRACK_ABSOLUTE_JUMP_BYTES {
@@ -1339,11 +1355,69 @@ fn relocation_encoder_instructions(
 // its displacement to the existing return stub after the complete buffer.
 // No bytes are inserted after encoding: all RIP-relative fixups retain their
 // encoder-computed locations. Blocks without pointer data keep their layout.
+struct RelocatedBlock {
+    encoded: BlockEncoderResult,
+    terminal_jump_offset: Option<usize>,
+    entry_relay_offset: Option<usize>,
+}
+
+// iced emits a tracked indirect transfer when a direct branch exceeds rel32
+// reach. Its destination needs ENDBR64 under CET, but a patched entry starts
+// with E9. Preserve iced's code and pointer locations, redirecting only its
+// entry-target branch literals through one ENDBR64 / NOTRACK relay. Appending
+// after the literal pool lets the existing terminal jump skip the relay too.
+fn append_entry_relay(
+    encoded: &mut BlockEncoderResult,
+    address: u64,
+    entry: u64,
+) -> Result<Option<usize>, TrampolineError> {
+    let mut entry_literals = Vec::new();
+    for info in &encoded.reloc_infos {
+        if info.kind != RelocKind::Offset64 {
+            continue;
+        }
+        let offset = info
+            .address
+            .checked_sub(address)
+            .and_then(|offset| usize::try_from(offset).ok())
+            .ok_or_else(|| encoding_error("entry branch literal precedes encoded block"))?;
+        let end = offset
+            .checked_add(core::mem::size_of::<u64>())
+            .ok_or_else(|| encoding_error("entry branch literal range overflow"))?;
+        let bytes = encoded
+            .code_buffer
+            .get(offset..end)
+            .ok_or_else(|| encoding_error("entry branch literal exceeds encoded block"))?;
+        if u64::from_le_bytes(bytes.try_into().unwrap()) == entry {
+            entry_literals.push(offset);
+        }
+    }
+    if entry_literals.is_empty() {
+        return Ok(None);
+    }
+    let offset = encoded.code_buffer.len();
+    let relay_address = address
+        .checked_add(offset as u64)
+        .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+    relay_address
+        .checked_add((ENTRY_RELAY_CODE.len() + core::mem::size_of::<u64>()) as u64)
+        .ok_or(TrampolineError::AddressNotRepresentable {
+            address: relay_address,
+        })?;
+    encoded.code_buffer.extend_from_slice(&ENTRY_RELAY_CODE);
+    encoded.code_buffer.extend_from_slice(&entry.to_le_bytes());
+    for offset in entry_literals {
+        encoded.code_buffer[offset..offset + core::mem::size_of::<u64>()]
+            .copy_from_slice(&relay_address.to_le_bytes());
+    }
+    Ok(Some(offset))
+}
+
 fn encode_relocated_block(
     instructions: &[Instruction],
     address: u64,
     observing_entry: Option<u64>,
-) -> Result<(BlockEncoderResult, Option<usize>), TrampolineError> {
+) -> Result<RelocatedBlock, TrampolineError> {
     let normalized = relocation_encoder_instructions(instructions, observing_entry)?;
     let instructions = normalized.as_slice();
     let options = BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS
@@ -1352,7 +1426,11 @@ fn encode_relocated_block(
         BlockEncoder::encode(64, InstructionBlock::new(instructions, address), options)
             .map_err(encoding_error)?;
     if encoded.reloc_infos.is_empty() {
-        return Ok((encoded, None));
+        return Ok(RelocatedBlock {
+            encoded,
+            terminal_jump_offset: None,
+            entry_relay_offset: None,
+        });
     }
 
     const TERMINAL_JUMP: [u8; NEAR_RETURN_JUMP_BYTES] = [0xE9, 0, 0, 0, 0];
@@ -1405,6 +1483,18 @@ fn encode_relocated_block(
             "encoder literal overlaps executable instructions",
         ));
     }
+    let entry_relay_offset = if let Some(entry) = observing_entry.filter(|entry| {
+        instructions.iter().any(|instruction| {
+            matches!(
+                instruction.op0_kind(),
+                OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
+            ) && instruction.near_branch_target() == *entry
+        })
+    }) {
+        append_entry_relay(&mut encoded, address, entry)?
+    } else {
+        None
+    };
     let data_len = encoded
         .code_buffer
         .len()
@@ -1413,7 +1503,11 @@ fn encode_relocated_block(
     let displacement = i32::try_from(data_len)
         .map_err(|_| encoding_error("encoder literal table exceeds signed rel32 reach"))?;
     encoded.code_buffer[offset + 1..end].copy_from_slice(&displacement.to_le_bytes());
-    Ok((encoded, Some(offset)))
+    Ok(RelocatedBlock {
+        encoded,
+        terminal_jump_offset: Some(offset),
+        entry_relay_offset,
+    })
 }
 
 fn append_relocated_program_counter_mappings(
@@ -3199,6 +3293,29 @@ mod tests {
                 .find_map(|mapping| mapping.translate(address))
         }
 
+        fn assert_entry_relay(image: &TrampolineImage, address: u64, relay: u64, entry: u64) {
+            let offset = usize::try_from(relay - address).unwrap();
+            let mut decoder =
+                Decoder::with_ip(64, &image.bytes()[offset..], relay, DecoderOptions::NONE);
+            let endbr = decoder.decode();
+            assert_eq!(endbr.code(), Code::Endbr64);
+            let jump = decoder.decode();
+            assert_eq!(jump.code(), Code::Jmp_rm64);
+            assert_eq!(jump.segment_prefix(), iced_x86::Register::DS);
+            assert_eq!(jump.ip_rel_memory_address(), jump.next_ip());
+            let literal = usize::try_from(jump.next_ip() - address).unwrap();
+            assert_eq!(
+                u64::from_le_bytes(image.bytes()[literal..literal + 8].try_into().unwrap()),
+                entry
+            );
+            for pc in relay..jump.next_ip() {
+                assert_eq!(logical_pc(image, pc), Some(entry));
+            }
+            for pc in jump.next_ip()..jump.next_ip() + 8 {
+                assert_eq!(logical_pc(image, pc), None);
+            }
+        }
+
         fn assert_memory(original: &Instruction, emitted: &Instruction) {
             assert!(!emitted.is_invalid());
             assert_eq!(
@@ -3295,12 +3412,10 @@ mod tests {
                             assert_eq!(transfer.mnemonic(), Mnemonic::Jmp);
                             assert_eq!(transfer.op0_kind(), OpKind::Memory);
                             let offset = (transfer.ip_rel_memory_address() - destination) as usize;
-                            assert_eq!(
-                                u64::from_le_bytes(
-                                    image.bytes()[offset..offset + 8].try_into().unwrap()
-                                ),
-                                base
+                            let relay = u64::from_le_bytes(
+                                image.bytes()[offset..offset + 8].try_into().unwrap(),
                             );
+                            assert_entry_relay(&image, destination, relay, base);
                             assert_eq!(branch.near_branch_target(), decoder.ip());
                             assert_eq!(logical_pc(&image, transfer.ip()), Some(base));
                         }
@@ -3385,6 +3500,7 @@ mod tests {
             let destination = 0x4_0000_0000;
             let image = plan.emit_at(destination).unwrap();
             let mut decoder = relocated(&image, destination);
+            let mut common_relay = None;
             for original_pc in [base, base + 2] {
                 let conditional = decoder.decode();
                 let transfer = decoder.decode();
@@ -3396,10 +3512,13 @@ mod tests {
                 assert_eq!(transfer.mnemonic(), Mnemonic::Jmp);
                 assert_eq!(transfer.op0_kind(), OpKind::Memory);
                 let offset = (transfer.ip_rel_memory_address() - destination) as usize;
-                assert_eq!(
-                    u64::from_le_bytes(image.bytes()[offset..offset + 8].try_into().unwrap()),
-                    base
-                );
+                let relay =
+                    u64::from_le_bytes(image.bytes()[offset..offset + 8].try_into().unwrap());
+                assert_entry_relay(&image, destination, relay, base);
+                if let Some(previous) = common_relay {
+                    assert_eq!(relay, previous);
+                }
+                common_relay = Some(relay);
                 for pc in conditional.ip()..transfer.next_ip() {
                     assert_eq!(logical_pc(&image, pc), Some(original_pc));
                 }
@@ -3417,8 +3536,162 @@ mod tests {
                     + image.layout().restore_len
                     + image.layout().relocated_len) as u64;
             assert_eq!(terminal.near_branch_target(), return_stub);
-            for pc in terminal.next_ip()..return_stub {
+            let relay = common_relay.unwrap();
+            assert_eq!(relay + 19, return_stub);
+            for pc in terminal.next_ip()..relay {
                 assert_eq!(logical_pc(&image, pc), None);
+            }
+        }
+
+        #[test]
+        fn far_entry_relay_preserves_all_direct_transfer_kinds_and_fallthrough() {
+            for code in [
+                &[0xe9, 0xfb, 0xff, 0xff, 0xff][..], // JMP
+                &[0xe8, 0xfb, 0xff, 0xff, 0xff],     // CALL
+                &[0x75, 0xfe, 0x90, 0x90, 0x90],     // JNE
+                &[0xe2, 0xfe, 0x90, 0x90, 0x90],     // LOOP
+                &[0xe1, 0xfe, 0x90, 0x90, 0x90],     // LOOPE
+                &[0xe0, 0xfe, 0x90, 0x90, 0x90],     // LOOPNE
+                &[0xe3, 0xfe, 0x90, 0x90, 0x90],     // JRCXZ
+                &[0x67, 0xe3, 0xfd, 0x90, 0x90],     // JECXZ
+            ] {
+                // The first placement is a forward rel32-limit patch target;
+                // the displaced backedge is nevertheless too far to return.
+                for (base, destination) in [(0x200ffc, 0x80201000), (0x20_0000, 0x4_0000_0000)] {
+                    if base == 0x200ffc {
+                        assert_eq!(destination - (base + 5), i32::MAX as u64);
+                        assert_eq!(destination % 4096, 0);
+                        let mut patch_code = code.to_vec();
+                        patch_code.resize(8, 0x90);
+                        let scanner = InstructionScanner::default();
+                        let scan = scanner.scan(&patch_code, base).unwrap();
+                        crate::patcher::JumpPatchPlan::from_scan(
+                            &scanner,
+                            &scan,
+                            &patch_code,
+                            base,
+                            base,
+                            destination,
+                        )
+                        .unwrap();
+                    }
+                    let plan = make_plan(code, base, false);
+                    let image = plan.emit_at(destination).unwrap();
+                    let mut decoder = relocated(&image, destination);
+                    let start = decoder.ip();
+                    let mut transfers = Vec::new();
+                    let indirect = loop {
+                        let instruction = decoder.decode();
+                        assert!(!instruction.is_invalid());
+                        transfers.push(instruction);
+                        if matches!(instruction.mnemonic(), Mnemonic::Call | Mnemonic::Jmp)
+                            && instruction.op0_kind() == OpKind::Memory
+                        {
+                            break instruction;
+                        }
+                    };
+                    assert_eq!(
+                        indirect.mnemonic(),
+                        if code[0] == 0xe8 {
+                            Mnemonic::Call
+                        } else {
+                            Mnemonic::Jmp
+                        }
+                    );
+                    let literal = (indirect.ip_rel_memory_address() - destination) as usize;
+                    let relay =
+                        u64::from_le_bytes(image.bytes()[literal..literal + 8].try_into().unwrap());
+                    assert_entry_relay(&image, destination, relay, base);
+                    for pc in start..indirect.next_ip() {
+                        assert_eq!(logical_pc(&image, pc), Some(base));
+                    }
+                    // Inverted Jcc fallthrough and LOOP's skip land immediately
+                    // after the indirect transfer. CALL returns there as well.
+                    if code[0] == 0x75 {
+                        assert_eq!(transfers[0].near_branch_target(), indirect.next_ip());
+                    } else if matches!(code[0], 0xe0..=0xe3 | 0x67) {
+                        assert_eq!(transfers[0].near_branch_target(), indirect.ip());
+                        assert_eq!(transfers[1].near_branch_target(), indirect.next_ip());
+                    }
+                    let terminal = loop {
+                        let instruction = decoder.decode();
+                        if instruction.mnemonic() != Mnemonic::Nop {
+                            break instruction;
+                        }
+                    };
+                    assert_eq!(terminal.code(), Code::Jmp_rel32_64);
+                    let return_stub = destination
+                        + (image.layout().instrumentation_len
+                            + image.layout().restore_len
+                            + image.layout().relocated_len) as u64;
+                    assert_eq!(terminal.near_branch_target(), return_stub);
+                    assert_eq!(relay + 19, return_stub);
+                    for pc in terminal.next_ip()..relay {
+                        assert_eq!(logical_pc(&image, pc), None);
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn near_entry_backedges_do_not_add_relay_or_change_encoding() {
+            let base = 0x20_0000;
+            let destination = base + 0x10_0000;
+            for code in [
+                &[0xe9, 0xfb, 0xff, 0xff, 0xff][..],
+                &[0xe8, 0xfb, 0xff, 0xff, 0xff],
+                &[0x75, 0xfe, 0x90, 0x90, 0x90],
+                &[0xe2, 0xfe, 0x90, 0x90, 0x90],
+            ] {
+                let plan = make_plan(code, base, false);
+                let normalized =
+                    super::super::relocation_encoder_instructions(&plan.instructions, Some(base))
+                        .unwrap();
+                let original_encoding = iced_x86::BlockEncoder::encode(
+                    64,
+                    iced_x86::InstructionBlock::new(&normalized, destination),
+                    iced_x86::BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS
+                        | iced_x86::BlockEncoderOptions::RETURN_RELOC_INFOS,
+                )
+                .unwrap();
+                assert!(original_encoding.reloc_infos.is_empty());
+                let relocated = super::super::encode_relocated_block(
+                    &plan.instructions,
+                    destination,
+                    Some(base),
+                )
+                .unwrap();
+                assert!(relocated.entry_relay_offset.is_none());
+                assert!(relocated.terminal_jump_offset.is_none());
+                assert_eq!(relocated.encoded.code_buffer, original_encoding.code_buffer);
+                assert_eq!(
+                    relocated.encoded.new_instruction_offsets,
+                    original_encoding.new_instruction_offsets
+                );
+            }
+        }
+
+        #[test]
+        fn entry_relay_leaves_other_far_branch_literals_unchanged() {
+            let base = 0x20_0000;
+            let destination = 0x4_0000_0000;
+            let plan = make_plan(&[0x75, 0xfe, 0x74, 0x7f, 0x90], base, false);
+            let image = plan.emit_at(destination).unwrap();
+            let mut decoder = relocated(&image, destination);
+            assert_eq!(decoder.decode().mnemonic(), Mnemonic::Je);
+            let entry_transfer = decoder.decode();
+            assert_eq!(decoder.decode().mnemonic(), Mnemonic::Jne);
+            let other_transfer = decoder.decode();
+            for (transfer, entry_target) in [(entry_transfer, true), (other_transfer, false)] {
+                assert_eq!(transfer.code(), Code::Jmp_rm64);
+                let literal = (transfer.ip_rel_memory_address() - destination) as usize;
+                let target =
+                    u64::from_le_bytes(image.bytes()[literal..literal + 8].try_into().unwrap());
+                if entry_target {
+                    assert_entry_relay(&image, destination, target, base);
+                } else {
+                    assert_eq!(target, base + 4 + 0x7f);
+                }
             }
         }
 
@@ -3734,9 +4007,10 @@ mod tests {
         let mut jump = iced_x86::Instruction::with_branch(iced_x86::Code::Jmp_rel8_64, 2).unwrap();
         jump.set_ip(3);
         let address = 0x4_0000_0000;
-        let (encoded, terminal) =
-            super::encode_relocated_block(&[branch, jump], address, None).unwrap();
-        assert!(terminal.is_some());
+        let relocated = super::encode_relocated_block(&[branch, jump], address, None).unwrap();
+        assert!(relocated.terminal_jump_offset.is_some());
+        assert!(relocated.entry_relay_offset.is_none());
+        let encoded = relocated.encoded;
         let targets: Vec<_> = encoded
             .reloc_infos
             .iter()
