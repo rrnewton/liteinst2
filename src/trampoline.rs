@@ -1264,6 +1264,59 @@ fn push_program_counter_mapping(
     });
 }
 
+// iced treats a memory target equal to an input instruction IP as a reference
+// to that instruction's relocated copy. Memory operands must instead retain
+// their application addresses, even when they point at an instruction head.
+// Rename those encoder identities and only their direct control-flow references.
+// The original instructions remain untouched for logical-PC mapping.
+fn relocation_encoder_instructions(
+    instructions: &[Instruction],
+) -> Result<Vec<Instruction>, TrampolineError> {
+    let mut normalized = instructions.to_vec();
+    let mut next_identity = 0_u32;
+    for (index, original) in instructions.iter().enumerate() {
+        if !instructions.iter().any(|instruction| {
+            instruction.is_ip_rel_memory_operand()
+                && instruction.ip_rel_memory_address() == original.ip()
+        }) {
+            continue;
+        }
+        // Low identities fit every near-branch operand width. Advancing this
+        // cursor also excludes all previously assigned identities. The original
+        // addresses and external targets must never acquire an accidental label.
+        let identity = loop {
+            let identity = u16::try_from(next_identity)
+                .map_err(|_| encoding_error("no unused encoder instruction identity"))?;
+            next_identity += 1;
+            if !instructions.iter().any(|instruction| {
+                let candidate = u64::from(identity);
+                instruction.ip() == candidate
+                    || (instruction.is_ip_rel_memory_operand()
+                        && instruction.ip_rel_memory_address() == candidate)
+                    || (matches!(
+                        instruction.op0_kind(),
+                        OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
+                    ) && instruction.near_branch_target() == candidate)
+            }) {
+                break identity;
+            }
+        };
+        normalized[index].set_ip(u64::from(identity));
+        for instruction in &mut normalized {
+            if instruction.near_branch_target() != original.ip() {
+                continue;
+            }
+            match instruction.op0_kind() {
+                OpKind::NearBranch16 => instruction.set_near_branch16(identity),
+                OpKind::NearBranch32 => instruction.set_near_branch32(u32::from(identity)),
+                OpKind::NearBranch64 => instruction.set_near_branch64(u64::from(identity)),
+                _ => {}
+            }
+        }
+    }
+    Ok(normalized)
+}
+
 // A block encoder appends aligned pointer data after its instructions. A far
 // conditional branch's fallthrough, or a far CALL's return, must not enter that
 // data. Reserve a fixed-width terminal E9 *inside* the encoded block, then patch
@@ -1274,6 +1327,8 @@ fn encode_relocated_block(
     instructions: &[Instruction],
     address: u64,
 ) -> Result<(BlockEncoderResult, Option<usize>), TrampolineError> {
+    let normalized = relocation_encoder_instructions(instructions)?;
+    let instructions = normalized.as_slice();
     let options = BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS
         | BlockEncoderOptions::RETURN_RELOC_INFOS;
     let mut encoded =
@@ -3068,6 +3123,273 @@ mod tests {
                     .find_map(|mapping| mapping.translate(return_address)),
                 Some(plan.return_address())
             );
+        }
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    mod pc_relative {
+        use super::{InstructionScanner, TrampolineError, TrampolinePlan, noop_hook};
+        use crate::trampoline::TrampolineImage;
+        use iced_x86::{Code, Decoder, DecoderOptions, Instruction, Mnemonic, OpKind};
+
+        fn memory_code(opcode: &[u8], eip: bool, ip: u64, target: u64) -> Vec<u8> {
+            let mut code = Vec::new();
+            if eip {
+                code.push(0x67);
+            }
+            code.extend_from_slice(opcode);
+            let next_ip = ip + code.len() as u64 + 4;
+            let displacement = if eip {
+                u32::try_from(target).unwrap().wrapping_sub(next_ip as u32)
+            } else {
+                i32::try_from(target as i128 - next_ip as i128).unwrap() as u32
+            };
+            code.extend_from_slice(&displacement.to_le_bytes());
+            let decoded = Decoder::with_ip(64, &code, ip, DecoderOptions::NONE).decode();
+            assert!(!decoded.is_invalid());
+            assert_eq!(decoded.ip_rel_memory_address(), target);
+            code
+        }
+
+        fn make_plan(code: &[u8], base: u64, replace_first: bool) -> TrampolinePlan {
+            let scan = InstructionScanner::default().scan(code, base).unwrap();
+            if replace_first {
+                TrampolinePlan::from_scan_replacing_first(&scan, base, noop_hook).unwrap()
+            } else {
+                TrampolinePlan::from_scan(&scan, base, noop_hook).unwrap()
+            }
+        }
+
+        fn relocated(image: &TrampolineImage, address: u64) -> Decoder<'_> {
+            let layout = image.layout();
+            let start = layout.instrumentation_len + layout.restore_len;
+            Decoder::with_ip(
+                64,
+                &image.bytes()[start..start + layout.relocated_len],
+                address + start as u64,
+                DecoderOptions::NONE,
+            )
+        }
+
+        fn logical_pc(image: &TrampolineImage, address: u64) -> Option<u64> {
+            image
+                .program_counter_mappings()
+                .iter()
+                .find_map(|mapping| mapping.translate(address))
+        }
+
+        fn assert_memory(original: &Instruction, emitted: &Instruction) {
+            assert!(!emitted.is_invalid());
+            assert_eq!(
+                emitted.ip_rel_memory_address(),
+                original.ip_rel_memory_address()
+            );
+            assert_eq!(emitted.code(), original.code());
+            assert_eq!(emitted.op_count(), original.op_count());
+            for operand in 0..original.op_count() {
+                assert_eq!(emitted.op_kind(operand), original.op_kind(operand));
+                if original.op_kind(operand) == OpKind::Register {
+                    assert_eq!(emitted.op_register(operand), original.op_register(operand));
+                }
+            }
+            assert_eq!(emitted.memory_size(), original.memory_size());
+            assert_eq!(emitted.segment_prefix(), original.segment_prefix());
+        }
+
+        #[test]
+        fn preserves_memory_targets_for_all_operand_classes() {
+            let mut cases = 0;
+            for opcode in [
+                &[0x48, 0x8d, 0x05][..],
+                &[0x48, 0x8b, 0x05],
+                &[0x48, 0x89, 0x05],
+                &[0xff, 0x15],
+                &[0xff, 0x25],
+            ] {
+                for eip in [false, true] {
+                    for base in [0, 0x20_0000] {
+                        for preceding_nop in [false, true] {
+                            let memory_ip = base + u64::from(preceding_nop);
+                            for target in [memory_ip, base, base + 2, base + 0x100, 0] {
+                                let mut code = if preceding_nop { vec![0x90] } else { vec![] };
+                                code.extend(memory_code(opcode, eip, memory_ip, target));
+                                let plan = make_plan(&code, base, false);
+                                let original = plan.instructions.clone();
+                                for destination in [base + 0x10_0000, 0x4_0000_0000] {
+                                    let image = plan.emit_at(destination).unwrap();
+                                    let emitted =
+                                        relocated(&image, destination).into_iter().last().unwrap();
+                                    assert_memory(original.last().unwrap(), &emitted);
+                                    for pc in emitted.ip()..emitted.next_ip() {
+                                        assert_eq!(logical_pc(&image, pc), Some(memory_ip));
+                                    }
+                                    assert_eq!(plan.instructions, original);
+                                    cases += 1;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            assert_eq!(cases, 400);
+        }
+
+        #[test]
+        fn preserves_eip_wrap_and_high_ip_external_targets() {
+            for base in [0xffff_fffc, 0x1_0000_1000] {
+                for target in [base as u32 as u64, 0, 2] {
+                    let code = memory_code(&[0x48, 0x8d, 0x05], true, base, target);
+                    let plan = make_plan(&code, base, false);
+                    for destination in [base + 0x10_0000, 0x8_0000_0000] {
+                        let image = plan.emit_at(destination).unwrap();
+                        assert_memory(
+                            &plan.instructions[0],
+                            &relocated(&image, destination).decode(),
+                        );
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn keeps_internal_branch_targets_distinct_from_memory_addresses() {
+            for base in [0, 1, 0x20_0000] {
+                for eip in [false, true] {
+                    // Both operands name the first instruction, but only the
+                    // direct branch follows its relocated copy. No loop executes.
+                    let mut code = vec![0x75, 0xfe];
+                    code.extend(memory_code(&[0x48, 0x8d, 0x05], eip, base + 2, base));
+                    let plan = make_plan(&code, base, false);
+                    let original = plan.instructions.clone();
+                    for destination in [base + 0x10_0000, 0x4_0000_0000] {
+                        let image = plan.emit_at(destination).unwrap();
+                        let mut decoder = relocated(&image, destination);
+                        let branch = decoder.decode();
+                        assert_eq!(branch.near_branch_target(), branch.ip());
+                        assert_memory(&original[1], &decoder.decode());
+                        assert_eq!(logical_pc(&image, branch.ip()), Some(base));
+                        assert_eq!(plan.instructions, original);
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn preserves_replace_first_omitted_and_retained_targets() {
+            let base = 0x20_0000;
+            for eip in [false, true] {
+                for target in [base, base + 3] {
+                    // The omitted NOP remains an external branch/memory target;
+                    // the retained LEA's own address must also remain original.
+                    let mut code = vec![0x90, 0x75, 0xfd];
+                    code.extend(memory_code(&[0x48, 0x8d, 0x05], eip, base + 3, target));
+                    let plan = make_plan(&code, base, true);
+                    let original = plan.instructions.clone();
+                    let destination = base + 0x10_0000;
+                    let image = plan.emit_at(destination).unwrap();
+                    let mut decoder = relocated(&image, destination);
+                    let branch = decoder.decode();
+                    assert_eq!(branch.near_branch_target(), base);
+                    let memory = decoder.decode();
+                    assert_memory(&original[2], &memory);
+                    assert_eq!(logical_pc(&image, branch.ip()), Some(base + 1));
+                    assert_eq!(logical_pc(&image, memory.ip()), Some(base + 3));
+                    assert_eq!(plan.instructions, original);
+                }
+            }
+        }
+
+        #[test]
+        fn preserves_memory_and_pc_mappings_with_far_branch_literals() {
+            let base = 0x40;
+            for target in [0, 1, 2] {
+                for alignment in 0..8 {
+                    let mut code = vec![
+                        0x75,
+                        i8::try_from(target as i64 - (base + 2) as i64).unwrap() as u8,
+                    ];
+                    code.extend(memory_code(&[0x48, 0x8d, 0x05], false, base + 2, base));
+                    let plan = make_plan(&code, base, false);
+                    let original = plan.instructions.clone();
+                    let destination = 0x4_0000_0000 + alignment;
+                    let image = plan.emit_at(destination).unwrap();
+                    let mut decoder = relocated(&image, destination);
+                    let branch = decoder.decode();
+                    let indirect = decoder.decode();
+                    let memory = decoder.decode();
+                    let terminal = decoder.decode();
+                    assert_eq!(branch.mnemonic(), Mnemonic::Je);
+                    assert_eq!(branch.near_branch_target(), memory.ip());
+                    assert_eq!(indirect.mnemonic(), Mnemonic::Jmp);
+                    assert_eq!(indirect.op0_kind(), OpKind::Memory);
+                    let literal = indirect.ip_rel_memory_address();
+                    let offset = usize::try_from(literal - destination).unwrap();
+                    assert_eq!(
+                        u64::from_le_bytes(image.bytes()[offset..offset + 8].try_into().unwrap()),
+                        target
+                    );
+                    assert_memory(&original[1], &memory);
+                    assert_eq!(terminal.code(), Code::Jmp_rel32_64);
+                    let return_stub = destination
+                        + (image.layout().instrumentation_len
+                            + image.layout().restore_len
+                            + image.layout().relocated_len) as u64;
+                    assert_eq!(terminal.near_branch_target(), return_stub);
+                    assert!(literal >= terminal.next_ip());
+                    assert!(literal + 8 <= return_stub);
+                    for pc in branch.ip()..memory.ip() {
+                        assert_eq!(logical_pc(&image, pc), Some(base));
+                    }
+                    for pc in memory.ip()..memory.next_ip() {
+                        assert_eq!(logical_pc(&image, pc), Some(base + 2));
+                    }
+                    for pc in terminal.ip()..terminal.next_ip() {
+                        assert_eq!(logical_pc(&image, pc), Some(plan.return_address()));
+                    }
+                    for pc in terminal.next_ip()..return_stub {
+                        assert_eq!(logical_pc(&image, pc), None);
+                    }
+                    assert_eq!(plan.instructions, original);
+                }
+            }
+        }
+
+        #[test]
+        fn refuses_unreachable_original_memory_instead_of_rebinding_it() {
+            let base = 0x1_0000_1000;
+            let code = memory_code(&[0x48, 0x8d, 0x05], false, base, base);
+            let plan = make_plan(&code, base, false);
+            assert!(matches!(
+                plan.emit_at(0x4_0000_0000),
+                Err(TrampolineError::Encoding { .. })
+            ));
+        }
+
+        #[test]
+        fn normalization_preserves_direct_branch_operand_widths() {
+            let code = memory_code(&[0x48, 0x8d, 0x05], false, 0, 0);
+            let memory = Decoder::with_ip(64, &code, 0, DecoderOptions::NONE).decode();
+            let mut original = vec![memory];
+            for (index, code) in [Code::Jmp_rel16, Code::Jmp_rel32_32, Code::Jmp_rel32_64]
+                .into_iter()
+                .enumerate()
+            {
+                let mut branch = Instruction::with_branch(code, 0).unwrap();
+                branch.set_ip(index as u64 + 1);
+                original.push(branch);
+            }
+            // Synthetic metadata covers operand widths that a 64-bit decoder
+            // need not emit; actual executable relocation is tested above.
+            let normalized = super::super::relocation_encoder_instructions(&original).unwrap();
+            assert_memory(&original[0], &normalized[0]);
+            assert!(![0, 1, 2, 3].contains(&normalized[0].ip()));
+            assert!(u16::try_from(normalized[0].ip()).is_ok());
+            for (before, after) in original[1..].iter().zip(&normalized[1..]) {
+                assert_eq!(after.op0_kind(), before.op0_kind());
+                assert_eq!(after.code(), before.code());
+                assert_eq!(after.near_branch_target(), normalized[0].ip());
+                assert_eq!(after.ip(), before.ip());
+            }
         }
     }
 
