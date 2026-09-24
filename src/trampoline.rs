@@ -853,7 +853,8 @@ impl TrampolinePlan {
     ///
     /// Complete consecutive instructions are displaced until their combined
     /// length can contain a five-byte near jump. The hook runs before all
-    /// displaced instructions are relocated and executed.
+    /// displaced instructions are relocated and executed, including each
+    /// direct backedge to the instrumented entry.
     pub fn from_scan(
         scan: &ScanResult,
         execute_address: u64,
@@ -1013,8 +1014,11 @@ impl TrampolinePlan {
                 .checked_add(completion_stop.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let relocated_instructions = &self.instructions[self.relocated_start..];
-            let (encoded, terminal_jump_offset) =
-                encode_relocated_block(relocated_instructions, relocated_address)?;
+            let (encoded, terminal_jump_offset) = encode_relocated_block(
+                relocated_instructions,
+                relocated_address,
+                (!self.replaces_first()).then_some(self.execute_address),
+            )?;
             let relocated = encoded.code_buffer;
             let return_jump_address = relocated_address
                 .checked_add(relocated.len() as u64)
@@ -1055,6 +1059,7 @@ impl TrampolinePlan {
                 &relocated[..terminal_jump_offset.unwrap_or(relocated.len())],
                 relocated_instructions,
                 &encoded.new_instruction_offsets,
+                (!self.replaces_first()).then_some(self.execute_address),
             )?;
             if let Some(offset) = terminal_jump_offset {
                 // The terminal transfer represents the continuation. Padding
@@ -1268,17 +1273,25 @@ fn push_program_counter_mapping(
 // to that instruction's relocated copy. Memory operands must instead retain
 // their application addresses, even when they point at an instruction head.
 // Rename those encoder identities and only their direct control-flow references.
+// An observing entry is also external: a backedge must revisit the live patch
+// site, running the hook again while active and original code while inactive.
+// Its relocated instruction therefore gets a distinct identity, but branches
+// retain their application-entry target rather than following that identity.
 // The original instructions remain untouched for logical-PC mapping.
 fn relocation_encoder_instructions(
     instructions: &[Instruction],
+    observing_entry: Option<u64>,
 ) -> Result<Vec<Instruction>, TrampolineError> {
     let mut normalized = instructions.to_vec();
     let mut next_identity = 0_u32;
     for (index, original) in instructions.iter().enumerate() {
-        if !instructions.iter().any(|instruction| {
-            instruction.is_ip_rel_memory_operand()
-                && instruction.ip_rel_memory_address() == original.ip()
-        }) {
+        let is_observing_entry = observing_entry == Some(original.ip());
+        if !is_observing_entry
+            && !instructions.iter().any(|instruction| {
+                instruction.is_ip_rel_memory_operand()
+                    && instruction.ip_rel_memory_address() == original.ip()
+            })
+        {
             continue;
         }
         // Low identities fit every near-branch operand width. Advancing this
@@ -1302,6 +1315,9 @@ fn relocation_encoder_instructions(
             }
         };
         normalized[index].set_ip(u64::from(identity));
+        if is_observing_entry {
+            continue;
+        }
         for instruction in &mut normalized {
             if instruction.near_branch_target() != original.ip() {
                 continue;
@@ -1326,8 +1342,9 @@ fn relocation_encoder_instructions(
 fn encode_relocated_block(
     instructions: &[Instruction],
     address: u64,
+    observing_entry: Option<u64>,
 ) -> Result<(BlockEncoderResult, Option<usize>), TrampolineError> {
-    let normalized = relocation_encoder_instructions(instructions)?;
+    let normalized = relocation_encoder_instructions(instructions, observing_entry)?;
     let instructions = normalized.as_slice();
     let options = BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS
         | BlockEncoderOptions::RETURN_RELOC_INFOS;
@@ -1405,8 +1422,12 @@ fn append_relocated_program_counter_mappings(
     code: &[u8],
     instructions: &[Instruction],
     offsets: &[u32],
+    observing_entry: Option<u64>,
 ) -> Result<(), TrampolineError> {
     debug_assert_eq!(instructions.len(), offsets.len());
+    // Expanded-instruction sizing must use the same identities as emission:
+    // an entry backedge can expand even though its original self-loop cannot.
+    let normalized = relocation_encoder_instructions(instructions, observing_entry)?;
     let mut cursor = 0_usize;
     let mut index = 0_usize;
     while index < instructions.len() {
@@ -1415,7 +1436,7 @@ fn append_relocated_program_counter_mappings(
             let instruction_address = relocated_address + cursor as u64;
             let separately_encoded = BlockEncoder::encode(
                 64,
-                InstructionBlock::new(&instructions[index..=index], instruction_address),
+                InstructionBlock::new(&normalized[index..=index], instruction_address),
                 BlockEncoderOptions::RETURN_RELOC_INFOS,
             )
             .map_err(encoding_error)?;
@@ -3252,11 +3273,11 @@ mod tests {
         }
 
         #[test]
-        fn keeps_internal_branch_targets_distinct_from_memory_addresses() {
+        fn keeps_entry_branches_and_memory_at_application_address() {
             for base in [0, 1, 0x20_0000] {
                 for eip in [false, true] {
-                    // Both operands name the first instruction, but only the
-                    // direct branch follows its relocated copy. No loop executes.
+                    // Both operands name the hook entry. The branch must revisit
+                    // the live patch; the memory address must remain original.
                     let mut code = vec![0x75, 0xfe];
                     code.extend(memory_code(&[0x48, 0x8d, 0x05], eip, base + 2, base));
                     let plan = make_plan(&code, base, false);
@@ -3265,12 +3286,139 @@ mod tests {
                         let image = plan.emit_at(destination).unwrap();
                         let mut decoder = relocated(&image, destination);
                         let branch = decoder.decode();
-                        assert_eq!(branch.near_branch_target(), branch.ip());
-                        assert_memory(&original[1], &decoder.decode());
+                        if destination < 0x4_0000_0000 {
+                            assert_eq!(branch.mnemonic(), Mnemonic::Jne);
+                            assert_eq!(branch.near_branch_target(), base);
+                        } else {
+                            assert_eq!(branch.mnemonic(), Mnemonic::Je);
+                            let transfer = decoder.decode();
+                            assert_eq!(transfer.mnemonic(), Mnemonic::Jmp);
+                            assert_eq!(transfer.op0_kind(), OpKind::Memory);
+                            let offset = (transfer.ip_rel_memory_address() - destination) as usize;
+                            assert_eq!(
+                                u64::from_le_bytes(
+                                    image.bytes()[offset..offset + 8].try_into().unwrap()
+                                ),
+                                base
+                            );
+                            assert_eq!(branch.near_branch_target(), decoder.ip());
+                            assert_eq!(logical_pc(&image, transfer.ip()), Some(base));
+                        }
+                        let memory = decoder.decode();
+                        assert_memory(&original[1], &memory);
+                        assert_eq!(logical_pc(&image, memory.ip()), Some(base + 2));
                         assert_eq!(logical_pc(&image, branch.ip()), Some(base));
                         assert_eq!(plan.instructions, original);
                     }
                 }
+            }
+        }
+
+        #[test]
+        fn retained_interior_branches_still_follow_their_relocated_instruction() {
+            for base in [0, 1, 0x20_0000] {
+                for eip in [false, true] {
+                    // This is an encoder-only control. Installed hooks still
+                    // reject strict-interior entries. The NOP is the hook entry;
+                    // the retained branch and LEA both address the branch itself.
+                    let mut code = vec![0x90, 0x75, 0xfe];
+                    code.extend(memory_code(&[0x48, 0x8d, 0x05], eip, base + 3, base + 1));
+                    for replace_first in [false, true] {
+                        let plan = make_plan(&code, base, replace_first);
+                        let original = plan.instructions.clone();
+                        for destination in [base + 0x10_0000, 0x4_0000_0000] {
+                            let image = plan.emit_at(destination).unwrap();
+                            let mut decoder = relocated(&image, destination);
+                            if !replace_first {
+                                assert_eq!(decoder.decode().mnemonic(), Mnemonic::Nop);
+                            }
+                            let branch = decoder.decode();
+                            assert_eq!(branch.near_branch_target(), branch.ip());
+                            assert_memory(&original[2], &decoder.decode());
+                            assert_eq!(logical_pc(&image, branch.ip()), Some(base + 1));
+                            assert_eq!(plan.instructions, original);
+                        }
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn observing_entry_targets_stay_external_for_direct_control_flow() {
+            for code in [
+                &[0xeb, 0xfe, 0x90, 0x90, 0x90][..],   // JMP rel8
+                &[0xe9, 0xfb, 0xff, 0xff, 0xff],       // JMP rel32
+                &[0x75, 0xfe, 0x90, 0x90, 0x90],       // JNE rel8
+                &[0x0f, 0x85, 0xfa, 0xff, 0xff, 0xff], // JNE rel32
+                &[0xe8, 0xfb, 0xff, 0xff, 0xff],       // CALL rel32
+                &[0xe2, 0xfe, 0x90, 0x90, 0x90],       // LOOP
+                &[0xe1, 0xfe, 0x90, 0x90, 0x90],       // LOOPE
+                &[0xe0, 0xfe, 0x90, 0x90, 0x90],       // LOOPNE
+                &[0xe3, 0xfe, 0x90, 0x90, 0x90],       // JRCXZ
+                &[0x67, 0xe3, 0xfd, 0x90, 0x90],       // JECXZ
+            ] {
+                for base in [0, 1, 0x20_0000] {
+                    let plan = make_plan(code, base, false);
+                    let original = plan.instructions.clone();
+                    let destination = base + 0x10_0000;
+                    let image = plan.emit_at(destination).unwrap();
+                    let instructions: Vec<_> = relocated(&image, destination).into_iter().collect();
+                    let targets: Vec<_> = instructions
+                        .iter()
+                        .filter(|instruction| instruction.op0_kind() == OpKind::NearBranch64)
+                        .map(Instruction::near_branch_target)
+                        .collect();
+                    assert!(
+                        targets.contains(&base),
+                        "code={code:02x?}; targets={targets:x?}"
+                    );
+                    assert!(!targets.contains(&instructions[0].ip()));
+                    assert_eq!(plan.instructions, original);
+                }
+            }
+        }
+
+        #[test]
+        fn maps_consecutive_far_entry_backedges_to_their_original_pcs() {
+            let base = 0x20_0000;
+            let plan = make_plan(&[0x75, 0xfe, 0x74, 0xfc, 0x90], base, false);
+            let destination = 0x4_0000_0000;
+            let image = plan.emit_at(destination).unwrap();
+            let mut decoder = relocated(&image, destination);
+            for original_pc in [base, base + 2] {
+                let conditional = decoder.decode();
+                let transfer = decoder.decode();
+                assert!(matches!(
+                    conditional.mnemonic(),
+                    Mnemonic::Je | Mnemonic::Jne
+                ));
+                assert_eq!(conditional.near_branch_target(), transfer.next_ip());
+                assert_eq!(transfer.mnemonic(), Mnemonic::Jmp);
+                assert_eq!(transfer.op0_kind(), OpKind::Memory);
+                let offset = (transfer.ip_rel_memory_address() - destination) as usize;
+                assert_eq!(
+                    u64::from_le_bytes(image.bytes()[offset..offset + 8].try_into().unwrap()),
+                    base
+                );
+                for pc in conditional.ip()..transfer.next_ip() {
+                    assert_eq!(logical_pc(&image, pc), Some(original_pc));
+                }
+            }
+            let nop = decoder.decode();
+            assert_eq!(nop.mnemonic(), Mnemonic::Nop);
+            assert_eq!(logical_pc(&image, nop.ip()), Some(base + 4));
+            let terminal = decoder.decode();
+            assert_eq!(terminal.code(), Code::Jmp_rel32_64);
+            for pc in terminal.ip()..terminal.next_ip() {
+                assert_eq!(logical_pc(&image, pc), Some(plan.return_address()));
+            }
+            let return_stub = destination
+                + (image.layout().instrumentation_len
+                    + image.layout().restore_len
+                    + image.layout().relocated_len) as u64;
+            assert_eq!(terminal.near_branch_target(), return_stub);
+            for pc in terminal.next_ip()..return_stub {
+                assert_eq!(logical_pc(&image, pc), None);
             }
         }
 
@@ -3380,15 +3528,22 @@ mod tests {
             }
             // Synthetic metadata covers operand widths that a 64-bit decoder
             // need not emit; actual executable relocation is tested above.
-            let normalized = super::super::relocation_encoder_instructions(&original).unwrap();
-            assert_memory(&original[0], &normalized[0]);
-            assert!(![0, 1, 2, 3].contains(&normalized[0].ip()));
-            assert!(u16::try_from(normalized[0].ip()).is_ok());
-            for (before, after) in original[1..].iter().zip(&normalized[1..]) {
-                assert_eq!(after.op0_kind(), before.op0_kind());
-                assert_eq!(after.code(), before.code());
-                assert_eq!(after.near_branch_target(), normalized[0].ip());
-                assert_eq!(after.ip(), before.ip());
+            for observing_entry in [None, Some(0)] {
+                let normalized =
+                    super::super::relocation_encoder_instructions(&original, observing_entry)
+                        .unwrap();
+                assert_memory(&original[0], &normalized[0]);
+                assert!(![0, 1, 2, 3].contains(&normalized[0].ip()));
+                assert!(u16::try_from(normalized[0].ip()).is_ok());
+                for (before, after) in original[1..].iter().zip(&normalized[1..]) {
+                    assert_eq!(after.op0_kind(), before.op0_kind());
+                    assert_eq!(after.code(), before.code());
+                    assert_eq!(
+                        after.near_branch_target(),
+                        observing_entry.unwrap_or(normalized[0].ip())
+                    );
+                    assert_eq!(after.ip(), before.ip());
+                }
             }
         }
     }
@@ -3579,7 +3734,8 @@ mod tests {
         let mut jump = iced_x86::Instruction::with_branch(iced_x86::Code::Jmp_rel8_64, 2).unwrap();
         jump.set_ip(3);
         let address = 0x4_0000_0000;
-        let (encoded, terminal) = super::encode_relocated_block(&[branch, jump], address).unwrap();
+        let (encoded, terminal) =
+            super::encode_relocated_block(&[branch, jump], address, None).unwrap();
         assert!(terminal.is_some());
         let targets: Vec<_> = encoded
             .reloc_infos
