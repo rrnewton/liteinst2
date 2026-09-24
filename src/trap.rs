@@ -33,6 +33,13 @@ pub type GuardSignalHandler =
 /// emulate the kernel's mask, reset, alternate-stack, or restart semantics for
 /// a directly invoked custom handler.
 ///
+/// The installed router must receive the requested `SA_SIGINFO` ABI with
+/// non-null native `siginfo_t` and `ucontext_t` pointers. For genuine Linux
+/// x86-64 `INT3` (`#BP`) delivery, preserve `si_code == SI_KERNEL` and the saved
+/// `uc_mcontext.gregs[REG_TRAPNO] == 3`. Synthetic or reinjected deliveries
+/// without this metadata are delegated to the prior disposition rather than
+/// retried as guards.
+///
 /// The callback runs during single-threaded runtime preparation, before the
 /// restrictive syscall filter is installed.
 pub type GuardSignalInstaller = unsafe fn(
@@ -54,6 +61,9 @@ pub type GuardDefaultRestorer = unsafe fn(libc::c_int, &GuardSignalAction) -> Re
 
 /// Host-owned signal operations required by the guard router after a
 /// restrictive syscall filter is active.
+///
+/// [`Self::install_blocked`] must preserve the native guard-delivery metadata
+/// required by [`GuardSignalInstaller`].
 #[derive(Clone, Copy)]
 pub struct GuardSignalRuntime {
     /// Exact-restorer installation callback that returns with SIGTRAP blocked.
