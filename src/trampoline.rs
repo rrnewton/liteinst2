@@ -4666,7 +4666,7 @@ mod tests {
                         &target.to_le_bytes()
                     );
                     assert!(pool_offset >= terminal + 5);
-                    assert!(pool_offset + 8 <= relay_offset);
+                    assert_eq!(pool_offset + 8, relay_offset);
                     assert!(
                         image.bytes()[terminal + 5..pool_offset]
                             .iter()
