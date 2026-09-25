@@ -75,7 +75,8 @@ const _: () = assert!(HOOK_CONTEXT_STACK_PREFIX_BYTES == 304);
 pub const SAVED_EXTENDED_STATE_COMPONENT_CAPACITY: usize = 8;
 const NEAR_RETURN_JUMP_BYTES: usize = 5;
 const NOTRACK_ABSOLUTE_JUMP_BYTES: usize = 15;
-const ENTRY_RELAY_CODE: [u8; 11] = [0xf3, 0x0f, 0x1e, 0xfa, 0x3e, 0xff, 0x25, 0, 0, 0, 0];
+const BRANCH_RELAY_CODE: [u8; 11] = [0xf3, 0x0f, 0x1e, 0xfa, 0x3e, 0xff, 0x25, 0, 0, 0, 0];
+const BRANCH_RELAY_BYTES: usize = BRANCH_RELAY_CODE.len() + core::mem::size_of::<u64>();
 const PTRACE_STOP_BYTES: [u8; 1] = [0xcc];
 const TRAMPOLINE_ALLOCATION_BYTES: usize = 4096;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -1019,11 +1020,10 @@ impl TrampolinePlan {
             let RelocatedBlock {
                 encoded,
                 terminal_jump_offset,
-                entry_relay_offset,
+                branch_relays,
             } = encode_relocated_block(
                 relocated_instructions,
                 relocated_address,
-                self.execute_address,
                 (!self.replaces_first()).then_some(self.execute_address),
             )?;
             let relocated = encoded.code_buffer;
@@ -1078,14 +1078,14 @@ impl TrampolinePlan {
                     self.return_address,
                 );
             }
-            if let Some(offset) = entry_relay_offset {
-                // ENDBR64 and the NOTRACK jump represent the application entry.
-                // The following absolute target is data and remains unmapped.
+            for relay in branch_relays {
+                // ENDBR64 and the NOTRACK jump represent the original direct
+                // branch destination. The following absolute target is data.
                 push_program_counter_mapping(
                     &mut program_counters,
-                    relocated_address + offset as u64,
-                    relocated_address + offset as u64 + ENTRY_RELAY_CODE.len() as u64,
-                    self.execute_address,
+                    relocated_address + relay.offset as u64,
+                    relocated_address + relay.offset as u64 + BRANCH_RELAY_CODE.len() as u64,
+                    relay.target,
                 );
             }
             let return_code_len = if return_jump.len() == NOTRACK_ABSOLUTE_JUMP_BYTES {
@@ -1359,20 +1359,51 @@ fn relocation_encoder_instructions(
 struct RelocatedBlock {
     encoded: BlockEncoderResult,
     terminal_jump_offset: Option<usize>,
-    entry_relay_offset: Option<usize>,
+    branch_relays: Vec<BranchRelay>,
+}
+
+struct BranchRelay {
+    offset: usize,
+    target: u64,
+}
+
+fn checked_branch_relay_layout(
+    address: u64,
+    encoded_len: usize,
+    target_count: usize,
+    terminal_end: usize,
+) -> Result<(usize, i32), TrampolineError> {
+    let relay_bytes = target_count
+        .checked_mul(BRANCH_RELAY_BYTES)
+        .ok_or_else(|| encoding_error("branch relay length overflow"))?;
+    let final_len = encoded_len
+        .checked_add(relay_bytes)
+        .ok_or_else(|| encoding_error("relocated block length overflow"))?;
+    let final_len_u64 = u64::try_from(final_len)
+        .map_err(|_| TrampolineError::AddressNotRepresentable { address })?;
+    address
+        .checked_add(final_len_u64)
+        .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+    let data_len = final_len
+        .checked_sub(terminal_end)
+        .ok_or_else(|| encoding_error("terminal jump exceeds encoded block"))?;
+    let displacement = i32::try_from(data_len)
+        .map_err(|_| encoding_error("encoder literal table exceeds signed rel32 reach"))?;
+    Ok((final_len, displacement))
 }
 
 // iced emits a tracked indirect transfer when a direct branch exceeds rel32
-// reach. Its destination needs ENDBR64 under CET, but a patched entry starts
-// with E9. Preserve iced's code and pointer locations, redirecting only its
-// entry-target branch literals through one ENDBR64 / NOTRACK relay. Appending
-// after the literal pool lets the existing terminal jump skip the relay too.
-fn append_entry_relay(
+// reach. The original direct destination is not required to begin with ENDBR64.
+// Preserve iced's code and pointer locations, redirecting every final Offset64
+// branch slot through one ENDBR64 / NOTRACK relay per distinct destination.
+// Appending after the literal pool lets the existing terminal jump skip all
+// relay code and data.
+fn append_branch_relays(
     encoded: &mut BlockEncoderResult,
     address: u64,
-    entry: u64,
-) -> Result<Option<usize>, TrampolineError> {
-    let mut entry_literals = Vec::new();
+    terminal_end: usize,
+) -> Result<Vec<BranchRelay>, TrampolineError> {
+    let mut branch_literals = Vec::new();
     for info in &encoded.reloc_infos {
         if info.kind != RelocKind::Offset64 {
             continue;
@@ -1381,43 +1412,72 @@ fn append_entry_relay(
             .address
             .checked_sub(address)
             .and_then(|offset| usize::try_from(offset).ok())
-            .ok_or_else(|| encoding_error("entry branch literal precedes encoded block"))?;
+            .ok_or_else(|| encoding_error("branch literal precedes encoded block"))?;
         let end = offset
             .checked_add(core::mem::size_of::<u64>())
-            .ok_or_else(|| encoding_error("entry branch literal range overflow"))?;
+            .ok_or_else(|| encoding_error("branch literal range overflow"))?;
+        if offset < terminal_end {
+            return Err(encoding_error(
+                "encoder branch literal overlaps executable instructions",
+            ));
+        }
         let bytes = encoded
             .code_buffer
             .get(offset..end)
-            .ok_or_else(|| encoding_error("entry branch literal exceeds encoded block"))?;
-        if u64::from_le_bytes(bytes.try_into().unwrap()) == entry {
-            entry_literals.push(offset);
+            .ok_or_else(|| encoding_error("branch literal exceeds encoded block"))?;
+        branch_literals.push((offset, u64::from_le_bytes(bytes.try_into().unwrap())));
+    }
+    if branch_literals.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let mut targets = Vec::new();
+    for &(_, target) in &branch_literals {
+        if !targets.contains(&target) {
+            targets.push(target);
         }
     }
-    if entry_literals.is_empty() {
-        return Ok(None);
+
+    let (final_len, _) = checked_branch_relay_layout(
+        address,
+        encoded.code_buffer.len(),
+        targets.len(),
+        terminal_end,
+    )?;
+
+    let mut branch_relays = Vec::with_capacity(targets.len());
+    for target in targets {
+        let offset = encoded.code_buffer.len();
+        let offset_u64 = u64::try_from(offset)
+            .map_err(|_| TrampolineError::AddressNotRepresentable { address })?;
+        address
+            .checked_add(offset_u64)
+            .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+        encoded.code_buffer.extend_from_slice(&BRANCH_RELAY_CODE);
+        encoded.code_buffer.extend_from_slice(&target.to_le_bytes());
+        branch_relays.push(BranchRelay { offset, target });
     }
-    let offset = encoded.code_buffer.len();
-    let relay_address = address
-        .checked_add(offset as u64)
-        .ok_or(TrampolineError::AddressNotRepresentable { address })?;
-    relay_address
-        .checked_add((ENTRY_RELAY_CODE.len() + core::mem::size_of::<u64>()) as u64)
-        .ok_or(TrampolineError::AddressNotRepresentable {
-            address: relay_address,
-        })?;
-    encoded.code_buffer.extend_from_slice(&ENTRY_RELAY_CODE);
-    encoded.code_buffer.extend_from_slice(&entry.to_le_bytes());
-    for offset in entry_literals {
+    debug_assert_eq!(encoded.code_buffer.len(), final_len);
+
+    for (offset, target) in branch_literals {
+        let relay = branch_relays
+            .iter()
+            .find(|relay| relay.target == target)
+            .ok_or_else(|| encoding_error("missing branch relay for frozen target"))?;
+        let relay_offset = u64::try_from(relay.offset)
+            .map_err(|_| TrampolineError::AddressNotRepresentable { address })?;
+        let relay_address = address
+            .checked_add(relay_offset)
+            .ok_or(TrampolineError::AddressNotRepresentable { address })?;
         encoded.code_buffer[offset..offset + core::mem::size_of::<u64>()]
             .copy_from_slice(&relay_address.to_le_bytes());
     }
-    Ok(Some(offset))
+    Ok(branch_relays)
 }
 
 fn encode_relocated_block(
     instructions: &[Instruction],
     address: u64,
-    patch_entry: u64,
     observing_entry: Option<u64>,
 ) -> Result<RelocatedBlock, TrampolineError> {
     let normalized = relocation_encoder_instructions(instructions, observing_entry)?;
@@ -1431,7 +1491,7 @@ fn encode_relocated_block(
         return Ok(RelocatedBlock {
             encoded,
             terminal_jump_offset: None,
-            entry_relay_offset: None,
+            branch_relays: Vec::new(),
         });
     }
 
@@ -1476,28 +1536,21 @@ fn encode_relocated_block(
     address
         .checked_add(encoded.code_buffer.len() as u64)
         .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+    let end_address = address
+        .checked_add(
+            u64::try_from(end).map_err(|_| TrampolineError::AddressNotRepresentable { address })?,
+        )
+        .ok_or(TrampolineError::AddressNotRepresentable { address })?;
     if encoded
         .reloc_infos
         .iter()
-        .any(|info| info.address < address + end as u64)
+        .any(|info| info.address < end_address)
     {
         return Err(encoding_error(
             "encoder literal overlaps executable instructions",
         ));
     }
-    // Replace-first plans already leave their omitted entry external, so they
-    // need no observing-entry identity rename. Their far entry branches still
-    // need the same CET relay as observing plans.
-    let entry_relay_offset = if instructions.iter().any(|instruction| {
-        matches!(
-            instruction.op0_kind(),
-            OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
-        ) && instruction.near_branch_target() == patch_entry
-    }) {
-        append_entry_relay(&mut encoded, address, patch_entry)?
-    } else {
-        None
-    };
+    let branch_relays = append_branch_relays(&mut encoded, address, end)?;
     let data_len = encoded
         .code_buffer
         .len()
@@ -1509,7 +1562,7 @@ fn encode_relocated_block(
     Ok(RelocatedBlock {
         encoded,
         terminal_jump_offset: Some(offset),
-        entry_relay_offset,
+        branch_relays,
     })
 }
 
@@ -3247,7 +3300,7 @@ mod tests {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     mod pc_relative {
         use super::{InstructionScanner, TrampolineError, TrampolinePlan, noop_hook};
-        use crate::trampoline::TrampolineImage;
+        use crate::trampoline::{BRANCH_RELAY_BYTES, BRANCH_RELAY_CODE, TrampolineImage};
         use iced_x86::{Code, Decoder, DecoderOptions, Instruction, Mnemonic, OpKind};
 
         fn memory_code(opcode: &[u8], eip: bool, ip: u64, target: u64) -> Vec<u8> {
@@ -3296,7 +3349,7 @@ mod tests {
                 .find_map(|mapping| mapping.translate(address))
         }
 
-        fn assert_entry_relay(image: &TrampolineImage, address: u64, relay: u64, entry: u64) {
+        fn assert_branch_relay(image: &TrampolineImage, address: u64, relay: u64, target: u64) {
             let offset = usize::try_from(relay - address).unwrap();
             let mut decoder =
                 Decoder::with_ip(64, &image.bytes()[offset..], relay, DecoderOptions::NONE);
@@ -3309,13 +3362,71 @@ mod tests {
             let literal = usize::try_from(jump.next_ip() - address).unwrap();
             assert_eq!(
                 u64::from_le_bytes(image.bytes()[literal..literal + 8].try_into().unwrap()),
-                entry
+                target
             );
             for pc in relay..jump.next_ip() {
-                assert_eq!(logical_pc(image, pc), Some(entry));
+                assert_eq!(logical_pc(image, pc), Some(target));
             }
             for pc in jump.next_ip()..jump.next_ip() + 8 {
                 assert_eq!(logical_pc(image, pc), None);
+            }
+        }
+
+        fn make_mode_plan(
+            code: &[u8],
+            base: u64,
+            replace_first: bool,
+            stops: bool,
+        ) -> TrampolinePlan {
+            let scan = InstructionScanner::default().scan(code, base).unwrap();
+            if stops {
+                assert!(replace_first);
+                TrampolinePlan::from_scan_replacing_first_with_ptrace_stops(&scan, base, noop_hook)
+                    .unwrap()
+            } else if replace_first {
+                TrampolinePlan::from_scan_replacing_first(&scan, base, noop_hook).unwrap()
+            } else {
+                TrampolinePlan::from_scan(&scan, base, noop_hook).unwrap()
+            }
+        }
+
+        fn relocated_bounds(image: &TrampolineImage, address: u64) -> (usize, u64, u64) {
+            let layout = image.layout();
+            let offset = layout.entry_stop_len
+                + layout.instrumentation_len
+                + layout.restore_len
+                + layout.completion_stop_len;
+            let start = address + offset as u64;
+            (offset, start, start + layout.relocated_len as u64)
+        }
+
+        fn relay_for_transfer(
+            image: &TrampolineImage,
+            address: u64,
+            transfer: &Instruction,
+            target: u64,
+        ) -> u64 {
+            assert_eq!(transfer.op0_kind(), OpKind::Memory);
+            let pool = transfer.ip_rel_memory_address();
+            let pool_offset = usize::try_from(pool - address).unwrap();
+            let relay = u64::from_le_bytes(
+                image.bytes()[pool_offset..pool_offset + 8]
+                    .try_into()
+                    .unwrap(),
+            );
+            assert_branch_relay(image, address, relay, target);
+            for pc in pool..pool + 8 {
+                assert_eq!(logical_pc(image, pc), None);
+            }
+            relay
+        }
+
+        fn decode_terminal(decoder: &mut Decoder<'_>) -> Instruction {
+            loop {
+                let instruction = decoder.decode();
+                if instruction.mnemonic() != Mnemonic::Nop {
+                    return instruction;
+                }
             }
         }
 
@@ -3418,7 +3529,7 @@ mod tests {
                             let relay = u64::from_le_bytes(
                                 image.bytes()[offset..offset + 8].try_into().unwrap(),
                             );
-                            assert_entry_relay(&image, destination, relay, base);
+                            assert_branch_relay(&image, destination, relay, base);
                             assert_eq!(branch.near_branch_target(), decoder.ip());
                             assert_eq!(logical_pc(&image, transfer.ip()), Some(base));
                         }
@@ -3517,7 +3628,7 @@ mod tests {
                 let offset = (transfer.ip_rel_memory_address() - destination) as usize;
                 let relay =
                     u64::from_le_bytes(image.bytes()[offset..offset + 8].try_into().unwrap());
-                assert_entry_relay(&image, destination, relay, base);
+                assert_branch_relay(&image, destination, relay, base);
                 if let Some(previous) = common_relay {
                     assert_eq!(relay, previous);
                 }
@@ -3604,7 +3715,7 @@ mod tests {
                     let literal = (indirect.ip_rel_memory_address() - destination) as usize;
                     let relay =
                         u64::from_le_bytes(image.bytes()[literal..literal + 8].try_into().unwrap());
-                    assert_entry_relay(&image, destination, relay, base);
+                    assert_branch_relay(&image, destination, relay, base);
                     for pc in start..indirect.next_ip() {
                         assert_eq!(logical_pc(&image, pc), Some(base));
                     }
@@ -3637,6 +3748,420 @@ mod tests {
         }
 
         #[test]
+        fn far_external_direct_branch_uses_cet_relay() {
+            let code = [0x75, 0x40, 0x90, 0x90, 0x90];
+            for (base, destination) in [(0x200ffc, 0x80201000), (0x20_0000, 0x4_0000_0000)] {
+                if base == 0x200ffc {
+                    assert_eq!(destination - (base + 5), i32::MAX as u64);
+                    assert_eq!(destination % 4096, 0);
+                    let mut patch_code = code.to_vec();
+                    patch_code.resize(8, 0x90);
+                    let scanner = InstructionScanner::default();
+                    let scan = scanner.scan(&patch_code, base).unwrap();
+                    crate::patcher::JumpPatchPlan::from_scan(
+                        &scanner,
+                        &scan,
+                        &patch_code,
+                        base,
+                        base,
+                        destination,
+                    )
+                    .unwrap();
+                }
+
+                let target = base + 0x42;
+                let plan = make_plan(&code, base, false);
+                let image = plan.emit_at(destination).unwrap();
+                let layout = image.layout();
+                let relocated_offset = layout.instrumentation_len + layout.restore_len;
+                let relocated_address = destination + relocated_offset as u64;
+                let return_stub = relocated_address + layout.relocated_len as u64;
+                let mut decoder = relocated(&image, destination);
+
+                let conditional = decoder.decode();
+                assert_eq!(conditional.mnemonic(), Mnemonic::Je);
+                let transfer = decoder.decode();
+                assert_eq!(transfer.code(), Code::Jmp_rm64);
+                assert_eq!(conditional.near_branch_target(), transfer.next_ip());
+                for pc in conditional.ip()..transfer.next_ip() {
+                    assert_eq!(logical_pc(&image, pc), Some(base));
+                }
+
+                let pool_address = transfer.ip_rel_memory_address();
+                let pool_offset = usize::try_from(pool_address - destination).unwrap();
+                let relay = u64::from_le_bytes(
+                    image.bytes()[pool_offset..pool_offset + 8]
+                        .try_into()
+                        .unwrap(),
+                );
+                assert!(
+                    relay >= relocated_address && relay.checked_add(19).unwrap() <= return_stub,
+                    "external branch pool must point to an in-image relay: {relay:#x}"
+                );
+                for pc in pool_address..pool_address + 8 {
+                    assert_eq!(logical_pc(&image, pc), None);
+                }
+
+                let relay_offset = usize::try_from(relay - destination).unwrap();
+                let mut relay_decoder = Decoder::with_ip(
+                    64,
+                    &image.bytes()[relay_offset..return_stub as usize - destination as usize],
+                    relay,
+                    DecoderOptions::NONE,
+                );
+                let endbr = relay_decoder.decode();
+                assert_eq!(endbr.code(), Code::Endbr64);
+                let jump = relay_decoder.decode();
+                assert_eq!(jump.code(), Code::Jmp_rm64);
+                assert_eq!(jump.segment_prefix(), iced_x86::Register::DS);
+                assert_eq!(jump.ip_rel_memory_address(), jump.next_ip());
+                let target_offset = usize::try_from(jump.next_ip() - destination).unwrap();
+                assert_eq!(
+                    u64::from_le_bytes(
+                        image.bytes()[target_offset..target_offset + 8]
+                            .try_into()
+                            .unwrap()
+                    ),
+                    target
+                );
+                for pc in relay..jump.next_ip() {
+                    assert_eq!(logical_pc(&image, pc), Some(target));
+                }
+                for pc in jump.next_ip()..jump.next_ip() + 8 {
+                    assert_eq!(logical_pc(&image, pc), None);
+                }
+
+                let terminal = loop {
+                    let instruction = decoder.decode();
+                    if instruction.mnemonic() != Mnemonic::Nop {
+                        break instruction;
+                    }
+                };
+                assert_eq!(terminal.code(), Code::Jmp_rel32_64);
+                assert_eq!(terminal.near_branch_target(), return_stub);
+                assert_eq!(relay + 19, return_stub);
+            }
+        }
+
+        #[test]
+        fn far_external_relays_cover_all_direct_forms_and_plan_modes() {
+            struct Case {
+                name: &'static str,
+                observing: &'static [u8],
+                replacing: &'static [u8],
+            }
+            let cases = [
+                Case {
+                    name: "jmp_rel8",
+                    observing: &[0xeb, 0x40, 0x90, 0x90, 0x90],
+                    replacing: &[0x90, 0xeb, 0x3f, 0x90, 0x90],
+                },
+                Case {
+                    name: "jmp_rel32",
+                    observing: &[0xe9, 0x3d, 0, 0, 0],
+                    replacing: &[0x90, 0xe9, 0x3c, 0, 0, 0],
+                },
+                Case {
+                    name: "call_rel32",
+                    observing: &[0xe8, 0x3d, 0, 0, 0],
+                    replacing: &[0x90, 0xe8, 0x3c, 0, 0, 0],
+                },
+                Case {
+                    name: "jne_rel8",
+                    observing: &[0x75, 0x40, 0x90, 0x90, 0x90],
+                    replacing: &[0x90, 0x75, 0x3f, 0x90, 0x90],
+                },
+                Case {
+                    name: "jne_rel32",
+                    observing: &[0x0f, 0x85, 0x3c, 0, 0, 0],
+                    replacing: &[0x90, 0x0f, 0x85, 0x3b, 0, 0, 0],
+                },
+                Case {
+                    name: "loop",
+                    observing: &[0xe2, 0x40, 0x90, 0x90, 0x90],
+                    replacing: &[0x90, 0xe2, 0x3f, 0x90, 0x90],
+                },
+                Case {
+                    name: "loope",
+                    observing: &[0xe1, 0x40, 0x90, 0x90, 0x90],
+                    replacing: &[0x90, 0xe1, 0x3f, 0x90, 0x90],
+                },
+                Case {
+                    name: "loopne",
+                    observing: &[0xe0, 0x40, 0x90, 0x90, 0x90],
+                    replacing: &[0x90, 0xe0, 0x3f, 0x90, 0x90],
+                },
+                Case {
+                    name: "jrcxz",
+                    observing: &[0xe3, 0x40, 0x90, 0x90, 0x90],
+                    replacing: &[0x90, 0xe3, 0x3f, 0x90, 0x90],
+                },
+                Case {
+                    name: "jecxz",
+                    observing: &[0x67, 0xe3, 0x3f, 0x90, 0x90],
+                    replacing: &[0x90, 0x67, 0xe3, 0x3e, 0x90],
+                },
+            ];
+
+            for case in cases {
+                for (replace_first, stops) in [(false, false), (true, false), (true, true)] {
+                    let code = if replace_first {
+                        case.replacing
+                    } else {
+                        case.observing
+                    };
+                    for (base, destination) in [(0x200ffc, 0x80201000), (0x20_0000, 0x4_0000_0000)]
+                    {
+                        if base == 0x200ffc {
+                            assert_eq!(destination - (base + 5), i32::MAX as u64);
+                            let mut patch_code = code.to_vec();
+                            patch_code.resize(8, 0x90);
+                            let scanner = InstructionScanner::default();
+                            let scan = scanner.scan(&patch_code, base).unwrap();
+                            crate::patcher::JumpPatchPlan::from_scan(
+                                &scanner,
+                                &scan,
+                                &patch_code,
+                                base,
+                                base,
+                                destination,
+                            )
+                            .unwrap();
+                        }
+
+                        let plan = make_mode_plan(code, base, replace_first, stops);
+                        assert_eq!(plan.replaces_first(), replace_first);
+                        assert_eq!(plan.displaced_len(), code.len());
+                        let image = plan.emit_at(destination).unwrap();
+                        assert_eq!(image.layout().entry_stop_len, usize::from(stops));
+                        assert_eq!(image.layout().completion_stop_len, usize::from(stops));
+                        let (relocated_offset, relocated_address, return_stub) =
+                            relocated_bounds(&image, destination);
+                        let originals: Vec<_> =
+                            Decoder::with_ip(64, code, base, DecoderOptions::NONE)
+                                .into_iter()
+                                .collect();
+                        let original = originals[usize::from(replace_first)];
+                        assert_eq!(original.near_branch_target(), base + 0x42);
+                        let mut decoder = Decoder::with_ip(
+                            64,
+                            &image.bytes()[relocated_offset..],
+                            relocated_address,
+                            DecoderOptions::NONE,
+                        );
+                        let first = decoder.decode();
+                        let mut transfers = vec![first];
+                        for _ in 0..2 {
+                            if transfers.last().unwrap().op0_kind() == OpKind::Memory {
+                                break;
+                            }
+                            transfers.push(decoder.decode());
+                        }
+                        let indirect = *transfers.last().unwrap();
+                        assert_eq!(indirect.op0_kind(), OpKind::Memory, "{}", case.name);
+                        assert_eq!(
+                            indirect.code(),
+                            if original.mnemonic() == Mnemonic::Call {
+                                Code::Call_rm64
+                            } else {
+                                Code::Jmp_rm64
+                            },
+                            "{}",
+                            case.name
+                        );
+                        let relay = relay_for_transfer(&image, destination, &indirect, base + 0x42);
+                        for pc in first.ip()..indirect.next_ip() {
+                            assert_eq!(logical_pc(&image, pc), Some(original.ip()));
+                        }
+                        match original.mnemonic() {
+                            Mnemonic::Je | Mnemonic::Jne => {
+                                assert_eq!(
+                                    first.mnemonic(),
+                                    if original.mnemonic() == Mnemonic::Je {
+                                        Mnemonic::Jne
+                                    } else {
+                                        Mnemonic::Je
+                                    }
+                                );
+                                assert_eq!(first.near_branch_target(), indirect.next_ip());
+                            }
+                            Mnemonic::Loop
+                            | Mnemonic::Loope
+                            | Mnemonic::Loopne
+                            | Mnemonic::Jrcxz
+                            | Mnemonic::Jecxz => {
+                                assert_eq!(first.mnemonic(), original.mnemonic());
+                                assert_eq!(first.near_branch_target(), indirect.ip());
+                                assert_eq!(transfers[1].code(), Code::Jmp_rel8_64);
+                                assert_eq!(transfers[1].near_branch_target(), indirect.next_ip());
+                            }
+                            Mnemonic::Call | Mnemonic::Jmp => assert_eq!(transfers.len(), 1),
+                            _ => unreachable!(),
+                        }
+                        let terminal = decode_terminal(&mut decoder);
+                        assert_eq!(terminal.code(), Code::Jmp_rel32_64);
+                        assert_eq!(terminal.near_branch_target(), return_stub);
+                        assert_eq!(relay + BRANCH_RELAY_BYTES as u64, return_stub);
+                    }
+                }
+            }
+        }
+
+        #[test]
+        fn branch_relay_grouping_is_deterministic_for_shared_and_mixed_targets() {
+            struct Fixture {
+                name: &'static str,
+                observing: &'static [u8],
+                replacing: &'static [u8],
+                target_offsets: [u64; 2],
+                shared: bool,
+            }
+            let fixtures = [
+                Fixture {
+                    name: "shared_external",
+                    observing: &[0x75, 0x40, 0x74, 0x3e, 0x90],
+                    replacing: &[0x90, 0x75, 0x3f, 0x74, 0x3d],
+                    target_offsets: [0x42, 0x42],
+                    shared: true,
+                },
+                Fixture {
+                    name: "entry_then_external",
+                    observing: &[0x75, 0xfe, 0x74, 0x3e, 0x90],
+                    replacing: &[0x90, 0x75, 0xfd, 0x74, 0x3d],
+                    target_offsets: [0, 0x42],
+                    shared: false,
+                },
+                Fixture {
+                    name: "external_then_entry",
+                    observing: &[0x75, 0x40, 0x74, 0xfc, 0x90],
+                    replacing: &[0x90, 0x75, 0x3f, 0x74, 0xfb],
+                    target_offsets: [0x42, 0],
+                    shared: false,
+                },
+            ];
+            let base = 0x20_0000;
+            let destination = 0x4_0000_0000;
+
+            for fixture in fixtures {
+                for (replace_first, stops) in [(false, false), (true, false), (true, true)] {
+                    let code = if replace_first {
+                        fixture.replacing
+                    } else {
+                        fixture.observing
+                    };
+                    let plan = make_mode_plan(code, base, replace_first, stops);
+                    let image = plan.emit_at(destination).unwrap();
+                    let (relocated_offset, relocated_address, return_stub) =
+                        relocated_bounds(&image, destination);
+                    let originals: Vec<_> = Decoder::with_ip(64, code, base, DecoderOptions::NONE)
+                        .into_iter()
+                        .skip(usize::from(replace_first))
+                        .filter(|instruction| instruction.op0_kind() == OpKind::NearBranch64)
+                        .collect();
+                    assert_eq!(originals.len(), 2, "{}", fixture.name);
+                    let mut decoder = Decoder::with_ip(
+                        64,
+                        &image.bytes()[relocated_offset..],
+                        relocated_address,
+                        DecoderOptions::NONE,
+                    );
+                    let mut relays = Vec::new();
+                    for (original, target_offset) in originals.iter().zip(fixture.target_offsets) {
+                        assert_eq!(original.near_branch_target(), base + target_offset);
+                        let conditional = decoder.decode();
+                        let indirect = decoder.decode();
+                        assert!(matches!(
+                            conditional.mnemonic(),
+                            Mnemonic::Je | Mnemonic::Jne
+                        ));
+                        assert_eq!(conditional.near_branch_target(), indirect.next_ip());
+                        assert_eq!(indirect.code(), Code::Jmp_rm64);
+                        let relay = relay_for_transfer(
+                            &image,
+                            destination,
+                            &indirect,
+                            base + target_offset,
+                        );
+                        for pc in conditional.ip()..indirect.next_ip() {
+                            assert_eq!(logical_pc(&image, pc), Some(original.ip()));
+                        }
+                        relays.push(relay);
+                    }
+                    if fixture.shared {
+                        assert_eq!(relays[0], relays[1], "{}", fixture.name);
+                        assert_eq!(relays[0] + BRANCH_RELAY_BYTES as u64, return_stub);
+                    } else {
+                        assert_eq!(
+                            relays[0] + BRANCH_RELAY_BYTES as u64,
+                            relays[1],
+                            "{}",
+                            fixture.name
+                        );
+                        assert_eq!(relays[1] + BRANCH_RELAY_BYTES as u64, return_stub);
+                    }
+                    let terminal = decode_terminal(&mut decoder);
+                    assert_eq!(terminal.code(), Code::Jmp_rel32_64);
+                    assert_eq!(terminal.near_branch_target(), return_stub);
+                }
+            }
+        }
+
+        #[test]
+        fn mixed_short_jcc_and_call_get_distinct_relays_in_public_plans() {
+            let base = 0x20_0000;
+            let destination = 0x4_0000_0000;
+            let observing = [0x75, 0x40, 0xe8, 0xf9, 0, 0, 0];
+            let replacing = [0x90, 0x75, 0x3f, 0xe8, 0xf8, 0, 0, 0];
+
+            for (replace_first, stops) in [(false, false), (true, false), (true, true)] {
+                let code = if replace_first {
+                    replacing.as_slice()
+                } else {
+                    observing.as_slice()
+                };
+                let plan = make_mode_plan(code, base, replace_first, stops);
+                assert_eq!(plan.displaced_len(), code.len());
+                let image = plan.emit_at(destination).unwrap();
+                let (relocated_offset, relocated_address, return_stub) =
+                    relocated_bounds(&image, destination);
+                let mut decoder = Decoder::with_ip(
+                    64,
+                    &image.bytes()[relocated_offset..],
+                    relocated_address,
+                    DecoderOptions::NONE,
+                );
+
+                let conditional = decoder.decode();
+                let jcc_transfer = decoder.decode();
+                let call_transfer = decoder.decode();
+                assert_eq!(conditional.mnemonic(), Mnemonic::Je);
+                assert_eq!(conditional.near_branch_target(), jcc_transfer.next_ip());
+                assert_eq!(jcc_transfer.code(), Code::Jmp_rm64);
+                assert_eq!(call_transfer.code(), Code::Call_rm64);
+                let original_jcc = base + u64::from(replace_first);
+                let original_call = original_jcc + 2;
+                for pc in conditional.ip()..jcc_transfer.next_ip() {
+                    assert_eq!(logical_pc(&image, pc), Some(original_jcc));
+                }
+                for pc in call_transfer.ip()..call_transfer.next_ip() {
+                    assert_eq!(logical_pc(&image, pc), Some(original_call));
+                }
+
+                let targets = [base + 0x42, base + 0x100];
+                let mut relays = Vec::new();
+                for (transfer, target) in [(jcc_transfer, targets[0]), (call_transfer, targets[1])]
+                {
+                    relays.push(relay_for_transfer(&image, destination, &transfer, target));
+                }
+                assert_eq!(relays[0] + BRANCH_RELAY_BYTES as u64, relays[1]);
+                assert_eq!(relays[1] + BRANCH_RELAY_BYTES as u64, return_stub);
+                let terminal = decoder.decode();
+                assert_eq!(terminal.code(), Code::Jmp_rel32_64);
+                assert_eq!(terminal.near_branch_target(), return_stub);
+            }
+        }
+
+        #[test]
         fn near_entry_backedges_do_not_add_relay_or_change_encoding() {
             let base = 0x20_0000;
             let destination = base + 0x10_0000;
@@ -3661,11 +4186,10 @@ mod tests {
                 let relocated = super::super::encode_relocated_block(
                     &plan.instructions,
                     destination,
-                    base,
                     Some(base),
                 )
                 .unwrap();
-                assert!(relocated.entry_relay_offset.is_none());
+                assert!(relocated.branch_relays.is_empty());
                 assert!(relocated.terminal_jump_offset.is_none());
                 assert_eq!(relocated.encoded.code_buffer, original_encoding.code_buffer);
                 assert_eq!(
@@ -3676,7 +4200,132 @@ mod tests {
         }
 
         #[test]
-        fn entry_relay_leaves_other_far_branch_literals_unchanged() {
+        fn near_external_branches_keep_iced_bytes_and_offsets_in_all_plan_modes() {
+            let cases = [
+                (&[0xe9, 0x3d, 0, 0, 0][..], &[0x90, 0xe9, 0x3c, 0, 0, 0][..]),
+                (&[0xe8, 0x3d, 0, 0, 0][..], &[0x90, 0xe8, 0x3c, 0, 0, 0][..]),
+                (
+                    &[0x75, 0x40, 0x90, 0x90, 0x90][..],
+                    &[0x90, 0x75, 0x3f, 0x90, 0x90][..],
+                ),
+                (
+                    &[0xe2, 0x40, 0x90, 0x90, 0x90][..],
+                    &[0x90, 0xe2, 0x3f, 0x90, 0x90][..],
+                ),
+            ];
+            let base = 0x20_0000;
+            let destination = base + 0x10_0000;
+
+            for (observing, replacing) in cases {
+                for (replace_first, stops) in [(false, false), (true, false), (true, true)] {
+                    let code = if replace_first { replacing } else { observing };
+                    let plan = make_mode_plan(code, base, replace_first, stops);
+                    let image = plan.emit_at(destination).unwrap();
+                    let layout = image.layout();
+                    let (relocated_offset, relocated_address, _) =
+                        relocated_bounds(&image, destination);
+                    let instructions = &plan.instructions[usize::from(replace_first)..];
+                    let observing_entry = (!replace_first).then_some(base);
+                    let normalized = super::super::relocation_encoder_instructions(
+                        instructions,
+                        observing_entry,
+                    )
+                    .unwrap();
+                    let expected = iced_x86::BlockEncoder::encode(
+                        64,
+                        iced_x86::InstructionBlock::new(&normalized, relocated_address),
+                        iced_x86::BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS
+                            | iced_x86::BlockEncoderOptions::RETURN_RELOC_INFOS,
+                    )
+                    .unwrap();
+                    assert!(expected.reloc_infos.is_empty());
+                    let relocated = super::super::encode_relocated_block(
+                        instructions,
+                        relocated_address,
+                        observing_entry,
+                    )
+                    .unwrap();
+                    assert!(relocated.branch_relays.is_empty());
+                    assert!(relocated.terminal_jump_offset.is_none());
+                    assert_eq!(relocated.encoded.code_buffer, expected.code_buffer);
+                    assert_eq!(
+                        relocated.encoded.new_instruction_offsets,
+                        expected.new_instruction_offsets
+                    );
+                    assert_eq!(
+                        &image.bytes()[relocated_offset..relocated_offset + layout.relocated_len],
+                        expected.code_buffer
+                    );
+                }
+            }
+        }
+
+        #[test]
+        fn relay_selection_uses_relocations_not_equal_immediates_or_continuation_identity() {
+            let base = 0x20_0000_u64;
+            let destination = 0x4_0000_0000;
+            let external = base + 0x42;
+
+            for (replace_first, stops) in [(false, false), (true, false), (true, true)] {
+                let mut code = if replace_first {
+                    vec![0x90, 0x75, 0x3f, 0x48, 0xb8]
+                } else {
+                    vec![0x75, 0x40, 0x48, 0xb8]
+                };
+                code.extend_from_slice(&external.to_le_bytes());
+                let plan = make_mode_plan(&code, base, replace_first, stops);
+                assert_eq!(plan.displaced_len(), code.len());
+                let image = plan.emit_at(destination).unwrap();
+                let (offset, start, return_stub) = relocated_bounds(&image, destination);
+                let mut decoder =
+                    Decoder::with_ip(64, &image.bytes()[offset..], start, DecoderOptions::NONE);
+                let conditional = decoder.decode();
+                let transfer = decoder.decode();
+                let mov = decoder.decode();
+                assert_eq!(conditional.near_branch_target(), transfer.next_ip());
+                assert_eq!(transfer.code(), Code::Jmp_rm64);
+                assert_eq!(mov.mnemonic(), Mnemonic::Mov);
+                assert_eq!(mov.immediate64(), external);
+                let relay = relay_for_transfer(&image, destination, &transfer, external);
+                assert_eq!(relay + BRANCH_RELAY_BYTES as u64, return_stub);
+                let terminal = decode_terminal(&mut decoder);
+                assert_eq!(terminal.code(), Code::Jmp_rel32_64);
+                assert_eq!(terminal.near_branch_target(), return_stub);
+
+                let continuation_code = if replace_first {
+                    &[0x90, 0x75, 0x02, 0x90, 0x90][..]
+                } else {
+                    &[0x75, 0x03, 0x90, 0x90, 0x90][..]
+                };
+                let continuation_plan =
+                    make_mode_plan(continuation_code, base, replace_first, stops);
+                let continuation_image = continuation_plan.emit_at(destination).unwrap();
+                let (continuation_offset, continuation_start, continuation_stub) =
+                    relocated_bounds(&continuation_image, destination);
+                assert_eq!(continuation_plan.return_address(), base + 5);
+                let mut continuation_decoder = Decoder::with_ip(
+                    64,
+                    &continuation_image.bytes()[continuation_offset..],
+                    continuation_start,
+                    DecoderOptions::NONE,
+                );
+                let conditional = continuation_decoder.decode();
+                let transfer = continuation_decoder.decode();
+                assert_eq!(conditional.near_branch_target(), transfer.next_ip());
+                let relay = relay_for_transfer(
+                    &continuation_image,
+                    destination,
+                    &transfer,
+                    continuation_plan.return_address(),
+                );
+                assert_eq!(relay + BRANCH_RELAY_BYTES as u64, continuation_stub);
+                let terminal = decode_terminal(&mut continuation_decoder);
+                assert_eq!(terminal.near_branch_target(), continuation_stub);
+            }
+        }
+
+        #[test]
+        fn far_branch_relays_preserve_entry_and_external_destinations() {
             let base = 0x20_0000;
             let destination = 0x4_0000_0000;
             let plan = make_plan(&[0x75, 0xfe, 0x74, 0x7f, 0x90], base, false);
@@ -3686,16 +4335,12 @@ mod tests {
             let entry_transfer = decoder.decode();
             assert_eq!(decoder.decode().mnemonic(), Mnemonic::Jne);
             let other_transfer = decoder.decode();
-            for (transfer, entry_target) in [(entry_transfer, true), (other_transfer, false)] {
+            for (transfer, target) in [(entry_transfer, base), (other_transfer, base + 4 + 0x7f)] {
                 assert_eq!(transfer.code(), Code::Jmp_rm64);
                 let literal = (transfer.ip_rel_memory_address() - destination) as usize;
-                let target =
+                let relay =
                     u64::from_le_bytes(image.bytes()[literal..literal + 8].try_into().unwrap());
-                if entry_target {
-                    assert_entry_relay(&image, destination, target, base);
-                } else {
-                    assert_eq!(target, base + 4 + 0x7f);
-                }
+                assert_branch_relay(&image, destination, relay, target);
             }
         }
 
@@ -3749,10 +4394,9 @@ mod tests {
                     assert_eq!(indirect.op0_kind(), OpKind::Memory);
                     let literal = indirect.ip_rel_memory_address();
                     let offset = usize::try_from(literal - destination).unwrap();
-                    assert_eq!(
-                        u64::from_le_bytes(image.bytes()[offset..offset + 8].try_into().unwrap()),
-                        target
-                    );
+                    let relay =
+                        u64::from_le_bytes(image.bytes()[offset..offset + 8].try_into().unwrap());
+                    assert_branch_relay(&image, destination, relay, target);
                     assert_memory(&original[1], &memory);
                     assert_eq!(terminal.code(), Code::Jmp_rel32_64);
                     let return_stub = destination
@@ -3771,8 +4415,12 @@ mod tests {
                     for pc in terminal.ip()..terminal.next_ip() {
                         assert_eq!(logical_pc(&image, pc), Some(plan.return_address()));
                     }
+                    assert_eq!(relay + BRANCH_RELAY_BYTES as u64, return_stub);
                     for pc in terminal.next_ip()..return_stub {
-                        assert_eq!(logical_pc(&image, pc), None);
+                        let expected = (relay..relay + BRANCH_RELAY_CODE.len() as u64)
+                            .contains(&pc)
+                            .then_some(target);
+                        assert_eq!(logical_pc(&image, pc), expected);
                     }
                     assert_eq!(plan.instructions, original);
                 }
@@ -3971,15 +4619,56 @@ mod tests {
                     for offset in terminal..terminal + 5 {
                         assert_eq!(translate(offset), Some(plan.return_address()));
                     }
+                    let relocated_address = address + relocated as u64;
+                    let mut decoder = iced_x86::Decoder::with_ip(
+                        64,
+                        &image.bytes()[relocated..return_offset],
+                        relocated_address,
+                        iced_x86::DecoderOptions::NONE,
+                    );
+                    let transfer = loop {
+                        let instruction = decoder.decode();
+                        assert!(!instruction.is_invalid());
+                        if matches!(
+                            instruction.code(),
+                            iced_x86::Code::Call_rm64 | iced_x86::Code::Jmp_rm64
+                        ) {
+                            break instruction;
+                        }
+                    };
+                    let pool_offset =
+                        usize::try_from(transfer.ip_rel_memory_address() - address).unwrap();
+                    let relay = u64::from_le_bytes(
+                        image.bytes()[pool_offset..pool_offset + 8]
+                            .try_into()
+                            .unwrap(),
+                    );
+                    let relay_offset = usize::try_from(relay - address).unwrap();
+                    assert_eq!(relay_offset + super::BRANCH_RELAY_BYTES, return_offset);
+                    assert_eq!(
+                        &image.bytes()[relay_offset..relay_offset + super::BRANCH_RELAY_CODE.len()],
+                        &super::BRANCH_RELAY_CODE
+                    );
+                    assert_eq!(
+                        &image.bytes()[relay_offset + super::BRANCH_RELAY_CODE.len()
+                            ..relay_offset + super::BRANCH_RELAY_BYTES],
+                        &target.to_le_bytes()
+                    );
                     for offset in terminal + 5..return_offset {
-                        assert_eq!(translate(offset), None, "data offset {offset}");
+                        let expected = (relay_offset
+                            ..relay_offset + super::BRANCH_RELAY_CODE.len())
+                            .contains(&offset)
+                            .then_some(target);
+                        assert_eq!(translate(offset), expected, "tail offset {offset}");
                     }
                     assert_eq!(
                         &image.bytes()[return_offset - 8..return_offset],
                         &target.to_le_bytes()
                     );
+                    assert!(pool_offset >= terminal + 5);
+                    assert!(pool_offset + 8 <= relay_offset);
                     assert!(
-                        image.bytes()[terminal + 5..return_offset - 8]
+                        image.bytes()[terminal + 5..pool_offset]
                             .iter()
                             .all(|byte| *byte == 0xCC)
                     );
@@ -4011,20 +4700,129 @@ mod tests {
         let mut jump = iced_x86::Instruction::with_branch(iced_x86::Code::Jmp_rel8_64, 2).unwrap();
         jump.set_ip(3);
         let address = 0x4_0000_0000;
-        let relocated = super::encode_relocated_block(&[branch, jump], address, 0, None).unwrap();
+        let relocated = super::encode_relocated_block(&[branch, jump], address, None).unwrap();
         assert!(relocated.terminal_jump_offset.is_some());
-        assert!(relocated.entry_relay_offset.is_none());
+        assert_eq!(relocated.branch_relays.len(), 2);
+        assert_eq!(
+            relocated
+                .branch_relays
+                .iter()
+                .map(|relay| relay.target)
+                .collect::<Vec<_>>(),
+            [1, 2]
+        );
         let encoded = relocated.encoded;
-        let targets: Vec<_> = encoded
+        let pool_targets: Vec<_> = encoded
             .reloc_infos
             .iter()
-            .map(|info| {
+            .zip(&relocated.branch_relays)
+            .map(|(info, relay)| {
                 let offset = (info.address - address) as usize;
-                u64::from_le_bytes(encoded.code_buffer[offset..offset + 8].try_into().unwrap())
+                assert_eq!(info.kind, iced_x86::RelocKind::Offset64);
+                assert_eq!(
+                    u64::from_le_bytes(encoded.code_buffer[offset..offset + 8].try_into().unwrap()),
+                    address + relay.offset as u64
+                );
+                assert_eq!(
+                    &encoded.code_buffer
+                        [relay.offset..relay.offset + super::BRANCH_RELAY_CODE.len()],
+                    &super::BRANCH_RELAY_CODE
+                );
+                u64::from_le_bytes(
+                    encoded.code_buffer[relay.offset + super::BRANCH_RELAY_CODE.len()
+                        ..relay.offset + super::BRANCH_RELAY_BYTES]
+                        .try_into()
+                        .unwrap(),
+                )
             })
             .collect();
-        assert_eq!(targets, [1, 2]);
+        assert_eq!(pool_targets, [1, 2]);
         assert_eq!(encoded.new_instruction_offsets, [u32::MAX, u32::MAX]);
+    }
+
+    #[test]
+    fn branch_relay_rejects_malformed_final_offset64_slots() {
+        fn encoded(buffer_len: usize, relocation_address: u64) -> iced_x86::BlockEncoderResult {
+            iced_x86::BlockEncoderResult {
+                rip: 0x100,
+                code_buffer: vec![0; buffer_len],
+                reloc_infos: vec![iced_x86::RelocInfo::new(
+                    iced_x86::RelocKind::Offset64,
+                    relocation_address,
+                )],
+                new_instruction_offsets: Vec::new(),
+                constant_offsets: Vec::new(),
+            }
+        }
+
+        let assert_encoding =
+            |result: Result<Vec<super::BranchRelay>, TrampolineError>, text| match result {
+                Err(TrampolineError::Encoding { message }) => {
+                    assert!(
+                        message.contains(text),
+                        "{message:?} does not contain {text:?}"
+                    );
+                }
+                _ => panic!("expected encoding refusal containing {text:?}"),
+            };
+
+        let mut before = encoded(16, 0xff);
+        assert_encoding(
+            super::append_branch_relays(&mut before, 0x100, 8),
+            "precedes encoded block",
+        );
+
+        let mut overlapping = encoded(16, 0x104);
+        assert_encoding(
+            super::append_branch_relays(&mut overlapping, 0x100, 12),
+            "overlaps executable instructions",
+        );
+
+        let mut truncated = encoded(16, 0x10c);
+        assert_encoding(
+            super::append_branch_relays(&mut truncated, 0x100, 8),
+            "exceeds encoded block",
+        );
+
+        let mut range_overflow = encoded(16, u64::MAX - 3);
+        assert_encoding(
+            super::append_branch_relays(&mut range_overflow, 0, 8),
+            "range overflow",
+        );
+    }
+
+    #[test]
+    fn branch_relay_layout_refuses_length_address_and_rel32_overflow() {
+        let assert_encoding = |result: Result<(usize, i32), TrampolineError>, text| match result {
+            Err(TrampolineError::Encoding { message }) => {
+                assert!(
+                    message.contains(text),
+                    "{message:?} does not contain {text:?}"
+                );
+            }
+            _ => panic!("expected encoding refusal containing {text:?}"),
+        };
+
+        assert_encoding(
+            super::checked_branch_relay_layout(0, 0, usize::MAX, 0),
+            "relay length overflow",
+        );
+        assert_encoding(
+            super::checked_branch_relay_layout(0, usize::MAX, 1, 0),
+            "relocated block length overflow",
+        );
+        assert!(matches!(
+            super::checked_branch_relay_layout(u64::MAX - 8, 0, 1, 0),
+            Err(TrampolineError::AddressNotRepresentable { .. })
+        ));
+        assert_encoding(
+            super::checked_branch_relay_layout(0, i32::MAX as usize, 1, 0),
+            "signed rel32 reach",
+        );
+        assert_encoding(
+            super::checked_branch_relay_layout(0, 0, 1, super::BRANCH_RELAY_BYTES + 1),
+            "terminal jump exceeds",
+        );
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
