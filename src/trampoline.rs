@@ -1023,6 +1023,7 @@ impl TrampolinePlan {
             } = encode_relocated_block(
                 relocated_instructions,
                 relocated_address,
+                self.execute_address,
                 (!self.replaces_first()).then_some(self.execute_address),
             )?;
             let relocated = encoded.code_buffer;
@@ -1416,6 +1417,7 @@ fn append_entry_relay(
 fn encode_relocated_block(
     instructions: &[Instruction],
     address: u64,
+    patch_entry: u64,
     observing_entry: Option<u64>,
 ) -> Result<RelocatedBlock, TrampolineError> {
     let normalized = relocation_encoder_instructions(instructions, observing_entry)?;
@@ -1483,15 +1485,16 @@ fn encode_relocated_block(
             "encoder literal overlaps executable instructions",
         ));
     }
-    let entry_relay_offset = if let Some(entry) = observing_entry.filter(|entry| {
-        instructions.iter().any(|instruction| {
-            matches!(
-                instruction.op0_kind(),
-                OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
-            ) && instruction.near_branch_target() == *entry
-        })
+    // Replace-first plans already leave their omitted entry external, so they
+    // need no observing-entry identity rename. Their far entry branches still
+    // need the same CET relay as observing plans.
+    let entry_relay_offset = if instructions.iter().any(|instruction| {
+        matches!(
+            instruction.op0_kind(),
+            OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
+        ) && instruction.near_branch_target() == patch_entry
     }) {
-        append_entry_relay(&mut encoded, address, entry)?
+        append_entry_relay(&mut encoded, address, patch_entry)?
     } else {
         None
     };
@@ -3658,6 +3661,7 @@ mod tests {
                 let relocated = super::super::encode_relocated_block(
                     &plan.instructions,
                     destination,
+                    base,
                     Some(base),
                 )
                 .unwrap();
@@ -4007,7 +4011,7 @@ mod tests {
         let mut jump = iced_x86::Instruction::with_branch(iced_x86::Code::Jmp_rel8_64, 2).unwrap();
         jump.set_ip(3);
         let address = 0x4_0000_0000;
-        let relocated = super::encode_relocated_block(&[branch, jump], address, None).unwrap();
+        let relocated = super::encode_relocated_block(&[branch, jump], address, 0, None).unwrap();
         assert!(relocated.terminal_jump_offset.is_some());
         assert!(relocated.entry_relay_offset.is_none());
         let encoded = relocated.encoded;
