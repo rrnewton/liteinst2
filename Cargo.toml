@@ -4,6 +4,10 @@ version = "0.1.0"
 edition = "2024"
 description = "Online x86-64 instrumentation using instruction punning"
 repository = "https://github.com/rrnewton/liteinst2"
+readme = "README.md"
+license = "BSD-2-Clause"
+keywords = ["instrumentation", "x86-64", "patching", "trampoline"]
+categories = ["development-tools", "os::linux-apis"]
 rust-version = "1.85"
 
 [dependencies]

@@ -501,7 +501,7 @@ mod tests {
     use crate::scanner::InstructionScanner;
     use crate::trampoline::HookContext;
 
-    unsafe extern "C" fn noop_hook(_context: *const HookContext) {}
+    unsafe extern "C" fn noop_hook(_context: *mut HookContext) {}
 
     #[test]
     fn original_tail_bytes_determine_the_exact_target() {
@@ -628,7 +628,7 @@ mod tests {
         static TEST_LOCK: Mutex<()> = Mutex::new(());
         static CALLBACKS: AtomicU64 = AtomicU64::new(0);
 
-        unsafe extern "C" fn record_hook(_context: *const HookContext) {
+        unsafe extern "C" fn record_hook(_context: *mut HookContext) {
             CALLBACKS.fetch_add(1, Ordering::Relaxed);
         }
 

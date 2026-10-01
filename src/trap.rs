@@ -249,6 +249,10 @@ mod imp {
         debug_assert!(false, "pending trap reservation was not registered");
     }
 
+    pub(crate) fn prepare() -> Result<(), TrapError> {
+        ensure_installed()
+    }
+
     fn ensure_installed() -> Result<(), TrapError> {
         match *INSTALL_RESULT.get_or_init(install_handler) {
             Ok(()) => Ok(()),
@@ -444,6 +448,10 @@ mod imp {
     ) -> Result<PendingTrapSite, TrapError> {
         Err(TrapError::Unsupported)
     }
+    pub(crate) fn prepare() -> Result<(), TrapError> {
+        Err(TrapError::Unsupported)
+    }
+
     pub(crate) fn register(
         _execute_address: usize,
         _reservation_start: usize,
@@ -454,4 +462,4 @@ mod imp {
     }
 }
 
-pub(crate) use imp::{TrapError, TrapSite, register, reserve};
+pub(crate) use imp::{TrapError, TrapSite, prepare, register, reserve};

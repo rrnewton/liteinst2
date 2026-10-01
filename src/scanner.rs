@@ -175,6 +175,11 @@ pub struct ScanResult {
 }
 
 impl ScanResult {
+    /// Returns the exact code bytes represented by this scan.
+    pub fn snapshot(&self) -> &[u8] {
+        &self.snapshot
+    }
+
     /// Returns decoded instructions in address order.
     pub fn instructions(&self) -> &[ScannedInstruction] {
         &self.instructions
@@ -216,6 +221,13 @@ impl ScanResult {
 /// Failures that prevent a complete and trustworthy scan.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ScanError {
+    /// A requested instruction prefix is longer than the available byte window.
+    PrefixTooShort {
+        /// Minimum number of complete instruction bytes requested.
+        required: usize,
+        /// Number of bytes available to the decoder.
+        available: usize,
+    },
     /// The half-open virtual-address range cannot be represented by `u64`.
     AddressRangeOverflow {
         /// Region start address.
@@ -249,6 +261,13 @@ pub enum ScanError {
 impl fmt::Display for ScanError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match *self {
+            Self::PrefixTooShort {
+                required,
+                available,
+            } => write!(
+                formatter,
+                "instruction prefix needs {required} bytes but only {available} are available"
+            ),
             Self::AddressRangeOverflow {
                 base_address,
                 byte_len,
@@ -377,6 +396,51 @@ impl InstructionScanner {
             sites,
         })
     }
+
+    /// Decodes the shortest complete instruction prefix containing at least
+    /// `minimum_bytes` bytes.
+    ///
+    /// The caller may provide extra readable bytes without proving that the
+    /// complete slice is code or ends on an instruction boundary. This is
+    /// useful when registering a live patch from an instruction pointer: the
+    /// returned snapshot contains only fully decoded instructions and can be
+    /// passed to later planners without retaining the speculative tail.
+    pub fn scan_prefix(
+        &self,
+        code: &[u8],
+        base_address: u64,
+        minimum_bytes: usize,
+    ) -> Result<ScanResult, ScanError> {
+        if code.len() < minimum_bytes {
+            return Err(ScanError::PrefixTooShort {
+                required: minimum_bytes,
+                available: code.len(),
+            });
+        }
+        let byte_len = u64::try_from(code.len()).map_err(|_| ScanError::AddressRangeOverflow {
+            base_address,
+            byte_len: code.len(),
+        })?;
+        base_address
+            .checked_add(byte_len)
+            .ok_or(ScanError::AddressRangeOverflow {
+                base_address,
+                byte_len: code.len(),
+            })?;
+
+        let mut decoder = Decoder::with_ip(64, code, base_address, DecoderOptions::NONE);
+        while decoder.position() < minimum_bytes {
+            let offset = decoder.position();
+            let instruction = decoder.decode();
+            if instruction.is_invalid() {
+                return Err(ScanError::InvalidInstruction {
+                    address: instruction.ip(),
+                    offset,
+                });
+            }
+        }
+        self.scan(&code[..decoder.position()], base_address)
+    }
 }
 
 impl Default for InstructionScanner {
@@ -485,6 +549,18 @@ mod tests {
                 byte_len: 1,
             }
         );
+    }
+
+    #[test]
+    fn prefix_scan_stops_on_the_first_boundary_after_the_minimum() {
+        let scanner = InstructionScanner::default();
+        // syscall (2), four-byte add, then a deliberately truncated MOV.
+        let code = [0x0F, 0x05, 0x48, 0x83, 0xC0, 0x01, 0xB8];
+
+        let result = scanner.scan_prefix(&code, 0x1000, 5).unwrap();
+
+        assert_eq!(result.snapshot(), &code[..6]);
+        assert_eq!(result.instructions().len(), 2);
     }
 
     #[test]
