@@ -1,6 +1,6 @@
 [package]
 name = "liteinst2"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 description = "Online x86-64 instrumentation using instruction punning"
 repository = "https://github.com/rrnewton/liteinst2"

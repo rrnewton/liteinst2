@@ -1621,12 +1621,15 @@ impl TrampolineArena {
 fn reserve_arena_slot(next: &AtomicUsize, len: usize) -> Result<usize, TrampolineError> {
     // This reserves exclusive storage; it does not publish completed code.
     // Saturation prevents failed reservations from wrapping and reusing bytes.
-    next.fetch_update(Ordering::AcqRel, Ordering::Acquire, |offset| {
+    // Keep the Rust 1.85 MSRV: fetch_update's replacement, try_update,
+    // is not available there.
+    #[allow(deprecated)]
+    let reservation = next.fetch_update(Ordering::AcqRel, Ordering::Acquire, |offset| {
         offset
             .checked_add(TRAMPOLINE_ALLOCATION_BYTES)
             .filter(|end| *end <= len)
-    })
-    .map_err(|_| TrampolineError::ArenaFull)
+    });
+    reservation.map_err(|_| TrampolineError::ArenaFull)
 }
 
 /// Process-lifetime executable trampoline mapping.
