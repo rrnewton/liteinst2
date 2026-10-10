@@ -17,6 +17,7 @@ use core::sync::atomic::compiler_fence;
 use iced_x86::BlockEncoder;
 use iced_x86::BlockEncoderOptions;
 use iced_x86::BlockEncoderResult;
+use iced_x86::Code;
 use iced_x86::Decoder;
 use iced_x86::DecoderOptions;
 use iced_x86::Instruction;
@@ -78,6 +79,8 @@ const NOTRACK_ABSOLUTE_JUMP_BYTES: usize = 15;
 const BRANCH_RELAY_CODE: [u8; 11] = [0xf3, 0x0f, 0x1e, 0xfa, 0x3e, 0xff, 0x25, 0, 0, 0, 0];
 const BRANCH_RELAY_BYTES: usize = BRANCH_RELAY_CODE.len() + core::mem::size_of::<u64>();
 const PTRACE_STOP_BYTES: [u8; 1] = [0xcc];
+const PRESERVED_USER_STATE_MASK: u64 = 0b10_1110_0111;
+const PKRU_XFEATURE: u64 = 1 << 9;
 const TRAMPOLINE_ALLOCATION_BYTES: usize = 4096;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 const MAX_PROCESS_MAPS_BYTES: usize = 2 * 1024 * 1024;
@@ -320,13 +323,17 @@ const _: () = assert!(core::mem::offset_of!(SavedExtendedStateDescriptor, format
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 impl SavedExtendedStateLayout {
-    /// Detects the exact tracee-side layout used by newly emitted trampolines.
+    /// Detects the exact tracee-side layout used by patch-window trampolines.
     ///
     /// Runtime stack sizing and trampoline emission share this single CPUID/
     /// XGETBV implementation. Callers must still require exact equality before
     /// publishing a hook in case the per-thread enabled state changed.
-    #[allow(unused_unsafe)]
     pub fn detect() -> Result<Self, TrampolineError> {
+        Self::detect_with_mask(PRESERVED_USER_STATE_MASK)
+    }
+
+    #[allow(unused_unsafe)]
+    fn detect_with_mask(preservation_mask: u64) -> Result<Self, TrampolineError> {
         use core::arch::x86_64::__cpuid;
         use core::arch::x86_64::__cpuid_count;
         use core::arch::x86_64::_xgetbv;
@@ -343,8 +350,7 @@ impl SavedExtendedStateLayout {
         // AMX in XCR0 while denying this thread tile-state permission through
         // XFD. Preserve the universally usable user components through PKRU
         // and leave AMX to its explicit owner.
-        const USER_STATE_MASK: u64 = 0b10_1110_0111;
-        let mask = unsafe { _xgetbv(0) } & USER_STATE_MASK;
+        let mask = unsafe { _xgetbv(0) } & preservation_mask;
         let root = unsafe { __cpuid_count(0xD, 0) };
         let supported = u64::from(root.eax) | (u64::from(root.edx) << 32);
         if mask & 0b11 != 0b11 || mask & !supported != 0 {
@@ -471,8 +477,11 @@ impl SavedExtendedStateLayout {
 ///
 /// The context remains valid only for the callback. The callback must follow
 /// the System V AMD64 ABI and must not unwind through generated machine code.
-/// The frame preserves x87 through AVX-512 plus PKRU; callbacks must not modify
-/// permission-gated AMX or other extended state outside that contract.
+/// Patch-window plans preserve x87 through AVX-512 plus PKRU. An exact-syscall
+/// plan preserves the same floating-point/SIMD state but leaves live PKRU
+/// unchanged on return; its saved-state descriptor excludes PKRU. Callbacks
+/// must not modify permission-gated AMX or other extended state outside that
+/// contract.
 pub type HookCallback = unsafe extern "C" fn(*mut HookContext);
 
 /// Mutable integer-register snapshot at the instrumented instruction.
@@ -698,6 +707,13 @@ pub enum TrampolineError {
         /// Decoded instruction length.
         instruction_len: usize,
     },
+    /// The exact-syscall plan requires the literal two-byte `0F 05` instruction.
+    NotExactSyscall {
+        /// Requested instruction address.
+        address: u64,
+        /// Decoded instruction length.
+        instruction_len: usize,
+    },
     /// Computing the address after the displaced instruction overflowed.
     ReturnAddressOverflow {
         /// Instruction address.
@@ -773,6 +789,13 @@ impl fmt::Display for TrampolineError {
                 formatter,
                 "instruction at {address:#x} is {instruction_len} bytes; direct redirection needs at least five"
             ),
+            Self::NotExactSyscall {
+                address,
+                instruction_len,
+            } => write!(
+                formatter,
+                "instruction at {address:#x} with length {instruction_len} is not the literal two-byte syscall 0F 05"
+            ),
             Self::ReturnAddressOverflow {
                 address,
                 instruction_len,
@@ -840,7 +863,13 @@ impl From<PatchError> for TrampolineError {
     }
 }
 
-/// Immutable relocation and dispatch plan for a complete patch window.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum TrampolineKind {
+    PatchWindow,
+    ExactSyscall,
+}
+
+/// Immutable dispatch plan for a patch window or one exact native syscall.
 #[derive(Clone, Debug)]
 pub struct TrampolinePlan {
     execute_address: u64,
@@ -849,6 +878,7 @@ pub struct TrampolinePlan {
     instructions: Vec<Instruction>,
     relocated_start: usize,
     ptrace_stops: bool,
+    kind: TrampolineKind,
 }
 
 impl TrampolinePlan {
@@ -879,6 +909,67 @@ impl TrampolinePlan {
         hook: HookCallback,
     ) -> Result<Self, TrampolineError> {
         Self::from_scan_mode(scan, execute_address, hook, 1, false)
+    }
+
+    /// Builds a standalone plan replacing only a literal two-byte `0F 05`.
+    ///
+    /// The scanned instruction must be an unprefixed native x86-64 `SYSCALL`.
+    /// The hook replaces it, no following application instructions are copied,
+    /// and a register- and flag-neutral jump resumes at `execute_address + 2`.
+    /// This constructor does not satisfy the five-byte patch-window contract;
+    /// callers must arrange entry separately, without treating it as a plan for
+    /// a live jump patch. Planning, emission, and arena allocation leave the
+    /// source bytes unchanged.
+    ///
+    /// Unlike the patch-window constructors, this plan excludes PKRU from both
+    /// XSAVE and XRSTOR. The saved-state layout, component map, and callback
+    /// descriptor describe that exact mask. Live rights established during the
+    /// callback (including by a genuine signal return) therefore survive the
+    /// trampoline return. All other supported floating-point/SIMD state and
+    /// the ordinary GPR, RFLAGS, RSP, and red-zone contract remain unchanged.
+    /// Capture and callback execution still use the incoming stack; this is
+    /// not an owned-stack or memory-protection boundary.
+    pub fn from_scan_replacing_exact_syscall(
+        scan: &ScanResult,
+        execute_address: u64,
+        hook: HookCallback,
+    ) -> Result<Self, TrampolineError> {
+        let scanned = scan
+            .instructions()
+            .iter()
+            .find(|instruction| instruction.address() == execute_address)
+            .ok_or(TrampolineError::SiteNotFound {
+                address: execute_address,
+            })?;
+        let bytes = scanned
+            .offset()
+            .checked_add(2)
+            .and_then(|end| scan.snapshot().get(scanned.offset()..end));
+        if scanned.instruction().code() != Code::Syscall
+            || scanned.len() != 2
+            || bytes != Some([0x0f, 0x05].as_slice())
+        {
+            return Err(TrampolineError::NotExactSyscall {
+                address: execute_address,
+                instruction_len: scanned.len(),
+            });
+        }
+        let return_address =
+            execute_address
+                .checked_add(2)
+                .ok_or(TrampolineError::ReturnAddressOverflow {
+                    address: execute_address,
+                    instruction_len: 2,
+                })?;
+        Ok(Self {
+            execute_address,
+            return_address,
+            hook,
+            instructions: vec![*scanned.instruction()],
+            relocated_start: 1,
+            ptrace_stops: false,
+            kind: TrampolineKind::ExactSyscall,
+        })
     }
 
     /// Builds a replace-first plan bracketed by two tracer-owned INT3 stops.
@@ -958,6 +1049,7 @@ impl TrampolinePlan {
             instructions,
             relocated_start,
             ptrace_stops,
+            kind: TrampolineKind::PatchWindow,
         })
     }
 
@@ -990,7 +1082,12 @@ impl TrampolinePlan {
         }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
-            let extended_state = SavedExtendedStateLayout::detect()?;
+            let extended_state = match self.kind {
+                TrampolineKind::PatchWindow => SavedExtendedStateLayout::detect()?,
+                TrampolineKind::ExactSyscall => SavedExtendedStateLayout::detect_with_mask(
+                    PRESERVED_USER_STATE_MASK & !PKRU_XFEATURE,
+                )?,
+            };
             let entry_stop: &[u8] = if self.ptrace_stops {
                 PTRACE_STOP_BYTES.as_slice()
             } else {
@@ -1017,16 +1114,17 @@ impl TrampolinePlan {
                 .checked_add(completion_stop.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let relocated_instructions = &self.instructions[self.relocated_start..];
-            let RelocatedBlock {
-                encoded,
-                terminal_jump_offset,
-                branch_relays,
-            } = encode_relocated_block(
-                relocated_instructions,
-                relocated_address,
-                (!self.replaces_first()).then_some(self.execute_address),
-            )?;
-            let relocated = encoded.code_buffer;
+            let relocated_block = match self.kind {
+                TrampolineKind::ExactSyscall => None,
+                TrampolineKind::PatchWindow => Some(encode_relocated_block(
+                    relocated_instructions,
+                    relocated_address,
+                    (!self.replaces_first()).then_some(self.execute_address),
+                )?),
+            };
+            let relocated = relocated_block
+                .as_ref()
+                .map_or(&[][..], |block| block.encoded.code_buffer.as_slice());
             let return_jump_address = relocated_address
                 .checked_add(relocated.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
@@ -1049,7 +1147,7 @@ impl TrampolinePlan {
             bytes.extend_from_slice(&instrumentation);
             bytes.extend_from_slice(&restore);
             bytes.extend_from_slice(completion_stop);
-            bytes.extend_from_slice(&relocated);
+            bytes.extend_from_slice(relocated);
             bytes.extend_from_slice(&return_jump);
             debug_assert_eq!(bytes.len(), total_len);
 
@@ -1060,33 +1158,35 @@ impl TrampolinePlan {
                 relocated_address,
                 self.execute_address,
             );
-            append_relocated_program_counter_mappings(
-                &mut program_counters,
-                relocated_address,
-                &relocated[..terminal_jump_offset.unwrap_or(relocated.len())],
-                relocated_instructions,
-                &encoded.new_instruction_offsets,
-                (!self.replaces_first()).then_some(self.execute_address),
-            )?;
-            if let Some(offset) = terminal_jump_offset {
-                // The terminal transfer represents the continuation. Padding
-                // and pointers after it are data, not displaced instructions.
-                push_program_counter_mapping(
+            if let Some(block) = relocated_block.as_ref() {
+                append_relocated_program_counter_mappings(
                     &mut program_counters,
-                    relocated_address + offset as u64,
-                    relocated_address + offset as u64 + NEAR_RETURN_JUMP_BYTES as u64,
-                    self.return_address,
-                );
-            }
-            for relay in branch_relays {
-                // ENDBR64 and the NOTRACK jump represent the original direct
-                // branch destination. The following absolute target is data.
-                push_program_counter_mapping(
-                    &mut program_counters,
-                    relocated_address + relay.offset as u64,
-                    relocated_address + relay.offset as u64 + BRANCH_RELAY_CODE.len() as u64,
-                    relay.target,
-                );
+                    relocated_address,
+                    &relocated[..block.terminal_jump_offset.unwrap_or(relocated.len())],
+                    relocated_instructions,
+                    &block.encoded.new_instruction_offsets,
+                    (!self.replaces_first()).then_some(self.execute_address),
+                )?;
+                if let Some(offset) = block.terminal_jump_offset {
+                    // The terminal transfer represents the continuation. Padding
+                    // and pointers after it are data, not displaced instructions.
+                    push_program_counter_mapping(
+                        &mut program_counters,
+                        relocated_address + offset as u64,
+                        relocated_address + offset as u64 + NEAR_RETURN_JUMP_BYTES as u64,
+                        self.return_address,
+                    );
+                }
+                for relay in &block.branch_relays {
+                    // ENDBR64 and the NOTRACK jump represent the original direct
+                    // branch destination. The following absolute target is data.
+                    push_program_counter_mapping(
+                        &mut program_counters,
+                        relocated_address + relay.offset as u64,
+                        relocated_address + relay.offset as u64 + BRANCH_RELAY_CODE.len() as u64,
+                        relay.target,
+                    );
+                }
             }
             let return_code_len = if return_jump.len() == NOTRACK_ABSOLUTE_JUMP_BYTES {
                 return_jump.len() - core::mem::size_of::<u64>()
@@ -1792,12 +1892,17 @@ impl TrampolineArena {
 fn reserve_arena_slot(next: &AtomicUsize, len: usize) -> Result<usize, TrampolineError> {
     // This reserves exclusive storage; it does not publish completed code.
     // Saturation prevents failed reservations from wrapping and reusing bytes.
-    next.fetch_update(Ordering::AcqRel, Ordering::Acquire, |offset| {
-        offset
+    let mut offset = next.load(Ordering::Acquire);
+    loop {
+        let end = offset
             .checked_add(TRAMPOLINE_ALLOCATION_BYTES)
             .filter(|end| *end <= len)
-    })
-    .map_err(|_| TrampolineError::ArenaFull)
+            .ok_or(TrampolineError::ArenaFull)?;
+        match next.compare_exchange_weak(offset, end, Ordering::AcqRel, Ordering::Acquire) {
+            Ok(_) => return Ok(offset),
+            Err(observed) => offset = observed,
+        }
+    }
 }
 
 /// Process-lifetime executable trampoline mapping.
