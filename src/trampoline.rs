@@ -2927,11 +2927,41 @@ fn near_candidates(
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 fn read_process_maps_bounded() -> Result<String, TrampolineError> {
-    let file =
-        std::fs::File::open("/proc/self/maps").map_err(|error| TrampolineError::ProcessMaps {
-            message: error.to_string(),
-        })?;
-    read_process_maps_from(file)
+    read_process_maps_from_open_result(std::fs::File::open("/proc/self/maps"))
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+enum ProcessMapsIoOperation {
+    Open,
+    Read,
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn process_maps_io_error(
+    operation: ProcessMapsIoOperation,
+    error: std::io::Error,
+) -> TrampolineError {
+    let operation = match operation {
+        ProcessMapsIoOperation::Open => "open",
+        ProcessMapsIoOperation::Read => "read",
+    };
+    // Formatting an OS error can enter libc's localized message lookup. Keep
+    // real errno values numeric, and never format a custom error's payload.
+    let message = if let Some(errno) = error.raw_os_error() {
+        format!("{operation} /proc/self/maps: errno {errno}")
+    } else {
+        format!("{operation} /proc/self/maps: {:?}", error.kind())
+    };
+    TrampolineError::ProcessMaps { message }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn read_process_maps_from_open_result<R: std::io::Read>(
+    opened: std::io::Result<R>,
+) -> Result<String, TrampolineError> {
+    let reader =
+        opened.map_err(|error| process_maps_io_error(ProcessMapsIoOperation::Open, error))?;
+    read_process_maps_from(reader)
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -2946,9 +2976,7 @@ fn read_process_maps_from(mut reader: impl std::io::Read) -> Result<String, Tram
     loop {
         let amount = reader
             .read(&mut chunk)
-            .map_err(|error| TrampolineError::ProcessMaps {
-                message: error.to_string(),
-            })?;
+            .map_err(|error| process_maps_io_error(ProcessMapsIoOperation::Read, error))?;
         if amount == 0 {
             break;
         }
@@ -3024,6 +3052,151 @@ mod tests {
     use crate::scanner::InstructionScanner;
 
     unsafe extern "C" fn noop_hook(_context: *mut HookContext) {}
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    mod process_maps_io_regressions {
+        use super::super::read_process_maps_from;
+        use super::super::read_process_maps_from_open_result;
+        use super::TrampolineError;
+        use std::fmt;
+        use std::io;
+        use std::io::Read;
+        use std::sync::Arc;
+        use std::sync::atomic::AtomicUsize;
+        use std::sync::atomic::Ordering;
+
+        fn process_maps_message(error: TrampolineError) -> String {
+            match error {
+                TrampolineError::ProcessMaps { message } => message,
+                _ => panic!("maps IO failure changed its ProcessMaps classification"),
+            }
+        }
+
+        struct ErrorReader {
+            error: Option<io::Error>,
+            reads: Arc<AtomicUsize>,
+        }
+
+        impl Read for ErrorReader {
+            fn read(&mut self, _buffer: &mut [u8]) -> io::Result<usize> {
+                self.reads.fetch_add(1, Ordering::Relaxed);
+                Err(self.error.take().expect("maps reader retried its error"))
+            }
+        }
+
+        struct CountingPayload {
+            displays: Arc<AtomicUsize>,
+            debugs: Arc<AtomicUsize>,
+        }
+
+        impl fmt::Display for CountingPayload {
+            fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                self.displays.fetch_add(1, Ordering::Relaxed);
+                formatter.write_str("maps payload Display must not be consulted")
+            }
+        }
+
+        impl fmt::Debug for CountingPayload {
+            fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+                self.debugs.fetch_add(1, Ordering::Relaxed);
+                formatter.write_str("maps payload Debug must not be consulted")
+            }
+        }
+
+        impl std::error::Error for CountingPayload {}
+
+        #[test]
+        fn open_result_reports_numeric_errno_without_reading() {
+            static READS: AtomicUsize = AtomicUsize::new(0);
+            struct MustNotRead;
+
+            impl Read for MustNotRead {
+                fn read(&mut self, _buffer: &mut [u8]) -> io::Result<usize> {
+                    READS.fetch_add(1, Ordering::Relaxed);
+                    panic!("an open error reached the maps reader");
+                }
+            }
+
+            READS.store(0, Ordering::Relaxed);
+            let error = read_process_maps_from_open_result::<MustNotRead>(Err(
+                io::Error::from_raw_os_error(libc::EMFILE),
+            ))
+            .unwrap_err();
+            let message = process_maps_message(error);
+            assert_eq!(READS.load(Ordering::Relaxed), 0);
+            assert_eq!(message, "open /proc/self/maps: errno 24");
+        }
+
+        #[test]
+        fn read_error_reports_numeric_errno() {
+            let reads = Arc::new(AtomicUsize::new(0));
+            let error = read_process_maps_from(ErrorReader {
+                error: Some(io::Error::from_raw_os_error(libc::EBADF)),
+                reads: Arc::clone(&reads),
+            })
+            .unwrap_err();
+            let message = process_maps_message(error);
+            assert_eq!(reads.load(Ordering::Relaxed), 1);
+            assert_eq!(message, "read /proc/self/maps: errno 9");
+        }
+
+        #[test]
+        fn read_error_retains_kind_without_display_or_debug_of_its_payload() {
+            let reads = Arc::new(AtomicUsize::new(0));
+            let displays = Arc::new(AtomicUsize::new(0));
+            let debugs = Arc::new(AtomicUsize::new(0));
+            let error = io::Error::new(
+                io::ErrorKind::PermissionDenied,
+                CountingPayload {
+                    displays: Arc::clone(&displays),
+                    debugs: Arc::clone(&debugs),
+                },
+            );
+            assert_eq!(error.raw_os_error(), None);
+            assert_eq!(error.kind(), io::ErrorKind::PermissionDenied);
+            let error = read_process_maps_from(ErrorReader {
+                error: Some(error),
+                reads: Arc::clone(&reads),
+            })
+            .unwrap_err();
+            let message = process_maps_message(error);
+            assert_eq!(reads.load(Ordering::Relaxed), 1);
+            assert_eq!(
+                (
+                    displays.load(Ordering::Relaxed),
+                    debugs.load(Ordering::Relaxed),
+                ),
+                (0, 0),
+            );
+            assert_eq!(message, "read /proc/self/maps: PermissionDenied");
+        }
+
+        #[test]
+        fn open_result_delegates_success_to_the_bounded_reader() {
+            struct CountingReader {
+                bytes: io::Cursor<&'static [u8]>,
+                reads: Arc<AtomicUsize>,
+            }
+
+            impl Read for CountingReader {
+                fn read(&mut self, buffer: &mut [u8]) -> io::Result<usize> {
+                    self.reads.fetch_add(1, Ordering::Relaxed);
+                    self.bytes.read(buffer)
+                }
+            }
+
+            let expected: &'static [u8] =
+                b"00400000-00401000 r-xp 00000000 00:00 0 /maps-fixture\n";
+            let reads = Arc::new(AtomicUsize::new(0));
+            let actual = read_process_maps_from_open_result(Ok(CountingReader {
+                bytes: io::Cursor::new(expected),
+                reads: Arc::clone(&reads),
+            }))
+            .unwrap();
+            assert_eq!(reads.load(Ordering::Relaxed), 2);
+            assert_eq!(actual.as_bytes(), expected);
+        }
+    }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     #[test]
