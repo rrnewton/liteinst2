@@ -447,6 +447,31 @@ impl SavedExtendedStateLayout {
                     .mov(qword_ptr(rsp + offset), rax)
                     .map_err(encoding_error)?;
             }
+            if mask & PKRU_XFEATURE != 0 {
+                let invalid = || TrampolineError::InvalidExtendedStateLayout {
+                    message: "saved PKRU reserved word has an invalid extent",
+                };
+                let component = self
+                    .components()
+                    .iter()
+                    .find(|component| component.xfeature() == PKRU_XFEATURE)
+                    .ok_or_else(invalid)?;
+                let end = component.offset().checked_add(8).ok_or_else(invalid)?;
+                if component.size() != 8
+                    || component.offset() < 576
+                    || component.offset() % 8 != 0
+                    || end > self.image_len()
+                    || end > self.len()
+                {
+                    return Err(invalid());
+                }
+                let upper = i32::try_from(end - 4).map_err(|_| invalid())?;
+                // Own the reserved-word initialization before a callback can
+                // inspect it; the component extent alone is not that proof.
+                assembler
+                    .mov(iced_x86::code_asm::dword_ptr(rsp + upper), eax)
+                    .map_err(encoding_error)?;
+            }
             assembler.mov(eax, mask as u32).map_err(encoding_error)?;
             assembler
                 .mov(edx, (mask >> 32) as u32)
@@ -541,6 +566,17 @@ impl HookContext {
         self.saved_extended_state
     }
 }
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod saved_pkru;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub use saved_pkru::SavedPkruView;
+#[cfg(all(
+    target_os = "linux",
+    target_arch = "x86_64",
+    feature = "saved-pkru-probe"
+))]
+pub use saved_pkru::run_saved_pkru_physical_probe;
 
 const _: () = assert!(core::mem::offset_of!(HookContext, instruction_pointer) == 0);
 const _: () = assert!(core::mem::offset_of!(HookContext, rflags) == 136);

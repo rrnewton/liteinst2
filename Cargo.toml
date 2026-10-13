@@ -17,6 +17,7 @@ include = [
     "README.md",
     "examples/preload_consumer.rs",
     "examples/replace_first.rs",
+    "examples/saved_pkru_probe.rs",
     "src/**",
     "tests/**",
 ]
@@ -41,3 +42,14 @@ nix = { version = "0.31.3", features = ["mman", "process", "signal"] }
 [[bin]]
 name = "liteinst2-arena-fork-fixture"
 path = "tests/support/arena_fork_fixture.rs"
+
+# Explicit host-only physical evidence; no runtime activation or default code.
+[features]
+saved-pkru-probe = []
+
+[[example]]
+name = "saved_pkru_probe"
+path = "examples/saved_pkru_probe.rs"
+required-features = ["saved-pkru-probe"]
+test = false
+bench = false
