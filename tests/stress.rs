@@ -1,6 +1,9 @@
 #![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 
+#[path = "support/patch_latency.rs"]
+mod patch_latency;
+
 use core::ffi::c_void;
 use core::sync::atomic::AtomicBool;
 use core::sync::atomic::AtomicU64;
