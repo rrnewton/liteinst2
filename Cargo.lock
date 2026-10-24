@@ -42,7 +42,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3eaf3ede3fee6db1a4c2ee091bf8a8b4dccdc6d17f656fb07896ee72867612f2"
 
 [[package]]
-name = "liteinst2"
+name = "liteinst"
 version = "0.1.0"
 dependencies = [
  "iced-x86",
@@ -101,7 +101,7 @@ name = "rapid-profiler"
 version = "0.1.0"
 dependencies = [
  "libc",
- "liteinst2",
+ "liteinst",
  "object",
  "perf-event-open-sys",
 ]

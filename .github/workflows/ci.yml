@@ -46,9 +46,9 @@ jobs:
         run: |
           package_root="$(mktemp -d)"
           cargo package --locked
-          package_archive="$(find target/package -maxdepth 1 -name 'liteinst2-*.crate' -print -quit)"
+          package_archive="$(find target/package -maxdepth 1 -name 'liteinst-*.crate' -print -quit)"
           tar -xf "$package_archive" -C "$package_root"
-          package_dir="$(find "$package_root" -mindepth 1 -maxdepth 1 -type d -name 'liteinst2-*' -print -quit)"
+          package_dir="$(find "$package_root" -mindepth 1 -maxdepth 1 -type d -name 'liteinst-*' -print -quit)"
           cd "$package_dir"
           cargo build --locked --example preload_consumer
       - name: Live patching stress

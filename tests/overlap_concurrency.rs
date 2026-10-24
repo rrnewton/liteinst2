@@ -1,8 +1,8 @@
 #![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 
-use liteinst2::patcher::{JumpPatchPlan, LiveJumpPatch, PatchError, StalenessBudget};
-use liteinst2::scanner::InstructionScanner;
+use liteinst::patcher::{JumpPatchPlan, LiveJumpPatch, PatchError, StalenessBudget};
+use liteinst::scanner::InstructionScanner;
 use std::os::unix::process::CommandExt;
 use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};

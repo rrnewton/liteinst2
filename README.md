@@ -1,6 +1,6 @@
-# liteinst2
+# liteinst
 
-`liteinst2` is a Rust library for **hooking machine code in a running program**.
+`liteinst` is a Rust library for **hooking machine code in a running program**.
 It lets you intercept a chosen point in already-loaded x86-64 code — redirecting
 execution into your own function and then back — by rewriting instructions in
 place while the program keeps running, with no recompilation and no need to stop
@@ -16,7 +16,7 @@ client that embeds it.
 ## Instruction punning
 
 Overwriting live code is dangerous: another thread can fetch an instruction
-mid-edit and execute half of the old bytes and half of the new. `liteinst2`
+mid-edit and execute half of the old bytes and half of the new. `liteinst`
 avoids this with *instruction punning* — a technique for x86-64 where a patch is
 published as a single atomic store that reuses ("puns") existing bytes so that
 every possible concurrent instruction fetch sees either the complete old
@@ -35,7 +35,7 @@ introduced them:
   [doi:10.1145/3062341.3062344](https://doi.org/10.1145/3062341.3062344)) — the
   guarded split-site (WordPatch++) protocol.
 
-`liteinst2` is a Rust reimplementation of that work.
+`liteinst` is a Rust reimplementation of that work.
 
 ## A first hook
 
@@ -124,7 +124,7 @@ installation admits only prior `SIG_DFL` or `SIG_IGN` dispositions and refuses a
 custom SIGTRAP handler without replacing it. A filtered host can instead call
 `prepare_live_patching_with_signal_runtime` with exact installation and default
 redelivery callbacks, subject to the same prior-disposition rule. The host
-installer retains a blocked SIGTRAP mask until LiteInst2 publishes the prior
+installer retains a blocked SIGTRAP mask until liteinst publishes the prior
 action and asks the host to restore the exact mask. This avoids pretending that
 a direct Rust call can reproduce kernel signal-mask,
 alternate-stack, reset, and restart semantics. The preparation entrypoint is

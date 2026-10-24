@@ -2,9 +2,9 @@
 use std::error::Error;
 use std::io;
 
-use liteinst2::patcher::StalenessBudget;
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{HookContext, HookSite, InstalledHook, TrampolineArena};
+use liteinst::patcher::StalenessBudget;
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{HookContext, HookSite, InstalledHook, TrampolineArena};
 
 const PAGE_BYTES: usize = 4096;
 

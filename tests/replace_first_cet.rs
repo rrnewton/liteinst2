@@ -7,9 +7,9 @@ use iced_x86::{
     BlockEncoder, BlockEncoderOptions, Code, Decoder, DecoderOptions, InstructionBlock, Mnemonic,
     OpKind, Register,
 };
-use liteinst2::patcher::JumpPatchPlan;
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::trampoline::{HookContext, TrampolineImage, TrampolinePlan};
+use liteinst::patcher::JumpPatchPlan;
+use liteinst::scanner::InstructionScanner;
+use liteinst::trampoline::{HookContext, TrampolineImage, TrampolinePlan};
 
 unsafe extern "C" fn noop(_: *mut HookContext) {}
 

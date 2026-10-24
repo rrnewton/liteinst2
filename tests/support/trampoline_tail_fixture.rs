@@ -1,8 +1,8 @@
 // Native execution controls for trampoline tails. Every run lives in a fresh,
 // bounded child so a machine-code fault remains an actual failing process.
 use iced_x86::{BlockEncoder, BlockEncoderOptions, InstructionBlock};
-use liteinst2::scanner;
-use liteinst2::trampoline::{ExecutableTrampoline, HookContext, TrampolinePlan};
+use liteinst::scanner;
+use liteinst::trampoline::{ExecutableTrampoline, HookContext, TrampolinePlan};
 use std::os::fd::AsRawFd;
 use std::path::Path;
 use std::sync::atomic::{AtomicI32, AtomicU64, Ordering};

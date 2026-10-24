@@ -11,8 +11,8 @@ use std::fs;
 use std::path::Path;
 use std::time::{Duration, Instant};
 
-use liteinst2::rapid::{RapidProbe, RapidTogglePlan};
-use liteinst2::scanner::InstructionScanner;
+use liteinst::rapid::{RapidProbe, RapidTogglePlan};
+use liteinst::scanner::InstructionScanner;
 use object::{Object, ObjectSection, ObjectSymbol};
 
 mod interval;

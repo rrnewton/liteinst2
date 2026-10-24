@@ -15,17 +15,17 @@ use std::thread;
 use std::time::Duration;
 use std::time::Instant;
 
-use liteinst2::patcher::JumpPatchPlan;
-use liteinst2::patcher::StalenessBudget;
-use liteinst2::rapid::RapidProbe;
-use liteinst2::rapid::RapidTogglePlan;
-use liteinst2::scanner::InstructionScanner;
-use liteinst2::scanner::ScanResult;
-use liteinst2::trampoline::HookContext;
-use liteinst2::trampoline::HookSite;
-use liteinst2::trampoline::InstalledHook;
-use liteinst2::trampoline::TrampolinePlan;
-use liteinst2::trampoline::translate_program_counter;
+use liteinst::patcher::JumpPatchPlan;
+use liteinst::patcher::StalenessBudget;
+use liteinst::rapid::RapidProbe;
+use liteinst::rapid::RapidTogglePlan;
+use liteinst::scanner::InstructionScanner;
+use liteinst::scanner::ScanResult;
+use liteinst::trampoline::HookContext;
+use liteinst::trampoline::HookSite;
+use liteinst::trampoline::InstalledHook;
+use liteinst::trampoline::TrampolinePlan;
+use liteinst::trampoline::translate_program_counter;
 
 const PAGE_BYTES: usize = 4096;
 const CACHE_LINE_BYTES: usize = 64;

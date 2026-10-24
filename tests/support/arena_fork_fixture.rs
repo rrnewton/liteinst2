@@ -13,8 +13,8 @@ fn main() {
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod native {
-    use liteinst2::scanner::InstructionScanner;
-    use liteinst2::trampoline::{HookContext, TrampolineArena, TrampolineError, TrampolinePlan};
+    use liteinst::scanner::InstructionScanner;
+    use liteinst::trampoline::{HookContext, TrampolineArena, TrampolineError, TrampolinePlan};
     use std::collections::{BTreeMap, BTreeSet};
     use std::io::{Read, Write};
     use std::os::unix::net::UnixStream;
