@@ -412,3 +412,122 @@ fn refused_shared_dependency_cannot_reach_a_partially_writing_publisher() {
     assert_eq!(publisher.calls, 0);
     assert_eq!(gate.state(A).unwrap(), PageState::Admitted);
 }
+
+#[test]
+fn adding_an_executable_neighbor_cannot_invalidate_a_closed_boundary_claim_silently() {
+    let gate = ModelGate::new();
+    let mut bytes = vec![0x90; 4096];
+    bytes[4095] = 0x0f;
+    let s = Snapshot::new(
+        MappingId(A),
+        Generation(1),
+        A,
+        bytes,
+        Boundary::NonExecutable,
+        Boundary::NonExecutable,
+        WriteControl::Owned,
+    )
+    .unwrap();
+    let e = LegalEntrySet::new(
+        s.mapping,
+        s.generation,
+        1,
+        s.range(),
+        Completeness::Partial,
+        [],
+        [],
+    )
+    .unwrap();
+    gate.register(range(A), s, e, Policy::default()).unwrap();
+    gate.admit(A, &mut Publisher::default()).unwrap();
+    let mut bytes = vec![0x90; 4096];
+    bytes[0] = 0xa2;
+    let neighbor = Snapshot::new(
+        MappingId(A + 4096),
+        Generation(1),
+        A + 4096,
+        bytes,
+        Boundary::Unknown,
+        Boundary::NonExecutable,
+        WriteControl::Owned,
+    )
+    .unwrap();
+    let e = LegalEntrySet::new(
+        neighbor.mapping,
+        neighbor.generation,
+        1,
+        neighbor.range(),
+        Completeness::Partial,
+        [],
+        [],
+    )
+    .unwrap();
+    assert_eq!(
+        gate.register(range(A + 4096), neighbor, e, Policy::default()),
+        Err(ModelError::BoundaryConflict)
+    );
+    assert_eq!(gate.state(A).unwrap(), PageState::Admitted);
+    assert_eq!(gate.state(A + 4096), Err(ModelError::MissingPage(A + 4096)));
+}
+
+#[test]
+fn new_boundary_claims_cannot_exclude_already_registered_code() {
+    let gate = ModelGate::new();
+    let mut first = snapshot(A, 1);
+    first.after = Boundary::Unknown;
+    gate.register(range(A), first.clone(), entries(&first), Policy::default())
+        .unwrap();
+    let neighbor = snapshot(A + 4096, 1);
+    assert_eq!(
+        gate.register(
+            range(A + 4096),
+            neighbor.clone(),
+            entries(&neighbor),
+            Policy::default()
+        ),
+        Err(ModelError::BoundaryConflict)
+    );
+    assert_eq!(gate.state(A).unwrap(), PageState::Unknown);
+}
+
+#[test]
+fn replacement_boundary_conflict_does_not_mutate_or_invalidate_current_facts() {
+    let gate = ModelGate::new();
+    let original = Snapshot::new(
+        MappingId(A),
+        Generation(1),
+        A,
+        vec![0x90; 8192],
+        Boundary::NonExecutable,
+        Boundary::NonExecutable,
+        WriteControl::Owned,
+    )
+    .unwrap();
+    let e = LegalEntrySet::new(
+        original.mapping,
+        original.generation,
+        1,
+        original.range(),
+        Completeness::Partial,
+        [],
+        [],
+    )
+    .unwrap();
+    for base in [A, A + 4096] {
+        gate.register(range(base), original.clone(), e.clone(), Policy::default())
+            .unwrap();
+    }
+    let conflicting = snapshot(A, 2);
+    assert_eq!(
+        gate.invalidate(A, conflicting.clone(), entries(&conflicting)),
+        Err(ModelError::BoundaryConflict)
+    );
+    assert_eq!(gate.state(A).unwrap(), PageState::Unknown);
+    assert_eq!(gate.state(A + 4096).unwrap(), PageState::Unknown);
+    let mut publisher = Publisher::default();
+    gate.admit(A, &mut publisher).unwrap();
+    assert_eq!(
+        publisher.saved_plan.unwrap().facts().snapshot().generation,
+        Generation(1)
+    );
+}

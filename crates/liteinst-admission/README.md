@@ -41,7 +41,9 @@ poisons the entire dependency bundle. Invalidation revokes transitive dependents
 before replacing their facts. Previously admitted dependencies are conservatively
 refused: revoking execute permission cannot erase saved contexts. A model lease
 is scoped and cannot cross threads, but **is not a live quiescence proof**.
-No API converts it or a mock receipt to an executable capability.
+No API converts it or a mock receipt to an executable capability. Mapping
+registration refuses neighbors that contradict a snapshot's non-executable
+boundary claims; such a change requires renewed boundary facts and revocation.
 
 Portable validation uses explicit byte puzzles and injected mock failures:
 

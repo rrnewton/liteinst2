@@ -35,6 +35,7 @@ pub enum PageState {
 pub enum ModelError {
     InvalidPage,
     DuplicatePage,
+    BoundaryConflict,
     MissingPage(u64),
     ScanRefused,
     PlanningRefused,
@@ -229,6 +230,7 @@ impl ModelGate {
         if table.pages.contains_key(&range.start()) {
             return Err(ModelError::DuplicatePage);
         }
+        check_boundaries(&table, range, &snapshot)?;
         table.pages.insert(
             range.start(),
             Page {
@@ -363,6 +365,7 @@ impl ModelGate {
         if page.state == PageState::Poisoned {
             return Err(ModelError::Poisoned);
         }
+        check_boundaries(&table, page.range, &snapshot)?;
         if snapshot.mapping != page.snapshot.mapping
             || snapshot.generation <= page.snapshot.generation
             || !snapshot.range().covers(page.range)
@@ -462,6 +465,29 @@ fn dependent_closure(address: u64, links: &BTreeMap<u64, BTreeSet<u64>>) -> BTre
             return invalidated;
         }
     }
+}
+
+fn check_boundaries(
+    table: &Table,
+    range: AddressRange,
+    snapshot: &Snapshot,
+) -> Result<(), ModelError> {
+    use crate::scan::Boundary;
+    let excludes = |source: &Snapshot, neighbor: AddressRange| {
+        (source.before == Boundary::NonExecutable
+            && source
+                .range()
+                .start()
+                .checked_sub(1)
+                .is_some_and(|pc| neighbor.contains(pc)))
+            || (source.after == Boundary::NonExecutable && neighbor.contains(source.range().end()))
+    };
+    for page in table.pages.values().filter(|page| page.range != range) {
+        if excludes(snapshot, page.range) || excludes(&page.snapshot, range) {
+            return Err(ModelError::BoundaryConflict);
+        }
+    }
+    Ok(())
 }
 
 #[cfg(test)]
