@@ -220,3 +220,8 @@ The workspace also contains [liteinst-admission](crates/liteinst-admission/READM
 a standalone all-start instruction scanner, versioned entry facts and a mock
 page/dependency ledger. It exports facts through `liteinst2::contracts`. The
 model never changes executable memory and is not a live admission gate.
+
+[liteinst-launch](crates/liteinst-launch/README.md) captures an ELF process at
+its exec stop before the executable/interpreter's first instruction, exposes
+bounded read-only checkpoint evidence, and terminates the child. It is B1
+launch groundwork; it does not yet admit or resume application code.

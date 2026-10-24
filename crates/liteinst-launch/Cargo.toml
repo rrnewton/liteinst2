@@ -1,0 +1,10 @@
+[package]
+name = "liteinst-launch"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+description = "Stopped first-instruction launch checkpoints for standalone LiteInst"
+license = "BSD-2-Clause"
+
+[dependencies]
+libc = "0.2.186"
