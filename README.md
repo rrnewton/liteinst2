@@ -213,3 +213,10 @@ cargo test --release --lib rapid::tests::live::benchmark_single_byte_toggle_late
 `LITEINST_STRESS_RAPID_FUNCTIONS`, `LITEINST_STRESS_RAPID_ITERATIONS`,
 `LITEINST_STRESS_GENERAL_FUNCTIONS`, `LITEINST_STRESS_GENERAL_CYCLES`, and
 `LITEINST_STRESS_SIGNAL_ROUNDS` scale the matrix without changing source.
+
+## Admission development
+
+The workspace also contains [liteinst-admission](crates/liteinst-admission/README.md),
+a standalone all-start instruction scanner, versioned entry facts and a mock
+page/dependency ledger. It exports facts through `liteinst2::contracts`. The
+model never changes executable memory and is not a live admission gate.
