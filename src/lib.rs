@@ -4,6 +4,7 @@
 #![warn(missing_docs)]
 
 pub mod cache_line;
+pub mod contracts;
 pub mod patcher;
 pub mod planner;
 pub mod probe;
