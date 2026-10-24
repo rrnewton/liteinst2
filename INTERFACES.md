@@ -57,9 +57,10 @@ code and instrumentation-private stack storage below the application red zone.
 The client supplies readable/writable mappings, instruction locations, block
 and function limits, mapping ownership, and complete legal-entry facts.
 
-A1 explicitly refuses overlapping streams, unknown entries/resumes, CET
+A1 requires certified alias ownership and explicitly refuses overlapping
+streams, unknown entries/resumes, CET
 IBT entry requirements it cannot preserve, unsupported relocation semantics,
-unowned aliases, allocation exhaustion, and unavailable sync-core. No claim of
+allocation exhaustion, and unavailable sync-core. No claim of
 transparent signal delivery or DWARF unwinding inside generated code is made:
 PC translation is available, and the embedding runtime must provide those
 semantics. SIGILL routing admits only an owned, unmasked router and qualifies

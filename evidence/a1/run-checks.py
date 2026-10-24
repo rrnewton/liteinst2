@@ -13,6 +13,8 @@ import time
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'ignored/a1'
 OUT.mkdir(parents=True, exist_ok=True)
+RUN = OUT / datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
+RUN.mkdir()
 resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 env = dict(os.environ, CARGO_INCREMENTAL='0', CARGO_BUILD_JOBS='4',
            CARGO_TARGET_DIR=str(ROOT / 'target'), RUST_TEST_THREADS='4',
@@ -36,7 +38,7 @@ source_sha256 = {path: hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
 for name, argv in commands:
     start = time.monotonic()
     utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
-    log = OUT / (name + '.log')
+    log = RUN / (name + '.log')
     with log.open('wb') as output:
         process = subprocess.Popen(argv, cwd=ROOT, env=env, stdout=output,
                                    stderr=subprocess.STDOUT, start_new_session=True)
@@ -47,13 +49,16 @@ for name, argv in commands:
             process.wait()
             code = 'timeout'
     record = dict(name=name, argv=argv, start_utc=utc, exit=code,
-                  seconds=time.monotonic()-start, sha256=hashlib.sha256(log.read_bytes()).hexdigest())
+                  seconds=time.monotonic()-start, log=str(log.relative_to(ROOT)),
+                  sha256=hashlib.sha256(log.read_bytes()).hexdigest())
     records.append(record)
     print(json.dumps(record), flush=True)
     if code != 0:
         print(log.read_text()[-16000:], flush=True)
         break
 summary = dict(head=head, tracked_diff_sha256=hashlib.sha256(diff).hexdigest(),
+               run_directory=str(RUN.relative_to(ROOT)),
                source_sha256=source_sha256, records=records)
+(RUN/'commands.json').write_text(json.dumps(summary, indent=2)+'\n')
 (OUT/'commands.json').write_text(json.dumps(summary, indent=2)+'\n')
 assert len(records) == len(commands) and all(r['exit'] == 0 for r in records), 'validation failed'

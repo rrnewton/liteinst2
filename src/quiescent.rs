@@ -109,7 +109,7 @@ pub struct PlanMetrics {
     pub displaced_bytes: usize,
     /// Instructions executed before the logical hook.
     pub prefix_instructions: usize,
-    /// Addresses examined for this selected candidate.
+    /// Candidate-search iterations for the selected physical site.
     pub allocation_attempts: usize,
     /// Ordered site attempts including refusals.
     pub attempts: Vec<SiteAttempt>,
