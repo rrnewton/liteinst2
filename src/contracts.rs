@@ -222,7 +222,7 @@ pub struct PublicationRequirements {
 }
 
 /// Inspectable construction input. Construction proves structure, not admission.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PlanParts {
     /// Source generation.
     pub identity: CodeIdentity,
@@ -253,7 +253,7 @@ pub struct PlanParts {
 }
 
 /// Immutable plan shared by private-image and live-memory emitters.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub struct PatchPlan(PlanParts);
 
 impl PatchPlan {
@@ -402,6 +402,11 @@ impl<'a> QuiescenceLease<'a> {
     pub const fn is_poisoned(&self) -> bool {
         self.poisoned
     }
+    /// Whether the lease holds a complete additional dependency, such as a
+    /// generated mapping whose execution and saved references must be drained.
+    pub fn covers(&self, range: AddressRange) -> bool {
+        self.ranges.iter().any(|held| held.covers(range))
+    }
     /// Checks identity and full dependency coverage before any source write.
     pub fn check(&self, plan: &PatchPlan) -> Result<(), Refusal> {
         if self.poisoned {
@@ -423,6 +428,9 @@ impl<'a> QuiescenceLease<'a> {
     /// Marks publication as possibly written; admission must remain held.
     pub fn poison(&mut self) {
         self.poisoned = true;
+    }
+    pub(crate) fn publication_completed(&mut self) {
+        self.poisoned = false;
     }
     /// Clears poison only after byte-for-byte rollback and instruction synchronization.
     ///

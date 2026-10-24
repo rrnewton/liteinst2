@@ -1,5 +1,11 @@
 # Patch-site decision tree
 
+This document describes the legacy `plan_hook` / `InstalledHook` interface.
+The separate generation-bound `quiescent::plan_install` interface now implements
+same-block upstream search, logical-PC hooks, and owned displaced-entry routing.
+Its contract and restrictions are in [A1-QUIESCENT.md](A1-QUIESCENT.md); it does
+not change the concurrent publication decision tree below.
+
 This is the exhaustive policy for a LiteInst client that has a ptrace slow
 path. A **logical site** is the instruction where the hook belongs; a
 **physical site** is the instruction whose bytes are changed. Every candidate

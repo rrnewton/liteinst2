@@ -1480,6 +1480,7 @@ mod imp {
     }
 }
 
+pub(crate) use imp::PendingTrapSite;
 pub(crate) use imp::TrapError;
 pub(crate) use imp::TrapSite;
 pub(crate) use imp::prepare;

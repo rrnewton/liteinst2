@@ -5,9 +5,11 @@
 
 pub mod cache_line;
 pub mod contracts;
+mod entry_router;
 pub mod patcher;
 pub mod planner;
 pub mod probe;
+pub mod quiescent;
 pub mod rapid;
 pub mod scanner;
 pub mod trampoline;

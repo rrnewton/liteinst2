@@ -586,6 +586,10 @@ const _: () = assert!(core::mem::size_of::<HookContext>() == 176);
 /// Checked byte lengths and saved-state layout for one trampoline.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct TrampolineLayout {
+    /// Original instructions executed before the logical hook.
+    ///
+    /// This is zero for the original same-site constructors.
+    pub relocated_prefix_len: usize,
     /// Optional INT3 reached with the untouched application register state.
     pub entry_stop_len: usize,
     /// Context-save and instrumentation-call bytes.
@@ -605,7 +609,8 @@ pub struct TrampolineLayout {
 impl TrampolineLayout {
     /// Returns the total allocation size, or None if the sum overflows.
     pub fn total_len(self) -> Option<usize> {
-        self.entry_stop_len
+        self.relocated_prefix_len
+            .checked_add(self.entry_stop_len)?
             .checked_add(self.instrumentation_len)?
             .checked_add(self.restore_len)?
             .checked_add(self.completion_stop_len)?
@@ -617,12 +622,20 @@ impl TrampolineLayout {
 /// Complete emitted bytes and section boundaries for a trampoline.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct TrampolineImage {
+    address: u64,
     bytes: Vec<u8>,
     layout: TrampolineLayout,
     program_counters: Vec<ProgramCounterMapping>,
+    entry_routes: Vec<(u64, u64)>,
+    instruction_boundaries: Vec<(u64, u64)>,
 }
 
 impl TrampolineImage {
+    /// Returns the exact executable address used to encode this image.
+    pub const fn address(&self) -> u64 {
+        self.address
+    }
+
     /// Returns the emitted machine code.
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
@@ -637,6 +650,26 @@ impl TrampolineImage {
     /// Encoder padding and literal data have no application PC mapping.
     pub fn program_counter_mappings(&self) -> &[ProgramCounterMapping] {
         &self.program_counters
+    }
+
+    /// Returns original instruction heads and their generated entry addresses.
+    ///
+    /// Entering the logical hook's route executes the callback. Entering a
+    /// later head bypasses it, while an upstream entry executes the remaining
+    /// prefix before reaching the hook. These routes are distinct from the
+    /// reverse-PC ranges used to report faults in instrumentation code.
+    pub fn entry_routes(&self) -> &[(u64, u64)] {
+        &self.entry_routes
+    }
+
+    /// Returns original heads and generated PCs immediately before execution.
+    ///
+    /// The application register and extended state has been restored at these
+    /// boundaries. The hook's own entry is not a comparison boundary; an
+    /// observing logical instruction has its boundary after the restore.
+    /// Replaced instructions have an entry route but no execution boundary.
+    pub fn instruction_boundaries(&self) -> &[(u64, u64)] {
+        &self.instruction_boundaries
     }
 }
 
@@ -912,6 +945,7 @@ pub struct TrampolinePlan {
     return_address: u64,
     hook: HookCallback,
     instructions: Vec<Instruction>,
+    logical_index: usize,
     relocated_start: usize,
     ptrace_stops: bool,
     kind: TrampolineKind,
@@ -1002,6 +1036,7 @@ impl TrampolinePlan {
             return_address,
             hook,
             instructions: vec![*scanned.instruction()],
+            logical_index: 0,
             relocated_start: 1,
             ptrace_stops: false,
             kind: TrampolineKind::ExactSyscall,
@@ -1083,8 +1118,85 @@ impl TrampolinePlan {
             return_address,
             hook,
             instructions,
+            logical_index: 0,
             relocated_start,
             ptrace_stops,
+            kind: TrampolineKind::PatchWindow,
+        })
+    }
+
+    /// Builds an exact, caller-certified displaced interval.
+    ///
+    /// The caller certifies that the interval stays in one function/basic block
+    /// and that instructions before `logical` have straight-line flow. Entry,
+    /// instruction-semantics, and publication obligations belong to the bundle
+    /// planner. This constructor authenticates all three instruction boundaries
+    /// and leaves the supplied snapshot untouched.
+    pub(crate) fn from_window(
+        scan: &ScanResult,
+        physical: u64,
+        logical: u64,
+        end: u64,
+        hook: HookCallback,
+        replace: bool,
+    ) -> Result<Self, TrampolineError> {
+        let start = scan
+            .instructions()
+            .iter()
+            .position(|instruction| instruction.address() == physical)
+            .ok_or(TrampolineError::SiteNotFound { address: physical })?;
+        if physical > logical || logical >= end {
+            return Err(TrampolineError::SiteNotFound { address: logical });
+        }
+        let mut cursor = physical;
+        let mut instructions = Vec::new();
+        let mut logical_index = None;
+        for scanned in &scan.instructions()[start..] {
+            if cursor == end {
+                break;
+            }
+            if scanned.address() != cursor {
+                return Err(encoding_error("displaced window is not contiguous"));
+            }
+            if cursor == logical {
+                logical_index = Some(instructions.len());
+            }
+            cursor = cursor.checked_add(scanned.len() as u64).ok_or(
+                TrampolineError::ReturnAddressOverflow {
+                    address: cursor,
+                    instruction_len: scanned.len(),
+                },
+            )?;
+            if cursor > end {
+                return Err(encoding_error(
+                    "displaced window ends inside an instruction",
+                ));
+            }
+            instructions.push(*scanned.instruction());
+        }
+        if cursor != end {
+            return Err(encoding_error(
+                "displaced window exceeds the instruction scan",
+            ));
+        }
+        let logical_index =
+            logical_index.ok_or(TrampolineError::SiteNotFound { address: logical })?;
+        let displaced_len = usize::try_from(end - physical)
+            .map_err(|_| TrampolineError::AddressNotRepresentable { address: end })?;
+        if displaced_len < crate::patcher::NEAR_JUMP_BYTES {
+            return Err(TrampolineError::InstructionTooShort {
+                address: physical,
+                instruction_len: displaced_len,
+            });
+        }
+        Ok(Self {
+            execute_address: physical,
+            return_address: end,
+            hook,
+            instructions,
+            logical_index,
+            relocated_start: logical_index + usize::from(replace),
+            ptrace_stops: false,
             kind: TrampolineKind::PatchWindow,
         })
     }
@@ -1092,6 +1204,11 @@ impl TrampolinePlan {
     /// Returns the first displaced instruction address.
     pub const fn execute_address(&self) -> u64 {
         self.execute_address
+    }
+
+    /// Returns the application instruction observed or replaced by the hook.
+    pub fn logical_address(&self) -> u64 {
+        self.instructions[self.logical_index].ip()
     }
 
     /// Returns the first application address after the displaced window.
@@ -1106,7 +1223,7 @@ impl TrampolinePlan {
 
     /// Returns whether the first displaced instruction is replaced by the hook.
     pub const fn replaces_first(&self) -> bool {
-        self.relocated_start == 1
+        self.logical_index == 0 && self.relocated_start == 1
     }
 
     /// Emits this plan at an exact executable address.
@@ -1124,12 +1241,30 @@ impl TrampolinePlan {
                     PRESERVED_USER_STATE_MASK & !PKRU_XFEATURE,
                 )?,
             };
+            let prefix_instructions = &self.instructions[..self.logical_index];
+            let prefix_block = if prefix_instructions.is_empty() {
+                None
+            } else {
+                let prefix = encode_relocated_block(prefix_instructions, address, None)?;
+                if prefix.terminal_jump_offset.is_some() || !prefix.branch_relays.is_empty() {
+                    return Err(encoding_error(
+                        "upstream prefix must have straight-line flow without branch relays",
+                    ));
+                }
+                Some(prefix)
+            };
+            let prefix = prefix_block
+                .as_ref()
+                .map_or(&[][..], |block| block.encoded.code_buffer.as_slice());
+            let hook_entry = address
+                .checked_add(prefix.len() as u64)
+                .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let entry_stop: &[u8] = if self.ptrace_stops {
                 PTRACE_STOP_BYTES.as_slice()
             } else {
                 &[]
             };
-            let instrumentation_address = address
+            let instrumentation_address = hook_entry
                 .checked_add(entry_stop.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let instrumentation =
@@ -1150,12 +1285,14 @@ impl TrampolinePlan {
                 .checked_add(completion_stop.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let relocated_instructions = &self.instructions[self.relocated_start..];
+            let observing_entry =
+                (self.relocated_start == self.logical_index).then_some(self.logical_address());
             let relocated_block = match self.kind {
                 TrampolineKind::ExactSyscall => None,
                 TrampolineKind::PatchWindow => Some(encode_relocated_block(
                     relocated_instructions,
                     relocated_address,
-                    (!self.replaces_first()).then_some(self.execute_address),
+                    observing_entry,
                 )?),
             };
             let relocated = relocated_block
@@ -1166,6 +1303,7 @@ impl TrampolinePlan {
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
             let return_jump = encode_return_jump(return_jump_address, self.return_address)?;
             let layout = TrampolineLayout {
+                relocated_prefix_len: prefix.len(),
                 entry_stop_len: entry_stop.len(),
                 instrumentation_len: instrumentation.len(),
                 restore_len: restore.len(),
@@ -1179,6 +1317,7 @@ impl TrampolinePlan {
                 allocation_len: TRAMPOLINE_ALLOCATION_BYTES,
             })?;
             let mut bytes = Vec::with_capacity(total_len);
+            bytes.extend_from_slice(prefix);
             bytes.extend_from_slice(entry_stop);
             bytes.extend_from_slice(&instrumentation);
             bytes.extend_from_slice(&restore);
@@ -1188,20 +1327,33 @@ impl TrampolinePlan {
             debug_assert_eq!(bytes.len(), total_len);
 
             let mut program_counters = Vec::new();
+            let mut instruction_boundaries = Vec::new();
+            if let Some(block) = prefix_block.as_ref() {
+                append_relocated_program_counter_mappings(
+                    &mut program_counters,
+                    &mut instruction_boundaries,
+                    address,
+                    prefix,
+                    prefix_instructions,
+                    &block.encoded.new_instruction_offsets,
+                    None,
+                )?;
+            }
             push_program_counter_mapping(
                 &mut program_counters,
-                address,
+                hook_entry,
                 relocated_address,
-                self.execute_address,
+                self.logical_address(),
             );
             if let Some(block) = relocated_block.as_ref() {
                 append_relocated_program_counter_mappings(
                     &mut program_counters,
+                    &mut instruction_boundaries,
                     relocated_address,
                     &relocated[..block.terminal_jump_offset.unwrap_or(relocated.len())],
                     relocated_instructions,
                     &block.encoded.new_instruction_offsets,
-                    (!self.replaces_first()).then_some(self.execute_address),
+                    observing_entry,
                 )?;
                 if let Some(offset) = block.terminal_jump_offset {
                     // The terminal transfer represents the continuation. Padding
@@ -1240,10 +1392,23 @@ impl TrampolinePlan {
                 return_jump_end - (return_jump.len() - return_code_len) as u64,
                 self.return_address,
             );
+            let mut entry_routes = instruction_boundaries.clone();
+            if let Some((_, generated)) = entry_routes
+                .iter_mut()
+                .find(|(original, _)| *original == self.logical_address())
+            {
+                *generated = hook_entry;
+            } else {
+                entry_routes.push((self.logical_address(), hook_entry));
+                entry_routes.sort_unstable_by_key(|(original, _)| *original);
+            }
             Ok(TrampolineImage {
+                address,
                 bytes,
                 layout,
                 program_counters,
+                entry_routes,
+                instruction_boundaries,
             })
         }
     }
@@ -1300,7 +1465,7 @@ impl TrampolinePlan {
         }
         assembler.push(rax).map_err(encoding_error)?;
         assembler
-            .mov(rax, self.execute_address)
+            .mov(rax, self.logical_address())
             .map_err(encoding_error)?;
         assembler.push(rax).map_err(encoding_error)?;
         assembler.mov(r12, rsp).map_err(encoding_error)?;
@@ -1704,6 +1869,7 @@ fn encode_relocated_block(
 
 fn append_relocated_program_counter_mappings(
     mappings: &mut Vec<ProgramCounterMapping>,
+    instruction_boundaries: &mut Vec<(u64, u64)>,
     relocated_address: u64,
     code: &[u8],
     instructions: &[Instruction],
@@ -1720,6 +1886,7 @@ fn append_relocated_program_counter_mappings(
         let offset = offsets[index];
         if offset == u32::MAX {
             let instruction_address = relocated_address + cursor as u64;
+            instruction_boundaries.push((instructions[index].ip(), instruction_address));
             let separately_encoded = BlockEncoder::encode(
                 64,
                 InstructionBlock::new(&normalized[index..=index], instruction_address),
@@ -1765,6 +1932,10 @@ fn append_relocated_program_counter_mappings(
         }
 
         let instruction_start = offset as usize;
+        instruction_boundaries.push((
+            instructions[index].ip(),
+            relocated_address + instruction_start as u64,
+        ));
         if cursor < instruction_start {
             let logical_address = instructions[index.saturating_sub(1)].ip();
             push_program_counter_mapping(
@@ -1956,7 +2127,78 @@ pub struct ExecutableTrampoline {
     program_counters_published: AtomicBool,
 }
 
+/// Owns a staged executable image until its publication transaction commits.
+///
+/// No global PC metadata may be published while this guard owns the image.
+/// Dropping it releases the RX mapping, including after a later preflight
+/// failure. Once source bytes can reach the image, its owner must commit or
+/// retain this guard until verified rollback and execution drainage complete.
+pub(crate) struct PendingExecutableTrampoline {
+    trampoline: Option<ExecutableTrampoline>,
+}
+
+impl PendingExecutableTrampoline {
+    /// Returns the staged allocation without publishing global PC metadata.
+    pub(crate) fn trampoline(&self) -> &ExecutableTrampoline {
+        self.trampoline.as_ref().unwrap()
+    }
+
+    /// Transfers the initialized mapping to process-lifetime ownership.
+    pub(crate) fn commit(mut self) -> ExecutableTrampoline {
+        self.trampoline.take().unwrap()
+    }
+}
+
+impl Drop for PendingExecutableTrampoline {
+    fn drop(&mut self) {
+        if let Some(trampoline) = self.trampoline.take() {
+            trampoline.discard();
+        }
+    }
+}
+
 impl ExecutableTrampoline {
+    /// Stages an already-emitted image at its authenticated exact address.
+    ///
+    /// The returned guard releases its mapping on failure in the surrounding
+    /// publication transaction. Its `commit` is infallible; callers publish
+    /// global PC mappings only after committing the transaction.
+    pub(crate) fn allocate_image_at(
+        image: &TrampolineImage,
+        address: u64,
+    ) -> Result<PendingExecutableTrampoline, TrampolineError> {
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            let _ = (image, address);
+            Err(TrampolineError::UnsupportedPlatform)
+        }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            if image.address != address {
+                return Err(encoding_error(
+                    "trampoline image was emitted for a different executable address",
+                ));
+            }
+            let page_size = page_size()?;
+            let native_address = usize::try_from(address)
+                .map_err(|_| TrampolineError::AddressNotRepresentable { address })?;
+            let mapping_start = align_down(native_address, page_size);
+            let entry_offset = native_address - mapping_start;
+            let required = entry_offset
+                .checked_add(image.bytes.len())
+                .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+            let mapping_len = required
+                .checked_add(page_size - 1)
+                .map(|value| align_down(value, page_size))
+                .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+            let mapping = PendingMapping::allocate_exact(mapping_start, mapping_len, address)?;
+            let trampoline = mapping.publish_at(image, entry_offset)?;
+            Ok(PendingExecutableTrampoline {
+                trampoline: Some(trampoline),
+            })
+        }
+    }
+
     /// Allocates a reachable page, emits the plan, and publishes an RX mapping.
     pub fn allocate(plan: &TrampolinePlan) -> Result<Self, TrampolineError> {
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
@@ -2029,7 +2271,11 @@ impl ExecutableTrampoline {
     /// `None` identifies an ordinary trampoline with no tracer-owned stops.
     pub const fn ptrace_entry_stop_rip(&self) -> Option<u64> {
         if self.layout.entry_stop_len == PTRACE_STOP_BYTES.len() {
-            Some(self.address + PTRACE_STOP_BYTES.len() as u64)
+            Some(
+                self.address
+                    + self.layout.relocated_prefix_len as u64
+                    + PTRACE_STOP_BYTES.len() as u64,
+            )
         } else {
             None
         }
@@ -2045,6 +2291,7 @@ impl ExecutableTrampoline {
         if self.layout.completion_stop_len == PTRACE_STOP_BYTES.len() {
             Some(
                 self.address
+                    + self.layout.relocated_prefix_len as u64
                     + self.layout.entry_stop_len as u64
                     + self.layout.instrumentation_len as u64
                     + self.layout.restore_len as u64
@@ -2062,6 +2309,7 @@ impl ExecutableTrampoline {
     /// must already contain the emulated result.
     pub const fn relocated_tail_address(&self) -> u64 {
         self.address
+            + self.layout.relocated_prefix_len as u64
             + self.layout.entry_stop_len as u64
             + self.layout.instrumentation_len as u64
             + self.layout.restore_len as u64
@@ -2766,11 +3014,13 @@ impl PendingMapping {
             return Err(os_error("munmap writable alias"));
         }
         self.writable = core::ptr::null_mut();
+        // Linux may release the descriptor even when close reports an error.
+        // Disarm it first so failure cleanup cannot close a reused descriptor.
+        let fd = core::mem::replace(&mut self.fd, -1);
         // SAFETY: fd is live; mappings retain their backing object.
-        if unsafe { libc::close(self.fd) } != 0 {
+        if unsafe { libc::close(fd) } != 0 {
             return Err(os_error("close trampoline memfd"));
         }
-        self.fd = -1;
         let mapping_address = self.executable as usize as u64;
         let address = mapping_address.checked_add(entry_offset as u64).ok_or(
             TrampolineError::AddressNotRepresentable {
@@ -3388,6 +3638,7 @@ mod tests {
     #[test]
     fn total_length_includes_every_section() {
         let layout = TrampolineLayout {
+            relocated_prefix_len: 0,
             entry_stop_len: 1,
             instrumentation_len: 32,
             completion_stop_len: 1,
@@ -3397,6 +3648,14 @@ mod tests {
             saved_extended_state: SavedExtendedStateLayout::UNAVAILABLE,
         };
         assert_eq!(layout.total_len(), Some(67));
+        assert_eq!(
+            TrampolineLayout {
+                relocated_prefix_len: 7,
+                ..layout
+            }
+            .total_len(),
+            Some(74)
+        );
     }
 
     #[test]
@@ -3415,6 +3674,261 @@ mod tests {
 
         assert_eq!(plan.displaced_len(), 5);
         assert_eq!(plan.return_address(), 0x1005);
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn window_emission_separates_entry_routes_from_architectural_boundaries() {
+        let base = 0x20_0000;
+        let address = base + 0x10_0000;
+        // ADD RAX,1; ADD RAX,2; ADD RAX,4; RET.
+        let code = [
+            0x48, 0x83, 0xc0, 1, 0x48, 0x83, 0xc0, 2, 0x48, 0x83, 0xc0, 4, 0xc3,
+        ];
+        let scan = InstructionScanner::default().scan(&code, base).unwrap();
+        let logical = base + 4;
+        for replace in [false, true] {
+            let plan = TrampolinePlan::from_window(
+                &scan,
+                base,
+                logical,
+                base + code.len() as u64,
+                noop_hook,
+                replace,
+            )
+            .unwrap();
+            let image = plan.emit_at(address).unwrap();
+            let layout = image.layout();
+            assert_eq!(image.address(), address);
+            assert_eq!(plan.execute_address(), base);
+            assert_eq!(plan.logical_address(), logical);
+            assert_eq!(plan.return_address(), base + code.len() as u64);
+            assert_eq!(layout.relocated_prefix_len, 4);
+            assert_eq!(layout.total_len(), Some(image.bytes().len()));
+            assert_eq!(&image.bytes()[..4], &code[..4]);
+            assert_eq!(
+                image
+                    .entry_routes()
+                    .iter()
+                    .map(|&(pc, _)| pc)
+                    .collect::<Vec<_>>(),
+                [base, logical, base + 8, base + 12]
+            );
+            assert_eq!(image.entry_routes()[0], (base, address));
+            assert_eq!(image.entry_routes()[1], (logical, address + 4));
+            let restored = address
+                + layout.relocated_prefix_len as u64
+                + layout.instrumentation_len as u64
+                + layout.restore_len as u64;
+            let expected_boundaries = if replace {
+                vec![
+                    (base, address),
+                    (base + 8, restored),
+                    (base + 12, restored + 4),
+                ]
+            } else {
+                vec![
+                    (base, address),
+                    (logical, restored),
+                    (base + 8, restored + 4),
+                    (base + 12, restored + 8),
+                ]
+            };
+            assert_eq!(image.instruction_boundaries(), expected_boundaries);
+            for &(original, generated) in image.instruction_boundaries() {
+                assert_eq!(
+                    image
+                        .program_counter_mappings()
+                        .iter()
+                        .find_map(|mapping| { mapping.translate(generated) }),
+                    Some(original)
+                );
+            }
+            let instrumentation = &image.bytes()[layout.relocated_prefix_len
+                ..layout.relocated_prefix_len + layout.instrumentation_len];
+            let mut decoder = iced_x86::Decoder::with_ip(
+                64,
+                instrumentation,
+                address + 4,
+                iced_x86::DecoderOptions::NONE,
+            );
+            assert!(decoder.iter().any(|instruction| {
+                instruction.mnemonic() == iced_x86::Mnemonic::Mov
+                    && instruction.op0_register() == iced_x86::Register::RAX
+                    && instruction.op1_kind() == iced_x86::OpKind::Immediate64
+                    && instruction.immediate64() == logical
+            }));
+        }
+    }
+
+    #[test]
+    fn window_constructor_requires_complete_physical_logical_and_end_boundaries() {
+        let base = 0x20_0000;
+        let code = [0x48, 0x83, 0xc0, 1, 0x48, 0x83, 0xc0, 2, 0xc3];
+        let scan = InstructionScanner::default().scan(&code, base).unwrap();
+        for (physical, logical, end) in [
+            (base + 1, base + 4, base + 9),
+            (base, base + 1, base + 9),
+            (base, base + 4, base + 7),
+            (base, base + 4, base + 10),
+            (base, base + 9, base + 9),
+            (base + 4, base, base + 9),
+            (base, base, base + 4),
+        ] {
+            assert!(
+                TrampolinePlan::from_window(&scan, physical, logical, end, noop_hook, false)
+                    .is_err(),
+                "accepted physical={physical:#x}, logical={logical:#x}, end={end:#x}"
+            );
+        }
+        assert!(
+            TrampolinePlan::from_window(&scan, base, base + 4, base + 9, noop_hook, false).is_ok()
+        );
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn same_site_window_emits_identical_legacy_bytes_and_layout() {
+        let base = 0x20_0000;
+        let code = [0x48, 0x89, 0xf8, 0x90, 0x90, 0xc3];
+        let scan = InstructionScanner::default().scan(&code, base).unwrap();
+        for replace in [false, true] {
+            let legacy = if replace {
+                TrampolinePlan::from_scan_replacing_first(&scan, base, noop_hook)
+            } else {
+                TrampolinePlan::from_scan(&scan, base, noop_hook)
+            }
+            .unwrap();
+            let window = TrampolinePlan::from_window(
+                &scan,
+                base,
+                base,
+                legacy.return_address(),
+                noop_hook,
+                replace,
+            )
+            .unwrap();
+            let legacy = legacy.emit_at(base + 0x10_0000).unwrap();
+            let window = window.emit_at(base + 0x10_0000).unwrap();
+            assert_eq!(legacy, window);
+            assert_eq!(legacy.layout().relocated_prefix_len, 0);
+        }
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn staged_image_rejects_wrong_address_without_mapping() {
+        let base = 0x20_0000;
+        let plan = plan(&[0x90; 5], base).unwrap();
+        let image = plan.emit_at(base + 0x10_0000).unwrap();
+        assert!(matches!(
+            super::ExecutableTrampoline::allocate_image_at(&image, image.address() + 1),
+            Err(TrampolineError::Encoding { .. })
+        ));
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn upstream_entries_execute_the_required_prefix_hook_and_suffix() {
+        use core::sync::atomic::{AtomicU64, Ordering};
+
+        static CALLBACKS: AtomicU64 = AtomicU64::new(0);
+        static OBSERVED_PC: AtomicU64 = AtomicU64::new(0);
+        static OBSERVED_RDI: AtomicU64 = AtomicU64::new(0);
+
+        unsafe extern "C" fn observe(context: *mut HookContext) {
+            // SAFETY: the emitted trampoline provides its live callback frame.
+            let context = unsafe { &*context };
+            OBSERVED_PC.store(context.instruction_pointer, Ordering::Relaxed);
+            OBSERVED_RDI.store(context.rdi, Ordering::Relaxed);
+            CALLBACKS.fetch_add(1, Ordering::Relaxed);
+        }
+
+        let base = observe as *const () as usize as u64;
+        // ADD RDI,1; ADD RDI,2; LEA RAX,[RDI+4]; RET.
+        let code = [
+            0x48, 0x83, 0xc7, 1, 0x48, 0x83, 0xc7, 2, 0x48, 0x8d, 0x47, 4, 0xc3,
+        ];
+        let scan = InstructionScanner::default().scan(&code, base).unwrap();
+        for replace in [false, true] {
+            let plan = TrampolinePlan::from_window(
+                &scan,
+                base,
+                base + 4,
+                base + code.len() as u64,
+                observe,
+                replace,
+            )
+            .unwrap();
+            let trampoline = super::ExecutableTrampoline::allocate(&plan).unwrap();
+            let image = plan.emit_at(trampoline.address()).unwrap();
+            let initial_calls = CALLBACKS.load(Ordering::Relaxed);
+            for (index, &(original, generated)) in image.entry_routes().iter().enumerate() {
+                let result: u64;
+                // SAFETY: each entry has straight-line integer operations and
+                // RET, follows the System V ABI, and has no external targets.
+                // Seed RAX too so the bare RET entry has a defined result.
+                unsafe {
+                    core::arch::asm!(
+                        "call r11",
+                        in("r11") generated,
+                        in("rdi") 10_u64,
+                        inlateout("rax") 10_u64 => result,
+                        clobber_abi("C"),
+                    );
+                }
+                let expected_result = if index < 3 {
+                    let prefix = u64::from(index == 0);
+                    let logical = if index < 2 && !replace { 2 } else { 0 };
+                    10 + prefix + logical + 4
+                } else {
+                    10
+                };
+                assert_eq!(result, expected_result);
+                let expected_calls = initial_calls + (index as u64 + 1).min(2);
+                assert_eq!(CALLBACKS.load(Ordering::Relaxed), expected_calls);
+                if original <= base + 4 {
+                    assert_eq!(OBSERVED_PC.load(Ordering::Relaxed), base + 4);
+                    assert_eq!(
+                        OBSERVED_RDI.load(Ordering::Relaxed),
+                        10 + u64::from(index == 0)
+                    );
+                }
+            }
+            assert_eq!(
+                trampoline.relocated_tail_address(),
+                image.instruction_boundaries()[1].1
+            );
+            // No global metadata or in-flight execution retains this mapping.
+            trampoline.discard();
+        }
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn dropping_staged_image_releases_its_exact_mapping() {
+        let base = noop_hook as *const () as usize as u64;
+        let plan = plan(&[0x90, 0x90, 0x90, 0x90, 0xc3], base).unwrap();
+        let mapping = super::PendingMapping::allocate_near(base).unwrap();
+        let address = mapping.executable as usize as u64;
+        let image = plan.emit_at(address).unwrap();
+        assert!(matches!(
+            super::ExecutableTrampoline::allocate_image_at(&image, address),
+            Err(TrampolineError::ExactAddressUnavailable { .. })
+        ));
+        // Transfer the already reserved mapping directly into a pending guard,
+        // avoiding any free-address race before the tested drop.
+        let staged = super::PendingExecutableTrampoline {
+            trampoline: Some(mapping.publish_at(&image, 0).unwrap()),
+        };
+        assert_eq!(staged.trampoline().address(), address);
+        drop(staged);
+        // Exact MAP_FIXED_NOREPLACE succeeds only if Drop released the page.
+        let staged = super::ExecutableTrampoline::allocate_image_at(&image, address).unwrap();
+        assert_eq!(staged.trampoline().code_len(), image.bytes().len());
+        let committed = staged.commit();
+        assert_eq!(committed.address(), address);
+        committed.discard();
     }
 
     #[test]

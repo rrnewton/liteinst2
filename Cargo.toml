@@ -14,6 +14,7 @@ include = [
     "Cargo.toml",
     "LICENSE",
     "INTERFACES.md",
+    "A1-QUIESCENT.md",
     "PATCH_SITE_DECISION_TREE.md",
     "README.md",
     "examples/preload_consumer.rs",
@@ -35,7 +36,7 @@ test = false
 members = ["tools/rapid-profiler"]
 
 [dependencies]
-iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "block_encoder", "code_asm"] }
+iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "block_encoder", "code_asm", "instr_info"] }
 libc = "0.2.186"
 memmap2 = "0.9.11"
 nix = { version = "0.31.3", features = ["mman", "process", "signal"] }

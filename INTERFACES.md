@@ -57,7 +57,7 @@ code and instrumentation-private stack storage below the application red zone.
 The client supplies readable/writable mappings, instruction locations, block
 and function limits, mapping ownership, and complete legal-entry facts.
 
-A1 will explicitly refuse overlapping streams, unknown entries/resumes, CET
+A1 explicitly refuses overlapping streams, unknown entries/resumes, CET
 IBT entry requirements it cannot preserve, unsupported relocation semantics,
 unowned aliases, allocation exhaustion, and unavailable sync-core. No claim of
 transparent signal delivery or DWARF unwinding inside generated code is made:
@@ -66,5 +66,6 @@ semantics. SIGILL routing admits only an owned, unmasked router and qualifies
 the exact illegal encoding; `0x62` alone is not an illegal-instruction proof.
 Application SIGILL handlers require a separately qualified embedding contract.
 
-The A1 implementation and tests will record additional concrete restrictions.
-These restrictions stay visible as refusals; they are not successful coverage.
+The implementation and its additional concrete restrictions are documented in
+`A1-QUIESCENT.md`. These restrictions stay visible as refusals; they are not
+successful coverage.
