@@ -1,0 +1,115 @@
+{
+  "binaries_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_artifacts": {},
+  "build_status": "not_started",
+  "cases": [],
+  "cases_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "catalogue": null,
+  "command_count": 0,
+  "command_recipe": {
+    "actual_commands": "Complete ordered argv, environments and captures are retained privately and bound by commands_sha256.",
+    "fixture_build": [
+      "sh",
+      "tools/page-entry/selected/tests/vpbroadcast/build.sh",
+      "<retained decoder.a>",
+      "<private run directory>",
+      "tools/page-entry/selected"
+    ],
+    "native": [
+      [
+        "vpbroadcast-0"
+      ],
+      [
+        "vpbroadcast-1"
+      ]
+    ],
+    "native_environment_controls": [
+      "absent",
+      "absent"
+    ],
+    "selected_build": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ]
+  },
+  "commands_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "cpu": 1,
+  "elf": null,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "bb425428e4d4e9cd51b9e431d819ac6a9bafdd8d",
+  "failure_type": "InvalidEvidence",
+  "final_error_count": 1,
+  "fixtures": null,
+  "hardware": null,
+  "inputs_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "native_commands": [],
+  "private_receipt": {
+    "bytes": 1961,
+    "sha256": "06e48628d123afd169bf5ba9566637a0a341240cf73b6129a989d54e55375fec"
+  },
+  "profile": "page-selected-vpbroadcast-oracle-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_vpbroadcast.py",
+    "--expect-revision",
+    "bb425428e4d4e9cd51b9e431d819ac6a9bafdd8d"
+  ],
+  "schema_version": 1,
+  "scope": "Exact unmasked 62e27d487ac6/Code3210, ESI low byte to all64 ZMM16 bytes. Two19-pair cohorts:36 new plus2 startup; all32ZMM/all8opmask independently seeded before both lanes, actual standard-layout CPUID records, complete unchanged native/TF/kernelFP/liveXSAVE/memory comparisons. All47 old+30 new supplied encoding refusals remain. No target data-memory operand or executed data-fault claim; original fault suites remain required separately. No general EVEX, enabled-CET, hardware masking, loader completion, performance or full-B2 claim",
+  "source": null,
+  "source_unchanged": false,
+  "started_utc": "20261027T233945.631909Z",
+  "status": "failed",
+  "tool_hashes": {},
+  "tool_versions": {},
+  "totals": {
+    "broadcast_pairs": 0,
+    "executed_refusal_checks": 0,
+    "generic_pairs": 0,
+    "new_crossing_pairs": 0,
+    "new_page_ending_pairs": 0,
+    "new_refusal_encodings": 0,
+    "old_refusal_encodings": 0,
+    "positive_pairs": 0,
+    "positive_selftest_pairs": 0,
+    "supplied_refusal_encodings": 0
+  }
+}

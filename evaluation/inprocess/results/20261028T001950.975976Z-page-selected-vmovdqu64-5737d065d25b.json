@@ -1,0 +1,131 @@
+{
+  "binaries_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_artifacts": {},
+  "build_status": "not_started",
+  "cases": [],
+  "cases_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "catalogue": null,
+  "command_count": 0,
+  "command_recipe": {
+    "actual_commands": "Complete ordered argv, environments and captures are retained privately and bound by commands_sha256.",
+    "fixture_build": [
+      "sh",
+      "tools/page-entry/selected/tests/vmovdqu64/build.sh",
+      "<retained decoder.a>",
+      "<private run directory>",
+      "tools/page-entry/selected"
+    ],
+    "native": [
+      [
+        "vmovdqu64-0"
+      ],
+      [
+        "vmovdqu64-1"
+      ],
+      [
+        "vmovdqu64-0"
+      ],
+      [
+        "vmovdqu64-0"
+      ]
+    ],
+    "native_environment_controls": [
+      "absent",
+      "absent",
+      "LI2_VM64_CONTROL=full-read-fault",
+      "LI2_VM64_CONTROL=cross-read-fault"
+    ],
+    "selected_build": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ]
+  },
+  "commands_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "cpu": 1,
+  "elf": null,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "5737d065d25ba2c5da079a529fb4ee1d240df393",
+  "failure_type": "ValueError",
+  "final_error_count": 0,
+  "fixtures": null,
+  "hardware": null,
+  "inputs_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "native_commands": [],
+  "private_receipt": {
+    "bytes": 2264,
+    "sha256": "4b0319a421eb6b031c404595de886ac530c9e61177c846cdeea91b87a749ac8b"
+  },
+  "profile": "page-selected-vmovdqu64-oracle-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_vmovdqu64.py",
+    "--expect-revision",
+    "5737d065d25ba2c5da079a529fb4ee1d240df393"
+  ],
+  "schema_version": 1,
+  "scope": "Exact unmasked 62e1fe486f0f/Code1605, ZMM17 from64 bytes at RDI. Two19-pair cohorts:36 new plus2 startup, aligned/unaligned and every fetch split; all32ZMM/all8opmask independently seeded, actual standard-layout CPUID records, complete unchanged native/TF/kernelFP/liveXSAVE/memory comparisons. Two real read-fault commands (full/cross-page operand) retain failed operation125, no TRACE/completion and unchanged state/memory. All47 old+33 new supplied refusals remain. No general EVEX, enabled-CET, hardware masking, loader completion, performance or full-B2 claim",
+  "source": {
+    "head_sources_match": true,
+    "revision": "cdac5a7fd5d95c090048ec7be3d7ce901d4fbfee",
+    "source_manifest_sha256": "3df25174705386c8d7e779d5d3c619676111dbeee7006f7eef8dfc3a9ad8f7cf",
+    "tracked_clean": true,
+    "tree": "9b9aa05676fbb61fb6fa5b480b28dacf6904a7a1"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T001950.975976Z",
+  "status": "failed",
+  "tool_hashes": {},
+  "tool_versions": {},
+  "totals": {
+    "executed_refusal_checks": 0,
+    "generic_pairs": 0,
+    "load_pairs": 0,
+    "negative_selftest_pairs": 0,
+    "new_crossing_pairs": 0,
+    "new_page_ending_pairs": 0,
+    "new_refusal_encodings": 0,
+    "old_refusal_encodings": 0,
+    "positive_pairs": 0,
+    "positive_selftest_pairs": 0,
+    "supplied_refusal_encodings": 0,
+    "verified_memory_failures": 0
+  }
+}

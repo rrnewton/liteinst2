@@ -1,0 +1,131 @@
+{
+  "aliases_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "binaries_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_status": "failed",
+  "cases": [],
+  "cleanup_complete": true,
+  "command_count": 0,
+  "command_recipe": {
+    "fixture": [
+      "sh",
+      "tools/page-entry/selected/tests/strrchr_short/build.sh",
+      "<retained decoder.a>",
+      "<unique private output>",
+      "tools/page-entry/selected"
+    ],
+    "native": [
+      [
+        "short-leaf-0"
+      ],
+      [
+        "short-leaf-1"
+      ],
+      [
+        "short-leaf-2"
+      ],
+      [
+        "short-connected"
+      ],
+      [
+        "short-connected"
+      ]
+    ],
+    "product": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ],
+    "selectors": [
+      {},
+      {},
+      {},
+      {
+        "LI2_CHAIN_CASE": "12"
+      },
+      {
+        "LI2_CHAIN_CASE": "13"
+      }
+    ]
+  },
+  "commands_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+  "cpu": 1,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "b791464724d16f1f74f57bd178c40388de4d97b6",
+  "failure_type": "ValueError",
+  "final_error_count": 0,
+  "fixture_build": null,
+  "hardware": null,
+  "inputs_sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
+  "private_receipt": {
+    "bytes": 2156,
+    "sha256": "d9d79daef4a83d1e79d05f9d6b662952de62cc599fe4000725274aa62f3f4e9f"
+  },
+  "profile": "page-selected-strrchr-short-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_strrchr_short.py",
+    "--expect-revision",
+    "b791464724d16f1f74f57bd178c40388de4d97b6"
+  ],
+  "schema": 1,
+  "scope": "Only three exact register encodings and two literal29-byte return programs.61 original-PC native/TF pairs and two three-lane programs, including five startup pairs total. Existing full-state C predicates and old80 KMOV refusals remain. No general EVEX/VEX/BMI, memory-form, rseq, longer path, real-program completion or performance claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "b791464acca9a549e6809c19e5fd2485ddecf4d8",
+    "source_manifest_sha256": "142695fd224336127e95d08cf473c043c0fd58a357ac694760ee8dfe81e1c28a",
+    "tracked_clean": true,
+    "tree": "4e232376d6f35e01150f1a19c9d7928e24a3bb2a"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T022951.524404Z",
+  "status": "failed",
+  "tool_hashes": {},
+  "tool_versions": null,
+  "totals": {
+    "connected_lanes": 0,
+    "connected_programs": 0,
+    "genuine_trace_handoffs": 0,
+    "individual_pairs": 0,
+    "new_instruction_pairs": 0,
+    "refusal_checks": 0,
+    "route_checks": 0,
+    "startup_pairs": 0
+  }
+}

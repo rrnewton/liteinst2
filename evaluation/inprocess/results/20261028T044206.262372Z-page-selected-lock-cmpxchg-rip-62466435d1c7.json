@@ -1,0 +1,973 @@
+{
+  "binaries_sha256": "26740d5745c0c6c2adb8b9fc982f9966c1721fc357be5a4f77ab5ec6388a54e3",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_artifacts": {
+    "bridge-selected.so": {
+      "bytes": 2036680,
+      "sha256": "d9325e6150580315ad9c87f96f48c6f4d0c0be779e29b4fec6fc45aea038f6e2"
+    },
+    "cc-version.txt": {
+      "bytes": 248,
+      "sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+    },
+    "decoder-cargo.txt": {
+      "bytes": 36,
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+    },
+    "decoder-rustc.txt": {
+      "bytes": 196,
+      "sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4"
+    },
+    "decoder.a": {
+      "bytes": 11123156,
+      "sha256": "d9d18b296edb1900f85c949ccf68d01427efcc5bf8001e90dd7222ab4c04d59b"
+    },
+    "decoder.d": {
+      "bytes": 867,
+      "sha256": "9da3fdbf942d6e42f6889c2cd612997500d857284e81d82293e2b32067562079"
+    },
+    "generic-observe": {
+      "bytes": 1516168,
+      "sha256": "91c3627ce6dbd3eb3d7492f694390e51ae27ebaa06a300d3dbdd278aaa81d7cd"
+    },
+    "observe": {
+      "bytes": 1515192,
+      "sha256": "23abb8f45984bd9f6b128a268f21308d2b1dd88af61003d86cb1381b565c8e3a"
+    }
+  },
+  "build_status": "passed",
+  "cases": [
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "fault_trailer": {
+        "bytes": 16512,
+        "observed": false
+      },
+      "header": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 71,
+        "sample_bytes": 721088,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "group0",
+      "operation_completed": true,
+      "process_outcome": "completed finite native/TF pair cohort",
+      "record": {
+        "bytes": 15880624,
+        "sha256": "76c7cc8c9441a9ef7bf911b576d801007b461e6d744c32ab56c6c8a76d13ffec"
+      },
+      "verified_memory_fault": false
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "fault_trailer": {
+        "bytes": 16512,
+        "observed": false
+      },
+      "header": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 71,
+        "sample_bytes": 721088,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "group1",
+      "operation_completed": true,
+      "process_outcome": "completed finite native/TF pair cohort",
+      "record": {
+        "bytes": 15880624,
+        "sha256": "52df1de75ea5bcf05fcd6dc5d123c95113cb9019ec56ea361682c1dcd4be7d14"
+      },
+      "verified_memory_fault": false
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "fault_trailer": {
+        "bytes": 16512,
+        "observed": false
+      },
+      "header": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 71,
+        "sample_bytes": 721088,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "group2",
+      "operation_completed": true,
+      "process_outcome": "completed finite native/TF pair cohort",
+      "record": {
+        "bytes": 15880624,
+        "sha256": "4926ba97ada9dbc640950c03ed0ac1b5be56983ce900ed6e4ff85ff7d6db32c2"
+      },
+      "verified_memory_fault": false
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "fault_trailer": {
+        "bytes": 16512,
+        "memory_bytes_per_snapshot": 4096,
+        "native_error": 6,
+        "observed": true,
+        "protection": 0,
+        "snapshots": 4,
+        "stepped_error": 6
+      },
+      "header": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 71,
+        "sample_bytes": 721088,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "no-access-match",
+      "operation_completed": false,
+      "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on no-access dword with equal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+      "record": {
+        "bytes": 15880624,
+        "sha256": "b1dd9f3b63a05f5c5c89c94b79c63b435316eb77f6d082ef97f8a127e756b26e"
+      },
+      "verified_memory_fault": true
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "fault_trailer": {
+        "bytes": 16512,
+        "memory_bytes_per_snapshot": 4096,
+        "native_error": 7,
+        "observed": true,
+        "protection": 1,
+        "snapshots": 4,
+        "stepped_error": 7
+      },
+      "header": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 71,
+        "sample_bytes": 721088,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "read-only-match",
+      "operation_completed": false,
+      "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on read-only dword with equal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+      "record": {
+        "bytes": 15880624,
+        "sha256": "9fe590ded6cc625382b2a6f617ff72a21a5ec48b0e5f8f9a01cddf5a7a86a264"
+      },
+      "verified_memory_fault": true
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "fault_trailer": {
+        "bytes": 16512,
+        "memory_bytes_per_snapshot": 4096,
+        "native_error": 6,
+        "observed": true,
+        "protection": 0,
+        "snapshots": 4,
+        "stepped_error": 6
+      },
+      "header": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 71,
+        "sample_bytes": 721088,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "no-access-mismatch",
+      "operation_completed": false,
+      "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on no-access dword with unequal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+      "record": {
+        "bytes": 15880624,
+        "sha256": "4bce9de12fb4365fcb33be21ba85206a4594b7812413325a677db2b62affc0db"
+      },
+      "verified_memory_fault": true
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "fault_trailer": {
+        "bytes": 16512,
+        "memory_bytes_per_snapshot": 4096,
+        "native_error": 7,
+        "observed": true,
+        "protection": 1,
+        "snapshots": 4,
+        "stepped_error": 7
+      },
+      "header": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 71,
+        "sample_bytes": 721088,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "read-only-mismatch",
+      "operation_completed": false,
+      "process_outcome": "Genuine failed original-PC LOCK CMPXCHG on read-only dword with unequal EAX. Native and stepped #PF, no TRACE/continuation/completion; unchanged complete fault state and four operand-page snapshots required.",
+      "record": {
+        "bytes": 15880624,
+        "sha256": "563d1e0d2521c62f3399a0ec27ac26a33f080ae3421fb251622d1f388b21d030"
+      },
+      "verified_memory_fault": true
+    }
+  ],
+  "cases_sha256": "e00df8911f5e4ff9ccee6805c13c3da157742c9ac0283dbb53ad1880b7c9f67e",
+  "catalogue": {
+    "counts": {
+      "backward_displacements": 24,
+      "crossing_pairs": 42,
+      "failure_pairs": 32,
+      "forward_displacements": 24,
+      "new_pairs": 48,
+      "page_ending_pairs": 6,
+      "success_pairs": 16
+    },
+    "rows_sha256": "da3da87af05bb729b38c29125187755bf8d7a1dffe3634e248b30dd9479c9c0a",
+    "source": {
+      "bytes": 8768,
+      "sha256": "c5385b353384d850e905f39449d6e0eab52fcbaf354eef2cdfbf2ca0d50129b5"
+    }
+  },
+  "command_count": 27,
+  "command_recipe": {
+    "actual_commands": "Complete ordered argv, environments and captures are retained privately and bound by commands_sha256.",
+    "control_variable": "LI2_LOCK_CMPXCHG_RIP_CONTROL",
+    "fixture_build": [
+      "sh",
+      "tools/page-entry/selected/tests/lock_cmpxchg_rip/build.sh",
+      "<retained decoder.a>",
+      "<private run directory>",
+      "tools/page-entry/selected"
+    ],
+    "native": [
+      [
+        "lock-cmpxchg-rip-0"
+      ],
+      [
+        "lock-cmpxchg-rip-1"
+      ],
+      [
+        "lock-cmpxchg-rip-2"
+      ],
+      [
+        "lock-cmpxchg-rip-0"
+      ],
+      [
+        "lock-cmpxchg-rip-0"
+      ],
+      [
+        "lock-cmpxchg-rip-1"
+      ],
+      [
+        "lock-cmpxchg-rip-1"
+      ]
+    ],
+    "native_environment_controls": [
+      "absent",
+      "absent",
+      "absent",
+      "no-access-match",
+      "read-only-match",
+      "no-access-mismatch",
+      "read-only-mismatch"
+    ],
+    "selected_build": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ]
+  },
+  "commands_sha256": "139376dcba08fb503453705d4b942852fd4a386bcb764a488e31200be3677bdb",
+  "cpu": 7,
+  "elf": {
+    "lock-cmpxchg-rip-0": {
+      "dynamic": false,
+      "interpreter": false,
+      "relocations": 0,
+      "tls": false,
+      "type": "ET_EXEC"
+    },
+    "lock-cmpxchg-rip-1": {
+      "dynamic": false,
+      "interpreter": false,
+      "relocations": 0,
+      "tls": false,
+      "type": "ET_EXEC"
+    },
+    "lock-cmpxchg-rip-2": {
+      "dynamic": false,
+      "interpreter": false,
+      "relocations": 0,
+      "tls": false,
+      "type": "ET_EXEC"
+    }
+  },
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "62466435d1c770a9c18708394a658bbe58fb7f55",
+  "failure_type": null,
+  "final_error_count": 0,
+  "fixtures": {
+    "lock-cmpxchg-rip-0": {
+      "bytes": 1890656,
+      "sha256": "b9eaf27450c55bdce2e4017462aa91c25f158d2fc27bb127c8ddac67ec98b6ff"
+    },
+    "lock-cmpxchg-rip-1": {
+      "bytes": 1890696,
+      "sha256": "9971b7b7bc7933d03b7508f207e8c7abd5d64e5415a9a51b9ca688b441620011"
+    },
+    "lock-cmpxchg-rip-2": {
+      "bytes": 1889568,
+      "sha256": "4113b8b8e4f47e4af4c9e0d143308e1e4aa5e8718157965d083129ec483cae22"
+    }
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 7,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_sha256": "bff3b4228b0fa288c0ea7819bd31b371ffd593debe3c3b0e67a9a34e6a22b358",
+  "native_commands": [
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15880624,
+          "sha256": "76c7cc8c9441a9ef7bf911b576d801007b461e6d744c32ab56c6c8a76d13ffec"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 162,
+          "sha256": "33cd43c17ae130960e3c7bf3daeb8e2618af6670684d2ece5d5dcccef6431b6a"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 23894383,
+      "environment_delta": {},
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "group0",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15880624,
+          "sha256": "52df1de75ea5bcf05fcd6dc5d123c95113cb9019ec56ea361682c1dcd4be7d14"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 162,
+          "sha256": "6dfc79d610f6d7513bb50e39b5f61eee9a3dac722b1b827a08eddbf31feab1d4"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 26147213,
+      "environment_delta": {},
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "group1",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15880624,
+          "sha256": "4926ba97ada9dbc640950c03ed0ac1b5be56983ce900ed6e4ff85ff7d6db32c2"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 162,
+          "sha256": "488591350da5934bebececb0fd45dad716b0656310100a37593dead2d3e1a5d4"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 26692682,
+      "environment_delta": {},
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "group2",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15880624,
+          "sha256": "b1dd9f3b63a05f5c5c89c94b79c63b435316eb77f6d082ef97f8a127e756b26e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 26,
+          "sha256": "4a4cb301117318ed718f1f9f3c48718e2d964428d4ba8671f67315183272e00b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 11397291,
+      "environment_delta": {
+        "LI2_LOCK_CMPXCHG_RIP_CONTROL": "no-access-match"
+      },
+      "exit": 125,
+      "expected_exit": 125,
+      "name": "no-access-match",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15880624,
+          "sha256": "9fe590ded6cc625382b2a6f617ff72a21a5ec48b0e5f8f9a01cddf5a7a86a264"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 26,
+          "sha256": "4a4cb301117318ed718f1f9f3c48718e2d964428d4ba8671f67315183272e00b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 10828929,
+      "environment_delta": {
+        "LI2_LOCK_CMPXCHG_RIP_CONTROL": "read-only-match"
+      },
+      "exit": 125,
+      "expected_exit": 125,
+      "name": "read-only-match",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15880624,
+          "sha256": "4bce9de12fb4365fcb33be21ba85206a4594b7812413325a677db2b62affc0db"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 26,
+          "sha256": "4a4cb301117318ed718f1f9f3c48718e2d964428d4ba8671f67315183272e00b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 10707847,
+      "environment_delta": {
+        "LI2_LOCK_CMPXCHG_RIP_CONTROL": "no-access-mismatch"
+      },
+      "exit": 125,
+      "expected_exit": 125,
+      "name": "no-access-mismatch",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15880624,
+          "sha256": "563d1e0d2521c62f3399a0ec27ac26a33f080ae3421fb251622d1f388b21d030"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 26,
+          "sha256": "4a4cb301117318ed718f1f9f3c48718e2d964428d4ba8671f67315183272e00b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 10851773,
+      "environment_delta": {
+        "LI2_LOCK_CMPXCHG_RIP_CONTROL": "read-only-mismatch"
+      },
+      "exit": 125,
+      "expected_exit": 125,
+      "name": "read-only-mismatch",
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "private_receipt": {
+    "bytes": 283834,
+    "sha256": "1f701bc747627ddd61f4e16420f31d9a41468aa457ce953d48fee5dab8963e79"
+  },
+  "profile": "page-selected-lock-cmpxchg-rip-oracle-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_lock_cmpxchg_rip.py",
+    "--expect-revision",
+    "62466435d1c770a9c18708394a658bbe58fb7f55"
+  ],
+  "schema_version": 1,
+  "scope": "Only f00fb115+disp32 atomic CMPXCHG dword [RIP+disp32],EDX at the original PC. Three additive 17-pair cohorts give 48 compare-success/failure pairs and three startup pairs, with 47 unchanged and 24 neighboring supplied refusals per command. Four genuine no-access/read-only RMW faults cover both would-match and would-mismatch inputs and remain failed operations. Both signed displacement directions and all eight fetch geometries are covered; zero displacement has separate typed classification coverage, not a native operand effect. Full source-bound native/TF state comparisons and complete private records are retained. Prior suites remain separately required. Singleton profile; no split-lock, concurrent atomicity, real-program completion, performance or full-B2 qualification.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "62466435d1c770a9c18708394a658bbe58fb7f55",
+    "source_manifest_sha256": "6528bbbab3f1420f6d463c648f22d7e30fda132cf5de50ec3068963700cc6b3f",
+    "tracked_clean": true,
+    "tree": "faf5587579e42ee05189babc4bab85906a2ac233"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T044206.262372Z",
+  "status": "passed",
+  "tool_hashes": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "cp": {
+      "bytes": 144400,
+      "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustup": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "totals": {
+    "actual_native_failed_operations": 4,
+    "actual_stepped_failed_operations": 4,
+    "additional_negative_command_selftests": 4,
+    "comparison_failure_pairs": 32,
+    "comparison_success_pairs": 16,
+    "executed_refusal_checks": 497,
+    "generic_pairs": 48,
+    "lock_cmpxchg_rip_pairs": 48,
+    "new_crossing_pairs": 42,
+    "new_page_ending_pairs": 6,
+    "new_refusal_encodings": 24,
+    "old_refusal_encodings": 47,
+    "positive_pairs": 51,
+    "positive_selftest_pairs": 3,
+    "promoted_acceptance_checks": 0,
+    "supplied_refusal_encodings": 71,
+    "verified_memory_fault_commands": 4
+  }
+}

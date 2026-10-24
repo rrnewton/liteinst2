@@ -1,0 +1,1057 @@
+{
+  "aliases_sha256": "8c585aeddc408f908df22c311b230a3010b91d59e0cb6acd2cfee2e7c721338c",
+  "artifacts_sha256": "14ed9f5f2a37ea11e4874cb4bdba0c8955fe1552a017dd67f1f4e5d43d1e667a",
+  "attempted_native_processes": 23,
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_sha256": "2cccf3a1b3d98a7c6b36803f768fecbfe20fd5206a7e858b0dd725f96fd39311",
+  "build_status": "passed",
+  "cases": [
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "0"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "arithmetic-ending",
+      "outcome": {
+        "genuine_trace_entries": 2,
+        "lanes": 3,
+        "nx": [
+          2,
+          4,
+          2
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 0,
+        "trace": [
+          0,
+          3,
+          3
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "c0facea92238fbf5e2928999aa4618763c96898f2c12ab1bed2c6701c38d68e5"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "1"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "arithmetic-crossing",
+      "outcome": {
+        "genuine_trace_entries": 2,
+        "lanes": 3,
+        "nx": [
+          2,
+          4,
+          2
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 0,
+        "trace": [
+          0,
+          3,
+          3
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "39c3f97982eb361a1bea353a942f2a25103169909e59c8e41b83c6861e8202c1"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "2"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "sse-ending",
+      "outcome": {
+        "genuine_trace_entries": 2,
+        "lanes": 3,
+        "nx": [
+          2,
+          4,
+          2
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 0,
+        "trace": [
+          0,
+          3,
+          3
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "be83e53567d58447c8d8c27ab492a7184f86b5ef2e0297573c0e1ece44617ab2"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "3"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "sse-crossing",
+      "outcome": {
+        "genuine_trace_entries": 2,
+        "lanes": 3,
+        "nx": [
+          2,
+          4,
+          2
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 0,
+        "trace": [
+          0,
+          3,
+          3
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "4e1933de1685703952ba226ca536f1fe46c02ed315d7f78fead44811ebc79635"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "4"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "memory",
+      "outcome": {
+        "genuine_trace_entries": 3,
+        "lanes": 3,
+        "nx": [
+          2,
+          5,
+          2
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 0,
+        "trace": [
+          0,
+          4,
+          4
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "b0a38dba511684c735c98a239e51fccd118089d862ed706b58c4ece7fd448fdf"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "5"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "loop",
+      "outcome": {
+        "genuine_trace_entries": 6,
+        "lanes": 3,
+        "nx": [
+          2,
+          8,
+          2
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 0,
+        "trace": [
+          0,
+          7,
+          7
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "af788a7f2c4114a2d70267176685871696350fce32add92337765feacbd3fe63"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "6"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "indirect",
+      "outcome": {
+        "genuine_trace_entries": 1,
+        "lanes": 3,
+        "nx": [
+          2,
+          3,
+          2
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 0,
+        "trace": [
+          0,
+          2,
+          2
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "4c3ec47b35d4e534d08bbff1354a6a1b08a7699769023988e8b70cece0e6c298"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "7"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "boundary-call-ret",
+      "outcome": {
+        "genuine_trace_entries": 2,
+        "lanes": 3,
+        "nx": [
+          2,
+          4,
+          2
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 0,
+        "trace": [
+          0,
+          3,
+          3
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "e759a05ef922731a35a2c815315c7fe576a881825c190ebd2360601777e0ae96"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "8"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "selected-first",
+      "outcome": {
+        "genuine_trace_entries": 1,
+        "lanes": 3,
+        "nx": [
+          2,
+          4,
+          3
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 1,
+        "trace": [
+          0,
+          2,
+          2
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "6312bcbf44c62ef25bb8a1ac9d3a753b4d9e39f3a5196802f6dbed4b83a31080"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "9"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "embedded-selected",
+      "outcome": {
+        "genuine_trace_entries": 1,
+        "lanes": 3,
+        "nx": [
+          2,
+          5,
+          4
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 1,
+        "trace": [
+          0,
+          3,
+          3
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "560e0374192a8000ad8072799f8f163f0d501b5b1c8bb630a984bfb59d65ba53"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "10"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "old-mov-fallback",
+      "outcome": {
+        "genuine_trace_entries": 1,
+        "lanes": 3,
+        "nx": [
+          2,
+          5,
+          4
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 0,
+        "trace": [
+          0,
+          4,
+          4
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "21a0eaedc064c8415f34946eadb3a26fbf6f635e4097b31a391cae6b2b1d3400"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "11"
+      },
+      "exit": 0,
+      "expected_operation": "completed",
+      "name": "xgetbv-fallback",
+      "outcome": {
+        "genuine_trace_entries": 2,
+        "lanes": 3,
+        "nx": [
+          2,
+          5,
+          3
+        ],
+        "old_startup_pairs": 1,
+        "operation": "completed",
+        "programs": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15,
+        "selected_callbacks": 0,
+        "trace": [
+          0,
+          4,
+          4
+        ]
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "a306d5857f3eebea284900f58cf2cb49f6ec57ab2e8c499466a784bd6c358d7a"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CONTROL": "1"
+      },
+      "exit": 125,
+      "expected_operation": "failed",
+      "name": "operand-fault",
+      "outcome": {
+        "completed": 0,
+        "expected_failure_verified": true,
+        "native_failed_observations": 1,
+        "nonissued_negative_returns": 0,
+        "old_startup_pairs": 1,
+        "operation": "failed",
+        "owner_error": 7,
+        "real_effects": 0,
+        "real_signals": 0,
+        "refusal_bytes": 47,
+        "route_controls": 15
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "5bccaacc9c62985cc18831fefd8f521e72e87118d775c5d22c7643e5ce652748"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CONTROL": "2"
+      },
+      "exit": 125,
+      "expected_operation": "failed",
+      "name": "unowned-continuation",
+      "outcome": {
+        "completed": 0,
+        "expected_failure_verified": true,
+        "native_failed_observations": 1,
+        "nonissued_negative_returns": 0,
+        "old_startup_pairs": 1,
+        "operation": "failed",
+        "owner_error": 101,
+        "real_effects": 0,
+        "real_signals": 0,
+        "refusal_bytes": 47,
+        "route_controls": 15
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "bb3e6b1923cbd1fd2252136ff84a9a2d299a856b913f01f319c5333722224da3"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CONTROL": "3"
+      },
+      "exit": 125,
+      "expected_operation": "failed",
+      "name": "source-cow-change",
+      "outcome": {
+        "completed": 0,
+        "expected_failure_verified": true,
+        "native_failed_observations": 0,
+        "nonissued_negative_returns": 0,
+        "old_startup_pairs": 1,
+        "operation": "failed",
+        "owner_error": 6,
+        "real_effects": 1,
+        "real_signals": 0,
+        "refusal_bytes": 47,
+        "route_controls": 15
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "1fe9793aff7cf438b4bbafd4233a23d45773eee5706680337996546ecf337b9e"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CONTROL": "4"
+      },
+      "exit": 125,
+      "expected_operation": "failed",
+      "name": "writable-alias",
+      "outcome": {
+        "completed": 0,
+        "expected_failure_verified": true,
+        "native_failed_observations": 0,
+        "nonissued_negative_returns": 0,
+        "old_startup_pairs": 1,
+        "operation": "failed",
+        "owner_error": 6,
+        "real_effects": 1,
+        "real_signals": 0,
+        "refusal_bytes": 47,
+        "route_controls": 15
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "b3d4c563e19f3ed587e8be4e8115f5f97098816dbcec79523e96b3f7b7faaa42"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CONTROL": "5"
+      },
+      "exit": 125,
+      "expected_operation": "failed",
+      "name": "generation-reuse",
+      "outcome": {
+        "completed": 0,
+        "expected_failure_verified": true,
+        "native_failed_observations": 0,
+        "nonissued_negative_returns": 0,
+        "old_startup_pairs": 1,
+        "operation": "failed",
+        "owner_error": 903,
+        "real_effects": 1,
+        "real_signals": 0,
+        "refusal_bytes": 47,
+        "route_controls": 15
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "195fa5f19a901409502a7e80fcebd8c1f1ded03e91675fad2b5ff092ce1625db"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CONTROL": "6"
+      },
+      "exit": 125,
+      "expected_operation": "failed",
+      "name": "open-error",
+      "outcome": {
+        "completed": 0,
+        "expected_failure_verified": true,
+        "native_failed_observations": 0,
+        "nonissued_negative_returns": 1,
+        "old_startup_pairs": 1,
+        "operation": "failed",
+        "owner_error": 10,
+        "real_effects": 0,
+        "real_signals": 0,
+        "refusal_bytes": 47,
+        "route_controls": 15
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "7883a560b69004cbbfae77c566e9934f95b1a0fbe006896815c318c215ddc584"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CONTROL": "7"
+      },
+      "exit": 125,
+      "expected_operation": "failed",
+      "name": "sync-error",
+      "outcome": {
+        "completed": 0,
+        "expected_failure_verified": true,
+        "native_failed_observations": 0,
+        "nonissued_negative_returns": 1,
+        "old_startup_pairs": 1,
+        "operation": "failed",
+        "owner_error": 11,
+        "real_effects": 0,
+        "real_signals": 0,
+        "refusal_bytes": 47,
+        "route_controls": 15
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "45a7e672c18f4f7d431956eb55f6464f74a385b627bcaf704ff0c20c67ae1bb3"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CONTROL": "8"
+      },
+      "exit": 125,
+      "expected_operation": "failed",
+      "name": "revoke-error",
+      "outcome": {
+        "completed": 0,
+        "expected_failure_verified": true,
+        "native_failed_observations": 0,
+        "nonissued_negative_returns": 1,
+        "old_startup_pairs": 1,
+        "operation": "failed",
+        "owner_error": 12,
+        "real_effects": 0,
+        "real_signals": 0,
+        "refusal_bytes": 47,
+        "route_controls": 15
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "d001904c79e34d723d138e2e3d7a144b99cb66f85ec02c01c418e034da191252"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CONTROL": "9"
+      },
+      "exit": 125,
+      "expected_operation": "failed",
+      "name": "nested-tgkill",
+      "outcome": {
+        "completed": 0,
+        "expected_failure_verified": true,
+        "native_failed_observations": 0,
+        "nonissued_negative_returns": 0,
+        "old_startup_pairs": 1,
+        "operation": "failed",
+        "owner_error": 7,
+        "real_effects": 0,
+        "real_signals": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "8aab19850cb31993094dd124201e7c127316e2c5947bad2b347473d99a51ead3"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CONTROL": "10"
+      },
+      "exit": 125,
+      "expected_operation": "failed",
+      "name": "wrong-trace-int3",
+      "outcome": {
+        "completed": 0,
+        "expected_failure_verified": true,
+        "native_failed_observations": 0,
+        "nonissued_negative_returns": 0,
+        "old_startup_pairs": 1,
+        "operation": "failed",
+        "owner_error": 7,
+        "real_effects": 0,
+        "real_signals": 1,
+        "refusal_bytes": 47,
+        "route_controls": 15
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "1b1d92345eb5148ad1dc541aa44a2b24572df3b2b73d0871fa12861c7390a106"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "environment_delta": {
+        "LI2_CHAIN_CONTROL": "11"
+      },
+      "exit": 125,
+      "expected_operation": "failed",
+      "name": "consumed-proof-replay",
+      "outcome": {
+        "completed": 0,
+        "expected_failure_verified": true,
+        "native_failed_observations": 0,
+        "nonissued_negative_returns": 0,
+        "old_startup_pairs": 1,
+        "operation": "failed",
+        "owner_error": 906,
+        "real_effects": 0,
+        "real_signals": 0,
+        "refusal_bytes": 47,
+        "route_controls": 15
+      },
+      "record": {
+        "bytes": 8029376,
+        "sha256": "824a0a147df970b69b8b4e6284c29d0ed3814446f9aa90c935eb827988abb61e"
+      },
+      "status": "accepted_observation"
+    }
+  ],
+  "cases_sha256": "6f02fa78e9ccc96a86879fb5dfc0a9eba33ab4d30ea3988915ead51ba955e700",
+  "cleanup_complete": true,
+  "command_count": 47,
+  "commands_sha256": "9e345d466a227566ce7bbb70572fabae0e3c454ec9e5d59c6ccf673caabb4e33",
+  "configuration_sha256": "f498e633d0e9c6902b5d2a6f76c0447f7554e0403100e0d7deba4b74c9a907b6",
+  "cpu": 15,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "577ac6823ca2a7f2cdbd3bf0241a2e875eaf6d98",
+  "failure_type": null,
+  "final_error_count": 0,
+  "finite_build_sha256": "a1a1c7396e1de5654f9af07f3953eee3bdf83c5c3488263e23ef4d5083bb5607",
+  "finite_build_status": "passed",
+  "fixture": {
+    "bytes": 1991040,
+    "sha256": "a93421586b6ffde3c1fd3b91fb2189fc6fe5b823a66ee26055fe14a732e64ebe"
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 15,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_sha256": "f3497ff27e1362c0167fe29911c9654e24af2567e16e2a418d09dfe7c1769acc",
+  "interpretation": "Accepted observations comprise12 completed three-lane programs and11 genuine failed operations; failed operations are never counted as completed. No production-dispatch, real-program or timing qualification.",
+  "private_receipt": {
+    "bytes": 1148875,
+    "sha256": "27d394fef6803f9942d184aab49095c8323960fd48e1ac820b93951d2ae6989a"
+  },
+  "profile": "page-selected-chain-oracle-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_chain_oracle.py",
+    "--expect-revision",
+    "577ac6823ca2a7f2cdbd3bf0241a2e875eaf6d98"
+  ],
+  "required_native_processes": 23,
+  "schema": 1,
+  "scope": "Finite original-PC native/all-NX/chained full-state oracle;12 programs and11 failed operations. Existing cache/maps cohorts remain separate. No default enable, fullB2/B3, production dispatcher or performance claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "577ac6823ca2a7f2cdbd3bf0241a2e875eaf6d98",
+    "source_manifest_sha256": "7b5b07f4f2368f30fed4e940816c305c02d4fa59b776c17f3248806f79cbfb90",
+    "tracked_clean": true,
+    "tree": "13c946be40b41d6d59784ef8a4b35e1ae7563bde"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T010916.336306Z",
+  "status": "passed",
+  "tool_hashes": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "cp": {
+      "bytes": 144400,
+      "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+    },
+    "gdb": {
+      "bytes": 17179552,
+      "sha256": "cf8ae9d5192667cf681eabedf50ef39ecd11fac784c15cea6e3961880d3a16ed"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustup": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "totals": {
+    "completed_lanes": 36,
+    "completed_programs": 12,
+    "native_failed_observations": 2,
+    "old_refusal_checks": 1081,
+    "old_startup_pairs": 23,
+    "route_checks": 345,
+    "verified_failed_operations": 11
+  }
+}

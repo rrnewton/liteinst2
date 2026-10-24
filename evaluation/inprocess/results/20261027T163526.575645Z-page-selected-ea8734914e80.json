@@ -1,0 +1,2887 @@
+{
+  "archive": {
+    "bytes": 10938032,
+    "sha256": "939f9949cb9d2917f52a0438dab7fe44a4f845e5fe996703aec7ace204905179"
+  },
+  "artifact_manifest_sha256": "07821cbf1a9d2d1617581ee2135f7ba6a55aacf5733c91089c803a23da427e04",
+  "bounds": {
+    "cpu_seconds_per_process": 3,
+    "file_bytes": 16777216,
+    "memory_bytes": 536870912,
+    "parallel_commands": 1,
+    "wall_seconds_per_command": 15
+  },
+  "bridge_elf": {
+    "imports": 0,
+    "interpreter": false,
+    "relative_relocations": 584,
+    "tls": false
+  },
+  "cases": [
+    {
+      "name": "rdrand16",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 7018,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 7018,
+        "selected_last_width": 16,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 7018,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdrand32",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 218772405,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 218772405,
+        "selected_last_width": 32,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 218772405,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdrand64",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 1560244214429803351,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 1560244214429803351,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 3019006807,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdseed16",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 1,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 3,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 51357,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 51357,
+        "selected_last_width": 16,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 51357,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdseed32",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 1,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 3,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 3905597348,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 3905597348,
+        "selected_last_width": 32,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 3905597348,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdseed64",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 1,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 3,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 3504234759399816778,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 3504234759399816778,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 2342141514,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdpid64",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 1,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 4,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 10,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 10,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 10,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "mov_exit",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 0,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 0,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 0,
+        "selected_last_value": 0,
+        "selected_last_width": 0,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 2,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 43,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "prefix_random",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 5,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 5,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 17907222812995536198,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 17907222812995536198,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 3,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 2589902150,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "cross_mov",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 4,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 4,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 1311768467463790320,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 9580140470197685809,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 9580140470197685809,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 2,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 4168748593,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "cross_selected",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 1,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 4,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 10,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 10,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 10,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rsp_refusal",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 7,
+        "detail_negative": 0,
+        "failure_code": 629,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 0,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 1,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 0,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 1,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 4,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 7,
+        "selected_last_value": 0,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 0,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 0,
+        "status": 125,
+        "sync_core": 0,
+        "syscalls": 0,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "query_trap",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 13,
+        "detail_negative": 0,
+        "failure_code": 206,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 0,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 6,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 13,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 6,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 0,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 0,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 0,
+        "selected_last_value": 0,
+        "selected_last_width": 0,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 5,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 125,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "query_trap_highbits",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 13,
+        "detail_negative": 0,
+        "failure_code": 206,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 0,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 6,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 13,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 6,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 0,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 0,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 0,
+        "selected_last_value": 0,
+        "selected_last_width": 0,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 5,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 125,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "query_usr1",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 3,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 14,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 14,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 0,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 0,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 0,
+        "selected_last_value": 0,
+        "selected_last_width": 0,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 11,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 3,
+        "status": 0,
+        "sync_core": 0,
+        "syscalls": 3,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "ls-unsupported",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 5,
+        "detail_abs": 693,
+        "detail_negative": 0,
+        "failure_code": 632,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 0,
+        "generations": 63,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 2,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 0,
+        "live_pages": 61,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 2,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 0,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 0,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 0,
+        "selected_last_value": 0,
+        "selected_last_width": 0,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 0,
+        "status": 125,
+        "sync_core": 0,
+        "syscalls": 0,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "expected_refusal"
+    }
+  ],
+  "commands": [
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 248,
+          "sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "f7c68fa8c505befad352ef4434e259e1264c6c42be90cf00c71b8052aaa91cba",
+      "duration_ns": 3252504,
+      "error_type": null,
+      "exit": 0,
+      "name": "compiler-version",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        120,
+        2147483648,
+        134217728,
+        150
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 217,
+          "sha256": "984398738788c655d4fe169d8d69d424ddfd0cb6b00312db8873207c483f1138"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "3ebe3b0a8d9dd840ea03b488ee9c51c874e09f9094187ec4c3020a89c751e78f",
+      "duration_ns": 2187118284,
+      "error_type": null,
+      "exit": 0,
+      "name": "build",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "a7a0d3084a344c75499b124ab7b9df67890fa1dfa4558cd810762894bd9022a9",
+      "duration_ns": 12910638,
+      "error_type": null,
+      "exit": 0,
+      "name": "undefined",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 90,
+          "sha256": "0dc172fb04900d18db85963ae2c1d2ea38c361d7afe0b8c1b2b106ff1b06f8ba"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "298afb677b7742398af5bdf3bcdf941c299228eb46d65231fd0247b9db4df3f9",
+      "duration_ns": 4121308,
+      "error_type": null,
+      "exit": 0,
+      "name": "hardware-before",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "5b5a6d12b5b181ac0cfbdf76130dc4b0d90e4e1ae7f35b6ce5f3c3a8b25b3a08",
+      "duration_ns": 52868392,
+      "error_type": null,
+      "exit": 0,
+      "name": "images",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "e45d72c4434977507d575b561d3018410114801dad11643e99c47ee58c2b03ff"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "c83acc81c42649b3c0dbf6964737efbbc3fb189d86dee7522b306622af0c411c",
+      "duration_ns": 43563719,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdrand16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "24f6b53de7062c5e965005914888ad641a83222886d3bd46cd492a2c3d0787b7",
+      "duration_ns": 2640234,
+      "error_type": null,
+      "exit": 128,
+      "name": "native-rdrand16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1387,
+          "sha256": "cbea64d82d7e18431263e2ca512fd229bb42d962f8a41a26c08a8448da717662"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "f875b962173c224fec5d9262c3a7d055a81bb1f38594eb27d3b678111c3c5a07",
+      "duration_ns": 44093695,
+      "error_type": null,
+      "exit": 106,
+      "name": "gated-rdrand16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "0bd90da7f6c8f2f99b47bb25fc30f530a711984350e57c250ddc08718c6778a1"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "ee052e836812374c6d81ab52caa2289c4962a46f2f060af153bfc41e35016c59",
+      "duration_ns": 41604706,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdrand32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "93804603352af518cceeadb6cd8eb098ee43a949c0126c72b8ab41268e7fcfa4",
+      "duration_ns": 2706204,
+      "error_type": null,
+      "exit": 151,
+      "name": "native-rdrand32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1402,
+          "sha256": "8fc1fbc6e53e84f6e7d150eb702c7e799df7f0807b4ab363b4a87c44d4367e22"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "b1b9b551e820d5d40d439fe64ea2c8010d8b556311a4c828274430f93239cffc",
+      "duration_ns": 42541795,
+      "error_type": null,
+      "exit": 181,
+      "name": "gated-rdrand32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "408c733c76a247bb3626385b30126d8f7ebda3fc1064f5cae4b9bafbeb629071"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "4677c12334983175038ee82891148339fc4d7edcf9c30232fb561060b73dfe2a",
+      "duration_ns": 40701430,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdrand64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "415efa0981f150bbdc437049bc1908c33c77c0ce40de755c0dbcca60bde5da5e",
+      "duration_ns": 2568257,
+      "error_type": null,
+      "exit": 182,
+      "name": "native-rdrand64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1423,
+          "sha256": "719a1dd89fb686a80d4e16426ab7d191cf0d89eba49138da9d1313d839f6750a"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "38485821fecc351ba9d8007eef42110f763af53c051ac0ecf200d4702ba2cfdb",
+      "duration_ns": 45168339,
+      "error_type": null,
+      "exit": 87,
+      "name": "gated-rdrand64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "87df9e7124aa12f5a89bbc312059683c934a42e6b6c0cc0db66f4bd5063431b1"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "7e5df937fc90b23787a63705e582afedfee638f9322c269cee2bc14b37d70a12",
+      "duration_ns": 43353472,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdseed16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "d2fe378f5b50a975fb7aaa4affbc8afd4b5e17ff4ca17a6310c9584d13832819",
+      "duration_ns": 2624842,
+      "error_type": null,
+      "exit": 89,
+      "name": "native-rdseed16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1390,
+          "sha256": "a51d2ca334ed447a37785588f3c3cb1325760a0d0e443762b1e312428e2f1411"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "3b010e7d2bc497c0402db93d23b8c81e73a3442eaaf441bbe684bfe63e397212",
+      "duration_ns": 42541934,
+      "error_type": null,
+      "exit": 157,
+      "name": "gated-rdseed16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "247d71caa7283a0367f0032fd0aa97ef8291b6e689ee47593fd8469059661c1d"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "07c3ae7e912453e68cf1a168b5d335f7992f74e2fc45ad769bcca16f329d7f44",
+      "duration_ns": 42276606,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdseed32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "efb4d43faeb6df994adccbcd069d219d94b460c2ca5c0a670ee1676ee2086396",
+      "duration_ns": 2746173,
+      "error_type": null,
+      "exit": 129,
+      "name": "native-rdseed32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1405,
+          "sha256": "338453c5d0b7425dc1e73de40036f4d3fe630948f7fd12527847d31bb15f5d8a"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "6175f7b8633444e07ababb8c223c332934428c02d588e8800c4b323e8bd757cb",
+      "duration_ns": 44530812,
+      "error_type": null,
+      "exit": 164,
+      "name": "gated-rdseed32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "c103994eace83df9f42a7a967b39a51b4d13f4cd84713420ad5f2fe8065add02"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "8f31047eda57bf6dd15d163fa5c552f1ecd0a6fe4e917ce2e1e1422d022e1276",
+      "duration_ns": 43788086,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdseed64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "d995149b6b9f70d50f5482c12ecfd42c4b3566bfae689a7252fe8eaa30f7ee05",
+      "duration_ns": 2576009,
+      "error_type": null,
+      "exit": 9,
+      "name": "native-rdseed64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1423,
+          "sha256": "14f3934ccaba1733134587c7bd55f7dd0dcb8c9cc4f1e3bf78f64da20e48d4ce"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "1b6e01a2cdc118904b9d12f7075a1ac2bdd75f1bc360c5fef41834f9c8e2b783",
+      "duration_ns": 41747051,
+      "error_type": null,
+      "exit": 74,
+      "name": "gated-rdseed64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "d072501ffd5901bb78006ed0cd95926105f184bdb500a98559bb3d0c975b04be"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "1097c23bf0835a6006859df72b5e456217292ef74b23cc66dd06e38c028c33ae",
+      "duration_ns": 42000692,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdpid64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "7abad315f24967f75c67248425376ec32bdf0b0bb7ec962fd1b4e6ec157cdd9d",
+      "duration_ns": 2512002,
+      "error_type": null,
+      "exit": 10,
+      "name": "native-rdpid64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1381,
+          "sha256": "b708a2a11c98e5fda01c06d2f50395235a9fbc387f4c6a37128f4957b50bd9c4"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "9987c8c6bd099a470b273ebdfa30c08b21a4a1c503ea218531c90840c4fa2608",
+      "duration_ns": 42200001,
+      "error_type": null,
+      "exit": 10,
+      "name": "gated-rdpid64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "6f62a74bc8977e9989372128f26de1753ef3f66ca6771f54142319ebd6a13dcd"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "e08dda27b7b01be643ae1b951430725645bdd08003d797bf9f273a9dc57f7769",
+      "duration_ns": 41909685,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-mov_exit",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "52fd4e1a4a031c54e86e767e117052b3a89133a964525bd4f4a1169048df3a25",
+      "duration_ns": 2612944,
+      "error_type": null,
+      "exit": 43,
+      "name": "native-mov_exit",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1378,
+          "sha256": "de9c14cd83fcb2eb4fc841c45ade14dfe7085e3d4ba84ef23a2a2fc51eefc742"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "51bc03ea631f94d274d962e9768c070e31aa81208b7520a6c831e12f4399e3fd",
+      "duration_ns": 42070396,
+      "error_type": null,
+      "exit": 43,
+      "name": "gated-mov_exit",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "fe6812baa12ad5f818191830968e7738fe286f5c8d0d874ca80128f69305a4d0"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "9fa5620f4b6efeacb8d7fb738e631cf4ddabe5ee9b16eb003e111b8645b6ac24",
+      "duration_ns": 41355273,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-prefix_random",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "1fb3a3dc0a1aeeb3971d4d9cd0ccf5c9c39351f259b6d6a40a03b8ce1dffafe9",
+      "duration_ns": 2584261,
+      "error_type": null,
+      "exit": 77,
+      "name": "native-prefix_random",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1425,
+          "sha256": "e46ffd332f99a0c6265a07675f03cac88b546fd9deafec5a0deebac51d7aa3be"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "9fdddb3a5544f5d9eaa71d9bd7e5633af4b00fc9eadec23c5eb6faf8a9325fb5",
+      "duration_ns": 43425001,
+      "error_type": null,
+      "exit": 70,
+      "name": "gated-prefix_random",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "5569f224b516097b94bd6cf597b49379019fe318adbf1d537822d806dac15995"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "8a2216ca604b2ec3a7da0333727f5069ff75ae7c6ac82381ddb9d2c6b23dbbea",
+      "duration_ns": 40780369,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-cross_mov",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "4ad97c0697096101b54aede812fb7af38b7792ec9c8f23c46b0d1b952b413e66",
+      "duration_ns": 2549629,
+      "error_type": null,
+      "exit": 100,
+      "name": "native-cross_mov",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1441,
+          "sha256": "f52ef295ebee8542b4fc8b4ed069859b3912dbbe75e1a99d0e66c724f9658a66"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "3d442b3ba80206bb336ec31d9231a501fe02962aad647c749fd2040f05b79318",
+      "duration_ns": 41755894,
+      "error_type": null,
+      "exit": 49,
+      "name": "gated-cross_mov",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "5f1c9f4d40584d870bfd6a229a97827a966ffb46b77ff1ce20b6e6efcb65b179"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "2bc606b0064512421498d561e1e51b8742b619e16c0343f2e5f62b1cf77dc3f8",
+      "duration_ns": 41458908,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-cross_selected",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "2fde89e8b361e9207a13bd6438dd6139f5053293bc0ae70091cb7c2a15e71e56",
+      "duration_ns": 2485813,
+      "error_type": null,
+      "exit": 10,
+      "name": "native-cross_selected",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1381,
+          "sha256": "b708a2a11c98e5fda01c06d2f50395235a9fbc387f4c6a37128f4957b50bd9c4"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "eee31e37906a051091a56ce9e6813299842d130f2c2b0c221f7e46abf9dd8273",
+      "duration_ns": 41863886,
+      "error_type": null,
+      "exit": 10,
+      "name": "gated-cross_selected",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "c7c36e865fd01b1def7ce95da44561f4b0169a4a8c202e7ec7f0a39e57f15029"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "eada2194348ab0d5d3268a31eefa751988541f4cbe333580b5077586560749c2",
+      "duration_ns": 41491738,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rsp_refusal",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1381,
+          "sha256": "37c222661312057e9b70432fb5c17d47c313318fac26761189c42dc05149b286"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "adfede6430ca2da7d78f497ba3d6cce5b9646bba0709e58f6d1dcb8e37cac17d",
+      "duration_ns": 44296690,
+      "error_type": null,
+      "exit": 125,
+      "name": "gated-rsp_refusal",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "a495ab30ff3282e4ff46513efb5e749f876a3e23012fef63a3ec97d73eda2218"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "0072cf26e97a89732639e832b99fe46a28d37313704e47abbe817b3140736a36",
+      "duration_ns": 44424922,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-query_trap",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "57392c24e4ada06586dc50b7fbd8857f86907dd2d05ea6142ebaebc1e6e9fab5",
+      "duration_ns": 2663500,
+      "error_type": null,
+      "exit": 0,
+      "name": "native-query_trap",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1382,
+          "sha256": "bcf5fb576c8bab3589f2129a180ce9e3381e5d8a85febe2eabf45426db82a5e0"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "45e62146e2e060873580340716328c897c145d94994b88a4235159108405bf6e",
+      "duration_ns": 44831163,
+      "error_type": null,
+      "exit": 125,
+      "name": "gated-query_trap",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "89adef242812a375426b8da2b0e72df5b119dbcef07bc2719a13041b0d07f669"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "128b86a9e3ec6efe07af3d23a05b332a203bc3260c3c14f980a401363d9996a3",
+      "duration_ns": 40973099,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-query_trap_highbits",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "c6c968797c7baf2a4c3879d30ebd4cb7df413abd627e479d39a484305264b8cb",
+      "duration_ns": 2514465,
+      "error_type": null,
+      "exit": 0,
+      "name": "native-query_trap_highbits",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1382,
+          "sha256": "bcf5fb576c8bab3589f2129a180ce9e3381e5d8a85febe2eabf45426db82a5e0"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "5f93090451b44d2728a3acead51e0e6ab178450f8d9fcaa747e9dfea08b770f2",
+      "duration_ns": 62464823,
+      "error_type": null,
+      "exit": 125,
+      "name": "gated-query_trap_highbits",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "1875829dfcd1c8efab25c7da98a8b126c0c822a53d946b44c912d47e168ae19c"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "85ad3107f46cdb709985dde465d08ec6eefbed32e6480a762977708c306b0527",
+      "duration_ns": 44124371,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-query_usr1",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "3361f254c5e3e2aa482e15911d39ce3b90e957b02b7d1b28d9bef690ef0946f0",
+      "duration_ns": 2474015,
+      "error_type": null,
+      "exit": 0,
+      "name": "native-query_usr1",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1380,
+          "sha256": "564d23e5036affac3207b80a48dae124dd3530b8a9e529c4d879d2c401854ab4"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "ba630228dfc669c9f51eda1a5989743d63bad69ed21e05412e48190bd815e910",
+      "duration_ns": 43108695,
+      "error_type": null,
+      "exit": 0,
+      "name": "gated-query_usr1",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 136,
+          "sha256": "c090db5af6ffa6f15f04a1f3b11321f4391f97319000977d4e16436a9c763660"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "98219d5ea4159abf24d9ae8d2e53b511ca2f280827bd9e647cd392c1098ad213",
+      "duration_ns": 4141048,
+      "error_type": null,
+      "exit": 0,
+      "name": "ls-entry-decode",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 136,
+          "sha256": "bc952a060c387df4adb1ab1e6982bf174255221cbfd7a101fcbdeed26d64fda4"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "133f3964bfbeea6ffbdd7aae0a0a9e7f04f36f534bbbcc86df91d91204ac6a91",
+      "duration_ns": 3616431,
+      "error_type": null,
+      "exit": 0,
+      "name": "ls-call-decode",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 509,
+          "sha256": "27dccdef66c012f95d93b4423846ea909eccca3893c4c7a23181fde9ab575566"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "1250ea25af35f96b59c201974c1cc85a7da7131695a8c8f9c06acc93f549b05e",
+      "duration_ns": 41665478,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-ls",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 2,
+          "sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "59b3afb9b05ca462bd0d8ea2cc2df7107f1362f8c1c77349bc59752fe886f521",
+      "duration_ns": 4072716,
+      "error_type": null,
+      "exit": 0,
+      "name": "native-ls",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1384,
+          "sha256": "631022960a04daf8259eb3e865ae79603a10ee20fbedfbf3454db160aed9c6db"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "4680762672cf9f1d97920f16fbe49a34eb33fe8712a5d569b9c1b0d2cf6ff627",
+      "duration_ns": 64961121,
+      "error_type": null,
+      "exit": 125,
+      "name": "gated-ls-unsupported",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 90,
+          "sha256": "0dc172fb04900d18db85963ae2c1d2ea38c361d7afe0b8c1b2b106ff1b06f8ba"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "298afb677b7742398af5bdf3bcdf941c299228eb46d65231fd0247b9db4df3f9",
+      "duration_ns": 2801016,
+      "error_type": null,
+      "exit": 0,
+      "name": "hardware-after",
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "cpu": 10,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "ea8734914e80bca715c66ef6abfae866dd89c26e",
+  "failure_type": null,
+  "final_error_count": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 10,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "hardware_after": {
+    "cpu": 10,
+    "leaf1_ecx": 2130326027,
+    "leaf7_ebx": 4055865259,
+    "leaf7_ecx": 423714782,
+    "rdpid": 10
+  },
+  "hardware_before": {
+    "cpu": 10,
+    "leaf1_ecx": 2130326027,
+    "leaf7_ebx": 4055865259,
+    "leaf7_ecx": 423714782,
+    "rdpid": 10
+  },
+  "input_manifest_sha256": "1ee22f8572e3ed7ae11226cd2390b9c9d661b7e9f88cb64d4db377a0983282f8",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected.py",
+    "--expect-revision",
+    "ea8734914e80bca715c66ef6abfae866dd89c26e",
+    "--library-root",
+    "/usr/lib64"
+  ],
+  "schema": 1,
+  "scope": "16 finite original-entry cases; no full ABI/B2/real-ls success claim",
+  "source": {
+    "head_sources_match": true,
+    "revision": "ea8734914e80bca715c66ef6abfae866dd89c26e",
+    "source_manifest_sha256": "29ea314f7c895c90236455b2f61cc08a5ac637b0e1b9bcfd36142766577d1779",
+    "tracked_clean": true,
+    "tree": "2c76b285b48f9ba81f345e50a47b0e9954d1bcfc"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261027T163526.575645Z",
+  "status": "passed",
+  "tool_hashes": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "python3": {
+      "bytes": 13541832,
+      "sha256": "886c366577a40e52823af32c30ecf67e628e27a2f87bcf1588be69493845ac6b"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "toolchain": {
+    "decoder-cargo.txt": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "decoder-rustc.txt": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6"
+  }
+}

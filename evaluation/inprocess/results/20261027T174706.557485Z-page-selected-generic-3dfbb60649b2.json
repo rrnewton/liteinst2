@@ -1,0 +1,4800 @@
+{
+  "archive_text_exports": {
+    "li2_decoder_tf_classify": 1,
+    "rust_eh_personality": 1
+  },
+  "artifact_manifest_sha256": "237de4f1aba1bec4d54cf11634700626b3ad87fcb7f3097d912486edd9a74e28",
+  "artifacts": {
+    "bridge-selected.so": {
+      "bytes": 1915480,
+      "mode": 493,
+      "sha256": "4e9f3c7eb1077eba1dc19c1344ceac211ba795441f5c7463d6b54d411f5e55a3"
+    },
+    "cc-version.txt": {
+      "bytes": 248,
+      "mode": 420,
+      "sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+    },
+    "decoder-cargo.txt": {
+      "bytes": 36,
+      "mode": 420,
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+    },
+    "decoder-rustc.txt": {
+      "bytes": 196,
+      "mode": 420,
+      "sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4"
+    },
+    "decoder.a": {
+      "bytes": 11025148,
+      "mode": 420,
+      "sha256": "616cefceb2549d6503d9ac113168b45595633945f53bc1663c3e427862afc8c7"
+    },
+    "decoder.d": {
+      "bytes": 749,
+      "mode": 420,
+      "sha256": "32520e5993e515d1eee6aaf3e95a25d6df540b0d2b83a53ff570d777e3884e45"
+    },
+    "generic-observe": {
+      "bytes": 1501352,
+      "mode": 493,
+      "sha256": "3d193bbf65f5ccde6bb770645fc3fb73cefde70f8837f5d67e5a735b9928da8b"
+    },
+    "observe": {
+      "bytes": 1500384,
+      "mode": 493,
+      "sha256": "4729a2909265ae246041d3a4918cc4dd392e5b6540e97a3f5438e277bb2539ac"
+    }
+  },
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      3,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "bridge_elf": {
+    "imports": 0,
+    "interpreter": false,
+    "relative_relocations": 586,
+    "tls": false
+  },
+  "build_command_completed": true,
+  "build_status": "passed",
+  "cases": [
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 3,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 3,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "source_syscalls": 1,
+        "status": 61802,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "92e673cc92995356f95330e66d5c4c2dd30b3dc3976a2a1f9e4aace9ec4ae455",
+      "name": "rdrand16",
+      "namespace": {
+        "launch.json": {
+          "bytes": 801,
+          "sha256": "b4ffc2bcbd1d25ae335f5b290372e1f6fde30745ab7c7ebb480eab9bc7a8a596"
+        },
+        "namespace.json": {
+          "bytes": 1731,
+          "sha256": "9b68c262399bda57290b8591b5986d01b8471efa128e52e57b5f2234994f80d7"
+        }
+      },
+      "native_exit": 186,
+      "outcome_class": "completed",
+      "selected_outcome": {
+        "carry": 1,
+        "destination": 7,
+        "input_destination": 0,
+        "kind": 2,
+        "native_attempts": 1,
+        "output_destination": 61802,
+        "phase": 4,
+        "status": 0,
+        "value": 61802,
+        "width": 16
+      }
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 3,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 3,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "source_syscalls": 1,
+        "status": 790634797,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "ff424587c1c47718bba36548f5f3c4dace5bba055f9f4a77a9dbd539a796a881",
+      "name": "rdrand32",
+      "namespace": {
+        "launch.json": {
+          "bytes": 801,
+          "sha256": "4664b72533f243e2292ec86fc3b969e22ccdbe0d9d25767c4ab5ffd1a14fdb13"
+        },
+        "namespace.json": {
+          "bytes": 1731,
+          "sha256": "96b576c670db6fc6a335c53a72822a2a3536224df3a73c843e9ed9ef60c42d9c"
+        }
+      },
+      "native_exit": 107,
+      "outcome_class": "completed",
+      "selected_outcome": {
+        "carry": 1,
+        "destination": 7,
+        "input_destination": 0,
+        "kind": 2,
+        "native_attempts": 1,
+        "output_destination": 790634797,
+        "phase": 4,
+        "status": 0,
+        "value": 790634797,
+        "width": 32
+      }
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 3,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 3,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "source_syscalls": 1,
+        "status": 1189771824,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "d377972557b4a5ec04987f8c3daf18a4ea8d6b3cd8cb6fe1093955c1fb4de127",
+      "name": "rdrand64",
+      "namespace": {
+        "launch.json": {
+          "bytes": 801,
+          "sha256": "8394717aeb315778e203c36e290fd6e23113441755f99ab8f5ad5d42c1c66e69"
+        },
+        "namespace.json": {
+          "bytes": 1731,
+          "sha256": "04d370335cbebc984e7614c1e6ccb35b5d427ab2f7d110f5604fc1c49743040b"
+        }
+      },
+      "native_exit": 21,
+      "outcome_class": "completed",
+      "selected_outcome": {
+        "carry": 1,
+        "destination": 7,
+        "input_destination": 0,
+        "kind": 2,
+        "native_attempts": 1,
+        "output_destination": 17471533572378229296,
+        "phase": 4,
+        "status": 0,
+        "value": 17471533572378229296,
+        "width": 64
+      }
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 3,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 3,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 1,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "source_syscalls": 1,
+        "status": 2158,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "fb8d4e9751c6055d239e351d71cff8232849ad1639db3dd2323e7cca8bb0b84f",
+      "name": "rdseed16",
+      "namespace": {
+        "launch.json": {
+          "bytes": 801,
+          "sha256": "9e27bc3846d17144dd71f4c95c651e31b9e5acb664f6e9e83b8015eff9507b1e"
+        },
+        "namespace.json": {
+          "bytes": 1731,
+          "sha256": "6526057e46ec03896d812323cee2de62662a771742f3de86a760217ae34aa334"
+        }
+      },
+      "native_exit": 252,
+      "outcome_class": "completed",
+      "selected_outcome": {
+        "carry": 1,
+        "destination": 7,
+        "input_destination": 0,
+        "kind": 3,
+        "native_attempts": 1,
+        "output_destination": 2158,
+        "phase": 4,
+        "status": 0,
+        "value": 2158,
+        "width": 16
+      }
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 3,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 3,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 1,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "source_syscalls": 1,
+        "status": 427205550,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "a0296fbe26e0bdb348e2e8b6e0b474bd9daaa0dc8dd4e7e2e6127a810fc8fa6c",
+      "name": "rdseed32",
+      "namespace": {
+        "launch.json": {
+          "bytes": 801,
+          "sha256": "5cb18eff9ff8dceb9bb0ad9478bf1e9b380d4bc2638123483ec02b1b3a252aa3"
+        },
+        "namespace.json": {
+          "bytes": 1731,
+          "sha256": "52d747a6c7f4061f824e31c5d73e638f27f0dcc8433f3f0279e4a216881a98d4"
+        }
+      },
+      "native_exit": 234,
+      "outcome_class": "completed",
+      "selected_outcome": {
+        "carry": 1,
+        "destination": 7,
+        "input_destination": 0,
+        "kind": 3,
+        "native_attempts": 1,
+        "output_destination": 427205550,
+        "phase": 4,
+        "status": 0,
+        "value": 427205550,
+        "width": 32
+      }
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 3,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 3,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 1,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "source_syscalls": 1,
+        "status": 1311930648,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "52153f8ee990dd2a53fa43f851cc205d5ebc620e5b0da42a3fba10c6a25dd931",
+      "name": "rdseed64",
+      "namespace": {
+        "launch.json": {
+          "bytes": 801,
+          "sha256": "e1abf54507a3b193bb0581696d1a26095b84a5ba63bde58f48b0dbc5056f42c1"
+        },
+        "namespace.json": {
+          "bytes": 1731,
+          "sha256": "d47f8ddf71dcd9e6f52c3fe3200c13ae965327cce653a461bb86d9765bf35f7a"
+        }
+      },
+      "native_exit": 204,
+      "outcome_class": "completed",
+      "selected_outcome": {
+        "carry": 1,
+        "destination": 7,
+        "input_destination": 0,
+        "kind": 3,
+        "native_attempts": 1,
+        "output_destination": 14277420536822921496,
+        "phase": 4,
+        "status": 0,
+        "value": 14277420536822921496,
+        "width": 64
+      }
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 3,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 3,
+        "rdpid": 1,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "source_syscalls": 1,
+        "status": 3,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "19eb426adaa7fd43ae3ac17edf54fafcc45e041c703afdb552a0d515199fd72b",
+      "name": "rdpid64",
+      "namespace": {
+        "launch.json": {
+          "bytes": 799,
+          "sha256": "1125480f0030cb87f8c83207c48001affe25d03d2c7ca10f9bc958c6535b760a"
+        },
+        "namespace.json": {
+          "bytes": 1726,
+          "sha256": "bfb70bec7ba517438829e7783aa2224ce9b22fc5fdf5f6a627991d96439d2ffb"
+        }
+      },
+      "native_exit": 3,
+      "outcome_class": "completed",
+      "selected_outcome": {
+        "carry": 0,
+        "destination": 7,
+        "input_destination": 0,
+        "kind": 4,
+        "native_attempts": 1,
+        "output_destination": 3,
+        "phase": 4,
+        "status": 0,
+        "value": 3,
+        "width": 64
+      }
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 3,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 3,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 2,
+        "source_syscalls": 1,
+        "status": 43,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "e6423a9871a32b3c48b708b6bfdab2833277f08d43765f39a733fadef06833d6",
+      "name": "mov_exit",
+      "namespace": {
+        "launch.json": {
+          "bytes": 801,
+          "sha256": "21e0437fc672b82c5968f2fca5452234bfd47a1fec0a0c858f66cc3237eb02ea"
+        },
+        "namespace.json": {
+          "bytes": 1731,
+          "sha256": "9d0caf73cdd5520bd17432fd4a5b1ff935b598cb2fbe7a2adaad62e219944877"
+        }
+      },
+      "native_exit": 43,
+      "outcome_class": "completed"
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 5,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 5,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 3,
+        "source_syscalls": 1,
+        "status": 4047841176,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "215a224364d52707836a93aec25ff2a99c1341e08ab7af3433c639630e17a67f",
+      "name": "prefix_random",
+      "namespace": {
+        "launch.json": {
+          "bytes": 811,
+          "sha256": "c062a83bd62c6ab3ce52725f8ac1d22d1a9856028413cae5010e640c1b82be7c"
+        },
+        "namespace.json": {
+          "bytes": 1756,
+          "sha256": "775814e457cab090323b7268ed6d0db082cd496924702cbb7c03065bd8a13fca"
+        }
+      },
+      "native_exit": 128,
+      "outcome_class": "completed",
+      "selected_outcome": {
+        "carry": 1,
+        "destination": 7,
+        "input_destination": 0,
+        "kind": 2,
+        "native_attempts": 1,
+        "output_destination": 6617868987353343896,
+        "phase": 4,
+        "status": 0,
+        "value": 6617868987353343896,
+        "width": 64
+      }
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 4,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 4,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 2,
+        "source_syscalls": 1,
+        "status": 1562323894,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "d00532971b0a9a35605db60995b0fb7b267b944b2679cbe94cbba8e022d7586a",
+      "name": "cross_mov",
+      "namespace": {
+        "launch.json": {
+          "bytes": 803,
+          "sha256": "3bd4996224688a3398142c4ae73934e86af32605c1c57cd3c838b9eed522cfd2"
+        },
+        "namespace.json": {
+          "bytes": 1736,
+          "sha256": "e13819ab684f7f29ed58cfe42d6d9e0059c387162b7989ea6cae72657e5652ad"
+        }
+      },
+      "native_exit": 14,
+      "outcome_class": "completed",
+      "selected_outcome": {
+        "carry": 1,
+        "destination": 7,
+        "input_destination": 1311768467463790320,
+        "kind": 2,
+        "native_attempts": 1,
+        "output_destination": 17218340092395858870,
+        "phase": 4,
+        "status": 0,
+        "value": 17218340092395858870,
+        "width": 64
+      }
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 3,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 3,
+        "rdpid": 1,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "source_syscalls": 1,
+        "status": 3,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "19eb426adaa7fd43ae3ac17edf54fafcc45e041c703afdb552a0d515199fd72b",
+      "name": "cross_selected",
+      "namespace": {
+        "launch.json": {
+          "bytes": 813,
+          "sha256": "e932d7c4c2d8bdcf6debdc386dc3bea6b260c52576acea32963557d0e21ae8ce"
+        },
+        "namespace.json": {
+          "bytes": 1761,
+          "sha256": "7fdcd513b4f7559a5fa55d96391e31a4e12d0f26ae0b9589fb8b2e935bb38953"
+        }
+      },
+      "native_exit": 3,
+      "outcome_class": "completed",
+      "selected_outcome": {
+        "carry": 0,
+        "destination": 7,
+        "input_destination": 0,
+        "kind": 4,
+        "native_attempts": 1,
+        "output_destination": 3,
+        "phase": 4,
+        "status": 0,
+        "value": 3,
+        "width": 64
+      }
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 7,
+        "detail_negative": 0,
+        "failure_code": 629,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 0,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 1,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 1,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 0,
+        "source_syscalls": 0,
+        "status": 125,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 0,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "1b0d718f8c16940daea711ddc76dcb837d13d373db67f0dadd94d4058c566c1a",
+      "name": "rsp_refusal",
+      "namespace": {
+        "launch.json": {
+          "bytes": 807,
+          "sha256": "f1d2595d25216ec27aa184310acbee807527bb94be6a76dc23a74db777286e56"
+        },
+        "namespace.json": {
+          "bytes": 1746,
+          "sha256": "531d308c03eff4e35a8e4164f968dc1e4b5ab086efdb8b66e7a1efb23abef86c"
+        }
+      },
+      "native_exit": null,
+      "outcome_class": "expected_refusal",
+      "selected_outcome": {
+        "carry": 0,
+        "destination": 4,
+        "input_destination": 0,
+        "kind": 2,
+        "native_attempts": 0,
+        "output_destination": 0,
+        "phase": 0,
+        "status": 7,
+        "value": 0,
+        "width": 64
+      }
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 13,
+        "detail_negative": 0,
+        "failure_code": 206,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 0,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 6,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 6,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 5,
+        "source_syscalls": 1,
+        "status": 125,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "8c83fa3281ca4f3c7a2bfbbd16d0210dd6ffc649525d9198dcf9708ee2db142b",
+      "name": "query_trap",
+      "namespace": {
+        "launch.json": {
+          "bytes": 805,
+          "sha256": "15867dcc198dd77d122da85ca6668e9bc43a81e400d2f2f17513ffd1b4a9ac2b"
+        },
+        "namespace.json": {
+          "bytes": 1741,
+          "sha256": "9c94f8701f7be91449d5e9336dd8a9553c579481f2749b28bbbb980b8077ee21"
+        }
+      },
+      "native_exit": 0,
+      "outcome_class": "expected_refusal"
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 13,
+        "detail_negative": 0,
+        "failure_code": 206,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 0,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 6,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 6,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 5,
+        "source_syscalls": 1,
+        "status": 125,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "8c83fa3281ca4f3c7a2bfbbd16d0210dd6ffc649525d9198dcf9708ee2db142b",
+      "name": "query_trap_highbits",
+      "namespace": {
+        "launch.json": {
+          "bytes": 823,
+          "sha256": "3d6a476ae4059ae4900e88398b7cbd601b255c35822ec3fc84a4662b6d3f56b1"
+        },
+        "namespace.json": {
+          "bytes": 1786,
+          "sha256": "a02d98bea0197eed22c9a47397b62fb4c631c232a163d18d805c2d653ae8f089"
+        }
+      },
+      "native_exit": 0,
+      "outcome_class": "expected_refusal"
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 3,
+        "generations": 5,
+        "generic_tf_attempts": 0,
+        "generic_tf_steps": 0,
+        "interpreter_faults": 14,
+        "live_pages": 3,
+        "main_faults": 0,
+        "nx_faults": 14,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 11,
+        "source_syscalls": 3,
+        "status": 0,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 3,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_family": 0,
+        "tf_flow": 0,
+        "tf_length": 0,
+        "tf_phase": 0,
+        "tf_release_complete": 0
+      },
+      "exact_report_sha256": "11e6d8e716c7b5cee55ad83aa429c6dfeb49835c343c797d348eea1da4fa4aa6",
+      "name": "query_usr1",
+      "namespace": {
+        "launch.json": {
+          "bytes": 805,
+          "sha256": "bc92c5cea081ca6c266eec74142e8d4fbf2b7058bf374d18fec31db3ec8fef18"
+        },
+        "namespace.json": {
+          "bytes": 1741,
+          "sha256": "035e4b5bdfb72adadcb81b4058644063a01718f75091a22d386093adbea8f531"
+        }
+      },
+      "native_exit": 0,
+      "outcome_class": "completed"
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 2,
+        "generations": 7,
+        "generic_tf_attempts": 15,
+        "generic_tf_steps": 15,
+        "interpreter_faults": 2,
+        "live_pages": 5,
+        "main_faults": 24,
+        "nx_faults": 26,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 9,
+        "source_syscalls": 2,
+        "status": 0,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 2,
+        "tf_code": 282,
+        "tf_error": 0,
+        "tf_family": 1,
+        "tf_flow": 1,
+        "tf_length": 4,
+        "tf_phase": 5,
+        "tf_release_complete": 1
+      },
+      "exact_report_sha256": "1eaf376f810498e44f6ca624db790539f1fa13d2cbb446d66231b8bb191b2a30",
+      "name": "branch_memory_stack",
+      "namespace": {
+        "launch.json": {
+          "bytes": 823,
+          "sha256": "23f74c855c6a3522a699b55b400314c910cba41770b96cb582e3638d82992424"
+        },
+        "namespace.json": {
+          "bytes": 1786,
+          "sha256": "845d02abac203d66862d9eb1a2cdf6d43759f2845cbdc1d1320d2b5c0d09df5c"
+        }
+      },
+      "native_exit": 0,
+      "outcome": {
+        "output_words": [
+          15,
+          15,
+          15
+        ]
+      },
+      "outcome_class": "completed"
+    },
+    {
+      "accepted": true,
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 2,
+        "generations": 7,
+        "generic_tf_attempts": 7,
+        "generic_tf_steps": 7,
+        "interpreter_faults": 2,
+        "live_pages": 5,
+        "main_faults": 16,
+        "nx_faults": 18,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 9,
+        "source_syscalls": 2,
+        "status": 0,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 2,
+        "tf_code": 282,
+        "tf_error": 0,
+        "tf_family": 1,
+        "tf_flow": 1,
+        "tf_length": 7,
+        "tf_phase": 5,
+        "tf_release_complete": 1
+      },
+      "exact_report_sha256": "9d91eac76de3fc427ff4344ec03ef5c0923fd80a786c3e15517114af160fa91e",
+      "name": "boundary_call_ret",
+      "namespace": {
+        "launch.json": {
+          "bytes": 819,
+          "sha256": "e442873421fc8d3d2da3a952a7695665f5ff07b055e69d560a145ffb3a1860b5"
+        },
+        "namespace.json": {
+          "bytes": 1776,
+          "sha256": "50144f7baa57ad5eb94fb19baaf08386cce5adadcf98b0241b72fc4da7801c8c"
+        }
+      },
+      "native_exit": 0,
+      "outcome": {
+        "output_words": [
+          4202496,
+          42
+        ]
+      },
+      "outcome_class": "completed"
+    },
+    {
+      "accepted": true,
+      "builtin_outcome": {
+        "a": 16,
+        "b": 1752462657,
+        "c": 1145913699,
+        "d": 1769238117,
+        "enable_result_abs": 0,
+        "enable_result_negative": 0,
+        "kind": 1,
+        "phase": 7,
+        "restore_result_abs": 0,
+        "restore_result_negative": 0
+      },
+      "counters": {
+        "admissions": 0,
+        "cpuid": 1,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 2,
+        "generations": 7,
+        "generic_tf_attempts": 8,
+        "generic_tf_steps": 8,
+        "interpreter_faults": 2,
+        "live_pages": 5,
+        "main_faults": 20,
+        "nx_faults": 22,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 11,
+        "source_syscalls": 2,
+        "status": 0,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 2,
+        "tf_code": 282,
+        "tf_error": 0,
+        "tf_family": 1,
+        "tf_flow": 1,
+        "tf_length": 7,
+        "tf_phase": 5,
+        "tf_release_complete": 1
+      },
+      "exact_report_sha256": "abdf583af0a0a96eba57adebde370d37cbba824295b2509fe5964677ea490bbe",
+      "name": "cpuid0",
+      "namespace": {
+        "launch.json": {
+          "bytes": 797,
+          "sha256": "672f4eb4c4d797b403e294c2d0b81dfed4a3193a27acae5900745bca22e032f1"
+        },
+        "namespace.json": {
+          "bytes": 1721,
+          "sha256": "c547ba83b11f44b016cdcd06eedb9477f973522a72e09a31415b07a24a5afbf5"
+        }
+      },
+      "native_exit": 0,
+      "outcome": {
+        "cpuid0": [
+          16,
+          1752462657,
+          1145913699,
+          1769238117
+        ]
+      },
+      "outcome_class": "completed"
+    },
+    {
+      "accepted": true,
+      "builtin_outcome": {
+        "a": 1898178501,
+        "b": 0,
+        "c": 0,
+        "d": 439413,
+        "enable_result_abs": 0,
+        "enable_result_negative": 0,
+        "kind": 5,
+        "phase": 7,
+        "restore_result_abs": 0,
+        "restore_result_negative": 0
+      },
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 2,
+        "generations": 7,
+        "generic_tf_attempts": 8,
+        "generic_tf_steps": 8,
+        "interpreter_faults": 2,
+        "live_pages": 5,
+        "main_faults": 20,
+        "nx_faults": 22,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 1,
+        "rdtscp": 0,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 11,
+        "source_syscalls": 2,
+        "status": 0,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 2,
+        "tf_code": 282,
+        "tf_error": 0,
+        "tf_family": 1,
+        "tf_flow": 1,
+        "tf_length": 7,
+        "tf_phase": 5,
+        "tf_release_complete": 1
+      },
+      "exact_report_sha256": "31dd52d136429d1c3a82b7fd999bc0840b78595e0506f97e4629bc4a458b06c4",
+      "name": "rdtsc",
+      "namespace": {
+        "launch.json": {
+          "bytes": 795,
+          "sha256": "72e3c133d9ab212ba81f794702333884fb42f47bf02dad91b0b2aec5e09b174d"
+        },
+        "namespace.json": {
+          "bytes": 1716,
+          "sha256": "a98e92349f0fef3eebb1f05ea404da43798e499ca6bdc838caa7a6eafbc3e742"
+        }
+      },
+      "native_exit": 0,
+      "outcome": {
+        "after_tsc": 1887266587276965,
+        "aux": 3,
+        "before_tsc": 1887265840353712,
+        "gated_tsc": 1887266362615749,
+        "native_tsc": 1887266061740491
+      },
+      "outcome_class": "completed"
+    },
+    {
+      "accepted": true,
+      "builtin_outcome": {
+        "a": 3344281226,
+        "b": 0,
+        "c": 3,
+        "d": 439413,
+        "enable_result_abs": 0,
+        "enable_result_negative": 0,
+        "kind": 6,
+        "phase": 7,
+        "restore_result_abs": 0,
+        "restore_result_negative": 0
+      },
+      "counters": {
+        "admissions": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 2,
+        "generations": 7,
+        "generic_tf_attempts": 8,
+        "generic_tf_steps": 8,
+        "interpreter_faults": 2,
+        "live_pages": 5,
+        "main_faults": 20,
+        "nx_faults": 22,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 1,
+        "retired": 2,
+        "selected_selftests": 1,
+        "selected_steps": 11,
+        "source_syscalls": 2,
+        "status": 0,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 2,
+        "tf_code": 282,
+        "tf_error": 0,
+        "tf_family": 1,
+        "tf_flow": 1,
+        "tf_length": 7,
+        "tf_phase": 5,
+        "tf_release_complete": 1
+      },
+      "exact_report_sha256": "0dbfbb40dcf1bbe7972ced9abafdc5fac1e55047ad317bc61af293b0411369de",
+      "name": "rdtscp",
+      "namespace": {
+        "launch.json": {
+          "bytes": 797,
+          "sha256": "1f83ca50e5837b2f7a6c1753d1fe0e15576ac3cf03d9ea2ba3d9b4bcb419bd2f"
+        },
+        "namespace.json": {
+          "bytes": 1721,
+          "sha256": "86198370eb57262b0a5bc0e24b673a14fa006b3030cab0cd8a4c1c95a2e75f8c"
+        }
+      },
+      "native_exit": 0,
+      "outcome": {
+        "after_tsc": 1887268031876516,
+        "aux": 3,
+        "before_tsc": 1887267304936606,
+        "gated_tsc": 1887267808718474,
+        "native_tsc": 1887267529106550
+      },
+      "outcome_class": "completed"
+    }
+  ],
+  "cohort_command_count": 80,
+  "command_count": 97,
+  "command_recipe": {
+    "actual_commands": "Normalized argv above; private ordered rows retain exact argv, environment and captured bytes.",
+    "build": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ],
+    "gated": [
+      "python3",
+      "tools/page-entry/carrier.py",
+      "exec-loader",
+      "--library-root",
+      "<sealed source root>",
+      "--namespace",
+      "${RUN}/namespace-<case>",
+      "<carrier>",
+      "<original>",
+      "--",
+      "<original>"
+    ],
+    "images": [
+      "python3",
+      "evaluation/inprocess/page_selected_generic_images.py",
+      "${RUN}/images"
+    ],
+    "ls_native": [
+      "/bin/ls",
+      "-d",
+      "."
+    ],
+    "native": [
+      "${RUN}/images/<case>/original"
+    ],
+    "observer": [
+      "generic-observe",
+      "<empty|clock|decode PC HEX>"
+    ]
+  },
+  "command_rows_sha256": "b4be366bfcc5ec53e3c3b8166ab9bd81d1f0683bc0937b38dac7c79d7b3fb4b2",
+  "commands": [
+    {
+      "actual_argv_sha256": "18bdb9739219bdbdcd6983a323594acf4faf3a63bc673f817245ca2191db1bb7",
+      "argv": [
+        "${TOOL_GIT}",
+        "-C",
+        "${REPO_ROOT}",
+        "ls-files",
+        "-z",
+        "tools/page-entry",
+        "evaluation/inprocess"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 7403,
+          "sha256": "204142ad3a19707e7b02535c266ad39038b8d77f05b89787e4a502a308bbc3a2"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3754476,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "source-paths",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "7b627f6da895abffc7ba5514fbea05fa25d91f3f2bcf46688197eec434c1984d",
+      "argv": [
+        "${TOOL_RUSTUP}",
+        "which",
+        "cargo"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 74,
+          "sha256": "794362539ea27188bc2cddb8221271ae691aa74e934324d761c98e0f5ea1aa34"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 7233528,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-cargo",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "8845fddae76f9f542dd157baefad248f9823d14ae808ec486f8d2fd77b2541a4",
+      "argv": [
+        "${TOOL_RUSTUP}",
+        "which",
+        "rustc"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 74,
+          "sha256": "5e776b2193b77c28e08d0506ee7ba7aefe1fbe72a6cca79df4cdfa0bab8f3610"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 6966657,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-rustc",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "09a2ffbaacb516dd6e385a433dfdc5d0ce2230401bad1aeb4b23bcf57559d6cd",
+      "argv": [
+        "${TOOL_CC}",
+        "-print-prog-name=cc1"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 44,
+          "sha256": "59fa4bbf4edf0b03fa2943dc05d8062c3f7d2a749836dd8ef99c85c5bd3db4ed"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3347074,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-cc1",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "55dbca06e41ac95f26628cf580b1f97c184f91ac7a52ca0c2211f5ec44bc87cd",
+      "argv": [
+        "${TOOL_CC}",
+        "-print-prog-name=collect2"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 49,
+          "sha256": "61a1f98fe2340c0787d504b6f91ed72f29ba84d4f9065d368a5103dbd7c1e48c"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3480614,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-collect2",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "56bac916e4d342ec8b2df6b475c2128c3f1e8498f169cfc56d3f424a1c8fb6a2",
+      "argv": [
+        "${TOOL_CC}",
+        "-print-prog-name=as"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 3,
+          "sha256": "8b97bca79750847558d488e2ea4de79903c9c71c9af27ecf1b3dff5dba2abdd9"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3342076,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-as",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4adc3c26fbefba4a7a31c3f79109cf7e008d3321b06d61883af0c6effef0f6e2",
+      "argv": [
+        "${TOOL_CC}",
+        "-print-prog-name=ld"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 3,
+          "sha256": "3b6cb8ae51045d062a7c7de7cc488ad8785144cfbc0a7fc9546ed52429e0d97f"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3344720,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "resolve-ld",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "f7c68fa8c505befad352ef4434e259e1264c6c42be90cf00c71b8052aaa91cba",
+      "argv": [
+        "${TOOL_CC}",
+        "--version"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 248,
+          "sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3388566,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-cc",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "9077d801ee56eeef523e18299c7f06541f16daec02e61df6b4de43b06b136b3f",
+      "argv": [
+        "${TOOL_CARGO}",
+        "--version"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 36,
+          "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 6271624,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-cargo",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "f4985c635314f2e6a3dcf88ac21d83cb09391fb48db484da9304ef1757fecadb",
+      "argv": [
+        "${TOOL_RUSTC}",
+        "-vV"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 196,
+          "sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 10245418,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-rustc",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "fabbb0f2779d88ad5ef290139da1fc4d16711fee77cec2d85896575e84e41960",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "--version"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 20,
+          "sha256": "5eb6687f88cac9c862afa5695cc3b4a5d024ae22b0cbd39840169c06ca1aa5f6"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3658792,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "version-python",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "6ee62f129a19c2e74594aab66332c3ed952fc82a2f3927c23b46b08ba7d846c6",
+      "argv": [
+        "${TOOL_CARGO}",
+        "metadata",
+        "--manifest-path",
+        "${REPO_ROOT}/tools/page-entry/selected/decoder/Cargo.toml",
+        "--format-version",
+        "1",
+        "--locked",
+        "--offline"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 11183,
+          "sha256": "d7039f9983e2f34b8c0a7d2657cfe83ac49c9d48298ae811e79074bc88337876"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 16355750,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "cargo-metadata",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "3ebe3b0a8d9dd840ea03b488ee9c51c874e09f9094187ec4c3020a89c751e78f",
+      "argv": [
+        "${TOOL_SH}",
+        "${REPO_ROOT}/tools/page-entry/selected/build.sh"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 74,
+          "sha256": "8891688152b3682ac33cac049b7f47af9e151be35242f35d1894ba784331e3a7"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2090443744,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "selected-build",
+      "profile": "build",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "2dd36da13901d0867ab63a1e3c5423a86032eb8349e460dbf8933fd4d6496105",
+      "argv": [
+        "${TOOL_NM}",
+        "-g",
+        "--defined-only",
+        "${RUN}/artifacts/decoder.a"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 132975,
+          "sha256": "41f91abd60364da4d130ea23c21cdb17d2a57fe9df0e14d37798ffaae2891adb"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 55964452,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "archive-text-exports",
+      "profile": "inspect",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "1c73903b01b088d9494eeaca24f4a74c6b6226b0dc0afae1482651870849a612",
+      "argv": [
+        "${TOOL_NM}",
+        "-u",
+        "${RUN}/artifacts/bridge-selected.so"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 12698992,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "bridge-undefined",
+      "profile": "inspect",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "f70bf0f49f2f3b353ad1f6f91b35b77dba053d82e1b732716f7d27d717a85938",
+      "argv": [
+        "${TOOL_READELF}",
+        "-h",
+        "-l",
+        "-d",
+        "-r",
+        "-W",
+        "${RUN}/artifacts/bridge-selected.so"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 51648,
+          "sha256": "4a2c91791f596873006cf60aba74aadf0282c82a64c1f94e67c8ae2d3904aefc"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 7498605,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "bridge-elf",
+      "profile": "inspect",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "c21988d034336e4a0ef10d887c686eed41877059db748e9fa168499bd0b0307b",
+      "argv": [
+        "${TOOL_CC}",
+        "-std=gnu11",
+        "-O2",
+        "-g",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-I${REPO_ROOT}/tools/page-entry/selected",
+        "-Wl,--gc-sections,--exclude-libs,ALL,-z,noexecstack,--build-id=none",
+        "${REPO_ROOT}/tools/page-entry/selected/tests/generic/observe.c",
+        "${RUN}/artifacts/decoder.a",
+        "-o",
+        "${RUN}/generic-observe"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 85827006,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "generic-observer-link",
+      "profile": "metadata",
+      "reaped": true,
+      "stage": "build",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "18aa5b740b356c7469ef2975d430cd806d228cd2c9471cd94c51fc32d7edfa2f",
+      "argv": [
+        "${RUN}/artifacts/generic-observe"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 88,
+          "sha256": "67fd1fdd8c57996a746e76ed9723fde81d4903f275b80e5e9a93d2900d013470"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2983558,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "hardware",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "e0f5d9546dcc100e1a06c65e33afa0a19307f55ab1fbba37111fe5f8c46d2442",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/evaluation/inprocess/page_selected_generic_images.py",
+        "${RUN}/images"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 46329160,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "images",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "c11e279960d1404cad2bff0e9b1727d093af00b6116bdcb4d007869beac3dc95",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/rdrand16/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/rdrand16/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "c7de208ba8673c25c4a7fc33a7edac51c1ea235a50220b60c4ecdc34dad7e6b5"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 39964527,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-rdrand16",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "88639bed2eb919a4f94be784540f7cacd97ea80274bb053425b6485f30a43815",
+      "argv": [
+        "${RUN}/images/rdrand16/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2770619,
+      "error_type": null,
+      "exit": 186,
+      "expected_exit": null,
+      "name": "native-rdrand16",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4478ed23be87228cfcdeafd9446c65b00a960277dc3142c28954a33b58abde2a",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/rdrand16",
+        "--namespace",
+        "${RUN}/namespace-rdrand16",
+        "${RUN}/images/rdrand16/carrier",
+        "${RUN}/images/rdrand16/original",
+        "--",
+        "${RUN}/images/rdrand16/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2103,
+          "sha256": "2486d81752793f1daa742d97936cac905bc7aa3e2275f40d112214128cc3aa9f"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 40849495,
+      "error_type": null,
+      "exit": 106,
+      "expected_exit": null,
+      "name": "gated-rdrand16",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "3127241f109b254be1ecf5f2cff2ad3b22d932666ae9df00aed9a89ec688b53b",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/rdrand32/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/rdrand32/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "4a0cfa617c3d7f083d25a4d41139f89e77fdfa3b6a11c7f0870de17eb385109d"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 42043948,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-rdrand32",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "d94c5b779f4247787dc0c656742962d9e6133129e57cd62044fd62f2bdb68cbb",
+      "argv": [
+        "${RUN}/images/rdrand32/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3804049,
+      "error_type": null,
+      "exit": 107,
+      "expected_exit": null,
+      "name": "native-rdrand32",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "a9b53e19fb37e8794b7a60c4d69b28f0f787326e7884c8a4e35a190c6399584a",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/rdrand32",
+        "--namespace",
+        "${RUN}/namespace-rdrand32",
+        "${RUN}/images/rdrand32/carrier",
+        "${RUN}/images/rdrand32/original",
+        "--",
+        "${RUN}/images/rdrand32/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2115,
+          "sha256": "59d02fea38a68364ba26d4a2ab44379504d34a62d7a11a2fdde0f980fbec7eaa"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 41287743,
+      "error_type": null,
+      "exit": 45,
+      "expected_exit": null,
+      "name": "gated-rdrand32",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "27181d08f776826cacf4b7583bc007cc75cd46077102a11f70e2d5ab53890461",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/rdrand64/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/rdrand64/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "1fbfd6c6b9792df8771b7ac3d31ef39d6e055cd6d9aec54e35a479fddc3e32ce"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 40022264,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-rdrand64",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "a98e9e65016231e2a717aece7646587c7eb67d82d57e7bbe6944457dbcd30b7b",
+      "argv": [
+        "${RUN}/images/rdrand64/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 4763170,
+      "error_type": null,
+      "exit": 21,
+      "expected_exit": null,
+      "name": "native-rdrand64",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "a68ea9f49f1da40a25cb4f7386109aefff0226bec0c2094fececc4da6723e30d",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/rdrand64",
+        "--namespace",
+        "${RUN}/namespace-rdrand64",
+        "${RUN}/images/rdrand64/carrier",
+        "${RUN}/images/rdrand64/original",
+        "--",
+        "${RUN}/images/rdrand64/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2138,
+          "sha256": "c4d2602ca45db8ff152592f908396bc8de0b97e47714bdd5c9a7f36b7c0cc98c"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 41267092,
+      "error_type": null,
+      "exit": 48,
+      "expected_exit": null,
+      "name": "gated-rdrand64",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "bb2b2f688a36322b9dbbb4c42e6a4653115e771cb955a52fc80cce0d06477e18",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/rdseed16/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/rdseed16/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "17f11cbdbb653289998798dd401a4ff8759208d8f563e30b080d21c8fc9f94d6"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 39343495,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-rdseed16",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "e2edc4bdd2d87627875d1c6d7e961c36199344618f6e01d8a522e08260f35563",
+      "argv": [
+        "${RUN}/images/rdseed16/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2667864,
+      "error_type": null,
+      "exit": 252,
+      "expected_exit": null,
+      "name": "native-rdseed16",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4965701782aa7b913109f13a6fdd8a6e308eaf35cc4b51be8647e6833fc543e9",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/rdseed16",
+        "--namespace",
+        "${RUN}/namespace-rdseed16",
+        "${RUN}/images/rdseed16/carrier",
+        "${RUN}/images/rdseed16/original",
+        "--",
+        "${RUN}/images/rdseed16/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2100,
+          "sha256": "413a8c396b0f1335bdf536b544e6aa36abddbc6b90db88647cab66d8446ba72b"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 40300731,
+      "error_type": null,
+      "exit": 110,
+      "expected_exit": null,
+      "name": "gated-rdseed16",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "7dbbebdbbf842ac20c9c6a6f25540f60a217a73d7f6b4f552e36b1bedbc0ff63",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/rdseed32/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/rdseed32/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "1f3be26a1273a80a5e8d05275c96a0d3c791e684e24bec5cc9b5bac9765e0d80"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 39108502,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-rdseed32",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "65037a4328a1c071beb4e8234d580308a4a67e40af44bc1bc8a643872614b1ef",
+      "argv": [
+        "${RUN}/images/rdseed32/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2675326,
+      "error_type": null,
+      "exit": 234,
+      "expected_exit": null,
+      "name": "native-rdseed32",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "9e62bcf539ddab6b33875955c6bede489daaa534510d22045779eed22c3731c8",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/rdseed32",
+        "--namespace",
+        "${RUN}/namespace-rdseed32",
+        "${RUN}/images/rdseed32/carrier",
+        "${RUN}/images/rdseed32/original",
+        "--",
+        "${RUN}/images/rdseed32/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2115,
+          "sha256": "e50a7246b3351b38373ded56cbcb91a241338df292ec683b7d639322ce642a0c"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 40788924,
+      "error_type": null,
+      "exit": 174,
+      "expected_exit": null,
+      "name": "gated-rdseed32",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "96c897f72ba55ecc7ccb3535b88ccb55b8c737490952bc78989359b9560402c0",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/rdseed64/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/rdseed64/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "668daa14115e86306cd063c035c11eb208d6ce8fdd5fd38f69a677067ace09b6"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 39241171,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-rdseed64",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "9b49fc2474d11f480edfa7427796037d7dcedfdae56029af81b8f4d0113b42a0",
+      "argv": [
+        "${RUN}/images/rdseed64/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2787063,
+      "error_type": null,
+      "exit": 204,
+      "expected_exit": null,
+      "name": "native-rdseed64",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "abe6696b0644320b6156e9d92d9c2ea928b4b3d503b54758d0eee4e5437b9ff4",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/rdseed64",
+        "--namespace",
+        "${RUN}/namespace-rdseed64",
+        "${RUN}/images/rdseed64/carrier",
+        "${RUN}/images/rdseed64/original",
+        "--",
+        "${RUN}/images/rdseed64/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2138,
+          "sha256": "6de7ae6b0a53a89873459427cbb5a54636d26b36413d59371d7733698d919fce"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 41093702,
+      "error_type": null,
+      "exit": 24,
+      "expected_exit": null,
+      "name": "gated-rdseed64",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "aefb5c2e9d63493b64297deddf01e8451589e61b7019c7976cd6ffaaabbbb788",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/rdpid64/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/rdpid64/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "af3c787db13598b362260e008f034a96551bf17222663df6845e47ad0a0f7767"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 39045618,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-rdpid64",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "07c13ce0245391060e0f9a1a5cb6f9f4d1ef6bfc950ec688a24aba17f72d423a",
+      "argv": [
+        "${RUN}/images/rdpid64/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2747944,
+      "error_type": null,
+      "exit": 3,
+      "expected_exit": null,
+      "name": "native-rdpid64",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "d403dcd4f5487159df816364aad64439fecf0340a5828313cbf159c72ec25042",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/rdpid64",
+        "--namespace",
+        "${RUN}/namespace-rdpid64",
+        "${RUN}/images/rdpid64/carrier",
+        "${RUN}/images/rdpid64/original",
+        "--",
+        "${RUN}/images/rdpid64/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2091,
+          "sha256": "4642df47753ebea5162e5224d08e1311b561a838acdf22c353e865e70d0584a6"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 42056077,
+      "error_type": null,
+      "exit": 3,
+      "expected_exit": null,
+      "name": "gated-rdpid64",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "0b312d5c9e6949e1210e3e7f7f943afe021c7cf1d876ccad315c281da0623d17",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/mov_exit/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/mov_exit/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "3c9f216377ff341ebb576ecb21d49333c560ea486bb9f8771fa1e92877879ab9"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 40646541,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-mov_exit",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4ca298b6eec67564d02f9633c2e5c6558a2c68d860f6521c257e0b95e5130c64",
+      "argv": [
+        "${RUN}/images/mov_exit/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2771630,
+      "error_type": null,
+      "exit": 43,
+      "expected_exit": null,
+      "name": "native-mov_exit",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "97a8d8cb486ebdc8f098b8b6eebf7bbfd156bdeea4820ce1cb4e43dcd7a6d47e",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/mov_exit",
+        "--namespace",
+        "${RUN}/namespace-mov_exit",
+        "${RUN}/images/mov_exit/carrier",
+        "${RUN}/images/mov_exit/original",
+        "--",
+        "${RUN}/images/mov_exit/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2091,
+          "sha256": "e2ac87cb6b7408a54fc3c8640da3b594cba9f4394c95d51f22e11f6daa566aaf"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 41886852,
+      "error_type": null,
+      "exit": 43,
+      "expected_exit": null,
+      "name": "gated-mov_exit",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "ee7564bdcceaa4eae56946191fb08175d6c141f334c0f34b318ca096cff59a65",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/prefix_random/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/prefix_random/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "1bcefd20fd92d6c2e7dd025c5a91bd7c45af1d16b5d2b37f8a2b4bf470060588"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 42608956,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-prefix_random",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "c2ef90e7df6b4f804b7cd884408248a73a16ebfa3c3e375ebd0ec3fed20f51eb",
+      "argv": [
+        "${RUN}/images/prefix_random/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2794464,
+      "error_type": null,
+      "exit": 128,
+      "expected_exit": null,
+      "name": "native-prefix_random",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "d960e2e6448701ee94abfabe12428599a470257ddee1c94f5490d8e4e3d7edff",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/prefix_random",
+        "--namespace",
+        "${RUN}/namespace-prefix_random",
+        "${RUN}/images/prefix_random/carrier",
+        "${RUN}/images/prefix_random/original",
+        "--",
+        "${RUN}/images/prefix_random/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2136,
+          "sha256": "5768c135fb8b876ef34546c6b586a2b09534220bfef3459424c267f416afa1cf"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 42650939,
+      "error_type": null,
+      "exit": 152,
+      "expected_exit": null,
+      "name": "gated-prefix_random",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "1a2e336e43a1d6b9a2f183ceeea981f7e490b6f5dc0bfb1538bd8ad3fd8c2387",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/cross_mov/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/cross_mov/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "01a7befdd9a78ef68e235e64b49f5bc70a5ada09d27af5bb5134ae48afe9b070"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 40556385,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-cross_mov",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "fd9bb740f3a6d200c11e428b90b6f66230068b7eb891bd29d363a6856261d928",
+      "argv": [
+        "${RUN}/images/cross_mov/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3114354,
+      "error_type": null,
+      "exit": 14,
+      "expected_exit": null,
+      "name": "native-cross_mov",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "cdbaded68aea84bb0530fa3df8977ac6b8ecf627989921d0e81cb614c386b29a",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/cross_mov",
+        "--namespace",
+        "${RUN}/namespace-cross_mov",
+        "${RUN}/images/cross_mov/carrier",
+        "${RUN}/images/cross_mov/original",
+        "--",
+        "${RUN}/images/cross_mov/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2156,
+          "sha256": "575531a023202d51ff211c91c6d8e936b38b47953d04a9322c26db6911c80d3f"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 42180493,
+      "error_type": null,
+      "exit": 182,
+      "expected_exit": null,
+      "name": "gated-cross_mov",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "7bc4c5de245c541ad2311891386379c9f9ed8c9b9060bf53efb9f0fd94b3085f",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/cross_selected/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/cross_selected/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "f3a481ae7a257b683bd669705864b6a3de535cf523bcb686702a70c747303839"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 39856224,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-cross_selected",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "8a5890a1ead8120e88c9eebb8855126bf3dc4f435603e0bc66917bc4a5b027ba",
+      "argv": [
+        "${RUN}/images/cross_selected/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2660103,
+      "error_type": null,
+      "exit": 3,
+      "expected_exit": null,
+      "name": "native-cross_selected",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "bd52a75b6db5f75188fc92365a32f79aad3395119f903fab37b56e50eefed4e1",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/cross_selected",
+        "--namespace",
+        "${RUN}/namespace-cross_selected",
+        "${RUN}/images/cross_selected/carrier",
+        "${RUN}/images/cross_selected/original",
+        "--",
+        "${RUN}/images/cross_selected/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2091,
+          "sha256": "4642df47753ebea5162e5224d08e1311b561a838acdf22c353e865e70d0584a6"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 42047212,
+      "error_type": null,
+      "exit": 3,
+      "expected_exit": null,
+      "name": "gated-cross_selected",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "98a267a7f2ce30f319f26029b3ef264f154a156b887b1cba9165ae9d0506e7ad",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/rsp_refusal/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/rsp_refusal/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "6b7283bfda6fa19eae860085d242fdde5893cfe1bbbfb74b628fd40c2ab29cd2"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 41581664,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-rsp_refusal",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "ffe73d91c684df70300e37c4b2ba3cd998e130c8a36e570712ace502fccc1ed7",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/rsp_refusal",
+        "--namespace",
+        "${RUN}/namespace-rsp_refusal",
+        "${RUN}/images/rsp_refusal/carrier",
+        "${RUN}/images/rsp_refusal/original",
+        "--",
+        "${RUN}/images/rsp_refusal/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2094,
+          "sha256": "fd8d5029cdfc6de8db0527db52b4bc9839ad7f8fb33fff47cf4378693eaa6118"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 43658812,
+      "error_type": null,
+      "exit": 125,
+      "expected_exit": null,
+      "name": "gated-rsp_refusal",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "e01228ecaa6d783747a2f84b171f0380d57961997dcdcb4142cf94f06e719fe6",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/query_trap/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/query_trap/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "4812c8bbd80f3d11c5491ac5446fc828f61a7e39c1bdabdcffd30ba355e7e91b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 39894732,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-query_trap",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "6c10d8791b5dc47d55eb004bcb4ae3c66b4bf47c1cecc15ece5c45fbe100a475",
+      "argv": [
+        "${RUN}/images/query_trap/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2750478,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "native-query_trap",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "11e59a4934b7552bcc59dab67327cc765e52af7f0619a6c0574bdefc1cf2bec0",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/query_trap",
+        "--namespace",
+        "${RUN}/namespace-query_trap",
+        "${RUN}/images/query_trap/carrier",
+        "${RUN}/images/query_trap/original",
+        "--",
+        "${RUN}/images/query_trap/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2095,
+          "sha256": "3ecf0482de3e0b09decee74bec98980deeb12b53bf40dcb16229513241a631fe"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 40665159,
+      "error_type": null,
+      "exit": 125,
+      "expected_exit": null,
+      "name": "gated-query_trap",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "299b470edf4ff039f23058b3035bff0373814236a8b5acf6f6da5c9dec1fd50a",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/query_trap_highbits/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/query_trap_highbits/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "eeb8f5cc8c7ab3e3c891b102a0a1ac910e0c638fc6f1dd9ad53d4b1f34e230e5"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 40851558,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-query_trap_highbits",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "51692199cd3c3fe2b1ce36e17941c7f5554afd775da2d9b3f8dc3a8b90ca1a06",
+      "argv": [
+        "${RUN}/images/query_trap_highbits/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2680704,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "native-query_trap_highbits",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "9f050dbc3958e5f49ef757d006fd9eab8c5c011c7beaba708b09513278b161cf",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/query_trap_highbits",
+        "--namespace",
+        "${RUN}/namespace-query_trap_highbits",
+        "${RUN}/images/query_trap_highbits/carrier",
+        "${RUN}/images/query_trap_highbits/original",
+        "--",
+        "${RUN}/images/query_trap_highbits/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2095,
+          "sha256": "3ecf0482de3e0b09decee74bec98980deeb12b53bf40dcb16229513241a631fe"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 40608253,
+      "error_type": null,
+      "exit": 125,
+      "expected_exit": null,
+      "name": "gated-query_trap_highbits",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "6f001e867c59194e8e975039dde1101fc59d7b28b107acf561ea38f4138ee995",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/query_usr1/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/query_usr1/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "2f497160c654bf9f5ca12817e28259088e2573f7a26176fe916b253135d61bbe"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 39415673,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-query_usr1",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "6fc6337fcc4800203b16e5dc20e61af94effd1e06b898595e33693f7ab396ca3",
+      "argv": [
+        "${RUN}/images/query_usr1/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2670849,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "native-query_usr1",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "af9bf0513aadf340647794f2ab2fdeab4bc9094f9b0d7505f5dbd4078bbaa881",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/query_usr1",
+        "--namespace",
+        "${RUN}/namespace-query_usr1",
+        "${RUN}/images/query_usr1/carrier",
+        "${RUN}/images/query_usr1/original",
+        "--",
+        "${RUN}/images/query_usr1/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2093,
+          "sha256": "f466903b416a938f3851083618492786c63fe08048baae256a1f9bfb88930749"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 41685169,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "gated-query_usr1",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "ee11403f8d68908de67acda6bf85a766da5c416cd1e66371d554440a38883a01",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/branch_memory_stack/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/branch_memory_stack/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "3e1a9893d5feee715917ceb12b936d3cd4a9d1d659eaa84614d518cd9798dc32"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 40988043,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-branch_memory_stack",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4e0aafa5a37f2687445dc925d6021ea5f6d6b6f94b47fe5c7bced6799c0e195a",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "clock"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 88,
+          "sha256": "d11d1a2f5bbd2cbc8a6c2c5e8a9049a5a9ee7800d33fb1e97d6a599407a8a321"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3285331,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "before-branch_memory_stack",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "d199c7c5fe0da9dff3926b0e55f8a21819f2c9330a5ec378db3d4728d3c7edaf",
+      "argv": [
+        "${RUN}/images/branch_memory_stack/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 24,
+          "sha256": "4ca6f79db3e85ff2a2cfc220c889889ebe061624298fe0c1046f196270db45da"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2639312,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "native-branch_memory_stack",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "011b46fbd9d7a171f1751b1f17ae2b10ab7007ce101910720458cf448bd3a102",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/branch_memory_stack",
+        "--namespace",
+        "${RUN}/namespace-branch_memory_stack",
+        "${RUN}/images/branch_memory_stack/carrier",
+        "${RUN}/images/branch_memory_stack/original",
+        "--",
+        "${RUN}/images/branch_memory_stack/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2112,
+          "sha256": "1eb6ac0e17ac5a192075f42f3b50c41573566cf2b419f1c3d290e69bd1ed8e2c"
+        },
+        "stdout": {
+          "bytes": 24,
+          "sha256": "4ca6f79db3e85ff2a2cfc220c889889ebe061624298fe0c1046f196270db45da"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 58992617,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "gated-branch_memory_stack",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4e0aafa5a37f2687445dc925d6021ea5f6d6b6f94b47fe5c7bced6799c0e195a",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "clock"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 88,
+          "sha256": "4aea93c04a8c3907e2134e530f85306d395a9fe016ff92b1e87ce7a9331b1da6"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3263728,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "after-branch_memory_stack",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "394b4a3eb95dd9b8c0143b8c54a8b6cd18c341cc64ee6d439db9ffb55ada53a8",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "decode",
+        "4198475",
+        "48895610"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 138,
+          "sha256": "1ee485472e12f61454a625104a1d4fda34fbe4813f19379af0fea0cf4f919e61"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3473444,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "decode-last-branch_memory_stack",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "0e0720062da30e86a23b60c6ad7b512b92ca92e43bc151f3f9de3e9f038350be",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/boundary_call_ret/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/boundary_call_ret/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "3df7adc0ca1250d8652c3e1f2907612e9a730f68e0e3865435ddd01b7faddf02"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 41435915,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-boundary_call_ret",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4e0aafa5a37f2687445dc925d6021ea5f6d6b6f94b47fe5c7bced6799c0e195a",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "clock"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 88,
+          "sha256": "a29cac2d3b1da3a4e7480c588822ec5621d363380b6f9bab96658f6c3dcf3dc9"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3310619,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "before-boundary_call_ret",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "8ae34354eb20c87e159c79fd50f150bd48a6a5f6aa86c93d4e03fbbf09749446",
+      "argv": [
+        "${RUN}/images/boundary_call_ret/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 16,
+          "sha256": "4db46a0fea9c0de493fbb8fb15d9eaf17c704d0923a7f266f7531dc4b6da5122"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2789447,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "native-boundary_call_ret",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "8bf8034253a6cf65dc2dff3c846205af0b456c51cdd8f427eed6d10fc3486a85",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/boundary_call_ret",
+        "--namespace",
+        "${RUN}/namespace-boundary_call_ret",
+        "${RUN}/images/boundary_call_ret/carrier",
+        "${RUN}/images/boundary_call_ret/original",
+        "--",
+        "${RUN}/images/boundary_call_ret/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2115,
+          "sha256": "2b7a580b59ccf596cfd2c94c29867aa1272124bfc21a45afa7f8dd1fc7f4fcff"
+        },
+        "stdout": {
+          "bytes": 16,
+          "sha256": "4db46a0fea9c0de493fbb8fb15d9eaf17c704d0923a7f266f7531dc4b6da5122"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 46360257,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "gated-boundary_call_ret",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4e0aafa5a37f2687445dc925d6021ea5f6d6b6f94b47fe5c7bced6799c0e195a",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "clock"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 88,
+          "sha256": "dd855114317b1d507cc6d38f2ce44a0d013d66518eb3d32984ce05287aa3c5a1"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3086894,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "after-boundary_call_ret",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "811455da56cc6a610a1678bb016b79efe93b213ce95d2ac7e260a69548c8d17e",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "decode",
+        "4202511",
+        "48891df2df1f00"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 138,
+          "sha256": "1e606ee4ad167bfae595259b7f3faba739e27a6d0f1b69630c752e2cdf074806"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3718041,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "decode-last-boundary_call_ret",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "2c49d052d7c7c18abfcb5281438e80f541b30beb0331861c29a287f8ebc44757",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/cpuid0/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/cpuid0/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "2f99376f6363171e615a905c3a1f0d2b46255a09d7a41aecb540b91138c021b3"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 43758301,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-cpuid0",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4e0aafa5a37f2687445dc925d6021ea5f6d6b6f94b47fe5c7bced6799c0e195a",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "clock"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 88,
+          "sha256": "5fc49d52e4d6635ff6f02072d2b217181237b7f59fa8050d4119729bd5d05800"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3083819,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "before-cpuid0",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "21e9977c717dcae013afc412d9724f722c9aa02ac06792ad736aec6302e4b089",
+      "argv": [
+        "${RUN}/images/cpuid0/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "6d6a653094c062c089e814b9f7ce65602ff6fbaf97600fce3b25c48f5399c13b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2927414,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "native-cpuid0",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "2d7a7c8e5d3b0ec73e0abd31e3b1d6a253583aa966091bb214bf27f2ce341b83",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/cpuid0",
+        "--namespace",
+        "${RUN}/namespace-cpuid0",
+        "${RUN}/images/cpuid0/carrier",
+        "${RUN}/images/cpuid0/original",
+        "--",
+        "${RUN}/images/cpuid0/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2144,
+          "sha256": "c4a43d9484c6258abc7050c78c26b335983b0e67519154c53ac486c21d9a5aeb"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "6d6a653094c062c089e814b9f7ce65602ff6fbaf97600fce3b25c48f5399c13b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 43909959,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "gated-cpuid0",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4e0aafa5a37f2687445dc925d6021ea5f6d6b6f94b47fe5c7bced6799c0e195a",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "clock"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 88,
+          "sha256": "fe27ea62337a578c9f3c11137308bfdd075499383f849d7ef0c9fc2d17d36da7"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3170869,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "after-cpuid0",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "da5dd43fbda57ecd1ca42dd9030ea27af8ac3fad239b050fe55cf145fa168de3",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "decode",
+        "4198473",
+        "488915c8ef1f00"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 138,
+          "sha256": "dc1ca789a911263c8f263ce2ec37ca72a26b9cdc1404e219d3a045ee3911c18c"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3365823,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "decode-last-cpuid0",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "2af68505359feb08984c4fa307234e1510c68ca82838ce1a5bae7657c43659d8",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/rdtsc/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/rdtsc/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "50cc20863c123c3b2021f98602836f38a7e9bbae21fd353a6d48c6fd15655243"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 42340102,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-rdtsc",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4e0aafa5a37f2687445dc925d6021ea5f6d6b6f94b47fe5c7bced6799c0e195a",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "clock"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 88,
+          "sha256": "c753e43f1f25e7560118c274e058daf2dfb5306f09dba13456cf84d50f693c40"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3289948,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "before-rdtsc",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "46988d434177d90fa6f372c46c21634dd7b3ff9911a71eda176206348f7da344",
+      "argv": [
+        "${RUN}/images/rdtsc/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "7f3d277d65407d3047198f0d501066ecbe302d5bf9be5fd5b710deaaf480092f"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 2662526,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "native-rdtsc",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "9818028a0c3019a026628679331271c7d5e2eef5c235367b17fe485b5e2d59b8",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/rdtsc",
+        "--namespace",
+        "${RUN}/namespace-rdtsc",
+        "${RUN}/images/rdtsc/carrier",
+        "${RUN}/images/rdtsc/original",
+        "--",
+        "${RUN}/images/rdtsc/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2130,
+          "sha256": "f02d408eec4871ffdd06b7042443629ead0649548de9dcd08eb0b5b964cb75c0"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "6700ea33a7f97a6943db2fbf1e975e2a12f05e52de76b15b2d3f3980c11df732"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 58303554,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "gated-rdtsc",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4e0aafa5a37f2687445dc925d6021ea5f6d6b6f94b47fe5c7bced6799c0e195a",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "clock"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 88,
+          "sha256": "c65cde0e855d58fa5cb0f11050821eac9305595e6e82445aa4da3b283075a539"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3395277,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "after-rdtsc",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "da5dd43fbda57ecd1ca42dd9030ea27af8ac3fad239b050fe55cf145fa168de3",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "decode",
+        "4198473",
+        "488915c8ef1f00"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 138,
+          "sha256": "dc1ca789a911263c8f263ce2ec37ca72a26b9cdc1404e219d3a045ee3911c18c"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3557020,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "decode-last-rdtsc",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "df7e326f25752783d2c8b05cae5aa4c8ee0cde5a4db38da0ecefb7b8e3a97bcd",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${RUN}/images/rdtscp/original",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/images/rdtscp/carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "2679d05d99b983811435b1249ba367d61066da5af21d46caf38cfada39194939"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 40288553,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-rdtscp",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4e0aafa5a37f2687445dc925d6021ea5f6d6b6f94b47fe5c7bced6799c0e195a",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "clock"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 88,
+          "sha256": "54a43ab9442ab29d8aa727c72e1fb1d3c07d7264576529375070dcf6b6f6b1be"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3164810,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "before-rdtscp",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "756d05962628ec012fc6fed463a904d45634aabfa5cf894e3552dbdb1a8520b5",
+      "argv": [
+        "${RUN}/images/rdtscp/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "0b271a7ec2659d22f9220253ffb60b24386030455f9c9e54b43bebfcd548ac7e"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3008155,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "native-rdtscp",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "6e4913f0d2e6f83ac9864388095086752ef770150ff5d8bb9925b7425a131d95",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${RUN}/images/rdtscp",
+        "--namespace",
+        "${RUN}/namespace-rdtscp",
+        "${RUN}/images/rdtscp/carrier",
+        "${RUN}/images/rdtscp/original",
+        "--",
+        "${RUN}/images/rdtscp/original"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2130,
+          "sha256": "957ea91dfede66b415aef62d8a02a6bc47888712fe9156071413d551803e1d76"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "979da2ae4fb1060972c6aa04256bbb09a0fe3bcf8dd3e4eb40a65ba1ca5c1eb1"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 44547316,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": null,
+      "name": "gated-rdtscp",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "4e0aafa5a37f2687445dc925d6021ea5f6d6b6f94b47fe5c7bced6799c0e195a",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "clock"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 88,
+          "sha256": "c8eef008e76b2135d9029d2aa6523ceef110baaa7cf6ed6d82e9a8c11e717339"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3058751,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "after-rdtscp",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "33df4194ace754572f3fb5bd7b6b0f9183b96cf26561bc00caf02e3734ddc4d1",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "decode",
+        "4198474",
+        "488915c7ef1f00"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 138,
+          "sha256": "18a16f372b1f3cbf85f19c83e32c3b2b37b07d42b2d750e2b1c20a7a11ae983d"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3623428,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "decode-last-rdtscp",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "8fbb8b64c3b032b9ea3fa7c48cf5879a48e199e7053fc843b3437e6ced479a88",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "make",
+        "${SYSTEM_LS}",
+        "${RUN}/artifacts/bridge-selected.so",
+        "${RUN}/ls-carrier"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 509,
+          "sha256": "b966353b5e2cee97fda9a3591188b441e1856c6f00722cafb919f8274ce9d7c8"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 44768688,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "make-ls",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "59b3afb9b05ca462bd0d8ea2cc2df7107f1362f8c1c77349bc59752fe886f521",
+      "argv": [
+        "${SYSTEM_LS}",
+        "-d",
+        "."
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 2,
+          "sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 3378822,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "native-ls",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "131300eabb90b0e148617c8d8882204046ec270cdc6b0313218904d68002b90a",
+      "argv": [
+        "${TOOL_PYTHON}",
+        "${REPO_ROOT}/tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "${LIBRARY_ROOT_0}",
+        "--namespace",
+        "${RUN}/namespace-ls",
+        "${RUN}/ls-carrier",
+        "${SYSTEM_LS}",
+        "--",
+        "${SYSTEM_LS}",
+        "-d",
+        "."
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 2138,
+          "sha256": "dbfe77a90189b5a8114f130c6fe11e3d40ab0b80f1e6d53ca8eb14e4d82672ea"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 64397050,
+      "error_type": null,
+      "exit": 125,
+      "expected_exit": null,
+      "name": "gated-ls-diagnostic",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    },
+    {
+      "actual_argv_sha256": "61bc0e0082819574af6302623c1cba82080811de1c5b9edc1a1aa2b86079ea8e",
+      "argv": [
+        "${RUN}/artifacts/generic-observe",
+        "decode",
+        "139864156794273",
+        "48c1e220"
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 154,
+          "sha256": "7856cf83fd1e53c041c2530e7b46a582e3b2920c68b37c5cf1ed4aa45c0c4c2b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 5821198,
+      "error_type": null,
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "decode-ls-refusal",
+      "profile": "native",
+      "reaped": true,
+      "stage": "cohort",
+      "timed_out": false
+    }
+  ],
+  "configuration_unchanged": true,
+  "cpu": 3,
+  "dep_info": {
+    "tools/page-entry/selected/decoder/src/abi.rs": {
+      "bytes": 2353,
+      "sha256": "7d29aecce77ce21dc34bbaddfe10af32b6994b052a25cd07c92120edb9db5b2c"
+    },
+    "tools/page-entry/selected/decoder/src/arena.rs": {
+      "bytes": 5490,
+      "sha256": "7306a0e12a5cb26fb7a19ea271f828bc2561ab4d03e5bcc9e0273a61eb22bd6b"
+    },
+    "tools/page-entry/selected/decoder/src/decode.rs": {
+      "bytes": 8805,
+      "sha256": "b7948615ebfb766620e9b082e3cda8b8a480326427d9742c23f4076f7f493160"
+    },
+    "tools/page-entry/selected/decoder/src/lib.rs": {
+      "bytes": 6696,
+      "sha256": "c98f3ada4c6a4f5e23e7d4000cca265b613c036517c3919cafd62ad6ff33cb2f"
+    },
+    "tools/page-entry/selected/decoder/src/scan.rs": {
+      "bytes": 2626,
+      "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
+    },
+    "tools/page-entry/selected/decoder/src/tf.rs": {
+      "bytes": 10633,
+      "sha256": "2e01f0eb8721d815eb030012213949b72323cf390d3fcfc248fd1fadd5c3f48c"
+    }
+  },
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "3dfbb60649b264b833cc501195f4a3f8f6353be1",
+  "failure_type": null,
+  "final_error_count": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 3,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "hardware_observer": {
+    "cpu": 3,
+    "leaf1_ecx": 2130326027,
+    "leaf7_ebx": 4055865259,
+    "leaf7_ecx": 423714782,
+    "rdpid": 3
+  },
+  "input_manifest_sha256": "65cbf03dba67d1df1ad199d0ff92c9af34499e248801e1c510a87cd5307144c9",
+  "ls_diagnostic": {
+    "bytes": "48c1e220",
+    "counters": {
+      "admissions": 0,
+      "cpuid": 0,
+      "dependency_faults": 0,
+      "dependency_objects": 5,
+      "detail_abs": 0,
+      "detail_negative": 0,
+      "failure_code": 100,
+      "first_target_is_interpreter_entry": 1,
+      "forwarded": 0,
+      "generations": 63,
+      "generic_tf_attempts": 11,
+      "generic_tf_steps": 10,
+      "interpreter_faults": 15,
+      "live_pages": 61,
+      "main_faults": 0,
+      "nx_faults": 15,
+      "rdpid": 0,
+      "rdrand": 0,
+      "rdseed": 0,
+      "rdtsc": 1,
+      "rdtscp": 0,
+      "retired": 2,
+      "selected_selftests": 1,
+      "selected_steps": 3,
+      "source_syscalls": 0,
+      "status": 125,
+      "step_route": 2,
+      "sync_core": 0,
+      "syscalls": 0,
+      "tf_code": 381,
+      "tf_error": 100,
+      "tf_family": 0,
+      "tf_flow": 0,
+      "tf_length": 4,
+      "tf_phase": 6,
+      "tf_release_complete": 0
+    },
+    "exact_report_sha256": "826890848b8f378a8c05728ae8030f86d26437e26a43aa83209987dde21a8b54",
+    "interpreter": {
+      "bytes": 939216,
+      "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+    },
+    "namespace": {
+      "launch.json": {
+        "bytes": 690,
+        "sha256": "133429d77b728b5fd14513c7560444a37b8d01f2336249ca231c620cefadd05b"
+      },
+      "namespace.json": {
+        "bytes": 2721,
+        "sha256": "2efbf950d723feaaf8bbe78d3b07f672e1a51eb4f9159b7cbb3dc5bbc593b23e"
+      }
+    },
+    "original": {
+      "bytes": 140752,
+      "sha256": "eec29318f59647c9a13b619e2738575164e3c43c7a1ee2b8509f36cb09019315"
+    },
+    "status": "unsupported_actual_opcode"
+  },
+  "private_receipt": {
+    "bytes": 399729,
+    "sha256": "2ca68a914f787aedf85e72624566c69629fd1c2dc4df82c85e44b9589bf67ae1"
+  },
+  "profile": "page-selected-generic-v1",
+  "registry_sources": [
+    {
+      "archive": {
+        "bytes": 1240616,
+        "sha256": "7c447cff8c7f384a7d4f741cfcff32f75f3ad02b406432e8d6c878d56b1edf6b"
+      },
+      "checksum": "7c447cff8c7f384a7d4f741cfcff32f75f3ad02b406432e8d6c878d56b1edf6b",
+      "files_checked": 142,
+      "marker": {
+        "bytes": 7,
+        "sha256": "afbf9d0f3560b0fd7795e81c42a0a79ee6b6fc67e064f77826aee642cad28d91"
+      },
+      "member_manifest_sha256": "751c82f251acd4c0d449899eb5eb0be588fd7d9c4984cdcc04c2f2a4670c5ffc",
+      "name": "iced-x86",
+      "version": "1.21.0"
+    },
+    {
+      "archive": {
+        "bytes": 14025,
+        "sha256": "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe"
+      },
+      "checksum": "bbd2bcb4c963f2ddae06a2efc7e9f3591312473c50c6685e1f298068316e66fe",
+      "files_checked": 21,
+      "marker": {
+        "bytes": 7,
+        "sha256": "afbf9d0f3560b0fd7795e81c42a0a79ee6b6fc67e064f77826aee642cad28d91"
+      },
+      "member_manifest_sha256": "dc18ef2cf1041d52937348d613d069c5d639ba9b884d375a1c5718ae2874c527",
+      "name": "lazy_static",
+      "version": "1.5.0"
+    },
+    {
+      "archive": {
+        "bytes": 38958,
+        "sha256": "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67"
+      },
+      "checksum": "6980e8d7511241f8acf4aebddbb1ff938df5eebe98691418c4468d0b72a96a67",
+      "files_checked": 23,
+      "marker": {
+        "bytes": 7,
+        "sha256": "afbf9d0f3560b0fd7795e81c42a0a79ee6b6fc67e064f77826aee642cad28d91"
+      },
+      "member_manifest_sha256": "08acc95365f0071c296f80bf613f4ea0728a835803650b8015b7bd191b92d9e9",
+      "name": "spin",
+      "version": "0.9.8"
+    }
+  ],
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_generic.py",
+    "--expect-revision",
+    "3dfbb60649b264b833cc501195f4a3f8f6353be1"
+  ],
+  "schema": 1,
+  "scope": "20 finite streams; separate real-ls diagnostic; no full ABI/B2/B3/performance claim",
+  "source": {
+    "head_sources_match": true,
+    "revision": "3dfbb60649b264b833cc501195f4a3f8f6353be1",
+    "source_manifest_sha256": "e195ff94caf770c87d3abfb8dbfe625bfc62a79e6a687cbb07c38c03ba900f17",
+    "tracked_clean": true,
+    "tree": "f0f74f163be591a120bee94dffef594de3f68e7b"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261027T174706.557485Z",
+  "status": "passed_finite_cohort",
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "cp": {
+      "bytes": 144400,
+      "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustup": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  }
+}

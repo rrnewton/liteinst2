@@ -1,0 +1,548 @@
+{
+  "accepted_cases": 3,
+  "artifact_manifest_sha256": "ba2a1963811fa6224b345e1234be542734a8b55ff640d7f82be7c2b95a893e77",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      3,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_evidence_sha256": "aa3689d92fbb7a8b62c7f072425b05160f69ec291277931a91364a9c52084502",
+  "build_status": "passed",
+  "case_rows_sha256": "a60f6fdff9aaf3d604264d9da485af5f692145998f756b0ad6f7574bd2d4ee65",
+  "cases": [
+    {
+      "accepted": true,
+      "classification": "completed",
+      "counters": {
+        "admissions": 0,
+        "cpuid": 3,
+        "failure_code": 0,
+        "forwarded": 2,
+        "generic_tf_attempts": 16,
+        "generic_tf_steps": 16,
+        "interpreter_faults": 2,
+        "main_faults": 28,
+        "nx_faults": 30,
+        "selected_steps": 3,
+        "source_syscalls": 2,
+        "status": 0,
+        "sync_core": 0,
+        "syscalls": 2
+      },
+      "gated_exit": 0,
+      "loader_sha256": "bee8ab387491834cabf23b66c53cd31b44ce451b8c2ef59637565129b81c4ecb",
+      "name": "register_guard_direct",
+      "namespace": {
+        "launch.json": {
+          "bytes": 849,
+          "sha256": "1f3cb46f2209426c2d3e15a9b563f8f983c7e2dade9114ebe8f4fecd06ecf0ff"
+        },
+        "namespace.json": {
+          "bytes": 1851,
+          "sha256": "130e2c53977489d4c01c60182dc9dfb7897064e389e3f314c54fe4cbea51b9fd"
+        }
+      },
+      "native_exit": 0,
+      "outcome": {
+        "copied_instructions": 12,
+        "cpuid0": [
+          16,
+          1752462657,
+          1145913699,
+          1769238117
+        ],
+        "generated_runs": 6,
+        "guard_completions": 3,
+        "hits": 2,
+        "loop_fallback": false,
+        "publications": 4,
+        "r11": 1393753992385309920,
+        "r12": 1393753992385309920
+      },
+      "register_report_sha256": "e7d77826692fbf80b4241ce62d1cf83450e522b70d96072517cd69ebd096c2d7"
+    },
+    {
+      "accepted": true,
+      "classification": "completed",
+      "counters": {
+        "admissions": 0,
+        "cpuid": 3,
+        "failure_code": 0,
+        "forwarded": 2,
+        "generic_tf_attempts": 17,
+        "generic_tf_steps": 17,
+        "interpreter_faults": 2,
+        "main_faults": 29,
+        "nx_faults": 31,
+        "selected_steps": 3,
+        "source_syscalls": 2,
+        "status": 0,
+        "sync_core": 0,
+        "syscalls": 2
+      },
+      "gated_exit": 0,
+      "loader_sha256": "92cfffc3a7ec1bc5f51af4487f037a5f02bf4ebb60b7f58bd6b4fca35fe78ac0",
+      "name": "register_first_cross",
+      "namespace": {
+        "launch.json": {
+          "bytes": 847,
+          "sha256": "5af8eca554a2d870eaf46bcbcd97abebcad1b0b39b97b8967b697775d4a52fba"
+        },
+        "namespace.json": {
+          "bytes": 1846,
+          "sha256": "9e584e0ab707805afe9d8fdbc2ace9540ab94a670cb0a132c3c0b7aacb78ed0f"
+        }
+      },
+      "native_exit": 0,
+      "outcome": {
+        "copied_instructions": 12,
+        "cpuid0": [
+          16,
+          1752462657,
+          1145913699,
+          1769238117
+        ],
+        "generated_runs": 6,
+        "guard_completions": 3,
+        "hits": 2,
+        "loop_fallback": false,
+        "publications": 4,
+        "r11": 1393753992385309920,
+        "r12": 1393753992385309920
+      },
+      "register_report_sha256": "ada5063e750205c1a58cd9cfb36cfffef273a1817eb43dbe71178058f76e4b13"
+    },
+    {
+      "accepted": true,
+      "classification": "completed",
+      "counters": {
+        "admissions": 0,
+        "cpuid": 3,
+        "failure_code": 0,
+        "forwarded": 2,
+        "generic_tf_attempts": 17,
+        "generic_tf_steps": 17,
+        "interpreter_faults": 2,
+        "main_faults": 32,
+        "nx_faults": 34,
+        "selected_steps": 9,
+        "source_syscalls": 2,
+        "status": 0,
+        "sync_core": 0,
+        "syscalls": 2
+      },
+      "gated_exit": 0,
+      "loader_sha256": "d2cae7e0867ea8b28cd610593443115a3a020a56b6d317efe10448f2f4b22908",
+      "name": "register_guard_cross",
+      "namespace": {
+        "launch.json": {
+          "bytes": 847,
+          "sha256": "6a924aa63f41999afedc35a3184bda468d63ab2b1dd7a6be0f467f02d3b19fde"
+        },
+        "namespace.json": {
+          "bytes": 1846,
+          "sha256": "a6b264d6967b5709e5ab1f96253afa6aafb780cf0e2016fd79a3160d5d3b49ef"
+        }
+      },
+      "native_exit": 0,
+      "outcome": {
+        "copied_instructions": 6,
+        "cpuid0": [
+          16,
+          1752462657,
+          1145913699,
+          1769238117
+        ],
+        "generated_runs": 3,
+        "guard_completions": 3,
+        "hits": 0,
+        "loop_fallback": true,
+        "publications": 3,
+        "r11": 1393753992385309920,
+        "r12": 1393753992385309920
+      },
+      "register_report_sha256": "ea488e51e65ae543ee23ce8b8769dfc3803f34a340a7411f6ea4d66b02bfafc6"
+    }
+  ],
+  "cohort_command_count": 20,
+  "command_recipe": {
+    "each_case": [
+      "make-carrier",
+      "before-clock",
+      "native-original",
+      "gated-carrier",
+      "after-clock",
+      "decode-last-generic"
+    ],
+    "evidence": "Private ordered rows retain exact argv, environments, bounds, cleanup, captures, namespace and owner reports.",
+    "gated": [
+      "python3",
+      "tools/page-entry/carrier.py",
+      "exec-loader",
+      "--library-root",
+      "${CASE}",
+      "--namespace",
+      "${RUN}/namespace-${CASE_NAME}",
+      "${CASE}/carrier",
+      "${CASE}/original",
+      "--",
+      "${CASE}/original"
+    ],
+    "images": [
+      "python3",
+      "evaluation/inprocess/page_selected_register_connected_images.py",
+      "${RUN}/images"
+    ],
+    "observer": [
+      "generic-observe"
+    ],
+    "opt_in_link": "Exact C link command from tools/page-entry/selected/build-register-run.sh, using the freshly retained archive; no second Cargo build.",
+    "reference_build": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ]
+  },
+  "command_rows_sha256": "f1ba6debbbbb42401191f50bacac773b34563a0de4a482f5164dce927c300d2a",
+  "commands": {
+    "attempted": 41,
+    "cleanup_errors": 0,
+    "errors": 0,
+    "nonzero_exits": 0,
+    "observed_duration_ns": 5948279672,
+    "reaped": 41,
+    "timeouts": 0
+  },
+  "configuration_unchanged": true,
+  "cpu": 17,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "61c451939393fec892f042f265e9bea0e1720883",
+  "failure_type": null,
+  "final_error_count": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 17,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "hardware_observer": {
+    "cpu": 17,
+    "leaf1_ecx": 2130326027,
+    "leaf7_ebx": 4055865259,
+    "leaf7_ecx": 423714782,
+    "rdpid": 17
+  },
+  "input_manifest_sha256": "a9c68b5459e470d7cf00fb2063668357e91bdbfde300211912061627b31fa8a3",
+  "opt_in_bridge": {
+    "bytes": 2143688,
+    "mode": 493,
+    "sha256": "a4d010857f5d9bd53454b9a3503e3086f5856f87270c90a3df775250771bac39"
+  },
+  "opt_in_bridge_elf": {
+    "imports": 0,
+    "interpreter": false,
+    "relative_relocations": 590,
+    "tls": false
+  },
+  "private_receipt": {
+    "bytes": 319623,
+    "sha256": "bfd10d1d4f6ac2188cfb532750c720ecb2e865c49f94ff925ecdd73f87c4bd85"
+  },
+  "profile": "page-selected-register-connected-v1",
+  "reference_artifacts": {
+    "bridge-selected.so": {
+      "bytes": 1988448,
+      "mode": 493,
+      "sha256": "2afabdb12e6945788d444342435f966edc64a7334dd432553aec94a52824c8e2"
+    },
+    "cc-version.txt": {
+      "bytes": 248,
+      "mode": 420,
+      "sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+    },
+    "decoder-cargo.txt": {
+      "bytes": 36,
+      "mode": 420,
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+    },
+    "decoder-rustc.txt": {
+      "bytes": 196,
+      "mode": 420,
+      "sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4"
+    },
+    "decoder.a": {
+      "bytes": 11031124,
+      "mode": 420,
+      "sha256": "24e45e7c86478cb958133d7f44dbe0cc15002dad9ad6a8dd1476b81dcd127348"
+    },
+    "decoder.d": {
+      "bytes": 749,
+      "mode": 420,
+      "sha256": "32520e5993e515d1eee6aaf3e95a25d6df540b0d2b83a53ff570d777e3884e45"
+    },
+    "generic-observe": {
+      "bytes": 1503392,
+      "mode": 493,
+      "sha256": "2f21a82ee0b68c82d176b6bd305561517c8cfe3812b9621e6b4aca8ea55a7c8a"
+    },
+    "observe": {
+      "bytes": 1502416,
+      "mode": 493,
+      "sha256": "d37f73f68495d330d4edb0752347902623c50eb274929c4b4e5a093e8549a4d8"
+    }
+  },
+  "register_build_sha256": "d20225c1224b145f60ae984bfdd4bc2c8619d68afbad0cd27a3ff1224450369b",
+  "register_build_status": "passed",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_register_connected.py",
+    "--expect-revision",
+    "61c451939393fec892f042f265e9bea0e1720883"
+  ],
+  "required_cases": 3,
+  "required_cohort_commands": 20,
+  "schema": 1,
+  "scope": "Three finite opt-in register-run streams with actual original CPUID guards; reference full-state/negative suites remain separate requirements. No general application, full B2/B3 or performance claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "61c451939393fec892f042f265e9bea0e1720883",
+    "source_manifest_sha256": "27689ce6253c2d7a38819a394d2236ba7da214fd813cc3997918cafbc3aa053c",
+    "tracked_clean": true,
+    "tree": "f1fe72fff288838f9d803a802818d504df975487"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261027T223449.604696Z",
+  "status": "passed_finite_cohort",
+  "tool_bindings_sha256": "8f455ac1bac68af69cd5eca2a538f17764ca3397fd32c57da82b178d5386640d",
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  }
+}

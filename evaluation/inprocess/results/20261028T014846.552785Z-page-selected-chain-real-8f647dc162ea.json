@@ -1,0 +1,657 @@
+{
+  "artifact_manifest_sha256": "68d9cd4534ad6220ef030cb565f8c21bfb3e8186f31b6daa8d286e5347538520",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      3,
+      536870912,
+      16777216,
+      15
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ]
+  },
+  "build_evidence_sha256": "dc95e68279c4c4bc3ee16cb129bf35acc0318dd0612e06d3a1f6dd4f1674ddd2",
+  "build_status": "passed",
+  "case_rows_sha256": "14aa7778637b7c863632660b09a104803e3eca4e44b6ccc588f1d41a8c54f810",
+  "cases": [
+    {
+      "actual_launch_environment_sha256": "cc7ec5e6597e7fc4629f3a7a3b8113fa3b257ce2201829ee2492ef650e71b1ec",
+      "cache_counts": [
+        64,
+        64,
+        667,
+        201,
+        402
+      ],
+      "chain": {
+        "attempts": 30612,
+        "error": 0,
+        "fallbacks": 2259,
+        "nx_entries": 2259,
+        "preparations": 30619,
+        "releases": 32878,
+        "steps": 30612,
+        "trace_entries": 28353,
+        "unexpected": 0
+      },
+      "counters": {
+        "admissions": 0,
+        "cpuid": 38,
+        "dependency_faults": 0,
+        "detail_abs": 334,
+        "detail_negative": 0,
+        "failure_code": 601,
+        "forwarded": 41,
+        "generic_tf_attempts": 30612,
+        "generic_tf_steps": 30612,
+        "interpreter_faults": 5057,
+        "main_faults": 0,
+        "nx_faults": 5057,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 4,
+        "rdtscp": 0,
+        "selected_steps": 2447,
+        "source_syscalls": 42,
+        "status": 125,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 41,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_length": 0,
+        "tf_phase": 0
+      },
+      "environment": {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "LD_BIND_NOW": "1",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TZ": "UTC"
+      },
+      "first_touch_ns": null,
+      "gated_exit": 125,
+      "last_opcode": null,
+      "name": "true-default",
+      "namespace": {
+        "launch.json": {
+          "bytes": 658,
+          "sha256": "64488495c459fb5d3b2b54ee0bee260762cf736a2f94b35b6b169b9577c94cd2"
+        },
+        "namespace.json": {
+          "bytes": 1544,
+          "sha256": "1341548a531bdb1db8ccc771396812ef04f67603f558df88b588b9f3f3b6d8de"
+        }
+      },
+      "native_exit": 0,
+      "register": {
+        "completed_runs": 265,
+        "copied_instructions": 683,
+        "plan_misses": 4304
+      },
+      "repeat": {
+        "attempts": 2,
+        "completed": 2,
+        "queries": 311,
+        "traces": 363
+      },
+      "status": "failed",
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "steady_state_ns": null,
+      "whole_process_ns": null
+    },
+    {
+      "actual_launch_environment_sha256": "4406e3b54f4c3548d69d9ddf6331b714cc8a6f19fd67609230e564244d940941",
+      "cache_counts": [
+        64,
+        64,
+        1212,
+        429,
+        719
+      ],
+      "chain": {
+        "attempts": 55983,
+        "error": 0,
+        "fallbacks": 3984,
+        "nx_entries": 3984,
+        "preparations": 55994,
+        "releases": 59978,
+        "steps": 55983,
+        "trace_entries": 51999,
+        "unexpected": 0
+      },
+      "counters": {
+        "admissions": 0,
+        "cpuid": 38,
+        "dependency_faults": 0,
+        "detail_abs": 334,
+        "detail_negative": 0,
+        "failure_code": 601,
+        "forwarded": 67,
+        "generic_tf_attempts": 55983,
+        "generic_tf_steps": 55983,
+        "interpreter_faults": 8856,
+        "main_faults": 0,
+        "nx_faults": 8856,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 4,
+        "rdtscp": 0,
+        "selected_steps": 4267,
+        "source_syscalls": 68,
+        "status": 125,
+        "step_route": 0,
+        "sync_core": 0,
+        "syscalls": 67,
+        "tf_code": 0,
+        "tf_error": 0,
+        "tf_length": 0,
+        "tf_phase": 0
+      },
+      "environment": {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "LD_BIND_NOW": "1",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TZ": "UTC"
+      },
+      "first_touch_ns": null,
+      "gated_exit": 125,
+      "last_opcode": null,
+      "name": "ls-default",
+      "namespace": {
+        "launch.json": {
+          "bytes": 701,
+          "sha256": "62039df6f42bea8ba60a873b9d5a9e845c552cb1c0039850c46ba07bd8469865"
+        },
+        "namespace.json": {
+          "bytes": 2732,
+          "sha256": "e94efbc5dcaf70dc558f96dc2f8b6f28315cffd716e57afd5bb95c6aa6e3a6fb"
+        }
+      },
+      "native_exit": 0,
+      "register": {
+        "completed_runs": 493,
+        "copied_instructions": 1153,
+        "plan_misses": 7532
+      },
+      "repeat": {
+        "attempts": 2,
+        "completed": 2,
+        "queries": 311,
+        "traces": 363
+      },
+      "status": "failed",
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "steady_state_ns": null,
+      "whole_process_ns": null
+    },
+    {
+      "actual_launch_environment_sha256": "cd6989316d61e817481d7ab9ca05a47a329056290a2280053c848dc18cb9d6ac",
+      "cache_counts": [
+        64,
+        64,
+        1818,
+        1227,
+        527
+      ],
+      "chain": {
+        "attempts": 129071,
+        "error": 100,
+        "fallbacks": 11145,
+        "nx_entries": 11146,
+        "preparations": 129102,
+        "releases": 140247,
+        "steps": 129070,
+        "trace_entries": 117925,
+        "unexpected": 0
+      },
+      "counters": {
+        "admissions": 0,
+        "cpuid": 38,
+        "dependency_faults": 150,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 100,
+        "forwarded": 47,
+        "generic_tf_attempts": 129071,
+        "generic_tf_steps": 129070,
+        "interpreter_faults": 22802,
+        "main_faults": 0,
+        "nx_faults": 22952,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 10,
+        "rdtscp": 0,
+        "selected_steps": 10418,
+        "source_syscalls": 47,
+        "status": 125,
+        "step_route": 2,
+        "sync_core": 0,
+        "syscalls": 47,
+        "tf_code": 1933,
+        "tf_error": 100,
+        "tf_length": 5,
+        "tf_phase": 6
+      },
+      "environment": {
+        "GLIBC_TUNABLES": "glibc.pthread.rseq=0",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "LD_BIND_NOW": "1",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TZ": "UTC"
+      },
+      "first_touch_ns": null,
+      "gated_exit": 125,
+      "last_opcode": "c4e1fb93f0",
+      "name": "true-rseq-disabled",
+      "namespace": {
+        "launch.json": {
+          "bytes": 710,
+          "sha256": "9d4793bb80c56c211e2f30eca611eeb056aad482a0c56aca76fc3970b4730fa7"
+        },
+        "namespace.json": {
+          "bytes": 1550,
+          "sha256": "96c8b6b588102dc148200a80fc5ff1982e38d6a52966cc3bfd5a7811d782d3bf"
+        }
+      },
+      "native_exit": 0,
+      "register": {
+        "completed_runs": 1291,
+        "copied_instructions": 2740,
+        "plan_misses": 21037
+      },
+      "repeat": {
+        "attempts": 2,
+        "completed": 2,
+        "queries": 311,
+        "traces": 363
+      },
+      "status": "failed",
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "steady_state_ns": null,
+      "whole_process_ns": null
+    },
+    {
+      "actual_launch_environment_sha256": "f773674c647f43311eee4fedefa3743b026cff6d3b987baa37ba664bd2a6348a",
+      "cache_counts": [],
+      "chain": null,
+      "counters": {},
+      "environment": {
+        "GLIBC_TUNABLES": "glibc.pthread.rseq=0",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "LD_BIND_NOW": "1",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TZ": "UTC"
+      },
+      "first_touch_ns": null,
+      "gated_exit": -9,
+      "last_opcode": null,
+      "name": "ls-rseq-disabled",
+      "namespace": {
+        "launch.json": {
+          "bytes": 753,
+          "sha256": "47a6c3174f9d71c32eb419356b87b19891eb51348b0eaa3887eacd671e6d9225"
+        },
+        "namespace.json": {
+          "bytes": 2738,
+          "sha256": "f1ef4ba55fdefe98a1dffce82254f7b9529497fca874ebf0ceb7106eea5ea35a"
+        }
+      },
+      "native_exit": 0,
+      "register": {},
+      "repeat": null,
+      "status": "failed",
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "steady_state_ns": null,
+      "whole_process_ns": null
+    }
+  ],
+  "command_count": 37,
+  "command_recipe": {
+    "build": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ],
+    "environment": "LD_BIND_NOW=1 in both lanes. Only rseq-disabled workloads add GLIBC_TUNABLES=glibc.pthread.rseq=0. Actual sealed namespace and dependency FDs remain explicit identity differences.",
+    "gated": "carrier.py exec-loader, with --disable-rseq only for explicitly named rseq-disabled workloads",
+    "native": [
+      "/bin/true",
+      "/bin/ls -d ."
+    ],
+    "opt_in": "Exact committed C link recipe with the same freshly retained archive",
+    "program_bounds": [
+      30,
+      536870912,
+      16777216,
+      60
+    ]
+  },
+  "command_rows_sha256": "d2cfa40fea7477e2eedaf3bc24abbee19684921fe605aa92a6a18e708e95040e",
+  "completed_cases": 0,
+  "cpu": 6,
+  "environment": {
+    "per_workload": {
+      "ls-default": {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "LD_BIND_NOW": "1",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TZ": "UTC"
+      },
+      "ls-rseq-disabled": {
+        "GLIBC_TUNABLES": "glibc.pthread.rseq=0",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "LD_BIND_NOW": "1",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TZ": "UTC"
+      },
+      "true-default": {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "LD_BIND_NOW": "1",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TZ": "UTC"
+      },
+      "true-rseq-disabled": {
+        "GLIBC_TUNABLES": "glibc.pthread.rseq=0",
+        "LANG": "C",
+        "LC_ALL": "C",
+        "LD_BIND_NOW": "1",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TZ": "UTC"
+      }
+    }
+  },
+  "expected_revision": "8f647dc162ea47b6ef2689dcbeeb1713f545ffa9",
+  "failure_type": "ValueError",
+  "final_error_count": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 6,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "input_manifest_sha256": "e682ffb7c3a1d6d895d829914a30d4950c7e0845e6809a295ef5beb72e6c3236",
+  "private_receipt": {
+    "bytes": 369477,
+    "sha256": "7f235cc12636c730e5225588212f16ba4c2f2ed208514c10d223c512e1aebedb"
+  },
+  "profile": "page-selected-chain-real-v1",
+  "register_build_sha256": "01b7b873185afbc57ef490957fda4a9dbb0ca8a17a5d2d5e7240ccf27c7941b1",
+  "register_build_status": "passed",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_chain_real.py",
+    "--expect-revision",
+    "8f647dc162ea47b6ef2689dcbeeb1713f545ffa9"
+  ],
+  "required_cases": 4,
+  "schema": 1,
+  "scope": "Four unchanged real-program/environment pairs with opt-in TRACE chaining and cache; no full B2/B3, transparent namespace or steady-state performance claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "8f647dc162ea47b6ef2689dcbeeb1713f545ffa9",
+    "source_manifest_sha256": "e4f2be2194e25d672050b83572d2044ff92a12b7a08dbb190ae82c622a97a3bf",
+    "tracked_clean": true,
+    "tree": "4105ec89846080d47c02163e1139b7787671c5f4"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T014846.552785Z",
+  "status": "failed",
+  "timing_scope": "One native then gated fresh exec per workload, after dependency preflight. Gated time includes Python namespace copy/sealing and exec. Build time separate; no cold-filesystem, steady-cache or instrumentation-only ratio.",
+  "tool_bindings_sha256": "8f455ac1bac68af69cd5eca2a538f17764ca3397fd32c57da82b178d5386640d",
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  }
+}

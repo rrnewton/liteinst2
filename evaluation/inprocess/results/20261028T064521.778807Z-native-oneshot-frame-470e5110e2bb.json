@@ -1,0 +1,1043 @@
+{
+  "aliases_sha256": "35b036426ee97be0013bb7941e631a076e3cb080d12053148ff7cc096c426187",
+  "artifacts_sha256": "6257f51a0b77d7673a77aca13f994d4ae79e4b0d6a2bc655d8be7e91b2c8f1f6",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_status": "passed",
+  "cases": [
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "argv": [
+        "0"
+      ],
+      "expected_exit": 0,
+      "name": "flags-0",
+      "nx_events": 10,
+      "record": {
+        "bytes": 1957248,
+        "sha256": "3453b15c06a520ff906ef115a27940648014cec121f27e802cbfafa85836cc6d"
+      },
+      "result": {
+        "count": 5,
+        "record_bytes": 1957248,
+        "record_sha256": "3453b15c06a520ff906ef115a27940648014cec121f27e802cbfafa85836cc6d",
+        "rows": [
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66050,
+            "id": 0,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 514,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66050,
+            "original_flags": 514,
+            "source_pages": 1,
+            "source_restored": true,
+            "tail": 5,
+            "ud_flags": 66050,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66050,
+            "id": 1,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 514,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66050,
+            "original_flags": 514,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 1,
+            "ud_flags": 66050,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66050,
+            "id": 2,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 514,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66050,
+            "original_flags": 514,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 2,
+            "ud_flags": 66050,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66050,
+            "id": 3,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 514,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66050,
+            "original_flags": 514,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 3,
+            "ud_flags": 66050,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66050,
+            "id": 4,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 514,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66050,
+            "original_flags": 514,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 4,
+            "ud_flags": 66050,
+            "xsave_bytes": 2440
+          }
+        ],
+        "scope": "actual sealed MAP_PRIVATE source E9/UD2 frame component; no selected operation or production publisher qualification"
+      },
+      "rows": 5,
+      "status": "passed",
+      "ud_events": 5
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "argv": [
+        "1"
+      ],
+      "expected_exit": 0,
+      "name": "flags-1",
+      "nx_events": 10,
+      "record": {
+        "bytes": 1957248,
+        "sha256": "41627ef9d721a6b5ef3a3234beee1821035ba536784e70e168d4bc5ff0101b23"
+      },
+      "result": {
+        "count": 5,
+        "record_bytes": 1957248,
+        "record_sha256": "41627ef9d721a6b5ef3a3234beee1821035ba536784e70e168d4bc5ff0101b23",
+        "rows": [
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66051,
+            "id": 0,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 515,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66051,
+            "original_flags": 515,
+            "source_pages": 1,
+            "source_restored": true,
+            "tail": 5,
+            "ud_flags": 66051,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66051,
+            "id": 1,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 515,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66051,
+            "original_flags": 515,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 1,
+            "ud_flags": 66051,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66051,
+            "id": 2,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 515,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66051,
+            "original_flags": 515,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 2,
+            "ud_flags": 66051,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66051,
+            "id": 3,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 515,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66051,
+            "original_flags": 515,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 3,
+            "ud_flags": 66051,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66051,
+            "id": 4,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 515,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66051,
+            "original_flags": 515,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 4,
+            "ud_flags": 66051,
+            "xsave_bytes": 2440
+          }
+        ],
+        "scope": "actual sealed MAP_PRIVATE source E9/UD2 frame component; no selected operation or production publisher qualification"
+      },
+      "rows": 5,
+      "status": "passed",
+      "ud_events": 5
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "argv": [
+        "2"
+      ],
+      "expected_exit": 0,
+      "name": "flags-2",
+      "nx_events": 10,
+      "record": {
+        "bytes": 1957248,
+        "sha256": "6eb18841ce1601c87116377afa0087b2b83bd0e2eaef935437ec62679325455a"
+      },
+      "result": {
+        "count": 5,
+        "record_bytes": 1957248,
+        "record_sha256": "6eb18841ce1601c87116377afa0087b2b83bd0e2eaef935437ec62679325455a",
+        "rows": [
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66118,
+            "id": 0,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 582,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66118,
+            "original_flags": 582,
+            "source_pages": 1,
+            "source_restored": true,
+            "tail": 5,
+            "ud_flags": 66118,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66118,
+            "id": 1,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 582,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66118,
+            "original_flags": 582,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 1,
+            "ud_flags": 66118,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66118,
+            "id": 2,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 582,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66118,
+            "original_flags": 582,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 2,
+            "ud_flags": 66118,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66118,
+            "id": 3,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 582,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66118,
+            "original_flags": 582,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 3,
+            "ud_flags": 66118,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 66118,
+            "id": 4,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 582,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 66118,
+            "original_flags": 582,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 4,
+            "ud_flags": 66118,
+            "xsave_bytes": 2440
+          }
+        ],
+        "scope": "actual sealed MAP_PRIVATE source E9/UD2 frame component; no selected operation or production publisher qualification"
+      },
+      "rows": 5,
+      "status": "passed",
+      "ud_events": 5
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "argv": [
+        "3"
+      ],
+      "expected_exit": 0,
+      "name": "flags-3",
+      "nx_events": 10,
+      "record": {
+        "bytes": 1957248,
+        "sha256": "c22419b698ada9180cd96cd866504b6d0cffa5780f160284b4ece15ffeeb6b30"
+      },
+      "result": {
+        "count": 5,
+        "record_bytes": 1957248,
+        "record_sha256": "c22419b698ada9180cd96cd866504b6d0cffa5780f160284b4ece15ffeeb6b30",
+        "rows": [
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 68246,
+            "id": 0,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 2710,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 68246,
+            "original_flags": 2710,
+            "source_pages": 1,
+            "source_restored": true,
+            "tail": 5,
+            "ud_flags": 68246,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 68246,
+            "id": 1,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 2710,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 68246,
+            "original_flags": 2710,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 1,
+            "ud_flags": 68246,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 68246,
+            "id": 2,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 2710,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 68246,
+            "original_flags": 2710,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 2,
+            "ud_flags": 68246,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 68246,
+            "id": 3,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 2710,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 68246,
+            "original_flags": 2710,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 3,
+            "ud_flags": 68246,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 68246,
+            "id": 4,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 2710,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 68246,
+            "original_flags": 2710,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 4,
+            "ud_flags": 68246,
+            "xsave_bytes": 2440
+          }
+        ],
+        "scope": "actual sealed MAP_PRIVATE source E9/UD2 frame component; no selected operation or production publisher qualification"
+      },
+      "rows": 5,
+      "status": "passed",
+      "ud_events": 5
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "argv": [
+        "4"
+      ],
+      "expected_exit": 0,
+      "name": "flags-4",
+      "nx_events": 10,
+      "record": {
+        "bytes": 1957248,
+        "sha256": "aa458f9a4110ff982f5bc034f619bb65688c55c8497140b737772ce983110217"
+      },
+      "result": {
+        "count": 5,
+        "record_bytes": 1957248,
+        "record_sha256": "aa458f9a4110ff982f5bc034f619bb65688c55c8497140b737772ce983110217",
+        "rows": [
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 67074,
+            "id": 0,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 1538,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 67074,
+            "original_flags": 1538,
+            "source_pages": 1,
+            "source_restored": true,
+            "tail": 5,
+            "ud_flags": 67074,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 67074,
+            "id": 1,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 1538,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 67074,
+            "original_flags": 1538,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 1,
+            "ud_flags": 67074,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 67074,
+            "id": 2,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 1538,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 67074,
+            "original_flags": 1538,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 2,
+            "ud_flags": 67074,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 67074,
+            "id": 3,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 1538,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 67074,
+            "original_flags": 1538,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 3,
+            "ud_flags": 67074,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 67074,
+            "id": 4,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 1538,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 67074,
+            "original_flags": 1538,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 4,
+            "ud_flags": 67074,
+            "xsave_bytes": 2440
+          }
+        ],
+        "scope": "actual sealed MAP_PRIVATE source E9/UD2 frame component; no selected operation or production publisher qualification"
+      },
+      "rows": 5,
+      "status": "passed",
+      "ud_events": 5
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "argv": [
+        "5"
+      ],
+      "expected_exit": 0,
+      "name": "flags-5",
+      "nx_events": 10,
+      "record": {
+        "bytes": 1957248,
+        "sha256": "0c6365bcccbce81f20c24d10b41b542612465fd8186c3c179720d9b9f26e1172"
+      },
+      "result": {
+        "count": 5,
+        "record_bytes": 1957248,
+        "record_sha256": "0c6365bcccbce81f20c24d10b41b542612465fd8186c3c179720d9b9f26e1172",
+        "rows": [
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 69335,
+            "id": 0,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 3799,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 69335,
+            "original_flags": 3799,
+            "source_pages": 1,
+            "source_restored": true,
+            "tail": 5,
+            "ud_flags": 69335,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 69335,
+            "id": 1,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 3799,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 69335,
+            "original_flags": 3799,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 1,
+            "ud_flags": 69335,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 69335,
+            "id": 2,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 3799,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 69335,
+            "original_flags": 3799,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 2,
+            "ud_flags": 69335,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 69335,
+            "id": 3,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 3799,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 69335,
+            "original_flags": 3799,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 3,
+            "ud_flags": 69335,
+            "xsave_bytes": 2440
+          },
+          {
+            "actual_events": 3,
+            "all16_gpr_equal": true,
+            "continuation_flags": 69335,
+            "id": 4,
+            "kernel_fp_bytes": 2444,
+            "live_flags": 3799,
+            "nx_cr2_equals_ud_cr2": true,
+            "nx_flags": 69335,
+            "original_flags": 3799,
+            "source_pages": 2,
+            "source_restored": true,
+            "tail": 4,
+            "ud_flags": 69335,
+            "xsave_bytes": 2440
+          }
+        ],
+        "scope": "actual sealed MAP_PRIVATE source E9/UD2 frame component; no selected operation or production publisher qualification"
+      },
+      "rows": 5,
+      "status": "passed",
+      "ud_events": 5
+    }
+  ],
+  "command_count": 23,
+  "commands_sha256": "f1078cd39398c0256f85206eb7f15691abaf4f0d4789c16191dc9e6c5ec476a5",
+  "cpu": 1,
+  "emitted_asm": {
+    "_start": {
+      "address": 4208962,
+      "bytes": 23,
+      "sha256": "9e2f9d0b3c82b6d9f22258064a289b0a98d436d5772af246fc451eebfe8d5045"
+    },
+    "fixture_capture_return": {
+      "address": 4209715,
+      "bytes": 227,
+      "sha256": "34ce93e8ebb3ae776ee79bac51d4c50da35555a00b5d0644985e02d450ef0821"
+    },
+    "fixture_enter": {
+      "address": 4209008,
+      "bytes": 707,
+      "sha256": "6ed3e5459716628fcfca2872fb4ac5fd5f09c41ac61d23599bdca200b4454ad7"
+    },
+    "fixture_return": {
+      "address": 4209942,
+      "bytes": 51,
+      "sha256": "5ef12f000a61fbbdab276cb0d2c5d693b35e319b3bb5a9eafab9a6fff53d4d15"
+    },
+    "fixture_vector_clobber": {
+      "address": 4208994,
+      "bytes": 14,
+      "sha256": "367b0757e04644002b80d604d4e1f19071cd195466c5f2f4fe35f5bb2b21b4f1"
+    },
+    "step_restorer": {
+      "address": 4208985,
+      "bytes": 9,
+      "sha256": "4ff8ed29bf94a7d3571a3967d1ada43f2321f67653894769f7c7a7a139a13a51"
+    }
+  },
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "470e5110e2bbe22dda1b3342b68903d90a14404b",
+  "failure_type": null,
+  "final_error_count": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_sha256": "2d794eb29ee7e3769ff47e909d4f89d705d7086622970910f0afc09bae89ef70",
+  "layout_sha256": "51e13e5b24b7a4a5be03e970d02bd83244abe4b5998192067deeaf538d038fda",
+  "native_commands": [
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "flags-0",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "flags-1",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "flags-2",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "flags-3",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "flags-4",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "flags-5",
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "private_receipt": {
+    "bytes": 329812,
+    "sha256": "a47fb5aa77e2bb58cadf97a0be624dcf6a3d3e2e0e13462d1a4b5ec4e8cb4020"
+  },
+  "profile": "native-oneshot-frame-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/native_oneshot_frame.py",
+    "--expect-revision",
+    "470e5110e2bbe22dda1b3342b68903d90a14404b"
+  ],
+  "rust_archive_used": false,
+  "scope": "Actual sealed MAP_PRIVATE source E9/UD2 and restored PC+2 NX frame component. No selected operation, production publisher, synthetic frame, or timing qualification.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "470e5110e2bbe22dda1b3342b68903d90a14404b",
+    "source_manifest_sha256": "775e054325073c3d95348814546c276539efde90ffaffd4ea1fc0e65004982ea",
+    "tracked_clean": true,
+    "tree": "6fdf9fdf7b43f08bc4029fe981750f9f9f09ec07"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T064521.778807Z",
+  "status": "passed",
+  "tool_hashes": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "dirname": {
+      "bytes": 27952,
+      "sha256": "dcccd2b58cda47c25292457d1153e612a68599ad7086c3b90a66ed568ab8950b"
+    },
+    "gdb": {
+      "bytes": 17179552,
+      "sha256": "cf8ae9d5192667cf681eabedf50ef39ecd11fac784c15cea6e3961880d3a16ed"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "tool_versions": {
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "gdb": [
+      17,
+      2,
+      0
+    ],
+    "objdump": [
+      2,
+      35,
+      2
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ]
+  },
+  "version": 1
+}

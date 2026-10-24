@@ -1,0 +1,10 @@
+lane,mode,control,status,expected_exit,exit,whole_process_ns,application_control_count,terminal_control_count,owner_control_count,hint_terminal_control_count,pair_control_count
+metadata,,,passed,0,0,6572658,0,0,0,0,0
+native,0,0,qualified_native_reference,0,0,131479128,36,0,0,0,0
+native,1,0,qualified_native_reference,0,0,128008016,36,0,0,0,0
+native,2,0,qualified_native_reference,0,0,124090565,36,0,0,0,0
+native,3,0,qualified_native_reference,0,0,128015658,36,0,0,0,0
+gated,0,0,qualified_preedge_pair,0,0,4548347658,0,320,46,41,4
+gated,1,0,qualified_preedge_pair,0,0,4539330940,0,320,46,41,4
+gated,2,0,qualified_preedge_pair,0,0,4439221088,0,320,46,41,4
+gated,3,0,qualified_preedge_pair,0,0,4547249963,0,320,46,41,4

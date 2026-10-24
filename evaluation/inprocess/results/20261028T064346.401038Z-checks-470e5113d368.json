@@ -1,0 +1,133 @@
+{
+  "backing_cleanup_query_required": true,
+  "backing_cleanup_required": true,
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/admission",
+        "-p",
+        "test_*.py"
+      ],
+      "environment_delta": {},
+      "id": "recorder_tests",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "environment_delta": {},
+      "id": "fmt",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "environment_delta": {},
+      "id": "clippy",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "environment_delta": {},
+      "id": "workspace_tests",
+      "status": "not_run",
+      "timeout_seconds": 900
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "environment_delta": {},
+      "id": "workspace_check",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "environment_delta": {
+        "LITEINST_EVALUATION": "1"
+      },
+      "id": "serial_launch",
+      "status": "not_run",
+      "timeout_seconds": 180
+    }
+  ],
+  "configuration_unchanged": null,
+  "environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "target",
+    "CARGO_TERM_COLOR": "never",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RLIMIT_CORE": 0,
+    "RUSTC_WORKSPACE_WRAPPER": "",
+    "RUSTC_WRAPPER": "",
+    "RUSTDOCFLAGS": "",
+    "RUSTFLAGS": "",
+    "RUST_TEST_THREADS": "4",
+    "TMPDIR": "private_run/tmp"
+  },
+  "error": "revision_differs",
+  "expected_revision": "470e5113d36879b652e28e5dc5b2eeac6334937d",
+  "log_limit_bytes_per_command": 8388608,
+  "precontext_native_required": true,
+  "profile": "inprocess-required-checks-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/checks.py",
+    "--expect-revision",
+    "470e5113d36879b652e28e5dc5b2eeac6334937d"
+  ],
+  "runner_sha256": "81f439c54c5a14498621b24c0a131b4d494394ce3c185d355743b8b16d8e9e23",
+  "schema_version": 1,
+  "scope": "New 900-second workspace profile; no historical result is relabelled.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "470e5110e2bbe22dda1b3342b68903d90a14404b",
+    "source_manifest_sha256": "775e054325073c3d95348814546c276539efde90ffaffd4ea1fc0e65004982ea",
+    "tracked_clean": true,
+    "tree": "6fdf9fdf7b43f08bc4029fe981750f9f9f09ec07"
+  },
+  "source_unchanged": null,
+  "started_utc": "20261028T064346.401038Z",
+  "status": "failed"
+}

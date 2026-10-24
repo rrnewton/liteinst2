@@ -1,0 +1,3151 @@
+{
+  "aliases_sha256": "56061256487eb3048b3465e44c5373c63e6d4bb692fffbc19a9acc86a37397fd",
+  "binaries_sha256": "9ecd6204ceceaf7efccec3d790dee56760b98bbeea72c38018747c20508805b6",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_status": "passed",
+  "cases": [
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "group0",
+      "outcome": {
+        "actual_before_queries": 32,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 0,
+        "ending_pairs": 16,
+        "fault_observations": null,
+        "footprint": {
+          "actual_before_queries": 32,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "6d6f9faa338d905a7102506849f9d4c67059a65fa9bf3baea78fd05e925a387a",
+          "values_sha256": "5dc9781356dfb364d3b8e21b277d0c8e87d3ac02130fcadd012ce29d455f59dd"
+        },
+        "header": {
+          "completed": 17,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 16,
+        "observations": {
+          "all_bvs_sha256": "782cba44f78934a652b903589a2f1aebe04d8011b0ccb79d21b1c68382b3e699",
+          "bytes": 5000,
+          "checked": 17,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "2e9a3db13c06e8fc61b86269200665d977bddc7b4120f6a60bb53b5da5cfc87b",
+          "query_count": 9,
+          "sha256": "53ed535fbc6786d233d315a49ae9f8a0ca1abf31f2ba0b9495e5ffad6f5603b1",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 17,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 0,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "656e175c0c7c6abc80689342f0e22bf87542ff6e7ecde516cb8f980cb4de1a0f"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "group1",
+      "outcome": {
+        "actual_before_queries": 32,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 0,
+        "ending_pairs": 16,
+        "fault_observations": null,
+        "footprint": {
+          "actual_before_queries": 32,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "091335a32e9e798b0af3e0efd2fdb0ffde8133b7ed63d6be08b04c42098f5f71",
+          "values_sha256": "5373efc248e27c4cd17df4f9a2466fa0feeb96c096ed3331156555af5c83a140"
+        },
+        "header": {
+          "completed": 17,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 16,
+        "observations": {
+          "all_bvs_sha256": "782cba44f78934a652b903589a2f1aebe04d8011b0ccb79d21b1c68382b3e699",
+          "bytes": 5000,
+          "checked": 17,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "62945c60902940f5b0940ac7402a391d99c39931844642ef2a132e5caf12da4d",
+          "query_count": 9,
+          "sha256": "ca4a33cb368e6300505c08f38bed32ecb2483e2322692fc25de4b0b91069e307",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 17,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 0,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "1cb99d051875089202f06dc0426ad1cf6c8e873404cebdbc22877e212b3a42f4"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "group2",
+      "outcome": {
+        "actual_before_queries": 32,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 0,
+        "ending_pairs": 16,
+        "fault_observations": null,
+        "footprint": {
+          "actual_before_queries": 32,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "8614c8d1417efbf5e202848860d46e6d04ff6cb70a134a3982082edc025d78b0",
+          "values_sha256": "2d21076e4183cd39c378caac8641018ea10c54721148426eebee71c4c3ac9670"
+        },
+        "header": {
+          "completed": 17,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 16,
+        "observations": {
+          "all_bvs_sha256": "782cba44f78934a652b903589a2f1aebe04d8011b0ccb79d21b1c68382b3e699",
+          "bytes": 5000,
+          "checked": 17,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "ac906db02ffb32d47ab9c8d4689eefcc328356fc7f4e57d9019de35c707b22a8",
+          "query_count": 9,
+          "sha256": "3353d6a0051bcda5e5bb8dc2dd7b910828e4c2e01dbd003718cd1ebd39a2b43d",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 17,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 0,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "fbce46e70ada0f18e3c8ab659c6690fc1315aa0fbd99f0a164ec34971e4ce24d"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "group3",
+      "outcome": {
+        "actual_before_queries": 32,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 0,
+        "ending_pairs": 16,
+        "fault_observations": null,
+        "footprint": {
+          "actual_before_queries": 32,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "44970f32e07c463bb1487ac514f98cda7d85aa6af8a49e81866cff36f05e773a",
+          "values_sha256": "43732005c4c6c1b88be5e16c74e636bfab3c1dadf391eacea2a03d657a44f22d"
+        },
+        "header": {
+          "completed": 17,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 16,
+        "observations": {
+          "all_bvs_sha256": "782cba44f78934a652b903589a2f1aebe04d8011b0ccb79d21b1c68382b3e699",
+          "bytes": 5000,
+          "checked": 17,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "7c17418324ed869950aa21f07eba9c90cd7f6e6e9891243d16aadd1cc7a06b16",
+          "query_count": 9,
+          "sha256": "fcee44a5a87637a4fedcd3447bd0a26748ecba22dda45c18f4e857c1b1e90c82",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 17,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 0,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "7d1e2134dc06862b0b9725d641bcb117e622c9cea6464926df57a39f9f9cd8e8"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "group4",
+      "outcome": {
+        "actual_before_queries": 32,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 0,
+        "ending_pairs": 16,
+        "fault_observations": null,
+        "footprint": {
+          "actual_before_queries": 32,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "030efeceae79c77bca14d969a0f7ce614d570376d03e821fa46a0d28f1ffa6ab",
+          "values_sha256": "d4fa699541a84ae3517b595bf4d69a0a3479b51375452af9e1214a06ff6991fc"
+        },
+        "header": {
+          "completed": 17,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 16,
+        "observations": {
+          "all_bvs_sha256": "782cba44f78934a652b903589a2f1aebe04d8011b0ccb79d21b1c68382b3e699",
+          "bytes": 5000,
+          "checked": 17,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "9cc58df1c3d0776608dce564a1601f1be49c1673ee0b13de3c7f7c39509d9d14",
+          "query_count": 9,
+          "sha256": "1684bbbbad3c2b071a4d42463251360690ceb936578b4db109095e3fb82345c7",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 17,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 0,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "5a0ae55c983b3c497619bcf4938c9c91509f0a902230b120955fb8e961d667db"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "group5",
+      "outcome": {
+        "actual_before_queries": 32,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 0,
+        "ending_pairs": 16,
+        "fault_observations": null,
+        "footprint": {
+          "actual_before_queries": 32,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "d1bd9147cfbdafeabf6a3f520df68e28939ff2784e763b56f4dea6c629f22755",
+          "values_sha256": "b641413b0932b1d77c63ca6ded8d6cf59736e4acfa31286d388629b0af864253"
+        },
+        "header": {
+          "completed": 17,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 16,
+        "observations": {
+          "all_bvs_sha256": "782cba44f78934a652b903589a2f1aebe04d8011b0ccb79d21b1c68382b3e699",
+          "bytes": 5000,
+          "checked": 17,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "dc54b14fdc9048130b3037f91f0ced99ba2667ea0c1a515c3dba80f6bdb016e6",
+          "query_count": 9,
+          "sha256": "2e16ec6ece581d49a9df4a5b945e43da83c41489216ba1d37020d36bebb418b9",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 17,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 0,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "a5922ef2c1cb00fbec221b296029eb49096be00aa104d69e62e2ab03e5310003"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "group6",
+      "outcome": {
+        "actual_before_queries": 32,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 8,
+        "ending_pairs": 8,
+        "fault_observations": null,
+        "footprint": {
+          "actual_before_queries": 32,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "02fe9bac58aca895a06f92843e2848c85ba8a8c594083ed0b6143bbbf31883d5",
+          "values_sha256": "22aa161e03b846fa25394975f5cc297624b163f2070ef4334ffaa32ee0c3e7dc"
+        },
+        "header": {
+          "completed": 17,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 16,
+        "observations": {
+          "all_bvs_sha256": "782cba44f78934a652b903589a2f1aebe04d8011b0ccb79d21b1c68382b3e699",
+          "bytes": 5000,
+          "checked": 17,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "f45e4323e8c2fe462dad3490ff3937dfbddb9e0d91a873fcb4262b2e521cd3bc",
+          "query_count": 9,
+          "sha256": "b9b97b8ef2583b2d1217e55f388f2d4d4b4a52f2e8e3c7ce4b67a5043cbd8989",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 17,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 0,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "b47f07523b50d3a126f29d14fc3f0dcadceb5e92fe7a53ddccb888f4aef8cc68"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "group7",
+      "outcome": {
+        "actual_before_queries": 32,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 14,
+        "ending_pairs": 2,
+        "fault_observations": null,
+        "footprint": {
+          "actual_before_queries": 32,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "d882b10cde36ffa8d4e4332dfd38ff1943842953863cf2a4b1237394411fda8c",
+          "values_sha256": "ff7e0937cb48f6bdb980775cfac6fde810072eccceba5772f715acd6e12b213d"
+        },
+        "header": {
+          "completed": 17,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 16,
+        "observations": {
+          "all_bvs_sha256": "782cba44f78934a652b903589a2f1aebe04d8011b0ccb79d21b1c68382b3e699",
+          "bytes": 5000,
+          "checked": 17,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "1dba827c73bea997e3e30bc80c71cd14c55a5c4fd76ecfe3b46f4916141433ab",
+          "query_count": 9,
+          "sha256": "4aa06fbc42fe5203ca7d84c88f28431c312b8886467eb1437e22669f75da82d3",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 17,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 0,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "de76fb5bec34bcf167cefdb373dc29e0f95dc1191f583931175add236db1fc9f"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "group8",
+      "outcome": {
+        "actual_before_queries": 32,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 15,
+        "ending_pairs": 1,
+        "fault_observations": null,
+        "footprint": {
+          "actual_before_queries": 32,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "666b07ba0df944ee50c0d6511179983ee3f74b48706ce96599f62bd6b9af01b7",
+          "values_sha256": "d1ba3fc518b1b8ddfba98167c962992a16bbf9d9a77e86a2a5974c8689bb8a61"
+        },
+        "header": {
+          "completed": 17,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 16,
+        "observations": {
+          "all_bvs_sha256": "782cba44f78934a652b903589a2f1aebe04d8011b0ccb79d21b1c68382b3e699",
+          "bytes": 5000,
+          "checked": 17,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "a3c829dc0a7b6f9fbb84f8b46634873b9d8f88547ae185ebb70bb7effdd90497",
+          "query_count": 9,
+          "sha256": "8e05408ee6cb1d5d204d78d2c851e78fc9f5543ab9485dee5cf1da2058ac30de",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 17,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 0,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "9de24b21717c0d6a1855085d137d21a312c115cf2bcf287dc91e46bc0dd0f8c6"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 0,
+      "environment_delta": {},
+      "name": "group9",
+      "outcome": {
+        "actual_before_queries": 32,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 0,
+        "ending_pairs": 16,
+        "fault_observations": null,
+        "footprint": {
+          "actual_before_queries": 32,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "d1121fa96b8a42836320aac1d8be39c71f6713c072424f25c2d2463336f2a65f",
+          "values_sha256": "d95c6da1f548a3fd3df56d31bd970e9db30ccd63c08a4ee7697cf11ae82f44fe"
+        },
+        "header": {
+          "completed": 17,
+          "control": 0,
+          "decoder_result": 0,
+          "expected_failure_verified": 0,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 0,
+          "owner_detail_negative": 0,
+          "owner_failure": 0,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 16,
+        "observations": {
+          "all_bvs_sha256": "782cba44f78934a652b903589a2f1aebe04d8011b0ccb79d21b1c68382b3e699",
+          "bytes": 5000,
+          "checked": 17,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "e1fb0aa4f61f50ebf5af999350a2ce927c306f92b0ae54acd1986a09ba79efaf",
+          "query_count": 9,
+          "sha256": "81d6b18a2eabf17738a719c287811d5c1de72cf0331edb3b87cd9fa4d8f1e713",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "completed",
+        "pairs": 17,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 0,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "6dcab54ff82f080991643d3fba7b72069a0bfe833535f1c7b06168509f2c0981"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 125,
+      "environment_delta": {
+        "LI2_VM64F_CONTROL": "full-read-fault"
+      },
+      "name": "full-read-fault",
+      "outcome": {
+        "actual_before_queries": 2,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 0,
+        "ending_pairs": 0,
+        "fault_observations": {
+          "address": 140394388189184,
+          "bytes": 96,
+          "checked": 1,
+          "kind": 1,
+          "live_after_bv": 743,
+          "live_before_bv": 743,
+          "native_after_bv": 743,
+          "native_before_bv": 743,
+          "operand": 140394388189184,
+          "owner_after_bv": 743,
+          "owner_before_bv": 743,
+          "owner_trace": 0,
+          "prefix_bytes": 0,
+          "sha256": "3f59e1fe10d6d34a72e52da2f3879a7b52f763320916cd2653b6427736d5b9a3"
+        },
+        "footprint": {
+          "actual_before_queries": 2,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "ce64ca8e69bcf255eb9c71350396cad8a3acc4e7d1018485487ecdea805f8f33",
+          "values_sha256": "8f97d4ad2b4def036010cc29bc8c7d160a419ac71ccf25550ef3d3d3a41e7fb6"
+        },
+        "header": {
+          "completed": 1,
+          "control": 1,
+          "decoder_result": 0,
+          "expected_failure_verified": 1,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 11,
+          "owner_detail_negative": 0,
+          "owner_failure": 7,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 0,
+        "observations": {
+          "all_bvs_sha256": "6ffcccb7a5d99c5373abdc556795a224674e1b422007289f8b567b3988083457",
+          "bytes": 5000,
+          "checked": 1,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "ef56294543b0b5e1dc2a4d52b424e37e429a253d0570b8cb26d1bb9025873a8b",
+          "query_count": 9,
+          "sha256": "ef2f3903fb70c822c19be060ff437a71e2577efcb22eb498b01d4aa252f51e45",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "failed_memory_read",
+        "pairs": 0,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 1,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "cbd30c5b18e26a678ec6318aa8660bc9763e6c919622797af90c76971f41646e"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 125,
+      "environment_delta": {
+        "LI2_VM64F_CONTROL": "cross-read-fault"
+      },
+      "name": "cross-read-fault",
+      "outcome": {
+        "actual_before_queries": 2,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 0,
+        "ending_pairs": 0,
+        "fault_observations": {
+          "address": 140522811764736,
+          "bytes": 96,
+          "checked": 1,
+          "kind": 2,
+          "live_after_bv": 743,
+          "live_before_bv": 743,
+          "native_after_bv": 743,
+          "native_before_bv": 743,
+          "operand": 140522811764720,
+          "owner_after_bv": 743,
+          "owner_before_bv": 743,
+          "owner_trace": 0,
+          "prefix_bytes": 16,
+          "sha256": "d3a8309d3061572e3c6e8868b251f24e469c4b1ca9966dd49e54db745a1db631"
+        },
+        "footprint": {
+          "actual_before_queries": 2,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "3cad9625895b84ed58abb2cc217bbeb69d8d576fecd7c5c85150401fd6169309",
+          "values_sha256": "40fe3c942859e73e91e94368497671938c901e1e2105dc5bc5b025af68014f72"
+        },
+        "header": {
+          "completed": 1,
+          "control": 1,
+          "decoder_result": 0,
+          "expected_failure_verified": 1,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 11,
+          "owner_detail_negative": 0,
+          "owner_failure": 7,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 0,
+        "observations": {
+          "all_bvs_sha256": "6ffcccb7a5d99c5373abdc556795a224674e1b422007289f8b567b3988083457",
+          "bytes": 5000,
+          "checked": 1,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "ef56294543b0b5e1dc2a4d52b424e37e429a253d0570b8cb26d1bb9025873a8b",
+          "query_count": 9,
+          "sha256": "ef2f3903fb70c822c19be060ff437a71e2577efcb22eb498b01d4aa252f51e45",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "failed_memory_read",
+        "pairs": 0,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 1,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "5eeaed1214d8ad4d3163c13c1704a92a14be10ec10101c66b7023737f91b4fd8"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 125,
+      "environment_delta": {
+        "LI2_VM64F_CONTROL": "indexed-full-read-fault"
+      },
+      "name": "indexed-full-read-fault",
+      "outcome": {
+        "actual_before_queries": 2,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 0,
+        "ending_pairs": 0,
+        "fault_observations": {
+          "address": 139638509744128,
+          "bytes": 96,
+          "checked": 1,
+          "kind": 3,
+          "live_after_bv": 743,
+          "live_before_bv": 743,
+          "native_after_bv": 743,
+          "native_before_bv": 743,
+          "operand": 139638509744128,
+          "owner_after_bv": 743,
+          "owner_before_bv": 743,
+          "owner_trace": 0,
+          "prefix_bytes": 0,
+          "sha256": "8c36d079d7f1b174a7fb187d7bed1caa8a736dd5d52d2700e8f7c899204bb5cc"
+        },
+        "footprint": {
+          "actual_before_queries": 2,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "eca47c8d356405d6f5a5aff5978648c24ec859aefc10ecedf9f2375b804eadad",
+          "values_sha256": "1d89e8d9b1c6c1dbf71727ab323f35f99235c047d64010e3bc442314cae031fc"
+        },
+        "header": {
+          "completed": 1,
+          "control": 1,
+          "decoder_result": 0,
+          "expected_failure_verified": 1,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 11,
+          "owner_detail_negative": 0,
+          "owner_failure": 7,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 0,
+        "observations": {
+          "all_bvs_sha256": "6ffcccb7a5d99c5373abdc556795a224674e1b422007289f8b567b3988083457",
+          "bytes": 5000,
+          "checked": 1,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "ef56294543b0b5e1dc2a4d52b424e37e429a253d0570b8cb26d1bb9025873a8b",
+          "query_count": 9,
+          "sha256": "ef2f3903fb70c822c19be060ff437a71e2577efcb22eb498b01d4aa252f51e45",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "failed_memory_read",
+        "pairs": 0,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 1,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "fc26c828e912262c25d367d04d14705534ddea0c8f8bfff425d2c49cc6983c1a"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "actual_exit": 125,
+      "environment_delta": {
+        "LI2_VM64F_CONTROL": "indexed-cross-read-fault"
+      },
+      "name": "indexed-cross-read-fault",
+      "outcome": {
+        "actual_before_queries": 2,
+        "architecture": "Authenticated C oracle compares complete native/TF state,literal memory/register loads and complete all512 selected-destination bits (upper256 exactly zero in VL256), including actual faults. Reader independently checks complete ELF-sized records, CPUID, prefix and actual-before queries; it is not a second full architectural replay.",
+        "crossing_pairs": 0,
+        "ending_pairs": 0,
+        "fault_observations": {
+          "address": 139741879390208,
+          "bytes": 96,
+          "checked": 1,
+          "kind": 4,
+          "live_after_bv": 743,
+          "live_before_bv": 743,
+          "native_after_bv": 743,
+          "native_before_bv": 743,
+          "operand": 139741879390192,
+          "owner_after_bv": 743,
+          "owner_before_bv": 743,
+          "owner_trace": 0,
+          "prefix_bytes": 16,
+          "sha256": "74c859c3ea042c97b7d10638297026888634c23e450746d059643b6f111dd1c8"
+        },
+        "footprint": {
+          "actual_before_queries": 2,
+          "bytes": 10304,
+          "memory_write_ranges": 0,
+          "sha256": "c2a7352cdbc2a586a1a2844e6b06ad091d7e7eb5a1efbdb17524f987c4efaaa3",
+          "values_sha256": "3e4cc8686f21b67d07c56ca6cfe43ab3319f22ed13dcc36c7522d2136d31aac2"
+        },
+        "header": {
+          "completed": 1,
+          "control": 1,
+          "decoder_result": 0,
+          "expected_failure_verified": 1,
+          "failed_refusal": 18446744073709551615,
+          "fixture_failure": 0,
+          "header_bytes": 136,
+          "magic": 3550605999948051020,
+          "owner_detail_abs": 11,
+          "owner_detail_negative": 0,
+          "owner_failure": 7,
+          "pairs": 17,
+          "refusals": 97,
+          "sample_bytes": 721088,
+          "version": 1,
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "new_pairs": 0,
+        "observations": {
+          "all_bvs_sha256": "6ffcccb7a5d99c5373abdc556795a224674e1b422007289f8b567b3988083457",
+          "bytes": 5000,
+          "checked": 1,
+          "components": [
+            {
+              "index": 2,
+              "raw": [
+                13,
+                2,
+                256,
+                576,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 5,
+              "raw": [
+                13,
+                5,
+                64,
+                832,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 6,
+              "raw": [
+                13,
+                6,
+                512,
+                896,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 7,
+              "raw": [
+                13,
+                7,
+                1024,
+                1408,
+                0,
+                0
+              ]
+            },
+            {
+              "index": 9,
+              "raw": [
+                13,
+                9,
+                8,
+                2432,
+                0,
+                0
+              ]
+            }
+          ],
+          "cpuid_basic": [
+            [
+              0,
+              0,
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ],
+            [
+              1,
+              0,
+              11603728,
+              50268160,
+              2130326027,
+              395049983
+            ],
+            [
+              7,
+              0,
+              1,
+              4055865259,
+              423714782,
+              268435728
+            ],
+            [
+              13,
+              0,
+              743,
+              2440,
+              2440,
+              0
+            ]
+          ],
+          "kernel_xstate_bv": [
+            743
+          ],
+          "live_xstate_bv": [
+            743
+          ],
+          "pair_ids_sha256": "ef56294543b0b5e1dc2a4d52b424e37e429a253d0570b8cb26d1bb9025873a8b",
+          "query_count": 9,
+          "sha256": "ef2f3903fb70c822c19be060ff437a71e2577efcb22eb498b01d4aa252f51e45",
+          "xcr0": 743,
+          "xsave_bytes": 2440
+        },
+        "operation": "failed_memory_read",
+        "pairs": 0,
+        "promotions": {
+          "bytes": 2080,
+          "scope": "Supplied exact old-byte controls; native coverage is separate.",
+          "sha256": "84dbd639648b4030be60995dbafc4b0fda85fc3b3902601f7f0e48d19d746346",
+          "supplied_none_queries": 7,
+          "typed_promotions": 7
+        },
+        "refusals": 97,
+        "startup_pairs": 1,
+        "supplied_none_queries": 7,
+        "typed_promotions": 7,
+        "vector_bits": 256,
+        "verified_memory_failures": 1,
+        "vm256_promotions": {
+          "bytes": 352,
+          "scope": "Supplied exact old bytes; full native coverage is separate.",
+          "sha256": "b13bd7aeb9208906676ddc4b142d2b1a11a64e4910fd325a420be0a276cd4da6",
+          "supplied_none_queries": 1,
+          "typed_promotions": 1
+        },
+        "vm256_supplied_none_queries": 1,
+        "vm256_typed_promotions": 1
+      },
+      "record": {
+        "bytes": 15881944,
+        "sha256": "c652e298ccbe13b036d4915d44dbbedb1afe7d13724391afbc2e9bb5f01d42c2"
+      },
+      "status": "accepted_observation"
+    }
+  ],
+  "catalogue": {
+    "compiled": {
+      "bytes": 18883,
+      "sha256": "24ef9eeb99c07aba087db74dddad2ef26d13ad42a4fd494ee42ce3267a8310ac"
+    },
+    "new_pairs": 160,
+    "rows_sha256": "c4feb72a9da6d5eeae76547d5be61164f89db63a41fdb1a11d3d64631a16a37c",
+    "source": {
+      "bytes": 51611,
+      "sha256": "22a97810689ed0a8503fa6226d686e2fee09f5c27f3812b25396d528dc007b5b"
+    }
+  },
+  "cleanup_complete": true,
+  "command_count": 71,
+  "command_recipe": {
+    "fixture": [
+      "sh",
+      "tools/page-entry/selected/tests/vmovdqu64_family/build256.sh",
+      "<retained decoder.a>",
+      "<unique private output>",
+      "tools/page-entry/selected",
+      "<group0..9>"
+    ],
+    "native": [
+      [
+        "vmovdqu64-256-family-0"
+      ],
+      [
+        "vmovdqu64-256-family-1"
+      ],
+      [
+        "vmovdqu64-256-family-2"
+      ],
+      [
+        "vmovdqu64-256-family-3"
+      ],
+      [
+        "vmovdqu64-256-family-4"
+      ],
+      [
+        "vmovdqu64-256-family-5"
+      ],
+      [
+        "vmovdqu64-256-family-6"
+      ],
+      [
+        "vmovdqu64-256-family-7"
+      ],
+      [
+        "vmovdqu64-256-family-8"
+      ],
+      [
+        "vmovdqu64-256-family-9"
+      ],
+      [
+        "vmovdqu64-256-family-0"
+      ],
+      [
+        "vmovdqu64-256-family-0"
+      ],
+      [
+        "vmovdqu64-256-family-0"
+      ],
+      [
+        "vmovdqu64-256-family-0"
+      ]
+    ],
+    "product": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ],
+    "selectors": [
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {},
+      {
+        "LI2_VM64F_CONTROL": "full-read-fault"
+      },
+      {
+        "LI2_VM64F_CONTROL": "cross-read-fault"
+      },
+      {
+        "LI2_VM64F_CONTROL": "indexed-full-read-fault"
+      },
+      {
+        "LI2_VM64F_CONTROL": "indexed-cross-read-fault"
+      }
+    ]
+  },
+  "commands_sha256": "38f84cdbd79b9ed2259f9fcfc8b04d108d2383171746f09ad6ced7dcf37c9430",
+  "cpu": 1,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c",
+  "failure_type": null,
+  "final_error_count": 0,
+  "fixture_build": {
+    "vmovdqu64-256-family-0": {
+      "artifact": {
+        "bytes": 1975568,
+        "mode": 493,
+        "sha256": "7f848334efc6ad3266b80d848c3deff1b1edd870ba91cc6754ae92217f938f58"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "bf25e76ef2e98511a152718fe4c41e5f00fdcf2364cc2e4230d5fd7208a30d65",
+      "record_bytes": 15881944,
+      "symbols_sha256": "c90a76b264f4a002b36902836b5ca472eda76e8c4820eefdc7d261c3e589b0fc"
+    },
+    "vmovdqu64-256-family-1": {
+      "artifact": {
+        "bytes": 1973840,
+        "mode": 493,
+        "sha256": "3375e2e98a7537e4cd56f7ab1a27f6afd3ff2af1b948b0892fae675dcb95772c"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "bf25e76ef2e98511a152718fe4c41e5f00fdcf2364cc2e4230d5fd7208a30d65",
+      "record_bytes": 15881944,
+      "symbols_sha256": "c90a76b264f4a002b36902836b5ca472eda76e8c4820eefdc7d261c3e589b0fc"
+    },
+    "vmovdqu64-256-family-2": {
+      "artifact": {
+        "bytes": 1973840,
+        "mode": 493,
+        "sha256": "f5ddf24944bb3b2413d2da74c4b475d3fadfd6186e799f28ea0f7b120b3ea2fd"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "bf25e76ef2e98511a152718fe4c41e5f00fdcf2364cc2e4230d5fd7208a30d65",
+      "record_bytes": 15881944,
+      "symbols_sha256": "c90a76b264f4a002b36902836b5ca472eda76e8c4820eefdc7d261c3e589b0fc"
+    },
+    "vmovdqu64-256-family-3": {
+      "artifact": {
+        "bytes": 1973840,
+        "mode": 493,
+        "sha256": "cb591b086a56c5ef86aa1677bf012ac58ae36b53377275f40c31d64aec5c4a42"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "bf25e76ef2e98511a152718fe4c41e5f00fdcf2364cc2e4230d5fd7208a30d65",
+      "record_bytes": 15881944,
+      "symbols_sha256": "c90a76b264f4a002b36902836b5ca472eda76e8c4820eefdc7d261c3e589b0fc"
+    },
+    "vmovdqu64-256-family-4": {
+      "artifact": {
+        "bytes": 1973840,
+        "mode": 493,
+        "sha256": "dc306ba52e02775f0b90a07267e99eb3aed4d4ba9e7cf6155a2f214518e0a3ac"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "bf25e76ef2e98511a152718fe4c41e5f00fdcf2364cc2e4230d5fd7208a30d65",
+      "record_bytes": 15881944,
+      "symbols_sha256": "c90a76b264f4a002b36902836b5ca472eda76e8c4820eefdc7d261c3e589b0fc"
+    },
+    "vmovdqu64-256-family-5": {
+      "artifact": {
+        "bytes": 1973848,
+        "mode": 493,
+        "sha256": "e8290223cd97f225d2a2431c8a2a244be5e985bdd055dcb45356bedab5fb7700"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "bf25e76ef2e98511a152718fe4c41e5f00fdcf2364cc2e4230d5fd7208a30d65",
+      "record_bytes": 15881944,
+      "symbols_sha256": "c90a76b264f4a002b36902836b5ca472eda76e8c4820eefdc7d261c3e589b0fc"
+    },
+    "vmovdqu64-256-family-6": {
+      "artifact": {
+        "bytes": 1973848,
+        "mode": 493,
+        "sha256": "27d78d75a4370fbc447a045dcfad6f7e1dd20c5a67b3cbcab782072afd1e52c4"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "bf25e76ef2e98511a152718fe4c41e5f00fdcf2364cc2e4230d5fd7208a30d65",
+      "record_bytes": 15881944,
+      "symbols_sha256": "c90a76b264f4a002b36902836b5ca472eda76e8c4820eefdc7d261c3e589b0fc"
+    },
+    "vmovdqu64-256-family-7": {
+      "artifact": {
+        "bytes": 1973848,
+        "mode": 493,
+        "sha256": "33ff19fe8ee72fe7fe0987b99868c6a70334d97a8a3e68d990edd6292e5b9113"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "bf25e76ef2e98511a152718fe4c41e5f00fdcf2364cc2e4230d5fd7208a30d65",
+      "record_bytes": 15881944,
+      "symbols_sha256": "c90a76b264f4a002b36902836b5ca472eda76e8c4820eefdc7d261c3e589b0fc"
+    },
+    "vmovdqu64-256-family-8": {
+      "artifact": {
+        "bytes": 1973848,
+        "mode": 493,
+        "sha256": "152260987bae1b2321ba8679fff5db7dd913d1b79373e7143e7c17b91687b3e3"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "bf25e76ef2e98511a152718fe4c41e5f00fdcf2364cc2e4230d5fd7208a30d65",
+      "record_bytes": 15881944,
+      "symbols_sha256": "c90a76b264f4a002b36902836b5ca472eda76e8c4820eefdc7d261c3e589b0fc"
+    },
+    "vmovdqu64-256-family-9": {
+      "artifact": {
+        "bytes": 1973848,
+        "mode": 493,
+        "sha256": "014c8e49ad3e4db7e810be056bf6d3e9921a2a6c53f2110a60c37c410e4bbb87"
+      },
+      "elf": {
+        "dynamic": false,
+        "interpreter": false,
+        "relocations": 0,
+        "tls": false,
+        "type": "ET_EXEC"
+      },
+      "headers_sha256": "bf25e76ef2e98511a152718fe4c41e5f00fdcf2364cc2e4230d5fd7208a30d65",
+      "record_bytes": 15881944,
+      "symbols_sha256": "c90a76b264f4a002b36902836b5ca472eda76e8c4820eefdc7d261c3e589b0fc"
+    }
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_sha256": "39d7e183b67821bdf9aa19ae07e81e4e2ce1f430065237f2621be0a21746290b",
+  "private_receipt": {
+    "bytes": 1421821,
+    "sha256": "cd8ccd4bde6b11807cbe840c16bc3cb0394e069b60d75ec35b4b5129284518a8"
+  },
+  "profile": "page-selected-vmovdqu64-256-family-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_vmovdqu64_family.py",
+    "--expect-revision",
+    "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c",
+    "--vector-bits",
+    "256"
+  ],
+  "schema": 1,
+  "scope": "Canonical EVEX256.W1 Code1604 load/register family.160 structural pairs in10 cohorts, all32 YMM source/destination roles/self-copies, all16 bases/all15 indices/scales, original64-bit ModRM/SIB/RIP/disp8*32 and all42 length/tail combinations. Complete unchanged native/TF state/source/stack/data/flags comparisons; exact low256 result and mandatory zero upper256 destination bits. Four genuine full/cross16-byte ordinary/indexed failed reads retain full original state. All47 common and25 remaining original neighbors plus25 VL256 neighbors refuse; seven prior Code1605 and one Code1604 positive promotions remain mandatory. No other width/mask/store/prefix, numerical-address exhaustiveness, application completion or performance claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "2b0c610e90a76db5d4586df7cf76c43cd3e5ec5c",
+    "source_manifest_sha256": "d5f02f72a61ac49d6137f93bf4d552872a82558e997ff73f6bf1c332fd9ff825",
+    "tracked_clean": true,
+    "tree": "df396d6b10e87b93048e885d5a69e9f4fa0c261d"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261029T114233.287936Z",
+  "status": "passed",
+  "tool_hashes": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "cp": {
+      "bytes": 144400,
+      "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustup": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "totals": {
+    "actual_before_queries": 328,
+    "crossing_pairs": 37,
+    "ending_pairs": 123,
+    "new_pairs": 160,
+    "pairs": 170,
+    "refusals": 1358,
+    "startup_pairs": 14,
+    "supplied_none_queries": 98,
+    "typed_promotions": 98,
+    "verified_memory_failures": 4,
+    "vm256_supplied_none_queries": 14,
+    "vm256_typed_promotions": 14
+  },
+  "vector_bits": 256
+}
