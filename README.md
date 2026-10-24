@@ -28,12 +28,13 @@ The techniques come from two papers and from the original C++ library that
 introduced them:
 
 - Original implementation (C++): [iu-parfunc/liteinst](https://github.com/iu-parfunc/liteinst).
-- *Instruction Punning: Lightweight Instrumentation for x86-64* (PLDI 2016) —
-  the single-store punning technique.
 - *Living on the Edge: Rapid-Toggling Probes with Cross-Modification on x86*
-  (PLDI 2017,
-  [doi:10.1145/3062341.3062344](https://doi.org/10.1145/3062341.3062344)) — the
-  guarded split-site (WordPatch++) protocol.
+  (PLDI 2016,
+  [doi:10.1145/2908080.2908084](https://doi.org/10.1145/2908080.2908084)) — the
+  guarded split-site word-patching protocol.
+- *Instruction Punning: Lightweight Instrumentation for x86-64* (PLDI 2017,
+  [doi:10.1145/3062341.3062344](https://doi.org/10.1145/3062341.3062344)) —
+  instruction punning and the generalized WordPatch++ protocol.
 
 `liteinst2` is a Rust reimplementation of that work.
 
