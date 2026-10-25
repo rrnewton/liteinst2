@@ -6,11 +6,12 @@
 //! the numeric address, and separately authenticated child code occupies that
 //! exact address. No tracee address becomes a local pointer or function value.
 //!
-//! This adapter requires one owned Linux x86-64 task, the same qualified host
-//! layout as the emitter, no CET/AMX, immutable code and exhaustive entry/resume
-//! facts. It supports only generalized puns and refuses interacting source
-//! dependencies. It does not implement A2 composition, application signal
-//! delivery, concurrent first faults, or the full B1 contract.
+//! This adapter requires a real held Linux x86-64 execution owner, the same
+//! qualified host layout as the emitter, no CET/AMX, immutable code and
+//! exhaustive entry/resume facts. It supports only generalized puns and refuses
+//! interacting source dependencies. Task rendezvous and first-fault arbitration
+//! belong to the execution owner. This adapter does not implement A2
+//! composition, application signal delivery, or the full B1 contract.
 
 use std::collections::BTreeSet;
 use std::mem::{offset_of, size_of};
@@ -33,9 +34,8 @@ use liteinst2::trampoline::{
     SavedExtendedStateLayout,
 };
 
-use crate::{
-    LaunchError, MemoryMapping, RegisterSnapshot, RemoteLeaseOps, SignalStop, SingleThreadStop,
-};
+use crate::publication::{PublicationOperations, PublicationStop};
+use crate::{LaunchError, MemoryMapping, RegisterSnapshot, SignalStop};
 
 const PAGE: u64 = 4096;
 const MAX_SOURCE: usize = 19; // Five consumed bytes plus at most fourteen tail bytes.
@@ -234,9 +234,9 @@ impl InstalledCpuid {
     ///
     /// The task remains stopped after INT3. Its next resume executes native
     /// CPUID once and returns through the unchanged core restore sequence.
-    pub fn observe(
+    pub fn observe<S: PublicationStop>(
         &self,
-        stop: &mut SingleThreadStop<'_>,
+        stop: &mut S,
         signal: &SignalStop,
     ) -> Result<CpuidObservation, LaunchError> {
         let (actual, context) = callback_context(stop, signal, &self.callback)?;
@@ -351,9 +351,9 @@ impl CpuidPublisher {
 
     /// Resolves and authenticates the shared callback stop without exposing an
     /// unauthenticated logical-PC lookup to the admission loop.
-    pub fn observe(
+    pub fn observe<S: PublicationStop>(
         &self,
-        stop: &mut SingleThreadStop<'_>,
+        stop: &mut S,
         signal: &SignalStop,
     ) -> Result<CpuidObservation, LaunchError> {
         let callback = self
@@ -379,7 +379,9 @@ impl CpuidPublisher {
     /// # Safety
     /// The caller certifies current identity, complete legal entries and saved
     /// continuations, immutable private code, no other readers/writers/aliases,
-    /// and sole ownership of the child's execution and mapping lifecycle. The
+    /// and sole ownership of the child's execution and mapping lifecycle. Every
+    /// task sharing the target address space must remain excluded throughout
+    /// publication; the selected worker may execute only trusted island code. The
     /// child must have the emitter's exact enabled extended-state layout, native
     /// System V ABI, no CET or AMX use, and sufficient mapped writable callback
     /// stack below its preserved red zone. Code and instrumentation-private
@@ -388,13 +390,13 @@ impl CpuidPublisher {
     /// or syscall island directly. No application signal handlers/delivery are
     /// supported. The finalizer must not execute application code or change
     /// source identity/bytes. These are owner proofs, not consequences of `/proc`.
-    pub unsafe fn publish_bundle(
+    pub unsafe fn publish_bundle<S: PublicationStop>(
         &mut self,
-        stop: &mut SingleThreadStop<'_>,
+        stop: &mut S,
         prepared: &[PreparedCpuid],
         current_identity: CodeIdentity,
         timeout: Duration,
-        finalize: impl FnOnce(&mut RemoteLeaseOps<'_, '_>) -> Result<(), LaunchError>,
+        finalize: impl FnOnce(&mut dyn PublicationOperations) -> Result<(), LaunchError>,
     ) -> Result<Vec<InstalledCpuid>, LaunchError> {
         if prepared.is_empty() || prepared.len() > MAX_CPUID_BUNDLE {
             return invalid("invalid CPUID publication bundle size");
@@ -447,7 +449,7 @@ impl CpuidPublisher {
         // helper's guard borrows the actual stopped child, exposes only narrow
         // publication operations, and kills on any error or unwind.
         let installed = unsafe {
-            stop.with_core_lease(current_identity, ranges, |operations, lease| {
+            stop.with_publication_lease(current_identity, ranges, |operations, lease| {
                 let mut transaction = PoisonOnFailure {
                     lease,
                     complete: false,
@@ -659,7 +661,7 @@ fn patched_read(plan: &PatchPlan, address: u64, original: &[u8]) -> Result<Vec<u
 }
 
 fn verify_reads(
-    operations: &RemoteLeaseOps<'_, '_>,
+    operations: &dyn PublicationOperations,
     plan: &PatchPlan,
     patched: bool,
 ) -> Result<(), LaunchError> {
@@ -677,7 +679,7 @@ fn verify_reads(
 }
 
 fn verify_registers(
-    operations: &RemoteLeaseOps<'_, '_>,
+    operations: &dyn PublicationOperations,
     registers: &RegisterSnapshot,
     xstate: &[u8],
 ) -> Result<(), LaunchError> {
@@ -723,7 +725,7 @@ fn padded_image(
 }
 
 fn map_code(
-    operations: &mut RemoteLeaseOps<'_, '_>,
+    operations: &mut dyn PublicationOperations,
     code: &CodeImage,
     deadline: Instant,
 ) -> Result<(), LaunchError> {
@@ -736,7 +738,7 @@ fn map_code(
 }
 
 fn verify_code_ops(
-    operations: &RemoteLeaseOps<'_, '_>,
+    operations: &dyn PublicationOperations,
     code: &CodeImage,
 ) -> Result<(), LaunchError> {
     require_permissions(
@@ -751,7 +753,7 @@ fn verify_code_ops(
     Ok(())
 }
 
-fn verify_code_stop(stop: &SingleThreadStop<'_>, code: &CodeImage) -> Result<(), LaunchError> {
+fn verify_code_stop<S: PublicationStop>(stop: &S, code: &CodeImage) -> Result<(), LaunchError> {
     require_permissions(
         &stop.mappings(),
         code.range.clone(),
@@ -764,8 +766,8 @@ fn verify_code_stop(stop: &SingleThreadStop<'_>, code: &CodeImage) -> Result<(),
     Ok(())
 }
 
-fn callback_context(
-    stop: &SingleThreadStop<'_>,
+fn callback_context<S: PublicationStop>(
+    stop: &S,
     signal: &SignalStop,
     callback: &CallbackImage,
 ) -> Result<(RegisterSnapshot, Vec<u8>), LaunchError> {

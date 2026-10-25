@@ -13,3 +13,6 @@ pub mod gate;
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub mod core_remote;
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub mod publication;
