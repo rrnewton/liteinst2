@@ -586,19 +586,21 @@ const _: () = assert!(core::mem::size_of::<HookContext>() == 176);
 /// Checked byte lengths and saved-state layout for one trampoline.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct TrampolineLayout {
-    /// Original instructions executed before the logical hook.
+    /// Original instructions executed before the first logical hook.
     ///
     /// This is zero for the original same-site constructors.
     pub relocated_prefix_len: usize,
     /// Optional INT3 reached with the untouched application register state.
     pub entry_stop_len: usize,
-    /// Context-save and instrumentation-call bytes.
+    /// Context-save and instrumentation-call bytes for the first logical hook.
     pub instrumentation_len: usize,
     /// Optional INT3 reached after the complete application-state restore.
     pub completion_stop_len: usize,
     /// Relocated instructions, including any jump over encoder padding and literals.
+    /// Coalesced images also include subsequent hook/restore groups here; the
+    /// instrumentation and restore lengths describe the first logical hook.
     pub relocated_len: usize,
-    /// Context-restore bytes.
+    /// Context-restore bytes for the first logical hook.
     pub restore_len: usize,
     /// Control-transfer bytes returning to application code.
     pub return_len: usize,
@@ -654,9 +656,9 @@ impl TrampolineImage {
 
     /// Returns original instruction heads and their generated entry addresses.
     ///
-    /// Entering the logical hook's route executes the callback. Entering a
-    /// later head bypasses it, while an upstream entry executes the remaining
-    /// prefix before reaching the hook. These routes are distinct from the
+    /// Entering a logical hook's route executes its callback. Entering a
+    /// later head bypasses earlier hooks, while an upstream entry executes the
+    /// remaining prefix before reaching them. These routes are distinct from the
     /// reverse-PC ranges used to report faults in instrumentation code.
     pub fn entry_routes(&self) -> &[(u64, u64)] {
         &self.entry_routes
@@ -936,14 +938,17 @@ impl From<PatchError> for TrampolineError {
 enum TrampolineKind {
     PatchWindow,
     ExactSyscall,
+    Instruction,
+    Actions,
 }
 
-/// Immutable dispatch plan for a patch window or one exact native syscall.
+/// Immutable emission plan for logical hooks or callback-free relocation.
 #[derive(Clone, Debug)]
 pub struct TrampolinePlan {
     execute_address: u64,
     return_address: u64,
-    hook: HookCallback,
+    hook: Option<HookCallback>,
+    actions: Vec<(u64, HookCallback, bool)>,
     instructions: Vec<Instruction>,
     logical_index: usize,
     relocated_start: usize,
@@ -1034,7 +1039,8 @@ impl TrampolinePlan {
         Ok(Self {
             execute_address,
             return_address,
-            hook,
+            hook: Some(hook),
+            actions: Vec::new(),
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
             relocated_start: 1,
@@ -1116,7 +1122,8 @@ impl TrampolinePlan {
         Ok(Self {
             execute_address,
             return_address,
-            hook,
+            hook: Some(hook),
+            actions: Vec::new(),
             instructions,
             logical_index: 0,
             relocated_start,
@@ -1192,7 +1199,8 @@ impl TrampolinePlan {
         Ok(Self {
             execute_address: physical,
             return_address: end,
-            hook,
+            hook: Some(hook),
+            actions: Vec::new(),
             instructions,
             logical_index,
             relocated_start: logical_index + usize::from(replace),
@@ -1235,7 +1243,8 @@ impl TrampolinePlan {
         Ok(Self {
             execute_address,
             return_address,
-            hook,
+            hook: Some(hook),
+            actions: Vec::new(),
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
             relocated_start: usize::from(replace),
@@ -1244,12 +1253,88 @@ impl TrampolinePlan {
         })
     }
 
+    /// Relocates exactly one whole instruction without calling a hook.
+    ///
+    /// The original successor is the continuation, even for instructions
+    /// shorter than a redirect. Instruction qualification and the redirect's
+    /// entry/publication proof remain the caller's responsibility.
+    pub fn from_instruction(
+        scan: &ScanResult,
+        execute_address: u64,
+    ) -> Result<Self, TrampolineError> {
+        let scanned = scan
+            .instructions()
+            .iter()
+            .find(|instruction| instruction.address() == execute_address)
+            .ok_or(TrampolineError::SiteNotFound {
+                address: execute_address,
+            })?;
+        if !(1..=15).contains(&scanned.len()) {
+            return Err(encoding_error(
+                "relocation requires one 1..=15-byte instruction",
+            ));
+        }
+        let return_address = execute_address.checked_add(scanned.len() as u64).ok_or(
+            TrampolineError::ReturnAddressOverflow {
+                address: execute_address,
+                instruction_len: scanned.len(),
+            },
+        )?;
+        Ok(Self {
+            execute_address,
+            return_address,
+            hook: None,
+            actions: Vec::new(),
+            instructions: vec![*scanned.instruction()],
+            logical_index: 0,
+            relocated_start: 0,
+            ptrace_stops: false,
+            kind: TrampolineKind::Instruction,
+        })
+    }
+
+    /// Builds one exact window with ordered, independent logical callbacks.
+    ///
+    /// Actions must name distinct instruction heads in strictly increasing
+    /// address order. Each callback receives freshly saved state at that head;
+    /// its Boolean selects replacement of that instruction only. Internal
+    /// direct branches enter the destination's callback when one is present.
+    /// The planner owns ISA, control-flow, entry and publication qualification.
+    pub fn from_actions(
+        scan: &ScanResult,
+        physical: u64,
+        end: u64,
+        actions: &[(u64, HookCallback, bool)],
+    ) -> Result<Self, TrampolineError> {
+        let &(logical, hook, replace) = actions
+            .first()
+            .ok_or_else(|| encoding_error("coalesced window requires at least one action"))?;
+        let mut plan = Self::from_window(scan, physical, logical, end, hook, replace)?;
+        for (index, &(pc, _, _)) in actions.iter().enumerate() {
+            if index > 0 && actions[index - 1].0 >= pc {
+                return Err(encoding_error(
+                    "logical actions must be strictly increasing",
+                ));
+            }
+            if !plan
+                .instructions
+                .iter()
+                .any(|instruction| instruction.ip() == pc)
+            {
+                return Err(TrampolineError::SiteNotFound { address: pc });
+            }
+        }
+        plan.actions = actions.to_vec();
+        plan.kind = TrampolineKind::Actions;
+        Ok(plan)
+    }
+
     /// Returns the first displaced instruction address.
     pub const fn execute_address(&self) -> u64 {
         self.execute_address
     }
 
-    /// Returns the application instruction observed or replaced by the hook.
+    /// Returns the first logical hook PC, or the callback-free instruction PC.
     pub fn logical_address(&self) -> u64 {
         self.instructions[self.logical_index].ip()
     }
@@ -1278,11 +1363,18 @@ impl TrampolinePlan {
         }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
+            if matches!(
+                self.kind,
+                TrampolineKind::Instruction | TrampolineKind::Actions
+            ) {
+                return self.emit_actions_at(address);
+            }
             let extended_state = match self.kind {
                 TrampolineKind::PatchWindow => SavedExtendedStateLayout::detect()?,
                 TrampolineKind::ExactSyscall => SavedExtendedStateLayout::detect_with_mask(
                     PRESERVED_USER_STATE_MASK & !PKRU_XFEATURE,
                 )?,
+                TrampolineKind::Instruction | TrampolineKind::Actions => unreachable!(),
             };
             let prefix_instructions = &self.instructions[..self.logical_index];
             let prefix_block = if prefix_instructions.is_empty() {
@@ -1310,8 +1402,12 @@ impl TrampolinePlan {
             let instrumentation_address = hook_entry
                 .checked_add(entry_stop.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
-            let instrumentation =
-                self.encode_instrumentation(instrumentation_address, &extended_state)?;
+            let instrumentation = self.encode_instrumentation(
+                instrumentation_address,
+                &extended_state,
+                self.logical_address(),
+                self.hook.expect("legacy plan always has a callback"),
+            )?;
             let restore_address = instrumentation_address
                 .checked_add(instrumentation.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
@@ -1337,6 +1433,7 @@ impl TrampolinePlan {
                     relocated_address,
                     observing_entry,
                 )?),
+                TrampolineKind::Instruction | TrampolineKind::Actions => unreachable!(),
             };
             let relocated = relocated_block
                 .as_ref()
@@ -1457,10 +1554,211 @@ impl TrampolinePlan {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn emit_actions_at(&self, address: u64) -> Result<TrampolineImage, TrampolineError> {
+        let extended_state = SavedExtendedStateLayout::detect()?;
+        // Give every encoder label an identity distinct from *all* original
+        // addresses and operands. Direct branches are retargeted explicitly;
+        // RIP-relative data references must never follow an encoder label.
+        let mut next_identity = 0_u32;
+        let mut identity = || -> Result<u64, TrampolineError> {
+            loop {
+                let candidate = u64::from(
+                    u16::try_from(next_identity)
+                        .map_err(|_| encoding_error("coalesced encoder identities exhausted"))?,
+                );
+                next_identity += 1;
+                if !self.instructions.iter().any(|instruction| {
+                    instruction.ip() == candidate
+                        || (instruction.is_ip_rel_memory_operand()
+                            && instruction.ip_rel_memory_address() == candidate)
+                        || (matches!(
+                            instruction.op0_kind(),
+                            OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
+                        ) && instruction.near_branch_target() == candidate)
+                }) {
+                    return Ok(candidate);
+                }
+            }
+        };
+        let entry_identities = (0..self.instructions.len())
+            .map(|_| identity())
+            .collect::<Result<Vec<_>, _>>()?;
+        let mut encoded_instructions = Vec::new();
+        let mut heads = Vec::new();
+        let mut first_hook_lengths = None;
+        let mut action_index = 0;
+        for (index, original) in self.instructions.iter().enumerate() {
+            let entry_index = encoded_instructions.len();
+            let mut entry = Instruction::with(Code::Zero_bytes);
+            entry.set_ip(entry_identities[index]);
+            encoded_instructions.push(entry);
+            let action = self
+                .actions
+                .get(action_index)
+                .filter(|action| action.0 == original.ip());
+            if let Some(&(_, hook, _)) = action {
+                // These helpers use only register/stack operands, absolute MOV
+                // immediates and internal relative branches. Their byte strings
+                // are position independent and remain contiguous below.
+                let instrumentation =
+                    self.encode_instrumentation(0, &extended_state, original.ip(), hook)?;
+                let restore = encode_restore(instrumentation.len() as u64, &extended_state)?;
+                first_hook_lengths.get_or_insert((
+                    entry_index,
+                    instrumentation.len(),
+                    restore.len(),
+                ));
+                for bytes in [instrumentation.as_slice(), restore.as_slice()] {
+                    for chunk in bytes.chunks(16) {
+                        let mut directive =
+                            Instruction::with_declare_byte(chunk).map_err(encoding_error)?;
+                        directive.set_ip(identity()?);
+                        encoded_instructions.push(directive);
+                    }
+                }
+                action_index += 1;
+            }
+            let body_index = encoded_instructions.len();
+            let mut body = Instruction::with(Code::Zero_bytes);
+            body.set_ip(identity()?);
+            encoded_instructions.push(body);
+            let replaced = action.is_some_and(|action| action.2);
+            if !replaced {
+                let mut instruction = *original;
+                instruction.set_ip(identity()?);
+                let internal_target = if matches!(
+                    instruction.op0_kind(),
+                    OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
+                ) {
+                    self.instructions
+                        .iter()
+                        .position(|head| head.ip() == original.near_branch_target())
+                } else {
+                    None
+                };
+                if let Some(target) = internal_target {
+                    let target = entry_identities[target];
+                    match instruction.op0_kind() {
+                        OpKind::NearBranch16 => instruction.set_near_branch16(target as u16),
+                        OpKind::NearBranch32 => instruction.set_near_branch32(target as u32),
+                        OpKind::NearBranch64 => instruction.set_near_branch64(target),
+                        _ => unreachable!(),
+                    }
+                }
+                encoded_instructions.push(instruction);
+            }
+            heads.push((original.ip(), entry_index, body_index, replaced));
+        }
+        let block = encode_relocated_block(&encoded_instructions, address, None)?;
+        let offset = |index: usize| -> Result<usize, TrampolineError> {
+            block
+                .encoded
+                .new_instruction_offsets
+                .get(index)
+                .copied()
+                .filter(|offset| *offset != u32::MAX)
+                .map(|offset| offset as usize)
+                .ok_or_else(|| encoding_error("coalesced encoder lost an instruction label"))
+        };
+        let generated = |offset: usize| {
+            address
+                .checked_add(offset as u64)
+                .ok_or(TrampolineError::AddressNotRepresentable { address })
+        };
+        let mut entry_routes = Vec::new();
+        let mut instruction_boundaries = Vec::new();
+        let mut program_counters = Vec::new();
+        let executable_end = block
+            .terminal_jump_offset
+            .unwrap_or(block.encoded.code_buffer.len());
+        for (index, &(pc, entry, body, replaced)) in heads.iter().enumerate() {
+            let start = generated(offset(entry)?)?;
+            let end = generated(if let Some(next) = heads.get(index + 1) {
+                offset(next.1)?
+            } else {
+                executable_end
+            })?;
+            entry_routes.push((pc, start));
+            if !replaced {
+                instruction_boundaries.push((pc, generated(offset(body)?)?));
+            }
+            push_program_counter_mapping(&mut program_counters, start, end, pc);
+        }
+        if let Some(offset) = block.terminal_jump_offset {
+            push_program_counter_mapping(
+                &mut program_counters,
+                generated(offset)?,
+                generated(offset + NEAR_RETURN_JUMP_BYTES)?,
+                self.return_address,
+            );
+        }
+        for relay in &block.branch_relays {
+            push_program_counter_mapping(
+                &mut program_counters,
+                generated(relay.offset)?,
+                generated(relay.offset + BRANCH_RELAY_CODE.len())?,
+                relay.target,
+            );
+        }
+        let return_start = generated(block.encoded.code_buffer.len())?;
+        let return_jump = encode_return_jump(return_start, self.return_address)?;
+        let return_code_len = if return_jump.len() == NOTRACK_ABSOLUTE_JUMP_BYTES {
+            return_jump.len() - core::mem::size_of::<u64>()
+        } else {
+            return_jump.len()
+        };
+        let total_len = block
+            .encoded
+            .code_buffer
+            .len()
+            .checked_add(return_jump.len())
+            .ok_or_else(|| encoding_error("coalesced image length overflow"))?;
+        generated(total_len)?;
+        push_program_counter_mapping(
+            &mut program_counters,
+            return_start,
+            generated(block.encoded.code_buffer.len() + return_code_len)?,
+            self.return_address,
+        );
+        let (prefix_len, instrumentation_len, restore_len) = match first_hook_lengths {
+            Some((entry, instrumentation, restore)) => (offset(entry)?, instrumentation, restore),
+            None => (0, 0, 0),
+        };
+        let relocated_len = block
+            .encoded
+            .code_buffer
+            .len()
+            .checked_sub(prefix_len + instrumentation_len + restore_len)
+            .ok_or_else(|| encoding_error("coalesced hook exceeds emitted image"))?;
+        let layout = TrampolineLayout {
+            relocated_prefix_len: prefix_len,
+            instrumentation_len,
+            restore_len,
+            relocated_len,
+            return_len: return_jump.len(),
+            saved_extended_state: extended_state,
+            ..TrampolineLayout::default()
+        };
+        let mut bytes = block.encoded.code_buffer;
+        bytes.extend_from_slice(&return_jump);
+        debug_assert_eq!(layout.total_len(), Some(bytes.len()));
+        Ok(TrampolineImage {
+            address,
+            bytes,
+            layout,
+            program_counters,
+            entry_routes,
+            instruction_boundaries,
+        })
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     fn encode_instrumentation(
         &self,
         address: u64,
         extended_state: &SavedExtendedStateLayout,
+        logical_address: u64,
+        hook: HookCallback,
     ) -> Result<Vec<u8>, TrampolineError> {
         let mut assembler = CodeAssembler::new(64).map_err(encoding_error)?;
         assembler
@@ -1508,7 +1806,7 @@ impl TrampolinePlan {
         }
         assembler.push(rax).map_err(encoding_error)?;
         assembler
-            .mov(rax, self.logical_address())
+            .mov(rax, logical_address)
             .map_err(encoding_error)?;
         assembler.push(rax).map_err(encoding_error)?;
         assembler.mov(r12, rsp).map_err(encoding_error)?;
@@ -1545,7 +1843,7 @@ impl TrampolinePlan {
         assembler.cld().map_err(encoding_error)?;
         assembler.mov(rdi, r12).map_err(encoding_error)?;
         assembler
-            .mov(rax, self.hook as usize as u64)
+            .mov(rax, hook as usize as u64)
             .map_err(encoding_error)?;
         assembler.call(rax).map_err(encoding_error)?;
         assembler.assemble(address).map_err(encoding_error)
@@ -2345,11 +2643,13 @@ impl ExecutableTrampoline {
         }
     }
 
-    /// Returns the entry that executes only relocated tail instructions.
+    /// Returns the entry immediately after the first logical hook's restore.
     ///
     /// A signal handler that already emulated a replace-first instruction can
     /// resume here after publishing the hook. The interrupted register context
     /// must already contain the emulated result.
+    /// Coalesced images still execute any later logical callbacks. For a
+    /// callback-free image this is the instruction's generated entry.
     pub const fn relocated_tail_address(&self) -> u64 {
         self.address
             + self.layout.relocated_prefix_len as u64
@@ -3912,6 +4212,553 @@ mod tests {
                 );
                 // No global PC metadata or in-flight execution retains it.
                 trampoline.discard();
+            }
+        }
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    mod a2_emitter_foundation {
+        use super::{HookContext, InstructionScanner, TrampolinePlan, noop_hook};
+        use crate::trampoline::{ExecutableTrampoline, HookCallback};
+        use core::sync::atomic::{AtomicU64, Ordering};
+
+        static CALLS: [AtomicU64; 2] = [const { AtomicU64::new(0) }; 2];
+        static PCS: [AtomicU64; 2] = [const { AtomicU64::new(0) }; 2];
+        static VALUES: [AtomicU64; 2] = [const { AtomicU64::new(0) }; 2];
+        static FLAGS: [AtomicU64; 2] = [const { AtomicU64::new(0) }; 2];
+        static STACKS: [AtomicU64; 2] = [const { AtomicU64::new(0) }; 2];
+        static ORDER: AtomicU64 = AtomicU64::new(0);
+
+        unsafe fn record(context: *mut HookContext, index: usize) {
+            // SAFETY: called only with the generated, initialized callback frame.
+            let context = unsafe { &*context };
+            CALLS[index].fetch_add(1, Ordering::Relaxed);
+            PCS[index].store(context.instruction_pointer, Ordering::Relaxed);
+            VALUES[index].store(context.rax, Ordering::Relaxed);
+            FLAGS[index].store(context.rflags, Ordering::Relaxed);
+            STACKS[index].store(context.stack_pointer, Ordering::Relaxed);
+            ORDER.store(
+                ORDER.load(Ordering::Relaxed) * 3 + index as u64 + 1,
+                Ordering::Relaxed,
+            );
+        }
+
+        unsafe extern "C" fn first(context: *mut HookContext) {
+            unsafe { record(context, 0) };
+        }
+        unsafe extern "C" fn second(context: *mut HookContext) {
+            unsafe { record(context, 1) };
+        }
+        unsafe extern "C" fn replace_first(context: *mut HookContext) {
+            unsafe {
+                record(context, 0);
+                (*context).rax = 100;
+            }
+        }
+        unsafe extern "C" fn replace_second(context: *mut HookContext) {
+            unsafe {
+                record(context, 1);
+                (*context).rax = 1000;
+            }
+        }
+        fn reset() {
+            for value in CALLS
+                .iter()
+                .chain(PCS.iter())
+                .chain(VALUES.iter())
+                .chain(FLAGS.iter())
+                .chain(STACKS.iter())
+                .chain([&ORDER])
+            {
+                value.store(0, Ordering::Relaxed);
+            }
+        }
+
+        struct Source(*mut u8, usize);
+        impl Source {
+            fn new(bytes: &[u8]) -> Self {
+                let len = crate::trampoline::page_size().unwrap();
+                assert!(bytes.len() <= len);
+                // SAFETY: privately owned initialized RW storage becomes RX
+                // before any entry executes. There is never an RWX mapping.
+                unsafe {
+                    let mapping = libc::mmap(
+                        core::ptr::null_mut(),
+                        len,
+                        libc::PROT_READ | libc::PROT_WRITE,
+                        libc::MAP_PRIVATE | libc::MAP_ANONYMOUS,
+                        -1,
+                        0,
+                    );
+                    assert_ne!(mapping, libc::MAP_FAILED);
+                    core::ptr::copy_nonoverlapping(bytes.as_ptr(), mapping.cast(), bytes.len());
+                    assert_eq!(
+                        libc::mprotect(mapping, len, libc::PROT_READ | libc::PROT_EXEC),
+                        0
+                    );
+                    Self(mapping.cast(), len)
+                }
+            }
+            fn address(&self) -> u64 {
+                self.0 as usize as u64
+            }
+        }
+        impl Drop for Source {
+            fn drop(&mut self) {
+                // SAFETY: all fixture entries and trampolines have drained.
+                assert_eq!(unsafe { libc::munmap(self.0.cast(), self.1) }, 0);
+            }
+        }
+        unsafe fn invoke(entry: u64, value: u64, count: u64) -> (u64, u64, u64) {
+            let result;
+            let remaining;
+            let flags;
+            // SAFETY: callers supply finite System V fixtures, initialized
+            // operands and an authenticated emitted entry. CLC seeds CF.
+            unsafe {
+                core::arch::asm!(
+                    "clc", "call r11", "pushfq", "pop rdx",
+                    in("r11") entry,
+                    inlateout("rax") value => result,
+                    inlateout("rcx") count => remaining,
+                    lateout("rdx") flags,
+                    clobber_abi("C"),
+                );
+            }
+            (result, remaining, flags)
+        }
+
+        #[test]
+        fn validates_exact_instruction_and_ordered_action_boundaries() {
+            let base = 0x20_0000;
+            let code = [0x48, 0x83, 0xc0, 1, 0x48, 0x83, 0xc0, 2, 0xc3];
+            let scan = InstructionScanner::default().scan(&code, base).unwrap();
+            assert!(TrampolinePlan::from_instruction(&scan, base + 1).is_err());
+            assert!(TrampolinePlan::from_instruction(&scan, base + 9).is_err());
+            for actions in [
+                vec![],
+                vec![(base + 1, noop_hook as HookCallback, false)],
+                vec![(base, noop_hook, false), (base, noop_hook, true)],
+                vec![(base + 4, noop_hook, false), (base, noop_hook, false)],
+                vec![(base, noop_hook, false), (base + 9, noop_hook, false)],
+            ] {
+                assert!(TrampolinePlan::from_actions(&scan, base, base + 9, &actions).is_err());
+            }
+            assert!(
+                TrampolinePlan::from_actions(&scan, base, base + 7, &[(base, noop_hook, false)])
+                    .is_err()
+            );
+            assert!(
+                TrampolinePlan::from_actions(&scan, base, base + 4, &[(base, noop_hook, false)])
+                    .is_err()
+            );
+            for replace in [false, true] {
+                let legacy = TrampolinePlan::from_window(
+                    &scan,
+                    base,
+                    base + 4,
+                    base + 9,
+                    noop_hook,
+                    replace,
+                )
+                .unwrap()
+                .emit_at(base + 0x10_0000)
+                .unwrap();
+                let actions = TrampolinePlan::from_actions(
+                    &scan,
+                    base,
+                    base + 9,
+                    &[(base + 4, noop_hook, replace)],
+                )
+                .unwrap()
+                .emit_at(base + 0x10_0000)
+                .unwrap();
+                assert_eq!(actions, legacy, "straight-line single-action legacy parity");
+            }
+        }
+
+        #[test]
+        fn callback_free_lengths_and_far_branch_maps_are_exact() {
+            let base = 0x20_0000;
+            for len in 1..=15 {
+                let mut code = vec![0x66; len - 1];
+                code.push(0x90);
+                let scan = InstructionScanner::default().scan(&code, base).unwrap();
+                let plan = TrampolinePlan::from_instruction(&scan, base).unwrap();
+                assert_eq!(plan.displaced_len(), len);
+                assert_eq!(plan.return_address(), base + len as u64);
+                assert!(!plan.replaces_first());
+                let image = plan.emit_at(base + 0x10_0000).unwrap();
+                assert_eq!(image.layout().instrumentation_len, 0);
+                assert_eq!(image.layout().restore_len, 0);
+                assert_eq!(image.layout().total_len(), Some(image.bytes().len()));
+                assert_eq!(image.entry_routes(), &[(base, image.address())]);
+                assert_eq!(image.instruction_boundaries(), image.entry_routes());
+                let return_offset = image.bytes().len() - image.layout().return_len;
+                let mut decoder = iced_x86::Decoder::with_ip(
+                    64,
+                    &image.bytes()[return_offset..],
+                    image.address() + return_offset as u64,
+                    iced_x86::DecoderOptions::NONE,
+                );
+                assert_eq!(decoder.decode().near_branch_target(), base + len as u64);
+            }
+            let scan = InstructionScanner::default()
+                .scan(&[0x74, 0x7f], base)
+                .unwrap();
+            let image = TrampolinePlan::from_instruction(&scan, base)
+                .unwrap()
+                .emit_at(0x80_0000_0000)
+                .unwrap();
+            let relay = image
+                .program_counter_mappings()
+                .iter()
+                .find(|mapping| mapping.logical_address() == base + 129)
+                .unwrap();
+            let offset = (relay.generated_start() - image.address()) as usize;
+            assert_eq!(
+                &image.bytes()[offset..offset + crate::trampoline::BRANCH_RELAY_CODE.len()],
+                &crate::trampoline::BRANCH_RELAY_CODE
+            );
+            assert!(
+                image
+                    .program_counter_mappings()
+                    .iter()
+                    .all(|mapping| mapping.translate(relay.generated_end()).is_none()),
+                "absolute relay target is data, not executable PC metadata"
+            );
+        }
+
+        fn native_cases() {
+            // Every supported architectural instruction length resumes at its
+            // original end; duplicate operand-size prefixes form one NOP.
+            for len in 1..=15 {
+                let mut code = vec![0x66; len - 1];
+                code.extend_from_slice(&[0x90, 0xb8, 123, 0, 0, 0, 0xc3]);
+                let source = Source::new(&code);
+                let scan = InstructionScanner::default()
+                    .scan(&code, source.address())
+                    .unwrap();
+                let plan = TrampolinePlan::from_instruction(&scan, source.address()).unwrap();
+                let trampoline = ExecutableTrampoline::allocate(&plan).unwrap();
+                assert_eq!(unsafe { invoke(trampoline.address(), 10, 3) }.0, 123);
+                assert_eq!(plan.return_address(), source.address() + len as u64);
+                trampoline.discard();
+            }
+
+            // Every original head is entered independently. The second hook
+            // must see the first instruction's restored result and fresh flags.
+            let code = [
+                0x48, 0x83, 0xc0, 1, 0x48, 0x83, 0xc0, 2, 0x48, 0x83, 0xc0, 4, 0xc3,
+            ];
+            let source = Source::new(&code);
+            let base = source.address();
+            let scan = InstructionScanner::default().scan(&code, base).unwrap();
+            for replacing_first in [false, true] {
+                for replacing_second in [false, true] {
+                    let hook0: HookCallback = if replacing_first {
+                        replace_first
+                    } else {
+                        first
+                    };
+                    let hook1: HookCallback = if replacing_second {
+                        replace_second
+                    } else {
+                        second
+                    };
+                    let plan = TrampolinePlan::from_actions(
+                        &scan,
+                        base,
+                        base + code.len() as u64,
+                        &[
+                            (base + 4, hook0, replacing_first),
+                            (base + 8, hook1, replacing_second),
+                        ],
+                    )
+                    .unwrap();
+                    let trampoline = ExecutableTrampoline::allocate(&plan).unwrap();
+                    let image = plan.emit_at(trampoline.address()).unwrap();
+                    assert_eq!(image.entry_routes().len(), 4);
+                    assert_eq!(
+                        image.instruction_boundaries().len(),
+                        4 - usize::from(replacing_first) - usize::from(replacing_second)
+                    );
+                    for &(pc, generated) in image.instruction_boundaries() {
+                        assert_eq!(
+                            image
+                                .program_counter_mappings()
+                                .iter()
+                                .find_map(|mapping| mapping.translate(generated)),
+                            Some(pc)
+                        );
+                    }
+                    for initial in [10_u64, u64::MAX] {
+                        for (entry, &(_, generated)) in image.entry_routes().iter().enumerate() {
+                            reset();
+                            let (mut expected, mut carry) = if entry == 0 {
+                                initial.overflowing_add(1)
+                            } else {
+                                (initial, false)
+                            };
+                            let first_value = expected;
+                            let first_carry = carry;
+                            if entry <= 1 {
+                                if replacing_first {
+                                    expected = 100;
+                                } else {
+                                    (expected, carry) = expected.overflowing_add(2);
+                                }
+                            }
+                            let second_value = expected;
+                            let second_carry = carry;
+                            if entry <= 2 {
+                                if replacing_second {
+                                    expected = 1000;
+                                } else {
+                                    expected = expected.wrapping_add(4);
+                                }
+                            }
+                            assert_eq!(unsafe { invoke(generated, initial, 3) }.0, expected);
+                            assert_eq!(CALLS[0].load(Ordering::Relaxed), u64::from(entry <= 1));
+                            assert_eq!(CALLS[1].load(Ordering::Relaxed), u64::from(entry <= 2));
+                            assert_eq!(
+                                ORDER.load(Ordering::Relaxed),
+                                if entry <= 1 {
+                                    5
+                                } else if entry == 2 {
+                                    2
+                                } else {
+                                    0
+                                }
+                            );
+                            if entry <= 1 {
+                                assert_eq!(PCS[0].load(Ordering::Relaxed), base + 4);
+                                assert_eq!(VALUES[0].load(Ordering::Relaxed), first_value);
+                                assert_eq!(
+                                    FLAGS[0].load(Ordering::Relaxed) & 1,
+                                    u64::from(first_carry)
+                                );
+                                assert_eq!(
+                                    STACKS[0].load(Ordering::Relaxed),
+                                    STACKS[1].load(Ordering::Relaxed)
+                                );
+                            }
+                            if entry <= 2 {
+                                assert_eq!(PCS[1].load(Ordering::Relaxed), base + 8);
+                                assert_eq!(VALUES[1].load(Ordering::Relaxed), second_value);
+                                assert_eq!(
+                                    FLAGS[1].load(Ordering::Relaxed) & 1,
+                                    u64::from(second_carry)
+                                );
+                            }
+                        }
+                    }
+                    trampoline.discard();
+                }
+            }
+
+            // A coalesced window ending before the original continuation must
+            // resume there from each entry, with only the remaining callbacks.
+            let code = [
+                0x48, 0x83, 0xc0, 1, 0x48, 0x83, 0xc0, 2, 0x48, 0x83, 0xc0, 4, 0x48, 0x83, 0xc0, 8,
+                0xc3,
+            ];
+            let source = Source::new(&code);
+            let base = source.address();
+            let scan = InstructionScanner::default().scan(&code, base).unwrap();
+            let plan = TrampolinePlan::from_actions(
+                &scan,
+                base,
+                base + 12,
+                &[(base + 4, first, false), (base + 8, second, false)],
+            )
+            .unwrap();
+            let trampoline = ExecutableTrampoline::allocate(&plan).unwrap();
+            let image = plan.emit_at(trampoline.address()).unwrap();
+            let return_pc =
+                image.address() + (image.bytes().len() - image.layout().return_len) as u64;
+            assert_eq!(
+                image
+                    .program_counter_mappings()
+                    .iter()
+                    .find_map(|mapping| mapping.translate(return_pc)),
+                Some(base + 12)
+            );
+            for (index, (&(_, entry), expected)) in
+                image.entry_routes().iter().zip([25, 24, 22]).enumerate()
+            {
+                reset();
+                assert_eq!(unsafe { invoke(entry, 10, 3) }.0, expected);
+                assert_eq!(CALLS[0].load(Ordering::Relaxed), u64::from(index < 2));
+                assert_eq!(CALLS[1].load(Ordering::Relaxed), 1);
+            }
+            trampoline.discard();
+
+            // A forward branch to the second action bypasses only the first.
+            let code = [0xeb, 4, 0x48, 0x83, 0xc0, 1, 0x48, 0x83, 0xc0, 2, 0xc3];
+            let source = Source::new(&code);
+            let base = source.address();
+            let scan = InstructionScanner::default().scan(&code, base).unwrap();
+            let plan = TrampolinePlan::from_actions(
+                &scan,
+                base,
+                base + code.len() as u64,
+                &[(base + 2, first, false), (base + 6, second, false)],
+            )
+            .unwrap();
+            let trampoline = ExecutableTrampoline::allocate(&plan).unwrap();
+            reset();
+            assert_eq!(unsafe { invoke(trampoline.address(), 10, 3) }.0, 12);
+            assert_eq!(CALLS[0].load(Ordering::Relaxed), 0);
+            assert_eq!(CALLS[1].load(Ordering::Relaxed), 1);
+            trampoline.discard();
+
+            // LOOP self must decrement the restored RCX and visit its logical
+            // hook on each iteration. No source patch is needed for this test:
+            // taking a branch to original code would miss the required hooks.
+            let code = [0xe2, 0xfe, 0x48, 0x89, 0xc8, 0xc3];
+            let source = Source::new(&code);
+            let base = source.address();
+            let scan = InstructionScanner::default().scan(&code, base).unwrap();
+            let plan = TrampolinePlan::from_instruction(&scan, base).unwrap();
+            let trampoline = ExecutableTrampoline::allocate(&plan).unwrap();
+            let (value, remaining, flags) = unsafe { invoke(trampoline.address(), 7, 3) };
+            assert_eq!((value, remaining, flags & 1), (0, 0, 0));
+            trampoline.discard();
+            let plan = TrampolinePlan::from_actions(
+                &scan,
+                base,
+                base + code.len() as u64,
+                &[(base, first, false), (base + 2, second, false)],
+            )
+            .unwrap();
+            let trampoline = ExecutableTrampoline::allocate(&plan).unwrap();
+            reset();
+            assert_eq!(unsafe { invoke(trampoline.address(), 7, 3) }.0, 0);
+            assert_eq!(CALLS[0].load(Ordering::Relaxed), 3);
+            assert_eq!(CALLS[1].load(Ordering::Relaxed), 1);
+            assert_eq!(PCS[0].load(Ordering::Relaxed), base);
+            assert_eq!(PCS[1].load(Ordering::Relaxed), base + 2);
+            trampoline.discard();
+
+            // Force branch expansion and the encoder's literal pool. Both the
+            // taken relay and the fallthrough terminal must reach *original*
+            // application addresses, never synthetic encoder identities.
+            let code = [0xe3, 6, 0xb8, 11, 0, 0, 0, 0xc3, 0xb8, 22, 0, 0, 0, 0xc3];
+            let source = Source::new(&code);
+            let base = source.address();
+            let scan = InstructionScanner::default().scan(&code, base).unwrap();
+            let plan = TrampolinePlan::from_instruction(&scan, base).unwrap();
+            let mapping =
+                crate::trampoline::PendingMapping::allocate_near(base ^ (1 << 34)).unwrap();
+            let address = mapping.executable as usize as u64;
+            assert!(i128::from(address).abs_diff(i128::from(base)) > i32::MAX as u128);
+            let image = plan.emit_at(address).unwrap();
+            assert!(
+                image
+                    .program_counter_mappings()
+                    .iter()
+                    .any(|mapping| mapping.logical_address() == base + 8)
+            );
+            let trampoline = mapping.publish_at(&image, 0).unwrap();
+            for (count, expected) in [(0, 22), (1, 11)] {
+                let (value, remaining, flags) = unsafe { invoke(trampoline.address(), 7, count) };
+                assert_eq!((value, remaining, flags & 1), (expected, count, 0));
+            }
+            trampoline.discard();
+
+            // A cross-head conditional backedge observes freshly updated flags.
+            let code = [0x48, 0xff, 0xc9, 0x75, 0xfb, 0x48, 0x89, 0xc8, 0xc3];
+            let source = Source::new(&code);
+            let base = source.address();
+            let scan = InstructionScanner::default().scan(&code, base).unwrap();
+            let plan = TrampolinePlan::from_actions(
+                &scan,
+                base,
+                base + code.len() as u64,
+                &[(base, first, false), (base + 3, second, false)],
+            )
+            .unwrap();
+            let trampoline = ExecutableTrampoline::allocate(&plan).unwrap();
+            reset();
+            assert_eq!(unsafe { invoke(trampoline.address(), 7, 3) }.0, 0);
+            assert_eq!(CALLS[0].load(Ordering::Relaxed), 3);
+            assert_eq!(CALLS[1].load(Ordering::Relaxed), 3);
+            trampoline.discard();
+
+            // A branch to a replaced head runs the replacement on every visit,
+            // rather than entering a removed instruction or bypassing its hook.
+            let code = [0x48, 0x83, 0xc0, 1, 0x48, 0xff, 0xc9, 0x75, 0xf7, 0xc3];
+            let source = Source::new(&code);
+            let base = source.address();
+            let scan = InstructionScanner::default().scan(&code, base).unwrap();
+            let plan = TrampolinePlan::from_actions(
+                &scan,
+                base,
+                base + code.len() as u64,
+                &[(base, replace_first, true), (base + 4, second, false)],
+            )
+            .unwrap();
+            let trampoline = ExecutableTrampoline::allocate(&plan).unwrap();
+            reset();
+            assert_eq!(unsafe { invoke(trampoline.address(), 7, 3) }.0, 100);
+            assert_eq!(CALLS[0].load(Ordering::Relaxed), 3);
+            assert_eq!(CALLS[1].load(Ordering::Relaxed), 3);
+            assert_eq!(VALUES[1].load(Ordering::Relaxed), 100);
+            trampoline.discard();
+
+            // RIP-relative data equal to an instruction head remains an
+            // application-address read even when that head has a callback.
+            let code = [
+                0x0f, 0xb6, 0x05, 0xf9, 0xff, 0xff, 0xff, 0x48, 0x83, 0xc0, 1, 0xc3,
+            ];
+            let source = Source::new(&code);
+            let base = source.address();
+            let scan = InstructionScanner::default().scan(&code, base).unwrap();
+            for plan in [
+                TrampolinePlan::from_instruction(&scan, base).unwrap(),
+                TrampolinePlan::from_actions(
+                    &scan,
+                    base,
+                    base + code.len() as u64,
+                    &[(base, first, false), (base + 7, second, false)],
+                )
+                .unwrap(),
+            ] {
+                let trampoline = ExecutableTrampoline::allocate(&plan).unwrap();
+                reset();
+                assert_eq!(unsafe { invoke(trampoline.address(), 7, 3) }.0, 0x10);
+                trampoline.discard();
+            }
+            assert_eq!(
+                unsafe { core::slice::from_raw_parts(source.0, code.len()) },
+                code
+            );
+        }
+
+        #[test]
+        fn native_instructions_actions_and_backedges() {
+            const CHILD: &str = "LI2_A2_EMITTER_CHILD";
+            if std::env::var_os(CHILD).is_some() {
+                native_cases();
+                return;
+            }
+            let mut child = std::process::Command::new(std::env::current_exe().unwrap())
+                .args(["--exact", "trampoline::tests::a2_emitter_foundation::native_instructions_actions_and_backedges",
+                    "--nocapture", "--test-threads=1"])
+                .env(CHILD, "1").spawn().unwrap();
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(20);
+            loop {
+                if let Some(status) = child.try_wait().unwrap() {
+                    assert!(status.success(), "native emitter child failed: {status}");
+                    break;
+                }
+                if std::time::Instant::now() >= deadline {
+                    child.kill().unwrap();
+                    child.wait().unwrap();
+                    panic!("native emitter child exceeded its 20-second bound");
+                }
+                std::thread::sleep(std::time::Duration::from_millis(10));
             }
         }
     }
