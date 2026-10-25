@@ -25,6 +25,7 @@ commands = [
     ('test', ['cargo', 'test', '--workspace']),
     ('check', ['cargo', 'check', '--workspace', '--all-features', '--all-targets']),
     ('contract', ['cargo', 'test', '--test', 'quiescent_contract', '--', '--test-threads=1', '--nocapture']),
+    ('pun-contract', ['cargo', 'test', '--test', 'generalized_pun_contract', '--', '--test-threads=1', '--nocapture']),
     ('oracle', ['cargo', 'test', '--test', 'quiescent_oracle', '--', '--test-threads=1', '--nocapture']),
 ]
 records = []
@@ -32,7 +33,8 @@ head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True
 diff = subprocess.check_output(['git', 'diff', '--binary', 'HEAD'], cwd=ROOT)
 sources = ['src/contracts.rs', 'src/quiescent.rs', 'src/entry_router.rs',
            'src/trampoline.rs', 'tests/quiescent_contract.rs',
-           'tests/quiescent_oracle.rs', 'tests/support/quiescent_oracle.rs']
+           'tests/quiescent_oracle.rs', 'tests/support/quiescent_oracle.rs',
+           'tests/generalized_pun_contract.rs']
 source_sha256 = {path: hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
                  for path in sources}
 for name, argv in commands:
