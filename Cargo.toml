@@ -9,21 +9,22 @@ license = "BSD-2-Clause"
 keywords = ["instrumentation", "x86-64", "patching", "trampoline"]
 categories = ["development-tools", "os::linux-apis"]
 rust-version = "1.85"
+# Root anchors keep explicit documentation names out of private work directories.
 include = [
-    "Cargo.lock",
-    "Cargo.toml",
-    "LICENSE",
-    "INTERFACES.md",
-    "A1-QUIESCENT.md",
-    "A2-COMPOSITION.md",
-    "COALESCED-CONTROLS.md",
-    "PATCH_SITE_DECISION_TREE.md",
-    "README.md",
-    "examples/preload_consumer.rs",
-    "examples/replace_first.rs",
-    "examples/saved_pkru_probe.rs",
-    "src/**",
-    "tests/**",
+    "/Cargo.lock",
+    "/Cargo.toml",
+    "/LICENSE",
+    "/INTERFACES.md",
+    "/A1-QUIESCENT.md",
+    "/A2-COMPOSITION.md",
+    "/COALESCED-CONTROLS.md",
+    "/PATCH_SITE_DECISION_TREE.md",
+    "/README.md",
+    "/examples/preload_consumer.rs",
+    "/examples/replace_first.rs",
+    "/examples/saved_pkru_probe.rs",
+    "/src/**",
+    "/tests/**",
 ]
 
 [[example]]
