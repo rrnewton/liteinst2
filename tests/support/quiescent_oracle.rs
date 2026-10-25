@@ -21,6 +21,12 @@
 //! exact logical instruction PC, with the same full state comparison.
 //! Application fixtures must not use that reserve. Code pages are checked against
 //! exact original/published images at every boundary, not broadly masked out.
+//! Ordered traces additionally exercise DEC, CMP, Jcc and LOOP with defined
+//! or preserved flags. They compare every repeated native visit in order.
+//! The optional hook log owns a separate zeroed private page and a thread-local
+//! pointer/capacity pair; neither changes the application-memory coverage above.
+//! Its entire page is checked for the exact event prefix, zero unused bytes and
+//! overflow at each restored boundary. The capacity is declared before fork.
 //!
 //! This is finite native execution evidence, not a concurrent-publication, CET,
 //! asynchronous-signal, arbitrary-instruction, or arbitrary-memory oracle.
@@ -375,6 +381,320 @@ impl NativeOracle {
         points
     }
 }
+
+// This shared helper is also compiled by the legacy oracle integration test,
+// which intentionally continues using its original linear-boundary API.
+#[allow(dead_code)]
+mod ordered_trace {
+    use super::*;
+    use std::collections::{BTreeMap, BTreeSet};
+    use std::ops::Range;
+
+    const EVENT_CAPACITY: usize = 128;
+    thread_local! {
+        static ACTIVE_LOG: Cell<(*mut u64, usize)> = const { Cell::new((core::ptr::null_mut(), 0)) };
+    }
+
+    /// One logical callback, also used to declare enabled probes in hook order.
+    #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+    pub struct HookEvent {
+        pub probe_id: u64,
+        pub logical_pc: u64,
+    }
+
+    /// Separate instrumentation-private storage; application memory is still
+    /// compared by the unchanged state comparator. Overflow always fails.
+    pub struct HookEventLog {
+        memory: Mapping,
+        capacity: usize,
+    }
+
+    impl HookEventLog {
+        pub fn new() -> Self {
+            Self::with_capacity(EVENT_CAPACITY)
+        }
+
+        pub fn with_capacity(capacity: usize) -> Self {
+            assert!((1..=EVENT_CAPACITY).contains(&capacity));
+            let memory = Mapping::new(PAGE);
+            memory.initialize(0, &vec![0; PAGE]);
+            Self { memory, capacity }
+        }
+
+        fn activate(&self) -> ActiveLog {
+            self.memory.initialize(0, &vec![0; PAGE]);
+            ActiveLog(ACTIVE_LOG.replace((self.memory.writable().cast(), self.capacity)))
+        }
+
+        fn assert_events(&self, child: &Tracee, expected: &[HookEvent]) {
+            let bytes = child.memory(self.memory.address(), PAGE);
+            let word = |index: usize| {
+                u64::from_ne_bytes(bytes[index * 8..index * 8 + 8].try_into().unwrap())
+            };
+            assert_eq!(word(1), 0, "hook event log overflow");
+            let count = usize::try_from(word(0)).unwrap();
+            assert!(count <= self.capacity, "invalid hook event count");
+            let actual: Vec<_> = (0..count)
+                .map(|index| HookEvent {
+                    probe_id: word(2 + 2 * index),
+                    logical_pc: word(3 + 2 * index),
+                })
+                .collect();
+            assert_eq!(actual, expected, "hook event trace mismatch");
+            assert!(
+                bytes[(2 + 2 * count) * 8..].iter().all(|&byte| byte == 0),
+                "hook event log wrote beyond its declared entries"
+            );
+        }
+    }
+
+    struct ActiveLog((*mut u64, usize));
+    impl Drop for ActiveLog {
+        fn drop(&mut self) {
+            ACTIVE_LOG.set(self.0);
+        }
+    }
+
+    /// Append from an oracle child's callback without allocation or locking.
+    /// The log pointer is inherited from its test thread across fork.
+    ///
+    /// # Safety
+    /// Call only in an oracle child executing under an active HookExpectation.
+    /// No concurrent or recursively reentrant writer may access this log.
+    pub unsafe fn record_hook_event(probe_id: u64, logical_pc: u64) {
+        ACTIVE_LOG.with(|active| {
+            let (pointer, capacity) = active.get();
+            if pointer.is_null() {
+                // SAFETY: fail the isolated child instead of unwinding a C hook.
+                unsafe { libc::_exit(122) };
+            }
+            // SAFETY: activation owns the live private page; all accesses are
+            // bounded by EVENT_CAPACITY, which fits entirely inside that page.
+            unsafe {
+                let count = pointer.read_volatile() as usize;
+                if count >= capacity {
+                    pointer.add(1).write_volatile(1);
+                    return;
+                }
+                pointer.add(2 + 2 * count).write_volatile(probe_id);
+                pointer.add(3 + 2 * count).write_volatile(logical_pc);
+                pointer.write_volatile((count + 1) as u64);
+            }
+        });
+    }
+
+    pub struct HookExpectation<'a> {
+        pub log: &'a HookEventLog,
+        /// Each matching native visit requires these callbacks, in this order.
+        pub enabled: &'a [HookEvent],
+    }
+
+    /// Complete restored-state boundaries, flattened from any number of images.
+    /// Several physical copies may implement one logical instruction. Gateway
+    /// PCs are original redirect entries, never state-comparison points.
+    #[derive(Default)]
+    pub struct TraceMap {
+        pub boundaries: Vec<(u64, u64)>, // (logical, physical)
+        pub gateways: Vec<u64>,
+        pub generated_ranges: Vec<Range<u64>>,
+    }
+
+    pub struct NativeTrace {
+        baseline: Baseline,
+        heads: BTreeSet<u64>,
+        terminals: BTreeSet<u64>,
+    }
+
+    impl NativeTrace {
+        pub fn visits(&self) -> Vec<u64> {
+            self.baseline
+                .points
+                .iter()
+                .map(|point| point.logical_pc)
+                .collect()
+        }
+    }
+
+    impl NativeOracle {
+        /// Execute one native instruction between successive snapshots, even
+        /// when a branch returns to the same PC. Every visited PC must be a
+        /// declared original head or terminal; no decoder supplies these facts.
+        pub fn trace_original(
+            &self,
+            entry: u64,
+            heads: &[u64],
+            terminals: &[u64],
+            seed: u64,
+        ) -> NativeTrace {
+            self.assert_publication(&[]);
+            let heads: BTreeSet<_> = heads.iter().copied().collect();
+            let terminals: BTreeSet<_> = terminals.iter().copied().collect();
+            assert!(heads.contains(&entry), "undeclared original trace entry");
+            assert!(!terminals.is_empty(), "original trace needs a terminal");
+            assert!(
+                heads.is_disjoint(&terminals),
+                "terminal is an executable head"
+            );
+            // Reuse the existing seed path exactly; this short-lived child is
+            // reaped before tracing begins. The legacy API remains unchanged.
+            let mut baseline = self.original(&[entry], seed);
+            let child = Tracee::fork();
+            child.set_registers(&baseline.initial);
+            child.set_xstate(&baseline.xstate);
+            baseline.points.clear();
+            for step in 0..=MAX_STEPS {
+                assert!(
+                    Instant::now() < child.deadline,
+                    "original trace wall deadline exhausted"
+                );
+                let pc = child.registers().rip;
+                assert!(
+                    heads.contains(&pc) || terminals.contains(&pc),
+                    "original trace reached undeclared instruction {pc:#x}"
+                );
+                baseline
+                    .points
+                    .push(self.snapshot(&child, pc, self.code.bytes()));
+                if terminals.contains(&pc) {
+                    return NativeTrace {
+                        baseline,
+                        heads,
+                        terminals,
+                    };
+                }
+                assert!(
+                    step < MAX_STEPS,
+                    "original trace instruction budget exhausted"
+                );
+                child.step(&[]);
+            }
+            unreachable!()
+        }
+
+        /// Compare every native visit against the first restored boundary
+        /// actually reached. Unexpected boundaries fail immediately; scaffolding
+        /// is traversed only within the existing step and child wall budgets.
+        pub fn assert_trace(
+            &self,
+            trace: &NativeTrace,
+            entry: u64,
+            map: &TraceMap,
+            owned_sigill_heads: &[u64],
+            hooks: Option<HookExpectation<'_>>,
+        ) {
+            let logical: BTreeSet<_> = trace.heads.union(&trace.terminals).copied().collect();
+            let mut physical = BTreeMap::new();
+            for &(original, generated) in &map.boundaries {
+                assert!(
+                    logical.contains(&original),
+                    "undeclared logical restored boundary"
+                );
+                assert!(
+                    physical.insert(generated, original).is_none(),
+                    "duplicate physical restored boundary"
+                );
+                assert!(
+                    generated == original
+                        || map
+                            .generated_ranges
+                            .iter()
+                            .any(|range| range.contains(&generated)),
+                    "restored boundary outside declared generated images"
+                );
+            }
+            for original in logical {
+                assert!(
+                    physical.values().any(|&pc| pc == original),
+                    "missing restored boundary for {original:#x}"
+                );
+            }
+            for &gateway in &map.gateways {
+                assert!(trace.heads.contains(&gateway), "undeclared source gateway");
+                assert!(
+                    !physical.contains_key(&gateway),
+                    "gateway is a restored boundary"
+                );
+            }
+            if let Some(hooks) = &hooks {
+                let mut ids = BTreeSet::new();
+                for event in hooks.enabled {
+                    assert!(
+                        trace.heads.contains(&event.logical_pc),
+                        "hook outside original heads"
+                    );
+                    assert!(
+                        ids.insert(event.probe_id),
+                        "duplicate enabled probe identity"
+                    );
+                }
+            }
+            let _active_log = hooks.as_ref().map(|hooks| hooks.log.activate());
+            self.code.protect(libc::PROT_READ | libc::PROT_EXEC);
+            let child = Tracee::fork();
+            let mut initial = trace.baseline.initial;
+            initial.rip = entry;
+            child.set_registers(&initial);
+            child.set_xstate(&trace.baseline.xstate);
+            let mut next = 0;
+            let mut events = Vec::new();
+            for step in 0..=MAX_STEPS {
+                assert!(
+                    Instant::now() < child.deadline,
+                    "patched trace wall deadline exhausted"
+                );
+                let pc = child.registers().rip;
+                if let Some(&original) = physical.get(&pc) {
+                    let expected = trace
+                        .baseline
+                        .points
+                        .get(next)
+                        .expect("extra restored boundary after native trace");
+                    assert_eq!(
+                        original, expected.logical_pc,
+                        "unexpected restored boundary at visit {next}"
+                    );
+                    assert_state(
+                        expected,
+                        &self.snapshot(&child, original, self.code.bytes()),
+                    );
+                    if let Some(hooks) = &hooks {
+                        events.extend(
+                            hooks
+                                .enabled
+                                .iter()
+                                .filter(|event| event.logical_pc == original)
+                                .copied(),
+                        );
+                        hooks.log.assert_events(&child, &events);
+                    }
+                    next += 1;
+                    if trace.terminals.contains(&original) {
+                        assert_eq!(
+                            next,
+                            trace.baseline.points.len(),
+                            "missing native trace visits"
+                        );
+                        return;
+                    }
+                } else if (self.code.address()..self.code.address() + PAGE as u64).contains(&pc) {
+                    assert!(
+                        map.gateways.contains(&pc),
+                        "unclassified source head {pc:#x}"
+                    );
+                }
+                assert!(
+                    step < MAX_STEPS,
+                    "patched trace instruction budget exhausted"
+                );
+                child.step(owned_sigill_heads);
+            }
+            unreachable!()
+        }
+    }
+}
+
+#[allow(unused_imports)] // The legacy oracle integration crate uses its older API.
+pub use ordered_trace::*;
 
 fn assert_state(expected: &Snapshot, actual: &Snapshot) {
     macro_rules! register {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bounded local checks. Raw results live in ignored ignored/a1/."""
+"""Bounded local checks. Raw results live under ignored/a1/."""
 import datetime
 import hashlib
 import json
