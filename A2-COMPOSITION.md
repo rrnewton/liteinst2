@@ -154,10 +154,15 @@ Five four-byte mandatory-prefix move forms now have forced B1/B2/T1 normal and
 synchronous-fault evidence, with exact code/operand qualification and nearby
 refusals. See `evidence/a2-mandatory-prefixes-20261025.md` for the bounded envelope.
 
-The full A2 exit gate remains open. Required gaps include contexts parked across
-publication, call-return and exception landing entries, active CET and Intel
-evidence, eviction-chain coverage, and relocation-boundary
-signal/unwind qualification. Existing unsupported refusals and finite AMD results do not
+A real prepublication signal frame now survives child-side publication and
+returns through the kernel into every enumerated head. Actual CALL/RET paths
+also preserve return addresses inside unchanged generalized-pun displacement
+bytes. These bounded fixtures and their explicit lifecycle/relocation limits
+are recorded in `evidence/a2-parked-call-20261025.md`.
+
+The full A2 exit gate remains open. Required gaps include exception landing
+entries, active CET and Intel evidence, eviction-chain coverage, and
+relocation-boundary signal/unwind qualification. Existing unsupported refusals and finite AMD results do not
 substitute for those required fixtures. Generalized puns retain first priority
 for install-once clients; ordinary relocation precedes T1. Concurrent toggle
 visibility remains A4 work.
