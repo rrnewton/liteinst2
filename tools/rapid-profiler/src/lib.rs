@@ -15,6 +15,9 @@ use liteinst2::rapid::{RapidProbe, RapidTogglePlan};
 use liteinst2::scanner::InstructionScanner;
 use object::{Object, ObjectSection, ObjectSymbol};
 
+/// Generation-owned bookkeeping, independent of the active profiler frontend.
+pub mod generation;
+
 mod interval;
 mod pmu;
 
