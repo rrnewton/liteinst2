@@ -28,6 +28,8 @@ commands = [
     ('pun-contract', ['cargo', 'test', '--test', 'generalized_pun_contract', '--', '--test-threads=1', '--nocapture']),
     ('prefix-contract', ['cargo', 'test', '--test', 'prefixed_pun_contract', '--', '--test-threads=1', '--nocapture']),
     ('prefix-oracle', ['cargo', 'test', '--test', 'prefixed_pun_oracle', '--', '--test-threads=1', '--nocapture']),
+    ('successor-contract', ['cargo', 'test', '--test', 'successor_eviction_contract', '--', '--test-threads=1', '--nocapture']),
+    ('successor-oracle', ['cargo', 'test', '--test', 'successor_eviction_oracle', '--', '--test-threads=1', '--nocapture']),
     ('bundle-contract', ['cargo', 'test', '--test', 'bundle_contract', '--', '--test-threads=1', '--nocapture']),
     ('a2-oracle', ['cargo', 'test', '--test', 'a2_oracle', '--', '--test-threads=1', '--nocapture']),
     ('oracle', ['cargo', 'test', '--test', 'quiescent_oracle', '--', '--test-threads=1', '--nocapture']),
@@ -35,13 +37,14 @@ commands = [
 records = []
 head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
 diff = subprocess.check_output(['git', 'diff', '--binary', 'HEAD'], cwd=ROOT)
-sources = ['Cargo.toml', 'src/lib.rs', 'src/grouping.rs',
+sources = ['Cargo.toml', 'src/lib.rs', 'src/grouping.rs', 'src/eviction.rs',
            'src/bundle.rs', 'src/composition.rs', 'tests/bundle_contract.rs',
            'tests/a2_oracle.rs', 'src/contracts.rs', 'src/quiescent.rs', 'src/entry_router.rs',
            'src/trampoline.rs', 'tests/quiescent_contract.rs',
            'tests/quiescent_oracle.rs', 'tests/support/quiescent_oracle.rs',
            'tests/generalized_pun_contract.rs', 'tests/prefixed_pun_contract.rs',
-           'tests/prefixed_pun_oracle.rs']
+           'tests/prefixed_pun_oracle.rs', 'tests/successor_eviction_contract.rs',
+           'tests/successor_eviction_oracle.rs']
 source_sha256 = {path: hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
                  for path in sources}
 for name, argv in commands:

@@ -60,8 +60,34 @@ publishes only its own image's PC maps; another member's bytes appearing at that
 alias have no authenticated execution entry. Mutable probe state is excluded
 from these immutable backing pages.
 
+`eviction::plan_successor` forces T2 successor eviction. It relocates one whole
+5–15-byte successor into a callback-free image, preserving its original entry
+through E9. The selected 1–4-byte instruction is then punned against that
+redirect's bytes; T1 is available for lengths 2–4. The successor may lie beyond
+the selected basic block but must remain inside the certified function and
+entry scope. Both allocations, entries and dependencies join one bundle.
+
+T2 decodes the authenticated original snapshot once. Its selected pun retains
+that instruction identity while authenticating the preceding byte overlay,
+including the successor's new E9. Unchanged tails of a long evicted instruction
+are locked and never decoded as new application instructions. The original
+successor instruction executes in its own image without adding a selected hook.
+An original control-flow visit back to the selected instruction still invokes
+that hook. Retirement restores the selected store first, preserving
+any overlaid E9 padding, then restores the victim redirect.
+
+Selected and victim allocation policies have separate bounds; aggregate bundle
+budgets charge both mappings and backing. Detailed planning retains every
+candidate/prefix outcome. A specific selected-site refusal survives later
+unavailable victim placements. Each fallthrough traversal of the evicted
+instruction adds its entry redirect and generated continuation jump, including
+calls that never visit the selected hook. Timing measurements are later work.
+T2 currently evicts one successor; recursive eviction chains and shorter victims
+are explicit refusals. The ordinary single-image planner remains available.
+
 A2 is not complete at this foundation. T1 and grouping have forced native and
-architectural-oracle fixtures recorded in `evidence/a2-20261025.md`. T2/T3, coalesced independent
+architectural-oracle fixtures recorded in `evidence/a2-20261025.md`. T2 qualification is recorded in
+`evidence/a2-successor-20261025.md`. T3, coalesced independent
 probe controls and the generated/sampled campaign remain pending. Generalized
 puns retain first priority for install-once clients; ordinary relocation precedes
 T1. Concurrent toggle visibility remains A4 work.
