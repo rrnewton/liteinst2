@@ -34,6 +34,14 @@ include = [
     "/tools/word-sync-oracle/inventory.json",
     "/tools/word-sync-oracle/*.rs",
     "/tools/word-sync-oracle/runtime/*.py",
+    "/tools/unwind-oracle/README.md",
+    "/tools/unwind-oracle/*.py",
+    "/tools/unwind-oracle/*.json",
+    "/tools/unwind-oracle/*.rs",
+    "/tools/unwind-oracle/*.cpp",
+    "/tools/unwind-oracle/*.S",
+    "/tools/unwind-oracle/*.h",
+    "/tools/unwind-oracle/runtime/*.py",
 ]
 
 [[example]]

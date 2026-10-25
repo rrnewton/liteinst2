@@ -13,6 +13,8 @@ mod entry_router;
 pub mod eviction;
 pub mod eviction_chain;
 pub mod frame_trace;
+/// Optional source-certified generated CFI and normal backtrace publication.
+pub mod generated_unwind;
 pub mod grouping;
 pub mod neighbor;
 pub mod patcher;
