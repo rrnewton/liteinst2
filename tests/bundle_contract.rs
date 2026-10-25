@@ -26,7 +26,7 @@ struct Fixture {
     identity: CodeIdentity,
 }
 impl Fixture {
-    fn new(routed: bool) -> Self {
+    fn new(mode: &str) -> Self {
         // SAFETY: child exclusively owns fresh aliases, with no executable users yet.
         let (write, execute) = unsafe {
             let fd = libc::memfd_create(c"bundle-contract".as_ptr(), libc::MFD_CLOEXEC);
@@ -56,7 +56,13 @@ impl Fixture {
         let originals = vec![
             ExpectedBytes {
                 address: ADDRESS + 0x100,
-                bytes: if routed {
+                bytes: if mode == "evex-lock" {
+                    let mut bytes = vec![
+                        0x48, 0x8d, 0x05, 0, 0, 0, 0, 0x90, 0xb8, 0x21, 0x43, 0x65, 0x07, 0xc3,
+                    ];
+                    bytes.resize(32, 0x90);
+                    bytes
+                } else if mode == "router" {
                     vec![0x90, 0xb8, 0x21, 0x43, 0x65, 0x07, 0xc3]
                 } else {
                     vec![0xb8, 0x21, 0x43, 0x65, 0x07, 0xc3]
@@ -104,13 +110,18 @@ impl Fixture {
             if index == 0 {
                 allocation.preferred_address = Some(ADDRESS + 0x10_0000);
             }
+            let evex_tail = index == 0 && source.bytes[0] == 0x48;
             let member = plan_install(&InstallRequest {
                 identity: self.identity,
                 code: &source.bytes,
                 base_address: source.address,
                 function: scope,
-                block: scope,
-                logical_pc: source.address,
+                block: if evex_tail {
+                    AddressRange::new(source.address, 8).unwrap()
+                } else {
+                    scope
+                },
+                logical_pc: source.address + if evex_tail { 7 } else { 0 },
                 entries: &entries,
                 hook: observe,
                 semantics: HookSemantics::Observe,
@@ -140,6 +151,40 @@ impl Fixture {
             BundleBudget::default(),
         )
         .unwrap()
+    }
+    fn conflicting_successor(&self) -> PlannedInstall {
+        let address = self.originals[0].address + 8;
+        let bytes = &self.originals[0].bytes[8..];
+        let scope = AddressRange::new(address, bytes.len()).unwrap();
+        let entries = LegalEntrySet {
+            identity: self.identity,
+            scope,
+            provenance: EntryProvenance::Declared("verified successor of qualified marker".into()),
+            completeness: EntryCompleteness::AllInstructionHeads,
+            entries: vec![],
+            resumes: ResumeObligation::NoneExist,
+        };
+        let mut allocation = AllocationPolicy::near(address).unwrap();
+        allocation.preferred_address = Some(address + 5 + 0x20_0004);
+        let plan = plan_install(&InstallRequest {
+            identity: self.identity,
+            code: bytes,
+            base_address: address,
+            function: scope,
+            block: scope,
+            logical_pc: address,
+            entries: &entries,
+            hook: observe,
+            semantics: HookSemantics::Observe,
+            allocation: &allocation,
+            search: SearchPolicy {
+                tactics: TacticPolicy::RelocationOnly,
+                ..SearchPolicy::default()
+            },
+        })
+        .unwrap();
+        assert_ne!(plan.plan().parts().writes[0].bytes[1] & 4, 0);
+        plan
     }
     fn alias(&self) -> WritableAlias {
         // SAFETY: both aliases share this child's exclusively owned original page.
@@ -176,6 +221,9 @@ impl Fixture {
         if self.originals[0].bytes[0] == 0x90 {
             entries.push((ADDRESS + 0x101, 0x0765_4321));
         }
+        if self.originals[0].bytes[0] == 0x48 {
+            entries.push((ADDRESS + 0x107, 0x0765_4321));
+        }
         for (address, expected) in entries {
             // SAFETY: these private verified fixtures have u32(void) ABI and no active mutation.
             let call: unsafe extern "C" fn() -> u32 =
@@ -195,9 +243,29 @@ impl Drop for Fixture {
     }
 }
 fn child(mode: &str) {
-    let fixture = Fixture::new(mode == "router");
+    let fixture = Fixture::new(mode);
     fixture.calls(0);
     let bundle = fixture.bundle();
+    if mode == "evex-lock" {
+        let members = fixture.members();
+        assert_eq!(members[0].plan().parts().writes[0].bytes[7], 0x62);
+        assert!(
+            bundle
+                .plan()
+                .locks()
+                .iter()
+                .any(|lock| lock.covers(AddressRange::new(ADDRESS + 0x107, 15).unwrap()))
+        );
+        let successor = fixture.conflicting_successor();
+        let failure = PlannedBundle::compose(
+            fixture.originals.clone(),
+            vec![members[0].clone(), successor, members[1].clone()],
+            BundleBudget::default(),
+        )
+        .unwrap_err();
+        assert_eq!(failure, Refusal::OwnershipConflict);
+        fixture.check(&fixture.originals);
+    }
     assert_eq!(bundle.plan().memory().mappings, 2);
     assert_eq!(
         bundle.plan().memory().backing_bytes,
@@ -208,14 +276,15 @@ fn child(mode: &str) {
     let mut lease = unsafe { QuiescenceLease::new(&mut guard, fixture.identity, fixture.held()) };
     let aliases = [fixture.alias()];
     match mode {
-        "success" | "router" | "retire-postwrite" => {
+        "success" | "router" | "evex-lock" | "retire-postwrite" => {
+            let expected_hooks = if mode == "evex-lock" { 3 } else { 2 };
             let (mut installed, receipt) = unsafe { bundle.publish(&aliases, &mut lease) }.unwrap();
             assert_eq!(receipt.plan().steps(), bundle.plan().steps());
             assert!(!lease.is_poisoned());
             drop(lease);
             fixture.check(bundle.plan().final_bytes());
-            fixture.calls(2);
-            if mode == "router" {
+            fixture.calls(expected_hooks);
+            if mode == "router" || mode == "evex-lock" {
                 assert!(installed.routed_entries() > 0);
             }
             let mut lease =
@@ -225,7 +294,7 @@ fn child(mode: &str) {
             assert_eq!(failure.stage, FailureStage::BeforeWrite);
             drop(lease);
             fixture.check(bundle.plan().final_bytes());
-            fixture.calls(2);
+            fixture.calls(expected_hooks);
             let mut held = fixture.held();
             held.extend(
                 bundle
@@ -372,6 +441,7 @@ fn bundle_transactions() {
     for mode in [
         "success",
         "router",
+        "evex-lock",
         "collision",
         "stale",
         "postwrite",

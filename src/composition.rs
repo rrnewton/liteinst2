@@ -8,8 +8,8 @@
 use std::collections::BTreeSet;
 
 use crate::contracts::{
-    AddressRange, ByteEdit, CodeIdentity, ExpectedBytes, GeneratedCode, PatchPlan, PlanKind,
-    Refusal,
+    AddressRange, ByteEdit, CodeIdentity, EntryObligation, ExpectedBytes, GeneratedCode, PatchPlan,
+    PlanKind, Refusal,
 };
 
 /// A virtual source image and the persistent byte locks of accepted steps.
@@ -161,6 +161,22 @@ impl Composition {
 
         for edit in edits {
             apply(&mut self.final_bytes, edit)?;
+        }
+        for obligation in &parts.obligations {
+            if let EntryObligation::Routed(route) = obligation {
+                if bytes_match(&self.final_bytes, route.original, &[0x62])? {
+                    // The qualified invalid-EVEX marker depends on its P1 byte
+                    // and may fetch a full architectural instruction before
+                    // #UD. Preserve the entire authenticated fetch envelope,
+                    // including bytes beyond the displaced interval. Inspect
+                    // the complete post-step overlay, not the original opcode.
+                    let fetch = AddressRange::new(route.original, 15)?;
+                    if !covered(&self.originals, fetch)? {
+                        return Err(Refusal::DependencyNotHeld);
+                    }
+                    new_locks.push(fetch);
+                }
+            }
         }
         self.locks.extend(new_locks);
         merge_ranges(&mut self.locks)?;
@@ -332,7 +348,7 @@ fn validate_generated(images: &[GeneratedCode]) -> Result<(), Refusal> {
 mod tests {
     use super::*;
     use crate::contracts::{
-        AllocationRequest, ApplicationProfile, EntryCompleteness, EntryObligation, EntryProvenance,
+        AllocationRequest, ApplicationProfile, EntryCompleteness, EntryProvenance, EntryRoute,
         GeneralizedPun, LegalEntrySet, PlanParts, PublicationRequirements, ResumeObligation,
         SourceIdentity,
     };
@@ -406,6 +422,17 @@ mod tests {
 
     fn relocation(reads: &[ExpectedBytes], pc: u64, bytes: &[u8], target: u64) -> PatchPlan {
         PatchPlan::checked(relocation_parts(reads, pc, bytes, target)).unwrap()
+    }
+
+    fn routed_tail(reads: &[ExpectedBytes], pc: u64, marker: u8) -> PatchPlan {
+        let mut parts = relocation_parts(reads, pc, &[0xe9, 0, 0, 0, 0, marker], 0x100000);
+        parts.displaced = AddressRange::new(pc, 6).unwrap();
+        parts.requirements.sigill_router = true;
+        parts.obligations = vec![EntryObligation::Routed(EntryRoute {
+            original: pc + 5,
+            generated: 0x100000,
+        })];
+        PatchPlan::checked(parts).unwrap()
     }
 
     fn pun(reads: &[ExpectedBytes], pc: u64) -> PatchPlan {
@@ -565,6 +592,107 @@ mod tests {
         let later = relocation(composition.final_bytes(), BASE + 32, &[0x90], 0x200000);
         assert_eq!(composition.append(&later), Err(Refusal::OwnershipConflict));
         assert_eq!(composition, saved);
+    }
+
+    #[test]
+    fn routed_invalid_evex_tail_locks_its_complete_qualified_fetch() {
+        let mut original = originals();
+        // MOV EAX,1; NOP. The final displaced NOP becomes 62 90 90 ...;
+        // P1 bit 2 is clear and all fifteen fetch bytes fit this source page.
+        original[0].bytes[..6].copy_from_slice(&[0xb8, 1, 0, 0, 0, 0x90]);
+        let mut composition = Composition::new(identity(), original).unwrap();
+        let first = routed_tail(composition.final_bytes(), BASE, 0x62);
+        composition.append(&first).unwrap();
+        assert_eq!(composition.final_bytes()[0].bytes[5], 0x62);
+        assert_eq!(composition.final_bytes()[0].bytes[7] & 4, 0);
+        assert_eq!(composition.locks(), [AddressRange::new(BASE, 20).unwrap()]);
+        let saved = composition.clone();
+        // P1 and the last fetch byte both lie beyond the six displaced bytes.
+        for changed in [BASE + 7, BASE + 19] {
+            let later = relocation(composition.final_bytes(), changed, &[0x94], 0x200000);
+            assert_eq!(composition.append(&later), Err(Refusal::OwnershipConflict));
+            assert_eq!(composition, saved);
+        }
+    }
+
+    #[test]
+    fn routed_invalid_evex_fetch_requires_complete_nonwrapping_source_coverage() {
+        for (address, len, error) in [
+            (BASE, 19, Refusal::DependencyNotHeld),
+            (u64::MAX - 6, 6, Refusal::InvalidRange),
+        ] {
+            let original = vec![ExpectedBytes {
+                address,
+                bytes: vec![0x90; len],
+            }];
+            let mut composition = Composition::new(identity(), original).unwrap();
+            let first = routed_tail(composition.final_bytes(), address, 0x62);
+            let saved = composition.clone();
+            assert_eq!(composition.append(&first), Err(error));
+            assert_eq!(composition, saved);
+        }
+        // Exact coverage is sufficient; the lock needs no unconsulted suffix.
+        let mut composition = Composition::new(
+            identity(),
+            vec![ExpectedBytes {
+                address: BASE,
+                bytes: vec![0x90; 20],
+            }],
+        )
+        .unwrap();
+        let first = routed_tail(composition.final_bytes(), BASE, 0x62);
+        composition.append(&first).unwrap();
+        assert_eq!(composition.locks(), [AddressRange::new(BASE, 20).unwrap()]);
+    }
+
+    #[test]
+    fn routed_invalid_evex_fetch_allows_an_identical_later_store_pad() {
+        let mut original = originals();
+        original[0].bytes[41..47].copy_from_slice(&[0xb8, 1, 0, 0, 0, 0x90]);
+        original[0].bytes[61..66].copy_from_slice(&[0x0f, 0x1f, 0, 0x48, 1]);
+        let mut composition = Composition::new(identity(), original).unwrap();
+        let first = routed_tail(composition.final_bytes(), BASE + 41, 0x62);
+        composition.append(&first).unwrap();
+        assert_eq!(
+            composition.locks(),
+            [AddressRange::new(BASE + 41, 20).unwrap()]
+        );
+        let saved_fetch = composition.final_bytes()[0].bytes[46..61].to_vec();
+        let later = pun(composition.final_bytes(), BASE + 61);
+        let PlanKind::GeneralizedPun(shape) = &later.parts().kind else {
+            unreachable!()
+        };
+        assert_eq!(shape.store.address, BASE + 60);
+        assert_eq!(shape.store.bytes[0], saved_fetch[14]);
+        composition.append(&later).unwrap();
+        assert_eq!(&composition.final_bytes()[0].bytes[46..61], saved_fetch);
+        assert_eq!(
+            &composition.final_bytes()[0].bytes[61..64],
+            &[0xe9, 0x34, 0x12]
+        );
+        assert_eq!(
+            composition.locks(),
+            [AddressRange::new(BASE + 41, 25).unwrap()]
+        );
+    }
+
+    #[test]
+    fn routed_single_byte_invalid_opcode_does_not_lock_an_evex_tail() {
+        let mut composition = Composition::new(identity(), originals()).unwrap();
+        let first = routed_tail(composition.final_bytes(), BASE, 0x60);
+        composition.append(&first).unwrap();
+        assert_eq!(composition.locks(), [AddressRange::new(BASE, 6).unwrap()]);
+        let later = relocation(composition.final_bytes(), BASE + 7, &[0x94], 0x200000);
+        composition.append(&later).unwrap();
+        assert_eq!(composition.final_bytes()[0].bytes[5], 0x60);
+        assert_eq!(composition.final_bytes()[0].bytes[7], 0x94);
+        assert_eq!(
+            composition.locks(),
+            [
+                AddressRange::new(BASE, 6).unwrap(),
+                AddressRange::new(BASE + 7, 5).unwrap()
+            ]
+        );
     }
 
     #[test]

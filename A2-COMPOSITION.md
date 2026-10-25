@@ -3,7 +3,10 @@
 `composition::Composition` is a pure virtual overlay for ordered source rewrites.
 It authenticates every member's reads against the preceding overlay, retains
 original snapshots separately, and locks writes, displaced instructions, consumed
-pun bytes and actual-store padding. Later changes to locked bytes refuse; an
+pun bytes and actual-store padding. A routed `0x62` marker also locks its entire
+qualified 15-byte fetch span, including successor bytes outside the displaced
+interval: changing those bytes could invalidate its illegal-encoding proof.
+Later changes to locked bytes refuse; an
 identical padding write is permitted. This makes a successor redirect available
 to a later pun without treating already-modified bytes as original input.
 
