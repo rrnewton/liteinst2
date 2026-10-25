@@ -19,6 +19,9 @@ use object::{Object, ObjectSection, ObjectSymbol};
 #[forbid(unsafe_code)]
 pub mod frontend;
 
+/// Ordinary Rust TLS intervals retaining the original bounded frontend owner.
+pub mod frontend_tls;
+
 /// Generation-owned bookkeeping, independent of the active profiler frontend.
 pub mod generation;
 

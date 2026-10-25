@@ -1026,5 +1026,18 @@ impl Drop for ThreadModel {
     }
 }
 
+impl ThreadModel {
+    // Ordinary Rust unwinding cancels precisely the authenticated top frame.
+    // Keeping this separate preserves the public Explicit cancellation API.
+    pub(crate) fn cancel_on_unwind(&mut self, slot: &mut ModelReturnSlot) -> Result<(), ExitError> {
+        self.exit_check(slot)?;
+        let frame = self.frames.pop().expect("checked unwind frame");
+        let original = frame.slot.word;
+        drop(frame);
+        slot.word = original;
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests;
