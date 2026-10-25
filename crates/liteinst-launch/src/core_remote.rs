@@ -141,7 +141,9 @@ impl PreparedCpuid {
     pub fn consumed(&self) -> AddressRange {
         match &self.plan().parts().kind {
             PlanKind::GeneralizedPun(pun) => pun.consumed,
-            PlanKind::Relocation => unreachable!("constructor accepts only generalized puns"),
+            PlanKind::Relocation | PlanKind::PrefixedPun(_) => {
+                unreachable!("constructor accepts only generalized puns")
+            }
         }
     }
 }
