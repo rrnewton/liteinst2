@@ -1,0 +1,49 @@
+{
+  "admission_rule": "All actual hashes, exact source revision and independent review must be supplied and verified before list/models requests are materialized. Template nulls are never accepted as a pass.",
+  "alias_check": "Root rlib alias and hashed rlib byte-identical; authenticate all three files and exact matching ordinary profile before docs. Bind actual docs artifact selection afterward; no cold 1MiB docs-build claim.",
+  "cargo_stream": "Require final build-finished success=true, no compiler diagnostics, exact known record kinds; inventory every record/artifact/dependency rather than selecting an executable by basename only. Record actual fresh flags.",
+  "clang_requirement": "With unchanged absent CLANG environment, bind the actual PATH-selected clang and its observed tool/runtime/link inputs before and after Cargo; preserve actual fixture/build-script reused/fresh provenance, never backfill identity for a reused historical artifact.",
+  "dependency_checks": [
+    "Bind each compiler artifact to exact Cargo.lock package/version/checksum/features and manifest owner",
+    "Archive all rlib/rmeta/executable/build-script outputs, aliases, available depfiles and selected registry source/archives used by actual records before shared target changes",
+    "Parse complete depfile rules and any env-dep entries without weakening old predicates; require exact owned source paths and frozen source bytes",
+    "Root rapid-profiler library source closure: lib.rs, interval.rs, pmu.rs, generation.rs, frontend.rs; test closure additionally generation/tests.rs, generation/owned_tests.rs, frontend/tests.rs",
+    "Preserve build.rs and fixtures/simple.c; account for their build-script compiler/output/depfile and fixture even though focused library tests do not execute that fixture",
+    "Read ELF interpreter/needed/rpath and actual selected runtime tool bindings; report selected closure honestly, no inferred complete runtime provenance"
+  ],
+  "docs_prerequisite": "Immediately before docs, rehash actual root alias/hashed rlib/rmeta and bound depfiles/source/flags. If missing/different, stop; no warming compile hidden inside the 1MiB test request, no cap increase.",
+  "encoded_rustflags_absent": true,
+  "features": [],
+  "manifest_path": "${REPO}/tools/rapid-profiler/Cargo.toml",
+  "normal_profile": "Exactly the test profile with test=false",
+  "ordinary_artifacts": [
+    "${REPO}/target/debug/librapid_profiler.rlib",
+    "${REPO}/target/debug/deps/librapid_profiler-<actual hash>.rlib",
+    "${REPO}/target/debug/deps/librapid_profiler-<same hash>.rmeta"
+  ],
+  "package_id_exact": "path+file://${REPO}/tools/rapid-profiler#0.1.0",
+  "root_package": "rapid-profiler",
+  "strict_rustflags": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+  "target": {
+    "crate_types": [
+      "lib"
+    ],
+    "doc": true,
+    "doctest": true,
+    "edition": "2024",
+    "kind": [
+      "lib"
+    ],
+    "name": "rapid_profiler",
+    "src_path": "${REPO}/tools/rapid-profiler/src/lib.rs",
+    "test": true
+  },
+  "test_artifact": "Require one exact library test executable, canonical owned target/debug/deps/rapid_profiler-<hex>, filename record contains the same path; archive whole bytes and authenticate copy before any further target write.",
+  "test_profile": {
+    "debug_assertions": true,
+    "debuginfo": 2,
+    "opt_level": "0",
+    "overflow_checks": true,
+    "test": true
+  }
+}

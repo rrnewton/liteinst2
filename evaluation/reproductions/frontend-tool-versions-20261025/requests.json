@@ -1,0 +1,274 @@
+{
+  "coordinate_rules": [
+    "The reproduction-template directory is the published evaluation/reproductions/frontend-tool-versions-20261025 directory. Read requests.json there; do not substitute it for REPO or RAW_VERSIONS.",
+    "Substitute each named scalar coordinate literally and consistently in JSON values. No unresolved placeholder, symlink escape, overwrite or extra environment entry is admitted. Record the actual expanded request hashes before launch.",
+    "Local rebased requests and receipts have new hashes; the historical hashes identify the preserved original evidence, not fresh results.",
+    "Use the exact six requests serially, once each, through the unchanged helper and the exact outer argv with the existing 55-second parent deadline. No new runner or materializer is supplied.",
+    "The standard /usr/bin:/bin suffix is the exact fixed platform PATH suffix from each recorded request; no host-specific path is published."
+  ],
+  "coordinates": {
+    "CURRENT_TOOLCHAIN": "Whole installed 1.97.1-x86_64-unknown-linux-gnu toolchain root; append /bin/<role> exactly. It is not the bin directory or a compiler executable.",
+    "MSRV_TOOLCHAIN": "Whole installed 1.85.0-x86_64-unknown-linux-gnu toolchain root, distinct from CURRENT_TOOLCHAIN; append /bin/<role> exactly.",
+    "PYTHON": "Explicit helper Python executable, independently admitted with the recorded whole-file SHA-256; not a directory.",
+    "RAW_VERSIONS": "Whole fresh canonical output directory strictly inside REPO/ignored, containing one directory for each of the six exact IDs; distinct from REPO, template data and every toolchain root.",
+    "REPO": "Whole canonical source checkout directory at the recorded d6 revision; cwd and helper owner. This is not the reproduction-template directory or a parent inferred from a file path.",
+    "TIMEOUT": "Explicit existing timeout executable, independently admitted with the recorded whole-file SHA-256; not a directory.",
+    "USER_HOME": "Local user home directory used only as the explicit HOME environment value; no historical username is published."
+  },
+  "executed_as_published_templates": false,
+  "helper_repository_path": "tools/unwind-oracle/bounded_command.py",
+  "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+  "helper_source_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+  "kind": "six_exact_data_only_request_templates_no_new_materializer_or_supervisor",
+  "ordered_ids": [
+    "1.97.1-cargo",
+    "1.97.1-rustc",
+    "1.97.1-rustdoc",
+    "1.85.0-cargo",
+    "1.85.0-rustc",
+    "1.85.0-rustdoc"
+  ],
+  "requests": [
+    {
+      "expected_exit": 0,
+      "expected_tool_sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "historical_request_sha256": "76c69082fbf4afb8bba0cf2736098f6a4d2bbe2b145dfec68403246d18b41c9f",
+      "historical_version_stdout_sha256": "d0c168c9509371d329569450e6bb43e1abb2be4f91c1c04849d863757596a7e2",
+      "id": "1.97.1-cargo",
+      "outer_argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${PYTHON}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_VERSIONS}/1.97.1-cargo/request.json",
+        "--receipt",
+        "${RAW_VERSIONS}/1.97.1-cargo/receipt.json"
+      ],
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${CURRENT_TOOLCHAIN}/bin/cargo",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${CURRENT_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.97.1-cargo/stderr",
+        "stdout": "${RAW_VERSIONS}/1.97.1-cargo/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "expected_exit": 0,
+      "expected_tool_sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "historical_request_sha256": "1e11a84f3881ad6086cf1c1eadad342eb120683e0ffcfa3ebf2a4abdcd8e5422",
+      "historical_version_stdout_sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4",
+      "id": "1.97.1-rustc",
+      "outer_argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${PYTHON}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_VERSIONS}/1.97.1-rustc/request.json",
+        "--receipt",
+        "${RAW_VERSIONS}/1.97.1-rustc/receipt.json"
+      ],
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${CURRENT_TOOLCHAIN}/bin/rustc",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${CURRENT_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.97.1-rustc/stderr",
+        "stdout": "${RAW_VERSIONS}/1.97.1-rustc/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "expected_exit": 0,
+      "expected_tool_sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+      "historical_request_sha256": "68aa2d68d05a296ea70a8eb27a39f8664fdb3b77b7e922d08f36265bc8df5db0",
+      "historical_version_stdout_sha256": "1ed8aa68c5b7567ffefd285c103678a8529c3148531398deee38e43b0c00d0e1",
+      "id": "1.97.1-rustdoc",
+      "outer_argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${PYTHON}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_VERSIONS}/1.97.1-rustdoc/request.json",
+        "--receipt",
+        "${RAW_VERSIONS}/1.97.1-rustdoc/receipt.json"
+      ],
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${CURRENT_TOOLCHAIN}/bin/rustdoc",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${CURRENT_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.97.1-rustdoc/stderr",
+        "stdout": "${RAW_VERSIONS}/1.97.1-rustdoc/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "expected_exit": 0,
+      "expected_tool_sha256": "1815642e0eaa0cf4ea86c3ba4299c21c4f2d68ae4a427881ea1f33070b2aae9b",
+      "historical_request_sha256": "8535d9468c097ab8a22949898ec126198502da06cf39941f71cbd345d67ca892",
+      "historical_version_stdout_sha256": "83cf4a2ef693f33c0c34aca8e2579e4178f707b0da4e7c723848e27ba298f006",
+      "id": "1.85.0-cargo",
+      "outer_argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${PYTHON}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_VERSIONS}/1.85.0-cargo/request.json",
+        "--receipt",
+        "${RAW_VERSIONS}/1.85.0-cargo/receipt.json"
+      ],
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${MSRV_TOOLCHAIN}/bin/cargo",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${MSRV_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.85.0-cargo/stderr",
+        "stdout": "${RAW_VERSIONS}/1.85.0-cargo/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "expected_exit": 0,
+      "expected_tool_sha256": "07d5a76ba859dc045883efd538d96c7b86cf10166f4e834afbb5981012b461c3",
+      "historical_request_sha256": "1efcb62b3d93798017898cb98f84af4412935350c4c7ed6ad647c1bcee0cd84b",
+      "historical_version_stdout_sha256": "be9e105cd61ce407c0e06d80a25240f93cc48de72942117e1886f09aa08f9a2a",
+      "id": "1.85.0-rustc",
+      "outer_argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${PYTHON}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_VERSIONS}/1.85.0-rustc/request.json",
+        "--receipt",
+        "${RAW_VERSIONS}/1.85.0-rustc/receipt.json"
+      ],
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${MSRV_TOOLCHAIN}/bin/rustc",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${MSRV_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.85.0-rustc/stderr",
+        "stdout": "${RAW_VERSIONS}/1.85.0-rustc/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "expected_exit": 0,
+      "expected_tool_sha256": "1cd0edbcce02fd5c2a9db63541cb086f4f89f85911cf705317a12241ef15653f",
+      "historical_request_sha256": "46caa0343ce9affe342f7aad4d7b4d4046de47094e4cc6a72462e505910fe18d",
+      "historical_version_stdout_sha256": "0a7dac044f2d2a3ca047ba5c1b646ac6d2092aedfb8d0e606fc10d836d545e58",
+      "id": "1.85.0-rustdoc",
+      "outer_argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${PYTHON}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_VERSIONS}/1.85.0-rustdoc/request.json",
+        "--receipt",
+        "${RAW_VERSIONS}/1.85.0-rustdoc/receipt.json"
+      ],
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${MSRV_TOOLCHAIN}/bin/rustdoc",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${MSRV_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.85.0-rustdoc/stderr",
+        "stdout": "${RAW_VERSIONS}/1.85.0-rustdoc/stdout",
+        "wall_seconds": 30
+      }
+    }
+  ],
+  "schema_version": 1
+}

@@ -200,3 +200,5 @@ Generated-unwind consumer results and reproduction materials are indexed in [con
 The [frontend model history](frontend-model-private/README.md) preserves the held, failed and completed private ownership/controller model attempts. These snapshots do not establish public-crate qualification, native interval exits or a software preemption clock.
 
 The [A3 common-corpus index](e9-common-public.md) separates historical prototype loader/body evidence from the four completed portable-preparation commands. The portable pipeline remains unrun beyond staging, and full A3 remains open.
+
+The [public frontend model index](frontend-public.md) joins the focused 60-model/eight-doc qualification at `9098a3d7`, the separate required workspace pass, the preserved failed `3f87ac90` attempt and six independent tool-version observations. It retains each record's source, admission epochs and denominator. This ownership/model evidence leaves native frontend execution, a preemption clock, full A5 and claims 1–4 unqualified.

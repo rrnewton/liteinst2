@@ -1,0 +1,9 @@
+# Focused public frontend models at 9098a3d7
+
+All eight prescribed commands passed at `9098a3d74309fd445fd6f56a6048c1ce517bb81f`. The actual unfiltered unit/model run passed all 60 cases, and the documentation run passed all eight exact compile-fail cases. Both have zero failures, ignores or filtered cases; their units remain separate.
+
+[summary.json](summary.json) records the exact source, commands, bounds, receipt/output hashes, two admission epochs and artifact-review pause. [commands.csv](commands.csv) has eight rows; [cases.csv](cases.csv) has 60 unit/model rows followed by eight documentation rows. [source-files.json](source-files.json) preserves all 512 tested Git-source identities. [tool-observations.json](tool-observations.json) distinguishes six captured version banners from tools whose versions were not queried.
+
+Use the [eight-command reproduction recipe](../../frontend-public/README.md) with the existing bounded helper. The first three phases used admission v2; the remaining five used v3 after an identical-byte loader-cache metadata replacement. A pre-helper administrative stop is preserved separately and is neither a workload failure nor a retry. The existing ordinary-library artifact review precedes documentation; this is not a cold documentation-build claim.
+
+The [public index](../../frontend-public.md) links the distinct required-workspace success, preserved earlier required failure and tool-version queries. Those totals are not added here. This suite supplies ownership/controller-model evidence and unchanged legacy unit checks; it does not activate the native or TLS frontend, establish a preemption clock, complete A5 or qualify claims 1–4. Hardware observations are phase-relative, cached C-fixture producer limits remain explicit, and timings are operational diagnostics.
