@@ -320,6 +320,103 @@ pub fn plan_install_detailed(
     result.map_err(|reason| PlanningFailure { reason, attempts })
 }
 
+/// Plans one shared relocation window with independent observing controls.
+///
+/// Controls name strictly increasing, distinct original heads; their handles
+/// must be distinct too. The first head is request.logical_pc. All controls and
+/// displaced instructions remain inside the certified basic block and the existing
+/// byte/search/allocation bounds. Existing source-entry and publication proofs
+/// apply. This forced coalesced path does not select a pun or evict a victim.
+/// The request must use Observe semantics; conditional replacement is separate.
+/// This API retains the ordinary no-interior-control-transfer rule. The action
+/// controls supply callbacks; request.hook and request.search.tactics are unused.
+pub fn plan_coalesced(
+    request: &InstallRequest<'_>,
+    actions: &[crate::controls::ControlledAction],
+) -> Result<PlannedInstall, Refusal> {
+    plan_coalesced_detailed(request, actions).map_err(|failure| failure.reason)
+}
+
+/// Coalesced planning with the complete bounded physical-site inventory.
+pub fn plan_coalesced_detailed(
+    request: &InstallRequest<'_>,
+    actions: &[crate::controls::ControlledAction],
+) -> Result<PlannedInstall, PlanningFailure> {
+    let mut attempts = Vec::new();
+    let result = (|| {
+        if request.semantics != HookSemantics::Observe {
+            return Err(Refusal::UnsupportedSemantics(
+                "runtime coalesced controls currently require observing hooks".into(),
+            ));
+        }
+        if actions.first().map(|action| action.logical_pc) != Some(request.logical_pc)
+            || actions.iter().enumerate().any(|(index, action)| {
+                (index > 0 && actions[index - 1].logical_pc >= action.logical_pc)
+                    || actions[..index]
+                        .iter()
+                        .any(|prior| prior.control == action.control)
+            })
+        {
+            return Err(Refusal::InvalidPlan);
+        }
+        let (source, scan) = validated_source(request)?;
+        for action in actions {
+            if !request.block.contains(action.logical_pc) {
+                return Err(Refusal::InvalidRange);
+            }
+            if scan.site(action.logical_pc).is_none() {
+                return Err(Refusal::NotInstructionHead);
+            }
+        }
+        if request.search.max_sites == 0 {
+            return Err(Refusal::NoPatchWindow);
+        }
+        let occupied = occupied_ranges()?;
+        let mut candidates: Vec<_> = scan
+            .instructions()
+            .iter()
+            .filter(|item| {
+                request.block.contains(item.address())
+                    && item.address() <= request.logical_pc
+                    && request.logical_pc - item.address()
+                        <= request.search.max_upstream_bytes as u64
+            })
+            .map(|item| item.address())
+            .collect();
+        candidates.sort_by_key(|&pc| {
+            (
+                pc != request.logical_pc,
+                pc % 64 > 56,
+                request.logical_pc - pc,
+            )
+        });
+        for physical in candidates.into_iter().take(request.search.max_sites) {
+            match plan_at_with_controls(request, &scan, source, physical, &occupied, Some(actions))
+            {
+                Ok(mut plan) => {
+                    attempts.push(SiteAttempt {
+                        tactic: PatchTactic::Relocation,
+                        physical_pc: physical,
+                        refusal: None,
+                    });
+                    plan.metrics.attempts = attempts.clone();
+                    return Ok(plan);
+                }
+                Err(reason) => attempts.push(SiteAttempt {
+                    tactic: PatchTactic::Relocation,
+                    physical_pc: physical,
+                    refusal: Some(reason),
+                }),
+            }
+        }
+        Err(attempts
+            .last()
+            .and_then(|attempt| attempt.refusal.clone())
+            .unwrap_or(Refusal::NoPatchWindow))
+    })();
+    result.map_err(|reason| PlanningFailure { reason, attempts })
+}
+
 pub(crate) fn validated_source(
     request: &InstallRequest<'_>,
 ) -> Result<(AddressRange, ScanResult), Refusal> {
@@ -619,6 +716,20 @@ fn plan_at(
     physical: u64,
     occupied: &[AddressRange],
 ) -> Result<PlannedInstall, Refusal> {
+    plan_at_with_controls(request, scan, source, physical, occupied, None)
+}
+
+fn plan_at_with_controls(
+    request: &InstallRequest<'_>,
+    scan: &ScanResult,
+    source: AddressRange,
+    physical: u64,
+    occupied: &[AddressRange],
+    controls: Option<&[crate::controls::ControlledAction]>,
+) -> Result<PlannedInstall, Refusal> {
+    let last_logical = controls
+        .and_then(|actions| actions.last())
+        .map_or(request.logical_pc, |action| action.logical_pc);
     let mut end = physical;
     let mut instructions = Vec::new();
     for item in scan
@@ -634,11 +745,11 @@ fn plan_at(
             return Err(Refusal::NoPatchWindow);
         }
         instructions.push(item);
-        if end - physical >= 5 && end > request.logical_pc {
+        if end - physical >= 5 && end > last_logical {
             break;
         }
     }
-    if end - physical < 5 || end <= request.logical_pc {
+    if end - physical < 5 || end <= last_logical {
         return Err(Refusal::NoPatchWindow);
     }
     let displaced = AddressRange::new(physical, (end - physical) as usize)?;
@@ -691,14 +802,17 @@ fn plan_at(
             "CET IBT landing pad in displaced range".into(),
         ));
     }
-    let trampoline = TrampolinePlan::from_window(
-        scan,
-        physical,
-        request.logical_pc,
-        end,
-        request.hook,
-        request.semantics == HookSemantics::ReplaceFirst,
-    )
+    let trampoline = match controls {
+        Some(actions) => TrampolinePlan::from_controlled_actions(scan, physical, end, actions),
+        None => TrampolinePlan::from_window(
+            scan,
+            physical,
+            request.logical_pc,
+            end,
+            request.hook,
+            request.semantics == HookSemantics::ReplaceFirst,
+        ),
+    }
     .map_err(|e| Refusal::Backend(e.to_string()))?;
     let mut mask = [false; 4];
     for &head in &heads {

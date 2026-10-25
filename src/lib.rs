@@ -7,6 +7,7 @@ pub mod bundle;
 pub mod cache_line;
 pub mod composition;
 pub mod contracts;
+pub mod controls;
 pub mod engine;
 mod entry_router;
 pub mod eviction;

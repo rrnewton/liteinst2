@@ -7,6 +7,7 @@
 //! within signed rel32 reach and is never writable through its RX alias.
 
 use core::fmt;
+use core::mem::ManuallyDrop;
 use core::sync::atomic::AtomicBool;
 use core::sync::atomic::AtomicPtr;
 use core::sync::atomic::AtomicU8;
@@ -46,6 +47,7 @@ use iced_x86::code_asm::rdx;
 use iced_x86::code_asm::rsi;
 use iced_x86::code_asm::rsp;
 
+use crate::controls::{ControlledAction, ProbeControl};
 use crate::patcher::JumpPatchPlan;
 use crate::patcher::LiveJumpPatch;
 use crate::patcher::PatchError;
@@ -630,6 +632,7 @@ pub struct TrampolineImage {
     program_counters: Vec<ProgramCounterMapping>,
     entry_routes: Vec<(u64, u64)>,
     instruction_boundaries: Vec<(u64, u64)>,
+    controls: Vec<ProbeControl>,
 }
 
 impl TrampolineImage {
@@ -639,8 +642,21 @@ impl TrampolineImage {
     }
 
     /// Returns the emitted machine code.
+    ///
+    /// Controlled images embed pointers to their retained control blocks. A
+    /// custom executable allocator copying these bytes must retain every
+    /// control for the entire executable-code lifetime. The provided private
+    /// and grouped allocators retain those references automatically.
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
+    }
+
+    /// Stable observing controls retained by this immutable image.
+    ///
+    /// Controls occupy separate mutable data, not immutable code backing.
+    /// Their payload size excludes Arc and allocator overhead.
+    pub fn controls(&self) -> &[ProbeControl] {
+        &self.controls
     }
 
     /// Returns the checked section lengths.
@@ -825,6 +841,8 @@ pub enum TrampolineError {
     },
     /// A trampoline arena must contain at least one checked slot.
     InvalidArenaCapacity,
+    /// Process-local observing controls cannot be stored in a fork-shared arena.
+    ControlledArenaUnsupported,
     /// Every slot in a prepared trampoline arena has been reserved.
     ArenaFull,
     /// Emitted code does not fit in its executable allocation.
@@ -899,6 +917,9 @@ impl fmt::Display for TrampolineError {
             Self::InvalidArenaCapacity => {
                 formatter.write_str("trampoline arena capacity must be non-zero")
             }
+            Self::ControlledArenaUnsupported => formatter.write_str(
+                "runtime observing controls require private or sealed-grouped mappings; shared arenas are unsupported",
+            ),
             Self::ArenaFull => formatter.write_str("trampoline arena has no free slots"),
             Self::CodeTooLarge {
                 code_len,
@@ -949,6 +970,7 @@ pub struct TrampolinePlan {
     return_address: u64,
     hook: Option<HookCallback>,
     actions: Vec<(u64, HookCallback, bool)>,
+    controls: Vec<ControlledAction>,
     instructions: Vec<Instruction>,
     logical_index: usize,
     relocated_start: usize,
@@ -1041,6 +1063,7 @@ impl TrampolinePlan {
             return_address,
             hook: Some(hook),
             actions: Vec::new(),
+            controls: Vec::new(),
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
             relocated_start: 1,
@@ -1124,6 +1147,7 @@ impl TrampolinePlan {
             return_address,
             hook: Some(hook),
             actions: Vec::new(),
+            controls: Vec::new(),
             instructions,
             logical_index: 0,
             relocated_start,
@@ -1201,6 +1225,7 @@ impl TrampolinePlan {
             return_address: end,
             hook: Some(hook),
             actions: Vec::new(),
+            controls: Vec::new(),
             instructions,
             logical_index,
             relocated_start: logical_index + usize::from(replace),
@@ -1245,6 +1270,7 @@ impl TrampolinePlan {
             return_address,
             hook: Some(hook),
             actions: Vec::new(),
+            controls: Vec::new(),
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
             relocated_start: usize::from(replace),
@@ -1285,6 +1311,7 @@ impl TrampolinePlan {
             return_address,
             hook: None,
             actions: Vec::new(),
+            controls: Vec::new(),
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
             relocated_start: 0,
@@ -1326,6 +1353,42 @@ impl TrampolinePlan {
         }
         plan.actions = actions.to_vec();
         plan.kind = TrampolineKind::Actions;
+        Ok(plan)
+    }
+
+    /// Builds an observing window with independently controlled callbacks.
+    ///
+    /// Actions must name distinct original heads in strictly increasing order
+    /// and use distinct control identities. Every original instruction executes
+    /// whether its callback is enabled or disabled. Internal direct branches
+    /// visit the target control on every logical visit. Conditional replacement
+    /// is intentionally absent from this API.
+    ///
+    /// Each dispatch saves full application state before testing its control;
+    /// disabling a callback is neither a cheap inactive path nor callback
+    /// drainage. The caller still owns ISA, entry and publication qualification.
+    pub fn from_controlled_actions(
+        scan: &ScanResult,
+        physical: u64,
+        end: u64,
+        actions: &[ControlledAction],
+    ) -> Result<Self, TrampolineError> {
+        for (index, action) in actions.iter().enumerate() {
+            if actions[..index]
+                .iter()
+                .any(|previous| previous.control == action.control)
+            {
+                return Err(encoding_error(
+                    "controlled actions require distinct control identities",
+                ));
+            }
+        }
+        let static_actions: Vec<_> = actions
+            .iter()
+            .map(|action| (action.logical_pc, action.control.callback(), false))
+            .collect();
+        let mut plan = Self::from_actions(scan, physical, end, &static_actions)?;
+        plan.controls = actions.to_vec();
         Ok(plan)
     }
 
@@ -1407,6 +1470,7 @@ impl TrampolinePlan {
                 &extended_state,
                 self.logical_address(),
                 self.hook.expect("legacy plan always has a callback"),
+                None,
             )?;
             let restore_address = instrumentation_address
                 .checked_add(instrumentation.len() as u64)
@@ -1549,6 +1613,11 @@ impl TrampolinePlan {
                 program_counters,
                 entry_routes,
                 instruction_boundaries,
+                controls: self
+                    .controls
+                    .iter()
+                    .map(|action| action.control.clone())
+                    .collect(),
             })
         }
     }
@@ -1600,8 +1669,15 @@ impl TrampolinePlan {
                 // These helpers use only register/stack operands, absolute MOV
                 // immediates and internal relative branches. Their byte strings
                 // are position independent and remain contiguous below.
-                let instrumentation =
-                    self.encode_instrumentation(0, &extended_state, original.ip(), hook)?;
+                let instrumentation = self.encode_instrumentation(
+                    0,
+                    &extended_state,
+                    original.ip(),
+                    hook,
+                    self.controls
+                        .get(action_index)
+                        .map(|action| &action.control),
+                )?;
                 let restore = encode_restore(instrumentation.len() as u64, &extended_state)?;
                 first_hook_lengths.get_or_insert((
                     entry_index,
@@ -1749,6 +1825,11 @@ impl TrampolinePlan {
             program_counters,
             entry_routes,
             instruction_boundaries,
+            controls: self
+                .controls
+                .iter()
+                .map(|action| action.control.clone())
+                .collect(),
         })
     }
 
@@ -1759,6 +1840,7 @@ impl TrampolinePlan {
         extended_state: &SavedExtendedStateLayout,
         logical_address: u64,
         hook: HookCallback,
+        control: Option<&ProbeControl>,
     ) -> Result<Vec<u8>, TrampolineError> {
         let mut assembler = CodeAssembler::new(64).map_err(encoding_error)?;
         assembler
@@ -1842,9 +1924,21 @@ impl TrampolinePlan {
         }
         assembler.cld().map_err(encoding_error)?;
         assembler.mov(rdi, r12).map_err(encoding_error)?;
-        assembler
-            .mov(rax, hook as usize as u64)
-            .map_err(encoding_error)?;
+        if let Some(control) = control {
+            // Application RSI was saved before this instrumentation-private
+            // argument. The stable block is retained for the code lifetime.
+            assembler
+                .mov(rsi, control.block_address())
+                .map_err(encoding_error)?;
+            assembler
+                .mov(rax, crate::controls::dispatch as *const () as usize as u64)
+                .map_err(encoding_error)?;
+        } else {
+            // Keep the legacy static callback path byte-for-byte unchanged.
+            assembler
+                .mov(rax, hook as usize as u64)
+                .map_err(encoding_error)?;
+        }
         assembler.call(rax).map_err(encoding_error)?;
         assembler.assemble(address).map_err(encoding_error)
     }
@@ -2396,8 +2490,15 @@ impl TrampolineArena {
         start..start + self.reservation_len
     }
 
-    /// Emits one checked plan into a freshly reserved arena slot.
+    /// Emits one checked static plan into a freshly reserved arena slot.
+    ///
+    /// Observing controls use process-local Arc storage, while these slots can
+    /// be published by a different fork-related process. Controlled plans are
+    /// refused before slot reservation; use private or sealed-grouped mappings.
     pub fn allocate(&self, plan: &TrampolinePlan) -> Result<ExecutableTrampoline, TrampolineError> {
+        if !plan.controls.is_empty() {
+            return Err(TrampolineError::ControlledArenaUnsupported);
+        }
         if !self.can_reach(plan.execute_address()) {
             return Err(TrampolineError::NoReachableMapping);
         }
@@ -2432,6 +2533,7 @@ impl TrampolineArena {
             code_len: image.bytes.len(),
             layout: image.layout,
             program_counters: image.program_counters.into_boxed_slice(),
+            controls: ManuallyDrop::new(image.controls),
             program_counters_published: AtomicBool::new(false),
         })
     }
@@ -2457,7 +2559,10 @@ fn reserve_arena_slot(next: &AtomicUsize, len: usize) -> Result<usize, Trampolin
 ///
 /// The writable alias is removed before construction returns. The RX page is
 /// intentionally not unmapped on drop because another thread may have fetched
-/// its address before concurrent deactivation.
+/// its address before concurrent deactivation. Observing controls embedded in
+/// that code are retained for the same lifetime. After fork, inherited controls
+/// are independent snapshots, not process-shared enable state. Do not publish
+/// newly created controlled code or heap pointers into another process.
 pub struct ExecutableTrampoline {
     address: u64,
     allocation_len: usize,
@@ -2466,6 +2571,10 @@ pub struct ExecutableTrampoline {
     layout: TrampolineLayout,
     program_counters: Box<[ProgramCounterMapping]>,
     program_counters_published: AtomicBool,
+    // Normal handle drop retains executable code and its embedded pointers.
+    // Verified unpublished discard releases these references after unmapping;
+    // non-reclaimable arena slots retain them for the same process lifetime.
+    controls: ManuallyDrop<Vec<ProbeControl>>,
 }
 
 /// Owns a staged executable image until its publication transaction commits.
@@ -2505,6 +2614,7 @@ impl PendingExecutableTrampoline {
                 code_len: image.bytes.len(),
                 layout: image.layout,
                 program_counters: image.program_counters.clone().into_boxed_slice(),
+                controls: ManuallyDrop::new(image.controls.clone()),
                 program_counters_published: AtomicBool::new(false),
             }),
         }
@@ -2724,13 +2834,20 @@ impl ExecutableTrampoline {
         debug_assert!(!self.program_counters_published.load(Ordering::Relaxed));
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
-            if self.mapping_address != 0 {
+            let mut this = self;
+            if this.mapping_address != 0 {
                 // SAFETY: this unpublished object exclusively owns the RX mapping.
-                unsafe {
+                let unmapped = unsafe {
                     libc::munmap(
-                        self.mapping_address as usize as *mut libc::c_void,
-                        self.allocation_len,
-                    );
+                        this.mapping_address as usize as *mut libc::c_void,
+                        this.allocation_len,
+                    )
+                };
+                if unmapped == 0 {
+                    // SAFETY: this consumed unpublished handle has no reachable
+                    // code after unmapping. No other path drops this field.
+                    // Failed unmapping conservatively retains controls with code.
+                    unsafe { ManuallyDrop::drop(&mut this.controls) };
                 }
             }
         }
@@ -3409,6 +3526,7 @@ impl PendingMapping {
             code_len: image.bytes.len(),
             layout: image.layout,
             program_counters: image.program_counters.clone().into_boxed_slice(),
+            controls: ManuallyDrop::new(image.controls.clone()),
             program_counters_published: AtomicBool::new(false),
         })
     }
@@ -5169,6 +5287,7 @@ mod tests {
             code_len: image.bytes().len(),
             layout,
             program_counters: Box::new([]),
+            controls: core::mem::ManuallyDrop::new(Vec::new()),
             program_counters_published: std::sync::atomic::AtomicBool::new(false),
         };
         assert_eq!(executable.ptrace_entry_stop_rip(), Some(trampoline + 1));
@@ -7998,5 +8117,381 @@ mod tests {
                 worker.join().unwrap();
             }
         }
+    }
+}
+
+// Runtime-control checks supplement the existing static emitter corpus.
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod observing_control_tests {
+    use super::*;
+    use crate::controls::{ControlledAction, ProbeControl};
+
+    unsafe extern "C" fn observe(_: *mut HookContext) {}
+
+    fn actions(base: u64) -> Vec<ControlledAction> {
+        [0, 3, 6]
+            .map(|offset| ControlledAction {
+                logical_pc: base + offset,
+                control: ProbeControl::new(observe, false),
+            })
+            .to_vec()
+    }
+
+    fn scan(base: u64) -> ScanResult {
+        InstructionScanner::default()
+            .scan(&[0x48, 0xff, 0xc0, 0x48, 0xff, 0xc0, 0xc3], base)
+            .unwrap()
+    }
+
+    #[test]
+    fn observing_control_plans_and_images_release_unused_references() {
+        let base = 0x10_0000;
+        let scan = scan(base);
+        let actions = actions(base);
+        let weak: Vec<_> = actions
+            .iter()
+            .map(|action| action.control.downgrade())
+            .collect();
+        let plan =
+            TrampolinePlan::from_controlled_actions(&scan, base, base + 7, &actions).unwrap();
+        assert!(weak.iter().all(|control| control.strong_count() == 2));
+        let image = plan.emit_at(base + 0x20_0000).unwrap();
+        assert_eq!(image.controls().len(), 3);
+        assert!(weak.iter().all(|control| control.strong_count() == 3));
+        drop(actions);
+        drop(plan);
+        assert!(weak.iter().all(|control| control.strong_count() == 1));
+        drop(image);
+        assert!(weak.iter().all(|control| control.upgrade().is_none()));
+    }
+
+    #[test]
+    fn observing_control_refusals_leave_no_hidden_control_owner() {
+        let base = 0x10_0000;
+        let scan = scan(base);
+        let actions = actions(base);
+        let weak: Vec<_> = actions
+            .iter()
+            .map(|action| action.control.downgrade())
+            .collect();
+        for invalid in [
+            vec![],
+            vec![actions[1].clone(), actions[0].clone()],
+            vec![actions[0].clone(), actions[0].clone()],
+            vec![ControlledAction {
+                logical_pc: base + 1,
+                control: actions[0].control.clone(),
+            }],
+            vec![
+                actions[0].clone(),
+                ControlledAction {
+                    logical_pc: base + 3,
+                    control: actions[0].control.clone(),
+                },
+            ],
+        ] {
+            assert!(
+                TrampolinePlan::from_controlled_actions(&scan, base, base + 7, &invalid).is_err()
+            );
+        }
+        assert!(weak.iter().all(|control| control.strong_count() == 1));
+        let plan =
+            TrampolinePlan::from_controlled_actions(&scan, base, base + 7, &actions).unwrap();
+        assert!(plan.emit_at(u64::MAX - 8).is_err());
+        assert!(weak.iter().all(|control| control.strong_count() == 2));
+        drop(plan);
+        drop(actions);
+        assert!(weak.iter().all(|control| control.upgrade().is_none()));
+    }
+
+    #[test]
+    fn observing_control_changes_leave_all_emitted_bytes_and_maps_identical() {
+        let base = 0x10_0000;
+        let scan = scan(base);
+        let actions = actions(base);
+        let plan =
+            TrampolinePlan::from_controlled_actions(&scan, base, base + 7, &actions).unwrap();
+        let static_plan = TrampolinePlan::from_actions(
+            &scan,
+            base,
+            base + 7,
+            &[
+                (base, observe, false),
+                (base + 3, observe, false),
+                (base + 6, observe, false),
+            ],
+        )
+        .unwrap();
+        let image = plan.emit_at(base + 0x20_0000).unwrap();
+        let static_image = static_plan.emit_at(base + 0x20_0000).unwrap();
+        assert!(static_image.controls().is_empty());
+        assert_eq!(image.entry_routes().len(), 3);
+        assert_eq!(
+            image.instruction_boundaries().len(),
+            3,
+            "all original instructions remain"
+        );
+        for subset in 0..8 {
+            for (index, action) in actions.iter().enumerate() {
+                action.control.set_enabled(subset & (1 << index) != 0);
+            }
+            assert_eq!(plan.emit_at(image.address()).unwrap(), image);
+            assert_eq!(
+                static_plan.emit_at(static_image.address()).unwrap(),
+                static_image
+            );
+            assert_eq!(scan.snapshot(), [0x48, 0xff, 0xc0, 0x48, 0xff, 0xc0, 0xc3]);
+        }
+    }
+
+    #[test]
+    fn observing_control_staged_drop_unmaps_before_releasing_last_owners() {
+        let base = observe as *const () as usize as u64;
+        let scan = scan(base);
+        let actions = actions(base);
+        let weak: Vec<_> = actions
+            .iter()
+            .map(|action| action.control.downgrade())
+            .collect();
+        let plan =
+            TrampolinePlan::from_controlled_actions(&scan, base, base + 7, &actions).unwrap();
+        let mapping = PendingMapping::allocate_near(base).unwrap();
+        let address = mapping.executable as usize as u64;
+        let image = plan.emit_at(address).unwrap();
+        let staged = PendingExecutableTrampoline {
+            trampoline: Some(mapping.publish_at(&image, 0).unwrap()),
+        };
+        drop(image);
+        drop(plan);
+        drop(actions);
+        assert!(weak.iter().all(|control| control.strong_count() == 1));
+        drop(staged);
+        assert!(weak.iter().all(|control| control.upgrade().is_none()));
+        // Exact replacement reservation proves the retired staging alias is gone.
+        let _reservation = PendingMapping::allocate_exact(address as usize, 4096, address).unwrap();
+    }
+
+    #[test]
+    fn observing_control_grouped_rollback_releases_its_clones() {
+        use crate::grouping::{GroupingBudget, GroupingPlan};
+        let base = 0x10_0000;
+        let scan = scan(base);
+        let actions = actions(base);
+        let weak: Vec<_> = actions
+            .iter()
+            .map(|action| action.control.downgrade())
+            .collect();
+        let plan =
+            TrampolinePlan::from_controlled_actions(&scan, base, base + 7, &actions).unwrap();
+        // This dedicated finite test address is unrelated to the live source;
+        // MAP_FIXED_NOREPLACE must fail rather than replace any existing VMA.
+        let address = 0x57c0_0000_0100;
+        let image = plan.emit_at(address).unwrap();
+        let grouping = GroupingPlan::new(vec![image], GroupingBudget::default()).unwrap();
+        let staged = grouping.stage().unwrap();
+        drop(grouping);
+        drop(plan);
+        drop(actions);
+        assert!(weak.iter().all(|control| control.strong_count() == 1));
+        drop(staged);
+        assert!(weak.iter().all(|control| control.upgrade().is_none()));
+        let _reservation =
+            PendingMapping::allocate_exact((address & !4095) as usize, 4096, address).unwrap();
+    }
+
+    #[test]
+    fn observing_control_executable_drop_keeps_code_dependencies_alive() {
+        let base = observe as *const () as usize as u64;
+        let scan = scan(base);
+        let actions = actions(base);
+        let weak: Vec<_> = actions
+            .iter()
+            .map(|action| action.control.downgrade())
+            .collect();
+        let plan =
+            TrampolinePlan::from_controlled_actions(&scan, base, base + 7, &actions).unwrap();
+        let executable = ExecutableTrampoline::allocate(&plan).unwrap();
+        drop(plan);
+        drop(actions);
+        assert!(weak.iter().all(|control| control.strong_count() == 1));
+        drop(executable);
+        assert!(
+            weak.iter().all(|control| control.strong_count() == 1),
+            "process-lifetime code retains its embedded control pointers"
+        );
+    }
+
+    #[test]
+    fn observing_control_arena_refusal_preserves_slots_bytes_and_static_support() {
+        let base = observe as *const () as usize as u64;
+        let scan = scan(base);
+        let actions = actions(base);
+        let weak: Vec<_> = actions
+            .iter()
+            .map(|action| action.control.downgrade())
+            .collect();
+        let plan =
+            TrampolinePlan::from_controlled_actions(&scan, base, base + 7, &actions).unwrap();
+        let arena = TrampolineArena::allocate_near(base, 1).unwrap();
+        // SAFETY: this private fixture owns a fresh readable RX arena mapping.
+        let before = unsafe { core::slice::from_raw_parts(arena.executable, arena.len) }.to_vec();
+        assert!(matches!(
+            arena.allocate(&plan),
+            Err(TrampolineError::ControlledArenaUnsupported)
+        ));
+        // SAFETY: successful arena construction initialized its reservation cursor.
+        assert_eq!(unsafe { (*arena.next).load(Ordering::Acquire) }, 0);
+        // SAFETY: no allocation or writer has touched the same private mapping.
+        assert_eq!(
+            unsafe { core::slice::from_raw_parts(arena.executable, arena.len) },
+            before
+        );
+        drop(plan);
+        drop(actions);
+        assert!(weak.iter().all(|control| control.upgrade().is_none()));
+        let static_plan =
+            TrampolinePlan::from_actions(&scan, base, base + 7, &[(base, observe, false)]).unwrap();
+        let executable = arena.allocate(&static_plan).unwrap();
+        assert_eq!(executable.address(), arena.executable as usize as u64);
+        assert!(matches!(
+            arena.allocate(&static_plan),
+            Err(TrampolineError::ArenaFull)
+        ));
+    }
+
+    #[test]
+    fn observing_control_native_subsets_and_retained_dispatch_after_handle_drop() {
+        const CHILD: &str = "LITEINST2_OBSERVING_CONTROL_NATIVE_CHILD";
+        if std::env::var_os(CHILD).is_none() {
+            use std::os::unix::process::CommandExt;
+            use std::time::{Duration, Instant};
+            let mut command = std::process::Command::new(std::env::current_exe().unwrap());
+            command.args([
+                "--exact",
+                "trampoline::observing_control_tests::observing_control_native_subsets_and_retained_dispatch_after_handle_drop",
+                "--test-threads=1",
+                "--nocapture",
+            ]).env(CHILD, "1");
+            // SAFETY: only async-signal-safe resource calls run before exec.
+            unsafe {
+                command.pre_exec(|| {
+                    for (resource, limit) in [(libc::RLIMIT_CORE, 0), (libc::RLIMIT_CPU, 5)] {
+                        let bound = libc::rlimit {
+                            rlim_cur: limit,
+                            rlim_max: limit,
+                        };
+                        if libc::setrlimit(resource, &bound) != 0 {
+                            return Err(std::io::Error::last_os_error());
+                        }
+                    }
+                    Ok(())
+                });
+            }
+            let mut child = command.spawn().unwrap();
+            let deadline = Instant::now() + Duration::from_secs(10);
+            loop {
+                if let Some(status) = child.try_wait().unwrap() {
+                    assert!(status.success(), "controlled native child failed: {status}");
+                    return;
+                }
+                if Instant::now() >= deadline {
+                    child.kill().unwrap();
+                    child.wait().unwrap();
+                    panic!("controlled native child exceeded ten seconds");
+                }
+                std::thread::sleep(Duration::from_millis(10));
+            }
+        }
+
+        static EVENTS: [AtomicUsize; 3] = [const { AtomicUsize::new(0) }; 3];
+        unsafe extern "C" fn first(_: *mut HookContext) {
+            EVENTS[0].fetch_add(1, Ordering::Relaxed);
+        }
+        unsafe extern "C" fn second(_: *mut HookContext) {
+            EVENTS[1].fetch_add(1, Ordering::Relaxed);
+        }
+        unsafe extern "C" fn third(_: *mut HookContext) {
+            EVENTS[2].fetch_add(1, Ordering::Relaxed);
+        }
+        fn invoke(address: u64) -> u64 {
+            let mut value = 40_u64;
+            // SAFETY: this bounded child executes a fully initialized private
+            // image containing two INC RAX instructions and RET. Each callback
+            // has the complete saved frame and the executable owner retains its
+            // controls. No source patch or external application entry exists.
+            unsafe {
+                core::arch::asm!("call r11", in("r11") address,
+                    inlateout("rax") value, clobber_abi("C"));
+            }
+            value
+        }
+        let base = first as *const () as usize as u64;
+        let scan = scan(base);
+        let actions: Vec<_> = [first as HookCallback, second, third]
+            .into_iter()
+            .enumerate()
+            .map(|(index, callback)| ControlledAction {
+                logical_pc: base + (index * 3) as u64,
+                control: ProbeControl::new(callback, false),
+            })
+            .collect();
+        let weak: Vec<_> = actions
+            .iter()
+            .map(|action| action.control.downgrade())
+            .collect();
+        let plan =
+            TrampolinePlan::from_controlled_actions(&scan, base, base + 7, &actions).unwrap();
+        let executable = ExecutableTrampoline::allocate(&plan).unwrap();
+        let image = plan.emit_at(executable.address()).unwrap();
+        let entries: Vec<_> = image.entry_routes().iter().map(|entry| entry.1).collect();
+        let address = executable.address();
+        let original_bytes = image.bytes().to_vec();
+        for subset in 0..8 {
+            for (index, action) in actions.iter().enumerate() {
+                action.control.set_enabled(subset & (1 << index) != 0);
+            }
+            for (entry_index, &entry) in entries.iter().enumerate() {
+                for event in &EVENTS {
+                    event.store(0, Ordering::Relaxed);
+                }
+                assert_eq!(invoke(entry), 42 - entry_index as u64);
+                for (index, event) in EVENTS.iter().enumerate() {
+                    assert_eq!(
+                        event.load(Ordering::Relaxed),
+                        usize::from(index >= entry_index && subset & (1 << index) != 0)
+                    );
+                }
+            }
+            // SAFETY: the executable mapping remains live and immutable.
+            assert_eq!(
+                unsafe { core::slice::from_raw_parts(address as *const u8, original_bytes.len()) },
+                original_bytes
+            );
+        }
+        for action in &actions {
+            action.control.set_enabled(true);
+        }
+        drop(actions);
+        drop(plan);
+        drop(image);
+        drop(executable);
+        assert!(weak.iter().all(|control| control.strong_count() == 1));
+        for (entry_index, &entry) in entries.iter().enumerate() {
+            for event in &EVENTS {
+                event.store(0, Ordering::Relaxed);
+            }
+            assert_eq!(invoke(entry), 42 - entry_index as u64);
+            for (index, event) in EVENTS.iter().enumerate() {
+                assert_eq!(
+                    event.load(Ordering::Relaxed),
+                    usize::from(index >= entry_index)
+                );
+            }
+        }
+        // SAFETY: process-lifetime code and controls survive all owner handles.
+        assert_eq!(
+            unsafe { core::slice::from_raw_parts(address as *const u8, original_bytes.len()) },
+            original_bytes
+        );
     }
 }
