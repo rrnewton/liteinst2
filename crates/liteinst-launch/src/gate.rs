@@ -20,7 +20,7 @@ use liteinst_admission::{AddressRange, Generation, MappingId};
 use liteinst2::contracts as core;
 use liteinst2::quiescent::AllocationPolicy;
 
-use crate::core_remote::{CpuidPlanRequest, CpuidPublisher, PreparedCpuid};
+use crate::core_remote::{CpuidPlanRequest, CpuidPublisher, MAX_CPUID_BUNDLE, PreparedCpuid};
 
 use crate::{
     ExecCheckpoint, LaunchError, MemoryMapping, ProcessEvent, RegisterSnapshot, SignalStop,
@@ -510,6 +510,7 @@ impl SingleThreadPageGate {
         let mut candidates = BTreeMap::new();
         let mut prepared = BTreeMap::new();
         while let Some(next) = bundle.difference(&scanned).next().copied() {
+            remaining(deadline)?;
             if !image
                 .snapshot
                 .range()
@@ -521,6 +522,7 @@ impl SingleThreadPageGate {
             }
             let target = AddressRange::new(next, next + PAGE).unwrap();
             let report = RuntimeScan.inspect(&image.snapshot, target, &image.entries, &self.policy);
+            remaining(deadline)?;
             if report.verdict() == Verdict::Refused {
                 return Err(GateError::Scan(report.obligations().to_vec()));
             }
@@ -537,6 +539,7 @@ impl SingleThreadPageGate {
                 ));
             }
             for site in report.candidates() {
+                remaining(deadline)?;
                 if site.class != liteinst_admission::scan::SiteClass::Cpuid {
                     return Err(GateError::Refused(
                         "selected class lacks reference single-step qualification",
@@ -552,7 +555,13 @@ impl SingleThreadPageGate {
                         .any(|installed| installed.plan().parts().logical_pc == site.address)
                         && !prepared.contains_key(&site.address)
                     {
+                        if prepared.len() == MAX_CPUID_BUNDLE {
+                            return Err(GateError::Refused(
+                                "core publication bundle budget exceeded",
+                            ));
+                        }
                         let plan = prepare_cpuid(image, *site)?;
+                        remaining(deadline)?;
                         let consumed = plan.consumed();
                         bundle.insert(consumed.start() & !(PAGE - 1));
                         bundle.insert((consumed.end() - 1) & !(PAGE - 1));
@@ -563,6 +572,7 @@ impl SingleThreadPageGate {
             scanned.insert(next);
         }
         for &next in &bundle {
+            remaining(deadline)?;
             self.returns
                 .record_before_admission(
                     &image.snapshot,
@@ -570,6 +580,7 @@ impl SingleThreadPageGate {
                     &image.entries,
                 )
                 .map_err(|_| GateError::Refused("CALL-return census is unresolved"))?;
+            remaining(deadline)?;
         }
         let mut expected = image.snapshot.bytes().to_vec();
         for (&pc, _) in self.sites.range(image.snapshot.range().as_range()) {

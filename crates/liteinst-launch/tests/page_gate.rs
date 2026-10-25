@@ -12,6 +12,7 @@ use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
+use std::sync::Mutex;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
@@ -25,6 +26,10 @@ const BASE: u64 = 0x400000;
 const TIMEOUT: Duration = Duration::from_secs(3);
 const CPUID: &[u8] = &[0x0f, 0xa2];
 static NEXT_FIXTURE: AtomicUsize = AtomicUsize::new(0);
+// A concurrent fork must not inherit another test's writable fixture FD.
+// CLOEXEC alone leaves that FD live until the other child completes exec.
+// Hold this only across file writes/close and child launch, never execution.
+static FIXTURE_FORK_LOCK: Mutex<()> = Mutex::new(());
 
 struct FixtureDirectory(PathBuf);
 
@@ -162,6 +167,7 @@ impl ElfBuilder {
             self.bytes[512..512 + name.len()].copy_from_slice(name);
         }
         let path = directory.0.join(name);
+        let _fork_guard = FIXTURE_FORK_LOCK.lock().unwrap();
         let mut file = OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -169,6 +175,7 @@ impl ElfBuilder {
             .open(&path)
             .unwrap();
         file.write_all(&self.bytes).unwrap();
+        drop(file);
         ElfImage {
             path,
             bytes: self.bytes,
@@ -210,6 +217,7 @@ fn put64(bytes: &mut [u8], at: usize, value: u64) {
 }
 
 fn checkpoint(image: &ElfImage) -> ExecCheckpoint {
+    let _fork_guard = FIXTURE_FORK_LOCK.lock().unwrap();
     let checkpoint = ExecCheckpoint::launch(&LaunchCommand::new(&image.path), TIMEOUT).unwrap();
     assert_eq!(
         checkpoint.entries().executable_entry,
@@ -744,6 +752,7 @@ struct NativeTrace {
 
 impl NativeTrace {
     fn launch(path: &Path) -> Self {
+        let _fork_guard = FIXTURE_FORK_LOCK.lock().unwrap();
         let mut command = Command::new(path);
         command
             .stdin(Stdio::null())
@@ -1278,5 +1287,66 @@ fn core_selected_destination_refuses_a_saved_call_return_while_still_nx() {
     assert!(
         gate.next_event().is_err(),
         "saved-return refusal must close execution"
+    );
+}
+
+#[test]
+fn core_bundle_budget_is_checked_before_planning_site_sixty_five() {
+    let directory = FixtureDirectory::new();
+    let mut builder = ElfBuilder::new(2, PAGE, false);
+    for _ in 0..64 {
+        assert_eq!(builder.cursor % 8, 0);
+        builder.push_instruction(CPUID);
+        builder.push_instruction(&[0xbf, 1, 0, 0, 0]);
+        builder.push_instruction(&[0x90]);
+    }
+    // The first 64 sites admit the core's static pun constraints. The next
+    // native CPUID is also valid, but its publication would cross a cache line.
+    // Requiring the budget error instead of NoPatchWindow proves the cap is
+    // enforced before the sixty-fifth plan is constructed.
+    for _ in 0..63 {
+        builder.push_instruction(&[0x90]);
+    }
+    assert_eq!(builder.cursor % 64, 63);
+    builder.push_instruction(CPUID);
+    builder.exit(73);
+    let image = builder.write(&directory, "core-bundle-budget", None);
+
+    let mut native = NativeTrace::launch(&image.path);
+    trace(libc::PTRACE_CONT, native.pid(), 0, 0);
+    let status = native.wait();
+    assert!(libc::WIFEXITED(status));
+    assert_eq!(libc::WEXITSTATUS(status), 73);
+
+    let mut gate = core_gate(checkpoint(&image), vec![image.facts(BASE)]);
+    let before = gate.read_registers().unwrap();
+    assert_eq!(before.rip, BASE + PAGE as u64);
+    assert_kernel_nx(gate.pid(), before.rip);
+    assert!(matches!(
+        gate.next_event(),
+        Err(GateError::Refused(
+            "core publication bundle budget exceeded"
+        ))
+    ));
+    let after = gate.read_registers().unwrap();
+    assert_eq!(after.rip, before.rip);
+    assert_eq!(after.rsp, before.rsp);
+    assert_eq!(after.rax, before.rax);
+    assert_eq!(after.rbx, before.rbx);
+    assert_eq!(after.rcx, before.rcx);
+    assert_eq!(after.rdx, before.rdx);
+    assert_eq!(after.rdi, before.rdi);
+    assert_eq!(
+        gate.read_memory(BASE, image.bytes.len()).unwrap(),
+        image.bytes
+    );
+    assert_kernel_nx(gate.pid(), after.rip);
+    assert!(!gate.is_admitted(after.rip));
+    assert_eq!(gate.metrics().admitted_pages, 0);
+    assert_eq!(gate.metrics().observations, 0);
+    assert!(gate.metrics().first_touch.is_empty());
+    assert!(
+        gate.next_event().is_err(),
+        "bundle budget refusal must close execution"
     );
 }

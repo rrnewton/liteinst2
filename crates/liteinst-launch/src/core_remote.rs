@@ -39,7 +39,8 @@ use crate::{
 
 const PAGE: u64 = 4096;
 const MAX_SOURCE: usize = 19; // Five consumed bytes plus at most fourteen tail bytes.
-const MAX_BUNDLE: usize = 64;
+/// Maximum selected plans retained for one remote publication transaction.
+pub const MAX_CPUID_BUNDLE: usize = 64;
 const RED_ZONE: u64 = 128;
 
 /// Exact, caller-certified source facts for one literal two-byte CPUID.
@@ -395,7 +396,7 @@ impl CpuidPublisher {
         timeout: Duration,
         finalize: impl FnOnce(&mut RemoteLeaseOps<'_, '_>) -> Result<(), LaunchError>,
     ) -> Result<Vec<InstalledCpuid>, LaunchError> {
-        if prepared.is_empty() || prepared.len() > MAX_BUNDLE {
+        if prepared.is_empty() || prepared.len() > MAX_CPUID_BUNDLE {
             return invalid("invalid CPUID publication bundle size");
         }
         if timeout.is_zero() || timeout > crate::MAX_LAUNCH_TIMEOUT {
