@@ -1,0 +1,183 @@
+{
+  "cases": [],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "complete_claim": false,
+      "heading": "systematic everytactic",
+      "number": 4,
+      "scope": "workspace regression checks; no new native tactic qualification",
+      "status": "scoped_support"
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 1.1712853480130434,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-fmt",
+      "receipt_sha256": "533de72a9a5960541847311c1bacf963fcefe9e27dd2918ab32bd208cf4c55c8",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 0.36861706199124455,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-clippy",
+      "receipt_sha256": "533de72a9a5960541847311c1bacf963fcefe9e27dd2918ab32bd208cf4c55c8",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "fecede7c2157efe2f16c8c8b9dce94b0fb4dd384dca8207046c8bf7636eb0ffe",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 270.4002349120565,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-test",
+      "receipt_sha256": "533de72a9a5960541847311c1bacf963fcefe9e27dd2918ab32bd208cf4c55c8",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "18b51c47549ca8e45560836502f7441a48c304b734a4470e106d7a686b443c0b",
+      "wall_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 0.06559911393560469,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-check",
+      "receipt_sha256": "533de72a9a5960541847311c1bacf963fcefe9e27dd2918ab32bd208cf4c55c8",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "a13905646e2aed93ec6ea9ed6ac91490a4e01f91af0215c3965279a910612149",
+      "wall_seconds": 180
+    }
+  ],
+  "complete_A4": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "earlier read-only observation on the same host; no continuous hardware attestation",
+    "observation_sha256": "a5bda96e4bf7665faa232dd26dea6c7802a2309c4fa116863589ed35335abd89",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "private_capture_manifest_sha256": "b20bb17d33034b2279ecd31c258555014a32edd26e36b3646a8ff0e6108cbef7",
+  "reproduction_script": "evaluation/required-gates.py",
+  "reproduction_script_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+  "run_id": "required-72e423d-20261025",
+  "schema_version": 1,
+  "scope": "Required regression gates after adding evaluation scripts/data; product source is unchanged from 7a4e5719. Fixed Word native evidence remains a separate earlier run.",
+  "sources": {
+    "exact_revision": {
+      "file_count": 181,
+      "git_tree": "c334b8c3242801cad9fd58f827fadc1534e151fe",
+      "kind": "git_commit",
+      "source_tree_sha256": "da2b49232151babb634aba97061e7387326d25a2564d19fb1f427e402436dfbc",
+      "tested_revision": "72e423da0822610ed349efd466aee0a7ac7e87fc",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "status": "pass",
+  "suite": "required-workspace-gates",
+  "tested_revision": "72e423da0822610ed349efd466aee0a7ac7e87fc",
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tool_selection_note": "This unchanged required runner invokes cargo through PATH and did not record per-command executable identities. No exact tool version is inferred here.",
+  "tools": [],
+  "workspace": {
+    "failed": 0,
+    "ignored": 4,
+    "nested_guard_passes_not_added": 5,
+    "outer_groups": 44,
+    "passed": 747,
+    "preexisting_ignores": [
+      "rapid::tests::live::benchmark_single_byte_toggle_latency",
+      "live_probe_stress_matrix",
+      "patch_latency::patch_activation_latency_benchmark",
+      "probe_overhead_benchmark"
+    ]
+  }
+}

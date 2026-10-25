@@ -1,0 +1,350 @@
+{
+  "cases": [
+    {
+      "command_id": "word-export",
+      "expected": "byte_identical_five_files",
+      "expected_exit": 0,
+      "kind": "reporting_control",
+      "observed": "byte_identical_five_files",
+      "observed_exit": 0,
+      "ordinal": 0
+    },
+    {
+      "command_id": "failed-msrv-export",
+      "expected": "byte_identical_failed_result_five_files",
+      "expected_exit": 0,
+      "kind": "reporting_control",
+      "observed": "byte_identical_failed_result_five_files",
+      "observed_exit": 0,
+      "ordinal": 1
+    },
+    {
+      "command_id": "pass",
+      "expected": "exact_original_request",
+      "expected_exit": 0,
+      "kind": "reporting_control",
+      "observed": "exact_original_request",
+      "observed_exit": 0,
+      "ordinal": 2
+    },
+    {
+      "command_id": "failed-snapshot",
+      "expected": "exact_failed_snapshot_request",
+      "expected_exit": 0,
+      "kind": "reporting_control",
+      "observed": "exact_failed_snapshot_request",
+      "observed_exit": 0,
+      "ordinal": 3
+    },
+    {
+      "command_id": "wrong-source",
+      "expected": "rejected_before_output",
+      "expected_exit": 1,
+      "kind": "reporting_control",
+      "observed": "rejected_before_output",
+      "observed_exit": 1,
+      "ordinal": 4
+    },
+    {
+      "command_id": "wrong-tool",
+      "expected": "rejected_before_output",
+      "expected_exit": 1,
+      "kind": "reporting_control",
+      "observed": "rejected_before_output",
+      "observed_exit": 1,
+      "ordinal": 5
+    },
+    {
+      "command_id": "required-export",
+      "expected": "four_required_gate_rows",
+      "expected_exit": 0,
+      "kind": "reporting_control",
+      "observed": "four_required_gate_rows",
+      "observed_exit": 0,
+      "ordinal": 6
+    }
+  ],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "heading": "systematic everytactic",
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${REPORT}/evaluation/export-word.py",
+        "--inputs",
+        "${REVIEWED_EXPORT_INPUTS}",
+        "--inputs-sha256",
+        "1acfd890be8997dd32645b3d6fc4dbab9b2856c40c56ee726c36bbee602add31",
+        "--output",
+        "${NEW_PRIVATE_OUTPUT}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.26090998109430075,
+      "exit": 0,
+      "expected_exit": 0,
+      "file_bytes": 16777216,
+      "id": "word-export",
+      "outcome": "byte_identical_five_files",
+      "receipt_sha256": "d58c167f6ee3ef417d825dea7459528324725e3ab67065503c4eff7df1ac9fcc",
+      "script_sha256": "65c9e02a4496b72eb3bfdaecd618cd3d4b3f114b8d371725e5b764661bb983a2",
+      "source_id": "private_snapshot",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${REPORT}/evaluation/export-word.py",
+        "--inputs",
+        "${REVIEWED_EXPORT_INPUTS}",
+        "--inputs-sha256",
+        "273ab0382f60c72f610d6406c14e496d45f629bc9bce147cb4b410e169e8675b",
+        "--output",
+        "${NEW_PRIVATE_OUTPUT}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.20410886290483177,
+      "exit": 0,
+      "expected_exit": 0,
+      "file_bytes": 16777216,
+      "id": "failed-msrv-export",
+      "outcome": "byte_identical_failed_result_five_files",
+      "receipt_sha256": "d4cc14510d1a160394938d3adb0555003f4668695d8a9c952682124d27ad42dd",
+      "script_sha256": "65c9e02a4496b72eb3bfdaecd618cd3d4b3f114b8d371725e5b764661bb983a2",
+      "source_id": "private_snapshot",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${REPORT}/evaluation/prepare-msrv.py",
+        "--repo",
+        "${REPO}",
+        "--toolchain",
+        "${TOOLCHAIN_1_85}",
+        "--cargo-home",
+        "${LOCAL_CARGO_HOME}",
+        "--user-home",
+        "${LOCAL_USER_HOME}",
+        "--mode",
+        "pass",
+        "--output",
+        "${NEW_PRIVATE_OUTPUT}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 1.1263750619255006,
+      "exit": 0,
+      "expected_exit": 0,
+      "file_bytes": 16777216,
+      "id": "pass",
+      "outcome": "exact_original_request",
+      "receipt_sha256": "46ff8237fdd8700da4ec07fcc1d70e63946c25ed0670ca3290e04fe57588f07d",
+      "script_sha256": "a309e5edb4bedc41f832d29b426f053a861a6f7aa852923f54446b46878e75f4",
+      "source_id": "private_snapshot",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "81ddb536eea53ebf9c4c59fc3ba923474400976750427db6e971f1f04a1a74a8",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${REPORT}/evaluation/prepare-msrv.py",
+        "--repo",
+        "${FAILED_REPO}",
+        "--toolchain",
+        "${TOOLCHAIN_1_85}",
+        "--cargo-home",
+        "${LOCAL_CARGO_HOME}",
+        "--user-home",
+        "${LOCAL_USER_HOME}",
+        "--mode",
+        "failed-snapshot",
+        "--output",
+        "${NEW_PRIVATE_OUTPUT}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.7735782191157341,
+      "exit": 0,
+      "expected_exit": 0,
+      "file_bytes": 16777216,
+      "id": "failed-snapshot",
+      "outcome": "exact_failed_snapshot_request",
+      "receipt_sha256": "bd97ba698649cfa802393c9119e202a25c5a798967be35a04d7121cad3e8bff4",
+      "script_sha256": "a309e5edb4bedc41f832d29b426f053a861a6f7aa852923f54446b46878e75f4",
+      "source_id": "private_snapshot",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "88e932c70277fd92fb18349969448143c1a05b5010e3b451aff495f6cf19af35",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${REPORT}/evaluation/prepare-msrv.py",
+        "--repo",
+        "${FAILED_REPO}",
+        "--toolchain",
+        "${TOOLCHAIN_1_85}",
+        "--cargo-home",
+        "${LOCAL_CARGO_HOME}",
+        "--user-home",
+        "${LOCAL_USER_HOME}",
+        "--mode",
+        "pass",
+        "--output",
+        "${NEW_PRIVATE_OUTPUT}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.859770636074245,
+      "exit": 1,
+      "expected_exit": 1,
+      "file_bytes": 16777216,
+      "id": "wrong-source",
+      "outcome": "rejected_before_output",
+      "receipt_sha256": "ddf8c9e6abb95e3005b22e93e9a1270f4809a1595ae836dcbb59267ac132a1c4",
+      "script_sha256": "a309e5edb4bedc41f832d29b426f053a861a6f7aa852923f54446b46878e75f4",
+      "source_id": "private_snapshot",
+      "stderr_sha256": "3350e65cfcdfca864431a314f9ac5ef0f037a9e04a73aabb27150d15edd78844",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${REPORT}/evaluation/prepare-msrv.py",
+        "--repo",
+        "${REPO}",
+        "--toolchain",
+        "${WRONG_TOOLCHAIN_CONTROL}",
+        "--cargo-home",
+        "${LOCAL_CARGO_HOME}",
+        "--user-home",
+        "${LOCAL_USER_HOME}",
+        "--mode",
+        "pass",
+        "--output",
+        "${NEW_PRIVATE_OUTPUT}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.9797825159039348,
+      "exit": 1,
+      "expected_exit": 1,
+      "file_bytes": 16777216,
+      "id": "wrong-tool",
+      "outcome": "rejected_before_output",
+      "receipt_sha256": "0c13b890866bbe8d01516c38a7036e8e63761cd58b418cc2ad3a1aa77d7f4e2f",
+      "script_sha256": "a309e5edb4bedc41f832d29b426f053a861a6f7aa852923f54446b46878e75f4",
+      "source_id": "private_snapshot",
+      "stderr_sha256": "2fc9e9a25776701c756ec4bb0362299ac2b46f1e1909867920d0fce4aaa64a21",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${REPORT}/evaluation/export-word.py",
+        "--inputs",
+        "${REVIEWED_EXPORT_INPUTS}",
+        "--inputs-sha256",
+        "6609ae5d69d00e369262d2a24a5279ac751097b618c60c83b7df71116f51b02a",
+        "--output",
+        "${NEW_PRIVATE_OUTPUT}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.1968379400204867,
+      "exit": 0,
+      "expected_exit": 0,
+      "file_bytes": 16777216,
+      "id": "required-export",
+      "outcome": "four_required_gate_rows",
+      "receipt_sha256": "f314a576404ef55df111bac483b15b92318c1801518658982b8cc26f96c318eb",
+      "script_sha256": "65c9e02a4496b72eb3bfdaecd618cd3d4b3f114b8d371725e5b764661bb983a2",
+      "source_id": "git_commit",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    }
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "earlier read-only observation on the same host; no continuous hardware attestation",
+    "observation_sha256": "a5bda96e4bf7665faa232dd26dea6c7802a2309c4fa116863589ed35335abd89",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "later_tool_observations": {
+    "observation_phase": "current read-only observation after these seven invocations; not proof of historical execution identity",
+    "observation_sha256": "87652e2f1bbc010207d61522a78d76a8171d64889a943e7100a186081cec01f9",
+    "python_sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+    "timeout_sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+  },
+  "original_failed_msrv_status": "fail_exit_101_preserved",
+  "reproduction": "Use the published export-word.py and prepare-msrv.py with fresh private paths as documented in evaluation/README.md. Wrong-source selects pass inventory for the reconstructed failed source; wrong-tool supplies distinct executable bytes. No compiler is started by these controls.",
+  "run_id": "reporting-tools-20261025",
+  "schema": "reporting-tool-validation-v1",
+  "scope": "Metadata reporting and request-generation checks only; no new architecture/compiler qualification",
+  "source_files": {
+    "evaluation/export-word.py": "65c9e02a4496b72eb3bfdaecd618cd3d4b3f114b8d371725e5b764661bb983a2",
+    "evaluation/prepare-msrv.py": "a309e5edb4bedc41f832d29b426f053a861a6f7aa852923f54446b46878e75f4"
+  },
+  "sources": {
+    "git_commit": {
+      "kind": "git_commit",
+      "tested_revision": "72e423da0822610ed349efd466aee0a7ac7e87fc"
+    },
+    "private_snapshot": {
+      "base_revision": "7a4e5719ed06dfd55eaccb2236867f4d760e402c",
+      "kind": "source_snapshot",
+      "later_match_is_not_execution_at_revision": true,
+      "matching_later_revision": "72e423da0822610ed349efd466aee0a7ac7e87fc",
+      "tested_revision": null
+    }
+  },
+  "status": "pass",
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tools": {
+    "execution_identity_limit": "Requests record interpreter paths. Per-invocation pre/post executable identities for Python and timeout were not preserved for these reporting commands.",
+    "helper_identity_basis": "directly recorded in each bounded-helper receipt",
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+  }
+}
