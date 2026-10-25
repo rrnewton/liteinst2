@@ -83,7 +83,7 @@ impl Fixture {
         let low = selected.min(victim);
         let high = (selected + len + 1).max(victim + victim_len + 1);
         assert!(low >= PAD && high <= 2 * PAGE);
-        assert!(selected + len + 1 <= victim || victim + victim_len + 1 <= selected);
+        assert!(selected + len < victim || victim + victim_len < selected);
         let source_offset = low - PAD;
         let mut original = vec![0x90; high - source_offset];
         let selected_index = selected - source_offset;
