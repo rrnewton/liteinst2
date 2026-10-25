@@ -5,7 +5,7 @@ This port starts from LiteInst2 `4dab7f01d4d6d394e968fbfad842019f72743c81`
 evidence is the working tree below:
 
 - repository: Reverie
-- path: `/home/newton/work/dev-hermit/worktrees/slots/dev-hermit-15-liteinst-bootstrap-rdtsc-01a0a13c`
+- location: private read-only working tree (content identity recorded below)
 - branch: `codex/liteinst-bootstrap-rdtsc-01a0a13c`
 - preserved base and current `HEAD`: `6e3915b70a71657a08f0028b3f70d6074116206a`
 - source subtree: `third_party/liteinst2`
