@@ -158,6 +158,11 @@ impl Case {
         }
         0x1234_5678_9000_0000 + register as u64
     }
+
+    fn random_carry(self, registers: &RegisterSnapshot) -> Option<u8> {
+        matches!(self.class, SiteClass::Rdrand | SiteClass::Rdseed)
+            .then_some((registers.eflags & 1) as u8)
+    }
 }
 
 struct Directory(PathBuf);
@@ -734,6 +739,64 @@ fn check_counters<P: InstructionProvider>(
     assert_eq!(metrics.refusals, 0);
 }
 
+enum EvaluationOutcome {
+    Completed {
+        raw_native_random_cf: Option<u8>,
+        native_gate_random_cf: Option<u8>,
+    },
+    Fault,
+}
+
+fn emit_evaluation(case: Case, outcome: EvaluationOutcome) {
+    if !std::env::var("LITEINST_EVALUATION").is_ok_and(|value| value == "1") {
+        return;
+    }
+    let class = match case.class {
+        SiteClass::Cpuid => "cpuid",
+        SiteClass::Rdrand => "rdrand",
+        SiteClass::Rdseed => "rdseed",
+        SiteClass::Rdpid => "rdpid",
+        SiteClass::Rdtsc => "rdtsc",
+        SiteClass::Rdtscp => "rdtscp",
+        _ => unreachable!("not a native CPU fixture"),
+    };
+    let (completed, fault, raw_cf, gate_cf) = match outcome {
+        EvaluationOutcome::Completed {
+            raw_native_random_cf,
+            native_gate_random_cf,
+        } => (1, 0, raw_native_random_cf, native_gate_random_cf),
+        EvaluationOutcome::Fault => (0, 1, None, None),
+    };
+    let number_or_null =
+        |value: Option<u32>| value.map_or_else(|| "null".to_owned(), |value| value.to_string());
+    // Only validated outcome categories and random carry bits are emitted.
+    // Addresses, register values, paths and raw process state stay out of JSON.
+    eprintln!(
+        concat!(
+            "LITEINST_EVALUATION_NATIVE_SELECTED ",
+            "{{\"schema_version\":1,\"class\":\"{}\",\"destination\":{},\"input_flags\":{},",
+            "\"cpuid_leaf\":{},\"cpuid_subleaf\":{},",
+            "\"raw_native_completed\":{},\"scripted_completed\":{},",
+            "\"native_gate_completed\":{},\"raw_native_fault\":{},",
+            "\"scripted_fault\":{},\"native_gate_signal\":{},",
+            "\"raw_native_random_cf\":{},\"native_gate_random_cf\":{}}}"
+        ),
+        class,
+        case.destination,
+        case.flags,
+        number_or_null(case.cpuid_input.map(|input| input.0)),
+        number_or_null(case.cpuid_input.map(|input| input.1)),
+        completed,
+        completed,
+        completed,
+        fault,
+        fault,
+        fault,
+        number_or_null(raw_cf.map(u32::from)),
+        number_or_null(gate_cf.map(u32::from)),
+    );
+}
+
 fn exercise(case: Case) {
     let fixture = Fixture::new(case);
     let mut native = Native::launch(&fixture);
@@ -742,7 +805,7 @@ fn exercise(case: Case) {
     native.ptrace(libc::PTRACE_CONT, 0, 0);
     let status = native.wait();
     let info = native.signal(status);
-    if info.si_signo == libc::SIGILL {
+    let outcome = if info.si_signo == libc::SIGILL {
         // Unsupported CPU instructions are explicit fault qualifications, never
         // successful coverage or a silent test skip. Scripted semantic positives
         // are mandatory in the independent selected_gate suite on every host.
@@ -750,6 +813,7 @@ fn exercise(case: Case) {
         let fault = native.evidence();
         eprintln!("native capability fault, no positive native qualification: {case:?}");
         exercise_fault(&fixture, &before, &fault, info.si_code);
+        EvaluationOutcome::Fault
     } else {
         assert_eq!(info.si_signo, libc::SIGTRAP);
         assert!(matches!(info.si_code, libc::SI_KERNEL | libc::TRAP_BRKPT));
@@ -769,10 +833,19 @@ fn exercise(case: Case) {
         let native_terminal = native.evidence();
         check_dataflow(&completion, &native_terminal, fixture.terminal);
         exercise_replay(&fixture, &before, &completion, &native_terminal);
-        exercise_native_provider(&fixture, &before);
-    }
+        let native_gate_random_cf = exercise_native_provider(&fixture, &before);
+        EvaluationOutcome::Completed {
+            raw_native_random_cf: case.random_carry(&completion.registers),
+            native_gate_random_cf,
+        }
+    };
     drop(native);
     assert_reaped(&native_handle);
+    drop(native_handle);
+    drop(fixture);
+    // A receipt exists only after every oracle, counter and cleanup assertion
+    // has succeeded. Missing receipts must never imply successful completion.
+    emit_evaluation(case, outcome);
 }
 
 fn exercise_replay(
@@ -808,7 +881,7 @@ fn exercise_replay(
     assert_reaped(&handle);
 }
 
-fn exercise_native_provider(fixture: &Fixture, before: &Evidence) {
+fn exercise_native_provider(fixture: &Fixture, before: &Evidence) -> Option<u8> {
     let mut gate = fixture.gate(NativeProvider);
     let handle = pidfd(gate.pid());
     let event = gate.next_event().unwrap();
@@ -833,6 +906,7 @@ fn exercise_native_provider(fixture: &Fixture, before: &Evidence) {
     check_counters(&gate, fixture.case, true, false);
     drop(gate);
     assert_reaped(&handle);
+    fixture.case.random_carry(&completion.registers)
 }
 
 fn exercise_fault(fixture: &Fixture, before: &Evidence, fault: &Evidence, code: i32) {
