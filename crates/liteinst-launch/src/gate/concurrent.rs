@@ -352,6 +352,7 @@ impl ConcurrentPageGate {
             &self.policy,
             &self.returns,
             Some(&self.publisher),
+            None,
             deadline,
         )?;
         for &next in &bundle.pages {

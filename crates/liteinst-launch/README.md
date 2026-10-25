@@ -62,12 +62,22 @@ gate permits a clean destination but refuses selected publication overlapping
 a retained return obligation; it does not invent an empty resume census from
 page history. Records persist across the entire execution domain.
 
-The initially qualified selected class is CPUID; all other selected classes
-refuse before publication. In particular, native SYSCALL stepping produces a
+The original `SingleThreadPageGate` reference qualifies CPUID; other selected
+classes refuse before publication in that API. Native SYSCALL stepping produces a
 different trap cause and exposes debugger TF in R11. Its raw primitive test
 records that difference; it is not accepted as a no-op observation.
 The broader default scan policy still finds those sites; it does not silently
 deselect them.
+
+`gate::SelectedPageGate` explicitly selects the broader single-task trap and
+interpreter path. Its typed provider receives the original instruction, logical
+PC and complete register input, then requests native execution, supplies a
+checked result, or reports an uncompleted architectural fault. Completion events
+retain the full input/output register and extended-state snapshots and distinguish
+native from scripted execution. CPUID, RDRAND, RDSEED, RDPID, RDTSC, RDTSCP and
+native SYSCALL have separate result types and class counters. This path shares
+page admission but does not claim A1 pun publication or replace a core refusal
+with an implicit fallback. See [selected-instruction contracts](SELECTED.md).
 
 `SingleThreadPageGate::new_core` selects a separate A1 path. It requires a
 generalized pun for every selected CPUID; a refusal does not fall back to the
@@ -98,10 +108,9 @@ inferred from NX history.
 
 The single-task reference supports immutable private code, 4 KiB pages,
 at most 64 initial executable mappings/censuses, at most 64 MiB of initial
-executable mappings and at most 64 KiB per census. It is groundwork
-for B1 and the B2 reference path. The custom interpreter fixture is not general
+executable mappings and at most 64 KiB per census. The custom interpreter fixture is not general
 dynamic-loader support. Mapping churn, application signal handlers, aliases,
-self-modifying code and the broader B2 instruction-class/ISA campaign remain
+self-modifying code and unrestricted selected-instruction encoding coverage remain
 unsupported.
 
 `gate::ConcurrentPageGate` adds a fixed-membership cooperative B1 envelope.

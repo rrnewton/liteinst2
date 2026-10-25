@@ -25,6 +25,9 @@ use crate::core_remote::{CpuidPlanRequest, CpuidPublisher, MAX_CPUID_BUNDLE, Pre
 mod concurrent;
 pub use concurrent::*;
 
+mod selected;
+pub use selected::*;
+
 use crate::{
     ExecCheckpoint, LaunchError, MemoryMapping, ProcessEvent, RegisterSnapshot, SignalStop,
     StoppedProcess,
@@ -60,11 +63,19 @@ pub enum GateError {
     Scan(Vec<liteinst_admission::scan::Obligation>),
     /// The A1 planner refused the selected instruction's required tactic.
     Core(core::Refusal),
+    /// A typed selected decode, provider decision or completion was refused.
+    Selected(crate::selected::SemanticsError),
 }
 
 impl From<LaunchError> for GateError {
     fn from(value: LaunchError) -> Self {
         Self::Control(value)
+    }
+}
+
+impl From<crate::selected::SemanticsError> for GateError {
+    fn from(value: crate::selected::SemanticsError) -> Self {
+        Self::Selected(value)
     }
 }
 
@@ -75,6 +86,7 @@ impl std::fmt::Display for GateError {
             Self::Refused(reason) => write!(f, "page gate refused: {reason}"),
             Self::Scan(obligations) => write!(f, "page scan refused: {obligations:?}"),
             Self::Core(reason) => write!(f, "core planning refused: {reason}"),
+            Self::Selected(reason) => write!(f, "selected instruction refused: {reason}"),
         }
     }
 }
@@ -149,6 +161,7 @@ pub struct SingleThreadPageGate {
     timeout: Duration,
     metrics: GateMetrics,
     core: Option<CpuidPublisher>,
+    selected_aliases: Option<crate::selected::SyscallAliases>,
 }
 
 impl SingleThreadPageGate {
@@ -281,6 +294,7 @@ impl SingleThreadPageGate {
             timeout,
             metrics,
             core: None,
+            selected_aliases: None,
         })
     }
 
@@ -516,6 +530,7 @@ impl SingleThreadPageGate {
             &self.policy,
             &self.returns,
             self.core.as_ref(),
+            self.selected_aliases.as_ref(),
             deadline,
         )?;
         for &next in &bundle {
@@ -624,6 +639,7 @@ fn prepare_admission(
     policy: &Policy,
     returns: &CallReturnLedger,
     publisher: Option<&CpuidPublisher>,
+    selected_aliases: Option<&crate::selected::SyscallAliases>,
     deadline: Instant,
 ) -> Result<AdmissionBundle, GateError> {
     // Close over complete pages required by every selected straddler.
@@ -659,7 +675,20 @@ fn prepare_admission(
         }
         for site in report.candidates() {
             remaining(deadline)?;
-            if site.class != liteinst_admission::scan::SiteClass::Cpuid {
+            if let Some(aliases) = selected_aliases {
+                let start = (site.address - image.mapping.start) as usize;
+                let end = start + usize::from(site.len);
+                let decoded = crate::selected::decode(
+                    site.address,
+                    &image.snapshot.bytes()[start..end],
+                    aliases,
+                )?;
+                if decoded.bytes().len() != usize::from(site.len)
+                    || decoded.operation().class() != site.class
+                {
+                    return Err(GateError::Refused("selected decode differs from scan"));
+                }
+            } else if site.class != liteinst_admission::scan::SiteClass::Cpuid {
                 return Err(GateError::Refused(
                     "selected class lacks reference single-step qualification",
                 ));
