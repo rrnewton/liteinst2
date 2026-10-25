@@ -28,6 +28,7 @@ BOX = dict(cpu_cores=1, memory_bytes=256 * 1024**2, pids=32,
            cpu_seconds=60, wall_seconds=180, concurrency=2,
            slice_cpu=2, slice_memory_bytes=1024**3, aggregate_wall_seconds=3600)
 CALIBRATIONS = sorted([
+    "memory_name_calibration::exact_mapping_kind_is_required",
     "oracle::calibration::rejects_fault_address_corruption",
     "oracle::calibration::rejects_gpr_corruption",
     "oracle::calibration::rejects_defined_flag_corruption",
@@ -44,6 +45,7 @@ INPUTS = ("generated.json", "cases.rs", "sample-runtime.json", "sample-cases.rs"
 CANCELLATION_SIGNALS = (signal.SIGINT, signal.SIGTERM, signal.SIGHUP)
 TERMINATING = False
 CGROUP_ROOT = Path("/sys/fs/cgroup")
+GIT_EXECUTABLE = None
 
 
 class Failure(RuntimeError):
@@ -81,8 +83,27 @@ def load(path):
     return json.loads(Path(path).read_text())
 
 
+def bind_git(executable, expected_sha256=None):
+    """Select and authenticate a Git tool explicitly, avoiding PATH wrappers."""
+    global GIT_EXECUTABLE
+    path = Path(executable).resolve(strict=True)
+    require(path.is_file() and os.access(path, os.X_OK), "Git executable is not runnable")
+    actual = digest(path)
+    require(expected_sha256 is None or actual == expected_sha256,
+            "Frozen Git executable identity changed")
+    GIT_EXECUTABLE = str(path)
+    return dict(path=str(path), sha256=actual)
+
+
+def git_bytes(repo, *args):
+    require(GIT_EXECUTABLE is not None, "Git tool must be bound before verification")
+    return subprocess.check_output(
+        [GIT_EXECUTABLE, "--no-optional-locks", "-c", "core.fsmonitor=false",
+         "-c", "core.preloadIndex=false", *args], cwd=repo)
+
+
 def git(repo, *args):
-    return subprocess.check_output(["git", *args], cwd=repo, text=True).strip()
+    return git_bytes(repo, *args).decode().strip()
 
 
 def private_path(repo, path):
@@ -200,8 +221,8 @@ def successful(argv, **kwargs):
 
 
 def repository_hashes(repo):
-    require(git(repo, "diff", "--binary", "HEAD") == "", "Tracked checkout must be clean")
-    names = subprocess.check_output(["git", "ls-files", "-z"], cwd=repo).split(b"\0")
+    require(git(repo, "diff", "--no-ext-diff", "--no-textconv", "--binary", "HEAD") == "", "Tracked checkout must be clean")
+    names = git_bytes(repo, "ls-files", "-z").split(b"\0")
     result = {}
     for encoded in names:
         if not encoded:
@@ -268,6 +289,7 @@ def freeze(args):
     inputs = private_path(repo, args.input_dir)
     require(source.is_relative_to(repo), "Campaign source must be inside this checkout")
     require(source.is_dir() and inputs.is_dir(), "Source/input directory is absent")
+    git_tool = bind_git(args.git_executable)
     head = git(repo, "rev-parse", "HEAD")
     tracked = repository_hashes(repo)
     output = fresh_directory(repo, args.output_dir)
@@ -321,6 +343,8 @@ def freeze(args):
     cargo = shutil.which("cargo")
     rustc = shutil.which("rustc")
     require(cargo and rustc, "Cargo and rustc must be available")
+    successful([git_tool["path"], "--version"], cwd=repo, env=env,
+               prefix=logs / "git-version", timeout=30)
     successful([rustc, "-Vv"], cwd=repo, env=env, prefix=logs / "rustc-version", timeout=30)
     successful([cargo, "-V"], cwd=repo, env=env, prefix=logs / "cargo-version", timeout=30)
     _, cargo_json, _ = successful(
@@ -369,7 +393,8 @@ def freeze(args):
                                     for p in sorted(payload.rglob("*")) if p.is_file()},
                     build_sha256={str(p.relative_to(output)): digest(p)
                                   for p in sorted(logs.iterdir()) if p.is_file()},
-                    driver_sha256=digest(Path(__file__)), artifacts=selected, locked_libc=locked_libc,
+                    driver_sha256=digest(Path(__file__)), git_tool=git_tool,
+                    artifacts=selected, locked_libc=locked_libc,
                     runner=binding["launcher"], runner_binding=binding,
                     runner_source_sha256=runner_hashes(args.runner, args.runner_source_root),
                     python=str(Path(sys.executable).resolve()),
@@ -397,6 +422,8 @@ def verify(frozen, expected):
     require(manifest["expected_calibrations"] == CALIBRATIONS, "Calibration set changed")
     require(digest(Path(__file__)) == manifest["driver_sha256"], "Driver differs from frozen source")
     repo = Path(manifest["repository"])
+    require(bind_git(manifest["git_tool"]["path"], manifest["git_tool"]["sha256"])
+            == manifest["git_tool"], "Git binding differs from frozen identity")
     private_path(repo, frozen)
     require(git(repo, "rev-parse", "HEAD") == manifest["head"], "Library HEAD changed")
     require(repository_hashes(repo) == manifest["tracked_sha256"], "Tracked source identity changed")
@@ -497,15 +524,15 @@ def worker(args):
                               prefix=output / "calibration-list", timeout=15)
     names = sorted(line.removesuffix(": test") for line in listing.read_text().splitlines()
                    if line.endswith(": test"))
-    require(names == CALIBRATIONS, "Actual calibration inventory differs from frozen eight")
+    require(names == CALIBRATIONS, "Actual calibration inventory differs from frozen required tests")
     verify(frozen, args.manifest_sha256)
     _, log, _ = successful([binary, "--test-threads=1", "--nocapture"],
                           cwd=output, env=env, prefix=output / "calibration-tests", timeout=170)
     summaries = re.findall(r"test result: ok\. (\d+) passed; (\d+) failed; (\d+) ignored; "
                            r"(\d+) measured; (\d+) filtered out;", log.read_text())
-    require(summaries == [("8", "0", "0", "0", "0")], "Incomplete/ignored/filtered calibrations")
+    require(summaries == [(str(len(CALIBRATIONS)), "0", "0", "0", "0")], "Incomplete/ignored/filtered calibrations")
     write_new(output / "calibrations-passed.json",
-              dict(names=names, passed=8, failed=0, ignored=0, manifest=args.manifest_sha256))
+              dict(names=names, passed=len(CALIBRATIONS), failed=0, ignored=0, manifest=args.manifest_sha256))
 
 
 def parse_sweep(text):
@@ -687,7 +714,7 @@ def run(args):
                 {f"{i:04d}" for i in range(544)}, "Actual result directory inventory changed")
         write_new(output / "complete.json",
                   dict(manifest=args.manifest_sha256, head=manifest["head"], inputs=544,
-                       calibrations=8, status="ALL_REQUIRED_OUTCOMES_VERIFIED",
+                       calibrations=len(CALIBRATIONS), status="ALL_REQUIRED_OUTCOMES_VERIFIED",
                        receipt_sha256={str(p.relative_to(output)): digest(p)
                                        for p in sorted(output.rglob("*")) if p.is_file()}))
         completed = True
@@ -711,6 +738,8 @@ def main():
     commands = parser.add_subparsers(dest="command", required=True)
     freezing = commands.add_parser("freeze", help="Build and freeze; executes no native calibration/case")
     freezing.add_argument("--repo", default=".")
+    freezing.add_argument("--git-executable", required=True,
+                          help="Explicit Git binary without detached helper sidecars")
     freezing.add_argument("--source-dir", required=True)
     freezing.add_argument("--input-dir", required=True)
     freezing.add_argument("--output-dir", required=True)

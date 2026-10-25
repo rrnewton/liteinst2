@@ -59,9 +59,14 @@ the complete memory pages and actual stopped-tracee flags.
 The driver separates `freeze` from `run`. Freeze requires a clean tracked
 checkout, captures exact offline Cargo artifact records, compiles both ordinary
 and calibration binaries, and hashes the complete source/input/binary inventory.
+Freeze also requires an explicit Git executable and binds its bytes and version.
+All source checks use that binary with raw diffs and exact tracked-file hashes.
+Choose a Git binary without detached helper sidecars: every helper shares the
+unchanged 32-task worker limit.
+
 It does not execute an input. Run requires that exact reviewed manifest hash,
 checks identities before each launch, and completes all eight helper calibration
-tests before any campaign input. Use `python3 driver.py --help` and the subcommand
+tests plus the exact backing-name calibration before any campaign input. Use `python3 driver.py --help` and the subcommand
 help for the required source, input, output and installed runner paths.
 
 ## Execution and observations

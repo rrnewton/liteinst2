@@ -151,6 +151,46 @@ fn private_backing_resources() -> Vec<String> {
     resources
 }
 
+fn mapping_fields(header: &str, grouped: bool) -> Vec<&str> {
+    let fields: Vec<_> = header.split_whitespace().collect();
+    let expected_name = if grouped {
+        "/memfd:liteinst2-immutable-group"
+    } else {
+        "/memfd:liteinst2-trampoline"
+    };
+    assert_eq!(fields.len(), 7);
+    assert_eq!(fields[1], "r-xs");
+    assert_eq!(&fields[5..], &[expected_name, "(deleted)"]);
+    fields
+}
+
+#[cfg(test)]
+mod memory_name_calibration {
+    use super::mapping_fields;
+
+    #[test]
+    fn exact_mapping_kind_is_required() {
+        let private = "1000-2000 r-xs 00000000 00:01 9 /memfd:liteinst2-trampoline (deleted)";
+        let grouped = "1000-2000 r-xs 00000000 00:01 9 /memfd:liteinst2-immutable-group (deleted)";
+        assert_eq!(mapping_fields(private, false)[5], "/memfd:liteinst2-trampoline");
+        assert_eq!(mapping_fields(grouped, true)[5], "/memfd:liteinst2-immutable-group");
+        let negatives = [
+            (private.to_string(), true),
+            (grouped.to_string(), false),
+            (private.replace("trampoline", "trampoline-spoof"), false),
+            (grouped.replace("immutable-group", "immutable-group-spoof"), true),
+            (private.replace("r-xs", "rwxs"), false),
+            (private.replace("r-xs", "rwx s"), false),
+            (grouped.replace("r-xs", "r-xp"), true),
+            (private.replace(" (deleted)", ""), false),
+            (format!("{grouped} extra"), true),
+        ];
+        for (header, kind) in negatives {
+            assert!(std::panic::catch_unwind(|| mapping_fields(&header, kind)).is_err(), "accepted {header}");
+        }
+    }
+}
+
 // Parent-only accounting after reading the immutable image pages. These are
 // observed whole-VMA values, separately reported from planner byte/page costs.
 fn memory_observation(log: &Recorder, label: &str, bundle: &PlannedBundle) {
@@ -196,7 +236,7 @@ fn memory_observation(log: &Recorder, label: &str, bundle: &PlannedBundle) {
         if overlaps.is_empty() {
             continue;
         }
-        assert!(lines[0].contains("memfd:liteinst2-trampoline"));
+        let fields = mapping_fields(lines[0], bundle.grouping().is_some());
         for index in overlaps {
             coverage[index].push((
                 start.max(allocations[index].start()),
@@ -215,8 +255,6 @@ fn memory_observation(log: &Recorder, label: &str, bundle: &PlannedBundle) {
             assert_eq!(parts[1], "kB");
             totals[index] += parts[0].parse::<u64>().unwrap();
         }
-        let fields: Vec<_> = lines[0].split_whitespace().collect();
-        assert!(fields.len() >= 6);
         let key = (fields[3].to_string(), fields[4].parse::<u64>().unwrap());
         assert_ne!(key.1, 0);
         let measured = fs::metadata(format!("/proc/self/map_files/{start:x}-{end:x}"))
