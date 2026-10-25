@@ -1,3 +1,5 @@
+//! Integration tests for arena behavior across process forks.
+
 #![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 

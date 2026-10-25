@@ -1,3 +1,5 @@
+//! Isolated entry point for Linux core synchronization checks.
+
 #![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[allow(dead_code)]

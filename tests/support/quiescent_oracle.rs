@@ -498,6 +498,14 @@ mod ordered_trace {
         include!("boundary_signal.rs");
     }
 
+    // Additive Word-sync schedules; every existing method is unchanged.
+    mod word_sync {
+        include!("word_sync.rs");
+    }
+    pub type ScheduleKind = word_sync::ScheduleKind;
+    pub use word_sync::WordPublication;
+    include!("word_trace_method.rs");
+
     const EVENT_CAPACITY: usize = 128;
     thread_local! {
         static ACTIVE_LOG: Cell<(*mut u64, usize)> = const { Cell::new((core::ptr::null_mut(), 0)) };

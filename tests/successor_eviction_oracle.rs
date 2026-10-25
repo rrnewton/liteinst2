@@ -83,6 +83,7 @@ fn native_state_covers_successor_eviction_into_b2_and_t1_puns() {
     isolation::run_parent("native_state_covers_successor_eviction_into_b2_and_t1_puns");
 }
 
+/// Compare native state for successor eviction with B2 and T1 puns.
 pub fn run_native_state_covers_successor_eviction_into_b2_and_t1_puns() {
     let puzzles = [
         Puzzle {
@@ -434,6 +435,7 @@ fn native_successor_eviction_preserves_seven_byte_victim_fault() {
     isolation::run_parent("native_successor_eviction_preserves_seven_byte_victim_fault");
 }
 
+/// Compare the original fault and state for a seven-byte evicted victim.
 pub fn run_native_successor_eviction_preserves_seven_byte_victim_fault() {
     // Independently checked with GNU objdump: MOV EAX,0 at0 (5 bytes),
     // MOV EAX,EAX at5 (2), MOV RCX,[RAX+disp32=0] at7 (7), RET at14.
@@ -645,6 +647,7 @@ fn native_successor_eviction_preserves_bounded_victim_backedge() {
     isolation::run_parent("native_successor_eviction_preserves_bounded_victim_backedge");
 }
 
+/// Compare repeated native visits through the bounded victim backedge.
 pub fn run_native_successor_eviction_preserves_bounded_victim_backedge() {
     // SHR ECX,1; JNZ selected; RET. The six-byte victim's rel32 is -8.
     // ECX reaches zero within32 selected visits from every initial value.
@@ -670,6 +673,7 @@ fn native_successor_eviction_preserves_victim_rip_relative_data() {
     isolation::run_parent("native_successor_eviction_preserves_victim_rip_relative_data");
 }
 
+/// Compare native state and data for a RIP-relative evicted victim.
 pub fn run_native_successor_eviction_preserves_victim_rip_relative_data() {
     // MOV EAX,EAX; MOV RCX,[RIP+55]; MOV [RDI],RCX; RET.
     // The load's original nextPC is9 and its controlled data target is64.

@@ -1,3 +1,5 @@
+//! Isolated entry point for the successor eviction native oracle.
+
 #![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 

@@ -10,6 +10,9 @@
 //! this protocol. Callers must provide a staleness budget calibrated for every
 //! supported machine.
 
+/// Separate experimental synchronization-based publication protocol.
+pub mod synchronized;
+
 use core::fmt;
 use core::num::NonZeroU64;
 #[cfg(target_arch = "x86_64")]

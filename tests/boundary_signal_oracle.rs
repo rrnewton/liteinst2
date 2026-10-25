@@ -1,3 +1,5 @@
+//! Native state comparisons for boundary signal delivery.
+
 #![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 
@@ -115,6 +117,7 @@ fn check_image(image: &liteinst2::trampoline::TrampolineImage) {
         image.bytes()
     );
 }
+/// Compare native state across signal returns at every restored visit.
 pub fn run_boundary_signals_every_restored_visit() {
     assert_eq!(PUZZLES.iter().map(|p| p.heads.len()).sum::<usize>(), 5);
     assert_eq!(
@@ -400,6 +403,7 @@ pub fn run_boundary_signals_every_restored_visit() {
         "boundary-signal complete: layouts=2 heads=5 seeds=2 baseline=10 traces=30 original=10 installed=10 retired=10 signal_roundtrips=84 generated_boundaries=8 source_boundaries=76 selected_events=6 unwind_qualified=false"
     );
 }
+/// Dispatch the selected fixture on the fresh process main thread.
 pub fn isolated_main() {
     isolation::main_thread_driver();
 }

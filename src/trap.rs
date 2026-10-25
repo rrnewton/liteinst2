@@ -582,6 +582,39 @@ mod imp {
         ensure_installed()
     }
 
+    // Additive synchronized-protocol admission check. Legacy paths do not call it.
+    pub(crate) fn verify_synchronized_router() -> Result<(), TrapError> {
+        let mut action = MaybeUninit::<libc::sigaction>::uninit();
+        // SAFETY: query initializes one native sigaction and changes no action.
+        if unsafe { libc::sigaction(libc::SIGTRAP, ptr::null(), action.as_mut_ptr()) } != 0 {
+            return Err(TrapError::Install(last_errno()));
+        }
+        // SAFETY: successful query initialized the action.
+        let action = unsafe { action.assume_init() };
+        let required = libc::SA_SIGINFO | libc::SA_RESTART;
+        let forbidden = libc::SA_RESETHAND | libc::SA_NODEFER;
+        if action.sa_sigaction != trap_handler as *const () as usize
+            || action.sa_flags & required != required
+            || action.sa_flags & forbidden != 0
+        {
+            return Err(TrapError::Install(libc::EPERM));
+        }
+        let mut mask = MaybeUninit::<libc::sigset_t>::uninit();
+        // SAFETY: a null input only queries this thread's mask.
+        let rc =
+            unsafe { libc::pthread_sigmask(libc::SIG_SETMASK, ptr::null(), mask.as_mut_ptr()) };
+        if rc != 0 {
+            return Err(TrapError::Install(rc));
+        }
+        // SAFETY: successful query initialized the signal set.
+        let mask = unsafe { mask.assume_init() };
+        // SAFETY: mask is initialized and SIGTRAP is a valid signal.
+        if unsafe { libc::sigismember(&mask, libc::SIGTRAP) } != 0 {
+            return Err(TrapError::Install(libc::EPERM));
+        }
+        Ok(())
+    }
+
     fn ensure_installed() -> Result<(), TrapError> {
         let mode = *INSTALL_MODE.get_or_init(|| InstallMode::Standalone);
         match *INSTALL_RESULT.get_or_init(|| install_handler(mode)) {
@@ -1489,3 +1522,6 @@ pub(crate) use imp::prepare_with_signal_runtime;
 pub(crate) use imp::register;
 pub(crate) use imp::register_jump;
 pub(crate) use imp::reserve;
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(crate) use imp::verify_synchronized_router;

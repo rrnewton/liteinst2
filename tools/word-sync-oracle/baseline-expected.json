@@ -1,0 +1,6 @@
+{
+  "positive": "word-sync: split_cycles=28 atomic_cycles=4 batch_cycles=2 saved_head_cycles=1 calls=263 guard_deliveries=68 saved_signal_returns=3 prewrite_refusals=10\n",
+  "deny-1": "word-sync: denied_barrier=1 terminal=true retained_writers=1 executed_poisoned_source=0\n",
+  "deny-2": "word-sync: denied_barrier=2 terminal=true retained_writers=1 executed_poisoned_source=0\n",
+  "deny-3": "word-sync: denied_barrier=3 terminal=true retained_writers=1 executed_poisoned_source=0\n"
+}

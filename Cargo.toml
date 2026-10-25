@@ -17,6 +17,7 @@ include = [
     "/INTERFACES.md",
     "/A1-QUIESCENT.md",
     "/A2-COMPOSITION.md",
+    "/A4-SYNCHRONIZED.md",
     "/COALESCED-CONTROLS.md",
     "/SEARCH-EVIDENCE.md",
     "/PATCH_SITE_DECISION_TREE.md",
@@ -26,6 +27,13 @@ include = [
     "/examples/saved_pkru_probe.rs",
     "/src/**",
     "/tests/**",
+    "/tools/word-sync-oracle/README.md",
+    "/tools/word-sync-oracle/adapter.py",
+    "/tools/word-sync-oracle/bounded_command.py",
+    "/tools/word-sync-oracle/baseline-expected.json",
+    "/tools/word-sync-oracle/inventory.json",
+    "/tools/word-sync-oracle/*.rs",
+    "/tools/word-sync-oracle/runtime/*.py",
 ]
 
 [[example]]

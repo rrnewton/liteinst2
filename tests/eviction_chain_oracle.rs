@@ -1,3 +1,5 @@
+//! Native state comparisons for successor eviction chains.
+
 #![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 
@@ -250,6 +252,7 @@ fn native_eviction_chains_all_original_entries() {
     isolation::run_parent("native_eviction_chains_all_original_entries");
 }
 
+/// Compare native eviction-chain execution from every declared original entry.
 pub fn run_native_eviction_chains_all_original_entries() {
     let mut retained = Vec::new();
     let mut original_count = 0;
@@ -411,6 +414,7 @@ fn native_eviction_chain_postwrite_failure_keeps_every_image() {
     isolation::run_parent("native_eviction_chain_postwrite_failure_keeps_every_image");
 }
 
+/// Check that postwrite failure retains every eviction-chain image.
 pub fn run_native_eviction_chain_postwrite_failure_keeps_every_image() {
     let mut native = NativeOracle::new(CASES[1].code);
     let f = Fixture::new(&CASES[1], native.code.address());
@@ -459,6 +463,7 @@ pub fn run_native_eviction_chain_postwrite_failure_keeps_every_image() {
     );
 }
 
+/// Dispatch the selected fixture on the fresh process main thread.
 pub fn isolated_main() {
     isolation::main_thread_driver();
 }

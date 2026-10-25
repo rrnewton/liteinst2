@@ -73,6 +73,9 @@ Each module owns one correctness boundary:
 - `cache_line`: overflow-safe patch-span classification.
 - `scanner`: fail-closed x86-64 decoding and cache-line crossing discovery.
 - `patcher`: multi-instruction jump planning and all-front-byte WordPatch++ publication.
+  The separate experimental `patcher::synchronized` API uses sync-core barriers
+  for word publication and batches; its [contract and required native gate](A4-SYNCHRONIZED.md)
+  define the supported geometry, caller obligations and terminal failure behavior.
 - `planner`: rapid, relocated, and client-trap fallback selection.
 - `rapid`: exact instruction-pun planning and atomic opcode toggling.
 - `probe`: idempotent probe lifecycle state.

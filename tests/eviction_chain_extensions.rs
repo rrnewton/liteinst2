@@ -1,3 +1,5 @@
+//! Native comparisons for extended successor eviction chains.
+
 #![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 
@@ -216,6 +218,7 @@ fn seeded_ecx(seed: u64) -> u32 {
 fn native_chain_short_conditional_backedge() {
     isolation::run_parent("native_chain_short_conditional_backedge");
 }
+/// Compare native state through the short conditional chain backedge.
 pub fn run_native_chain_short_conditional_backedge() {
     RECORD_EVENTS.store(true, Ordering::Relaxed);
     assert_eq!(SEEDS.map(seeded_ecx), [0xfa97ac78, 0x6f659161]);
@@ -338,6 +341,7 @@ fn fault_case(operand: u64) -> Case {
 fn native_chain_anchor_readable_and_fault() {
     isolation::run_parent("native_chain_anchor_readable_and_fault");
 }
+/// Compare readable and faulting loads in the eviction-chain fixture.
 pub fn run_native_chain_anchor_readable_and_fault() {
     RECORD_EVENTS.store(true, Ordering::Relaxed);
     let operand = Mapping::new(4096);
@@ -470,6 +474,7 @@ pub fn run_native_chain_anchor_readable_and_fault() {
     );
 }
 
+/// Dispatch the selected fixture on the fresh process main thread.
 pub fn isolated_main() {
     isolation::main_thread_driver();
 }

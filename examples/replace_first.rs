@@ -1,3 +1,5 @@
+//! Example of replacing a function entry with a hook.
+
 #![deny(warnings)]
 use std::error::Error;
 use std::io;

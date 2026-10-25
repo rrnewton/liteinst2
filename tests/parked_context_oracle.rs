@@ -1,3 +1,5 @@
+//! Native comparisons for publication while an original context is parked.
+
 #![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 
