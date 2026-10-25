@@ -1,5 +1,8 @@
 # B0 qualification and cooperative B1 evidence
 
+The accepted stack subsequently passed [validation on the extended core](admission-rebase-20261025.md).
+The original source identities and measurements below remain historical.
+
 Recorded 2026-10-25 06:15:44 EDT. Validated code revision:
 `642d8a99f6fbb78eee49161d0330ea5551110770`, consuming core A1
 `c6cc3fb62d2b839a2318d112a6dbca76bce4c2ec`. The tracked worktree matched the
