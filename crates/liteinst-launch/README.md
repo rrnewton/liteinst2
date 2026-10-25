@@ -89,7 +89,7 @@ observing allowlist. Code mappings remain owned until child termination.
 
 The A1 constructor additionally requires owner certification of the exact
 emitter/child extended-state layout, System V ABI, no CET or AMX use, sufficient
-writable callback stack, no reads of instrumentation-private stack, and entry
+writable callback stack, no reads or writes of instrumentation-private frames, and entry
 to generated code only through installed source entries. These are unsafe
 closed-world preconditions, not properties inferred from the parent's CPU or
 from a private VMA. Every saved continuation must be a declared head; the core

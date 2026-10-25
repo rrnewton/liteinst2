@@ -1,5 +1,11 @@
 # Admission B0 and first-instruction checkpoint evidence
 
+Historical checkpoint receipt: revisions below precede the unpublished branch's
+replay onto sanitized core history. They are retained as the original capture
+identities. See [the B1 receipt](admission-b1-20261025.md) for the current
+qualified CALL-return rule, live publication, concurrent gate and validation.
+Earlier log digests describe their original captures, not later workspace runs.
+
 Recorded 2026-10-24 19:50:33 EDT. Code revision: `72db37c2caa765eb18658c08a6f2abdcd4e3b84c`.
 Shared core A0 contract: `b1be84f53e73e2d1cde524014f31e5bfd20a89b1`.
 B0 initial implementation: `923652d34614e3b3995dca810c2c0544d0ebe746`;
