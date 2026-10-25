@@ -202,3 +202,7 @@ The [frontend model history](frontend-model-private/README.md) preserves the hel
 The [A3 common-corpus index](e9-common-public.md) separates historical prototype loader/body evidence from the four completed portable-preparation commands. The portable pipeline remains unrun beyond staging, and full A3 remains open.
 
 The [public frontend model index](frontend-public.md) joins the focused 60-model/eight-doc qualification at `9098a3d7`, the separate required workspace pass, the preserved failed `3f87ac90` attempt and six independent tool-version observations. It retains each record's source, admission epochs and denominator. This ownership/model evidence leaves native frontend execution, a preemption clock, full A5 and claims 1–4 unqualified.
+
+## TLS ownership evidence
+
+[Private TLS failure and corrected qualification](frontend-tls-private.md) retain separate null-revision snapshots, exact74-model/10-doc inventories and request-only reproduction materials. [Public required gates at4c754df8](results/required-4c754df8-20261025/summary.json) report1000 outer passes/0 failures/4 existing ignores, with five nested guard executions separate. Repeated private/public runs do not add unique coverage; native machine-return-slot integration, the preemption clock and full A5 remain unqualified.

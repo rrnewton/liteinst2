@@ -1,0 +1,7 @@
+
+thread 'frontend::tests::g10_registry_poison_refuses_before_slot_mutation' (${G10_OS_THREAD_ID}) panicked at tools/rapid-profiler/src/frontend/tests.rs:926:9:
+required registry poison calibration
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread '<unnamed>' (${TLS_OS_THREAD_ID}) panicked at tools/rapid-profiler/src/frontend_tls/tests.rs:506:21:
+required TLS ordinary-unwind fixture

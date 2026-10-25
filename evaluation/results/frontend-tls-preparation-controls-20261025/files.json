@@ -1,0 +1,10 @@
+{
+  "files": {
+    "cases.csv": "10a5d3753dcfc25ee2fec8e7c83e5b5224b624b54babc8bf1a4bfc9cc288770c",
+    "commands.csv": "9cf64ad4fd77ffd27ee7727f71650e78fd0abd2c2f9d63801861f1b7d5b4e8df",
+    "source-files.json": "816082d77c9d9f9bc18f4abc7ca5d22c0816e4983d10abdaf7bc826a8f935d49",
+    "summary.json": "b86f502ccc4d43aaf93c25f2a86bfc0e8859ee55e20192a74f3094acbd3cc85b"
+  },
+  "index_excludes_itself": true,
+  "schema_version": 1
+}

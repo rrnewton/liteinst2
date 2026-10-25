@@ -1,0 +1,85 @@
+ordinal,command_id,case_id,kind,expected,observed
+0,models,frontend::tests::g01_per_function_k_two_and_global_storage,inherited_unit_model,pass,pass
+1,models,frontend::tests::g02_old_frame_keeps_removed_owner_and_payload,inherited_unit_model,pass,pass
+2,models,frontend::tests::g03_nested_old_new_frames_keep_two_children,inherited_unit_model,pass,pass
+3,models,frontend::tests::g04_stale_disable_cannot_mutate_new_generation,inherited_unit_model,pass,pass
+4,models,frontend::tests::g05_acquired_owner_after_close_refuses,inherited_unit_model,pass,pass
+5,models,frontend::tests::g05_install_and_foreign_handle_refuse_without_slot_change,inherited_unit_model,pass,pass
+6,models,frontend::tests::g05_reserved_before_close_completes_to_old,inherited_unit_model,pass,pass
+7,models,frontend::tests::g06_kth_gap_keeps_seven_terminals_and_one_other,inherited_unit_model,pass,pass
+8,models,frontend::tests::g07_payload_before_release_pause_blocks_drain,inherited_unit_model,pass,pass
+9,models,frontend::tests::g07_sixteen_payloads_visible_after_drain_before_join,inherited_unit_model,pass,pass
+10,models,frontend::tests::g08_explicit_cancel_and_drop_publish_distinct_payloads_first,inherited_unit_model,pass,pass
+11,models,frontend::tests::g08_forgotten_complete_frame_retains_reservation_and_permit,inherited_unit_model,pass,pass
+12,models,frontend::tests::g08_standalone_owned_ticket_has_no_frontend_permit_claim,inherited_unit_model,pass,pass
+13,models,frontend::tests::g09_a_storage_exhaustion_preserves_records_and_slot,inherited_unit_model,pass,pass
+14,models,frontend::tests::g09_constructor_bounds_and_failed_stage_release_permit,inherited_unit_model,pass,pass
+15,models,frontend::tests::g09_d_frame_limit_preserves_owned_frame_and_slot,inherited_unit_model,pass,pass
+16,models,frontend::tests::g09_e_handles_reports_final_owner_and_forgotten_owners,inherited_unit_model,pass,pass
+17,models,frontend::tests::g09_m_reservation_exhaustion_preserves_records_and_slot,inherited_unit_model,pass,pass
+18,models,frontend::tests::g09_t_registration_limit_and_duplicate_are_exact,inherited_unit_model,pass,pass
+19,models,frontend::tests::g10_nonwrapping_sequences_refuse_and_remain_terminal,inherited_unit_model,pass,pass
+20,models,frontend::tests::g10_reentry_and_duplicate_slot_preserve_existing_frames,inherited_unit_model,pass,pass
+21,models,frontend::tests::g10_registry_contention_refuses_before_slot_mutation,inherited_unit_model,pass,pass
+22,models,frontend::tests::g10_registry_poison_refuses_before_slot_mutation,inherited_unit_model,pass,pass
+23,models,frontend::tests::g10_unregistered_thread_and_empty_binding_are_explicit,inherited_unit_model,pass,pass
+24,models,frontend::tests::g11_mandatory_action_remains_after_all_profiling_functions_close,inherited_unit_model,pass,pass
+25,models,frontend::tests::g11_shared_group_keeps_b_then_disables_after_b_closes,inherited_unit_model,pass,pass
+26,models,frontend::tests::g12_after_mutation_failures_retain_owner_and_refuse_retry,inherited_unit_model,pass,pass
+27,models,frontend::tests::g12_before_mutation_failures_keep_binding_and_group_state,inherited_unit_model,pass,pass
+28,models,frontend::tests::g12_bounded_scan_recovers_closed_actions_without_notification_queue,inherited_unit_model,pass,pass
+29,models,frontend::tests::g12_history_exhaustion_refuses_before_any_controller_mutation,inherited_unit_model,pass,pass
+30,models,frontend::tests::g12_republishing_current_original_or_clone_refuses_all_failure_modes,inherited_unit_model,pass,pass
+31,models,frontend::tests::reference_ledger_rejects_eight_identity_payload_action_mutations,inherited_unit_model,pass,pass
+32,models,frontend_tls::tests::tls_invariant_failure_retains_frame_and_poison_until_actual_thread_teardown,tls_separate_additive_poison_teardown_control,pass,pass
+33,models,frontend_tls::tests::tls_p1_two_actual_threads_rotate_and_finish_exact_old_frames,tls_required_real_rust_thread_cohort,pass,pass
+34,models,frontend_tls::tests::tls_p2_two_reservations_keep_one_k_winner_and_one_dropped_completion,tls_required_real_rust_thread_cohort,pass,pass
+35,models,frontend_tls::tests::tls_p3_nested_panic_cancels_exact_frames_then_same_registration_recovers,tls_required_real_rust_thread_cohort,pass,pass
+36,models,frontend_tls::tests::tls_p4_detach_and_forgotten_registration_follow_actual_thread_teardown,tls_required_real_rust_thread_cohort,pass,pass
+37,models,frontend_tls::tests::tls_r1_duplicate_attachment_preserves_original_and_t_budget,tls_required_typed_refusal,test_pass_with_exact_refusal:AlreadyAttached,pass_with_exact_refusal:AlreadyAttached
+38,models,frontend_tls::tests::tls_r2_wrong_install_runs_body_once_without_admission,tls_required_typed_refusal,test_pass_with_exact_refusal:Entry(WrongInstall),pass_with_exact_refusal:Entry(WrongInstall)
+39,models,frontend_tls::tests::tls_r3_removed_current_runs_body_once_without_admission,tls_required_typed_refusal,test_pass_with_exact_refusal:Entry(NoCurrent),pass_with_exact_refusal:Entry(NoCurrent)
+40,models,frontend_tls::tests::tls_r4_depth_refusal_keeps_exact_existing_outer_frame,tls_required_typed_refusal,test_pass_with_exact_refusal:Entry(Depth),pass_with_exact_refusal:Entry(Depth)
+41,models,frontend_tls::tests::tls_r5_bookkeeping_borrow_busy_runs_body_once_without_panic,tls_required_typed_refusal,test_pass_with_exact_refusal:Busy,pass_with_exact_refusal:Busy
+42,models,frontend_tls::tests::tls_r6_lifetime_thread_limit_does_not_recycle_after_os_thread_exit,tls_required_typed_refusal,test_pass_with_exact_refusal:Setup(ThreadLimit),pass_with_exact_refusal:Setup(ThreadLimit)
+43,models,frontend_tls::tests::tls_r7_registration_identity_overflow_refuses_before_t_consumption,tls_required_typed_refusal,test_pass_with_exact_refusal:IdentityExhausted,pass_with_exact_refusal:IdentityExhausted
+44,models,frontend_tls::tests::tls_r8_slot_identity_overflow_preserves_records_and_runs_body_once,tls_required_typed_refusal,test_pass_with_exact_refusal:SlotIdentityExhausted,pass_with_exact_refusal:SlotIdentityExhausted
+45,models,frontend_tls::tests::unwind_seam_rejects_two_mismatches_and_drops_only_matching_inner_frame,tls_separate_additive_seam_control,pass,pass
+46,models,generation::owned_tests::owned_and_borrowed_records_have_exact_terminal_parity,inherited_unit_model,pass,pass
+47,models,generation::owned_tests::owned_cancel_and_drop_keep_exact_old_epoch_after_new_creation,inherited_unit_model,pass,pass
+48,models,generation::owned_tests::owned_refusals_preserve_slots_and_original_identity,inherited_unit_model,pass,pass
+49,models,generation::owned_tests::owned_ticket_retains_original_epoch_until_its_terminal,inherited_unit_model,pass,pass
+50,models,generation::tests::checked_generation_exhaustion_never_wraps_or_reuses,inherited_unit_model,pass,pass
+51,models,generation::tests::close_after_admission_waits_for_terminal_record,inherited_unit_model,pass,pass
+52,models,generation::tests::close_before_admission_refuses_without_record,inherited_unit_model,pass,pass
+53,models,generation::tests::close_gap_allows_five_post_k_completions_but_only_one_other_reservation,inherited_unit_model,pass,pass
+54,models,generation::tests::exact_constructor_refusals_and_largest_budget_do_not_wrap,inherited_unit_model,pass,pass
+55,models,generation::tests::explicit_and_drop_cancellation_are_distinct_and_do_not_consume_k,inherited_unit_model,pass,pass
+56,models,generation::tests::final_acquire_observes_all_sixteen_exact_terminal_values,inherited_unit_model,pass,pass
+57,models,generation::tests::independent_ledger_rejects_six_wrong_populations_or_identities,inherited_unit_model,pass,pass
+58,models,generation::tests::independent_two_generation_two_function_event_ledger,inherited_unit_model,pass,pass
+59,models,generation::tests::inflight_refusal_does_not_consume_a_slot,inherited_unit_model,pass,pass
+60,models,generation::tests::nested_invocations_keep_identity_and_completion_selection_order,inherited_unit_model,pass,pass
+61,models,generation::tests::old_ticket_completion_does_not_close_or_write_new_epoch,inherited_unit_model,pass,pass
+62,models,generation::tests::partial_records_keep_unfinished_in_two_epochs_separate,inherited_unit_model,pass,pass
+63,models,generation::tests::retained_budget_is_per_function_for_one_ten_and_thousand,inherited_unit_model,pass,pass
+64,models,generation::tests::simultaneous_completions_have_exactly_one_final_retention_and_request,inherited_unit_model,pass,pass
+65,models,generation::tests::total_storage_exhaustion_closes_epoch_without_losing_records,inherited_unit_model,pass,pass
+66,models,generation::tests::unknown_function_refusal_and_closed_function_do_not_hide_other_function,inherited_unit_model,pass,pass
+67,models,interval::tests::distribution_tracks_constant_space_summary,inherited_unit_model,pass,pass
+68,models,interval::tests::exit_continuation_emits_cet_notrack_indirect_jump,inherited_unit_model,pass,pass
+69,models,interval::tests::plain_indirect_jump_is_not_accepted_as_cet_notrack,inherited_unit_model,pass,pass
+70,models,interval::tests::sample_slot_saturates_and_identifies_the_kth_completion,inherited_unit_model,pass,pass
+71,models,pmu::tests::a_counter_that_never_ran_is_unavailable,inherited_unit_model,pass,pass
+72,models,pmu::tests::amd_l2_event_matches_the_perf_event_encoding,inherited_unit_model,pass,pass
+73,models,pmu::tests::counter_delta_scales_multiplexed_events_and_preserves_unavailable_ones,inherited_unit_model,pass,pass
+74,docs,tools/rapid-profiler/src/frontend.rs - frontend::AdmissionHandle (line 284),compile_fail_documentation,E0616,not_run
+75,docs,tools/rapid-profiler/src/frontend.rs - frontend::EpochHandle (line 221),compile_fail_documentation,E0616,not_run
+76,docs,tools/rapid-profiler/src/frontend.rs - frontend::Report (line 261),compile_fail_documentation,E0616,not_run
+77,docs,tools/rapid-profiler/src/frontend.rs - frontend::ThreadModel (line 859),compile_fail_documentation,E0616,not_run
+78,docs,tools/rapid-profiler/src/frontend_tls.rs - frontend_tls::ThreadRegistration (line 138),compile_fail_documentation,E0277,not_run
+79,docs,tools/rapid-profiler/src/frontend_tls.rs - frontend_tls::ThreadRegistration (line 145),compile_fail_documentation,E0277,not_run
+80,docs,tools/rapid-profiler/src/generation.rs - generation::OwnedTicket (line 638),compile_fail_documentation,E0599,not_run
+81,docs,tools/rapid-profiler/src/generation.rs - generation::OwnedTicket (line 646),compile_fail_documentation,E0382,not_run
+82,docs,tools/rapid-profiler/src/generation.rs - generation::Ticket (line 567),compile_fail_documentation,E0599,not_run
+83,docs,tools/rapid-profiler/src/generation.rs - generation::Ticket (line 574),compile_fail_documentation,E0382,not_run

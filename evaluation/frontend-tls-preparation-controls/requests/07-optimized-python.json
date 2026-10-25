@@ -1,0 +1,37 @@
+{
+  "argv": [
+    "${PYTHON}",
+    "-O",
+    "-B",
+    "${MATERIAL}/prepare.py",
+    "prepare",
+    "--attempt",
+    "v2",
+    "--repo",
+    "${REPO}",
+    "--base-root",
+    "${BASE}",
+    "--raw",
+    "${CONTROL_RAW}/outputs/07-optimized-python",
+    "--toolchain",
+    "${TOOLCHAIN}",
+    "--msrv-toolchain",
+    "${MSRV_TOOLCHAIN}",
+    "--user-home",
+    "${USER_HOME}",
+    "--cargo-home",
+    "${CARGO_HOME}"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${REPO}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "${CONTROL_RAW}/commands/07-optimized-python/tmp"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${CONTROL_RAW}/commands/07-optimized-python/stderr.txt",
+  "stdout": "${CONTROL_RAW}/commands/07-optimized-python/stdout.txt",
+  "wall_seconds": 30
+}
