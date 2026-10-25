@@ -150,9 +150,9 @@ pub struct PlanMetrics {
 /// Pure plan and emitted image; no executable mapping has been changed.
 #[derive(Clone, Debug)]
 pub struct PlannedInstall {
-    plan: PatchPlan,
-    image: TrampolineImage,
-    metrics: PlanMetrics,
+    pub(crate) plan: PatchPlan,
+    pub(crate) image: TrampolineImage,
+    pub(crate) metrics: PlanMetrics,
 }
 impl PlannedInstall {
     /// Shared immutable contract consumed by admission.
@@ -209,48 +209,7 @@ pub fn plan_install_detailed(
 ) -> Result<PlannedInstall, PlanningFailure> {
     let mut attempts = Vec::new();
     let result = (|| {
-        let source = AddressRange::new(request.base_address, request.code.len())?;
-        if request.entries.identity != request.identity {
-            return Err(Refusal::StaleGeneration);
-        }
-        if request.entries.completeness == EntryCompleteness::Incomplete
-            || request.entries.resumes == ResumeObligation::Unresolved
-        {
-            return Err(Refusal::UnresolvedEntry);
-        }
-        if !source.covers(request.function)
-            || !request.function.covers(request.block)
-            || !request.block.contains(request.logical_pc)
-            || !request.entries.scope.covers(request.block)
-        {
-            return Err(Refusal::InvalidRange);
-        }
-        qualify_host()?;
-        let scan = InstructionScanner::default()
-            .scan(request.code, request.base_address)
-            .map_err(|e| Refusal::Backend(e.to_string()))?;
-        if scan.site(request.logical_pc).is_none()
-            || scan.site(request.block.start()).is_none()
-            || (request.block.end() != source.end() && scan.site(request.block.end()).is_none())
-        {
-            return Err(Refusal::NotInstructionHead);
-        }
-        for entry in &request.entries.entries {
-            if !request.entries.scope.contains(entry.address)
-                || (source.contains(entry.address) && scan.site(entry.address).is_none())
-            {
-                return Err(Refusal::NotInstructionHead);
-            }
-        }
-        if let ResumeObligation::Enumerated(pcs) = &request.entries.resumes {
-            for &pc in pcs {
-                if !request.entries.scope.contains(pc)
-                    || (source.contains(pc) && scan.site(pc).is_none())
-                {
-                    return Err(Refusal::NotInstructionHead);
-                }
-            }
-        }
+        let (source, scan) = validated_source(request)?;
         let occupied = occupied_ranges()?;
         if request.search.max_sites == 0 {
             return Err(Refusal::NoPatchWindow);
@@ -361,7 +320,55 @@ pub fn plan_install_detailed(
     result.map_err(|reason| PlanningFailure { reason, attempts })
 }
 
-fn plan_pun(
+pub(crate) fn validated_source(
+    request: &InstallRequest<'_>,
+) -> Result<(AddressRange, ScanResult), Refusal> {
+    let source = AddressRange::new(request.base_address, request.code.len())?;
+    if request.entries.identity != request.identity {
+        return Err(Refusal::StaleGeneration);
+    }
+    if request.entries.completeness == EntryCompleteness::Incomplete
+        || request.entries.resumes == ResumeObligation::Unresolved
+    {
+        return Err(Refusal::UnresolvedEntry);
+    }
+    if !source.covers(request.function)
+        || !request.function.covers(request.block)
+        || !request.block.contains(request.logical_pc)
+        || !request.entries.scope.covers(request.block)
+    {
+        return Err(Refusal::InvalidRange);
+    }
+    qualify_host()?;
+    let scan = InstructionScanner::default()
+        .scan(request.code, request.base_address)
+        .map_err(|e| Refusal::Backend(e.to_string()))?;
+    if scan.site(request.logical_pc).is_none()
+        || scan.site(request.block.start()).is_none()
+        || (request.block.end() != source.end() && scan.site(request.block.end()).is_none())
+    {
+        return Err(Refusal::NotInstructionHead);
+    }
+    for entry in &request.entries.entries {
+        if !request.entries.scope.contains(entry.address)
+            || (source.contains(entry.address) && scan.site(entry.address).is_none())
+        {
+            return Err(Refusal::NotInstructionHead);
+        }
+    }
+    if let ResumeObligation::Enumerated(pcs) = &request.entries.resumes {
+        for &pc in pcs {
+            if !request.entries.scope.contains(pc)
+                || (source.contains(pc) && scan.site(pc).is_none())
+            {
+                return Err(Refusal::NotInstructionHead);
+            }
+        }
+    }
+    Ok((source, scan))
+}
+
+pub(crate) fn plan_pun(
     request: &InstallRequest<'_>,
     scan: &ScanResult,
     source: AddressRange,
@@ -839,7 +846,7 @@ fn plan_at(
 const ILLEGAL: [u8; 14] = [
     0x06, 0x07, 0x0e, 0x16, 0x17, 0x1e, 0x1f, 0x27, 0x2f, 0x37, 0x3f, 0x60, 0x61, 0xce,
 ];
-fn candidate_target(
+pub(crate) fn candidate_target(
     physical: u64,
     mask: [bool; 4],
     preferred: Option<u64>,
@@ -864,7 +871,7 @@ fn candidate_target(
     u64::try_from(i128::from(next) + i128::from(i32::from_le_bytes(bytes))).ok()
 }
 
-fn qualify_instruction(instruction: &iced_x86::Instruction) -> Result<(), Refusal> {
+pub(crate) fn qualify_instruction(instruction: &iced_x86::Instruction) -> Result<(), Refusal> {
     use Mnemonic::*;
     // Deliberately explicit initial ABI envelope. Expanding it requires a
     // forced puzzle and independent state/fault evidence, not just decoding.
@@ -985,7 +992,7 @@ pub(crate) fn qualify_host() -> Result<(), Refusal> {
     }
 }
 
-fn occupied_ranges() -> Result<Vec<AddressRange>, Refusal> {
+pub(crate) fn occupied_ranges() -> Result<Vec<AddressRange>, Refusal> {
     let file =
         std::fs::File::open("/proc/self/maps").map_err(|e| Refusal::Backend(e.to_string()))?;
     let mut text = String::new();
