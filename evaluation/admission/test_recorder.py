@@ -58,7 +58,7 @@ class RecorderTests(unittest.TestCase):
             root = Path(temporary)
             env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
             def git(*args):
-                return subprocess.check_output(["git", *args], cwd=root, env=env,
+                return subprocess.check_output([run.GIT, *args], cwd=root, env=env,
                                                stderr=subprocess.DEVNULL)
             git("init", "-q")
             (root / "fixture.rs").write_text("original")

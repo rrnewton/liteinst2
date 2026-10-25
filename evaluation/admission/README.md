@@ -9,7 +9,10 @@ python3 evaluation/admission/run.py --expect-revision "$(git rev-parse HEAD)"
 The recorded `reproduce` argument vector contains the concrete 40-hex revision.
 Check out that revision and use its recorded Rust/Cargo versions and Linux
 x86-64 hardware to reproduce the experiment. The dependency cache must already
-contain Cargo.lock's dependencies: resolution is offline. Child ptrace and
+contain Cargo.lock's dependencies: resolution is offline. The protocol uses
+`/usr/bin/git` explicitly for source authentication and the isolated Git fixture,
+recording its version and hash. This avoids ambient Git wrappers that start
+background processes; the same descendant-cleanup requirement still applies. Child ptrace and
 child-mm membarrier sync-core must be available; tests fail if requirements are
 missing. Do not use root to turn a failed unprivileged run into a claimed
 unprivileged success. The result records effective-root status, relevant

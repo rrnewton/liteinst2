@@ -16,6 +16,7 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
+GIT = "/usr/bin/git"
 from parsing import InvalidEvidence, parse_harnesses, native_receipts, native_block
 from processes import run_command
 
@@ -50,7 +51,7 @@ def git(*args):
     # must not authenticate a different checkout. HEAD replacement is disabled.
     env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
     return subprocess.check_output(
-        ["git", "--no-replace-objects", "-C", str(ROOT), "--work-tree=" + str(ROOT),
+        [GIT, "--no-replace-objects", "-C", str(ROOT), "--work-tree=" + str(ROOT),
          "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false", *args],
         cwd=ROOT, env=env, stderr=subprocess.DEVNULL)
 
@@ -291,8 +292,12 @@ def main():
         record["toolchain"] = {name: {"version": tool_version(name, env),
                                       "launcher_sha256": sha(Path(shutil.which(name, path=env.get("PATH"))).read_bytes())}
                                for name in ("rustc", "cargo")}
-        record["toolchain"]["python"] = {"version": sys.version.split()[0],
-                                          "executable_sha256": sha(Path(sys.executable).read_bytes())}
+        record["toolchain"]["git"] = {"argv0": GIT, "version": tool_version(GIT, env),
+                                       "executable_sha256": sha(Path(GIT).read_bytes())}
+        record["toolchain"]["python"] = {
+            "version": sys.version.split()[0],
+            "executable_sha256": sha(Path(sys.executable).read_bytes()),
+            "launcher_sha256": sha(Path(shutil.which("python3", path=env["PATH"])).read_bytes())}
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
         record["status"] = "running"
         write_result(public, record)
