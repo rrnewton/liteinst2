@@ -650,7 +650,7 @@ impl NativeGroup {
         );
         // SAFETY: this successful syscall returned a new descriptor.
         result.kill_handle = Some(unsafe { OwnedFd::from_raw_fd(descriptor as i32) });
-        let status = native_wait(pid, Instant::now() + TIMEOUT);
+        let status = result.wait(pid, Instant::now() + TIMEOUT);
         assert!(libc::WIFSTOPPED(status));
         assert_eq!(libc::WSTOPSIG(status), libc::SIGTRAP);
         native_trace(
@@ -666,11 +666,45 @@ impl NativeGroup {
         self.child.as_ref().unwrap().id() as libc::pid_t
     }
 
+    fn wait(&mut self, tid: libc::pid_t, deadline: Instant) -> i32 {
+        assert!(self.tids.contains(&tid), "native wait needs an owned TID");
+        loop {
+            let mut status = 0;
+            // SAFETY: this observer exclusively owns this unreaped task.
+            let result = unsafe { libc::waitpid(tid, &mut status, libc::WNOHANG | libc::__WALL) };
+            if result == tid {
+                if libc::WIFEXITED(status) || libc::WIFSIGNALED(status) {
+                    // Retire numeric identity before a caller can assert or
+                    // unwind. In particular, reaping the leader ends procfs
+                    // discovery even if the expected stop never arrived.
+                    self.tids.remove(&tid);
+                }
+                return status;
+            }
+            if result == -1 {
+                let error = io::Error::last_os_error();
+                if error.raw_os_error() == Some(libc::ECHILD) {
+                    self.tids.remove(&tid);
+                }
+                assert_eq!(
+                    error.raw_os_error(),
+                    Some(libc::EINTR),
+                    "native group wait: {error}"
+                );
+            }
+            assert!(
+                Instant::now() < deadline,
+                "native group wait exceeded deadline"
+            );
+            std::thread::sleep(Duration::from_millis(1));
+        }
+    }
+
     fn run_factory(&mut self, image: &ElfImage) {
         let deadline = Instant::now() + TIMEOUT;
         loop {
             native_trace(libc::PTRACE_CONT, self.pid(), 0, 0);
-            let status = native_wait(self.pid(), deadline);
+            let status = self.wait(self.pid(), deadline);
             assert!(libc::WIFSTOPPED(status));
             assert_eq!(libc::WSTOPSIG(status), libc::SIGTRAP);
             if status >> 16 == libc::PTRACE_EVENT_CLONE {
@@ -684,7 +718,7 @@ impl NativeGroup {
                 let tid = libc::pid_t::try_from(raw).unwrap();
                 assert!(self.tids.insert(tid), "native duplicate clone TID");
                 // Retain cleanup ownership before inspecting the new child.
-                let status = native_wait(tid, deadline);
+                let status = self.wait(tid, deadline);
                 assert!(libc::WIFSTOPPED(status));
                 assert_eq!(libc::WSTOPSIG(status), libc::SIGSTOP);
                 assert_eq!(status >> 16, 0);
@@ -714,11 +748,10 @@ impl NativeGroup {
         }
         let deadline = Instant::now() + TIMEOUT;
         for (tid, id) in workers {
-            let status = native_wait(tid, deadline);
+            let status = self.wait(tid, deadline);
             assert!(libc::WIFEXITED(status));
             assert_eq!(libc::WEXITSTATUS(status) as u64, id);
             assert!((1..=WORKERS as u64).contains(&id));
-            self.tids.remove(&tid);
         }
     }
 
@@ -750,7 +783,7 @@ impl NativeGroup {
         let deadline = Instant::now() + TIMEOUT;
         let mut evidence = BTreeMap::new();
         for tid in workers {
-            let status = native_wait(tid, deadline);
+            let status = self.wait(tid, deadline);
             assert!(libc::WIFSTOPPED(status));
             assert_eq!(libc::WSTOPSIG(status), libc::SIGTRAP);
             assert_eq!(status >> 16, 0);
@@ -790,7 +823,9 @@ impl Drop for NativeGroup {
             return;
         };
         let tgid = child.id() as libc::pid_t;
-        discover_native_tasks(tgid, &mut self.tids);
+        if self.tids.contains(&tgid) {
+            discover_native_tasks(tgid, &mut self.tids);
+        }
         if let Some(handle) = &self.kill_handle {
             // SAFETY: the pidfd retains this group's identity across cleanup.
             unsafe {
@@ -802,7 +837,9 @@ impl Drop for NativeGroup {
                     0,
                 );
             }
-        } else {
+        } else if self.tids.contains(&tgid) {
+            // The fallback is only reachable before pidfd_open succeeds. An
+            // owned, unreaped leader prevents its numeric PID being reused.
             let _ = child.kill();
         }
         let mut pending = std::mem::take(&mut self.tids);
@@ -815,13 +852,15 @@ impl Drop for NativeGroup {
                     while !reap_native_group(tgid, &mut pending) {
                         std::thread::sleep(Duration::from_millis(1));
                     }
-                    let _ = child.wait();
+                    // Raw terminal waits consumed every owned status. Child's
+                    // cached status was never set, so never wait through it.
+                    drop(child);
                 });
                 return;
             }
             std::thread::sleep(Duration::from_millis(1));
         }
-        let _ = child.wait(); // Raw terminal waits already consumed the statuses.
+        drop(child);
     }
 }
 
@@ -857,27 +896,6 @@ fn reap_native_group(tgid: libc::pid_t, pending: &mut BTreeSet<libc::pid_t>) -> 
         }
     }
     pending.is_empty()
-}
-
-fn native_wait(tid: libc::pid_t, deadline: Instant) -> i32 {
-    loop {
-        let mut status = 0;
-        // SAFETY: the independent observer exclusively owns this exact task.
-        let result = unsafe { libc::waitpid(tid, &mut status, libc::WNOHANG | libc::__WALL) };
-        if result == tid {
-            return status;
-        }
-        assert!(
-            result != -1 || io::Error::last_os_error().raw_os_error() == Some(libc::EINTR),
-            "native group wait: {}",
-            io::Error::last_os_error()
-        );
-        assert!(
-            Instant::now() < deadline,
-            "native group wait exceeded deadline"
-        );
-        std::thread::sleep(Duration::from_millis(1));
-    }
 }
 
 fn native_trace(request: u32, tid: libc::pid_t, address: usize, data: usize) {
@@ -931,6 +949,29 @@ fn native_memory(tid: libc::pid_t, address: u64, len: usize) -> Vec<u8> {
         bytes.extend_from_slice(&word.to_le_bytes());
     }
     bytes
+}
+
+#[test]
+fn native_group_retires_leader_identity_before_unexpected_exit_assertion() {
+    let directory = FixtureDirectory::new();
+    let mut builder = ElfBuilder::new(2);
+    builder.mov32(7, 0);
+    builder.mov32(0, libc::SYS_exit as u32);
+    builder.instruction(&[0x0f, 0x05]);
+    let freeze = builder.instruction(&[0xcc]);
+    let image = builder.write(&directory, "native-early-exit", freeze, freeze, None);
+    let mut native = NativeGroup::launch(&image);
+    let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        native.run_factory(&image);
+    }));
+    assert!(outcome.is_err(), "the missing factory stop must still fail");
+    assert!(
+        native.tids.is_empty(),
+        "the consumed terminal status must retire leader identity before unwinding"
+    );
+    // Drop must neither rediscover this numeric TGID nor wait through Child's
+    // unset status cache after the raw wait already consumed the native exit.
+    drop(native);
 }
 
 #[test]

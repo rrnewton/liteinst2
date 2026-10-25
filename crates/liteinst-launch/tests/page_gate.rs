@@ -790,6 +790,7 @@ impl NativeTrace {
     }
 
     fn wait(&mut self) -> i32 {
+        assert!(!self.reaped, "native wait needs an unreaped child");
         let deadline = Instant::now() + TIMEOUT;
         loop {
             let mut status = 0;
@@ -889,36 +890,52 @@ impl Drop for NativeTrace {
 // Takes cleanup ownership, including the exceptional delayed-reap handoff.
 fn reap_native_child(mut child: Child) {
     let _ = child.kill();
+    let pid = child.id() as libc::pid_t;
     let deadline = Instant::now() + TIMEOUT;
-    loop {
-        let mut status = 0;
-        // SAFETY: cleanup retains exclusive ownership of this child only.
-        let result = unsafe {
-            libc::waitpid(
-                child.id() as libc::pid_t,
-                &mut status,
-                libc::WNOHANG | libc::__WALL,
-            )
-        };
-        if result > 0 && (libc::WIFEXITED(status) || libc::WIFSIGNALED(status)) {
-            // Our raw ptrace wait consumed the terminal status. Reconcile
-            // std's Child owner as well; ECHILD is expected and nonblocking.
-            let _ = child.wait();
-            return;
-        }
-        if result == -1 && io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD) {
-            let _ = child.wait();
-            return;
-        }
+    while !native_child_reaped(pid) {
         if Instant::now() >= deadline {
             // Retain cleanup ownership if kernel exit is unexpectedly slow.
             std::thread::spawn(move || {
-                let _ = child.wait();
+                while !native_child_reaped(pid) {
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+                drop(child);
             });
             return;
         }
         std::thread::sleep(Duration::from_millis(1));
     }
+    // Raw waitpid consumed the terminal status. Child's cache was not updated;
+    // another wait through Child could target a reused numeric PID.
+    drop(child);
+}
+
+fn native_child_reaped(pid: libc::pid_t) -> bool {
+    let mut status = 0;
+    // SAFETY: the cleanup caller exclusively owns this unreaped child and stops
+    // polling immediately once its terminal status (or ECHILD) is observed.
+    let result = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG | libc::__WALL) };
+    (result == pid && (libc::WIFEXITED(status) || libc::WIFSIGNALED(status)))
+        || (result == -1 && io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD))
+}
+
+#[test]
+fn native_trace_retires_identity_before_unexpected_exit_assertion() {
+    let directory = FixtureDirectory::new();
+    let mut builder = ElfBuilder::new(2, PAGE, false);
+    builder.exit(0);
+    let terminal = builder.push_instruction(&[0x0f, 0x0b]);
+    let image = builder.write(&directory, "native-early-exit", None);
+    let mut native = NativeTrace::launch(&image.path);
+    let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        native.run_to_ud2(BASE + terminal as u64);
+    }));
+    assert!(outcome.is_err(), "the missing UD2 stop must still fail");
+    assert!(
+        native.reaped,
+        "the consumed terminal status must retire identity before unwinding"
+    );
+    drop(native);
 }
 
 fn trace(request: u32, pid: libc::pid_t, address: usize, data: usize) {

@@ -322,6 +322,33 @@ impl NativeChild {
             std::thread::sleep(Duration::from_millis(1));
         }
     }
+
+    fn wait_entry_event(&mut self) -> i32 {
+        let pid = self.child.as_ref().unwrap().id() as libc::pid_t;
+        let deadline = Instant::now() + CONTROL_TIMEOUT;
+        loop {
+            let mut status = 0;
+            // SAFETY: the native guard exclusively owns this named child.
+            let result = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG | libc::__WALL) };
+            if result == pid {
+                if libc::WIFEXITED(status) || libc::WIFSIGNALED(status) {
+                    // Already reaped: Drop must never signal a reused PID.
+                    self.child.take();
+                    panic!("native entry fixture terminated before its trap");
+                }
+                return status;
+            }
+            if result == -1 {
+                let error = std::io::Error::last_os_error();
+                if error.raw_os_error() == Some(libc::ECHILD) {
+                    self.child.take();
+                }
+                assert_eq!(error.raw_os_error(), Some(libc::EINTR));
+            }
+            assert!(Instant::now() < deadline, "native entry trap timed out");
+            std::thread::sleep(Duration::from_millis(1));
+        }
+    }
 }
 
 // This observer executes a fixture whose first instruction is already INT3.
@@ -352,29 +379,7 @@ fn independent_entry_xstate(path: &Path) -> Vec<u8> {
         );
     };
     for step in 0..2 {
-        let deadline = Instant::now() + CONTROL_TIMEOUT;
-        let status = loop {
-            let mut status = 0;
-            // SAFETY: the native guard exclusively owns this named child.
-            let result = unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG | libc::__WALL) };
-            if result == pid {
-                if libc::WIFEXITED(status) || libc::WIFSIGNALED(status) {
-                    // Already reaped: Drop must never signal a reused PID.
-                    native.child.take();
-                    panic!("native entry fixture terminated before its trap");
-                }
-                break status;
-            }
-            if result == -1 {
-                let error = std::io::Error::last_os_error();
-                if error.raw_os_error() == Some(libc::ECHILD) {
-                    native.child.take();
-                }
-                assert_eq!(error.raw_os_error(), Some(libc::EINTR));
-            }
-            assert!(Instant::now() < deadline, "native entry trap timed out");
-            std::thread::sleep(Duration::from_millis(1));
-        };
+        let status = native.wait_entry_event();
         assert!(libc::WIFSTOPPED(status));
         assert_eq!(libc::WSTOPSIG(status), libc::SIGTRAP);
         assert_eq!(status >> 16, 0);
@@ -426,6 +431,47 @@ impl Drop for NativeChild {
             let _ = error.0.wait();
         }
     }
+}
+
+#[test]
+fn native_entry_oracle_forgets_reaped_child_before_early_exit_assertion() {
+    let fixtures = Fixtures::new();
+    let path = fixtures.elf("native-entry-early-exit", false, None);
+    // Valid native exit(0), deliberately lacking the oracle's expected INT3.
+    replace_fixture_code(&path, &[0xb8, 60, 0, 0, 0, 0x31, 0xff, 0x0f, 0x05]);
+    let mut command = std::process::Command::new(&path);
+    // SAFETY: only ptrace and errno access occur between fork and exec.
+    unsafe {
+        command.pre_exec(|| {
+            if libc::ptrace(libc::PTRACE_TRACEME, 0, 0, 0) == -1 {
+                Err(std::io::Error::last_os_error())
+            } else {
+                Ok(())
+            }
+        });
+    }
+    let mut native = NativeChild::launch_command(&mut command);
+    let pid = native.child.as_ref().unwrap().id() as libc::pid_t;
+    let exec_stop = native.wait_entry_event();
+    assert!(libc::WIFSTOPPED(exec_stop));
+    assert_eq!(libc::WSTOPSIG(exec_stop), libc::SIGTRAP);
+    assert_eq!(exec_stop >> 16, 0);
+    // SAFETY: this resumes only the owned fixture from its authenticated exec stop.
+    assert_eq!(unsafe { libc::ptrace(libc::PTRACE_CONT, pid, 0, 0) }, 0);
+    let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        native.wait_entry_event();
+    }))
+    .expect_err("early exit must fail the entry oracle");
+    assert_eq!(
+        panic.downcast_ref::<&str>(),
+        Some(&"native entry fixture terminated before its trap")
+    );
+    assert!(
+        native.child.is_none(),
+        "raw terminal wait left a numeric kill/reap target in the guard"
+    );
+    assert_reaped(pid);
+    drop(native);
 }
 
 #[test]
