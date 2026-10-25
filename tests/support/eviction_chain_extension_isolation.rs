@@ -1,0 +1,367 @@
+//! Test-only main-thread execution; unchanged owned-group cleanup from T2.
+const COHORTS: [&str; 2] = [
+    "native_chain_short_conditional_backedge",
+    "native_chain_anchor_readable_and_fault",
+];
+const CPU_SECONDS: libc::rlim_t = 20;
+const WALL_SECONDS: u64 = 30;
+#[cfg(test)]
+pub fn run_parent(cohort: &str) {
+    launcher::run(cohort);
+}
+pub fn main_thread_driver() {
+    let args: Vec<_> = std::env::args_os().collect();
+    assert_eq!(args.len(), 5);
+    assert_eq!(args[1], "--cohort");
+    assert_eq!(args[3], "--captures");
+    let cohort = args[2].to_str().expect("literal cohort");
+    assert!(COHORTS.contains(&cohort));
+    let capture = std::path::PathBuf::from(&args[4]);
+    assert!(capture.is_dir());
+    std::fs::write(
+        capture.join("declared-bounds.txt"),
+        format!("cpu={CPU_SECONDS}\nwall={WALL_SECONDS}\ntrace_wall=15\ntrace_steps=20000\n"),
+    )
+    .unwrap();
+    record_single_main_thread(&capture, "before");
+    match cohort {
+        "native_chain_short_conditional_backedge" => {
+            super::run_native_chain_short_conditional_backedge()
+        }
+        "native_chain_anchor_readable_and_fault" => {
+            super::run_native_chain_anchor_readable_and_fault()
+        }
+        _ => unreachable!(),
+    }
+    record_single_main_thread(&capture, "after");
+    std::fs::write(
+        capture.join("complete.txt"),
+        format!("completed-cohort:{cohort}\n"),
+    )
+    .unwrap();
+}
+fn record_single_main_thread(capture: &std::path::Path, phase: &str) {
+    let pid = std::process::id();
+    // SAFETY: gettid only reads the current kernel thread identity.
+    let tid = unsafe { libc::syscall(libc::SYS_gettid) };
+    assert_eq!(tid, libc::c_long::from(pid));
+    let mut tasks: Vec<_> = std::fs::read_dir("/proc/self/task")
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name().into_string().unwrap())
+        .collect();
+    tasks.sort();
+    assert_eq!(tasks, vec![pid.to_string()]);
+    let maps = std::fs::read_to_string("/proc/self/maps").unwrap();
+    std::fs::write(capture.join(format!("{phase}.maps")), maps).unwrap();
+    std::fs::write(
+        capture.join(format!("{phase}.threads.txt")),
+        format!(
+            "pid={pid}\ntid={tid}\ncount={}\ntasks={tasks:?}\n",
+            tasks.len()
+        ),
+    )
+    .unwrap();
+}
+
+#[cfg(test)]
+mod launcher {
+    use super::{COHORTS, CPU_SECONDS, WALL_SECONDS};
+    use std::collections::BTreeSet;
+    use std::io::Read;
+    use std::os::unix::process::CommandExt;
+    use std::process::{Child, Command, Stdio};
+    use std::time::{Duration, Instant};
+
+    #[derive(Clone, Copy, Debug)]
+    struct Exit {
+        code: i32,
+        status: i32,
+    }
+
+    // WNOWAIT leaves the direct child waitable: its PID/PGID cannot be recycled
+    // until the final exact-PID reap, after every group signal and peer wait.
+    fn peek(pid: i32) -> Result<Option<Exit>, String> {
+        // SAFETY: initialized output and exact still-owned child PID.
+        let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+        let result = unsafe {
+            libc::waitid(
+                libc::P_PID,
+                pid as libc::id_t,
+                &mut info,
+                libc::WEXITED | libc::WNOHANG | libc::WNOWAIT,
+            )
+        };
+        if result == -1 {
+            return Err(std::io::Error::last_os_error().to_string());
+        }
+        // SAFETY: successful waitid initialized the child-status union fields.
+        let found = unsafe { info.si_pid() };
+        if found == 0 {
+            return Ok(None);
+        }
+        if found != pid {
+            return Err("waitid returned a different owned child".into());
+        }
+        Ok(Some(Exit {
+            code: info.si_code,
+            status: unsafe { info.si_status() },
+        }))
+    }
+
+    // Same finite nonrecursive /proc grammar used by the approved parked v5
+    // helper: <=65536 entries, <=4096 bytes per stat, deadline on every read.
+    // The optional /proc/PID/task/TID/children interface is not available here.
+    fn owned_group(group: i32, deadline: Instant) -> Result<Vec<i32>, String> {
+        let mut result = Vec::new();
+        let entries = std::fs::read_dir("/proc").map_err(|e| e.to_string())?;
+        for (index, entry) in entries.enumerate() {
+            if index >= 65536 || Instant::now() >= deadline {
+                return Err("bounded process inventory exhausted".into());
+            }
+            let entry = entry.map_err(|e| e.to_string())?;
+            let name = entry.file_name();
+            let Some(name) = name.to_str() else {
+                continue;
+            };
+            if name.is_empty() || !name.bytes().all(|byte| byte.is_ascii_digit()) {
+                continue;
+            }
+            let pid: i32 = name.parse().map_err(|_| "invalid numeric process ID")?;
+            let mut file = match std::fs::File::open(entry.path().join("stat")) {
+                Ok(file) => file,
+                Err(error) if matches!(error.raw_os_error(), Some(libc::ENOENT | libc::ESRCH)) => {
+                    continue;
+                }
+                Err(error) => return Err(error.to_string()),
+            };
+            let mut bytes = Vec::new();
+            file.by_ref()
+                .take(4097)
+                .read_to_end(&mut bytes)
+                .map_err(|e| e.to_string())?;
+            if bytes.len() > 4096 || Instant::now() >= deadline {
+                return Err("bounded process stat read exhausted".into());
+            }
+            if !bytes.starts_with(format!("{pid} (").as_bytes()) {
+                return Err("process stat identity mismatch".into());
+            }
+            // comm may contain arbitrary non-UTF8 bytes and parentheses. Only
+            // the numeric fields after its final delimiter are ASCII-parsed.
+            let close = bytes
+                .windows(2)
+                .rposition(|pair| pair == b") ")
+                .ok_or("malformed process stat")?;
+            let suffix = std::str::from_utf8(&bytes[close + 2..])
+                .map_err(|_| "non-ASCII numeric process fields")?;
+            let fields: Vec<_> = suffix.split_whitespace().collect();
+            if fields.len() < 3 {
+                return Err("short process stat".into());
+            }
+            let parent: u32 = fields[1].parse().map_err(|_| "invalid parent PID")?;
+            let pgrp: i32 = fields[2].parse().map_err(|_| "invalid process group")?;
+            if parent == std::process::id() && pgrp == group {
+                result.push(pid);
+            }
+        }
+        if Instant::now() >= deadline {
+            return Err("bounded process inventory deadline".into());
+        }
+        result.sort_unstable();
+        Ok(result)
+    }
+
+    struct Guard {
+        _child: Child,
+        pid: i32,
+        seen_peers: BTreeSet<i32>,
+        peer_reaps: Vec<(i32, i32)>,
+        direct_reap: Option<i32>,
+        cleanup_attempted: bool,
+        cleanup_error: Option<String>,
+    }
+    impl Guard {
+        fn cleanup(&mut self) {
+            if self.cleanup_attempted {
+                return;
+            }
+            self.cleanup_attempted = true;
+            self.cleanup_error = self.cleanup_inner().err();
+        }
+        fn cleanup_inner(&mut self) -> Result<(), String> {
+            // SAFETY: the unreaped leader still pins this exact owned group.
+            let killed = unsafe { libc::kill(-self.pid, libc::SIGKILL) };
+            if killed == -1 && std::io::Error::last_os_error().raw_os_error() != Some(libc::ESRCH) {
+                return Err("owned group kill failed".into());
+            }
+            let deadline = Instant::now() + Duration::from_secs(2);
+            loop {
+                if Instant::now() >= deadline {
+                    return Err("owned cleanup exceeded two seconds".into());
+                }
+                // Exit notification follows reparenting: once the direct child
+                // is waitable, its same-group descendants are ours, or still
+                // descend from another same-group child in this inventory.
+                if peek(self.pid)?.is_none() {
+                    std::thread::sleep(Duration::from_millis(5));
+                    continue;
+                }
+                let children = owned_group(self.pid, deadline)?;
+                if !children.contains(&self.pid) {
+                    return Err("owned unreaped leader absent from inventory".into());
+                }
+                let peers: Vec<_> = children
+                    .into_iter()
+                    .filter(|&pid| pid != self.pid)
+                    .collect();
+                if peers.is_empty() {
+                    let mut status = 0;
+                    // SAFETY: reap ONLY the exact pinned leader, last. No
+                    // process-group operation follows this ownership release.
+                    let reaped = unsafe {
+                        libc::waitpid(self.pid, &mut status, libc::WNOHANG | libc::__WALL)
+                    };
+                    if reaped != self.pid {
+                        return Err("exact final leader reap failed".into());
+                    }
+                    self.direct_reap = Some(status);
+                    return Ok(());
+                }
+                for pid in peers {
+                    if Instant::now() >= deadline {
+                        return Err("peer cleanup deadline".into());
+                    }
+                    self.seen_peers.insert(pid);
+                    // waitid proves parent-child ownership without releasing
+                    // the PID before an individual signal or exact reap.
+                    let _ = peek(pid)?;
+                    let killed = unsafe { libc::kill(pid, libc::SIGKILL) };
+                    if killed == -1
+                        && std::io::Error::last_os_error().raw_os_error() != Some(libc::ESRCH)
+                    {
+                        return Err("owned peer kill failed".into());
+                    }
+                    let mut status = 0;
+                    let reaped =
+                        unsafe { libc::waitpid(pid, &mut status, libc::WNOHANG | libc::__WALL) };
+                    if reaped == pid {
+                        self.peer_reaps.push((pid, status));
+                    } else if reaped == -1 {
+                        return Err("exact owned peer reap failed".into());
+                    }
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+        }
+    }
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            self.cleanup();
+        }
+    }
+
+    pub(super) fn run(cohort: &str) {
+        assert!(COHORTS.contains(&cohort));
+        let driver = std::env::var_os("LITEINST_CHAIN_EXTENSION_MAIN_THREAD_DRIVER")
+            .map(std::path::PathBuf::from)
+            .or_else(|| {
+                option_env!("CARGO_BIN_EXE_eviction-chain-extension-driver").map(Into::into)
+            })
+            .expect("main-thread chain fixture binary must be built; never skip a cohort");
+        assert!(driver.is_absolute());
+        let root = std::env::var_os("LITEINST_CHAIN_EXTENSION_MAIN_THREAD_CAPTURES")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| std::env::temp_dir().join("liteinst2-chain-extension-main-thread"));
+        std::fs::create_dir_all(&root).unwrap();
+        let capture = root.join(format!("{}-{cohort}", std::process::id()));
+        std::fs::create_dir(&capture).unwrap();
+        let stdout = std::fs::File::create(capture.join("stdout.txt")).unwrap();
+        let stderr = std::fs::File::create(capture.join("stderr.txt")).unwrap();
+        // SAFETY: idempotent flag; other test groups remain separately owned.
+        assert_eq!(unsafe { libc::prctl(libc::PR_SET_CHILD_SUBREAPER, 1) }, 0);
+        let mut command = Command::new(&driver);
+        command
+            .args(["--cohort", cohort, "--captures"])
+            .arg(&capture)
+            .process_group(0)
+            .stdout(Stdio::from(stdout))
+            .stderr(Stdio::from(stderr));
+        // SAFETY: only async-signal-safe syscalls before exec.
+        unsafe {
+            command.pre_exec(|| {
+                for (kind, value) in [
+                    (libc::RLIMIT_CORE, 0),
+                    (libc::RLIMIT_CPU, CPU_SECONDS),
+                    (libc::RLIMIT_FSIZE, 16 * 1024 * 1024),
+                ] {
+                    let limit = libc::rlimit {
+                        rlim_cur: value,
+                        rlim_max: value,
+                    };
+                    if libc::setrlimit(kind, &limit) != 0 {
+                        return Err(std::io::Error::last_os_error());
+                    }
+                }
+                Ok(())
+            });
+        }
+        let child = command.spawn().unwrap();
+        let pid = child.id() as i32;
+        let mut guard = Guard {
+            _child: child,
+            pid,
+            seen_peers: BTreeSet::new(),
+            peer_reaps: Vec::new(),
+            direct_reap: None,
+            cleanup_attempted: false,
+            cleanup_error: None,
+        };
+        let deadline = Instant::now() + Duration::from_secs(WALL_SECONDS);
+        let outcome = loop {
+            if let Some(outcome) = peek(pid).expect("owned direct-child waitid failed") {
+                break Some(outcome);
+            }
+            if Instant::now() >= deadline {
+                break None;
+            }
+            std::thread::sleep(Duration::from_millis(5));
+        };
+        guard.cleanup();
+        std::fs::write(capture.join("parent-result.txt"), format!(
+            "cohort={cohort}\ndriver={}\ncpu_seconds={CPU_SECONDS}\nwall_seconds={WALL_SECONDS}\npeek={outcome:?}\nseen_peers={:?}\npeer_reaps={:?}\ndirect_reap={:?}\ncleanup_error={:?}\nleader_reaped_last={}\n",
+            driver.display(), guard.seen_peers, guard.peer_reaps, guard.direct_reap, guard.cleanup_error, guard.direct_reap.is_some() && guard.cleanup_error.is_none(),
+        )).unwrap();
+        eprintln!("chain main-thread {cohort}: {}", capture.display());
+        eprint!(
+            "{}",
+            std::fs::read_to_string(capture.join("stderr.txt")).unwrap()
+        );
+        assert!(guard.cleanup_error.is_none(), "owned child cleanup failed");
+        let reaped = guard
+            .direct_reap
+            .expect("direct child was not reaped exactly");
+        assert!(
+            outcome.is_some(),
+            "required chain cohort exceeded {WALL_SECONDS}s wall bound"
+        );
+        let outcome = outcome.unwrap();
+        assert_eq!(
+            outcome.code,
+            libc::CLD_EXITED,
+            "required chain child did not exit normally"
+        );
+        assert_eq!(
+            outcome.status, 0,
+            "required chain child failed; logs retained"
+        );
+        assert!(libc::WIFEXITED(reaped));
+        assert_eq!(libc::WEXITSTATUS(reaped), 0);
+        assert!(
+            guard.seen_peers.is_empty() && guard.peer_reaps.is_empty(),
+            "successful cohort left descendants behind"
+        );
+        assert_eq!(
+            std::fs::read_to_string(capture.join("complete.txt")).unwrap(),
+            format!("completed-cohort:{cohort}\n")
+        );
+    }
+}
