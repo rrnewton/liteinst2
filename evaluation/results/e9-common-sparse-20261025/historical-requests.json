@@ -1,0 +1,3698 @@
+{
+  "instructions": "Exact semantic request fields with host-root placeholders. Historical hashes identify original bytes. Do not execute by blind string substitution: guards contain authenticated absolute source/dependency owners; an independently reviewed explicit rebinding adapter remains required.",
+  "requests": [
+    {
+      "historical_receipt_sha256": "5b38bd15947d2b4ed206f30450a9427990fd77f2f9781c0941e110b5139e68d1",
+      "historical_request_sha256": "1350d6ae8b6f998d33815bddac6cf9ff8ce3b6defcc08cfdcf596d11dcdc90d1",
+      "id": "v1-prepare",
+      "outer": null,
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/entry.py",
+          "prepare",
+          "10156e1de5c089840279fae2395282ab9bc62fa4f4e68964dec521915487a434"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-root-v1/prepare.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-root-v1/prepare.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "legacy-v1",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "a4d2ce580353566dc065ad9f3052ee65a89128c1603e936877a56b4480dcb16f",
+      "historical_request_sha256": "7adeab5e174d452d04f8671d329ac1399f77adf811088f11876e11395083a170",
+      "id": "v1-calibrate",
+      "outer": null,
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/entry.py",
+          "calibrate",
+          "10156e1de5c089840279fae2395282ab9bc62fa4f4e68964dec521915487a434"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/calibration-run-v1/calibrate.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/calibration-run-v1/calibrate.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "legacy-v1",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "098aab96c8a0187f7489eb50cee5d5e81e05ffd48e648348e9c4991eef8744a3",
+      "historical_request_sha256": "af4f386b381bc13aa38b82281b7e4fff7b2fabe9a08009becb6819c3e5f10b66",
+      "id": "v1-supervisor_calibrate",
+      "outer": null,
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/entry.py",
+          "supervisor_calibrate",
+          "10156e1de5c089840279fae2395282ab9bc62fa4f4e68964dec521915487a434"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/calibration-run-v1/supervisor_calibrate.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/calibration-run-v1/supervisor_calibrate.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "legacy-v1",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "b8fb1bafad6eb1f3bd0679cda2a975f198d3d909041b16f199cf11caccea8853",
+      "historical_request_sha256": "45b4dc13a1da2db43af2de1f7f201652669ebd382b7519e5e0c17c493fb0c220",
+      "id": "v1-calibrate_prerequisites",
+      "outer": null,
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/entry.py",
+          "calibrate_prerequisites",
+          "10156e1de5c089840279fae2395282ab9bc62fa4f4e68964dec521915487a434"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/calibration-run-v1/calibrate_prerequisites.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/calibration-run-v1/calibrate_prerequisites.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "legacy-v1",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "830cd2f68a26d0f8db3a0db7a0c72a0d65da0942781c1e8b1b2869b97ffa8d3f",
+      "historical_request_sha256": "5db2dba6da29253c419b24688b0ed77d7a494c7e0227e5062c0ebc343d921941",
+      "id": "v1-calibrate-common",
+      "outer": null,
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/entry.py",
+          "calibrate-common",
+          "10156e1de5c089840279fae2395282ab9bc62fa4f4e68964dec521915487a434"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/calibration-run-v1/calibrate-common.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v1/calibration-run-v1/calibrate-common.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "legacy-v1",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "6d51802968dd014068068c5849141ec9620c8ef72909e9664d9b54b93c8930ba",
+      "historical_request_sha256": "89d314480d2692bccfac0cd4593930e85b98b0c5b94fd3a47a46b6492d0b810a",
+      "id": "v3-prepare",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-root-v2/prepare.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-root-v2/prepare.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "4deb1f913e93fb283ca841fb36d72397a62681bd997b4b94d90fba18e8dc3445"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "prepare",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-root-v2/prepare.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-root-v2/prepare.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "60e3fd64296bb42f8e26af5a6593978d19c1e4e717f1bf06d8ad479a99549c57",
+      "historical_request_sha256": "8070cfda8b88f4653caee8722e0608ebe24462b884648337252db1978e18a726",
+      "id": "v3-calibrate",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/prepared-v1/calibrate.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "028e14b52c04bc365747b83078bdb72a268bad4797c32b8f05375c76c8e78906"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "calibrate",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "131868c43434d17145542e96dcb7cbf45dde7326e60a9a9a281bbecbd5a5dfb3",
+      "historical_request_sha256": "cdbebf37386eb4f00a4a4bb1c4028749c65e31251332a483e3779e4c85af100f",
+      "id": "v3-supervisor_calibrate",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/prepared-v1/supervisor_calibrate.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/supervisor_calibrate.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "44a893d74d1be238d28f36ae1dd652c95f80260533e81e46a93d93491ef82927"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "supervisor_calibrate",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/supervisor_calibrate.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/supervisor_calibrate.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "87e84d8ed07584ad75f23a8470aa06e2795baae5df7c4609a6b7b9a357cae8a0",
+      "historical_request_sha256": "926e79e199e1f2a06b15a66797d1fb829e2bd95b18b0c42f9d1b2101f548d1d4",
+      "id": "v3-calibrate_prerequisites",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/prepared-v1/calibrate_prerequisites.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate_prerequisites.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "31785a27f0606556e0131fb6ae12717413d540574fd8042bba0a617e20c075cc"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "calibrate_prerequisites",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate_prerequisites.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate_prerequisites.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "a17412a76a9db03db1091438b6c148dbf20a5cd9b01608d1a6b80aa6a72cd325",
+      "historical_request_sha256": "dbb915248085e1e3b989edd60b825a63e51892b34ad6881f3ab01d25739982fd",
+      "id": "v3-calibrate-common",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/prepared-v1/calibrate-common.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate-common.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "527123c943d7d429eb2b380b0c332c34ae46870c34bfcc8479ff2551276cbe68"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "calibrate-common",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate-common.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate-common.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "66a8002179486326a6449ba9c7ff861e2fe29dcb73677ce8dbf981d1c55f4621",
+      "historical_request_sha256": "fb8adbf435aeed858f16ab69b8098ad203231d3dc1f6b16174148ccd053c9cd3",
+      "id": "v3-calibrate-sparse",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/prepared-v1/calibrate-sparse.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate-sparse.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "9607e274b249e3f067f9bd79ba53a0b60f449ea6931db8c195b8cd3b1755b184"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "calibrate-sparse",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate-sparse.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate-sparse.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "c14d7f1457ab5ca7829dc2d813535ad24872473eb30883492fc5c40a06fda2d9",
+      "historical_request_sha256": "fcdf140954f37b0832f6e40ddcb5761cfe05f32529c3ef4f6351f201f092d4c0",
+      "id": "v3-calibrate-ledgers",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/prepared-v1/calibrate-ledgers.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate-ledgers.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "66132ace1d36b73fb1dc36e0ee35cdfd53955395e91e361f9bba78963a30460a"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "calibrate-ledgers",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate-ledgers.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/calibration-run-v1/calibrate-ledgers.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "74e9c359c39e6fae821954c3a29baa60bd7136fd9ab5892601975b95468cfb6e",
+      "historical_request_sha256": "ed766975da2f203971df4326d4578778b0e005d49f776f0fc203c02ce585384d",
+      "id": "v3-emission-aggregate",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "190s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-root-v2/emit.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-root-v2/emit.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 205,
+        "record_sha256": "8e344a78d232229c90535db9192d50430bf17378bf4ffb0e174f7faadee73e5c"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "emit",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6"
+        ],
+        "cpu_seconds": 120,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-root-v2/emit.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-root-v2/emit.stdout",
+        "wall_seconds": 180
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "ffdf5b8307e7c71996935ef9fb9c8835c6ccbf02918b8e7a87b4b9323ed29bf5",
+      "historical_request_sha256": "a74c8846b8fca5543c2bef11a7e726c26cb9073f3e3f9d4fa8bc6d3b2f1ce99b",
+      "id": "v3-unstripped-pie-frontend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie/frontend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie/frontend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "fe1a0b4929b6dd5560dabed20ceb92121892eb07a3c36dc90bfe1a77aa9aa8fa",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-common-calibration/compat-build-v1/artifacts/e9tool-json-output",
+          "--format",
+          "json",
+          "--output",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie/request.json",
+          "--action",
+          "addr=0x1067:passthru",
+          "${REPO}/ignored/a3/e9-common-calibration/corrected-fixture-v1/original/pie"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie/frontend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie/frontend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "d71a0ad511a8be80348a94aa7db02effebfa957f17bc7eaf8fa9d3bedba39298",
+      "historical_request_sha256": "0b58307802f34234fe123d46b288b9df17bc9618e1d1b015d5461a9fe2d30b7c",
+      "id": "v3-unstripped-pie-backend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie/backend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie/backend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "0f028d0b0a27671f06c780519c59dbb824d38a399a16cde901846af0772218c2",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-bootstrap-abi-build-v4/tree/e9patch",
+          "--debug",
+          "--input",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie/request.json"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie/backend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-pie/backend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "72fe083e51fe9100e6c09fcd98000335187fa5aaae4f7f8df5fd1db97457785d",
+      "historical_request_sha256": "7b6a6085693e0a2cf5d99979be4abb21c0ba84e0201d307614bc62a677cddba0",
+      "id": "v3-unstripped-exec-frontend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec/frontend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec/frontend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "862f10a10855a2e64b17ba34c0a7abedc020cea21b90aa0adef571d6767be190",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-common-calibration/compat-build-v1/artifacts/e9tool-json-output",
+          "--format",
+          "json",
+          "--output",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec/request.json",
+          "--action",
+          "addr=0x401067:passthru",
+          "${REPO}/ignored/a3/e9-common-calibration/corrected-fixture-v1/original/exec"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec/frontend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec/frontend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "2a56c26a5dc49f9992dabb0fc5394dafa0a71cbdd03ea3551f1308b9bd086ef1",
+      "historical_request_sha256": "1fc77a1a96fd86c95b7d71a41f4d6d438eee72230958380886e0c2b6c64acff6",
+      "id": "v3-unstripped-exec-backend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec/backend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec/backend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "3c307ad745076decf875a17bab6a81ea8f68906c68bcba1af011558668bc147b",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-bootstrap-abi-build-v4/tree/e9patch",
+          "--debug",
+          "--input",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec/request.json"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec/backend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-exec/backend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "8e9a126587f24334f1f71998efb8df9cf3154068ed02029f8c923ec8d4711cb4",
+      "historical_request_sha256": "803adfd8a41943c34710dcc3f15e54e512d4bacb4fb53e806445dc3a5556768a",
+      "id": "v3-unstripped-libcarrierfixture.so-frontend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so/frontend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so/frontend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "c5ed689f3b7e024bb250e8f31a610c2d0cc7e4786c75ce4d98cb7f012c6472e3",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-common-calibration/compat-build-v1/artifacts/e9tool-json-output",
+          "--format",
+          "json",
+          "--output",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so/request.json",
+          "--action",
+          "addr=0x1001:passthru",
+          "${REPO}/ignored/a3/e9-common-calibration/corrected-fixture-v1/original/libcarrierfixture.so"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so/frontend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so/frontend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "8126593ef126d3be1900a5e170521b3ffd169f8272aa977c19609d4d9b8364db",
+      "historical_request_sha256": "221d7ff6b5a9fe9099076f2c13986e303414a8fcdf98e9c7c784641cad3b5792",
+      "id": "v3-unstripped-libcarrierfixture.so-backend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so/backend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so/backend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "55bc9e96d45d0a838369be7b43b395bc7c960e6edfed3786d0462f2622eea38b",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-bootstrap-abi-build-v4/tree/e9patch",
+          "--debug",
+          "--input",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so/request.json"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so/backend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/unstripped-libcarrierfixture.so/backend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "70a064357b93cb880b25f1c00e0bd83184a30baf4ae97247c4e35be9fb7f8c28",
+      "historical_request_sha256": "4800ef2a47d511bf9b71628de6b3579eb4dc61e01c5f548b36a34d2c701c34f2",
+      "id": "v3-stripped-pie-frontend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie/frontend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie/frontend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "ff19ca84604ba12d9beab860c79675f62397b77d9eff35278417d09a0ddad849",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-common-calibration/compat-build-v1/artifacts/e9tool-json-output",
+          "--format",
+          "json",
+          "--output",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie/request.json",
+          "--action",
+          "addr=0x1067:passthru",
+          "${REPO}/ignored/a3/e9-common-calibration/corrected-fixture-v1/original-stripped/pie"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie/frontend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie/frontend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "54e63bec486f1c216c80822d5f40b406cd11a9e586aa86786b8a6f9fd6c5b5ff",
+      "historical_request_sha256": "a812dd4766a9fa71db2050eabf7ac970ce5092a7578e8e3aed785686906d81d0",
+      "id": "v3-stripped-pie-backend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie/backend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie/backend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "79478afab55e2db45b42a66c2d0f7ba5c3d6618a1b21a45bda7627b86875e59f",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-bootstrap-abi-build-v4/tree/e9patch",
+          "--debug",
+          "--input",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie/request.json"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie/backend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-pie/backend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "aba620c1b46b10aec32d6ca4f489329a4421f9dcebd5d8dd662c7466fcec469b",
+      "historical_request_sha256": "4d229d7404bfe79f3448b09f9529df298f543a90c9411aea6c5602ddf1e511e9",
+      "id": "v3-stripped-exec-frontend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec/frontend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec/frontend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "6db23bd48ad314b5b70e3ef48b2950ef7176d9375f3cb61a89455475f16f8f1b",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-common-calibration/compat-build-v1/artifacts/e9tool-json-output",
+          "--format",
+          "json",
+          "--output",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec/request.json",
+          "--action",
+          "addr=0x401067:passthru",
+          "${REPO}/ignored/a3/e9-common-calibration/corrected-fixture-v1/original-stripped/exec"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec/frontend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec/frontend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "bcbbb3f1e891c96edb0891eda7038e69c9e4919f8df96695eff37aaaa8f95ace",
+      "historical_request_sha256": "45cdd3bd509a06685407a2edc29f0656bc96edd15b1d642a1cc49336d7c01550",
+      "id": "v3-stripped-exec-backend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec/backend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec/backend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "0320cfcde5b6f2afd50cb4b435e9ce35bcd0a9276f74b8848d8d8fbd469a19c4",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-bootstrap-abi-build-v4/tree/e9patch",
+          "--debug",
+          "--input",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec/request.json"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec/backend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-exec/backend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "479ec5959cc1eaaf7db9a84f4009a4364a3a888be34b486138f2c80a4f114e7d",
+      "historical_request_sha256": "a6d671f9d12d72593b99f972ddee11618c477a8de6d4b30991573d7e964e1fd1",
+      "id": "v3-stripped-libcarrierfixture.so-frontend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so/frontend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so/frontend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "b2cd010889794c8495da9b1fc98a7ac776eb7e2240bc56596422bc51f9dc70da",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-common-calibration/compat-build-v1/artifacts/e9tool-json-output",
+          "--format",
+          "json",
+          "--output",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so/request.json",
+          "--action",
+          "addr=0x1001:passthru",
+          "${REPO}/ignored/a3/e9-common-calibration/corrected-fixture-v1/original-stripped/libcarrierfixture.so"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so/frontend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so/frontend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "250a03caf8d9ebb7f91fd61490322ceaf8562a8488c13c2d006b8772b5ab3e4a",
+      "historical_request_sha256": "617f1eb01dec359c9ec6e64c627d50696505d5b4cfc40850a1a179e2317b69db",
+      "id": "v3-stripped-libcarrierfixture.so-backend",
+      "outer": {
+        "argv": [
+          "${PYTHON}",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so/backend.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so/backend.receipt.json"
+        ],
+        "exit": 0,
+        "helper_watchdog_seconds": 55,
+        "post_kill_wait_seconds": 5,
+        "record_sha256": "e20cc43827f2411b77197130cf552ef23304f1c9142a2002a0adbb3783701e2c",
+        "termination_grace_seconds": 10
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-bootstrap-abi-build-v4/tree/e9patch",
+          "--debug",
+          "--input",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so/request.json"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so/backend.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-emission/stripped-libcarrierfixture.so/backend.stdout",
+        "wall_seconds": 45
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "40874a7e69142cfd200f9d435e805409e278ee391e2cb4ba3ee43be4c6646b47",
+      "historical_request_sha256": "9a37f287377549ae51436421e2b24db66d2a949dcfd0a4f70ff9bfe9b2b619de",
+      "id": "v3-bind-native",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-root-v2/bind-native.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-root-v2/bind-native.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "b17751b7addfac044a7526f92c3b650c02ad9286c64f381657a3b05aba985625"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "bind-native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-root-v2/bind-native.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-root-v2/bind-native.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "fd924850085a74c27f7cbb468b324d570046c2ab9f943fcfe1fd097220ea9967",
+      "historical_request_sha256": "b9ddec18af2cf36f9970e1f75e2cd22fc7e7998a9644fff9001b391c225d1d6b",
+      "id": "v3-baseline-unstripped-pie",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/baseline-unstripped-pie.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-unstripped-pie/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "bac6591b308f40ac1b626199cd0b1f60d860de7ce80ce90d2e864132e247bc2d"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "baseline-unstripped-pie",
+          "--binding-sha256",
+          "844046ef2b0e497496b295c0461d4a1b13dfea343af8f11f3f5144f46b0ac9aa"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-unstripped-pie/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-unstripped-pie/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "cab051fa8145ef567740f41398c7a022d1c9ee7fddad3acd250dba27ba41b6f3",
+      "historical_request_sha256": "dbb3faa6a94b264749ea23dc4b466ad64da4627ac5502a2e8b3212535c523b86",
+      "id": "v3-baseline-unstripped-exec",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/baseline-unstripped-exec.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-unstripped-exec/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "acec014f8ec265c5acfea15cf11b9c49a84c0d7617cab7424f103feddb320bf7"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "baseline-unstripped-exec",
+          "--binding-sha256",
+          "b97737a8a78cced755fab71f6c035c0716fe96c5866362ae4f7f289e74db4405"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-unstripped-exec/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-unstripped-exec/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "fa6a5068e123073d035e7459f0f56935bbd1cd2bd4e95ae108df5788c244eed7",
+      "historical_request_sha256": "9a65bbd19ba4bbb7a8895e04e56bc431c3fb7a988afd357ac96be874f641e048",
+      "id": "v3-native-unstripped-both-pie-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-both-pie-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-pie-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "36b677bd7e1fe79af7aede520904907794ccbd9b6d1e1e02bedd180b55756901"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-both-pie-0",
+          "--binding-sha256",
+          "5ea5782d47b0e0665b30a99005e07e091c7b2e897826551592750ca48159b26f"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-pie-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-pie-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "3efb8f45f420bb2d5f08330bf2aceb21262c35313221795e0c152434ce5755a3",
+      "historical_request_sha256": "f3172aba9059cd7b54c537b3b86021b101b4a669a7a77cec86ede36e5247c09f",
+      "id": "v3-native-unstripped-both-pie-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-both-pie-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-pie-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "1d7856c83736433afdcdd9f88e0e612e48b103b9e05fa41f2d8294b1b0d26050"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-both-pie-1",
+          "--binding-sha256",
+          "acba71074430528a052c82fffde5783b2a97f5638c3c9288392b00d1bbf5b843"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-pie-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-pie-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "a63b609abf3e6f0da6511b12f0b944ddd696e8119cab1ce77980d10216955e16",
+      "historical_request_sha256": "7813d9845c8f8bcb348181bd3482cc5b7561df3dc46e05e90531ea6cf0924306",
+      "id": "v3-native-unstripped-both-pie-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-both-pie-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-pie-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "9831581448d949fe2cf6a500a47b1d5bcee6c7559b75b715e26dc09b88826f40"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-both-pie-2",
+          "--binding-sha256",
+          "56491041bcc793f075ec8855f9ab3df20cf03df7a88c0e939cbb3af47eb3235b"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-pie-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-pie-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "5636a9487507a65e02dba024931d51ab4e2e60bda3874e888f62f1f5cfabe504",
+      "historical_request_sha256": "5acca703823c803b4d8f4f540ad776a0fbcb41b757088fc3879f3ed3872eaeb4",
+      "id": "v3-native-unstripped-both-exec-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-both-exec-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-exec-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "c82429f08aaee56a8486ed761f4cf9662eac9f42a14a9bd285c5e66294680a75"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-both-exec-0",
+          "--binding-sha256",
+          "e1a44929c7b3ddae95b0355608806fba88b97d449a31d15f70db40e858f8a081"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-exec-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-exec-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "b003466ac79fe9ba7ed050c5a92c56bb49f8f3780e8f55fe8f123a2de7ee25d6",
+      "historical_request_sha256": "c26f55a143fde1a5c86e103184c77c2ec472c9d0f158acec5300bf1db3d541cc",
+      "id": "v3-native-unstripped-both-exec-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-both-exec-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-exec-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "7c9dc3fcc0a1812d8cb004d973f38e41e0d7fadf962a745768d38c672aab6671"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-both-exec-1",
+          "--binding-sha256",
+          "ddb49f46d9992085f9938b81b8c57d1cf8b4dde87e0bbb95839052012639a738"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-exec-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-exec-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "385a80ba76a6d58f326e83d71954486b6c8bec78e59fe1067de4cfb2c59d4c95",
+      "historical_request_sha256": "287f1beda6d61cdbc60c0aaf00cbe6a8531687d2ad041e6d0a83b4900da5a5e7",
+      "id": "v3-native-unstripped-both-exec-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-both-exec-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-exec-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "bb024909472dc342b706b9e2a70190491ba34055a55696964787271142d17933"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-both-exec-2",
+          "--binding-sha256",
+          "8affdb8ef10b756b692b7b31b7316ecae3828cb5129cf956f95fb7d6a1357ed3"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-exec-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-both-exec-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "e780bb4a52445dca4a79c1ec6ed9a2ccb2241304c711cf638fea40af030d8ad0",
+      "historical_request_sha256": "e17aefc9cb6cc31e4fd566bd2845a85bc693b4c3b312e52310c0eec8fb7f5589",
+      "id": "v3-native-unstripped-main-only-pie-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-main-only-pie-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-pie-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "f8310efc81d24b87b182be070e42e7a3853b3e846adf7b813d59cd07228ed136"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-main-only-pie-0",
+          "--binding-sha256",
+          "02a793d0ddda186e1f8c718005f3384c8115a257d708c4aa1f077b34298e6e28"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-pie-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-pie-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "a5ce9f5a8e7b458a367fcb5a9990eb3faa0e29ff3b05440522e2712872a37ca2",
+      "historical_request_sha256": "69400ce7f528242925d28e758321b7f6684cdf035b25c071ea26162364ed1300",
+      "id": "v3-native-unstripped-main-only-pie-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-main-only-pie-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-pie-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "c002a614677b97d7b28affdf9010fdf87722cbfed433ef61508fd9d1cfdcac8b"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-main-only-pie-1",
+          "--binding-sha256",
+          "554f4e646b9ffaaf5069326b7fff7677eadf8d87ac8e54760d11763329ea9c5f"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-pie-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-pie-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "bf5b4a9df1b1b8a9968c632d200d86b19ebc4a35b4cd94c9fbdc72b38e9c7f90",
+      "historical_request_sha256": "d261e6eae3102d2c8a4aa38d2a652c0faf69152c6250ac375f5214dfd1434910",
+      "id": "v3-native-unstripped-main-only-pie-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-main-only-pie-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-pie-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "8acd4773691698ba09b5bb80a508773a34c91206bcd9957092fb568c8b46ae83"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-main-only-pie-2",
+          "--binding-sha256",
+          "3caaac7cb0856311f04c75ad183717100a41e47de46b3985178a516e098cf31f"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-pie-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-pie-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "c7f56d62112511ba925d39d6bd2f425cbef5055cc0d3cc49cfc75e6bea827ff2",
+      "historical_request_sha256": "8f90dd591ec6e1f77fe325d5111404cf5d36fba2ae6fd24a84e0db540b466fa8",
+      "id": "v3-native-unstripped-main-only-exec-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-main-only-exec-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-exec-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "9763ccd7ad3397e66d7c1340ca42e9f61a69940ae840e849d7903d128d2b637a"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-main-only-exec-0",
+          "--binding-sha256",
+          "af1b6b39d3a63e0e8325a3120c36321b27b3659ce57dd628e17f1d55f6ee7afb"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-exec-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-exec-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "151524979bdf7ebb19f37b45f637441c522889cecb3b909d42959f40eb8ae303",
+      "historical_request_sha256": "60b330d8b49f9a923421ad90443b0e594461c5bf12f23d6ea3243acec180f54a",
+      "id": "v3-native-unstripped-main-only-exec-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-main-only-exec-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-exec-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "a658debfe5b5214883bd816ccf617d8ac94b323cfc837ea2fd2ebc9c2704c638"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-main-only-exec-1",
+          "--binding-sha256",
+          "a02daedde94ed25f809c5bb0bf45552491aca49520f8523c621fb0a112aebfda"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-exec-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-exec-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "556d6294cd71a5b1b605c65edbd616baa146eebb3456c390ec596b4cd6fe3a9e",
+      "historical_request_sha256": "5c91b9c69fe2fb8250ee101160e2b6cd0e87aa102770adcef01da1feefc7dc34",
+      "id": "v3-native-unstripped-main-only-exec-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-main-only-exec-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-exec-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "17f7fb70c8a5a0b3e07752d2e51baf727301b20cef833d28001a0d6498c4ea6d"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-main-only-exec-2",
+          "--binding-sha256",
+          "049635de0f4a92dc68e1f0a65eae1661be63d51c472e1db683b6b9d0e9fc4b42"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-exec-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-main-only-exec-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "2c2fcf988f9fb0d843732b8dfdd29fd5b66f48315d7ab3bc492c2ce2a5ddd5be",
+      "historical_request_sha256": "67f04aa426b814a87328945a7a30d2ce1e841731dea56096d4b332f00be78e07",
+      "id": "v3-native-unstripped-library-only-pie-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-library-only-pie-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-pie-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "7191aae6743460257b13fb70896327a528c186b46d4ecd63a4cc5e3dcfb2c8a5"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-library-only-pie-0",
+          "--binding-sha256",
+          "4d0fc82a18d4ebc255889c58f40c735cba31b3f61845f10f925da71ad35db404"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-pie-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-pie-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "308ebc8ea3e22da5511d4207a2d7c636fe36091f53e419f06759a56ad4d8d583",
+      "historical_request_sha256": "2f0e095182054a6e2cb7fe315710aa406f4f8d5df4cf67dbfde7fc7705312299",
+      "id": "v3-native-unstripped-library-only-pie-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-library-only-pie-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-pie-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "edb4d470d2c0417e2595c27df456dcff055aaa9dd691d4ce47e1de4e76ff1d99"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-library-only-pie-1",
+          "--binding-sha256",
+          "e5899d82f76c9c620a1b6096b60308ca56edbb4c85457b8880a96db8e669fcdb"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-pie-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-pie-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "904e5d8ee76d918a8d1f164d12a639febd9726f62fd95a02f03acd31bdeda06a",
+      "historical_request_sha256": "4350e17493eb1c4b442c73b8c926c2408aa73b36de2fa3b85d396f0123963f9a",
+      "id": "v3-native-unstripped-library-only-pie-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-library-only-pie-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-pie-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "6095836ec38724a7ac372751c2ad1b8264736ff524e669ea5c9fa8b746da6a74"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-library-only-pie-2",
+          "--binding-sha256",
+          "cc79d9713b4ac8a4cf53c01fa833135d61613322412190a2f89b6d5b27e62921"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-pie-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-pie-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "18dd94f3078b6e850adb4e1a1b692740243e0bd618225527ac6450f5935b2dbd",
+      "historical_request_sha256": "0a651b9d2cfc50340150a903e3b847483f0f3efb1424bc38a1c7371c1178934f",
+      "id": "v3-native-unstripped-library-only-exec-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-library-only-exec-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-exec-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "853a92de676a70e94d646e47e5c9e7087177a36eaf8c49e89729a41b03ee5b5f"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-library-only-exec-0",
+          "--binding-sha256",
+          "dc58c560c96fea224cf560ba9337b5bd76aa1aebc5bc38d47591ba1888af1826"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-exec-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-exec-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "0c0c28944f7e31757c0ae53947148c09398fff92d7a5b6c7d8d3106ae84ae1b5",
+      "historical_request_sha256": "622d78448b95e59c2c609f1f5a7ff21ec40af75adf63a6784aba93b026af8220",
+      "id": "v3-native-unstripped-library-only-exec-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-library-only-exec-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-exec-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "44c03ecb02d465f39656d149a13d35b414e74880e7a1d8385ccae9372a1650d8"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-library-only-exec-1",
+          "--binding-sha256",
+          "ca4d0f3bac7453ca59fe05aa4aff4254c47a42ab0ba094b5a3977da0e5dcea4f"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-exec-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-exec-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "93c9734bf80f3fac3bb859783eac8fba18057db33f1742e07bc680f9780db3f6",
+      "historical_request_sha256": "c3dd0aec2eaadba2b62f8c3cba1262994088cddfcd8f351d5bf37fb4e5627625",
+      "id": "v3-native-unstripped-library-only-exec-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-unstripped-library-only-exec-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-exec-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "b60dfc3b869ccbc790ed2d598b386d235552f2c3c370d0c64e197292267a8858"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-unstripped-library-only-exec-2",
+          "--binding-sha256",
+          "3dadfbec52df7822f5abc961114e91edf0a752829d65a72193f7316c8ca2ec27"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-exec-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-unstripped-library-only-exec-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "d72f6bd57814a496369cdbce859421adcb66c9c02df68703e9bea2a483c27b5c",
+      "historical_request_sha256": "01e19a443b29eed609c96ed366e24fc188d9d7ace7e1a108e8b1ec2b497bfa4e",
+      "id": "v3-baseline-stripped-pie",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/baseline-stripped-pie.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-stripped-pie/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "c70532e8fca83aa260e2d0132cfa4f8a4c3f0cf708132877cec899861d457a6f"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "baseline-stripped-pie",
+          "--binding-sha256",
+          "1032c95abd00c2b906a92427b1f40894804558a3073aca812407e932a7ea9980"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-stripped-pie/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-stripped-pie/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "0abebe8773b697ff81626871e9816c94eb8eb3b9785d14d8f4a76f8e021b61b7",
+      "historical_request_sha256": "efe5469330fcf01630e0309f83b931611366d1ab536a45b55565d015cb0e9204",
+      "id": "v3-baseline-stripped-exec",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/baseline-stripped-exec.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-stripped-exec/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "01ad41b6930fbfd01d4e9d207a5a4859bf3b98b6da54a78abb2dd3eb9cc49f60"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "baseline-stripped-exec",
+          "--binding-sha256",
+          "f03136da0bf81dcc41555803192cbe965b7ee98c7c55dc14d08d8d4a25c4f3eb"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-stripped-exec/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/baseline-stripped-exec/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "aeefbad52dce8141f0fc54aca348f4b9f6981ac10a02db48b84b43861e6d1d23",
+      "historical_request_sha256": "a82a5584a37cda05ceb67b94e459a85e4f9902f7119bdd56550068e68ac016a7",
+      "id": "v3-native-stripped-both-pie-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-both-pie-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-pie-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "203712f329a8ad86acbda9915be751d8a6149418989c1baead4b8f8d07266344"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-both-pie-0",
+          "--binding-sha256",
+          "ec6f0ea3ce51392252ed6e8e0afe7099db4ca6681262cc096efb43efdf54eadb"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-pie-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-pie-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "66e2eb6179f074864e8986a8de188657dda127ff765752ce800bcef920e1db54",
+      "historical_request_sha256": "7e4b77c507ba89f8707cb842b990fc86ef2908cb9f77cdb6d169331bd81d6ca8",
+      "id": "v3-native-stripped-both-pie-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-both-pie-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-pie-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "f540edcc00bd8efec5261ef0661283731c7045008e4e5557853924bb0e9df11a"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-both-pie-1",
+          "--binding-sha256",
+          "52c5ba5046d2d2db0497044503128dd264c91dff7dc03730afb6fde2a20d374c"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-pie-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-pie-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "48b2373fbbab163e523bd96865d42300f96e12622404aa6cea9e99dad65442ba",
+      "historical_request_sha256": "f9e9e296a990bf4bf7bb6829933250ece1e712189b079d9f1f3df8555c57485a",
+      "id": "v3-native-stripped-both-pie-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-both-pie-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-pie-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "6ee7d2a9a5b8a6f406bf73392a021332de079a803ed201d10afd326ea16741e7"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-both-pie-2",
+          "--binding-sha256",
+          "a61b89c524ca4ccae0b1cabf0dd09788da9a5177085860cbbb0a4adfd479725a"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-pie-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-pie-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "5d02786e29fb30d5c16c8c0a721864138f663c248bfafd037fcf6e7710dad5c9",
+      "historical_request_sha256": "e74a84a4b05e75e205620ad40c01fb26f6f8a4fb172de68a9aa559a3ad2a0563",
+      "id": "v3-native-stripped-both-exec-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-both-exec-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-exec-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "7d8cf367841ffd572a12c7a603ea707e26008877975d725009d9b42bb843314b"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-both-exec-0",
+          "--binding-sha256",
+          "094b6afa4541fa4c70dfe208466d99b7a3e9e5c1b93c04fa270fab3e1d98935e"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-exec-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-exec-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "98b9200b405fe9927d6b3cd6ff829599531411f43af5c58dfb80fb7a894dfef4",
+      "historical_request_sha256": "7d4d0bba6387f8b9610db27126592f054bd5aeb37a4a6369bce38b018dc71a3e",
+      "id": "v3-native-stripped-both-exec-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-both-exec-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-exec-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "6c6d5194e2eca73b78856bb31ee8bdef6ed0bd5fe9f8a13d59d7b5d388a90851"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-both-exec-1",
+          "--binding-sha256",
+          "9531a126bbb793a81afcea4747cf82f76b403ec187dc3f02c858071f317ddefe"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-exec-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-exec-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "4ef5ac697085a4deb9356d797bce755c8987d1b361d74d5a64c39ecd22f359fc",
+      "historical_request_sha256": "40c0547813a5d12578e0b6ac1224f2475dc6020ba0fa02b8541a6c3f720e897b",
+      "id": "v3-native-stripped-both-exec-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-both-exec-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-exec-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "f02864b2559938075d3852ac2b9ca86e57f0eba4f674785b50a0de05d342cd0d"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-both-exec-2",
+          "--binding-sha256",
+          "c5277dc72b65ba017a3f15343667173dbeea145de96c28f1b48d7e10fc531bf8"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-exec-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-both-exec-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "f9fbff3101e662dafc944696e9939a6cca81a5e03f8f6ff5f5f1b5dede7d11d3",
+      "historical_request_sha256": "a8eb5da80f166ee8deaf60299f8bd79328eb86884809ec9dbb6c9b875f67f866",
+      "id": "v3-native-stripped-main-only-pie-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-main-only-pie-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-pie-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "bf5db5325f655753fc9217c94dfa346fd4622f00380499cbc478f34706c57876"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-main-only-pie-0",
+          "--binding-sha256",
+          "a19f8d1299b1934ce70ea8c6c4616cc79a078d80abcfef93dbd6e5d614145909"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-pie-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-pie-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "836007be9af2538f6f4dfc7a131039ff3a4f6dd667abfe79b058c932ab65928d",
+      "historical_request_sha256": "01b8e9f74bd91e4966629b1fc3a7d3757ab07d7e5a0152fe1b1099b4a967c291",
+      "id": "v3-native-stripped-main-only-pie-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-main-only-pie-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-pie-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "d2d96025f6d3c8b72014f5b79f43928914c46323cbc0aabbbf91ed628ff8faac"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-main-only-pie-1",
+          "--binding-sha256",
+          "5d2b6eadf31403e5668d035dcf78aa3d8eb0a170b22a98c834f7feb3b68528fa"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-pie-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-pie-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "aa50bf4a55799a56df4340453ea795eb605c25ef78a7958f4e6e4499ff8bdafe",
+      "historical_request_sha256": "e6b2ece36759c0ef5edc8a3a41148d5cfedfe23282eea533a7eede18ef5cf21c",
+      "id": "v3-native-stripped-main-only-pie-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-main-only-pie-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-pie-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "7f5ccd6853325ecd2e0e01e09846e4a9ea27ba1ee8a77ecf94b0a22b0501c228"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-main-only-pie-2",
+          "--binding-sha256",
+          "e5b3df3f797b6e75026cff06aeede9c5463b92f77b2c4eb33ab6b18e1826a59a"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-pie-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-pie-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "e6cd7c3b9f41a21ce479f8fb5fd73f9a5ad0e6225aae59c6a6d489d3c337aa0a",
+      "historical_request_sha256": "fa5ee7c50aec82322593fe9b0cd7b59ade452385fcfdcf6c496be3c68879dd46",
+      "id": "v3-native-stripped-main-only-exec-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-main-only-exec-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-exec-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "39da7a96e16e7d0e34c3217388957efc6a7de6f348b6cd2ea133e088d46621f1"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-main-only-exec-0",
+          "--binding-sha256",
+          "49c4e166c2ed56291f311e194db51a5021d18d5381302cb7b0c69527c33d28d5"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-exec-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-exec-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "3bf9b8a2fc912e6528e6548a2404fc5bd1279c9826e15a1c8cdff938b9b8f41f",
+      "historical_request_sha256": "992b0d9261a9d3cb25aee8065e7c085e64eae8e9d66ddbf94468f43cf9812009",
+      "id": "v3-native-stripped-main-only-exec-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-main-only-exec-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-exec-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "051dbbf5db4c9089486297f1f323060d171b95f0cadc3e276bec30111ea94800"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-main-only-exec-1",
+          "--binding-sha256",
+          "577eb4b01fe72f99cfe622b98722abd42b69fa1e9243f1aacc1d89d69f2d9e62"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-exec-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-exec-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "a301ea168f6d1470e7da8087e13202e3e3a8b003cc32358502f19a89530d6767",
+      "historical_request_sha256": "2f642d71a2f81da74d17e7dca56ec194c636e95fb7ac4cb865e848ada8f18ba9",
+      "id": "v3-native-stripped-main-only-exec-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-main-only-exec-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-exec-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "a424e38bcdfc446a4351347f618d8b4d190cc728bef570deb557246d78483eff"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-main-only-exec-2",
+          "--binding-sha256",
+          "530807d74f0fd0cccd8d5ed4a03781920679f129efc5d42a9669abb0ee881ac2"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-exec-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-main-only-exec-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "b41b1bfb4fc3a0a36c257c261298bab9de1e914abe4cdaf44d33a890adce05ae",
+      "historical_request_sha256": "5df69790bef796a3bab04f588648399ccdb2f402415a31a712f42bce98ce4da8",
+      "id": "v3-native-stripped-library-only-pie-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-library-only-pie-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-pie-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "0bf80f9ac74894bb82e2b80b839ff4ab995da46b1970d99f8792225b5e296f86"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-library-only-pie-0",
+          "--binding-sha256",
+          "a012022c81fa7513cb4aa25b1af535a38bd54f02749be261566ad7985087bc0e"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-pie-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-pie-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "f40b8ed754995480c29fcbc894f047f7f7a15b36d4f2411e1dc7072696fc8253",
+      "historical_request_sha256": "79f68ed66a9b3f85dec8107968e68f0155a560808d1d18aa3617a6573b3dbe0b",
+      "id": "v3-native-stripped-library-only-pie-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-library-only-pie-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-pie-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "1735cc14cde7ca22e0c8a437e0ec6fd80b09875cd2b2679f5b42a33160154e55"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-library-only-pie-1",
+          "--binding-sha256",
+          "907497826bd4b0db3061bd746d4214b40b1accaa1ade0bbbd2e10d789514a732"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-pie-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-pie-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "0b6528fe204873b745d206ed43856d78fc778d062cbd018945de92e27d5b30ff",
+      "historical_request_sha256": "ee29a5baa1aef285021db6867ae3554c161524623a0f2cd66da77c6e6102300f",
+      "id": "v3-native-stripped-library-only-pie-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-library-only-pie-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-pie-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "d5fac24fc253b7fdc2571bbaa1fff1135df5b37f469ab65ff8da7ad483a3bbe8"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-library-only-pie-2",
+          "--binding-sha256",
+          "5a2f74c514a7567984d9d64eb8ee7ae1be8b053004d2e020fd9ad35dd4d89e1b"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-pie-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-pie-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "0473a92c69d5d1c7dbd38207cd7eed31eb641e66735bcdf3c7f0c767032e23d5",
+      "historical_request_sha256": "0eecde7bb267c9f6be1d8f908f197c6182a395f41cb0405bdc748e027e0ff368",
+      "id": "v3-native-stripped-library-only-exec-0",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-library-only-exec-0.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-exec-0/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "9d5e9401c1d5db036e8e06d44e16ae2c92e53bbf99567c9538785683255e5a30"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-library-only-exec-0",
+          "--binding-sha256",
+          "85388418b82993518e9df6849037d7183eda5a94c919d480efb0621b92e5b312"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-exec-0/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-exec-0/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "7c746fa52989fbd29b7cdd7a07ac25913f82b8eeb5b2e83ed4ade321a55b05bc",
+      "historical_request_sha256": "df64328cc046ad5ce57db4102ad0cdabb9948d433726d32a87cfeabb9a1ddf72",
+      "id": "v3-native-stripped-library-only-exec-1",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-library-only-exec-1.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-exec-1/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "b445412a76fa7efca4ff6420126c286b4d97bd12782297f78a093fdab6da3ca0"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-library-only-exec-1",
+          "--binding-sha256",
+          "cb7eca2e66cf5ab1526d2aa9acb881baac984c8fefceefacdd2cb0609c65eb5b"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-exec-1/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-exec-1/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "a8752a85b4a9dbdee08ef6b1f9cf9399eeff40dd4d741ce894561491d330843d",
+      "historical_request_sha256": "16ae8a01536f65b08909defe98123d6a73f632c43f544ebbeabd60035cbc7b91",
+      "id": "v3-native-stripped-library-only-exec-2",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/requests/native-stripped-library-only-exec-2.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-exec-2/driver.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "cef5dfebb5a5a49251966d8d8ad6789bf7e64e51d577c83cee75b9f5c41d7d24"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--case",
+          "native-stripped-library-only-exec-2",
+          "--binding-sha256",
+          "ab4b0ef18d38607e0bf6ee8c6e6a30fbc5c9dfeebf260cba53bf7d022e2b6a11"
+        ],
+        "cpu_seconds": 10,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-exec-2/driver.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/native-v1/native-stripped-library-only-exec-2/driver.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "ed2a4c215d1701d6ef45ae593ff91100fb6a44484faaaf6fa614b8ef9da0bbe9",
+      "historical_request_sha256": "01ee1013c54e5bbf263a182ca0a3c0b7f7e9afb331287b00d1b9ab38db6e8eb3",
+      "id": "v3-audit-native",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-root-v2/audit-native.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-root-v2/audit-native.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "3d58280251d0d7258279bf6a565dcd44c723f0c99d30153c7e84be9a2cd59de8"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "audit-native",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76",
+          "--plan-sha256",
+          "961daed207e3912d622880b44cdff66a6f912ac39fcad3bcbf78026f1360d2b5"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-root-v2/audit-native.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-root-v2/audit-native.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "9193c5397d7383ff5220d8d0074acc06392d5b5e11a56692976c959b6fa097ad",
+      "historical_request_sha256": "b039af6b2d5033788fe10a66486d964e5fd937d69086646d88b50d1995623277",
+      "id": "v3-bind-state",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-root-v2/bind-state.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-root-v2/bind-state.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "a27e30c0c114c2ea33e5c28e0b4e47424fc7c97f76ed3b742cfd6a0275b11c53"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "bind-state",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99",
+          "--prepared-sha256",
+          "1a6819d87ecc603754e9fffc0c87a260d35dbb44ec2d38651f827d0921dd29c6",
+          "--emitted-sha256",
+          "92bbff776b0a29113b0c8fb592708f18cd3a52e2a8987b223127f7c0823cef76"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-root-v2/bind-state.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-root-v2/bind-state.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "d3af60cb5536afdf441c81d7ca5c3069f243aa2f6f67d62ef0440fe8739c04a1",
+      "historical_request_sha256": "cb11f92bdae160cc4f1f1f96db0d097a8caca4bda08ab5b626b1b5ad98187260",
+      "id": "v3-state-compiler-version",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/compiler-version.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/compiler-version.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "ae124121483aac776d127af1be47bda251f6a1179139b9ea6ca0151c61f53927"
+      },
+      "request": {
+        "argv": [
+          "${TOOL_D3A664C970A9FD83}",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_MANIFEST_DIR": "${REPO}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/compiler-version.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/compiler-version.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "866d0ab4c46a019bc4b528c04e61c33a828ef1ad90fcb8728c9ef9c37ee322ab",
+      "historical_request_sha256": "90e6a3acd4417719d28d73130d134963241fd73c3430a3b58c8b880d9f686814",
+      "id": "v3-state-identity-calibrations",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/identity-calibrations.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/identity-calibrations.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "36c3120909957c578c35513560718bbccc4ec2928cc190188b2c86e5d0cd2136"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/entry.py",
+          "calibrate-state-identity",
+          "5f5c50629f8c2dbffcb2f96c69e818062c1f8d8a4929e0950331854bc9651a99"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_MANIFEST_DIR": "${REPO}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/identity-calibrations.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/identity-calibrations.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "05aa11691f88a20a1b7343dd7bdbaf3d46f710cedce238a1f410dd1648a88f96",
+      "historical_request_sha256": "9f0ce5fd860f3db2c74ed9831e113d268bb65196c48b3a89456f1f8f9dcf682d",
+      "id": "v3-state-compile",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/compile.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/compile.receipt.json"
+        ],
+        "exit": 1,
+        "parent_timeout_seconds": 115,
+        "record_sha256": "48b7c28d0a780b64f90db545517a0f1c04c7a634f465888138a69f5bdde854b2"
+      },
+      "request": {
+        "argv": [
+          "${TOOL_D3A664C970A9FD83}",
+          "--edition=2024",
+          "-Dwarnings",
+          "-Ccodegen-units=1",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/future-state-v1/main.rs",
+          "-L",
+          "dependency=${REPO}/ignored/a3/corrected-core-join-v1/state-binding-v2/build/deps",
+          "--extern",
+          "libc=${REPO}/ignored/a3/elf-state-oracle/initial-build/liblibc-b659f680c3b8ebe8.rlib",
+          "--extern",
+          "liteinst2_artifact_draft=${REPO}/ignored/a3/native-core-images/initial-build/libliteinst2_artifact_draft.rlib",
+          "--extern",
+          "sha2=${REPO}/ignored/a3/native-core-images/initial-build/libsha2-4feeeb2eda2759b0.rlib",
+          "-o",
+          "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/oracle"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_MANIFEST_DIR": "${REPO}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/compile.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3/state-build-v1/compile.stdout",
+        "wall_seconds": 90
+      },
+      "source_id": "sparse-v3",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "c72ac37211f225c398557b7987b316de72b30e07f17a5819bbf765961461eea0",
+      "historical_request_sha256": "2505471e6cedb6f7bdafe83a8896165ee1784c015b0ddf1534b132c9f3321f22",
+      "id": "v4-state-compile",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-state-hooktype-v4/requests/compile.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-state-hooktype-v4/build/compile.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 115,
+        "record_sha256": "d411f003b996c24e67858fa0a74020efe327d647670d2d5960f9800c97ee22bc"
+      },
+      "request": {
+        "argv": [
+          "${TOOL_D3A664C970A9FD83}",
+          "--edition=2024",
+          "-Dwarnings",
+          "-Ccodegen-units=1",
+          "${REPO}/ignored/a3/e9-common-state-hooktype-v4/source/main.rs",
+          "-L",
+          "dependency=${REPO}/ignored/a3/corrected-core-join-v1/state-binding-v2/build/deps",
+          "--extern",
+          "libc=${REPO}/ignored/a3/elf-state-oracle/initial-build/liblibc-b659f680c3b8ebe8.rlib",
+          "--extern",
+          "liteinst2_artifact_draft=${REPO}/ignored/a3/native-core-images/initial-build/libliteinst2_artifact_draft.rlib",
+          "--extern",
+          "sha2=${REPO}/ignored/a3/native-core-images/initial-build/libsha2-4feeeb2eda2759b0.rlib",
+          "-o",
+          "${REPO}/ignored/a3/e9-common-state-hooktype-v4/build/oracle"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_MANIFEST_DIR": "${REPO}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${REPO}/ignored/a3/e9-common-state-hooktype-v4/build/compile.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-state-hooktype-v4/build/compile.stdout",
+        "wall_seconds": 90
+      },
+      "source_id": "body-v4",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "22655729e89b1a95dcb03c678da7f54753cc0c2aa14c4f66617d9b4c432f94a7",
+      "historical_request_sha256": "1bfd6d4507b6221784ba157164294783b380c96368a92d7a1e955bce2aa6e73e",
+      "id": "v4-ownership-controls",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-state-hooktype-v4/state-run-v1/ownership-controls.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-state-hooktype-v4/state-run-v1/ownership-controls.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "1772ad40509b9f6788c2143d9228e0a843c5667835ba87a162273e763a464771"
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-common-state-hooktype-v4/build/oracle",
+          "--ownership-controls"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_MANIFEST_DIR": "${REPO}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${REPO}/ignored/a3/e9-common-state-hooktype-v4/state-run-v1/ownership-controls.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-state-hooktype-v4/state-run-v1/ownership-controls.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "body-v4",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "9196a25bd8cd35e4b4bf47a471b84a7646510b31e88d09ab9d672e2598823e9f",
+      "historical_request_sha256": "424599d223324fee99261b2d9f0cd35951dc399db5291b24c4beede67557fff2",
+      "id": "v4-native",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-state-hooktype-v4/state-run-v1/native.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-state-hooktype-v4/state-run-v1/native.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 115,
+        "record_sha256": "c1a07d8a756389aed1cbb2a2c230e19f2b4a156b27fa4337190b9603e3178970"
+      },
+      "request": {
+        "argv": [
+          "${REPO}/ignored/a3/e9-common-state-hooktype-v4/build/oracle",
+          "${REPO}/ignored/a3/e9-common-state-hooktype-v4/state-run-v1/captures"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}/ignored/a3/e9-common-corrected-implementation-v3",
+        "env": {
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_MANIFEST_DIR": "${REPO}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-state-hooktype-v4/state-run-v1/native.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-state-hooktype-v4/state-run-v1/native.stdout",
+        "wall_seconds": 90
+      },
+      "source_id": "body-v4",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "528d42a190f7179b91cd62691987f1e62dbedba3f58cdda3b2d11f6825f3038e",
+      "historical_request_sha256": "4e4dc84e17cd9c5da037141bfc910324ca8de2ca2a064e7bf125b66b2a0f6cdd",
+      "id": "v4-audit-receipt-controls",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-state-runtime-root-v1/audit-receipt-controls.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-state-runtime-root-v1/audit-receipt-controls.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "e18e7e112b4d8116d9c30c12e454ee98f8b86ea0ba63ab0777cd4684e30f7786"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-state-audit-v1/calibrate_receipts.py",
+          "7bd3d1f23c603745db3b47f31ff893c27f0ded092d426028a8a81d4fd2e7b155"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-state-runtime-root-v1/audit-receipt-controls.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-state-runtime-root-v1/audit-receipt-controls.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "body-audit-v1",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    },
+    {
+      "historical_receipt_sha256": "285be90b0349f61b47593b81c94a3994363a72a776063c7cefa4fc66b6624b5b",
+      "historical_request_sha256": "4c86d032c805a30f9809d1aa8818aa3a1c3a644d7c9ca6a72a467f4a910101b0",
+      "id": "v4-capture-audit",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/validation/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/e9-common-state-runtime-root-v1/capture-audit.request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/e9-common-state-runtime-root-v1/capture-audit.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "record_sha256": "1f8cdc3d1472058b8b846685aa5ad697fff3d5fbb04502d551d56ae409d2e7d9"
+      },
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-state-audit-v1/audit_state.py",
+          "--manifest-sha256",
+          "7bd3d1f23c603745db3b47f31ff893c27f0ded092d426028a8a81d4fd2e7b155",
+          "--binding",
+          "${REPO}/ignored/a3/e9-common-state-v4-actual-audit-binding-v1/binding.json",
+          "--binding-sha256",
+          "06b3e3939a4714602dc7cf741eacbec3102442ea1335e5271ab443a25a137fe3",
+          "--review",
+          "${REPO}/ignored/a3/e9-common-state-v4-actual-audit-binding-v1/review-baseline-v1/review.json",
+          "--review-sha256",
+          "de3e3e55ed4caf030882dba66e8e060ea727bf410d20fdfb8312f9be60c1af88",
+          "--output",
+          "${REPO}/ignored/a3/e9-common-state-v4-capture-audit-v1"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REPO}/ignored/a3/e9-common-state-runtime-root-v1/capture-audit.stderr",
+        "stdout": "${REPO}/ignored/a3/e9-common-state-runtime-root-v1/capture-audit.stdout",
+        "wall_seconds": 30
+      },
+      "source_id": "body-audit-v1",
+      "status": "HISTORICAL_TEMPLATE_NOT_REBOUND_FOR_PORTABLE_EXECUTION"
+    }
+  ],
+  "status": "TEMPLATES_ONLY_NOT_A_PORTABLE_REPRODUCER"
+}

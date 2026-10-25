@@ -1,0 +1,32 @@
+{
+  "accepted": [
+    "exact-compact",
+    "exact-sparse-exec",
+    "sparse-exact-40KiB-budget",
+    "exact-common-bias-two-roots"
+  ],
+  "refused": [
+    "unknown-kind",
+    "wrong-compact-base",
+    "wrong-compact-end",
+    "wrong-source-page",
+    "wrong-generated-PC",
+    "wrong-backing-offset",
+    "unaligned-source",
+    "zero-root-budget",
+    "one-root-budget-for-EXEC",
+    "root-budget-above-contract",
+    "zero-byte-budget",
+    "one-byte-below-required-storage",
+    "byte-budget-above-contract",
+    "actual-address-underflow",
+    "actual-address-overflow",
+    "noncanonical-actual-address",
+    "overlapping-acquisition-roots",
+    "actual-aggregate-budget"
+  ],
+  "acceptances": 4,
+  "refusals": 18,
+  "mappings": 0,
+  "application_executions": 0
+}

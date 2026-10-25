@@ -1,0 +1,31 @@
+{
+  "accepted": [
+    "exact-local-prerequisite",
+    "owned-package-path",
+    "fixed-request-geometry",
+    "exact-success-receipt"
+  ],
+  "refused": [
+    "boolean-limit",
+    "negative-limit",
+    "unknown-template-marker",
+    "package-path-escape",
+    "missing-resource",
+    "extra-resource",
+    "wrong-resource-hash",
+    "wrong-resource-size",
+    "collapsed-resource-owners",
+    "configuration-member-drift",
+    "present-preload",
+    "wrong-interpreter-path",
+    "boolean-exit",
+    "boolean-elapsed",
+    "failed-command",
+    "duplicate-json-key"
+  ],
+  "acceptances": 4,
+  "refusals": 16,
+  "process_launches": 0,
+  "native_executions": 0,
+  "signal_deliveries": 0
+}

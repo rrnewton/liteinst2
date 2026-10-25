@@ -1,0 +1,15 @@
+# A3 portable preparation, v3
+
+Four actual preparation commands passed: the request-only bootstrap, preparation controls (4 accepted/16 refused), separate operational-owner controls (3 accepted/10 refused), and source/input staging. All used the unchanged helper with 20 CPU seconds / 30 wall seconds / 16 MiB file limits and clean ECHILD ownership. The admitted outer timeout was40 seconds, kill-after10, caller cap55. These are per-command observations, not cgroup containment.
+
+The exact stage is `d7dc3037496dfde3f51b829f354a6473af2fa4b0034c76c9f87ea46515076818`, still `STAGED_REVIEW_REQUIRED_NO_WORKLOAD`. No E9 invocation, compiler, loader application or manual body trace ran in this preparation sequence. Forty loader and144 body rows are staged future inventories, not passes. All four paper claims and full A3 remain unqualified.
+
+This is a private-source snapshot with tested_revision null. The9098 repository revision records operational context only. CPU/kernel information comes from a separate earlier required-gate observation on the AMD EPYC Zen5 dev host, not from per-command hardware capture or continuous attestation. Selected Python/timeout/helper file hashes are recorded; no version output for these invocations or full tool closure is claimed.
+
+[The historical report](../e9-common-sparse-20261025/README.md) stays immutable, including its pending portable-reproducer status and earlier failures. This new record closes only preparation. See the [portable recipe](../../../tools/e9-common-reproduce/README.md) and [literal request templates](request-templates.json). The public source recipe may be staged alongside this data; these references are not claims that later pipeline phases completed.
+
+Each placeholder names an ordinary whole executable or directory coordinate; the role table and constraints are part of request-templates.json. All complete child environments are recorded. Bootstrap's actual parent record captures argv/environment/cap; the two control parents capture argv/cap but not environment; stage's parent captures exit/elapsed/stream hashes, with helper argv/cap supplied by admission and generated plan. No omitted field is silently inferred. Only both control requests set TMPDIR to the canonical bootstrap output directory under the helper repository's ignored root.
+
+observations.json binds all74 stage files and the117-file preparation tree as observed at this closure, including every actual request/receipt/capture. Later pipeline outputs are outside this recorded result. source-files.json binds164 source-package files; input-files.json exposes502 opaque file roles, hashes/sizes and owner classes without raw paths. The recorded four full-stat/config epochs remained exact; current reviewer equality is a separate later observation.
+
+The33 control cases are classified by acceptance/refusal and kept separate from historical native or pipeline calibration populations. Operational elapsed time is not performance evidence. Raw captures/configuration contents/GPL reference implementations and binaries remain private; no new exporter or supervisor is introduced.

@@ -1,0 +1,34 @@
+{
+  "accepted": [
+    "cases-exact-ordered-schema",
+    "pages-exact-ordered-schema",
+    "ownership-exact-ordered-schema"
+  ],
+  "refused": [
+    "cases-duplicate-leading-header-conflicting-value",
+    "cases-duplicate-trailing-header",
+    "cases-reordered-header",
+    "cases-missing-header",
+    "cases-extra-header",
+    "cases-missing-row-cell",
+    "cases-extra-row-cell",
+    "pages-duplicate-leading-header-conflicting-value",
+    "pages-duplicate-trailing-header",
+    "pages-reordered-header",
+    "pages-missing-header",
+    "pages-extra-header",
+    "pages-missing-row-cell",
+    "pages-extra-row-cell",
+    "ownership-duplicate-leading-header-conflicting-value",
+    "ownership-duplicate-trailing-header",
+    "ownership-reordered-header",
+    "ownership-missing-header",
+    "ownership-extra-header",
+    "ownership-missing-row-cell",
+    "ownership-extra-row-cell"
+  ],
+  "acceptances": 3,
+  "refusals": 21,
+  "mappings": 0,
+  "application_executions": 0
+}

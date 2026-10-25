@@ -1,0 +1,30 @@
+{
+  "accepted": [
+    "exact fresh six/core native/state inventory"
+  ],
+  "refused": [
+    "missing fresh state terminal",
+    "wrong completion status",
+    "historical original cohort",
+    "historical selection",
+    "historical emitted cohort",
+    "missing B1 output",
+    "refusal substituted for positive",
+    "missing baseline",
+    "missing native execution",
+    "missing state trace",
+    "missing state point",
+    "missing hook witness",
+    "missing file page",
+    "missing original state phase",
+    "missing capture file",
+    "missing capture directory",
+    "full qualification claimed",
+    "backend ABI relabelled resolved",
+    "E9 native enabled"
+  ],
+  "acceptances": 1,
+  "refusals": 19,
+  "actual_process_launches": 0,
+  "actual_state_traces": 0
+}

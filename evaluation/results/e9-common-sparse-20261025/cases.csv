@@ -1,0 +1,499 @@
+ordinal,command_id,case_id,kind,expected,observed
+0,v1-calibrate,RX exact file translation,pure_acceptance,accept,accept
+1,v1-calibrate,exact one-site RPC,pure_acceptance,accept,accept
+2,v1-calibrate,exact B1 summary and debug witness,pure_acceptance,accept,accept
+3,v1-calibrate,absolute trampoline coordinates,pure_acceptance,accept,accept
+4,v1-calibrate,exact bounded-helper success receipt,pure_acceptance,accept,accept
+5,v1-calibrate,duplicate JSON key,pure_negative,refuse,refuse
+6,v1-calibrate,non-JSON NaN,pure_negative,refuse,refuse
+7,v1-calibrate,R metadata is not executable,pure_negative,refuse,refuse
+8,v1-calibrate,translation crosses file-backed extent,pure_negative,refuse,refuse
+9,v1-calibrate,unsigned virtual extent overflow,pure_negative,refuse,refuse
+10,v1-calibrate,ambiguous virtual ownership,pure_negative,refuse,refuse
+11,v1-calibrate,truncated program headers,pure_negative,refuse,refuse
+12,v1-calibrate,non-power-of-two load alignment,pure_negative,refuse,refuse
+13,v1-calibrate,wrong source path,pure_negative,refuse,refuse
+14,v1-calibrate,wrong binary mode,pure_negative,refuse,refuse
+15,v1-calibrate,extra action instruction,pure_negative,refuse,refuse
+16,v1-calibrate,wrong selected length,pure_negative,refuse,refuse
+17,v1-calibrate,wrong selected virtual address,pure_negative,refuse,refuse
+18,v1-calibrate,wrong selected file offset,pure_negative,refuse,refuse
+19,v1-calibrate,boolean instruction length,pure_negative,refuse,refuse
+20,v1-calibrate,wrong patch offset,pure_negative,refuse,refuse
+21,v1-calibrate,wrong patch trampoline,pure_negative,refuse,refuse
+22,v1-calibrate,out-of-order RPC id,pure_negative,refuse,refuse
+23,v1-calibrate,extra patch,pure_negative,refuse,refuse
+24,v1-calibrate,missing patch,pure_negative,refuse,refuse
+25,v1-calibrate,output path escape,pure_negative,refuse,refuse
+26,v1-calibrate,wrong mapping unit,pure_negative,refuse,refuse
+27,v1-calibrate,unknown method,pure_negative,refuse,refuse
+28,v1-calibrate,unknown patch metadata,pure_negative,refuse,refuse
+29,v1-calibrate,RPC incomplete final line,pure_negative,refuse,refuse
+30,v1-calibrate,RPC duplicate JSON id,pure_negative,refuse,refuse
+31,v1-calibrate,partial success,pure_negative,refuse,refuse
+32,v1-calibrate,fallback to B2,pure_negative,refuse,refuse
+33,v1-calibrate,duplicate statistic,pure_negative,refuse,refuse
+34,v1-calibrate,wrong debug PC,pure_negative,refuse,refuse
+35,v1-calibrate,wrong debug length,pure_negative,refuse,refuse
+36,v1-calibrate,wrong debug tactic,pure_negative,refuse,refuse
+37,v1-calibrate,empty trampoline,pure_negative,refuse,refuse
+38,v1-calibrate,duplicate debug site,pure_negative,refuse,refuse
+39,v1-calibrate,warning is not a success,pure_negative,refuse,refuse
+40,v1-calibrate,failed-site diagnostic,pure_negative,refuse,refuse
+41,v1-calibrate,missing success marker,pure_negative,refuse,refuse
+42,v1-calibrate,failure marker,pure_negative,refuse,refuse
+43,v1-calibrate,wrong input size,pure_negative,refuse,refuse
+44,v1-calibrate,helper exit=1,pure_negative,refuse,refuse
+45,v1-calibrate,helper exit=False,pure_negative,refuse,refuse
+46,v1-calibrate,helper wall_timeout=True,pure_negative,refuse,refuse
+47,v1-calibrate,helper unexpected_descendants=[123],pure_negative,refuse,refuse
+48,v1-calibrate,helper absence_proof=None,pure_negative,refuse,refuse
+49,v1-calibrate,helper stdout_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',pure_negative,refuse,refuse
+50,v1-calibrate,helper request_sha256='cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',pure_negative,refuse,refuse
+51,v1-calibrate,helper helper_sha256='dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',pure_negative,refuse,refuse
+52,v1-calibrate,helper aborted='SIGTERM',pure_negative,refuse,refuse
+53,v1-calibrate,helper cleanup_error='deadline',pure_negative,refuse,refuse
+54,v1-calibrate,helper inputs_unchanged=False,pure_negative,refuse,refuse
+55,v1-calibrate,helper elapsed_seconds=inf,pure_negative,refuse,refuse
+56,v1-calibrate,helper elapsed_seconds=-1,pure_negative,refuse,refuse
+57,v1-calibrate,helper elapsed_seconds=51,pure_negative,refuse,refuse
+58,v1-calibrate,malformed cleanup event,pure_negative,refuse,refuse
+59,v1-calibrate,contradictory killed descendant,pure_negative,refuse,refuse
+60,v1-supervisor_calibrate,repeated-signal-receipt-window,mocked_supervisor,1_scenario_6_simulated_deliveries,1_scenario_6_simulated_deliveries
+61,v1-calibrate_prerequisites,exact fresh six/core native/state inventory,pure_acceptance,accept,accept
+62,v1-calibrate_prerequisites,missing fresh state terminal,pure_negative,refuse,refuse
+63,v1-calibrate_prerequisites,wrong completion status,pure_negative,refuse,refuse
+64,v1-calibrate_prerequisites,historical original cohort,pure_negative,refuse,refuse
+65,v1-calibrate_prerequisites,historical selection,pure_negative,refuse,refuse
+66,v1-calibrate_prerequisites,historical emitted cohort,pure_negative,refuse,refuse
+67,v1-calibrate_prerequisites,missing B1 output,pure_negative,refuse,refuse
+68,v1-calibrate_prerequisites,refusal substituted for positive,pure_negative,refuse,refuse
+69,v1-calibrate_prerequisites,missing baseline,pure_negative,refuse,refuse
+70,v1-calibrate_prerequisites,missing native execution,pure_negative,refuse,refuse
+71,v1-calibrate_prerequisites,missing state trace,pure_negative,refuse,refuse
+72,v1-calibrate_prerequisites,missing state point,pure_negative,refuse,refuse
+73,v1-calibrate_prerequisites,missing hook witness,pure_negative,refuse,refuse
+74,v1-calibrate_prerequisites,missing file page,pure_negative,refuse,refuse
+75,v1-calibrate_prerequisites,missing original state phase,pure_negative,refuse,refuse
+76,v1-calibrate_prerequisites,missing capture file,pure_negative,refuse,refuse
+77,v1-calibrate_prerequisites,missing capture directory,pure_negative,refuse,refuse
+78,v1-calibrate_prerequisites,full qualification claimed,pure_negative,refuse,refuse
+79,v1-calibrate_prerequisites,backend ABI relabelled resolved,pure_negative,refuse,refuse
+80,v1-calibrate_prerequisites,E9 native enabled,pure_negative,refuse,refuse
+81,v1-calibrate-common,complete-common-required-group,required_calibration_group,17_acceptances_19_refusals,failed_no_group_credit
+82,v3-calibrate,RX exact file translation,pure_acceptance,accept,accept
+83,v3-calibrate,exact one-site RPC,pure_acceptance,accept,accept
+84,v3-calibrate,exact B1 summary and debug witness,pure_acceptance,accept,accept
+85,v3-calibrate,absolute trampoline coordinates,pure_acceptance,accept,accept
+86,v3-calibrate,exact bounded-helper success receipt,pure_acceptance,accept,accept
+87,v3-calibrate,duplicate JSON key,pure_negative,refuse,refuse
+88,v3-calibrate,non-JSON NaN,pure_negative,refuse,refuse
+89,v3-calibrate,R metadata is not executable,pure_negative,refuse,refuse
+90,v3-calibrate,translation crosses file-backed extent,pure_negative,refuse,refuse
+91,v3-calibrate,unsigned virtual extent overflow,pure_negative,refuse,refuse
+92,v3-calibrate,ambiguous virtual ownership,pure_negative,refuse,refuse
+93,v3-calibrate,truncated program headers,pure_negative,refuse,refuse
+94,v3-calibrate,non-power-of-two load alignment,pure_negative,refuse,refuse
+95,v3-calibrate,wrong source path,pure_negative,refuse,refuse
+96,v3-calibrate,wrong binary mode,pure_negative,refuse,refuse
+97,v3-calibrate,extra action instruction,pure_negative,refuse,refuse
+98,v3-calibrate,wrong selected length,pure_negative,refuse,refuse
+99,v3-calibrate,wrong selected virtual address,pure_negative,refuse,refuse
+100,v3-calibrate,wrong selected file offset,pure_negative,refuse,refuse
+101,v3-calibrate,boolean instruction length,pure_negative,refuse,refuse
+102,v3-calibrate,wrong patch offset,pure_negative,refuse,refuse
+103,v3-calibrate,wrong patch trampoline,pure_negative,refuse,refuse
+104,v3-calibrate,out-of-order RPC id,pure_negative,refuse,refuse
+105,v3-calibrate,extra patch,pure_negative,refuse,refuse
+106,v3-calibrate,missing patch,pure_negative,refuse,refuse
+107,v3-calibrate,output path escape,pure_negative,refuse,refuse
+108,v3-calibrate,wrong mapping unit,pure_negative,refuse,refuse
+109,v3-calibrate,unknown method,pure_negative,refuse,refuse
+110,v3-calibrate,unknown patch metadata,pure_negative,refuse,refuse
+111,v3-calibrate,RPC incomplete final line,pure_negative,refuse,refuse
+112,v3-calibrate,RPC duplicate JSON id,pure_negative,refuse,refuse
+113,v3-calibrate,partial success,pure_negative,refuse,refuse
+114,v3-calibrate,fallback to B2,pure_negative,refuse,refuse
+115,v3-calibrate,duplicate statistic,pure_negative,refuse,refuse
+116,v3-calibrate,wrong debug PC,pure_negative,refuse,refuse
+117,v3-calibrate,wrong debug length,pure_negative,refuse,refuse
+118,v3-calibrate,wrong debug tactic,pure_negative,refuse,refuse
+119,v3-calibrate,empty trampoline,pure_negative,refuse,refuse
+120,v3-calibrate,duplicate debug site,pure_negative,refuse,refuse
+121,v3-calibrate,warning is not a success,pure_negative,refuse,refuse
+122,v3-calibrate,failed-site diagnostic,pure_negative,refuse,refuse
+123,v3-calibrate,missing success marker,pure_negative,refuse,refuse
+124,v3-calibrate,failure marker,pure_negative,refuse,refuse
+125,v3-calibrate,wrong input size,pure_negative,refuse,refuse
+126,v3-calibrate,helper exit=1,pure_negative,refuse,refuse
+127,v3-calibrate,helper exit=False,pure_negative,refuse,refuse
+128,v3-calibrate,helper wall_timeout=True,pure_negative,refuse,refuse
+129,v3-calibrate,helper unexpected_descendants=[123],pure_negative,refuse,refuse
+130,v3-calibrate,helper absence_proof=None,pure_negative,refuse,refuse
+131,v3-calibrate,helper stdout_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',pure_negative,refuse,refuse
+132,v3-calibrate,helper request_sha256='cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',pure_negative,refuse,refuse
+133,v3-calibrate,helper helper_sha256='dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',pure_negative,refuse,refuse
+134,v3-calibrate,helper aborted='SIGTERM',pure_negative,refuse,refuse
+135,v3-calibrate,helper cleanup_error='deadline',pure_negative,refuse,refuse
+136,v3-calibrate,helper inputs_unchanged=False,pure_negative,refuse,refuse
+137,v3-calibrate,helper elapsed_seconds=inf,pure_negative,refuse,refuse
+138,v3-calibrate,helper elapsed_seconds=-1,pure_negative,refuse,refuse
+139,v3-calibrate,helper elapsed_seconds=51,pure_negative,refuse,refuse
+140,v3-calibrate,malformed cleanup event,pure_negative,refuse,refuse
+141,v3-calibrate,contradictory killed descendant,pure_negative,refuse,refuse
+142,v3-supervisor_calibrate,repeated-signal-receipt-window,mocked_supervisor,1_scenario_6_simulated_deliveries,1_scenario_6_simulated_deliveries
+143,v3-calibrate_prerequisites,exact fresh six/core native/state inventory,pure_acceptance,accept,accept
+144,v3-calibrate_prerequisites,missing fresh state terminal,pure_negative,refuse,refuse
+145,v3-calibrate_prerequisites,wrong completion status,pure_negative,refuse,refuse
+146,v3-calibrate_prerequisites,historical original cohort,pure_negative,refuse,refuse
+147,v3-calibrate_prerequisites,historical selection,pure_negative,refuse,refuse
+148,v3-calibrate_prerequisites,historical emitted cohort,pure_negative,refuse,refuse
+149,v3-calibrate_prerequisites,missing B1 output,pure_negative,refuse,refuse
+150,v3-calibrate_prerequisites,refusal substituted for positive,pure_negative,refuse,refuse
+151,v3-calibrate_prerequisites,missing baseline,pure_negative,refuse,refuse
+152,v3-calibrate_prerequisites,missing native execution,pure_negative,refuse,refuse
+153,v3-calibrate_prerequisites,missing state trace,pure_negative,refuse,refuse
+154,v3-calibrate_prerequisites,missing state point,pure_negative,refuse,refuse
+155,v3-calibrate_prerequisites,missing hook witness,pure_negative,refuse,refuse
+156,v3-calibrate_prerequisites,missing file page,pure_negative,refuse,refuse
+157,v3-calibrate_prerequisites,missing original state phase,pure_negative,refuse,refuse
+158,v3-calibrate_prerequisites,missing capture file,pure_negative,refuse,refuse
+159,v3-calibrate_prerequisites,missing capture directory,pure_negative,refuse,refuse
+160,v3-calibrate_prerequisites,full qualification claimed,pure_negative,refuse,refuse
+161,v3-calibrate_prerequisites,backend ABI relabelled resolved,pure_negative,refuse,refuse
+162,v3-calibrate_prerequisites,E9 native enabled,pure_negative,refuse,refuse
+163,v3-calibrate-common,original-relocation-unstripped-pie,pure_acceptance,accept,accept
+164,v3-calibrate-common,old-structure-only-unstripped-pie,pure_acceptance,accept,accept
+165,v3-calibrate-common,original-relocation-unstripped-exec,pure_acceptance,accept,accept
+166,v3-calibrate-common,old-structure-only-unstripped-exec,pure_acceptance,accept,accept
+167,v3-calibrate-common,original-relocation-unstripped-libcarrierfixture.so,pure_acceptance,accept,accept
+168,v3-calibrate-common,old-structure-only-unstripped-libcarrierfixture.so,pure_acceptance,accept,accept
+169,v3-calibrate-common,original-relocation-stripped-pie,pure_acceptance,accept,accept
+170,v3-calibrate-common,old-structure-only-stripped-pie,pure_acceptance,accept,accept
+171,v3-calibrate-common,original-relocation-stripped-exec,pure_acceptance,accept,accept
+172,v3-calibrate-common,old-structure-only-stripped-exec,pure_acceptance,accept,accept
+173,v3-calibrate-common,original-relocation-stripped-libcarrierfixture.so,pure_acceptance,accept,accept
+174,v3-calibrate-common,old-structure-only-stripped-libcarrierfixture.so,pure_acceptance,accept,accept
+175,v3-calibrate-common,exact-original-indirect-definition,pure_acceptance,accept,accept
+176,v3-calibrate-common,checked-module-bias,pure_acceptance,accept,accept
+177,v3-calibrate-common,complete-original-source,pure_acceptance,accept,accept
+178,v3-calibrate-common,unoccupied-generated-page,pure_acceptance,accept,accept
+179,v3-calibrate-common,exact-same-module-PROT_NONE-gap,pure_acceptance,accept,accept
+180,v3-calibrate-common,relocation-writes-selected-code,pure_negative,refuse,refuse
+181,v3-calibrate-common,unknown-relocation-width,pure_negative,refuse,refuse
+182,v3-calibrate-common,wrong-referenced-symbol,pure_negative,refuse,refuse
+183,v3-calibrate-common,wrong-addend,pure_negative,refuse,refuse
+184,v3-calibrate-common,eight-byte-write-crosses-owner,pure_negative,refuse,refuse
+185,v3-calibrate-common,explicit-generated-dependency-write,pure_negative,refuse,refuse
+186,v3-calibrate-common,changed-indirect-native-body,pure_negative,refuse,refuse
+187,v3-calibrate-common,wrong-module-path,pure_negative,refuse,refuse
+188,v3-calibrate-common,wrong-mount-device,pure_negative,refuse,refuse
+189,v3-calibrate-common,wrong-file-inode,pure_negative,refuse,refuse
+190,v3-calibrate-common,readable-reservation,pure_negative,refuse,refuse
+191,v3-calibrate-common,writable-reservation,pure_negative,refuse,refuse
+192,v3-calibrate-common,wrong-file-offset,pure_negative,refuse,refuse
+193,v3-calibrate-common,partial-reservation,pure_negative,refuse,refuse
+194,v3-calibrate-common,reservation-outside-module,pure_negative,refuse,refuse
+195,v3-calibrate-common,duplicate-reservation-owner,pure_negative,refuse,refuse
+196,v3-calibrate-common,reservation-overlaps-real-LOAD,pure_negative,refuse,refuse
+197,v3-calibrate-common,wrong-original-source-offset,pure_negative,refuse,refuse
+198,v3-calibrate-common,ambiguous-module-bias,pure_negative,refuse,refuse
+199,v3-calibrate-sparse,exact-compact,pure_acceptance,accept,accept
+200,v3-calibrate-sparse,exact-sparse-exec,pure_acceptance,accept,accept
+201,v3-calibrate-sparse,sparse-exact-40KiB-budget,pure_acceptance,accept,accept
+202,v3-calibrate-sparse,exact-common-bias-two-roots,pure_acceptance,accept,accept
+203,v3-calibrate-sparse,unknown-kind,pure_negative,refuse,refuse
+204,v3-calibrate-sparse,wrong-compact-base,pure_negative,refuse,refuse
+205,v3-calibrate-sparse,wrong-compact-end,pure_negative,refuse,refuse
+206,v3-calibrate-sparse,wrong-source-page,pure_negative,refuse,refuse
+207,v3-calibrate-sparse,wrong-generated-PC,pure_negative,refuse,refuse
+208,v3-calibrate-sparse,wrong-backing-offset,pure_negative,refuse,refuse
+209,v3-calibrate-sparse,unaligned-source,pure_negative,refuse,refuse
+210,v3-calibrate-sparse,zero-root-budget,pure_negative,refuse,refuse
+211,v3-calibrate-sparse,one-root-budget-for-EXEC,pure_negative,refuse,refuse
+212,v3-calibrate-sparse,root-budget-above-contract,pure_negative,refuse,refuse
+213,v3-calibrate-sparse,zero-byte-budget,pure_negative,refuse,refuse
+214,v3-calibrate-sparse,one-byte-below-required-storage,pure_negative,refuse,refuse
+215,v3-calibrate-sparse,byte-budget-above-contract,pure_negative,refuse,refuse
+216,v3-calibrate-sparse,actual-address-underflow,pure_negative,refuse,refuse
+217,v3-calibrate-sparse,actual-address-overflow,pure_negative,refuse,refuse
+218,v3-calibrate-sparse,noncanonical-actual-address,pure_negative,refuse,refuse
+219,v3-calibrate-sparse,overlapping-acquisition-roots,pure_negative,refuse,refuse
+220,v3-calibrate-sparse,actual-aggregate-budget,pure_negative,refuse,refuse
+221,v3-calibrate-ledgers,cases-exact-ordered-schema,pure_acceptance,accept,accept
+222,v3-calibrate-ledgers,pages-exact-ordered-schema,pure_acceptance,accept,accept
+223,v3-calibrate-ledgers,ownership-exact-ordered-schema,pure_acceptance,accept,accept
+224,v3-calibrate-ledgers,cases-duplicate-leading-header-conflicting-value,pure_negative,refuse,refuse
+225,v3-calibrate-ledgers,cases-duplicate-trailing-header,pure_negative,refuse,refuse
+226,v3-calibrate-ledgers,cases-reordered-header,pure_negative,refuse,refuse
+227,v3-calibrate-ledgers,cases-missing-header,pure_negative,refuse,refuse
+228,v3-calibrate-ledgers,cases-extra-header,pure_negative,refuse,refuse
+229,v3-calibrate-ledgers,cases-missing-row-cell,pure_negative,refuse,refuse
+230,v3-calibrate-ledgers,cases-extra-row-cell,pure_negative,refuse,refuse
+231,v3-calibrate-ledgers,pages-duplicate-leading-header-conflicting-value,pure_negative,refuse,refuse
+232,v3-calibrate-ledgers,pages-duplicate-trailing-header,pure_negative,refuse,refuse
+233,v3-calibrate-ledgers,pages-reordered-header,pure_negative,refuse,refuse
+234,v3-calibrate-ledgers,pages-missing-header,pure_negative,refuse,refuse
+235,v3-calibrate-ledgers,pages-extra-header,pure_negative,refuse,refuse
+236,v3-calibrate-ledgers,pages-missing-row-cell,pure_negative,refuse,refuse
+237,v3-calibrate-ledgers,pages-extra-row-cell,pure_negative,refuse,refuse
+238,v3-calibrate-ledgers,ownership-duplicate-leading-header-conflicting-value,pure_negative,refuse,refuse
+239,v3-calibrate-ledgers,ownership-duplicate-trailing-header,pure_negative,refuse,refuse
+240,v3-calibrate-ledgers,ownership-reordered-header,pure_negative,refuse,refuse
+241,v3-calibrate-ledgers,ownership-missing-header,pure_negative,refuse,refuse
+242,v3-calibrate-ledgers,ownership-extra-header,pure_negative,refuse,refuse
+243,v3-calibrate-ledgers,ownership-missing-row-cell,pure_negative,refuse,refuse
+244,v3-calibrate-ledgers,ownership-extra-row-cell,pure_negative,refuse,refuse
+245,v3-state-identity-calibrations,distinct-stat-and-mount-device-domains,pure_acceptance,accept,accept
+246,v3-state-identity-calibrations,same-stat-and-mount-device-domain,pure_acceptance,accept,accept
+247,v3-state-identity-calibrations,wrong_mount_id,pure_negative,refuse,refuse
+248,v3-state-identity-calibrations,wrong_mount_device,pure_negative,refuse,refuse
+249,v3-state-identity-calibrations,wrong_fd_inode,pure_negative,refuse,refuse
+250,v3-state-identity-calibrations,wrong_stat_device,pure_negative,refuse,refuse
+251,v3-state-identity-calibrations,wrong_stat_inode,pure_negative,refuse,refuse
+252,v3-state-identity-calibrations,wrong_file_size,pure_negative,refuse,refuse
+253,v3-state-identity-calibrations,wrong_digest,pure_negative,refuse,refuse
+254,v3-state-identity-calibrations,wrong_fd_path,pure_negative,refuse,refuse
+255,v3-state-identity-calibrations,wrong_mountpoint,pure_negative,refuse,refuse
+256,v3-state-identity-calibrations,missing_mount,pure_negative,refuse,refuse
+257,v3-state-identity-calibrations,duplicate_mount,pure_negative,refuse,refuse
+258,v3-state-identity-calibrations,malformed_mount,pure_negative,refuse,refuse
+259,v3-state-identity-calibrations,duplicate_fd_mount_id,pure_negative,refuse,refuse
+260,v3-state-identity-calibrations,missing_fd_mount_id,pure_negative,refuse,refuse
+261,v3-state-identity-calibrations,malformed_fd_field,pure_negative,refuse,refuse
+262,v3-state-identity-calibrations,wrong_vma_device,pure_negative,refuse,refuse
+263,v3-state-identity-calibrations,wrong_vma_inode,pure_negative,refuse,refuse
+264,v3-unstripped-pie-backend,unstripped-pie,emitted_site,exact_B1_MOV5_passthru,exact_B1_MOV5_passthru
+265,v3-unstripped-exec-backend,unstripped-exec,emitted_site,exact_B1_MOV5_passthru,exact_B1_MOV5_passthru
+266,v3-unstripped-libcarrierfixture.so-backend,unstripped-libcarrierfixture.so,emitted_site,exact_B1_MOV5_passthru,exact_B1_MOV5_passthru
+267,v3-stripped-pie-backend,stripped-pie,emitted_site,exact_B1_MOV5_passthru,exact_B1_MOV5_passthru
+268,v3-stripped-exec-backend,stripped-exec,emitted_site,exact_B1_MOV5_passthru,exact_B1_MOV5_passthru
+269,v3-stripped-libcarrierfixture.so-backend,stripped-libcarrierfixture.so,emitted_site,exact_B1_MOV5_passthru,exact_B1_MOV5_passthru
+270,v3-baseline-unstripped-pie,baseline-unstripped-pie,OS_loader_baseline,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+271,v3-baseline-unstripped-exec,baseline-unstripped-exec,OS_loader_baseline,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+272,v3-native-unstripped-both-pie-0,native-unstripped-both-pie-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+273,v3-native-unstripped-both-pie-1,native-unstripped-both-pie-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+274,v3-native-unstripped-both-pie-2,native-unstripped-both-pie-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+275,v3-native-unstripped-both-exec-0,native-unstripped-both-exec-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+276,v3-native-unstripped-both-exec-1,native-unstripped-both-exec-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+277,v3-native-unstripped-both-exec-2,native-unstripped-both-exec-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+278,v3-native-unstripped-main-only-pie-0,native-unstripped-main-only-pie-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+279,v3-native-unstripped-main-only-pie-1,native-unstripped-main-only-pie-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+280,v3-native-unstripped-main-only-pie-2,native-unstripped-main-only-pie-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+281,v3-native-unstripped-main-only-exec-0,native-unstripped-main-only-exec-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+282,v3-native-unstripped-main-only-exec-1,native-unstripped-main-only-exec-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+283,v3-native-unstripped-main-only-exec-2,native-unstripped-main-only-exec-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+284,v3-native-unstripped-library-only-pie-0,native-unstripped-library-only-pie-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+285,v3-native-unstripped-library-only-pie-1,native-unstripped-library-only-pie-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+286,v3-native-unstripped-library-only-pie-2,native-unstripped-library-only-pie-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+287,v3-native-unstripped-library-only-exec-0,native-unstripped-library-only-exec-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+288,v3-native-unstripped-library-only-exec-1,native-unstripped-library-only-exec-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+289,v3-native-unstripped-library-only-exec-2,native-unstripped-library-only-exec-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+290,v3-baseline-stripped-pie,baseline-stripped-pie,OS_loader_baseline,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+291,v3-baseline-stripped-exec,baseline-stripped-exec,OS_loader_baseline,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+292,v3-native-stripped-both-pie-0,native-stripped-both-pie-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+293,v3-native-stripped-both-pie-1,native-stripped-both-pie-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+294,v3-native-stripped-both-pie-2,native-stripped-both-pie-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+295,v3-native-stripped-both-exec-0,native-stripped-both-exec-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+296,v3-native-stripped-both-exec-1,native-stripped-both-exec-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+297,v3-native-stripped-both-exec-2,native-stripped-both-exec-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+298,v3-native-stripped-main-only-pie-0,native-stripped-main-only-pie-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+299,v3-native-stripped-main-only-pie-1,native-stripped-main-only-pie-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+300,v3-native-stripped-main-only-pie-2,native-stripped-main-only-pie-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+301,v3-native-stripped-main-only-exec-0,native-stripped-main-only-exec-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+302,v3-native-stripped-main-only-exec-1,native-stripped-main-only-exec-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+303,v3-native-stripped-main-only-exec-2,native-stripped-main-only-exec-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+304,v3-native-stripped-library-only-pie-0,native-stripped-library-only-pie-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+305,v3-native-stripped-library-only-pie-1,native-stripped-library-only-pie-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+306,v3-native-stripped-library-only-pie-2,native-stripped-library-only-pie-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+307,v3-native-stripped-library-only-exec-0,native-stripped-library-only-exec-0,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+308,v3-native-stripped-library-only-exec-1,native-stripped-library-only-exec-1,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+309,v3-native-stripped-library-only-exec-2,native-stripped-library-only-exec-2,OS_loader_rewritten,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap,exit0_exact_16byte_stdout_empty_stderr_owned_bootstrap
+310,v4-native,unstripped-pie/bias-0/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+311,v4-native,unstripped-pie/bias-0/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+312,v4-native,unstripped-pie/bias-0/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+313,v4-native,unstripped-pie/bias-0/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+314,v4-native,unstripped-pie/bias-0/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+315,v4-native,unstripped-pie/bias-0/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+316,v4-native,unstripped-pie/bias-0/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+317,v4-native,unstripped-pie/bias-0/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+318,v4-native,unstripped-pie/bias-0/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+319,v4-native,unstripped-pie/bias-0/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+320,v4-native,unstripped-pie/bias-0/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+321,v4-native,unstripped-pie/bias-0/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+322,v4-native,unstripped-pie/bias-1/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+323,v4-native,unstripped-pie/bias-1/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+324,v4-native,unstripped-pie/bias-1/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+325,v4-native,unstripped-pie/bias-1/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+326,v4-native,unstripped-pie/bias-1/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+327,v4-native,unstripped-pie/bias-1/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+328,v4-native,unstripped-pie/bias-1/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+329,v4-native,unstripped-pie/bias-1/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+330,v4-native,unstripped-pie/bias-1/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+331,v4-native,unstripped-pie/bias-1/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+332,v4-native,unstripped-pie/bias-1/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+333,v4-native,unstripped-pie/bias-1/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+334,v4-native,unstripped-exec/bias-0/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+335,v4-native,unstripped-exec/bias-0/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+336,v4-native,unstripped-exec/bias-0/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+337,v4-native,unstripped-exec/bias-0/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+338,v4-native,unstripped-exec/bias-0/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+339,v4-native,unstripped-exec/bias-0/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+340,v4-native,unstripped-exec/bias-0/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+341,v4-native,unstripped-exec/bias-0/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+342,v4-native,unstripped-exec/bias-0/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+343,v4-native,unstripped-exec/bias-0/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+344,v4-native,unstripped-exec/bias-0/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+345,v4-native,unstripped-exec/bias-0/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+346,v4-native,unstripped-exec/bias-1/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+347,v4-native,unstripped-exec/bias-1/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+348,v4-native,unstripped-exec/bias-1/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+349,v4-native,unstripped-exec/bias-1/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+350,v4-native,unstripped-exec/bias-1/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+351,v4-native,unstripped-exec/bias-1/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+352,v4-native,unstripped-exec/bias-1/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+353,v4-native,unstripped-exec/bias-1/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+354,v4-native,unstripped-exec/bias-1/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+355,v4-native,unstripped-exec/bias-1/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+356,v4-native,unstripped-exec/bias-1/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+357,v4-native,unstripped-exec/bias-1/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+358,v4-native,unstripped-libcarrierfixture.so/bias-0/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+359,v4-native,unstripped-libcarrierfixture.so/bias-0/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+360,v4-native,unstripped-libcarrierfixture.so/bias-0/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+361,v4-native,unstripped-libcarrierfixture.so/bias-0/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+362,v4-native,unstripped-libcarrierfixture.so/bias-0/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+363,v4-native,unstripped-libcarrierfixture.so/bias-0/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+364,v4-native,unstripped-libcarrierfixture.so/bias-0/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+365,v4-native,unstripped-libcarrierfixture.so/bias-0/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+366,v4-native,unstripped-libcarrierfixture.so/bias-0/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+367,v4-native,unstripped-libcarrierfixture.so/bias-0/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+368,v4-native,unstripped-libcarrierfixture.so/bias-0/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+369,v4-native,unstripped-libcarrierfixture.so/bias-0/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+370,v4-native,unstripped-libcarrierfixture.so/bias-1/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+371,v4-native,unstripped-libcarrierfixture.so/bias-1/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+372,v4-native,unstripped-libcarrierfixture.so/bias-1/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+373,v4-native,unstripped-libcarrierfixture.so/bias-1/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+374,v4-native,unstripped-libcarrierfixture.so/bias-1/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+375,v4-native,unstripped-libcarrierfixture.so/bias-1/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+376,v4-native,unstripped-libcarrierfixture.so/bias-1/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+377,v4-native,unstripped-libcarrierfixture.so/bias-1/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+378,v4-native,unstripped-libcarrierfixture.so/bias-1/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+379,v4-native,unstripped-libcarrierfixture.so/bias-1/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+380,v4-native,unstripped-libcarrierfixture.so/bias-1/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+381,v4-native,unstripped-libcarrierfixture.so/bias-1/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+382,v4-native,stripped-pie/bias-0/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+383,v4-native,stripped-pie/bias-0/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+384,v4-native,stripped-pie/bias-0/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+385,v4-native,stripped-pie/bias-0/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+386,v4-native,stripped-pie/bias-0/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+387,v4-native,stripped-pie/bias-0/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+388,v4-native,stripped-pie/bias-0/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+389,v4-native,stripped-pie/bias-0/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+390,v4-native,stripped-pie/bias-0/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+391,v4-native,stripped-pie/bias-0/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+392,v4-native,stripped-pie/bias-0/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+393,v4-native,stripped-pie/bias-0/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+394,v4-native,stripped-pie/bias-1/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+395,v4-native,stripped-pie/bias-1/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+396,v4-native,stripped-pie/bias-1/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+397,v4-native,stripped-pie/bias-1/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+398,v4-native,stripped-pie/bias-1/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+399,v4-native,stripped-pie/bias-1/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+400,v4-native,stripped-pie/bias-1/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+401,v4-native,stripped-pie/bias-1/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+402,v4-native,stripped-pie/bias-1/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+403,v4-native,stripped-pie/bias-1/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+404,v4-native,stripped-pie/bias-1/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+405,v4-native,stripped-pie/bias-1/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+406,v4-native,stripped-exec/bias-0/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+407,v4-native,stripped-exec/bias-0/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+408,v4-native,stripped-exec/bias-0/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+409,v4-native,stripped-exec/bias-0/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+410,v4-native,stripped-exec/bias-0/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+411,v4-native,stripped-exec/bias-0/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+412,v4-native,stripped-exec/bias-0/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+413,v4-native,stripped-exec/bias-0/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+414,v4-native,stripped-exec/bias-0/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+415,v4-native,stripped-exec/bias-0/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+416,v4-native,stripped-exec/bias-0/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+417,v4-native,stripped-exec/bias-0/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+418,v4-native,stripped-exec/bias-1/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+419,v4-native,stripped-exec/bias-1/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+420,v4-native,stripped-exec/bias-1/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+421,v4-native,stripped-exec/bias-1/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+422,v4-native,stripped-exec/bias-1/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+423,v4-native,stripped-exec/bias-1/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+424,v4-native,stripped-exec/bias-1/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+425,v4-native,stripped-exec/bias-1/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+426,v4-native,stripped-exec/bias-1/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+427,v4-native,stripped-exec/bias-1/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+428,v4-native,stripped-exec/bias-1/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+429,v4-native,stripped-exec/bias-1/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+430,v4-native,stripped-libcarrierfixture.so/bias-0/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+431,v4-native,stripped-libcarrierfixture.so/bias-0/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+432,v4-native,stripped-libcarrierfixture.so/bias-0/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+433,v4-native,stripped-libcarrierfixture.so/bias-0/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+434,v4-native,stripped-libcarrierfixture.so/bias-0/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+435,v4-native,stripped-libcarrierfixture.so/bias-0/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+436,v4-native,stripped-libcarrierfixture.so/bias-0/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+437,v4-native,stripped-libcarrierfixture.so/bias-0/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+438,v4-native,stripped-libcarrierfixture.so/bias-0/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+439,v4-native,stripped-libcarrierfixture.so/bias-0/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+440,v4-native,stripped-libcarrierfixture.so/bias-0/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+441,v4-native,stripped-libcarrierfixture.so/bias-0/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+442,v4-native,stripped-libcarrierfixture.so/bias-1/original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+443,v4-native,stripped-libcarrierfixture.so/bias-1/original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+444,v4-native,stripped-libcarrierfixture.so/bias-1/original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+445,v4-native,stripped-libcarrierfixture.so/bias-1/original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+446,v4-native,stripped-libcarrierfixture.so/bias-1/rewritten/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+447,v4-native,stripped-libcarrierfixture.so/bias-1/rewritten/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+448,v4-native,stripped-libcarrierfixture.so/bias-1/rewritten/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+449,v4-native,stripped-libcarrierfixture.so/bias-1/rewritten/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+450,v4-native,stripped-libcarrierfixture.so/bias-1/restored-original/entry-0-seed-0,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+451,v4-native,stripped-libcarrierfixture.so/bias-1/restored-original/entry-1-seed-0,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+452,v4-native,stripped-libcarrierfixture.so/bias-1/restored-original/entry-0-seed-1,manual_body_state_trace,3_points_zero_hooks_exact_state,3_points_zero_hooks_exact_state
+453,v4-native,stripped-libcarrierfixture.so/bias-1/restored-original/entry-1-seed-1,manual_body_state_trace,2_points_zero_hooks_exact_state,2_points_zero_hooks_exact_state
+454,v4-ownership-controls,compact-roundtrip-and-owned-release,actual_mapping_acceptance,accept,accept
+455,v4-ownership-controls,compact-wrong-file-offset,actual_mapping_negative,refuse_preserve_expected_pages,refuse_preserve_expected_pages
+456,v4-ownership-controls,compact-wrong-permissions,actual_mapping_negative,refuse_preserve_expected_pages,refuse_preserve_expected_pages
+457,v4-ownership-controls,compact-wrong-backing,actual_mapping_negative,refuse_preserve_expected_pages,refuse_preserve_expected_pages
+458,v4-ownership-controls,sparse-exec-roundtrip-and-owned-release,actual_mapping_acceptance,accept,accept
+459,v4-ownership-controls,sparse-exec-wrong-file-offset,actual_mapping_negative,refuse_preserve_expected_pages,refuse_preserve_expected_pages
+460,v4-ownership-controls,sparse-exec-wrong-permissions,actual_mapping_negative,refuse_preserve_expected_pages,refuse_preserve_expected_pages
+461,v4-ownership-controls,sparse-exec-wrong-backing,actual_mapping_negative,refuse_preserve_expected_pages,refuse_preserve_expected_pages
+462,v4-ownership-controls,sparse-restored-readable-image,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+463,v4-ownership-controls,sparse-restored-executable-image,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+464,v4-ownership-controls,occupied-leading-guard,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+465,v4-ownership-controls,occupied-middle,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+466,v4-ownership-controls,occupied-trailing-guard,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+467,v4-ownership-controls,wrong-returned-address,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+468,v4-ownership-controls,post-acquire-phase-failure,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+469,v4-ownership-controls,one-root-budget,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+470,v4-ownership-controls,one-byte-under-budget,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+471,v4-ownership-controls,overlap,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+472,v4-ownership-controls,bias-underflow,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+473,v4-ownership-controls,bias-overflow,actual_mapping_negative,refuse_preserve_ownership,refuse_preserve_ownership
+474,v4-audit-receipt-controls,exact-success-receipt,pure_acceptance,accept,accept
+475,v4-audit-receipt-controls,bool-exit,pure_negative,refuse,refuse
+476,v4-audit-receipt-controls,float-exit,pure_negative,refuse,refuse
+477,v4-audit-receipt-controls,nonzero-exit,pure_negative,refuse,refuse
+478,v4-audit-receipt-controls,missing-exit,pure_negative,refuse,refuse
+479,v4-audit-receipt-controls,wrong-request,pure_negative,refuse,refuse
+480,v4-audit-receipt-controls,wrong-helper,pure_negative,refuse,refuse
+481,v4-audit-receipt-controls,wall-timeout,pure_negative,refuse,refuse
+482,v4-audit-receipt-controls,numeric-wall-timeout,pure_negative,refuse,refuse
+483,v4-audit-receipt-controls,descendant,pure_negative,refuse,refuse
+484,v4-audit-receipt-controls,cleanup-event,pure_negative,refuse,refuse
+485,v4-audit-receipt-controls,cleanup-error,pure_negative,refuse,refuse
+486,v4-audit-receipt-controls,abort,pure_negative,refuse,refuse
+487,v4-audit-receipt-controls,no-absence-proof,pure_negative,refuse,refuse
+488,v4-audit-receipt-controls,wrong-stdout,pure_negative,refuse,refuse
+489,v4-audit-receipt-controls,wrong-stderr,pure_negative,refuse,refuse
+490,v4-audit-receipt-controls,bool-elapsed,pure_negative,refuse,refuse
+491,v4-audit-receipt-controls,negative-elapsed,pure_negative,refuse,refuse
+492,v4-audit-receipt-controls,infinite-elapsed,pure_negative,refuse,refuse
+493,v4-audit-receipt-controls,nan-elapsed,pure_negative,refuse,refuse
+494,v4-audit-receipt-controls,inputs-changed,pure_negative,refuse,refuse
+495,v4-audit-receipt-controls,numeric-inputs-unchanged,pure_negative,refuse,refuse
+496,v4-audit-receipt-controls,missing-field,pure_negative,refuse,refuse
+497,v4-audit-receipt-controls,extra-field,pure_negative,refuse,refuse

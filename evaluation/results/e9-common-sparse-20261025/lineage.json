@@ -1,0 +1,39 @@
+[
+  {
+    "emission_or_native_credit": 0,
+    "failed_command_id": "v1-calibrate-common",
+    "passed_command_ids": [
+      "v1-prepare",
+      "v1-calibrate",
+      "v1-supervisor_calibrate",
+      "v1-calibrate_prerequisites"
+    ],
+    "reason": "EXEC generated page lies below the original contiguous module; original contiguous 1 MiB contract fails. No internal common-group partial acceptance credited.",
+    "source_id": "legacy-v1",
+    "status": "failed_required_calibration"
+  },
+  {
+    "actual_commands": 0,
+    "reason": "Duplicate ledger-header acceptance identified in source review; all held sources remain preserved.",
+    "source_id": "held-v2",
+    "status": "held_unexecuted"
+  },
+  {
+    "failed_command_id": "v3-state-compile",
+    "reason": "The FileHookWitness re-export was unused under deny(warnings); compilation exited 1 before v3 state execution.",
+    "source_id": "sparse-v3",
+    "status": "emission_and_loader_pass_state_compile_failed"
+  },
+  {
+    "carried_prerequisites": [
+      "v3-state-compiler-version",
+      "v3-state-identity-calibrations"
+    ],
+    "delta_sha256": "073ce7cae3ab2f230a9dadc15a14204f968c19e1a8f0907236c267459750e26b",
+    "literal_correction": "hook: None, -> hook: None::<oracle::FileHookWitness>,",
+    "new_compiler_commands": 1,
+    "no_prerequisite_rerun_credit": true,
+    "source_id": "body-v4",
+    "status": "separate_body_oracle_pass"
+  }
+]

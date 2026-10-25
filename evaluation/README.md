@@ -198,3 +198,5 @@ only; per-command tool and hardware provenance limits remain in each record.
 Generated-unwind consumer results and reproduction materials are indexed in [consumer-public.md](consumer-public.md). The index separates historical native/parity results, failed fresh-reproduction prerequisites, workspace regressions and reporting operations; these records do not establish full A2 or general unwind support.
 
 The [frontend model history](frontend-model-private/README.md) preserves the held, failed and completed private ownership/controller model attempts. These snapshots do not establish public-crate qualification, native interval exits or a software preemption clock.
+
+The [A3 common-corpus index](e9-common-public.md) separates historical prototype loader/body evidence from the four completed portable-preparation commands. The portable pipeline remains unrun beyond staging, and full A3 remains open.

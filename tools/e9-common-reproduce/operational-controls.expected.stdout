@@ -1,0 +1,24 @@
+{
+  "accepted": [
+    "exact-operational-owners",
+    "movable-mandatory-nonconsumed-evidence",
+    "fixed-lookup-and-symlink-target"
+  ],
+  "refused": [
+    "same-bytes-wrong-config-owner",
+    "same-bytes-wrong-python-owner",
+    "same-members-wrong-config-directory",
+    "same-bytes-retargeted-config-symlink",
+    "missing-operational-owner",
+    "extra-operational-owner",
+    "missing-runtime-classification",
+    "overlapping-runtime-classification",
+    "unproven-resolved-owner",
+    "evidence-classification-claims-consumption"
+  ],
+  "acceptances": 3,
+  "refusals": 10,
+  "process_launches": 0,
+  "native_executions": 0,
+  "signal_deliveries": 0
+}
