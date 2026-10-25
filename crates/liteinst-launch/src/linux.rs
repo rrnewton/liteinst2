@@ -8,6 +8,9 @@ use std::os::unix::fs::OpenOptionsExt;
 use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant};
 
+mod remote;
+pub use remote::*;
+
 /// Largest permitted original-memory snapshot.
 pub const MAX_MEMORY_READ: usize = 64 * 1024;
 /// Largest accepted launch timeout.
@@ -100,6 +103,12 @@ macro_rules! registers {
         impl From<libc::user_regs_struct> for RegisterSnapshot {
             fn from(raw: libc::user_regs_struct) -> Self {
                 Self { $($field: raw.$field,)+ }
+            }
+        }
+
+        impl From<RegisterSnapshot> for libc::user_regs_struct {
+            fn from(snapshot: RegisterSnapshot) -> Self {
+                Self { $($field: snapshot.$field,)+ }
             }
         }
     };
@@ -256,8 +265,9 @@ impl Drop for ChildOwner {
 
 /// An owned child stopped before its first original user instruction.
 ///
-/// There is deliberately no resume API. This value is launch evidence, not an
-/// admission or publication capability. Drop kills and reaps the child.
+/// Inspection does not resume the child. Explicit conversion through
+/// [`Self::into_stopped_process`] adds restricted remote control; this
+/// checkpoint alone is not an admission capability. Drop kills and reaps.
 pub struct ExecCheckpoint {
     child: ChildOwner,
     initial_registers: RegisterSnapshot,
