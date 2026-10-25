@@ -30,6 +30,9 @@ commands = [
     ('prefix-oracle', ['cargo', 'test', '--test', 'prefixed_pun_oracle', '--', '--test-threads=1', '--nocapture']),
     ('successor-contract', ['cargo', 'test', '--test', 'successor_eviction_contract', '--', '--test-threads=1', '--nocapture']),
     ('successor-oracle', ['cargo', 'test', '--test', 'successor_eviction_oracle', '--', '--test-threads=1', '--nocapture']),
+    ('neighbor-contract', ['cargo', 'test', '--test', 'neighbor_eviction_contract', '--', '--test-threads=1', '--nocapture']),
+    ('neighbor-oracle', ['cargo', 'test', '--test', 'neighbor_eviction_oracle', '--', '--test-threads=4', '--nocapture']),
+    ('tactic-engine', ['cargo', 'test', '--test', 'tactic_engine', '--', '--test-threads=1', '--nocapture']),
     ('bundle-contract', ['cargo', 'test', '--test', 'bundle_contract', '--', '--test-threads=1', '--nocapture']),
     ('a2-oracle', ['cargo', 'test', '--test', 'a2_oracle', '--', '--test-threads=1', '--nocapture']),
     ('oracle', ['cargo', 'test', '--test', 'quiescent_oracle', '--', '--test-threads=1', '--nocapture']),
@@ -44,7 +47,9 @@ sources = ['Cargo.toml', 'src/lib.rs', 'src/grouping.rs', 'src/eviction.rs',
            'tests/quiescent_oracle.rs', 'tests/support/quiescent_oracle.rs',
            'tests/generalized_pun_contract.rs', 'tests/prefixed_pun_contract.rs',
            'tests/prefixed_pun_oracle.rs', 'tests/successor_eviction_contract.rs',
-           'tests/successor_eviction_oracle.rs']
+           'tests/successor_eviction_oracle.rs', 'src/neighbor.rs', 'src/engine.rs',
+           'tests/neighbor_eviction_contract.rs', 'tests/neighbor_eviction_oracle.rs',
+           'tests/tactic_engine.rs', 'evidence/a2/run-checks.py']
 source_sha256 = {path: hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
                  for path in sources}
 for name, argv in commands:

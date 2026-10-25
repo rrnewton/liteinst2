@@ -85,9 +85,47 @@ calls that never visit the selected hook. Timing measurements are later work.
 T2 currently evicts one successor; recursive eviction chains and shorter victims
 are explicit refusals. The ordinary single-image planner remains available.
 
+`neighbor::plan_neighbor` forces T3. A selected 2–4-byte instruction receives
+EB rel8 to a private relay at V+5 inside a whole 10–15-byte victim at V. The
+victim's first E9 enters its callback-free image; the relay's E9 enters the
+selected hook image. Original victim entries retain their behavior, and both
+whole original instructions, including unchanged tails, remain locked. The
+legal victim-start interval is S−131 through S+124, inclusive. The displacement
+is measured from S+2 to V+5; the two E9 displacements are measured from V+5
+and V+10, respectively.
+
+T3 builds both images from the authenticated original decode. It composes source
+members in descending physical-address order, with later reads authenticating
+the preceding overlay. Both members use the internal Relocation contract;
+the outer PlannedNeighbor and immutable geometry identify the multi-member T3
+tactic. Publication stages both images and uses the existing quiescent bundle
+transaction. Its two edits do not claim single-store atomic publication. The
+source relay is generation-bound plan metadata, not an original legal entry or
+process-lifetime reverse-PC registration. Existing asynchronous signal/unwind
+limitations remain in force.
+
+NeighborSearch independently bounds victim heads and total joint image-placement
+candidate slots. Forced victim selection never substitutes another head.
+Stage-specific attempt records distinguish qualification, victim placement,
+selected placement and composition. Selected fallthrough adds EB, relay E9 and
+a generated continuation transfer; victim fallthrough adds its entry E9 and
+generated continuation. Original taken branches may bypass a continuation.
+
+`engine::plan` provides one bundle result for all five install-once tactics.
+Its preferred order is generalized pun, same-site/upstream relocation, prefixed
+pun, successor eviction and neighbor eviction. A forced policy invokes exactly
+one tactic. Every result pays the bundle budget, including single-image plans;
+leaf successes that fail aggregate limits remain engine failures. The complete
+ordered leaf attempt inventories and winning geometry/cost metrics remain
+inspectable. Selected and victim allocation policies are separate. The outer
+search performs at most five bounded leaf invocations and may repeat original
+validation; it does not claim decode sharing or improved search performance.
+RapidProbe remains the separate exact-byte toggle interface.
+
 A2 is not complete at this foundation. T1 and grouping have forced native and
 architectural-oracle fixtures recorded in `evidence/a2-20261025.md`. T2 qualification is recorded in
-`evidence/a2-successor-20261025.md`. T3, coalesced independent
-probe controls and the generated/sampled campaign remain pending. Generalized
+`evidence/a2-successor-20261025.md`. T3 and unified selection are recorded in
+`evidence/a2-neighbor-20261025.md`. Coalesced independent probe controls,
+classified search termination and the generated/sampled campaign remain pending. Generalized
 puns retain first priority for install-once clients; ordinary relocation precedes
 T1. Concurrent toggle visibility remains A4 work.
