@@ -191,12 +191,17 @@ def cargo_configuration(env):
 
 def command_evidence(command, output, corpus):
     """Retain failure status and sanitized partial observations independently."""
-    if command["id"] == "recorder_tests" and command["status"] == "passed":
+    if command["id"] == "recorder_tests":
         counts = re.findall(r"^Ran (\d+) tests in [\d.]+s$", output, re.MULTILINE)
-        if counts != [str(corpus["recorder_tests"])] or output.rstrip().splitlines()[-1:] != ["OK"]:
-            command.update(parse_error="changed_recorder_test_cohort", status="invalid_evidence")
-        else:
-            command["tests_passed"] = corpus["recorder_tests"]
+        terminal_ok = output.rstrip().splitlines()[-1:] == ["OK"]
+        if len(counts) == 1:
+            command["recorder_observations"] = {"tests_run": int(counts[0]),
+                                                "exact_ok_terminal": terminal_ok}
+        if command["status"] == "passed":
+            if counts != [str(corpus["recorder_tests"])] or not terminal_ok:
+                command.update(parse_error="changed_recorder_test_cohort", status="invalid_evidence")
+            else:
+                command["tests_passed"] = corpus["recorder_tests"]
     if command["id"] not in corpus["harness_test_counts"]:
         return
     command["evidence_status"] = "complete"

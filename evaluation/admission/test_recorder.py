@@ -140,6 +140,16 @@ class RecorderTests(unittest.TestCase):
             self.assertEqual(command["status"], "invalid_evidence")
             self.assertNotIn("tests_passed", command)
 
+    def test_failed_recorder_retains_assertion_observations_without_qualifying_command(self):
+        command = {"id": "recorder_tests", "status": "failed", "exit_code": 0,
+                   "termination": "descendants_after_exit"}
+        corpus = {"recorder_tests": 52, "harness_test_counts": {}}
+        run.command_evidence(command, "Ran 52 tests in 0.1s\n\nOK\n", corpus)
+        self.assertEqual(command["status"], "failed")
+        self.assertEqual(command["recorder_observations"],
+                         {"tests_run": 52, "exact_ok_terminal": True})
+        self.assertNotIn("tests_passed", command)
+
     def test_partial_compile_failure_retains_primary_exit_and_missing_observations(self):
         command = {"id": "workspace_tests", "status": "failed", "exit_code": 101}
         corpus = {"harness_test_counts": {"workspace_tests": {"unit/example/lib":
