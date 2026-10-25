@@ -57,8 +57,11 @@ class RecorderTests(unittest.TestCase):
         with self.temporary() as temporary:
             root = Path(temporary)
             env = {k: v for k, v in os.environ.items() if not k.startswith("GIT_")}
+            env.update(GIT_CONFIG_NOSYSTEM="1", GIT_CONFIG_GLOBAL=os.devnull)
             def git(*args):
-                return subprocess.check_output([run.GIT, *args], cwd=root, env=env,
+                return subprocess.check_output(
+                    [run.GIT, "-c", "maintenance.autoDetach=false", "-c", "gc.autoDetach=false",
+                     "-c", "core.hooksPath=" + str(root / "no-hooks"), *args], cwd=root, env=env,
                                                stderr=subprocess.DEVNULL)
             git("init", "-q")
             (root / "fixture.rs").write_text("original")

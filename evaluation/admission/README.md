@@ -3,7 +3,7 @@
 Run the admission validation protocol from a clean checkout of an exact commit:
 
 ```sh
-python3 evaluation/admission/run.py --expect-revision "$(git rev-parse HEAD)"
+python3 evaluation/admission/run.py --expect-revision "$(/usr/bin/git rev-parse HEAD)"
 ```
 
 The recorded `reproduce` argument vector contains the concrete 40-hex revision.
@@ -12,7 +12,9 @@ x86-64 hardware to reproduce the experiment. The dependency cache must already
 contain Cargo.lock's dependencies: resolution is offline. The protocol uses
 `/usr/bin/git` explicitly for source authentication and the isolated Git fixture,
 recording its version and hash. This avoids ambient Git wrappers that start
-background processes; the same descendant-cleanup requirement still applies. Child ptrace and
+background processes. Automatic Git maintenance runs in the foreground; the isolated
+fixture excludes ambient Git configuration and hooks. The same descendant
+cleanup and hidden-source-edit assertions still apply. Child ptrace and
 child-mm membarrier sync-core must be available; tests fail if requirements are
 missing. Do not use root to turn a failed unprivileged run into a claimed
 unprivileged success. The result records effective-root status, relevant

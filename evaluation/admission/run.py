@@ -52,7 +52,8 @@ def git(*args):
     env = {key: value for key, value in os.environ.items() if not key.startswith("GIT_")}
     return subprocess.check_output(
         [GIT, "--no-replace-objects", "-C", str(ROOT), "--work-tree=" + str(ROOT),
-         "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false", *args],
+         "-c", "core.fsmonitor=false", "-c", "core.untrackedCache=false",
+         "-c", "maintenance.autoDetach=false", "-c", "gc.autoDetach=false", *args],
         cwd=ROOT, env=env, stderr=subprocess.DEVNULL)
 
 
