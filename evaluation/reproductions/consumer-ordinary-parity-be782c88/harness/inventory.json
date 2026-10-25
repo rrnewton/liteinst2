@@ -1,0 +1,670 @@
+{
+  "status": "FIXED_BEFORE_ANY_EXECUTION",
+  "rows": [
+    {
+      "name": "b1_observe_leaf",
+      "shape": "B1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b1_observe_engine",
+      "shape": "B1",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b1_replace_leaf",
+      "shape": "B1",
+      "semantics": "Replace",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b1_replace_engine",
+      "shape": "B1",
+      "semantics": "Replace",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b2_observe_leaf",
+      "shape": "B2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b2_observe_engine",
+      "shape": "B2",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b2_replace_leaf",
+      "shape": "B2",
+      "semantics": "Replace",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b2_replace_engine",
+      "shape": "B2",
+      "semantics": "Replace",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t1_observe_leaf",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t1_observe_engine",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t1_replace_leaf",
+      "shape": "T1",
+      "semantics": "Replace",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t1_replace_engine",
+      "shape": "T1",
+      "semantics": "Replace",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t2_observe_leaf",
+      "shape": "T2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "t2_observe_engine",
+      "shape": "T2",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "t2_replace_leaf",
+      "shape": "T2",
+      "semantics": "Replace",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "t2_replace_engine",
+      "shape": "T2",
+      "semantics": "Replace",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "t3_observe_leaf",
+      "shape": "T3",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "t3_observe_engine",
+      "shape": "T3",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "t3_replace_leaf",
+      "shape": "T3",
+      "semantics": "Replace",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "t3_replace_engine",
+      "shape": "T3",
+      "semantics": "Replace",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "upstream_observe_leaf",
+      "shape": "Upstream",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "upstream_observe_engine",
+      "shape": "Upstream",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "upstream_replace_leaf",
+      "shape": "Upstream",
+      "semantics": "Replace",
+      "api": "Leaf",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "upstream_replace_engine",
+      "shape": "Upstream",
+      "semantics": "Replace",
+      "api": "Engine",
+      "scenario": "Plain",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t1_l2_p1",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Prefix { len: 2, prefixes: 1 }",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t1_l3_p1",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Prefix { len: 3, prefixes: 1 }",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t1_l3_p2",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Prefix { len: 3, prefixes: 2 }",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t1_l4_p1",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Prefix { len: 4, prefixes: 1 }",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t1_l4_p2",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Prefix { len: 4, prefixes: 2 }",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t1_l4_p3",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Prefix { len: 4, prefixes: 3 }",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b2_l1_observe",
+      "shape": "B2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "PunLength(1)",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b2_l1_replace",
+      "shape": "B2",
+      "semantics": "Replace",
+      "api": "Leaf",
+      "scenario": "PunLength(1)",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b2_l2_observe",
+      "shape": "B2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "PunLength(2)",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b2_l2_replace",
+      "shape": "B2",
+      "semantics": "Replace",
+      "api": "Leaf",
+      "scenario": "PunLength(2)",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b2_l4_observe",
+      "shape": "B2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "PunLength(4)",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "b2_l4_replace",
+      "shape": "B2",
+      "semantics": "Replace",
+      "api": "Leaf",
+      "scenario": "PunLength(4)",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "t2_prefix_p1_observe_leaf",
+      "shape": "T2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "T2Prefix",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "t2_prefix_p1_observe_engine",
+      "shape": "T2",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "T2Prefix",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "t2_prefix_p1_replace_leaf",
+      "shape": "T2",
+      "semantics": "Replace",
+      "api": "Leaf",
+      "scenario": "T2Prefix",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "t2_prefix_p1_replace_engine",
+      "shape": "T2",
+      "semantics": "Replace",
+      "api": "Engine",
+      "scenario": "T2Prefix",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "preferred_b1",
+      "shape": "B1",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Preferred",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "preferred_b2",
+      "shape": "B2",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Preferred",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "preferred_t1",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Preferred",
+      "expected": "Success",
+      "images": 1
+    },
+    {
+      "name": "preferred_t2",
+      "shape": "T2",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Preferred",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "preferred_t3",
+      "shape": "T3",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Preferred",
+      "expected": "Success",
+      "images": 2
+    },
+    {
+      "name": "refuse_b1_budget_leaf",
+      "shape": "B1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Budget",
+      "expected": "NoPatchWindow",
+      "images": 0
+    },
+    {
+      "name": "refuse_b1_budget_engine",
+      "shape": "B1",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Budget",
+      "expected": "NoPatchWindow",
+      "images": 0
+    },
+    {
+      "name": "refuse_b2_budget_leaf",
+      "shape": "B2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Budget",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_b2_budget_engine",
+      "shape": "B2",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Budget",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_t1_budget_leaf",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Budget",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_t1_budget_engine",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Budget",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_t2_budget_leaf",
+      "shape": "T2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Budget",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_t2_budget_engine",
+      "shape": "T2",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Budget",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_t3_budget_leaf",
+      "shape": "T3",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Budget",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_t3_budget_engine",
+      "shape": "T3",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Budget",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_b1_incomplete",
+      "shape": "B1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Incomplete",
+      "expected": "UnresolvedEntry",
+      "images": 0
+    },
+    {
+      "name": "refuse_b2_incomplete",
+      "shape": "B2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Incomplete",
+      "expected": "UnresolvedEntry",
+      "images": 0
+    },
+    {
+      "name": "refuse_t1_incomplete",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Incomplete",
+      "expected": "UnresolvedEntry",
+      "images": 0
+    },
+    {
+      "name": "refuse_t2_incomplete",
+      "shape": "T2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Incomplete",
+      "expected": "UnresolvedEntry",
+      "images": 0
+    },
+    {
+      "name": "refuse_t3_incomplete",
+      "shape": "T3",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Incomplete",
+      "expected": "UnresolvedEntry",
+      "images": 0
+    },
+    {
+      "name": "refuse_b1_midpoint",
+      "shape": "B1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Midpoint",
+      "expected": "NotInstructionHead",
+      "images": 0
+    },
+    {
+      "name": "refuse_b2_midpoint",
+      "shape": "B2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Midpoint",
+      "expected": "NotInstructionHead",
+      "images": 0
+    },
+    {
+      "name": "refuse_t1_midpoint",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Midpoint",
+      "expected": "NotInstructionHead",
+      "images": 0
+    },
+    {
+      "name": "refuse_t2_midpoint",
+      "shape": "T2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Midpoint",
+      "expected": "NotInstructionHead",
+      "images": 0
+    },
+    {
+      "name": "refuse_t3_midpoint",
+      "shape": "T3",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "Midpoint",
+      "expected": "NotInstructionHead",
+      "images": 0
+    },
+    {
+      "name": "refuse_b1_aggregate",
+      "shape": "B1",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Aggregate",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_b2_aggregate",
+      "shape": "B2",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Aggregate",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_t1_aggregate",
+      "shape": "T1",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Aggregate",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_t2_aggregate",
+      "shape": "T2",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Aggregate",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_t3_aggregate",
+      "shape": "T3",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "Aggregate",
+      "expected": "AllocationUnavailable",
+      "images": 0
+    },
+    {
+      "name": "refuse_b2_no_substitution",
+      "shape": "B1",
+      "semantics": "Observe",
+      "api": "Engine",
+      "scenario": "NoSubstitute",
+      "expected": "NoPatchWindow",
+      "images": 0
+    },
+    {
+      "name": "refuse_t2_selected_precedence",
+      "shape": "T2",
+      "semantics": "Observe",
+      "api": "Leaf",
+      "scenario": "T2Precedence",
+      "expected": "NoPatchWindow",
+      "images": 0
+    }
+  ],
+  "totals": {
+    "cases": 72,
+    "required_successes": 45,
+    "required_refusals": 27,
+    "images_per_library": 59,
+    "positive_comparator_calibrations": 1,
+    "negative_comparator_calibrations": 11,
+    "shared_observer_bindings_per_library": 45
+  },
+  "source_arenas": {
+    "base": 52776558133248,
+    "stride": 8589934592,
+    "selected_offset": 2147483776,
+    "per_row_disjoint": true
+  },
+  "pointer_normalization": false,
+  "generated_code_execution": false
+}

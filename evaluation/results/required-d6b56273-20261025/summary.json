@@ -1,0 +1,249 @@
+{
+  "cases": [],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "heading": "systematic everytactic",
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "claims_scope": "Workspace regression only; no complete paper claim or new native unwind/tactic/clock qualification.",
+  "cleanup_scope": "Legacy process-group runner; no ECHILD/subreaper claim",
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 1.0667291430290788,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-fmt",
+      "receipt_sha256": "e36348b62d0fb22460a7ba0c53e0b5cbf5fe7131cce64f31d89bb9ce2a9b724e",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 6.828145141014829,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-clippy",
+      "receipt_sha256": "e36348b62d0fb22460a7ba0c53e0b5cbf5fe7131cce64f31d89bb9ce2a9b724e",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "9f378ed72f2f3cf4094b467aabe78965c5e105a31d1b39e02207aca3677112db",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 290.4724890610669,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-test",
+      "receipt_sha256": "e36348b62d0fb22460a7ba0c53e0b5cbf5fe7131cce64f31d89bb9ce2a9b724e",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "cace38ca68696ee1ba0e571912b75b57321cc7a40314f942a5cb130848b54c89",
+      "wall_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 4.523699795128778,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-check",
+      "receipt_sha256": "e36348b62d0fb22460a7ba0c53e0b5cbf5fe7131cce64f31d89bb9ce2a9b724e",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "d864878dd941ad27cfbcf3d20f5869b0b8e0e6f40000332c5907928c34104431",
+      "wall_seconds": 180
+    }
+  ],
+  "complete_A2": false,
+  "complete_A3": false,
+  "complete_A4": false,
+  "complete_A5": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "cpuinfo_sha256": "00696ead7b8e7514dbbe9242d734efb1bbbbeded26d3ac1af847a59be32fcf56",
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "recorded CPU/kernel context before the required runner launch; not continuous attestation",
+    "observation_sha256": "b17d54c5732229bcf359ef1fbeb87fa028e046d05684112b9749a2320fe2f6a4",
+    "observed_at_utc": "2026-10-25T20:32:11.670800+00:00",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "independent_review_binding_sha256": "2202ddfb6ed82ddee3728d8a25ef29ca278eae3d0ad58ec01d1bf76255e88e97",
+  "independent_review_sha256": "012928968a4d97434c56f8cef7ed0489d5b3a359f758a3b49729619012ef876d",
+  "pre_required_context_sha256": "b17d54c5732229bcf359ef1fbeb87fa028e046d05684112b9749a2320fe2f6a4",
+  "preemption_clock_claim": false,
+  "private_capture_manifest_sha256": "d160ca56056330a5a7dcdf858f427644783a32d8cbdfa5f7ce4931f3f13f84c2",
+  "reproduction": {
+    "argv": [
+      "${PYTHON}",
+      "-B",
+      "${REPO}/evaluation/required-gates.py",
+      "--repo",
+      "${REPO}",
+      "--output",
+      "${RAW_PARENT}/required-d6b56273-v1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${RUST_TOOLCHAIN}/bin/rustdoc"
+    },
+    "parent_timeout_seconds": 1000,
+    "runtime_tool_versions_inferred": false
+  },
+  "reproduction_binding_note": "Each placeholder is a distinct literal coordinate binding. RAW_PARENT is the original output parent role; create a fresh corresponding ignored directory for a new run. The entire recorded outer environment is retained.",
+  "reproduction_script": "evaluation/required-gates.py",
+  "reproduction_script_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+  "root_group_counts_sha256": "36af9ecf102802269b91dc86ed6841f00a55c43347fc679c392f9de0f96a3af4",
+  "run_id": "required-d6b56273-20261025",
+  "schema_version": 1,
+  "scope": "Exact merged-workspace regression after merging be782c88 with coordinator main 27df290b. Historical be782 native/unwind/parity and other milestone results remain separate.",
+  "sources": {
+    "exact_revision": {
+      "base_revision": "be782c88f9f30581d67aa43aa20aa0a49062cd69",
+      "clean_tracked": true,
+      "file_count": 349,
+      "git_tree": "c5cabf71ffea54d0e6ee02e2524fc9ee1c2e7b34",
+      "kind": "git_commit",
+      "merge_parents": [
+        "be782c88f9f30581d67aa43aa20aa0a49062cd69",
+        "27df290bd203a8235bb478a210fa700d3b8feaa3"
+      ],
+      "source_tree_sha256": "5862a708a769618ad6c6dfe2e61531c873fc37c2ede2068a8cbd1a428cc0ad76",
+      "tested_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "status": "pass",
+  "suite": "required-workspace-gates",
+  "tested_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tool_selection_note": "The unchanged required runner invokes cargo through PATH and did not record per-command executable hashes or version text. Recorded selection paths do not establish historical executable identity.",
+  "tools": [],
+  "workspace": {
+    "added_groups": 16,
+    "added_passes": 163,
+    "admission_added_passes": 44,
+    "failed": 0,
+    "generated_unwind_models_already_in_inherited_total": 6,
+    "group_inventory_sha256": "c70ce08b505dc9b29c601a119ecae6b12048982afde38451d86e060ce458c03e",
+    "ignored": 4,
+    "inherited_be782_groups": 44,
+    "inherited_be782_passes": 772,
+    "inherited_group_counts_and_printed_test_status_multisets_exact": true,
+    "launch_added_passes": 119,
+    "nested_guard_groups": [
+      {
+        "filtered_each": 189,
+        "owner": "root library",
+        "passes": 2
+      },
+      {
+        "filtered_each": 26,
+        "owner": "controlled oracle",
+        "passes": 3
+      }
+    ],
+    "nested_guard_passes_not_added": 5,
+    "outer_groups": 60,
+    "passed": 935,
+    "preexisting_ignores": [
+      "live_probe_stress_matrix",
+      "patch_latency::patch_activation_latency_benchmark",
+      "probe_overhead_benchmark",
+      "rapid::tests::live::benchmark_single_byte_toggle_latency"
+    ]
+  }
+}

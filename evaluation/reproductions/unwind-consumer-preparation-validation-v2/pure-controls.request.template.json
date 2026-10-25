@@ -1,0 +1,32 @@
+{
+  "argv": [
+    "/usr/bin/python3.9",
+    "-B",
+    "${CASE_ROOT}/positive/repo/evaluation/reproductions/unwind-consumer-env-dependency-v4/calibrate.py",
+    "--adapter",
+    "${CASE_ROOT}/positive/repo/tools/unwind-oracle/adapter.py",
+    "--adapter-sha256",
+    "fd83e351ba6c13f18554f7103aeddf7547175cbfba273a7d89cf5df3e28e7d30",
+    "--cases",
+    "${CASE_ROOT}/positive/repo/evaluation/reproductions/unwind-consumer-env-dependency-v4/cases.json",
+    "--cases-sha256",
+    "6308ed81ba035d1fb6586dc89f43cd5a506e9e08bc885189988795f8a298e95c",
+    "--expected",
+    "${CASE_ROOT}/positive/repo/evaluation/reproductions/unwind-consumer-env-dependency-v4/expected.json",
+    "--expected-sha256",
+    "14a039db5fdc3fb47795dd7f0a2ca1c15a1a6dabbc5881d63d9105b8c97cc9e5",
+    "--self-sha256",
+    "a7187cb187f618e840e9685a00c166d880f67c30b9f867a7c99f717343af664c"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${CASE_ROOT}/positive/repo",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${CASE_ROOT}/positive/repo/ignored/prepared/stderr",
+  "stdout": "${CASE_ROOT}/positive/repo/ignored/prepared/stdout",
+  "wall_seconds": 30
+}

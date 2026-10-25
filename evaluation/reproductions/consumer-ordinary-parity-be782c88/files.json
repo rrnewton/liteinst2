@@ -1,0 +1,18 @@
+{
+  "README.md": "5c69b7b73950d2403aa646b7776d0391c19a1ad6ac8e7a71eac6d7143369fc21",
+  "audit.py": "7cd551d79f006a045ee9755b67bdad785f94357c54ceff0749c49f9abcea525c",
+  "binary-review.template.json": "f899b68a927319007107e03a4f439eb949ad946fa1b6d9a51ddb9a3fc23f574f",
+  "calibrate.py": "85db2a31ab7bee7dad4e95657cf3cdfd3796dde7792811d25394d600f8ecab2b",
+  "controls.json": "b258380106c533077b6b0d0f39b34f6a9c14b7b8c8a40c961459ecdbd65c0cae",
+  "harness/capture.rs": "37ccca7f1b67c3ebf7781d6dd7c8413148d8ea3187045b8bf5de013e7be5f129",
+  "harness/common.rs": "af9eb42a7951ef86e730dfdc998ca24553a924d5c2d43080c23df6185f16095f",
+  "harness/inventory.json": "f83180d458c769fe3ef7dff9d0c4339a7252956660ae54590b28534e4c808a97",
+  "harness/inventory.rs": "3859fd41fae37651af98916782bc48dc53ce8549602f9a77d127d2cbf7f101af",
+  "harness/main.rs": "dd12159d3b6b97f0ee0810dcb5a29510600e819cb8c354c364b058400ed174e3",
+  "launch-contract.json": "702929e1b630457f3cb00e26e2fe132ea6ad05eab84f5b3acf69cf36c3723a29",
+  "old-overlay/Cargo.lock": "8e931862342bf18c3e78658e1cc3e1691d9db3fd7842b97657a521fde996ed88",
+  "old-overlay/Cargo.toml": "278f29cf0f5af3207d5c674e5cbbe074f9d7bc29da51098ebbef5722623b4fe0",
+  "prepare.py": "ec38aaf654ce2104d4beacc384449ec4814fad8f0a4090ab77f928c6d04140f4",
+  "request-templates.json": "ff70150a672023288026511c7fba9f9d51ac130fb8ef0df3e3a6a4efe1ac2a26",
+  "source-inputs.json": "b85c3609194cbe0b1a6ba4433740529495179b497197b15b3ebd6e09956d3d4b"
+}

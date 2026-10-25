@@ -1,0 +1,2011 @@
+[
+  {
+    "executable": null,
+    "features": [
+      "default",
+      "extra_traits",
+      "std"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/build/libc-4f73485da7908c66/build-script-build"
+    ],
+    "fresh": true,
+    "manifest_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.189/Cargo.toml",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.189",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2021",
+      "kind": [
+        "custom-build"
+      ],
+      "name": "build-script-build",
+      "src_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.189/build.rs",
+      "test": false
+    }
+  },
+  {
+    "cfgs": [
+      "freebsd12"
+    ],
+    "env": [],
+    "linked_libs": [],
+    "linked_paths": [],
+    "out_dir": "${REPO}/target/debug/build/libc-7a154e5d1130310e/out",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.189",
+    "reason": "build-script-executed"
+  },
+  {
+    "executable": null,
+    "features": [],
+    "filenames": [
+      "${REPO}/target/debug/deps/libcfg_aliases-664d4d56488eac2b.rlib",
+      "${REPO}/target/debug/deps/libcfg_aliases-664d4d56488eac2b.rmeta"
+    ],
+    "fresh": true,
+    "manifest_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/cfg_aliases-0.2.2/Cargo.toml",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#cfg_aliases@0.2.2",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "lib"
+      ],
+      "doc": true,
+      "doctest": true,
+      "edition": "2018",
+      "kind": [
+        "lib"
+      ],
+      "name": "cfg_aliases",
+      "src_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/cfg_aliases-0.2.2/src/lib.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [],
+    "filenames": [
+      "${REPO}/target/debug/deps/liblazy_static-d2037ab2ef12e903.rmeta"
+    ],
+    "fresh": true,
+    "manifest_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/lazy_static-1.5.0/Cargo.toml",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#lazy_static@1.5.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "lib"
+      ],
+      "doc": true,
+      "doctest": true,
+      "edition": "2015",
+      "kind": [
+        "lib"
+      ],
+      "name": "lazy_static",
+      "src_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/lazy_static-1.5.0/src/lib.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [],
+    "filenames": [
+      "${REPO}/target/debug/deps/libcfg_if-f6c55092bc2054c3.rmeta"
+    ],
+    "fresh": true,
+    "manifest_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/cfg-if-1.0.4/Cargo.toml",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#cfg-if@1.0.4",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "lib"
+      ],
+      "doc": true,
+      "doctest": true,
+      "edition": "2018",
+      "kind": [
+        "lib"
+      ],
+      "name": "cfg_if",
+      "src_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/cfg-if-1.0.4/src/lib.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "default",
+      "extra_traits",
+      "std"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/liblibc-ebcc74a0fd9f07cd.rmeta"
+    ],
+    "fresh": true,
+    "manifest_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.189/Cargo.toml",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#libc@0.2.189",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "lib"
+      ],
+      "doc": true,
+      "doctest": true,
+      "edition": "2021",
+      "kind": [
+        "lib"
+      ],
+      "name": "libc",
+      "src_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/libc-0.2.189/src/lib.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "default",
+      "mman",
+      "process",
+      "signal"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/build/nix-bc42d9c5015e4faa/build-script-build"
+    ],
+    "fresh": true,
+    "manifest_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.31.3/Cargo.toml",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#nix@0.31.3",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2021",
+      "kind": [
+        "custom-build"
+      ],
+      "name": "build-script-build",
+      "src_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.31.3/build.rs",
+      "test": false
+    }
+  },
+  {
+    "executable": null,
+    "features": [],
+    "filenames": [
+      "${REPO}/target/debug/deps/libbitflags-310d0e498bc6a726.rmeta"
+    ],
+    "fresh": true,
+    "manifest_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/bitflags-2.13.1/Cargo.toml",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#bitflags@2.13.1",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "lib"
+      ],
+      "doc": true,
+      "doctest": true,
+      "edition": "2021",
+      "kind": [
+        "lib"
+      ],
+      "name": "bitflags",
+      "src_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/bitflags-2.13.1/src/lib.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "block_encoder",
+      "code_asm",
+      "decoder",
+      "encoder",
+      "instr_info",
+      "lazy_static",
+      "std"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libiced_x86-39983df4843c2ba2.rmeta"
+    ],
+    "fresh": true,
+    "manifest_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/iced-x86-1.21.0/Cargo.toml",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#iced-x86@1.21.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "lib"
+      ],
+      "doc": true,
+      "doctest": true,
+      "edition": "2021",
+      "kind": [
+        "lib"
+      ],
+      "name": "iced_x86",
+      "src_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/iced-x86-1.21.0/src/lib.rs",
+      "test": true
+    }
+  },
+  {
+    "cfgs": [
+      "linux",
+      "linux_android"
+    ],
+    "env": [],
+    "linked_libs": [],
+    "linked_paths": [],
+    "out_dir": "${REPO}/target/debug/build/nix-58b1164ef8995353/out",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#nix@0.31.3",
+    "reason": "build-script-executed"
+  },
+  {
+    "executable": null,
+    "features": [],
+    "filenames": [
+      "${REPO}/target/debug/deps/libmemmap2-47217e3af7be6fe9.rmeta"
+    ],
+    "fresh": true,
+    "manifest_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/memmap2-0.9.11/Cargo.toml",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#memmap2@0.9.11",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "lib"
+      ],
+      "doc": true,
+      "doctest": true,
+      "edition": "2021",
+      "kind": [
+        "lib"
+      ],
+      "name": "memmap2",
+      "src_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/memmap2-0.9.11/src/lib.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "default",
+      "mman",
+      "process",
+      "signal"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libnix-5be42ec1a0937a9c.rmeta"
+    ],
+    "fresh": true,
+    "manifest_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.31.3/Cargo.toml",
+    "package_id": "registry+https://github.com/rust-lang/crates.io-index#nix@0.31.3",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "lib"
+      ],
+      "doc": true,
+      "doctest": true,
+      "edition": "2021",
+      "kind": [
+        "lib"
+      ],
+      "name": "nix",
+      "src_path": "${CARGO_HOME}/registry/src/index.crates.io-1949cf8c6b5b557f/nix-0.31.3/src/lib.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libliteinst2-befeb7da8fad6735.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "lib"
+      ],
+      "doc": true,
+      "doctest": true,
+      "edition": "2024",
+      "kind": [
+        "lib"
+      ],
+      "name": "liteinst2",
+      "src_path": "${REPO}/src/lib.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libconcurrent_overlap-7e4550d8fab94081.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "concurrent_overlap",
+      "src_path": "${REPO}/tests/concurrent_overlap.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libcontrolled_coalescing_contract-960e266d5db37c4d.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "controlled_coalescing_contract",
+      "src_path": "${REPO}/tests/controlled_coalescing_contract.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/examples/libpreload_consumer-7b947f3db3a66129.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "cdylib"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "example"
+      ],
+      "name": "preload_consumer",
+      "src_path": "${REPO}/examples/preload_consumer.rs",
+      "test": false
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libentry_backedge-10ccad8e5337050e.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "entry_backedge",
+      "src_path": "${REPO}/tests/entry_backedge.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/examples/libsaved_pkru_probe-5fe4503e364de3df.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "example"
+      ],
+      "name": "saved_pkru_probe",
+      "required-features": [
+        "saved-pkru-probe"
+      ],
+      "src_path": "${REPO}/examples/saved_pkru_probe.rs",
+      "test": false
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libeviction_chain_extension_driver-9f77aba94fde0262.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "bin"
+      ],
+      "name": "eviction-chain-extension-driver",
+      "src_path": "${REPO}/tests/support/eviction_chain_extension_driver.rs",
+      "test": false
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libquiescent_oracle-727cda7bde8461f7.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "quiescent_oracle",
+      "src_path": "${REPO}/tests/quiescent_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libsuccessor_eviction_oracle_driver-7e19284861044694.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "bin"
+      ],
+      "name": "successor-eviction-oracle-driver",
+      "src_path": "${REPO}/tests/support/successor_eviction_driver.rs",
+      "test": false
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libliteinst2-b30737a51a91c8d5.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "lib"
+      ],
+      "doc": true,
+      "doctest": true,
+      "edition": "2024",
+      "kind": [
+        "lib"
+      ],
+      "name": "liteinst2",
+      "src_path": "${REPO}/src/lib.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libprefixed_pun_oracle-2eda2c07594f0b61.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "prefixed_pun_oracle",
+      "src_path": "${REPO}/tests/prefixed_pun_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/examples/libreplace_first-3a9cec01efd31502.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "example"
+      ],
+      "name": "replace_first",
+      "src_path": "${REPO}/examples/replace_first.rs",
+      "test": false
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libprefixed_pun_contract-efd2e4adff54e04f.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "prefixed_pun_contract",
+      "src_path": "${REPO}/tests/prefixed_pun_contract.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libboundary_signal_oracle_driver-4e61540e54edd801.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "bin"
+      ],
+      "name": "boundary-signal-oracle-driver",
+      "src_path": "${REPO}/tests/support/boundary_signal_driver.rs",
+      "test": false
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libquiescent_contract-32b54122cabccfe3.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "quiescent_contract",
+      "src_path": "${REPO}/tests/quiescent_contract.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libsearch_eviction_evidence-4960294f9290ff41.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "search_eviction_evidence",
+      "src_path": "${REPO}/tests/search_eviction_evidence.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libtrampoline_tail-fc8885298ce44d56.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "trampoline_tail",
+      "src_path": "${REPO}/tests/trampoline_tail.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libeviction_chain_oracle-1f911bab395679bc.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "eviction_chain_oracle",
+      "src_path": "${REPO}/tests/eviction_chain_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libliteinst2_arena_fork_fixture-a874dd1fc403e094.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": true,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "bin"
+      ],
+      "name": "liteinst2-arena-fork-fixture",
+      "src_path": "${REPO}/tests/support/arena_fork_fixture.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libeviction_chain_contract-88cc54182e0ebcfd.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "eviction_chain_contract",
+      "src_path": "${REPO}/tests/eviction_chain_contract.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/liba2_oracle-aeaa1d938da6bf97.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "a2_oracle",
+      "src_path": "${REPO}/tests/a2_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libliteinst2_arena_fork_fixture-f36323f8dc0a17aa.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": true,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "bin"
+      ],
+      "name": "liteinst2-arena-fork-fixture",
+      "src_path": "${REPO}/tests/support/arena_fork_fixture.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libeviction_chain_extensions-442aa29a0c808d3b.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "eviction_chain_extensions",
+      "src_path": "${REPO}/tests/eviction_chain_extensions.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libcall_return_oracle-a452e6b996702a10.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "call_return_oracle",
+      "src_path": "${REPO}/tests/call_return_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libsearch_evidence-779dc52f79be6a75.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "search_evidence",
+      "src_path": "${REPO}/tests/search_evidence.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libboundary_signal_oracle-46f8bc54307a7b64.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "boundary_signal_oracle",
+      "src_path": "${REPO}/tests/boundary_signal_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libsigtrap_origin-fd7b38ca64790a1f.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "sigtrap_origin",
+      "src_path": "${REPO}/tests/sigtrap_origin.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/liboverlap_concurrency-e48fc947b3e666d1.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "overlap_concurrency",
+      "src_path": "${REPO}/tests/overlap_concurrency.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libstress-ea23f83e00818125.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "stress",
+      "src_path": "${REPO}/tests/stress.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libreplace_first_cet-d5cb4bc41c2eed88.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "replace_first_cet",
+      "src_path": "${REPO}/tests/replace_first_cet.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libneighbor_eviction_oracle-941a0437d294e5b4.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "neighbor_eviction_oracle",
+      "src_path": "${REPO}/tests/neighbor_eviction_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libsuccessor_eviction_contract-09948ff2310ee8c8.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "successor_eviction_contract",
+      "src_path": "${REPO}/tests/successor_eviction_contract.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libarena_fork-0f573934420318da.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "arena_fork",
+      "src_path": "${REPO}/tests/arena_fork.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libneighbor_eviction_contract-6597672d2c60771a.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "neighbor_eviction_contract",
+      "src_path": "${REPO}/tests/neighbor_eviction_contract.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libsync_core_capability-4ca6c14a85efc8e6.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "sync_core_capability",
+      "src_path": "${REPO}/tests/sync_core_capability.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libsync_core_capability_driver-50da672a94120b89.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "bin"
+      ],
+      "name": "sync-core-capability-driver",
+      "src_path": "${REPO}/tests/support/sync_core_driver.rs",
+      "test": false
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libtactic_engine-6dec213049b0fe15.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "tactic_engine",
+      "src_path": "${REPO}/tests/tactic_engine.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libsuccessor_eviction_oracle-508671460196cae8.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "successor_eviction_oracle",
+      "src_path": "${REPO}/tests/successor_eviction_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libbundle_contract-1df5400bb5569b77.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "bundle_contract",
+      "src_path": "${REPO}/tests/bundle_contract.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libcontrolled_oracle-3b53617bebf273e2.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "controlled_oracle",
+      "src_path": "${REPO}/tests/controlled_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libexact_syscall-0c25fe439ef329c7.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "exact_syscall",
+      "src_path": "${REPO}/tests/exact_syscall.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libpc_relative-2a9e092838b08378.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "pc_relative",
+      "src_path": "${REPO}/tests/pc_relative.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libgeneralized_pun_contract-603d9cc8d8d58f0a.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "generalized_pun_contract",
+      "src_path": "${REPO}/tests/generalized_pun_contract.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libentry_paths_oracle-d4caf33e703aeaa6.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "entry_paths_oracle",
+      "src_path": "${REPO}/tests/entry_paths_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libmandatory_prefix_oracle-303689b23441b4b1.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "mandatory_prefix_oracle",
+      "src_path": "${REPO}/tests/mandatory_prefix_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libeviction_chain_oracle_driver-db39a66c76ae31a1.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "bin"
+      ],
+      "name": "eviction-chain-oracle-driver",
+      "src_path": "${REPO}/tests/support/eviction_chain_driver.rs",
+      "test": false
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/librel32_endpoint_oracle-3e0d9d120475b3c1.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "rel32_endpoint_oracle",
+      "src_path": "${REPO}/tests/rel32_endpoint_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "executable": null,
+    "features": [
+      "saved-pkru-probe"
+    ],
+    "filenames": [
+      "${REPO}/target/debug/deps/libparked_context_oracle-b4889bd397d4cc96.rmeta"
+    ],
+    "fresh": false,
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": true
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "test"
+      ],
+      "name": "parked_context_oracle",
+      "src_path": "${REPO}/tests/parked_context_oracle.rs",
+      "test": true
+    }
+  },
+  {
+    "reason": "build-finished",
+    "success": true
+  }
+]

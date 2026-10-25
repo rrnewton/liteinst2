@@ -1,0 +1,1777 @@
+{
+  "artifact_reuse": {
+    "cargo": {
+      "compiler_artifact_records": 11,
+      "fresh_false_compiled": 1,
+      "fresh_true_reused": 10
+    },
+    "unit": {
+      "compiler_artifact_records": 11,
+      "fresh_false_compiled": 1,
+      "fresh_true_reused": 10
+    }
+  },
+  "cases": [
+    {
+      "case_id": "elf-exec",
+      "command_id": "authority-controls",
+      "expected": "accept",
+      "kind": "synthetic_authority_control",
+      "observed": "accept",
+      "ordinal": 0
+    },
+    {
+      "case_id": "elf-dyn",
+      "command_id": "authority-controls",
+      "expected": "accept",
+      "kind": "synthetic_authority_control",
+      "observed": "accept",
+      "ordinal": 1
+    },
+    {
+      "case_id": "elf-rel",
+      "command_id": "authority-controls",
+      "expected": "refuse",
+      "kind": "synthetic_authority_control",
+      "observed": "refuse",
+      "ordinal": 2
+    },
+    {
+      "case_id": "elf-core",
+      "command_id": "authority-controls",
+      "expected": "refuse",
+      "kind": "synthetic_authority_control",
+      "observed": "refuse",
+      "ordinal": 3
+    },
+    {
+      "case_id": "exact-initial-authority",
+      "command_id": "authority-controls",
+      "expected": "accept",
+      "kind": "synthetic_authority_control",
+      "observed": "accept",
+      "ordinal": 4
+    },
+    {
+      "case_id": "changed-coordinate",
+      "command_id": "authority-controls",
+      "expected": "refuse",
+      "kind": "synthetic_authority_control",
+      "observed": "refuse",
+      "ordinal": 5
+    },
+    {
+      "case_id": "changed-build-digest",
+      "command_id": "authority-controls",
+      "expected": "refuse",
+      "kind": "synthetic_authority_control",
+      "observed": "refuse",
+      "ordinal": 6
+    },
+    {
+      "case_id": "replacement-epoch-original-digest",
+      "command_id": "authority-controls",
+      "expected": "refuse",
+      "kind": "synthetic_authority_control",
+      "observed": "refuse",
+      "ordinal": 7
+    },
+    {
+      "case_id": "refreshed-inputs-original-receipt",
+      "command_id": "authority-controls",
+      "expected": "refuse",
+      "kind": "synthetic_authority_control",
+      "observed": "refuse",
+      "ordinal": 8
+    },
+    {
+      "case_id": "changed-during-read",
+      "command_id": "authority-controls",
+      "expected": "refuse",
+      "kind": "synthetic_authority_control",
+      "observed": "refuse",
+      "ordinal": 9
+    },
+    {
+      "case_id": "changed-after-phase",
+      "command_id": "authority-controls",
+      "expected": "refuse",
+      "kind": "synthetic_authority_control",
+      "observed": "refuse",
+      "ordinal": 10
+    },
+    {
+      "case_id": "changed-init-receipt",
+      "command_id": "authority-controls",
+      "expected": "refuse",
+      "kind": "synthetic_authority_control",
+      "observed": "refuse",
+      "ordinal": 11
+    },
+    {
+      "case_id": "changed-init-request",
+      "command_id": "authority-controls",
+      "expected": "refuse",
+      "kind": "synthetic_authority_control",
+      "observed": "refuse",
+      "ordinal": 12
+    }
+  ],
+  "claims": [
+    {
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "cleanup_scope": "Receipt ECHILD/no-peer evidence applies to each recorded helper process, not a cgroup or a process-wide safety proof. The failed pre-helper launch has no helper cleanup proof.",
+  "command_details": [
+    {
+      "actual_request_sha256": "73026a3277482f210aeb05d0983c3900c52780ef455a22a35c6406b287980c79",
+      "child_limits_applied": true,
+      "id": "prepare-freeze-v2",
+      "level": "outer",
+      "parent": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${FREEZE_PREPARE_V2}/request.json",
+          "--receipt",
+          "${FREEZE_PREPARE_V2}/receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "parent_sha256": "db026fedffaf9e5695c52c578ee997395b4fe6ad20f781088fb3534786029070",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/aggregate.py",
+          "prepare",
+          "--parameters",
+          "${SOURCE_DIR}/freeze-parameters.json",
+          "--parameters-sha256",
+          "94387e9ddb5223aee038e13106785032a49e83c2c1246a1905bf40042945c01e",
+          "--output",
+          "${FREEZE_OUTER_V2}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${FREEZE_PREPARE_V2}/stderr",
+        "stdout": "${FREEZE_PREPARE_V2}/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "actual_request_sha256": "30898353adb3ac27ab2669063f460471eaa00f2b994bb6a9ed391ebff1dfb9af",
+      "child_limits_applied": false,
+      "id": "launch-freeze-v2",
+      "level": "outer",
+      "parent": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/aggregate.py",
+          "launch",
+          "--binding",
+          "${FREEZE_OUTER_V2}/binding.json",
+          "--binding-sha256",
+          "39c669ce9c4cdda6d1ffd6b4e49b4f183c7eeb721a51b56dae22a5484ce94051"
+        ],
+        "exit": 1,
+        "parent_timeout_seconds": 55
+      },
+      "parent_sha256": "e0cc0d30734c1a1744d973365fb1204da98c88ab5e45e0015b33ffe8fa4b1ce5",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/adapter.py",
+          "freeze",
+          "--output",
+          "${CONSUMER_RAW_V2}",
+          "--toolchain",
+          "${REPO}/ignored/a2/generated-unwind/consumer-public-active-v2/toolchain.json",
+          "--admission",
+          "${SOURCE_DIR}/source-admission.json",
+          "--admission-sha256",
+          "272232221876891730ab37c03dc0f846fe0950ef5c558f58be9873128d89ae78"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${FREEZE_OUTER_V2}/outer.stderr",
+        "stdout": "${FREEZE_OUTER_V2}/outer.stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "actual_request_sha256": "8e66ce8deabb92efb3a62866570b96eea734ddf631bc26950d2a5064315fe526",
+      "child_limits_applied": true,
+      "id": "prepare-freeze-v3",
+      "level": "outer",
+      "parent": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${FREEZE_PREPARE_V3}/request.json",
+          "--receipt",
+          "${FREEZE_PREPARE_V3}/receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55
+      },
+      "parent_sha256": "a3e32d490bc3aee8250bd3372520e96de8c808f9c74a335eadeb3451e7ec9474",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/aggregate.py",
+          "prepare",
+          "--parameters",
+          "${FREEZE_PREPARE_V3}/parameters.json",
+          "--parameters-sha256",
+          "f605ba38d3b196598b4238cc2c9196ad2793e4dc0dbd942799d5a1ab5f3438a5",
+          "--output",
+          "${FREEZE_OUTER_V3}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${FREEZE_PREPARE_V3}/stderr",
+        "stdout": "${FREEZE_PREPARE_V3}/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "actual_request_sha256": "2fc2a40ba98123cd2ff0f806dbafddf0583bacd8d2d2460a90c928c226890fdd",
+      "child_limits_applied": true,
+      "id": "freeze-v3",
+      "level": "outer",
+      "parent": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/aggregate.py",
+          "launch",
+          "--binding",
+          "${FREEZE_OUTER_V3}/binding.json",
+          "--binding-sha256",
+          "125561ffc5057f4e006831d95d89fc70dfa902952b45a477161183e19655c862"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "parent_sha256": "2c54a61bb81dc5e78f6a6b4a3aec21679bc4676d8194f4ea37cba7a920170525",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/adapter.py",
+          "freeze",
+          "--output",
+          "${CONSUMER_RAW}",
+          "--toolchain",
+          "${REPO}/ignored/a2/generated-unwind/consumer-public-active-v2/toolchain.json",
+          "--admission",
+          "${SOURCE_DIR}/source-admission.json",
+          "--admission-sha256",
+          "272232221876891730ab37c03dc0f846fe0950ef5c558f58be9873128d89ae78"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${FREEZE_OUTER_V3}/outer.stderr",
+        "stdout": "${FREEZE_OUTER_V3}/outer.stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "actual_request_sha256": "c4c149c6fd2ea38eb345e338aced605a9fd08a8fa8ac4f8c8e614d103779d1bd",
+      "child_limits_applied": true,
+      "id": "authority-controls",
+      "level": "outer",
+      "parent": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${CONTROL_CAPTURE}/calibrations.request.json",
+          "--receipt",
+          "${CONTROL_CAPTURE}/calibrations.receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55
+      },
+      "parent_sha256": "7e489e58c31f91544848f069a2d829f2d34b59290be36e6b9de7c6d3328d1d8e",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${MATERIALS}/calibrate.py",
+          "--materials-sha256",
+          "d920a147c98e6abad91aa7b7db1be4388f4fc31378600156ca113f7d08dca497",
+          "--repository",
+          "${REPO}",
+          "--output",
+          "${CONTROL_OUTPUT}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${CONSUMER_RAW}/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${CONTROL_CAPTURE}/calibrations.stderr",
+        "stdout": "${CONTROL_CAPTURE}/calibrations.stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "actual_request_sha256": "8042e8347af83ff7e8a9f673abbe2b9206a7945394e11198b206b37f88121a09",
+      "child_limits_applied": true,
+      "id": "prepare-build-v3",
+      "level": "outer",
+      "parent": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${BUILD_PREPARE}/request.json",
+          "--receipt",
+          "${BUILD_PREPARE}/receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55
+      },
+      "parent_sha256": "abc7da95b7311d26245f479275b92a35a51479a9ad33e60c910bd0eff92ec189",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/aggregate.py",
+          "prepare",
+          "--parameters",
+          "${BUILD_PREPARE}/parameters.json",
+          "--parameters-sha256",
+          "ad004f25ce5b6106fa67af57d87c7e2b09b24e26fe80de7d5d3c8a2e7f078ae4",
+          "--output",
+          "${BUILD_OUTER}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${BUILD_PREPARE}/stderr",
+        "stdout": "${BUILD_PREPARE}/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "actual_request_sha256": "7a63e167a96b8e4117f14609d26ba3d7ca73fd1a0248435fb6cc1b4639c63d48",
+      "child_limits_applied": true,
+      "id": "consumer-build-v3",
+      "level": "outer",
+      "parent": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "190s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/aggregate.py",
+          "launch",
+          "--binding",
+          "${BUILD_OUTER}/binding.json",
+          "--binding-sha256",
+          "9e3adccf2dcc6e73a7599deb1d22999bcbc2a91a1a33d318fd125759908cedc2"
+        ],
+        "exit": 1,
+        "parent_timeout_seconds": 205,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "parent_sha256": "feec6ddb888bc70c5c7cf5f5e23f115129d7705e2187bc865e896147c86c11a1",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/adapter.py",
+          "build",
+          "--output",
+          "${CONSUMER_RAW}",
+          "--freeze-sha256",
+          "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+        ],
+        "cpu_seconds": 120,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${BUILD_OUTER}/outer.stderr",
+        "stdout": "${BUILD_OUTER}/outer.stdout",
+        "wall_seconds": 180
+      }
+    },
+    {
+      "actual_helper_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CONSUMER_RAW}/build/mapping-calibrations.request.json",
+        "--receipt",
+        "${CONSUMER_RAW}/build/mapping-calibrations.receipt.json"
+      ],
+      "actual_request_sha256": "7ede181d5e30ed704afa909eae1d5172e9a7dfe6eff8e4ecd0c668dc58a8240c",
+      "child_limits_applied": true,
+      "finite_parent_timeout_seconds": 55,
+      "id": "inner-mapping-calibrations",
+      "level": "consumer_build_inner",
+      "parent": null,
+      "parent_sha256": null,
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/mapping_entry.py",
+          "${CONSUMER_RAW}",
+          "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${CONSUMER_RAW}/tmp",
+          "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+          "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${CONSUMER_RAW}/build/mapping-calibrations.stderr",
+        "stdout": "${CONSUMER_RAW}/build/mapping-calibrations.stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "actual_helper_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CONSUMER_RAW}/build/cargo.request.json",
+        "--receipt",
+        "${CONSUMER_RAW}/build/cargo.receipt.json"
+      ],
+      "actual_request_sha256": "6293a4513ef17865419dda32201104594438494c0fa2f888e46c8ecca0e8810a",
+      "child_limits_applied": true,
+      "finite_parent_timeout_seconds": 115,
+      "id": "inner-cargo",
+      "level": "consumer_build_inner",
+      "parent": null,
+      "parent_sha256": null,
+      "request_template": {
+        "argv": [
+          "${RUST_TOOLCHAIN}/bin/cargo",
+          "build",
+          "--offline",
+          "--locked",
+          "--lib",
+          "-p",
+          "liteinst2",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${CONSUMER_RAW}/tmp",
+          "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+          "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${CONSUMER_RAW}/build/cargo.stderr",
+        "stdout": "${CONSUMER_RAW}/build/cargo.stdout",
+        "wall_seconds": 90
+      }
+    },
+    {
+      "actual_helper_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CONSUMER_RAW}/build/unit.request.json",
+        "--receipt",
+        "${CONSUMER_RAW}/build/unit.receipt.json"
+      ],
+      "actual_request_sha256": "6623f5a380ea98e27eb2b49075a7a7def5711d97875237f8a0d1eaa54481b7bb",
+      "child_limits_applied": true,
+      "finite_parent_timeout_seconds": 115,
+      "id": "inner-unit",
+      "level": "consumer_build_inner",
+      "parent": null,
+      "parent_sha256": null,
+      "request_template": {
+        "argv": [
+          "${RUST_TOOLCHAIN}/bin/cargo",
+          "test",
+          "--offline",
+          "--locked",
+          "--lib",
+          "-p",
+          "liteinst2",
+          "--no-run",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${CONSUMER_RAW}/tmp",
+          "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+          "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${CONSUMER_RAW}/build/unit.stderr",
+        "stdout": "${CONSUMER_RAW}/build/unit.stdout",
+        "wall_seconds": 90
+      }
+    },
+    {
+      "actual_helper_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CONSUMER_RAW}/build/compile-witness.request.json",
+        "--receipt",
+        "${CONSUMER_RAW}/build/compile-witness.receipt.json"
+      ],
+      "actual_request_sha256": "0de269acf9916494cdc03947aa62355dfc183dfc551e4e88f1f3d55158fdbbb5",
+      "child_limits_applied": true,
+      "finite_parent_timeout_seconds": 115,
+      "id": "inner-compile-witness",
+      "level": "consumer_build_inner",
+      "parent": null,
+      "parent_sha256": null,
+      "request_template": {
+        "argv": [
+          "/usr/bin/gcc",
+          "-g",
+          "-fPIC",
+          "-fcf-protection=none",
+          "-MD",
+          "-MF",
+          "${CONSUMER_RAW}/build/witness.d",
+          "-c",
+          "${REPO}/tools/unwind-oracle/witness.S",
+          "-o",
+          "${CONSUMER_RAW}/build/witness.o"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${CONSUMER_RAW}/tmp",
+          "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+          "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${CONSUMER_RAW}/build/compile-witness.stderr",
+        "stdout": "${CONSUMER_RAW}/build/compile-witness.stdout",
+        "wall_seconds": 90
+      }
+    },
+    {
+      "actual_helper_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CONSUMER_RAW}/build/compile-collector.request.json",
+        "--receipt",
+        "${CONSUMER_RAW}/build/compile-collector.receipt.json"
+      ],
+      "actual_request_sha256": "81de9f61434dc20bff38019debee95b42799f6f2062ac4fc51efe841d42716dc",
+      "child_limits_applied": true,
+      "finite_parent_timeout_seconds": 115,
+      "id": "inner-compile-collector",
+      "level": "consumer_build_inner",
+      "parent": null,
+      "parent_sha256": null,
+      "request_template": {
+        "argv": [
+          "/usr/bin/g++",
+          "-std=c++17",
+          "-O0",
+          "-g",
+          "-Wall",
+          "-Wextra",
+          "-Werror",
+          "-fPIC",
+          "-fno-omit-frame-pointer",
+          "-fno-optimize-sibling-calls",
+          "-fno-exceptions",
+          "-fno-rtti",
+          "-fasynchronous-unwind-tables",
+          "-fcf-protection=none",
+          "-fno-lto",
+          "-MD",
+          "-MF",
+          "${CONSUMER_RAW}/build/collector.d",
+          "-c",
+          "${REPO}/tools/unwind-oracle/collector.cpp",
+          "-o",
+          "${CONSUMER_RAW}/build/collector.o"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${CONSUMER_RAW}/tmp",
+          "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+          "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${CONSUMER_RAW}/build/compile-collector.stderr",
+        "stdout": "${CONSUMER_RAW}/build/compile-collector.stdout",
+        "wall_seconds": 90
+      }
+    },
+    {
+      "actual_helper_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CONSUMER_RAW}/build/compile-consumer-main.request.json",
+        "--receipt",
+        "${CONSUMER_RAW}/build/compile-consumer-main.receipt.json"
+      ],
+      "actual_request_sha256": "51d64b2e00fe78e1a6818e5c8efe1b7d393386ff163da3bb8edb8df23242fe7c",
+      "child_limits_applied": true,
+      "finite_parent_timeout_seconds": 115,
+      "id": "inner-compile-consumer-main",
+      "level": "consumer_build_inner",
+      "parent": null,
+      "parent_sha256": null,
+      "request_template": {
+        "argv": [
+          "${RUST_TOOLCHAIN}/bin/rustc",
+          "--edition=2024",
+          "-Dwarnings",
+          "-Ccodegen-units=1",
+          "-Copt-level=0",
+          "-Cdebug-assertions=yes",
+          "-Coverflow-checks=yes",
+          "-Cdebuginfo=2",
+          "-Cforce-unwind-tables=yes",
+          "-Cforce-frame-pointers=yes",
+          "-Clinker=${CONSUMER_RAW}/build/linker-capture",
+          "-Clink-arg=-fuse-ld=bfd",
+          "-Clink-arg=-Wl,-t",
+          "-L",
+          "dependency=${CONSUMER_RAW}/build/archives",
+          "--extern",
+          "liteinst2=${CONSUMER_RAW}/build/archives/libliteinst2.rlib",
+          "--extern",
+          "libc=${CONSUMER_RAW}/build/archives/liblibc-6047589744e1fc88.rlib",
+          "--crate-name",
+          "consumer_main",
+          "${REPO}/tools/unwind-oracle/native.rs",
+          "-Clink-arg=${CONSUMER_RAW}/build/witness.o",
+          "-Clink-arg=${CONSUMER_RAW}/build/collector.o",
+          "-Clink-arg=/usr/lib64/libgcc_s-11-20240719.so.1",
+          "-Clink-arg=/usr/lib64/libstdc++.so.6.0.29",
+          "--emit=link,dep-info=${CONSUMER_RAW}/build/consumer-main.d",
+          "-o",
+          "${CONSUMER_RAW}/build/consumer-main"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${CONSUMER_RAW}/tmp",
+          "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+          "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${CONSUMER_RAW}/build/compile-consumer-main.stderr",
+        "stdout": "${CONSUMER_RAW}/build/compile-consumer-main.stdout",
+        "wall_seconds": 90
+      }
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/aggregate.py",
+        "prepare",
+        "--parameters",
+        "${SOURCE_DIR}/freeze-parameters.json",
+        "--parameters-sha256",
+        "94387e9ddb5223aee038e13106785032a49e83c2c1246a1905bf40042945c01e",
+        "--output",
+        "${FREEZE_OUTER_V2}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.2807809130754322,
+      "environment": {
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "prepare-freeze-v2",
+      "receipt_sha256": "4bdc0c087e7e43b59f40486a8b830be6036c4088512a8c4315e85154298e803f",
+      "source_id": "consumer",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "6485fecc97a08d448be93e893a9cdd734f47654c7d3f79bf831ab474d45cc959",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/aggregate.py",
+        "launch",
+        "--binding",
+        "${FREEZE_OUTER_V2}/binding.json",
+        "--binding-sha256",
+        "39c669ce9c4cdda6d1ffd6b4e49b4f183c7eeb721a51b56dae22a5484ce94051"
+      ],
+      "cleanup": "not_established_helper_not_started",
+      "cpu_seconds": null,
+      "elapsed_seconds": null,
+      "environment": {},
+      "exit": 1,
+      "file_bytes": null,
+      "id": "launch-freeze-v2",
+      "receipt_sha256": null,
+      "source_id": "consumer",
+      "status": "fail",
+      "stderr_sha256": "e8418c80c63e977e5736bfccd0c48803d2fec84d5f7f6850b5cce60f74fd538c",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 40
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/aggregate.py",
+        "prepare",
+        "--parameters",
+        "${FREEZE_PREPARE_V3}/parameters.json",
+        "--parameters-sha256",
+        "f605ba38d3b196598b4238cc2c9196ad2793e4dc0dbd942799d5a1ab5f3438a5",
+        "--output",
+        "${FREEZE_OUTER_V3}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.21715135499835014,
+      "environment": {
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "prepare-freeze-v3",
+      "receipt_sha256": "ac781032d89ca90b63940eeb01193c5b660b750b33bbca481595ef5605f18a57",
+      "source_id": "consumer",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "23cca317a3f42ccfbcb1fabb10b18cfad122d21f4281e529a2c2ce73fc658fc6",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/adapter.py",
+        "freeze",
+        "--output",
+        "${CONSUMER_RAW}",
+        "--toolchain",
+        "${REPO}/ignored/a2/generated-unwind/consumer-public-active-v2/toolchain.json",
+        "--admission",
+        "${SOURCE_DIR}/source-admission.json",
+        "--admission-sha256",
+        "272232221876891730ab37c03dc0f846fe0950ef5c558f58be9873128d89ae78"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.9669822019059211,
+      "environment": {
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "freeze-v3",
+      "receipt_sha256": "000aa3de27a9d6236f4bfa6eee3fa4007c787a562fbcd3c96048f7668e74f6d6",
+      "source_id": "consumer",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "2930326780478e3a76ab8c084813aa651a572030d94970ff69919378d359252c",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${MATERIALS}/calibrate.py",
+        "--materials-sha256",
+        "d920a147c98e6abad91aa7b7db1be4388f4fc31378600156ca113f7d08dca497",
+        "--repository",
+        "${REPO}",
+        "--output",
+        "${CONTROL_OUTPUT}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.209921149071306,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${CONSUMER_RAW}/tmp"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "authority-controls",
+      "receipt_sha256": "01199649b09ed0b1a4a3a4145a2af22d4e8b97a66922de4193143e81dc4ee80a",
+      "source_id": "reproducer_materials",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "ca02e6460867f8420f74e43fbf8d4637b1ac8a84fa88af72ffec54cc94d183d7",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/aggregate.py",
+        "prepare",
+        "--parameters",
+        "${BUILD_PREPARE}/parameters.json",
+        "--parameters-sha256",
+        "ad004f25ce5b6106fa67af57d87c7e2b09b24e26fe80de7d5d3c8a2e7f078ae4",
+        "--output",
+        "${BUILD_OUTER}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.20955397002398968,
+      "environment": {
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "prepare-build-v3",
+      "receipt_sha256": "e665bd792d06db2e48cf23e707d8f11d9bdbea628accef727b55211b0cc89ae2",
+      "source_id": "consumer",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3a16dd220828c38d43602b6271cc0d84599ab74add373639b636a806425a7610",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/adapter.py",
+        "build",
+        "--output",
+        "${CONSUMER_RAW}",
+        "--freeze-sha256",
+        "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 120,
+      "elapsed_seconds": 26.012577204965055,
+      "environment": {
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 1,
+      "file_bytes": 134217728,
+      "id": "consumer-build-v3",
+      "receipt_sha256": "0df8e7f3b2c6dfc091e4859d707badfb2b09e47d0010d140349200cb7fc3d88e",
+      "source_id": "consumer",
+      "status": "fail",
+      "stderr_sha256": "be86b495dec1e1347a06132a9a19db92781527c1c4e3e0cf991cc78e3cd98783",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/mapping_entry.py",
+        "${CONSUMER_RAW}",
+        "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 1.5638190049212426,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${CONSUMER_RAW}/tmp",
+        "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+        "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "inner-mapping-calibrations",
+      "receipt_sha256": "7ccb63ab2dfcbb5839c9ebd27988921d90dd6031bb29181375a502d9618d9f9a",
+      "source_id": "consumer",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "86379495eda553881e32290f13a964e0ed24a4a13d234dac6b24f7b5db25215a",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${RUST_TOOLCHAIN}/bin/cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "--lib",
+        "-p",
+        "liteinst2",
+        "--message-format=json"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 3.417192465858534,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${CONSUMER_RAW}/tmp",
+        "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+        "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "inner-cargo",
+      "receipt_sha256": "056bc887e285a2ec4d59bb4a271e918c96e62865d93a14b138a8460b85a6d731",
+      "source_id": "consumer",
+      "status": "pass",
+      "stderr_sha256": "974d2a1567c0794c0bf0760785c772af00705c30977eba96feac41b08a7d0c77",
+      "stdout_sha256": "1dd7bd4cfd09ddb13704f0b98af355367710598b84b1ce599e68a23fb8ef2bc5",
+      "wall_seconds": 90
+    },
+    {
+      "argv": [
+        "${RUST_TOOLCHAIN}/bin/cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--lib",
+        "-p",
+        "liteinst2",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 6.027050109114498,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${CONSUMER_RAW}/tmp",
+        "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+        "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "inner-unit",
+      "receipt_sha256": "b4ebecf2b1d311b26193418a099fd82060405ec30949aebd9e9cc1afab7d0688",
+      "source_id": "consumer",
+      "status": "pass",
+      "stderr_sha256": "ca3b1d4fedbf391c88c744081346acfc0a4520c79f93d890bebeb41f0dbe1636",
+      "stdout_sha256": "e22c0aeedc843126902e96c14c9fbd993255fef3787ec949c767fd8555fe9025",
+      "wall_seconds": 90
+    },
+    {
+      "argv": [
+        "/usr/bin/gcc",
+        "-g",
+        "-fPIC",
+        "-fcf-protection=none",
+        "-MD",
+        "-MF",
+        "${CONSUMER_RAW}/build/witness.d",
+        "-c",
+        "${REPO}/tools/unwind-oracle/witness.S",
+        "-o",
+        "${CONSUMER_RAW}/build/witness.o"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 0.1625271150842309,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${CONSUMER_RAW}/tmp",
+        "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+        "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "inner-compile-witness",
+      "receipt_sha256": "7db1590ff11ea4a0db678131d102d3a9ea243fa81b7f533b3e948be8d55d50b9",
+      "source_id": "consumer",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 90
+    },
+    {
+      "argv": [
+        "/usr/bin/g++",
+        "-std=c++17",
+        "-O0",
+        "-g",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-fPIC",
+        "-fno-omit-frame-pointer",
+        "-fno-optimize-sibling-calls",
+        "-fno-exceptions",
+        "-fno-rtti",
+        "-fasynchronous-unwind-tables",
+        "-fcf-protection=none",
+        "-fno-lto",
+        "-MD",
+        "-MF",
+        "${CONSUMER_RAW}/build/collector.d",
+        "-c",
+        "${REPO}/tools/unwind-oracle/collector.cpp",
+        "-o",
+        "${CONSUMER_RAW}/build/collector.o"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 0.19806031789630651,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${CONSUMER_RAW}/tmp",
+        "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+        "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "inner-compile-collector",
+      "receipt_sha256": "2759e40c1d1afe66cb643d0796791fe57beda5a6645e04d8365fdddc104e4a94",
+      "source_id": "consumer",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 90
+    },
+    {
+      "argv": [
+        "${RUST_TOOLCHAIN}/bin/rustc",
+        "--edition=2024",
+        "-Dwarnings",
+        "-Ccodegen-units=1",
+        "-Copt-level=0",
+        "-Cdebug-assertions=yes",
+        "-Coverflow-checks=yes",
+        "-Cdebuginfo=2",
+        "-Cforce-unwind-tables=yes",
+        "-Cforce-frame-pointers=yes",
+        "-Clinker=${CONSUMER_RAW}/build/linker-capture",
+        "-Clink-arg=-fuse-ld=bfd",
+        "-Clink-arg=-Wl,-t",
+        "-L",
+        "dependency=${CONSUMER_RAW}/build/archives",
+        "--extern",
+        "liteinst2=${CONSUMER_RAW}/build/archives/libliteinst2.rlib",
+        "--extern",
+        "libc=${CONSUMER_RAW}/build/archives/liblibc-6047589744e1fc88.rlib",
+        "--crate-name",
+        "consumer_main",
+        "${REPO}/tools/unwind-oracle/native.rs",
+        "-Clink-arg=${CONSUMER_RAW}/build/witness.o",
+        "-Clink-arg=${CONSUMER_RAW}/build/collector.o",
+        "-Clink-arg=/usr/lib64/libgcc_s-11-20240719.so.1",
+        "-Clink-arg=/usr/lib64/libstdc++.so.6.0.29",
+        "--emit=link,dep-info=${CONSUMER_RAW}/build/consumer-main.d",
+        "-o",
+        "${CONSUMER_RAW}/build/consumer-main"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 3.6623546020127833,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTFLAGS": "-Dwarnings -Ccodegen-units=1 -Clinker=/usr/bin/gcc -Clink-arg=-fuse-ld=bfd",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${CONSUMER_RAW}/tmp",
+        "UNWIND_SOURCE_FREEZE": "${CONSUMER_RAW}",
+        "UNWIND_SOURCE_FREEZE_SHA256": "8c05fa0e2b358115b5643cac3642f30e683f9ff63f45bd1a10bc9c703bccfb52"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "inner-compile-consumer-main",
+      "receipt_sha256": "e96c1333fd34d036fd3c025d44dc0b63127cdf184009cffdf1731f45e31a457d",
+      "source_id": "consumer",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 90
+    }
+  ],
+  "complete_A2": false,
+  "complete_A3": false,
+  "complete_A4": false,
+  "complete_A5": false,
+  "failure": {
+    "actual_mismatching_observation_recorded": false,
+    "actual_mismatching_value": null,
+    "build_complete": false,
+    "cause_established": false,
+    "failed_record_sha256": "53f5d0371e022853d639a0e9bbfad38f7dc293bccbf88f101e7a962b79ab1878",
+    "frozen_observation": {
+      "coordinate": "${ANCESTOR_CARGO_CONFIG}",
+      "errno": 1,
+      "kind": "unreadable",
+      "operation": "exists"
+    },
+    "later_observation_scope": "Later point observation only. The differing value that caused the earlier exact-equality assertion was not serialized and is unknown.",
+    "later_observation_sha256": "7390748e59ec84f2b4d3aaa3b037991b1f43259b2f84c6b85ced45d915aa22c0",
+    "no_automatic_retry": true,
+    "phase": "consumer prerequisite build, post-sixth inner command verification",
+    "sixth_compiler_exit": 0,
+    "sixth_compiler_fully_bound": false,
+    "step_acceptance_scope": "Six child receipts have exit zero. The main compiler post-check failed before binding, so only the first five adapter steps were fully accepted."
+  },
+  "hardware": {
+    "continuous_attestation": false,
+    "cpuinfo_sha256": "01436622ae56dcdbb186281fd8d9fa5036579f15363abb0a3aae5ac47a465cca",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "observation_phase": "Separate observation before reproduction preparation; no continuous hardware attestation.",
+    "observation_sha256": "0a2944087aaa3882e5e1c4d7dbc82baf86eadb72bfe7b8794a672fa06970a197",
+    "observed_at_utc": "2026-10-25T20:47:09.658049+00:00"
+  },
+  "independent_actual_review_binding_sha256": "f24691fd7432413ef2cb244c6c476ec5eea738efba2d95cf72f21e7186f52f9e",
+  "independent_actual_review_sha256": "1cc8c2a3db6270402e0af74040f4960cd25827321b7fc7ef6d8dbb8cec4c1418",
+  "preserved_prehelper_failure": {
+    "cause": "Caller preopened reserved aggregate helper capture names; aggregate rejected them before execve.",
+    "correction": "A fresh attempt used distinct parent capture paths; source, assertions and limits did not change.",
+    "freezer_child_started": false,
+    "helper_receipt_created": false,
+    "outer_kill_after_seconds": 10,
+    "outer_wall_seconds": 40,
+    "parent_exit": 1,
+    "parent_timeout_seconds": 55,
+    "prior_attempt_record_sha256": "fc9b37039a150c8ca564aa19e18fe56dcd332ff048b7910759c1f08730bfa625",
+    "requested_child_bounds_applied": false,
+    "status": "failed_before_helper"
+  },
+  "raw_capture_manifest_sha256": "98f735a783e41a0f1ba01b1a6f11b981c988e5fd78098410766eb7e131296882",
+  "reproduction": {
+    "consumer_prerequisite": "tools/unwind-oracle/README.md",
+    "coordinate_bindings": {
+      "materialization_order": "Choose RAW_ROOT, form each raw directory value with one ordinary directory join of RAW_ROOT and its listed basename, then perform full-token replacement with all directory/file roles. No token stands for a filename prefix.",
+      "new_attempt_rule": "Historical request and receipt digests are evidence, not reusable current values. Generate fresh authenticated parameters and requests with the same commands and caps; a new attempt must not overwrite these historical directories or report their outcomes as new.",
+      "other_roles": {
+        "ANCESTOR_CARGO_CONFIG": {
+          "kind": "file",
+          "meaning": "Exact ancestor Cargo config path compared by the adapter; the frozen observation is exists/EPERM1 and does not authenticate hidden contents."
+        },
+        "CARGO_HOME": {
+          "kind": "directory",
+          "meaning": "Complete recorded CARGO_HOME value; preserve its independent identity."
+        },
+        "MATERIALS": {
+          "kind": "directory",
+          "meaning": "The immutable reproduction material directory containing files.json, calibrate.py and the other manifest-bound files. Public portable location is evaluation/reproductions/consumer-ordinary-parity-be782c88; the historical execution used its private byte-identical staged copy."
+        },
+        "REPO": {
+          "kind": "directory",
+          "meaning": "Exact historical consumer source checkout at be782c88; current reporting checkout is separate."
+        },
+        "RUST_TOOLCHAIN": {
+          "kind": "directory",
+          "meaning": "Complete installed Rust toolchain directory whose bin/cargo and bin/rustc appear in the recorded requests; selected identities remain bound."
+        },
+        "USER_HOME": {
+          "kind": "directory",
+          "meaning": "Complete recorded HOME value; do not infer a new value from another token."
+        }
+      },
+      "raw_directory_roles": {
+        "BUILD_OUTER": {
+          "basename": "consumer-public-parity-reproduction-build-outer-v3",
+          "kind": "directory",
+          "parent_token": "RAW_ROOT"
+        },
+        "BUILD_PREPARE": {
+          "basename": "consumer-public-parity-reproduction-build-prepare-v3",
+          "kind": "directory",
+          "parent_token": "RAW_ROOT"
+        },
+        "CONSUMER_RAW": {
+          "basename": "consumer-public-parity-reproduction-consumer-v3",
+          "kind": "directory",
+          "parent_token": "RAW_ROOT"
+        },
+        "CONSUMER_RAW_V2": {
+          "basename": "consumer-public-parity-reproduction-consumer-v2",
+          "kind": "directory",
+          "parent_token": "RAW_ROOT"
+        },
+        "CONTROL_CAPTURE": {
+          "basename": "consumer-public-parity-reproduction-controls-root-v2",
+          "kind": "directory",
+          "parent_token": "RAW_ROOT"
+        },
+        "CONTROL_OUTPUT": {
+          "basename": "consumer-public-parity-reproduction-controls-output-v2",
+          "kind": "directory",
+          "parent_token": "RAW_ROOT"
+        },
+        "FREEZE_OUTER_V2": {
+          "basename": "consumer-public-parity-reproduction-freeze-outer-v2",
+          "kind": "directory",
+          "parent_token": "RAW_ROOT"
+        },
+        "FREEZE_OUTER_V3": {
+          "basename": "consumer-public-parity-reproduction-freeze-outer-v3",
+          "kind": "directory",
+          "parent_token": "RAW_ROOT"
+        },
+        "FREEZE_PREPARE_V2": {
+          "basename": "consumer-public-parity-reproduction-freeze-prepare-v2",
+          "kind": "directory",
+          "parent_token": "RAW_ROOT"
+        },
+        "FREEZE_PREPARE_V3": {
+          "basename": "consumer-public-parity-reproduction-freeze-prepare-v3",
+          "kind": "directory",
+          "parent_token": "RAW_ROOT"
+        },
+        "SOURCE_DIR": {
+          "basename": "consumer-public-parity-reproduction-source-v2",
+          "kind": "directory",
+          "parent_token": "RAW_ROOT"
+        }
+      },
+      "raw_root": {
+        "kind": "directory",
+        "scope": "Common parent of the eleven historical raw directories, represented by a fresh directory beneath REPO/ignored for a new attempt.",
+        "token": "RAW_ROOT"
+      },
+      "substitution_rule": "Bind each named token to its complete literal value. Directory values include no trailing separator. Replace only the full ${TOKEN}; preserve every slash and other surrounding character. No prefix splicing or separator removal is permitted."
+    },
+    "new_attempt_requires_fresh_source_config_tool_and_actual_digest_admission": true,
+    "new_supervisor": false,
+    "old_request_or_output_hashes_are_not_new_observations": true,
+    "request_templates_are_actual_coordinate_substitutions": true,
+    "source": "evaluation/reproductions/consumer-ordinary-parity-be782c88/README.md"
+  },
+  "run_id": "consumer-ordinary-parity-reproduction-attempt-20261025",
+  "schema_version": 1,
+  "scope": "Fresh reproduction prerequisite attempt only. The historical native consumer and 72-row parity results remain separate; none of the eight public parity stages ran.",
+  "selected_tool_observation": {
+    "complete_closure": false,
+    "files": 163,
+    "observed_at_utc": "2026-10-25T20:47:09.653874+00:00",
+    "record_sha256": "47c1f35384630d425a0f3cbcfd639d035244b51bb1f8a134284323939ede8841",
+    "scope": "Current byte/stat observations of 162 historical enumerated role/header/runtime paths plus helper; no complete closure claim."
+  },
+  "separate_denominators": {
+    "consumer_build_inner": {
+      "fully_accepted_adapter_steps": 5,
+      "helper_exit_nonzero": 0,
+      "helper_exit_zero": 6,
+      "planned": 8,
+      "postcheck_failures_after_exit_zero": 1,
+      "unrun": 2
+    },
+    "native_application_invocations": 0,
+    "outer_attempts": {
+      "failed": 2,
+      "passed": 5,
+      "rows": 7
+    },
+    "parity_stages": {
+      "launched": 0,
+      "passed": 0,
+      "planned": 8,
+      "unrun": 8
+    },
+    "planner_parity_rows_executed": 0,
+    "prerequisite_mapping_controls": {
+      "accepted": 4,
+      "refused": 35
+    },
+    "synthetic_authority_controls": {
+      "accepted": 3,
+      "actual_consumer_builds_inside_controls": 0,
+      "helper_launches_inside_controls": 0,
+      "refused": 10
+    }
+  },
+  "source_held_predecessor": {
+    "executed": false,
+    "findings": [
+      "missing ELF e_type predicate",
+      "unpinned initial inputs authority"
+    ],
+    "historical_results_relabelled": false,
+    "repaired_version": "v2",
+    "status": "source_held",
+    "version": "public parity reproduction v1"
+  },
+  "source_scope": "Consumer helper/build source is exact be782c88. Authority controls execute an uncommitted, independently source-reviewed reproduction bundle with tested_revision null. No later reporting commit retrodates it.",
+  "sources": {
+    "consumer": {
+      "base_revision": "be782c88f9f30581d67aa43aa20aa0a49062cd69",
+      "clean_tracked": true,
+      "git_tree": "22540c75c4a6b3d5d186b28722283bfbd290ab0b",
+      "kind": "git_commit",
+      "source_tree_sha256": "8cef6896d779a1d80b0bd56789e0a19446bb9051544783bc9770ec8765eeb6b9",
+      "tested_revision": "be782c88f9f30581d67aa43aa20aa0a49062cd69",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "reproducer_materials": {
+      "kind": "source_snapshot",
+      "manifest_sha256": "c01be1f6046460d176759fa5ce43086791b81762422bef68062480d65ec34a8a",
+      "materials_sha256": "d920a147c98e6abad91aa7b7db1be4388f4fc31378600156ca113f7d08dca497",
+      "portable_source_roles_are_not_historical_locations": true,
+      "tested_revision": null
+    }
+  },
+  "status": "failed",
+  "suite": "consumer-ordinary-parity-fresh-reproduction-prerequisites",
+  "tested_revision": null,
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tools": [
+    {
+      "path": "/usr/bin/as",
+      "resolved_path": "/usr/bin/as",
+      "role": "assembler",
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56",
+      "version": null
+    },
+    {
+      "path": "${RUST_TOOLCHAIN}/bin/cargo",
+      "resolved_path": "${RUST_TOOLCHAIN}/bin/cargo",
+      "role": "cargo",
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "version": null
+    },
+    {
+      "path": "/usr/bin/g++",
+      "resolved_path": "/usr/bin/g++",
+      "role": "cxx",
+      "sha256": "8b58cbb443f9f3af9a6dfb333fae55ef8808ed10a78d2a343885ccd06e016e59",
+      "version": null
+    },
+    {
+      "path": "/usr/bin/gcc",
+      "resolved_path": "/usr/bin/gcc",
+      "role": "gcc",
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0",
+      "version": null
+    },
+    {
+      "path": "/usr/bin/python3.9",
+      "resolved_path": "/usr/bin/python3.9",
+      "role": "helper_python",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "version": null
+    },
+    {
+      "path": "/usr/lib64/libgcc_s-11-20240719.so.1",
+      "resolved_path": "/usr/lib64/libgcc_s-11-20240719.so.1",
+      "role": "libgcc",
+      "sha256": "3d144b557008c93e4e67567d5dc98cb81cf55187a698d1b4872ce84ba8a26bed",
+      "version": null
+    },
+    {
+      "path": "/usr/lib64/libstdc++.so.6.0.29",
+      "resolved_path": "/usr/lib64/libstdc++.so.6.0.29",
+      "role": "libstdcxx",
+      "sha256": "cc5f795fb4c6cc06fd5e1c14e9105dc8db7b663b7fe41d4b4fb35a8f133aec83",
+      "version": null
+    },
+    {
+      "path": "/usr/bin/ld.bfd",
+      "resolved_path": "/usr/bin/ld.bfd",
+      "role": "linker",
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42",
+      "version": null
+    },
+    {
+      "path": "${RUST_TOOLCHAIN}/bin/rustc",
+      "resolved_path": "${RUST_TOOLCHAIN}/bin/rustc",
+      "role": "rustc",
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "version": null
+    },
+    {
+      "path": "/usr/bin/timeout",
+      "resolved_path": "/usr/bin/timeout",
+      "role": "timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+      "version": null
+    },
+    {
+      "path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "resolved_path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "role": "helper",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "version": null
+    }
+  ],
+  "unrun_inner": [
+    "compile-consumer-launcher",
+    "compile-consumer-calibrations"
+  ],
+  "unrun_parity_stages": [
+    "init",
+    "old-cargo",
+    "archive-old",
+    "compile-request",
+    "compile",
+    "bind",
+    "run-once",
+    "audit"
+  ]
+}

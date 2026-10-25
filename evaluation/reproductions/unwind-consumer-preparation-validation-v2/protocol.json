@@ -1,0 +1,172 @@
+{
+  "adapter_sha256": "fd83e351ba6c13f18554f7103aeddf7547175cbfba273a7d89cf5df3e28e7d30",
+  "command_expectations": [
+    {
+      "command_id": "prepare-positive",
+      "expected_exit": 0,
+      "expected_outcome": "prepared",
+      "observed_expected_outcome": true
+    },
+    {
+      "command_id": "prepare-wrong-source",
+      "expected_exit": 1,
+      "expected_outcome": "specific_assertion_refusal",
+      "observed_expected_outcome": true
+    },
+    {
+      "command_id": "prepare-wrong-tool",
+      "expected_exit": 1,
+      "expected_outcome": "specific_assertion_refusal",
+      "observed_expected_outcome": true
+    },
+    {
+      "command_id": "prepare-existing-output",
+      "expected_exit": 1,
+      "expected_outcome": "specific_assertion_refusal",
+      "observed_expected_outcome": true
+    },
+    {
+      "command_id": "prepare-outside-ignored",
+      "expected_exit": 1,
+      "expected_outcome": "specific_assertion_refusal",
+      "observed_expected_outcome": true
+    },
+    {
+      "command_id": "pure-controls",
+      "expected_exit": 0,
+      "expected_outcome": "exact_4_accept_32_refuse_inventory",
+      "observed_expected_outcome": true
+    }
+  ],
+  "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+  "historical_inner_binding_sha256": "70f126af6a14f5b678d3580fd93c9e094b6448587951d421294da3f5e1a02113",
+  "historical_root_runtime_admission_sha256": "49a868c0e7874beb22274bd3031be7766be2e750c1ffc74205295a847f147abc",
+  "new_supervisor_or_materializer": false,
+  "outer_invocations": [
+    {
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${HARNESS_REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CASE_ROOT}/positive/prepare.request.json",
+        "--receipt",
+        "${CASE_ROOT}/positive/prepare.receipt.json"
+      ],
+      "exit": 0,
+      "id": "prepare-positive",
+      "original_request_sha256": "330ca756161500bed1009be1b877102a51213e7c57b2179ee24d9a6dcd416a5b",
+      "parent_timeout_seconds": 55,
+      "template": "prepare-positive.request.template.json"
+    },
+    {
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${HARNESS_REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CASE_ROOT}/wrong-source/prepare.request.json",
+        "--receipt",
+        "${CASE_ROOT}/wrong-source/prepare.receipt.json"
+      ],
+      "exit": 1,
+      "id": "prepare-wrong-source",
+      "original_request_sha256": "37c9689ca8f7a278dc16fbbe76b2449135291d2dc3539ec14122b313e6afd5ce",
+      "parent_timeout_seconds": 55,
+      "template": "prepare-wrong-source.request.template.json"
+    },
+    {
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${HARNESS_REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CASE_ROOT}/wrong-tool/prepare.request.json",
+        "--receipt",
+        "${CASE_ROOT}/wrong-tool/prepare.receipt.json"
+      ],
+      "exit": 1,
+      "id": "prepare-wrong-tool",
+      "original_request_sha256": "d3475609b79f540c75955e0f4cdbf0ca797e0dcaac9febee678c3b7eb76a5ed0",
+      "parent_timeout_seconds": 55,
+      "template": "prepare-wrong-tool.request.template.json"
+    },
+    {
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${HARNESS_REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CASE_ROOT}/existing-output/prepare.request.json",
+        "--receipt",
+        "${CASE_ROOT}/existing-output/prepare.receipt.json"
+      ],
+      "exit": 1,
+      "id": "prepare-existing-output",
+      "original_request_sha256": "1770b73859312cc3feed0eb57302ab13a90edaacbd0093957ed7ba10df6fd376",
+      "parent_timeout_seconds": 55,
+      "template": "prepare-existing-output.request.template.json"
+    },
+    {
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${HARNESS_REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CASE_ROOT}/outside-ignored/prepare.request.json",
+        "--receipt",
+        "${CASE_ROOT}/outside-ignored/prepare.receipt.json"
+      ],
+      "exit": 1,
+      "id": "prepare-outside-ignored",
+      "original_request_sha256": "58958483eb922010b9b7d1719e2d79a53153def8c35004109cdf19bb409eda20",
+      "parent_timeout_seconds": 55,
+      "template": "prepare-outside-ignored.request.template.json"
+    },
+    {
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${CASE_ROOT}/positive/repo/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CASE_ROOT}/positive/repo/ignored/prepared/request.json",
+        "--receipt",
+        "${CASE_ROOT}/positive/repo/ignored/prepared/receipt.json"
+      ],
+      "exit": 0,
+      "id": "pure-controls",
+      "original_request_sha256": "1bc50c092d1048d0454bca4543a56bc94a8aac46bbc72df6e19f792ae8a8f1c9",
+      "parent_timeout_seconds": 55,
+      "template": "pure-controls.request.template.json"
+    }
+  ],
+  "preparer_sha256": "6785b7466f8fdc58a3d592b15b37a7a499fe98a7529bc3b760b526b409d30086",
+  "request_coordinate_rule": "CASE_ROOT strictly beneath HARNESS_REPO/ignored. First four outputs strictly beneath their own minimal repo/ignored; outside-ignored deliberately requests a sibling and must refuse before writing.",
+  "schema_version": 1,
+  "source_manifest_sha256": "349d39e645832eb647eb2cfec149b6da5a421037eef4dc94addcc2b1f6e8a352",
+  "source_map": "../../results/consumer-public-reproduction-v2-20261025/source-files.json"
+}

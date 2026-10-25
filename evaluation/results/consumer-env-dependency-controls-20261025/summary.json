@@ -1,0 +1,192 @@
+{
+  "all_four_paper_claims": "unqualified_by_these_pure_input_controls",
+  "commands": [
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${REPO}/evaluation/reproductions/unwind-consumer-env-dependency-v4/calibrate.py",
+        "--adapter",
+        "${REPO}/tools/unwind-oracle/adapter.py",
+        "--adapter-sha256",
+        "fd83e351ba6c13f18554f7103aeddf7547175cbfba273a7d89cf5df3e28e7d30",
+        "--cases",
+        "${REPO}/evaluation/reproductions/unwind-consumer-env-dependency-v4/cases.json",
+        "--cases-sha256",
+        "6308ed81ba035d1fb6586dc89f43cd5a506e9e08bc885189988795f8a298e95c",
+        "--expected",
+        "${REPO}/evaluation/reproductions/unwind-consumer-env-dependency-v4/expected.json",
+        "--expected-sha256",
+        "14a039db5fdc3fb47795dd7f0a2ca1c15a1a6dabbc5881d63d9105b8c97cc9e5",
+        "--self-sha256",
+        "a7187cb187f618e840e9685a00c166d880f67c30b9f867a7c99f717343af664c"
+      ],
+      "cleanup": "ECHILD_no_peers_no_cleanup_events",
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "elapsed_seconds": 0.20210141618736088,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "expected_acceptances": 4,
+      "expected_refusals": 32,
+      "file_bytes": 16777216,
+      "id": "env-dependency-controls",
+      "kind": "pure_fixture_input_controls",
+      "observed_acceptances": 4,
+      "observed_refusals": 32,
+      "receipt_sha256": "592be25f6af709862c6eb7dc3c24fcb1a3359667c13b11c175ac57f3923770b3",
+      "request_sha256": "699f8aa7b1bb4ed658b9c0bbea6eecfb6f361376634fd725cab9ab3be00442f7",
+      "source_id": "historical_private_v4_material_snapshot",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "93a4056c5e704b1924825fead6e891e8c76f35716f9fa7e1e479cfcec729f1de",
+      "wall_seconds": 30
+    }
+  ],
+  "controls": {
+    "accepted": [
+      "main_no_environment_records",
+      "launcher_exact_absent_record",
+      "calibrations_no_environment_records",
+      "launcher_unrelated_environment_value"
+    ],
+    "refused": [
+      "launcher_missing_record",
+      "launcher_duplicate_record",
+      "launcher_other_name",
+      "launcher_other_name_suffix",
+      "launcher_wrong_case",
+      "launcher_empty_record_value",
+      "launcher_nonempty_record_value",
+      "launcher_trailing_space",
+      "launcher_leading_space",
+      "launcher_extra_name_after",
+      "launcher_extra_name_before",
+      "launcher_nul_record",
+      "main_forbidden_record",
+      "calibrations_forbidden_record",
+      "main_other_record",
+      "calibrations_other_record",
+      "launcher_present_empty_environment",
+      "launcher_present_nonempty_environment",
+      "main_present_empty_environment",
+      "calibrations_present_nonempty_environment",
+      "unknown_fixture",
+      "null_fixture",
+      "environment_list",
+      "environment_null",
+      "environment_nonstring_value",
+      "environment_null_value",
+      "parser_dollar",
+      "parser_backslash",
+      "parser_carriage_return",
+      "parser_duplicate_target",
+      "parser_duplicate_prerequisite",
+      "parser_unrecognized_comment"
+    ],
+    "status": "PURE_ENV_DEPENDENCY_CONTROLS_PASS"
+  },
+  "counts_not_combined_with_mapping_controls_or_build_phases": true,
+  "hardware": {
+    "continuous_attestation": false,
+    "cpuinfo_sha256": "1d5d19cdc9f1bf0bcfd8fcc77055472df7a861a789117407732ec07bdf735037",
+    "family": 26,
+    "kernel_release": null,
+    "kernel_release_scope": "not captured by this preparation record",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "separate preparation before this one pure-control invocation",
+    "observation_sha256": "87f4e2ba34954d21d026b1b6d0a5358e836d1a805bb9f73d6662db2fafc6d5f5",
+    "observed_at_utc": "2026-10-25T19:47:30.797980+00:00",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "independent_actual_review_sha256": "39d18a3a8cce17086929c00b3f34baef0e957e700f22110de999c9ee3b38a7c3",
+  "outer": {
+    "argv": [
+      "${TIMEOUT}",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "40s",
+      "${PYTHON}",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/request.json",
+      "--receipt",
+      "${RAW}/receipt.json"
+    ],
+    "exit": 0,
+    "helper_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "helper_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+    "outer_record_sha256": "9bc3d5c26ced7c59b6df266966f8509e96606705081345e9de5133eed6a0a755",
+    "parent_timeout_seconds": 55
+  },
+  "prior_failed_attempt_preserved": true,
+  "qualification_complete": false,
+  "raw_capture_files": 9,
+  "raw_capture_manifest_sha256": "04fb547e3c7d225009148c1a70e1ae80d139f854ba0faf2f4c2c218852e93f81",
+  "reproduction": "../../reproductions/unwind-consumer-env-dependency-v4/README.md",
+  "root_result_sha256": "2185049f85549f027b4acab84509af2214fd1ab9ea4b82bdd4018c91a24a11dd",
+  "run_id": "consumer-env-dependency-controls-20261025",
+  "schema_version": 1,
+  "scope": "One actual private pure-control invocation; portable copies retain exact bytes. No public materializer, compiler or native result is credited.",
+  "source": {
+    "base_revision": "c537acdfa72396541efec57720a5d4573cc1a244",
+    "kind": "private_source_snapshot",
+    "materials_sha256": {
+      "evaluation/reproductions/unwind-consumer-env-dependency-v4/calibrate.py": "a7187cb187f618e840e9685a00c166d880f67c30b9f867a7c99f717343af664c",
+      "evaluation/reproductions/unwind-consumer-env-dependency-v4/cases.json": "6308ed81ba035d1fb6586dc89f43cd5a506e9e08bc885189988795f8a298e95c",
+      "evaluation/reproductions/unwind-consumer-env-dependency-v4/expected.json": "14a039db5fdc3fb47795dd7f0a2ca1c15a1a6dabbc5881d63d9105b8c97cc9e5",
+      "tools/unwind-oracle/adapter.py": "fd83e351ba6c13f18554f7103aeddf7547175cbfba273a7d89cf5df3e28e7d30",
+      "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    },
+    "portable_source_paths_are_byte_equivalent_roles_not_historical_locations": true,
+    "source_manifest_sha256": "f7f26313fa91595396c87a72f804af3271dbcdf6c361552231abacbcbb7797fc",
+    "tested_revision": null
+  },
+  "status": "pass",
+  "suite": "unwind-consumer-env-dependency-controls",
+  "timing_class": "operational_only_not_a_performance_benchmark",
+  "tool_scope": "Three explicit roles, whole source/hash admission and current independent rechecks. Root recorded unchanged sources/tools; no claim of complete transitive Python/runtime closure or fabricated historical post snapshots.",
+  "tools": [
+    {
+      "path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "resolved_path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "role": "helper",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "size": 7710,
+      "version": null,
+      "version_scope": "no version command in this control invocation"
+    },
+    {
+      "path": "${PYTHON}",
+      "resolved_path": "${PYTHON}",
+      "role": "python",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "size": 15448,
+      "version": null,
+      "version_scope": "no version command in this control invocation"
+    },
+    {
+      "path": "${TIMEOUT}",
+      "resolved_path": "${TIMEOUT}",
+      "role": "timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+      "size": 36848,
+      "version": null,
+      "version_scope": "no version command in this control invocation"
+    }
+  ],
+  "totals": {
+    "accepted": 4,
+    "actual_commands": 1,
+    "compiler_commands": 0,
+    "native_invocations": 0,
+    "refused": 32
+  }
+}

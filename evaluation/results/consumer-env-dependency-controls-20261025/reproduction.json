@@ -1,0 +1,51 @@
+{
+  "expected_controls": {
+    "accepted": 4,
+    "refused": 32
+  },
+  "expected_stderr": "",
+  "expected_whole_stdout_sha256": "93a4056c5e704b1924825fead6e891e8c76f35716f9fa7e1e479cfcec729f1de",
+  "failure_retention": "Retain incomplete output and failed receipts; never retry in the same output directory or convert a required refusal into a skip.",
+  "fresh_output_constraint": "${FRESH_RAW} must be an absolute canonical fresh directory strictly beneath ${REPO}/ignored (not ${REPO}/ignored itself); its parent must already exist.",
+  "historical_tested_revision": null,
+  "launch": "Independently review generated binding, then use its exact outer_argv and finite 55-second parent wait through the existing bounded workflow. This materializer never launches or imports the adapter/calibrator.",
+  "materializer": "../../reproductions/unwind-consumer-env-dependency-v4/prepare-controls.py",
+  "materials": "../../reproductions/unwind-consumer-env-dependency-v4/materials.json",
+  "newly_observed_tool_hashes_must_not_relabel_historical_tools": true,
+  "preparation_controls": "Original one accepted/three refused plus separate outside-ignored refusal, all as preparation-cases.json; actual 4/32 still mandatory.",
+  "prepare_argv": [
+    "${PYTHON}",
+    "-B",
+    "${REPO}/evaluation/reproductions/unwind-consumer-env-dependency-v4/prepare-controls.py",
+    "--repo",
+    "${REPO}",
+    "--output",
+    "${FRESH_RAW}",
+    "--python",
+    "${PYTHON}",
+    "--python-sha256",
+    "${REVIEWED_PYTHON_SHA256}",
+    "--timeout",
+    "${TIMEOUT}",
+    "--timeout-sha256",
+    "${REVIEWED_TIMEOUT_SHA256}"
+  ],
+  "prepare_bounds": {
+    "cpu_seconds": 20,
+    "file_bytes": 16777216,
+    "wall_seconds": 30
+  },
+  "required_adapter_sha256": "fd83e351ba6c13f18554f7103aeddf7547175cbfba273a7d89cf5df3e28e7d30",
+  "required_clean_receipt": "exit 0, no timeout/abort/peers/cleanup events/error, unchanged inputs, ECHILD; exact receipt request/helper/output hashes",
+  "required_helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+  "run_bounds": {
+    "cpu_seconds": 20,
+    "file_bytes": 16777216,
+    "finite_parent_wait_seconds": 55,
+    "kill_after_seconds": 10,
+    "outer_timeout_seconds": 40,
+    "wall_seconds": 30
+  },
+  "schema_version": 1,
+  "status": "PROSPECTIVE_PUBLIC_REQUEST_PREPARATION_NOT_EXECUTED"
+}

@@ -1,0 +1,63 @@
+{
+  "expected_msrv_records": {
+    "build-finished": 1,
+    "build-script-executed": 2,
+    "compiler-artifact": 58
+  },
+  "expected_package_names": 148,
+  "expected_package_stdout_sha256": "3cb2784400196c8805f299ee3e9067159187928686e9a095b4a819aefe5a0589",
+  "expected_unwind_tool_names": 26,
+  "freshness_rule": "Record actual fresh/reused outcomes on reproduction; do not require or claim the historical cached state.",
+  "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+  "no_new_supervisor_or_materializer": true,
+  "outer_invocations": [
+    {
+      "actual_outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW}/msrv.request.json",
+        "--receipt",
+        "${RAW}/msrv.receipt.json"
+      ],
+      "actual_outer_exit": 0,
+      "command_id": "msrv",
+      "finite_parent_timeout_seconds": 115,
+      "original_request_sha256": "7eb993df24ddfea31d5f3e831e1e8d1b38a501c7649dcee13ffbaf55d1583c60",
+      "outer_record_sha256": "686b7f4b51af23967670e12a8f18e5bd0e46bada77bb7aea7bda072bda541f6f",
+      "template": "msrv.request.template.json"
+    },
+    {
+      "actual_outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW}/package.request.json",
+        "--receipt",
+        "${RAW}/package.receipt.json"
+      ],
+      "actual_outer_exit": 0,
+      "command_id": "package",
+      "finite_parent_timeout_seconds": 55,
+      "original_request_sha256": "01a4b5c66ba332274ffa9b40e7e27db560103659c367984b7fee3d479527ac7e",
+      "outer_record_sha256": "8a4630f58ecc958d501dd8fdd7fe418554734cd1ad611a59210f04a294d01582",
+      "template": "package.request.template.json"
+    }
+  ],
+  "output_constraint": "All materialized request, receipt, stdout, stderr and helper captures must be strictly beneath ${REPO}/ignored; use a fresh ${RAW} directory there.",
+  "required_source_files": 290,
+  "schema_version": 1,
+  "source_map": "../../results/consumer-msrv-package-be782c8-20261025/source-files.json",
+  "source_state": "Exact 290-file commit source required even though the package command includes --allow-dirty.",
+  "tested_revision": "be782c88f9f30581d67aa43aa20aa0a49062cd69"
+}

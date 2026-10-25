@@ -1,0 +1,40 @@
+{
+  "controls": {
+    "accepted": 4,
+    "names_sha256": "14a039db5fdc3fb47795dd7f0a2ca1c15a1a6dabbc5881d63d9105b8c97cc9e5",
+    "refused": 32
+  },
+  "exact_later_source_reconstruction_commit": "be782c88f9f30581d67aa43aa20aa0a49062cd69",
+  "historical_failed_build_source_base": "c537acdfa72396541efec57720a5d4573cc1a244",
+  "historical_source_manifest_sha256": "f7f26313fa91595396c87a72f804af3271dbcdf6c361552231abacbcbb7797fc",
+  "later_commit_is_not_historical_tested_revision": true,
+  "material_sha256": {
+    "calibrate.py": "a7187cb187f618e840e9685a00c166d880f67c30b9f867a7c99f717343af664c",
+    "cases.json": "6308ed81ba035d1fb6586dc89f43cd5a506e9e08bc885189988795f8a298e95c",
+    "expected.json": "14a039db5fdc3fb47795dd7f0a2ca1c15a1a6dabbc5881d63d9105b8c97cc9e5",
+    "historical-tools.json": "f8a5ba6429724c2075eb62999599fa17af7079c95037b835e287e608c14f9cc5",
+    "preparation-cases.json": "5030ce656fc4048db06680421b105c54aa5c07503f244d67925507426e09e6a4",
+    "prepare-controls.py": "6785b7466f8fdc58a3d592b15b37a7a499fe98a7529bc3b760b526b409d30086",
+    "reproduce-v3.patch": "db865464d3a247fafef5005f3900854f5dd7d80b5c51e9ae254f9116a210f529"
+  },
+  "materializer_bounds": {
+    "cpu_seconds": 20,
+    "file_bytes": 16777216,
+    "wall_seconds": 30
+  },
+  "new_materializer_validation": "Current v2 source is unexecuted. Require the original one positive/three refusal preparation controls at repo/ignored/prepared, plus one separate outside-ignored refusal; then require the unchanged actual 4/32 pure controls. The previous accepted v1 request was unusable and its helper attempt failed before calibration.",
+  "output_constraint": "Absolute canonical fresh output strictly beneath repo/ignored, excluding repo/ignored itself.",
+  "required_active_adapter_sha256": "fd83e351ba6c13f18554f7103aeddf7547175cbfba273a7d89cf5df3e28e7d30",
+  "required_existing_helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+  "runtime_bounds": {
+    "cpu_seconds": 20,
+    "file_bytes": 16777216,
+    "finite_parent_wait_seconds": 55,
+    "kill_after_seconds": 10,
+    "outer_timeout_seconds": 40,
+    "wall_seconds": 30
+  },
+  "schema_version": 1,
+  "scope": "Byte-exact portable copies of the actual v4 pure-control materials and the v4-to-v3 failure reversal; no executed public-materializer result.",
+  "whole_290_file_recovery": "The later source commit has the same290-file set; exact reversal changes only adapter.py to the original failure digest. Verify reproduction.json source map before using new local freeze requests."
+}

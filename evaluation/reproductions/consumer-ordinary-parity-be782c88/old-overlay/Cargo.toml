@@ -1,0 +1,26 @@
+[package]
+name = "liteinst2"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+autobins = false
+autotests = false
+autoexamples = false
+
+[lib]
+name = "liteinst2_consumer_parity_base_v1"
+path = "src/lib.rs"
+doctest = false
+
+[workspace]
+members = []
+
+[dependencies]
+iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "block_encoder", "code_asm", "instr_info"] }
+libc = "0.2.186"
+memmap2 = "0.9.11"
+nix = { version = "0.31.3", features = ["mman", "process", "signal"] }
+
+[features]
+saved-pkru-probe = []

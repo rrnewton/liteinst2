@@ -1,0 +1,30 @@
+{
+  "argv": [
+    "/usr/bin/python3.9",
+    "-B",
+    "${CASE_ROOT}/outside-ignored/repo/evaluation/reproductions/unwind-consumer-env-dependency-v4/prepare-controls.py",
+    "--repo",
+    "${CASE_ROOT}/outside-ignored/repo",
+    "--output",
+    "${CASE_ROOT}/outside-ignored/prepared",
+    "--python",
+    "/usr/bin/python3.9",
+    "--python-sha256",
+    "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+    "--timeout",
+    "/usr/bin/timeout",
+    "--timeout-sha256",
+    "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${HARNESS_REPO}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${CASE_ROOT}/outside-ignored/prepare.stderr",
+  "stdout": "${CASE_ROOT}/outside-ignored/prepare.stdout",
+  "wall_seconds": 30
+}

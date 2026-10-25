@@ -1,0 +1,66 @@
+{
+  "accepted": 3,
+  "bounds": {
+    "cpu_seconds": 20,
+    "file_bytes": 16777216,
+    "wall_seconds": 30
+  },
+  "cases": [
+    {
+      "expected": "accept",
+      "id": "elf-exec"
+    },
+    {
+      "expected": "accept",
+      "id": "elf-dyn"
+    },
+    {
+      "expected": "refuse",
+      "id": "elf-rel"
+    },
+    {
+      "expected": "refuse",
+      "id": "elf-core"
+    },
+    {
+      "expected": "accept",
+      "id": "exact-initial-authority"
+    },
+    {
+      "expected": "refuse",
+      "id": "changed-coordinate"
+    },
+    {
+      "expected": "refuse",
+      "id": "changed-build-digest"
+    },
+    {
+      "expected": "refuse",
+      "id": "replacement-epoch-original-digest"
+    },
+    {
+      "expected": "refuse",
+      "id": "refreshed-inputs-original-receipt"
+    },
+    {
+      "expected": "refuse",
+      "id": "changed-during-read"
+    },
+    {
+      "expected": "refuse",
+      "id": "changed-after-phase"
+    },
+    {
+      "expected": "refuse",
+      "id": "changed-init-receipt"
+    },
+    {
+      "expected": "refuse",
+      "id": "changed-init-request"
+    }
+  ],
+  "rejected": 10,
+  "schema": "parity-reproduction-source-controls-v2",
+  "scope": "Synthetic header/input-authority unit controls only. No valid consumer-build/helper receipt is manufactured as workload evidence; 72-row corpus and 1+11 comparator controls are unchanged.",
+  "status": "PROSPECTIVE_UNEXECUTED"
+}

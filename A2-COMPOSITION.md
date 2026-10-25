@@ -211,3 +211,5 @@ unwind qualification. Existing unsupported refusals and finite AMD results do no
 substitute for those required fixtures. Generalized puns retain first priority
 for install-once clients; ordinary relocation precedes T1. Concurrent toggle
 visibility remains A4 work.
+
+`publish_with_unwind` provides scoped `BacktraceOnly` support for two authored frame profiles, with process-lifetime ownership of retained CFI metadata. The [consumer evidence and reproduction index](evaluation/consumer-public.md) records the qualified native witnesses, ordinary-planner parity, failed fresh-reproduction prerequisites and their separate source epochs. Full A2 remains open; this does not establish general CFI coverage, arbitrary asynchronous unwinding or general unwind support.

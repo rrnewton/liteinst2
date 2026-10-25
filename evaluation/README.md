@@ -194,3 +194,5 @@ refusals, unrun cases remain unrun, and formatter-review assertion failures
 remain distinct from the actual successful formatter command. Reporting and
 request preparation do not execute the modeled workload. Timing is operational
 only; per-command tool and hardware provenance limits remain in each record.
+
+Generated-unwind consumer results and reproduction materials are indexed in [consumer-public.md](consumer-public.md). The index separates historical native/parity results, failed fresh-reproduction prerequisites, workspace regressions and reporting operations; these records do not establish full A2 or general unwind support.

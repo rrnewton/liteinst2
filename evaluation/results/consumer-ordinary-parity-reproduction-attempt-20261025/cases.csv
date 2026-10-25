@@ -1,0 +1,14 @@
+ordinal,command_id,case_id,kind,expected,observed
+0,authority-controls,elf-exec,synthetic_authority_control,accept,accept
+1,authority-controls,elf-dyn,synthetic_authority_control,accept,accept
+2,authority-controls,elf-rel,synthetic_authority_control,refuse,refuse
+3,authority-controls,elf-core,synthetic_authority_control,refuse,refuse
+4,authority-controls,exact-initial-authority,synthetic_authority_control,accept,accept
+5,authority-controls,changed-coordinate,synthetic_authority_control,refuse,refuse
+6,authority-controls,changed-build-digest,synthetic_authority_control,refuse,refuse
+7,authority-controls,replacement-epoch-original-digest,synthetic_authority_control,refuse,refuse
+8,authority-controls,refreshed-inputs-original-receipt,synthetic_authority_control,refuse,refuse
+9,authority-controls,changed-during-read,synthetic_authority_control,refuse,refuse
+10,authority-controls,changed-after-phase,synthetic_authority_control,refuse,refuse
+11,authority-controls,changed-init-receipt,synthetic_authority_control,refuse,refuse
+12,authority-controls,changed-init-request,synthetic_authority_control,refuse,refuse

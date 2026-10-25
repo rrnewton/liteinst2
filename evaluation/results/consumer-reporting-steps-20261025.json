@@ -1,0 +1,256 @@
+{
+  "claims": [
+    {
+      "number": 1,
+      "status": "unqualified_by_reporting"
+    },
+    {
+      "number": 2,
+      "status": "unqualified_by_reporting"
+    },
+    {
+      "number": 3,
+      "status": "unqualified_by_reporting"
+    },
+    {
+      "number": 4,
+      "status": "unqualified_by_reporting"
+    }
+  ],
+  "commands": [
+    {
+      "actual_request_sha256": "1cf8f38df10cfee7ae9b8004f6075fc5556a04d0066487c93a498dd4d96dd744",
+      "cleanup": "ECHILD_zero_descendants",
+      "elapsed_seconds": 0.19780680118128657,
+      "exit": 0,
+      "finite_parent_timeout_seconds": 55,
+      "id": "prepare-closed-export",
+      "outer_kill_after_seconds": 10,
+      "outer_timeout_seconds": 40,
+      "receipt_sha256": "bec520e96dbbd7ddd57ef4c5d84e735b809c210ca33f86716cd79df6d8916f01",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/aggregate.py",
+          "prepare",
+          "--parameters",
+          "${EXPORT_INPUTS}/parameters.json",
+          "--parameters-sha256",
+          "a1e2fd2b43146b3432cbc9636b5c5a4f3400c1e9eec77c16a526f9e9e556044f",
+          "--output",
+          "${EXPORT_OUTER}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PREPARE_RAW}/stderr.txt",
+        "stdout": "${PREPARE_RAW}/stdout.txt",
+        "wall_seconds": 30
+      },
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "815fe54cbf2bcd3022a6347874d14dd1cdac8cf54e51e7f35df4759a6325dc1e"
+    },
+    {
+      "actual_request_sha256": "c0d35eb55610aff0c4093d6ff5042da227331f41decbe63980553f370ba6995a",
+      "cleanup": "ECHILD_zero_descendants",
+      "elapsed_seconds": 3.353710650000721,
+      "exit": 0,
+      "finite_parent_timeout_seconds": 55,
+      "id": "closed-export",
+      "outer_kill_after_seconds": 10,
+      "outer_timeout_seconds": 40,
+      "receipt_sha256": "c00bec53c7831fb9f3f848f5e02835150fbdf8bbcb9a7205ff7f93c6c84be772",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/export.py",
+          "--runtime",
+          "${CONSUMER_RUNTIME}",
+          "--manifest-sha256",
+          "f7d9409593ef87299fddbacb5f8533fd906d40efaff927e037debb771da17d06",
+          "--terminal",
+          "${CONSUMER_RUNTIME}/control/complete.json",
+          "--terminal-sha256",
+          "687a47bd375642dc67ccd1017c2659719df84ba4646e05ac499e5629f9118915",
+          "--aggregate-binding",
+          "${QUALIFICATION_OUTER}/binding.json",
+          "--aggregate-binding-sha256",
+          "a3721075fe0653558537192cd72fb0a2c7c232f7c205f57c259b259e46d02063",
+          "--schema",
+          "${REPO}/evaluation/schema-v1.json",
+          "--schema-sha256",
+          "322201b2d8d1594b1306e59bf3498fd09a59968e3da104771f9ff4a6f54feb3a",
+          "--metadata",
+          "${EXPORT_INPUTS}/metadata.json",
+          "--metadata-sha256",
+          "0e5043ec2c0136f8cc9356e9e9f619fb2d55cf63e43cb1fe42bfbd991fb0bbbc",
+          "--output",
+          "${EXPORT_OUTPUT}",
+          "--run-id",
+          "a2-generated-unwind-be782c88-20261025"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${EXPORT_OUTER}/outer.stderr",
+        "stdout": "${EXPORT_OUTER}/outer.stdout",
+        "wall_seconds": 30
+      },
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "f269adfeac7ebfb68810492896200254b14495f2c5f4e4065ccdcc8a64728298"
+    },
+    {
+      "actual_request_sha256": "b147d5b971b7d60c462ea2567711a2e04a2fc0c89572076ee678ce3a1d786d2d",
+      "cleanup": "ECHILD_zero_descendants",
+      "elapsed_seconds": 0.5443179719150066,
+      "exit": 0,
+      "finite_parent_timeout_seconds": 55,
+      "id": "required-export",
+      "outer_kill_after_seconds": 10,
+      "outer_timeout_seconds": 40,
+      "receipt_sha256": "b7ce9cbff29291d58cbe6bcb81063e9424aa6b80249350ec3ba4b6278e6b891b",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/evaluation/export-word.py",
+          "--inputs",
+          "${REQUIRED_INPUTS}/export-inputs.json",
+          "--inputs-sha256",
+          "b857e9e3b51587c71d2574093fcf29ab0d53445d0884c91599654836bb12db18",
+          "--output",
+          "${REQUIRED_OUTPUT}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${REQUIRED_CONTROL}/stderr",
+        "stdout": "${REQUIRED_CONTROL}/stdout",
+        "wall_seconds": 30
+      },
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "cpuinfo_capture_sha256": "fe1328b25eb6a889ec5738d101012a162c08942b8a12cb90694d943c736bc39a",
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "microcode": "0xb101066",
+    "model": 17,
+    "observation_record_sha256": "8785e7d4864d11274727d5b07b06b935a66792a14fa9e1549adebee1ea3ba82f",
+    "observation_scope": "Separate retained MSRV/package host context; no phase-relative or continuous attestation for these reporting commands.",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "historical_output_only": "The closed export produced 19 command rows and 310 typed case rows; the required export produced four command rows and an empty case table, with the workspace counts in its metadata. These records do not add new native case credit.",
+  "native_commands": 0,
+  "output_inventory": {
+    "closed_consumer": {
+      "cases.csv": "e5a92daadb5e81037ce55337b3ec126df39b8ab934aff3a58ee0fd754f473072",
+      "commands.csv": "352a07227963125e011cd50dd20c910e05e0e550155526ac6c051c34a19e54fd",
+      "source-files.json": "ad4e1f167a5d102fa805c2cb176ff20a9da136a079abb964c29d1ec1795f9fbf",
+      "summary.json": "0270e51b5a9c3bc2904eb76641d9d09afe9088489c6af2d759b363a895429a20"
+    },
+    "required_workspace": {
+      "cases.csv": "5527894905b2fc719672562b928cd6e93a921a1c8b2a7d6b9e11d82e9328fcd1",
+      "commands.csv": "70fb46dd66039bb6db31f7d41f054513ec7c03f3aa1d9f7220afb189533554ac",
+      "source-files.json": "9527a91d5d69fabe7a315e42f0645ac376f65060cbb50340b67f10f56ee21f55",
+      "summary.json": "66cc3d5c0e73fdba2c1ac86b51acb08eef841a268f934cb7a9c5809f899023d3"
+    }
+  },
+  "reproduction": "../consumer-reporting.md",
+  "run_id": "consumer-reporting-steps-20261025",
+  "schema_version": 1,
+  "source_map": "required-be782c88-20261025/source-files.json",
+  "source_map_sha256": "9527a91d5d69fabe7a315e42f0645ac376f65060cbb50340b67f10f56ee21f55",
+  "source_scope": "The executed public reporting/helper source was at be782c88; private parameter/input files are separate hash-bound data, not part of that Git commit.",
+  "status": "pass",
+  "suite": "closed-record-request-preparation-and-export",
+  "tested_revision": "be782c88f9f30581d67aa43aa20aa0a49062cd69",
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tool_scope": "Selected interpreter, timeout, helper and reporting source bytes only; not full runtime closure.",
+  "tools": {
+    "consumer_reporting": [
+      {
+        "role": "python",
+        "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+        "version": null,
+        "version_basis": "Selected whole-file observation; version banner not captured."
+      },
+      {
+        "role": "timeout",
+        "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+        "version": null,
+        "version_basis": "Selected whole-file observation; version banner not captured."
+      },
+      {
+        "role": "helper",
+        "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "version": null,
+        "version_basis": "Selected whole-file observation; version banner not captured."
+      },
+      {
+        "role": "aggregate",
+        "sha256": "1323b6e86e3c93cae5eda9f864b82bfb1cc24c7cf8d000d0ca1d7b963d19569e",
+        "version": null,
+        "version_basis": "Selected whole-file observation; version banner not captured."
+      },
+      {
+        "role": "reporter",
+        "sha256": "1d61d445d12226aafb2d66588c9fba9db788228b26f0266f6640d11806645e8a",
+        "version": null,
+        "version_basis": "Selected whole-file observation; version banner not captured."
+      }
+    ],
+    "required_reporting": [
+      {
+        "role": "export-word.py",
+        "sha256": "65c9e02a4496b72eb3bfdaecd618cd3d4b3f114b8d371725e5b764661bb983a2",
+        "version": null,
+        "version_basis": "Selected whole-file observation; version banner not captured."
+      },
+      {
+        "role": "bounded_command.py",
+        "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "version": null,
+        "version_basis": "Selected whole-file observation; version banner not captured."
+      },
+      {
+        "role": "python3.9",
+        "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+        "version": null,
+        "version_basis": "Selected whole-file observation; version banner not captured."
+      },
+      {
+        "role": "timeout",
+        "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+        "version": null,
+        "version_basis": "Selected whole-file observation; version banner not captured."
+      }
+    ]
+  }
+}

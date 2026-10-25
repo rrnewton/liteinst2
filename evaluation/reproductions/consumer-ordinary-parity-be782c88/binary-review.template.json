@@ -1,0 +1,19 @@
+{
+  "binary_binding_sha256": "${BINARY_BINDING_SHA256}",
+  "binary_sha256": "${ACTUAL_BINARY_SHA256}",
+  "input_authority": {
+    "init_receipt_sha256": "${ACTUAL_INIT_RECEIPT_SHA256}",
+    "init_request_sha256": "${ACTUAL_INIT_REQUEST_SHA256}",
+    "init_stdout_sha256": "${ACTUAL_INIT_STDOUT_SHA256}",
+    "inputs_sha256": "${INITIAL_INPUTS_SHA256}",
+    "old_cargo_request_sha256": "${ACTUAL_OLD_CARGO_REQUEST_SHA256}"
+  },
+  "report": {
+    "path": "${INDEPENDENT_REPORT}",
+    "sha256": "${INDEPENDENT_REPORT_SHA256}"
+  },
+  "run_request_sha256": "${ACTUAL_RUN_REQUEST_SHA256}",
+  "schema": "consumer-ordinary-parity-reproduction-binary-review-v1",
+  "source_bundle_sha256": "${MATERIAL_SHA256}",
+  "status": "APPROVED_ACTUAL_BINARY_FOR_ONCE_ONLY_PARITY"
+}
