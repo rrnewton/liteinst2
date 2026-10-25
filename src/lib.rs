@@ -12,6 +12,7 @@ pub mod engine;
 mod entry_router;
 pub mod eviction;
 pub mod eviction_chain;
+pub mod frame_trace;
 pub mod grouping;
 pub mod neighbor;
 pub mod patcher;

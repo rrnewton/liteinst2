@@ -48,6 +48,10 @@ use iced_x86::code_asm::rsi;
 use iced_x86::code_asm::rsp;
 
 use crate::controls::{ControlledAction, ProbeControl};
+use crate::frame_trace::{
+    FrameCallKind, FrameEffect, FrameEmission, FrameEntryOrigin, FrameRecorder, FrameStage,
+    FrameTraceLimits, FrameTraceRefusal, HelperFrames,
+};
 use crate::patcher::JumpPatchPlan;
 use crate::patcher::LiveJumpPatch;
 use crate::patcher::PatchError;
@@ -1419,9 +1423,51 @@ impl TrampolinePlan {
 
     /// Emits this plan at an exact executable address.
     pub fn emit_at(&self, address: u64) -> Result<TrampolineImage, TrampolineError> {
+        self.emit_at_recording(address, None)
+    }
+
+    /// Emits unchanged code with separately fallible producer frame metadata.
+    ///
+    /// This does not supply original CFI, register FDEs or admit unwinding.
+    /// Unsupported metadata never removes an otherwise valid ordinary image.
+    pub fn emit_with_frame_trace_at(&self, address: u64) -> Result<FrameEmission, TrampolineError> {
+        self.emit_with_frame_trace_limits_at(address, FrameTraceLimits::default())
+    }
+
+    /// Emits code and metadata with independent, explicit metadata limits.
+    pub fn emit_with_frame_trace_limits_at(
+        &self,
+        address: u64,
+        limits: FrameTraceLimits,
+    ) -> Result<FrameEmission, TrampolineError> {
+        let origin = if self.ptrace_stops {
+            FrameEntryOrigin::ControllerOwnedStack
+        } else {
+            FrameEntryOrigin::ApplicationStack
+        };
+        let mut frames = FrameRecorder::new(origin, limits);
+        if self.ptrace_stops {
+            frames.refuse(FrameTraceRefusal::UnsupportedEntryOrigin);
+        } else if matches!(self.kind, TrampolineKind::ExactSyscall) {
+            frames.refuse(FrameTraceRefusal::ExactSyscallRequiresFrameContract);
+        } else if self.relocated_start != self.logical_index
+            || self.actions.iter().any(|action| action.2)
+        {
+            frames.refuse(FrameTraceRefusal::ReplacementRequiresFrameContract);
+        }
+        let image = self.emit_at_recording(address, Some(&mut frames))?;
+        let trace = frames.finish(&image);
+        Ok(FrameEmission::new(origin, image, trace))
+    }
+
+    fn emit_at_recording(
+        &self,
+        address: u64,
+        frames: Option<&mut FrameRecorder>,
+    ) -> Result<TrampolineImage, TrampolineError> {
         #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
         {
-            let _ = address;
+            let _ = (address, frames);
             return Err(TrampolineError::UnsupportedPlatform);
         }
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -1430,7 +1476,7 @@ impl TrampolinePlan {
                 self.kind,
                 TrampolineKind::Instruction | TrampolineKind::Actions
             ) {
-                return self.emit_actions_at(address);
+                return self.emit_actions_at(address, frames);
             }
             let extended_state = match self.kind {
                 TrampolineKind::PatchWindow => SavedExtendedStateLayout::detect()?,
@@ -1465,17 +1511,25 @@ impl TrampolinePlan {
             let instrumentation_address = hook_entry
                 .checked_add(entry_stop.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+            let recording = frames.as_deref().is_some_and(FrameRecorder::recording);
+            let mut instrumentation_frames = HelperFrames::new(FrameStage::SaveAndCall);
+            let mut restore_frames = HelperFrames::new(FrameStage::Restore);
             let instrumentation = self.encode_instrumentation(
                 instrumentation_address,
                 &extended_state,
                 self.logical_address(),
                 self.hook.expect("legacy plan always has a callback"),
                 None,
+                recording.then_some(&mut instrumentation_frames),
             )?;
             let restore_address = instrumentation_address
                 .checked_add(instrumentation.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
-            let restore = encode_restore(restore_address, &extended_state)?;
+            let restore = encode_restore(
+                restore_address,
+                &extended_state,
+                recording.then_some(&mut restore_frames),
+            )?;
             let completion_stop_address = restore_address
                 .checked_add(restore.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
@@ -1606,6 +1660,32 @@ impl TrampolinePlan {
                 entry_routes.push((self.logical_address(), hook_entry));
                 entry_routes.sort_unstable_by_key(|(original, _)| *original);
             }
+            if let Some(frames) = frames {
+                if let Some(block) = prefix_block.as_ref() {
+                    record_relocated_frames(frames, prefix_instructions, address, block);
+                }
+                frames.helper(
+                    self.logical_address(),
+                    instrumentation_address,
+                    &instrumentation,
+                    instrumentation_frames,
+                );
+                frames.helper(
+                    self.logical_address(),
+                    restore_address,
+                    &restore,
+                    restore_frames,
+                );
+                if let Some(block) = relocated_block.as_ref() {
+                    record_relocated_frames(
+                        frames,
+                        relocated_instructions,
+                        relocated_address,
+                        block,
+                    );
+                }
+                frames.return_jump(return_jump_address, return_jump.len(), self.return_address);
+            }
             Ok(TrampolineImage {
                 address,
                 bytes,
@@ -1623,7 +1703,11 @@ impl TrampolinePlan {
     }
 
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
-    fn emit_actions_at(&self, address: u64) -> Result<TrampolineImage, TrampolineError> {
+    fn emit_actions_at(
+        &self,
+        address: u64,
+        frames: Option<&mut FrameRecorder>,
+    ) -> Result<TrampolineImage, TrampolineError> {
         let extended_state = SavedExtendedStateLayout::detect()?;
         // Give every encoder label an identity distinct from *all* original
         // addresses and operands. Direct branches are retargeted explicitly;
@@ -1655,6 +1739,7 @@ impl TrampolinePlan {
         let mut encoded_instructions = Vec::new();
         let mut heads = Vec::new();
         let mut first_hook_lengths = None;
+        let mut helper_frames = Vec::new();
         let mut action_index = 0;
         for (index, original) in self.instructions.iter().enumerate() {
             let entry_index = encoded_instructions.len();
@@ -1669,6 +1754,9 @@ impl TrampolinePlan {
                 // These helpers use only register/stack operands, absolute MOV
                 // immediates and internal relative branches. Their byte strings
                 // are position independent and remain contiguous below.
+                let recording = frames.as_deref().is_some_and(FrameRecorder::recording);
+                let mut instrumentation_frames = HelperFrames::new(FrameStage::SaveAndCall);
+                let mut restore_frames = HelperFrames::new(FrameStage::Restore);
                 let instrumentation = self.encode_instrumentation(
                     0,
                     &extended_state,
@@ -1677,8 +1765,13 @@ impl TrampolinePlan {
                     self.controls
                         .get(action_index)
                         .map(|action| &action.control),
+                    recording.then_some(&mut instrumentation_frames),
                 )?;
-                let restore = encode_restore(instrumentation.len() as u64, &extended_state)?;
+                let restore = encode_restore(
+                    instrumentation.len() as u64,
+                    &extended_state,
+                    recording.then_some(&mut restore_frames),
+                )?;
                 first_hook_lengths.get_or_insert((
                     entry_index,
                     instrumentation.len(),
@@ -1691,6 +1784,16 @@ impl TrampolinePlan {
                         directive.set_ip(identity()?);
                         encoded_instructions.push(directive);
                     }
+                }
+                if recording {
+                    helper_frames.push((
+                        entry_index,
+                        original.ip(),
+                        instrumentation.len(),
+                        restore.len(),
+                        instrumentation_frames,
+                        restore_frames,
+                    ));
                 }
                 action_index += 1;
             }
@@ -1815,6 +1918,64 @@ impl TrampolinePlan {
             saved_extended_state: extended_state,
             ..TrampolineLayout::default()
         };
+        if let Some(frames) = frames {
+            if block.terminal_jump_offset.is_some()
+                || !block.branch_relays.is_empty()
+                || block.encoded.new_instruction_offsets.contains(&u32::MAX)
+            {
+                frames.refuse(FrameTraceRefusal::ExpandedRelocation);
+            }
+            for (
+                entry,
+                pc,
+                instrumentation_len,
+                restore_len,
+                instrumentation_frames,
+                restore_frames,
+            ) in helper_frames
+            {
+                let helper_offset = match offset(entry) {
+                    Ok(offset) => offset,
+                    Err(_) => {
+                        frames.refuse(FrameTraceRefusal::InvalidProducerAnnotation);
+                        continue;
+                    }
+                };
+                let restore_offset = helper_offset.checked_add(instrumentation_len);
+                let helper_end = restore_offset.and_then(|value| value.checked_add(restore_len));
+                if let (Some(restore_offset), Some(helper_end)) = (restore_offset, helper_end) {
+                    if let (Some(instrumentation), Some(restore), Ok(start), Ok(restored)) = (
+                        block.encoded.code_buffer.get(helper_offset..restore_offset),
+                        block.encoded.code_buffer.get(restore_offset..helper_end),
+                        generated(helper_offset),
+                        generated(restore_offset),
+                    ) {
+                        frames.helper(pc, start, instrumentation, instrumentation_frames);
+                        frames.helper(pc, restored, restore, restore_frames);
+                    } else {
+                        frames.refuse(FrameTraceRefusal::IncompleteByteOwnership);
+                    }
+                } else {
+                    frames.refuse(FrameTraceRefusal::ArithmeticOverflow);
+                }
+            }
+            for (index, &(_, _, body, replaced)) in heads.iter().enumerate() {
+                if !replaced {
+                    let start = offset(body).and_then(generated);
+                    let end = heads
+                        .get(index + 1)
+                        .map_or(Ok(executable_end), |next| offset(next.1))
+                        .and_then(generated);
+                    match (start, end) {
+                        (Ok(start), Ok(end)) => {
+                            frames.relocated(self.instructions[index], start, end)
+                        }
+                        _ => frames.refuse(FrameTraceRefusal::InvalidProducerAnnotation),
+                    }
+                }
+            }
+            frames.return_jump(return_start, return_jump.len(), self.return_address);
+        }
         let mut bytes = block.encoded.code_buffer;
         bytes.extend_from_slice(&return_jump);
         debug_assert_eq!(layout.total_len(), Some(bytes.len()));
@@ -1841,22 +2002,44 @@ impl TrampolinePlan {
         logical_address: u64,
         hook: HookCallback,
         control: Option<&ProbeControl>,
+        mut frames: Option<&mut HelperFrames>,
     ) -> Result<Vec<u8>, TrampolineError> {
         let mut assembler = CodeAssembler::new(64).map_err(encoding_error)?;
         assembler
             .lea(rsp, rsp - SYSTEM_V_RED_ZONE_BYTES)
             .map_err(encoding_error)?;
+        record_frame_effect(
+            &mut frames,
+            &assembler,
+            FrameEffect::Reserve(SYSTEM_V_RED_ZONE_BYTES),
+        );
         // Reserve the descriptor immediately below the untouched application
         // red zone. Flags and GPR pushes below it retain every pre-existing
         // HookContext offset, while the descriptor becomes its 32-byte tail.
         assembler
             .lea(rsp, rsp - SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES)
             .map_err(encoding_error)?;
+        record_frame_effect(
+            &mut frames,
+            &assembler,
+            FrameEffect::Reserve(SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES),
+        );
         assembler.pushfq().map_err(encoding_error)?;
+        record_frame_effect(&mut frames, &assembler, FrameEffect::SaveFlags);
         for register in [
             rax, rcx, rdx, rbx, rbp, rsi, rdi, r8, r9, r10, r11, r12, r13, r14, r15,
         ] {
             assembler.push(register).map_err(encoding_error)?;
+            if let Some(frames) = frames.as_deref_mut() {
+                let source = assembler
+                    .instructions()
+                    .last()
+                    .expect("successful PUSH is present");
+                frames.after(
+                    assembler.instructions().len(),
+                    FrameEffect::SaveRegister(source.op0_register()),
+                );
+            }
         }
         if self.ptrace_stops {
             // The authenticated entry controller placed the application RSP in
@@ -1887,11 +2070,14 @@ impl TrampolinePlan {
                 .map_err(encoding_error)?;
         }
         assembler.push(rax).map_err(encoding_error)?;
+        record_frame_effect(&mut frames, &assembler, FrameEffect::MetadataWord);
         assembler
             .mov(rax, logical_address)
             .map_err(encoding_error)?;
         assembler.push(rax).map_err(encoding_error)?;
+        record_frame_effect(&mut frames, &assembler, FrameEffect::MetadataWord);
         assembler.mov(r12, rsp).map_err(encoding_error)?;
+        record_frame_effect(&mut frames, &assembler, FrameEffect::AnchorContext);
         extended_state.encode_save(&mut assembler)?;
         let descriptor_offset = core::mem::offset_of!(HookContext, saved_extended_state) as i32;
         assembler
@@ -1940,7 +2126,17 @@ impl TrampolinePlan {
                 .map_err(encoding_error)?;
         }
         assembler.call(rax).map_err(encoding_error)?;
-        assembler.assemble(address).map_err(encoding_error)
+        if let Some(frames) = frames.as_deref_mut() {
+            frames.call(
+                assembler.instructions().len(),
+                if control.is_some() {
+                    FrameCallKind::ControlDispatcher
+                } else {
+                    FrameCallKind::Observer
+                },
+            );
+        }
+        assemble_frame_helper(&mut assembler, address, frames)
     }
 }
 
@@ -1948,26 +2144,115 @@ impl TrampolinePlan {
 fn encode_restore(
     address: u64,
     extended_state: &SavedExtendedStateLayout,
+    mut frames: Option<&mut HelperFrames>,
 ) -> Result<Vec<u8>, TrampolineError> {
     let mut assembler = CodeAssembler::new(64).map_err(encoding_error)?;
     extended_state.encode_restore(&mut assembler)?;
     assembler.mov(rsp, r12).map_err(encoding_error)?;
+    record_frame_effect(&mut frames, &assembler, FrameEffect::RestoreStack);
     assembler
         .add(rsp, HOOK_METADATA_BYTES)
         .map_err(encoding_error)?;
+    record_frame_effect(&mut frames, &assembler, FrameEffect::SkipMetadata);
     for register in [
         r15, r14, r13, r12, r11, r10, r9, r8, rdi, rsi, rbp, rbx, rdx, rcx, rax,
     ] {
         assembler.pop(register).map_err(encoding_error)?;
+        if let Some(frames) = frames.as_deref_mut() {
+            let source = assembler
+                .instructions()
+                .last()
+                .expect("successful POP is present");
+            frames.after(
+                assembler.instructions().len(),
+                FrameEffect::RestoreRegister(source.op0_register()),
+            );
+        }
     }
     assembler.popfq().map_err(encoding_error)?;
+    record_frame_effect(&mut frames, &assembler, FrameEffect::RestoreFlags);
     assembler
         .lea(rsp, rsp + SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES)
         .map_err(encoding_error)?;
+    record_frame_effect(
+        &mut frames,
+        &assembler,
+        FrameEffect::Release(SAVED_EXTENDED_STATE_DESCRIPTOR_BYTES),
+    );
     assembler
         .lea(rsp, rsp + SYSTEM_V_RED_ZONE_BYTES)
         .map_err(encoding_error)?;
-    assembler.assemble(address).map_err(encoding_error)
+    record_frame_effect(
+        &mut frames,
+        &assembler,
+        FrameEffect::Release(SYSTEM_V_RED_ZONE_BYTES),
+    );
+    assemble_frame_helper(&mut assembler, address, frames)
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn record_frame_effect(
+    frames: &mut Option<&mut HelperFrames>,
+    assembler: &CodeAssembler,
+    effect: FrameEffect,
+) {
+    if let Some(frames) = frames.as_deref_mut() {
+        frames.after(assembler.instructions().len(), effect);
+    }
+}
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn assemble_frame_helper(
+    assembler: &mut CodeAssembler,
+    address: u64,
+    frames: Option<&mut HelperFrames>,
+) -> Result<Vec<u8>, TrampolineError> {
+    if let Some(frames) = frames {
+        let result = assembler
+            .assemble_options(address, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+            .map_err(encoding_error)?;
+        frames.finish(assembler.instructions(), &result.inner);
+        Ok(result.inner.code_buffer)
+    } else {
+        assembler.assemble(address).map_err(encoding_error)
+    }
+}
+
+fn record_relocated_frames(
+    frames: &mut FrameRecorder,
+    instructions: &[Instruction],
+    address: u64,
+    block: &RelocatedBlock,
+) {
+    if !frames.recording() {
+        return;
+    }
+    let offsets = &block.encoded.new_instruction_offsets;
+    if block.terminal_jump_offset.is_some()
+        || !block.branch_relays.is_empty()
+        || offsets.contains(&u32::MAX)
+    {
+        frames.refuse(FrameTraceRefusal::ExpandedRelocation);
+        return;
+    }
+    if offsets.len() != instructions.len() {
+        frames.refuse(FrameTraceRefusal::InvalidProducerAnnotation);
+        return;
+    }
+    for (index, instruction) in instructions.iter().enumerate() {
+        let start = address.checked_add(offsets[index] as u64);
+        let end = address.checked_add(
+            offsets
+                .get(index + 1)
+                .map_or(block.encoded.code_buffer.len() as u64, |offset| {
+                    u64::from(*offset)
+                }),
+        );
+        match (start, end) {
+            (Some(start), Some(end)) => frames.relocated(*instruction, start, end),
+            _ => frames.refuse(FrameTraceRefusal::ArithmeticOverflow),
+        }
+    }
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
