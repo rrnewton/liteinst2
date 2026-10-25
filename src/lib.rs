@@ -21,5 +21,6 @@ pub mod quiescent;
 pub mod rapid;
 pub mod scanner;
 pub mod search;
+pub mod sync_core;
 pub mod trampoline;
 mod trap;

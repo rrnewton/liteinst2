@@ -88,3 +88,10 @@ path = "tests/support/boundary_signal_driver.rs"
 test = false
 bench = false
 doc = false
+
+[[bin]]
+name = "sync-core-capability-driver"
+path = "tests/support/sync_core_driver.rs"
+test = false
+bench = false
+doc = false
