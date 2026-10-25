@@ -67,3 +67,10 @@ path = "tests/support/successor_eviction_driver.rs"
 test = false
 bench = false
 doc = false
+
+[[bin]]
+name = "eviction-chain-oracle-driver"
+path = "tests/support/eviction_chain_driver.rs"
+test = false
+bench = false
+doc = false

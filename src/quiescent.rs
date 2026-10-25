@@ -566,6 +566,40 @@ pub(crate) fn plan_pun(
     search_evidence: &mut SearchEvidence,
     parent_scope: SearchScope,
 ) -> Result<PlannedInstall, Refusal> {
+    plan_pun_with_context(
+        request,
+        scan,
+        source,
+        occupied,
+        prefixes,
+        search_evidence,
+        PunContext {
+            scope: parent_scope,
+            callback_free: false,
+            exact_target: None,
+        },
+    )
+}
+
+/// Internal composition only. The original public planner uses the unchanged
+/// schedule and observing/replacing constructor through the wrapper above.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct PunContext {
+    pub(crate) scope: SearchScope,
+    pub(crate) callback_free: bool,
+    pub(crate) exact_target: Option<u64>,
+}
+
+pub(crate) fn plan_pun_with_context(
+    request: &InstallRequest<'_>,
+    scan: &ScanResult,
+    source: AddressRange,
+    occupied: &[AddressRange],
+    prefixes: usize,
+    search_evidence: &mut SearchEvidence,
+    context: PunContext,
+) -> Result<PlannedInstall, Refusal> {
+    let parent_scope = context.scope;
     let physical = request.logical_pc;
     let scope = SearchScope {
         physical_pc: Some(physical),
@@ -590,7 +624,7 @@ pub(crate) fn plan_pun(
         search_evidence.qualification(scope, &Refusal::NoPatchWindow);
         return Err(Refusal::NoPatchWindow);
     }
-    if request.semantics != HookSemantics::ReplaceFirst {
+    if context.callback_free || request.semantics != HookSemantics::ReplaceFirst {
         qualify_instruction(instruction.instruction())
             .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
     }
@@ -643,14 +677,31 @@ pub(crate) fn plan_pun(
         );
         return Err(Refusal::AllocationUnavailable);
     }
-    let trampoline = TrampolinePlan::from_short_instruction(
-        scan,
-        physical,
-        request.hook,
-        request.semantics == HookSemantics::ReplaceFirst,
-    )
+    let trampoline = if context.callback_free {
+        TrampolinePlan::from_instruction(scan, physical)
+    } else {
+        TrampolinePlan::from_short_instruction(
+            scan,
+            physical,
+            request.hook,
+            request.semantics == HookSemantics::ReplaceFirst,
+        )
+    }
     .map_err(|e| Refusal::Backend(e.to_string()))?;
-    let candidates = pun_candidates(window, policy);
+    let candidates = if let Some(target) = context.exact_target {
+        if policy.max_candidates == 0 || !window.contains(target) {
+            return Err(Refusal::AllocationUnavailable);
+        }
+        PunCandidates {
+            addresses: vec![target],
+            proof: crate::search::CandidateProof::Indexed {
+                permanent_end_exclusive: Some(1),
+                omitted: None,
+            },
+        }
+    } else {
+        pun_candidates(window, policy)
+    };
     let mut last_error = Refusal::AllocationUnavailable;
     let image_search = search_evidence.begin(
         SearchDomain::SelectedImages,
@@ -799,7 +850,7 @@ pub(crate) fn plan_pun(
     Err(last_error)
 }
 
-fn pun_candidates(window: AddressRange, policy: &AllocationPolicy) -> PunCandidates {
+pub(crate) fn pun_candidates(window: AddressRange, policy: &AllocationPolicy) -> PunCandidates {
     let mut addresses = Vec::new();
     let mut seen = std::collections::BTreeSet::new();
     let mut add = |address| {
@@ -1270,9 +1321,9 @@ fn candidate_word(displacement: i32, mask: [bool; 4], mut choice: usize) -> u32 
     u32::from_le_bytes(bytes)
 }
 
-struct PunCandidates {
-    addresses: Vec<u64>,
-    proof: crate::search::CandidateProof,
+pub(crate) struct PunCandidates {
+    pub(crate) addresses: Vec<u64>,
+    pub(crate) proof: crate::search::CandidateProof,
 }
 
 fn pun_candidate_proof(

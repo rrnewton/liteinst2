@@ -82,8 +82,37 @@ candidate/prefix outcome. A specific selected-site refusal survives later
 unavailable victim placements. Each fallthrough traversal of the evicted
 instruction adds its entry redirect and generated continuation jump, including
 calls that never visit the selected hook. Timing measurements are later work.
-T2 currently evicts one successor; recursive eviction chains and shorter victims
-are explicit refusals. The ordinary single-image planner remains available.
+The T2 API still evicts exactly one long successor and refuses shorter victims.
+The separate chain API below does not change that contract or the ordinary
+single-image planner.
+
+`eviction_chain::plan_successor_chain` adds explicit bounded successor chains.
+One selected 1–4-byte instruction is followed by at least one immediate original
+1–4-byte successor and then the first whole 5–15-byte anchor. The anchor is
+redirected first; each predecessor is punned against that preceding overlay.
+One original decode supplies every instruction identity, and each member
+authenticates the full current overlay. Auxiliary images add no hook; only the
+selected instruction observes or replaces. Original branches can revisit the
+selected instruction and therefore invoke its hook again.
+
+`ChainSearch` bounds the number of short successors and total candidate work,
+including suffix backtracking. A forced successor list must name the exact
+immediate original path. Separate allocation policies apply to each successor,
+while all images pay the existing aggregate bundle budget. Complete instruction
+spans, consumed pun bytes and actual store padding remain locked. Publication
+and retirement use the existing bundle transaction and process-lifetime code
+retention. The five-tactic engine order remains unchanged; chains use this
+explicit API rather than an implicit fallback.
+
+Local search evidence retains failed suffixes and original refusal reasons.
+A global cutoff requires a witnessed unentered candidate; reaching the cap
+alone is insufficient. `classification_complete` remains false. The initial
+private qualification covers genuine depth-two/depth-three straight-line chains,
+all declared original entries, and transaction failures; it does not establish
+native branch/fault-chain coverage or grouping. See
+`evidence/a2-eviction-chains-20261025.md`. A separate 72-record legacy planner/emitter parity gate passes with exact bytes,
+maps, contracts and diagnostics; exact active-head workspace validation remains
+pending for this integration proposal.
 
 `neighbor::plan_neighbor` forces T3. A selected 2–4-byte instruction receives
 EB rel8 to a private relay at V+5 inside a whole 10–15-byte victim at V. The
@@ -167,8 +196,8 @@ See `evidence/a2-exception-landing-20261025.md` for the bounded envelope and the
 fixture package's C++ compiler requirement.
 
 The full A2 exit gate remains open. Required gaps include broader exception
-and generated-unwind support, active CET and Intel evidence, eviction-chain coverage, and
-relocation-boundary signal/unwind qualification. Existing unsupported refusals and finite AMD results do not
+and generated-unwind support, active CET and Intel evidence, chain branch/fault
+qualification and active integration gates, and relocation-boundary signal/unwind qualification. Existing unsupported refusals and finite AMD results do not
 substitute for those required fixtures. Generalized puns retain first priority
 for install-once clients; ordinary relocation precedes T1. Concurrent toggle
 visibility remains A4 work.
