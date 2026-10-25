@@ -620,13 +620,15 @@ struct TerminalEvidence {
 }
 
 impl TerminalEvidence {
-    fn normalize_declared_stack_address(mut self) -> Self {
+    fn normalize_declared_stack_address(mut self, entry_rsp: u64) -> (i128, Self) {
         // Each fresh exec chooses its stack address independently. The fixture
         // leaves no stack-derived address in another GPR or in the compared
-        // memory. RSP is the only normalized field; all flags, segments, other
+        // memory. Preserve the exact signed change from that run's entry RSP;
+        // only the absolute address is normalized. All flags, segments, other
         // GPRs, xstate bytes and initialized stack bytes remain exact.
+        let stack_delta = i128::from(self.registers.rsp) - i128::from(entry_rsp);
         self.registers.rsp = 0;
-        self
+        (stack_delta, self)
     }
 }
 
@@ -672,6 +674,7 @@ fn no_op_cpuid_observer_matches_independent_native_gprs_xstate_and_memory() {
     let image = builder.write(&directory, "differential", None);
 
     let mut native = NativeTrace::launch(&image.path);
+    let native_entry_rsp = native.registers().rsp;
     native.run_to_ud2(BASE + terminal as u64);
     let native_registers = native.registers();
     let native_evidence = TerminalEvidence {
@@ -680,7 +683,9 @@ fn no_op_cpuid_observer_matches_independent_native_gprs_xstate_and_memory() {
         initialized_stack: native.memory(native_registers.rsp, 32),
     };
 
-    let mut gate = gate(checkpoint(&image), vec![image.facts(BASE)]);
+    let checkpoint = checkpoint(&image);
+    let gated_entry_rsp = checkpoint.initial_registers().rsp;
+    let mut gate = gate(checkpoint, vec![image.facts(BASE)]);
     let observation = observe(&mut gate);
     assert_eq!(observation.site.address, BASE + cpuid as u64);
     assert_eq!(
@@ -708,19 +713,25 @@ fn no_op_cpuid_observer_matches_independent_native_gprs_xstate_and_memory() {
         native_evidence.registers.rsp % 16,
         gated_evidence.registers.rsp % 16
     );
-    let native_evidence = native_evidence.normalize_declared_stack_address();
-    let gated_evidence = gated_evidence.normalize_declared_stack_address();
+    let mut wrong_rsp = native_evidence.clone();
+    wrong_rsp.registers.rsp += 16;
+    let wrong_rsp = wrong_rsp.normalize_declared_stack_address(native_entry_rsp);
+    let native_evidence = native_evidence.normalize_declared_stack_address(native_entry_rsp);
+    let gated_evidence = gated_evidence.normalize_declared_stack_address(gated_entry_rsp);
+    assert_eq!(native_evidence.0, -32, "native fixture's exact RSP delta");
+    assert_eq!(gated_evidence.0, -32, "gated fixture's exact RSP delta");
     assert_eq!(gated_evidence, native_evidence);
+    assert_ne!(gated_evidence, wrong_rsp, "RSP+16 must remain observable");
 
     // Negative controls ensure the exact comparison observes each state class.
     let mut wrong = native_evidence.clone();
-    wrong.registers.r12 ^= 1;
+    wrong.1.registers.r12 ^= 1;
     assert_ne!(gated_evidence, wrong);
     let mut wrong = native_evidence.clone();
-    wrong.xstate[160] ^= 1; // First XMM0 byte in the architectural legacy area.
+    wrong.1.xstate[160] ^= 1; // First XMM0 byte in the architectural legacy area.
     assert_ne!(gated_evidence, wrong);
     let mut wrong = native_evidence;
-    wrong.initialized_stack[0] ^= 1;
+    wrong.1.initialized_stack[0] ^= 1;
     assert_ne!(gated_evidence, wrong);
 }
 
@@ -910,5 +921,362 @@ fn trace(request: u32, pid: libc::pid_t, address: usize, data: usize) {
         -1,
         "native ptrace {request}: {}",
         io::Error::last_os_error()
+    );
+}
+
+fn core_gate(checkpoint: ExecCheckpoint, facts: Vec<ImageFacts>) -> SingleThreadPageGate {
+    // SAFETY: the private, hand-authored fixtures satisfy the same closed-world
+    // contract as gate(): exhaustive reachable heads, one task, no external
+    // writers/aliases, no code-as-data reads, and no signal or mapping lifecycle
+    // changes. The gate alone owns publication and all child execution.
+    unsafe {
+        SingleThreadPageGate::new_core(
+            checkpoint,
+            facts,
+            Policy {
+                version: 1,
+                selected: [SiteClass::Cpuid].into_iter().collect(),
+            },
+            TIMEOUT,
+        )
+    }
+    .unwrap()
+}
+
+fn assert_published_cpuid_pun(
+    gate: &SingleThreadPageGate,
+    image: &ElfImage,
+    base: u64,
+    offset: usize,
+) {
+    // The real core uses a two-byte source MOV to form E9 with three unchanged
+    // successor bytes. A source INT3 reference cannot satisfy this evidence.
+    let original = &image.bytes[offset..offset + 5];
+    assert_eq!(&original[..2], CPUID);
+    let published = gate.read_memory(base + offset as u64, 5).unwrap();
+    assert_eq!(published[0], 0xe9);
+    assert_eq!(&published[2..], &original[2..]);
+}
+
+#[test]
+fn core_pun_observes_first_cpuid_before_native_child_replacement_and_exits() {
+    let directory = FixtureDirectory::new();
+    let mut builder = ElfBuilder::new(2, PAGE, false);
+    builder.push_instruction(CPUID);
+    // BF 35 00 fixes a positive rel32 pun window; these are executable
+    // successor bytes and must survive publication at their original address.
+    builder.exit(53);
+    let image = builder.write(&directory, "core-first-cpuid", None);
+    let checkpoint = checkpoint(&image);
+    let entry = checkpoint.entries().initial_instruction;
+    let mut gate = core_gate(checkpoint, vec![image.facts(BASE)]);
+    assert_kernel_nx(gate.pid(), entry);
+    let observation = observe(&mut gate);
+    assert_eq!(observation.site.address, entry);
+    assert_eq!(observation.site.class, SiteClass::Cpuid);
+    assert_eq!(observation.registers.rip, entry);
+    assert_eq!(observation.registers.rax, 0);
+    assert_eq!(observation.registers.rcx, 0);
+    assert_published_cpuid_pun(&gate, &image, BASE, PAGE);
+    assert_eq!(gate.metrics().observations, 1);
+    assert_exit(&mut gate, 53);
+    assert_eq!(gate.metrics().observations, 1);
+    assert_eq!(gate.metrics().admitted_pages, 1);
+}
+
+#[test]
+fn core_pun_observes_custom_interpreter_and_main_first_instructions_once_each() {
+    let directory = FixtureDirectory::new();
+    let mut interpreter = ElfBuilder::new(2, PAGE, true);
+    interpreter.push_instruction(CPUID);
+    interpreter.mov64(0, BASE + PAGE as u64);
+    interpreter.push_instruction(&[0xff, 0xe0]);
+    let interpreter = interpreter.write(&directory, "core-interpreter", None);
+    let mut main = ElfBuilder::new(2, PAGE, false);
+    main.push_instruction(CPUID);
+    main.exit(59);
+    let main = main.write(&directory, "core-main", Some(&interpreter.path));
+    let checkpoint = checkpoint(&main);
+    let interpreter_base = checkpoint.entries().interpreter_base;
+    assert_ne!(interpreter_base, 0);
+    let mut gate = core_gate(
+        checkpoint,
+        vec![main.facts(BASE), interpreter.facts(interpreter_base)],
+    );
+    let first = observe(&mut gate);
+    assert_eq!(first.site.address, interpreter_base + PAGE as u64);
+    assert_eq!(first.registers.rip, first.site.address);
+    assert_eq!(first.registers.rax, 0);
+    assert_published_cpuid_pun(&gate, &interpreter, interpreter_base, PAGE);
+    assert_kernel_nx(gate.pid(), BASE + PAGE as u64);
+    let second = observe(&mut gate);
+    assert_eq!(second.site.address, BASE + PAGE as u64);
+    assert_eq!(second.registers.rip, second.site.address);
+    assert_eq!(second.registers.rax, BASE + PAGE as u64);
+    assert_published_cpuid_pun(&gate, &main, BASE, PAGE);
+    assert_eq!(gate.metrics().observations, 2);
+    assert_exit(&mut gate, 59);
+    assert_eq!(gate.metrics().observations, 2);
+    assert_eq!(gate.metrics().admitted_pages, 2);
+}
+
+#[test]
+fn core_native_cpuid_replacement_matches_independent_native_complete_state() {
+    let directory = FixtureDirectory::new();
+    let mut builder = ElfBuilder::new(2, PAGE, false);
+    builder.push_instruction(&[0x48, 0x83, 0xec, 0x20]); // sub rsp, 32
+    for (offset, value) in [
+        (0, 0x1122_3344_u32),
+        (8, 0x5566_7788),
+        (16, 0x1357_2468),
+        (24, 0x0246_1357),
+    ] {
+        let mut bytes = vec![0x48, 0xc7, 0x44, 0x24, offset];
+        bytes.extend_from_slice(&value.to_le_bytes());
+        builder.push_instruction(&bytes);
+    }
+    builder.push_instruction(&[0xdb, 0xe3]); // fninit
+    builder.push_instruction(&[0xd9, 0xe8]); // fld1
+    builder.push_instruction(&[0x66, 0x0f, 0x76, 0xc9]); // pcmpeqd xmm1,xmm1
+    builder.push_instruction(&[0x66, 0x0f, 0x6f, 0xd1]); // movdqa xmm2,xmm1
+    for register in 0..16 {
+        if register != 4 {
+            builder.mov64(
+                register,
+                if matches!(register, 0 | 1) {
+                    0
+                } else {
+                    0x1000 + u64::from(register)
+                },
+            );
+        }
+    }
+    builder.push_instruction(&[0x68, 0x02, 0x02, 0, 0]);
+    builder.push_instruction(&[0x9d]);
+    let cpuid = builder.push_instruction(CPUID);
+    // The first store contributes 48 89 04 as fixed high displacement bytes,
+    // producing a positive target window without changing successor semantics.
+    builder.push_instruction(&[0x48, 0x89, 0x04, 0x24]);
+    builder.push_instruction(&[0x48, 0x89, 0x5c, 0x24, 8]);
+    builder.push_instruction(&[0x48, 0x89, 0x4c, 0x24, 16]);
+    builder.push_instruction(&[0x48, 0x89, 0x54, 0x24, 24]);
+    let terminal = builder.push_instruction(&[0x0f, 0x0b]);
+    let image = builder.write(&directory, "core-differential", None);
+
+    let mut native = NativeTrace::launch(&image.path);
+    let native_entry_rsp = native.registers().rsp;
+    native.run_to_ud2(BASE + terminal as u64);
+    let native_registers = native.registers();
+    let native_evidence = TerminalEvidence {
+        registers: native_registers,
+        xstate: native.xstate(),
+        initialized_stack: native.memory(native_registers.rsp, 32),
+    };
+    // Leaf zero returns a nonzero maximum basic leaf on this x86-64 platform.
+    // A replacement that merely skips CPUID and preserves input RAX=0 fails.
+    assert_ne!(native_evidence.registers.rax, 0);
+
+    let checkpoint = checkpoint(&image);
+    let core_entry_rsp = checkpoint.initial_registers().rsp;
+    let mut gate = core_gate(checkpoint, vec![image.facts(BASE)]);
+    let observation = observe(&mut gate);
+    assert_eq!(observation.site.address, BASE + cpuid as u64);
+    assert_eq!(observation.registers.rip, observation.site.address);
+    assert_eq!(observation.registers.rax, 0);
+    assert_eq!(observation.registers.rcx, 0);
+    assert_eq!(observation.registers.rdx, 0x1002);
+    assert_eq!(observation.registers.rbx, 0x1003);
+    assert_eq!(observation.registers.rbp, 0x1005);
+    assert_eq!(observation.registers.rsi, 0x1006);
+    assert_eq!(observation.registers.rdi, 0x1007);
+    assert_eq!(observation.registers.r8, 0x1008);
+    assert_eq!(observation.registers.r9, 0x1009);
+    assert_eq!(observation.registers.r10, 0x100a);
+    assert_eq!(observation.registers.r11, 0x100b);
+    assert_eq!(observation.registers.r12, 0x100c);
+    assert_eq!(observation.registers.r13, 0x100d);
+    assert_eq!(observation.registers.r14, 0x100e);
+    assert_eq!(observation.registers.r15, 0x100f);
+    assert_eq!(observation.registers.eflags, 0x202);
+    let initial_stack: Vec<_> = [0x1122_3344_u64, 0x5566_7788, 0x1357_2468, 0x0246_1357]
+        .into_iter()
+        .flat_map(u64::to_le_bytes)
+        .collect();
+    assert_eq!(
+        gate.read_memory(observation.registers.rsp, 32).unwrap(),
+        initial_stack
+    );
+    // CPUID, the following GPR stores and terminal UD2 do not modify extended
+    // state, so the independent native snapshot also checks the observation.
+    assert_eq!(observation.xstate, native_evidence.xstate);
+    assert_published_cpuid_pun(&gate, &image, BASE, cpuid);
+    let registers = match gate.next_event().unwrap() {
+        GateEvent::ApplicationSignal {
+            signal, registers, ..
+        } => {
+            assert_eq!(signal, libc::SIGILL);
+            assert_eq!(registers.rip, BASE + terminal as u64);
+            registers
+        }
+        other => panic!("expected terminal UD2 after core CPUID replacement, got {other:?}"),
+    };
+    assert_published_cpuid_pun(&gate, &image, BASE, cpuid);
+    let core_evidence = TerminalEvidence {
+        registers,
+        xstate: gate.read_xstate().unwrap(),
+        initialized_stack: gate.read_memory(registers.rsp, 32).unwrap(),
+    };
+    assert_eq!(registers.rsp, observation.registers.rsp);
+    assert_eq!(gate.metrics().observations, 1);
+    assert_eq!(
+        native_evidence.registers.rsp % 16,
+        core_evidence.registers.rsp % 16
+    );
+    let mut wrong_rsp = native_evidence.clone();
+    wrong_rsp.registers.rsp += 16;
+    let wrong_rsp = wrong_rsp.normalize_declared_stack_address(native_entry_rsp);
+    let native_evidence = native_evidence.normalize_declared_stack_address(native_entry_rsp);
+    let core_evidence = core_evidence.normalize_declared_stack_address(core_entry_rsp);
+    assert_eq!(native_evidence.0, -32, "native fixture's exact RSP delta");
+    assert_eq!(core_evidence.0, -32, "core fixture's exact RSP delta");
+    assert_eq!(
+        core_evidence, native_evidence,
+        "real A1 CPUID replacement must preserve every compared architectural field"
+    );
+    assert_ne!(core_evidence, wrong_rsp, "RSP+16 must remain observable");
+}
+
+#[test]
+fn core_pun_cache_line_constraint_refuses_without_source_changes_or_execution() {
+    let directory = FixtureDirectory::new();
+    let entry = PAGE + 63;
+    let mut builder = ElfBuilder::new(2, entry, false);
+    builder.push_instruction(CPUID); // Its two-byte publication crosses a cache line.
+    builder.exit(61);
+    let image = builder.write(&directory, "core-invalid-pun", None);
+    let mut native = NativeTrace::launch(&image.path);
+    trace(libc::PTRACE_CONT, native.pid(), 0, 0);
+    let status = native.wait();
+    assert!(libc::WIFEXITED(status));
+    assert_eq!(libc::WEXITSTATUS(status), 61);
+
+    let mut gate = core_gate(checkpoint(&image), vec![image.facts(BASE)]);
+    let before = gate.read_registers().unwrap();
+    assert_eq!(before.rip, BASE + entry as u64);
+    assert_kernel_nx(gate.pid(), before.rip);
+    assert_eq!(
+        gate.read_memory(BASE, image.bytes.len()).unwrap(),
+        image.bytes
+    );
+    assert!(matches!(
+        gate.next_event(),
+        Err(GateError::Core(
+            liteinst2::contracts::Refusal::NoPatchWindow
+        ))
+    ));
+    let after = gate.read_registers().unwrap();
+    assert_eq!(after.rip, before.rip);
+    assert_eq!(after.rax, before.rax);
+    assert_eq!(after.rbx, before.rbx);
+    assert_eq!(after.rcx, before.rcx);
+    assert_eq!(after.rdx, before.rdx);
+    assert_eq!(
+        gate.read_memory(BASE, image.bytes.len()).unwrap(),
+        image.bytes
+    );
+    assert_kernel_nx(gate.pid(), after.rip);
+    assert!(!gate.is_admitted(after.rip));
+    assert_eq!(gate.metrics().admitted_pages, 0);
+    assert_eq!(gate.metrics().observations, 0);
+    assert!(
+        gate.next_event().is_err(),
+        "failed core plan must close execution"
+    );
+}
+
+#[test]
+fn core_pun_consumed_jump_fetch_admits_both_pages_once() {
+    let directory = FixtureDirectory::new();
+    let entry = 2 * PAGE - CPUID.len();
+    let mut builder = ElfBuilder::new(3, entry, false);
+    builder.push_instruction(CPUID);
+    assert_eq!(builder.cursor, 2 * PAGE);
+    builder.exit(71);
+    let image = builder.write(&directory, "core-consumed-cross-page", None);
+    let source = BASE + entry as u64;
+    let successor = BASE + (2 * PAGE) as u64;
+    let mut gate = core_gate(checkpoint(&image), vec![image.facts(BASE)]);
+    assert_kernel_nx(gate.pid(), source);
+    assert_kernel_nx(gate.pid(), successor);
+
+    let observation = observe(&mut gate);
+    assert_eq!(observation.site.address, source);
+    assert_eq!(observation.site.len, CPUID.len() as u8);
+    assert_eq!(observation.registers.rip, source);
+    assert_eq!(observation.registers.rax, 0);
+    // The original two-byte CPUID is wholly on the first page. The published
+    // E9 consumes five bytes, so its instruction fetch also needs the next page.
+    assert!(gate.is_admitted(source));
+    assert!(gate.is_admitted(successor));
+    assert_published_cpuid_pun(&gate, &image, BASE, entry);
+    assert_eq!(
+        gate.read_memory(successor, 3).unwrap(),
+        image.bytes[2 * PAGE..2 * PAGE + 3]
+    );
+    assert_eq!(gate.metrics().admitted_pages, 2);
+    assert_eq!(gate.metrics().observations, 1);
+    assert_exit(&mut gate, 71);
+    assert_eq!(gate.metrics().admitted_pages, 2);
+    assert_eq!(gate.metrics().observations, 1);
+}
+
+#[test]
+fn core_selected_destination_refuses_a_saved_call_return_while_still_nx() {
+    let directory = FixtureDirectory::new();
+    let call = 2 * PAGE - 5;
+    let callee = PAGE + 64;
+    let mut builder = ElfBuilder::new(3, PAGE, false);
+    builder.relative(0xe9, call);
+    builder.seek(callee);
+    builder.push_instruction(CPUID);
+    // The declared MOV supplies a valid five-byte core source and a positive
+    // target window. RET still uses the original CALL's saved stack address.
+    builder.push_instruction(&[0xbf, 67, 0, 0, 0]);
+    builder.push_instruction(&[0xc3]);
+    builder.seek(call);
+    builder.relative(0xe8, callee);
+    assert_eq!(builder.cursor, 2 * PAGE);
+    builder.push_instruction(CPUID);
+    builder.exit(67);
+    let image = builder.write(&directory, "core-saved-return", None);
+
+    let mut native = NativeTrace::launch(&image.path);
+    trace(libc::PTRACE_CONT, native.pid(), 0, 0);
+    let status = native.wait();
+    assert!(libc::WIFEXITED(status));
+    assert_eq!(libc::WEXITSTATUS(status), 67);
+
+    let mut gate = core_gate(checkpoint(&image), vec![image.facts(BASE)]);
+    check_live_return(&mut gate, BASE + call as u64, BASE + callee as u64);
+    assert_published_cpuid_pun(&gate, &image, BASE, callee);
+    assert!(matches!(
+        gate.next_event(),
+        Err(GateError::Refused(
+            "potential saved CALL return intersects selected publication"
+        ))
+    ));
+    let destination = BASE + (2 * PAGE) as u64;
+    assert!(!gate.is_admitted(destination));
+    assert_kernel_nx(gate.pid(), destination);
+    assert_eq!(gate.read_registers().unwrap().rip, destination);
+    assert_eq!(
+        gate.read_memory(destination, PAGE).unwrap(),
+        image.bytes[2 * PAGE..3 * PAGE]
+    );
+    assert_eq!(gate.metrics().admitted_pages, 1);
+    assert_eq!(gate.metrics().observations, 1);
+    assert!(
+        gate.next_event().is_err(),
+        "saved-return refusal must close execution"
     );
 }

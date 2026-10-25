@@ -1,12 +1,13 @@
-//! First-touch page gating with an address-preserving, ptrace trap reference.
+//! First-touch page gating with separate A1 and ptrace-reference CPUID paths.
 //!
 //! This deliberately slow reference supports one owned task and declared,
-//! immutable code. It is not the A1 remote trampoline publisher or the B1
-//! concurrent-fault implementation. The initially qualified selected class is
-//! CPUID, executed natively under SINGLESTEP after a pre-instruction observation.
-//! Other selected classes remain explicit prepublication refusals.
+//! immutable code. It does not implement B1 concurrent-fault rendezvous. The
+//! selected CPUID runs natively under SINGLESTEP in reference mode, or through
+//! a native replacement callback in A1 mode. Other selected classes remain
+//! explicit prepublication refusals.
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use iced_x86::{Decoder, DecoderOptions};
@@ -16,6 +17,10 @@ use liteinst_admission::scan::{
     AdmissionOracle, Boundary, Candidate, Policy, RuntimeScan, Snapshot, Verdict, WriteControl,
 };
 use liteinst_admission::{AddressRange, Generation, MappingId};
+use liteinst2::contracts as core;
+use liteinst2::quiescent::AllocationPolicy;
+
+use crate::core_remote::{CpuidPlanRequest, CpuidPublisher, PreparedCpuid};
 
 use crate::{
     ExecCheckpoint, LaunchError, MemoryMapping, ProcessEvent, RegisterSnapshot, SignalStop,
@@ -27,6 +32,7 @@ const SEGV_ACCERR: i32 = 2;
 const MAX_IMAGES: usize = 64;
 const MAX_IMAGE_BYTES: usize = 64 * 1024;
 const MAX_GATED_PAGES: u64 = 16 * 1024;
+static NEXT_IMAGE_ID: AtomicU64 = AtomicU64::new(1);
 
 /// A caller-certified complete instruction-head census for one original VMA.
 /// Addresses and bytes are rechecked against the stopped child before use.
@@ -49,6 +55,8 @@ pub enum GateError {
     Refused(&'static str),
     /// RuntimeScan retained an unresolved obligation.
     Scan(Vec<liteinst_admission::scan::Obligation>),
+    /// The A1 planner refused the selected instruction's required tactic.
+    Core(core::Refusal),
 }
 
 impl From<LaunchError> for GateError {
@@ -63,6 +71,7 @@ impl std::fmt::Display for GateError {
             Self::Control(error) => write!(f, "{error}"),
             Self::Refused(reason) => write!(f, "page gate refused: {reason}"),
             Self::Scan(obligations) => write!(f, "page scan refused: {obligations:?}"),
+            Self::Core(reason) => write!(f, "core planning refused: {reason}"),
         }
     }
 }
@@ -82,7 +91,7 @@ pub struct Observation {
 /// The externally observable events of the reference execution loop.
 #[derive(Clone, Debug)]
 pub enum GateEvent {
-    /// The next call executes this instruction once and reinstalls its trap.
+    /// The next call executes this instruction once through the chosen path.
     Observe(Observation),
     /// Normal application termination.
     Exited(i32),
@@ -119,6 +128,7 @@ struct Image {
     mapping: MemoryMapping,
     snapshot: Snapshot,
     entries: LegalEntrySet,
+    core_identity: core::CodeIdentity,
 }
 
 /// Owns one launched task from its exec checkpoint through exit or termination.
@@ -135,6 +145,7 @@ pub struct SingleThreadPageGate {
     poisoned: bool,
     timeout: Duration,
     metrics: GateMetrics,
+    core: Option<CpuidPublisher>,
 }
 
 impl SingleThreadPageGate {
@@ -246,6 +257,7 @@ impl SingleThreadPageGate {
                 mapping,
                 snapshot,
                 entries,
+                core_identity: new_core_identity()?,
             });
         }
         let metrics = GateMetrics {
@@ -265,7 +277,35 @@ impl SingleThreadPageGate {
             poisoned: false,
             timeout,
             metrics,
+            core: None,
         })
+    }
+
+    /// Gates pages using A1 generalized puns and a remote native CPUID callback.
+    /// Every selected site must admit the required tactic; there is no fallback
+    /// to the trap reference. Generated mappings live until the child exits.
+    ///
+    /// # Safety
+    /// All certifications of [`Self::new`] apply. Execution must additionally
+    /// obey the System V ABI, with sufficient writable stack below the red zone
+    /// for A1's extended-state frame. The target must have the emitter's exact
+    /// enabled extended-state layout, with no CET or AMX use or dynamic
+    /// extended-state permission changes. Instrumentation-private stack must
+    /// never be inspected as application data. Generated code may be entered
+    /// only through published source entries, never the callback directly.
+    /// Every saved application continuation must refer
+    /// to a declared instruction head; arbitrary synthetic interior resumes are
+    /// forbidden. These certifications apply throughout the child's lifetime.
+    pub unsafe fn new_core(
+        checkpoint: ExecCheckpoint,
+        facts: Vec<ImageFacts>,
+        policy: Policy,
+        timeout: Duration,
+    ) -> Result<Self, GateError> {
+        // SAFETY: this constructor forwards the same ownership certifications.
+        let mut gate = unsafe { Self::new(checkpoint, facts, policy, timeout)? };
+        gate.core = Some(CpuidPublisher::default());
+        Ok(gate)
     }
 
     /// The owned child identifier, for diagnostics only.
@@ -354,6 +394,22 @@ impl SingleThreadPageGate {
                     if signal.signal == libc::SIGTRAP
                         && (signal.code == libc::SI_KERNEL || signal.code == libc::TRAP_BRKPT)
                     {
+                        if let Some(publisher) = &self.core {
+                            if publisher
+                                .callback_address()
+                                .and_then(|pc| pc.checked_add(1))
+                                == Some(signal.instruction_pointer)
+                            {
+                                let mut stop = self.process.hold()?;
+                                let observed = publisher.observe(&mut stop, &signal)?;
+                                self.metrics.observations += 1;
+                                return Ok(GateEvent::Observe(Observation {
+                                    site: observed.site,
+                                    registers: observed.registers,
+                                    xstate: observed.xstate,
+                                }));
+                            }
+                        }
                         if let Some(site) = signal
                             .instruction_pointer
                             .checked_sub(1)
@@ -452,6 +508,7 @@ impl SingleThreadPageGate {
         let mut bundle = BTreeSet::from([page]);
         let mut scanned = BTreeSet::new();
         let mut candidates = BTreeMap::new();
+        let mut prepared = BTreeMap::new();
         while let Some(next) = bundle.difference(&scanned).next().copied() {
             if !image
                 .snapshot
@@ -488,6 +545,20 @@ impl SingleThreadPageGate {
                 candidates.insert(site.address, *site);
                 bundle.insert(site.address & !(PAGE - 1));
                 bundle.insert((site.address + u64::from(site.len) - 1) & !(PAGE - 1));
+                if let Some(publisher) = &self.core {
+                    if !publisher
+                        .installed()
+                        .iter()
+                        .any(|installed| installed.plan().parts().logical_pc == site.address)
+                        && !prepared.contains_key(&site.address)
+                    {
+                        let plan = prepare_cpuid(image, *site)?;
+                        let consumed = plan.consumed();
+                        bundle.insert(consumed.start() & !(PAGE - 1));
+                        bundle.insert((consumed.end() - 1) & !(PAGE - 1));
+                        prepared.insert(site.address, plan);
+                    }
+                }
             }
             scanned.insert(next);
         }
@@ -504,20 +575,20 @@ impl SingleThreadPageGate {
         for (&pc, _) in self.sites.range(image.snapshot.range().as_range()) {
             expected[(pc - image.mapping.start) as usize] = 0xcc;
         }
+        if let Some(publisher) = &self.core {
+            for installed in publisher.installed() {
+                for edit in &installed.plan().parts().writes {
+                    if image.snapshot.range().contains(edit.address) {
+                        let offset = (edit.address - image.mapping.start) as usize;
+                        expected[offset..offset + edit.bytes.len()].copy_from_slice(&edit.bytes);
+                    }
+                }
+            }
+        }
         let mut stop = self.process.hold()?;
         stop.acknowledge_owned_signal(signal)?;
         if stop.read_memory(image.mapping.start, expected.len())? != expected {
             return Err(GateError::Refused("source changed before publication"));
-        }
-        for site in candidates.values() {
-            if let std::collections::btree_map::Entry::Vacant(entry) =
-                self.sites.entry(site.address)
-            {
-                let original =
-                    image.snapshot.bytes()[(site.address - image.mapping.start) as usize];
-                stop.write_memory_checked(site.address, &[original], &[0xcc])?;
-                entry.insert(*site);
-            }
         }
         let protection = libc::PROT_EXEC
             | if image.mapping.permissions.as_bytes()[0] == b'r' {
@@ -525,10 +596,53 @@ impl SingleThreadPageGate {
             } else {
                 0
             };
-        for &next in &bundle {
-            stop.mprotect(next, PAGE as usize, protection, remaining(deadline)?)?;
+        if let Some(publisher) = &mut self.core {
+            let prepared: Vec<_> = prepared.into_values().collect();
+            if prepared.is_empty() {
+                for &next in &bundle {
+                    stop.mprotect(next, PAGE as usize, protection, remaining(deadline)?)?;
+                }
+                stop.sync_core(remaining(deadline)?)?;
+            } else {
+                // SAFETY: the held sole-task stop, immutable image/facts, complete
+                // declared resumes and constructor ownership contract cover this
+                // bundle. Publication's finalizer restores only scanned pages.
+                unsafe {
+                    publisher.publish_bundle(
+                        &mut stop,
+                        &prepared,
+                        image.core_identity,
+                        remaining(deadline)?,
+                        |operations| {
+                            for &next in &bundle {
+                                operations.mprotect(
+                                    next,
+                                    PAGE as usize,
+                                    protection,
+                                    control_remaining(deadline)?,
+                                )?;
+                            }
+                            operations.sync_core(control_remaining(deadline)?)
+                        },
+                    )?;
+                }
+            }
+        } else {
+            for site in candidates.values() {
+                if let std::collections::btree_map::Entry::Vacant(entry) =
+                    self.sites.entry(site.address)
+                {
+                    let original =
+                        image.snapshot.bytes()[(site.address - image.mapping.start) as usize];
+                    stop.write_memory_checked(site.address, &[original], &[0xcc])?;
+                    entry.insert(*site);
+                }
+            }
+            for &next in &bundle {
+                stop.mprotect(next, PAGE as usize, protection, remaining(deadline)?)?;
+            }
+            stop.sync_core(remaining(deadline)?)?;
         }
-        stop.sync_core(remaining(deadline)?)?;
         for next in bundle {
             if self.pages.insert(next, true) == Some(false) {
                 self.metrics.admitted_pages += 1;
@@ -538,6 +652,87 @@ impl SingleThreadPageGate {
         self.metrics.first_touch.push(started.elapsed());
         Ok(())
     }
+}
+
+fn new_core_identity() -> Result<core::CodeIdentity, GateError> {
+    let nonce = NEXT_IMAGE_ID
+        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
+            value.checked_add(1)
+        })
+        .map_err(|_| GateError::Refused("image identity space exhausted"))?;
+    let mut source = [0; 32];
+    source[..8].copy_from_slice(b"li2image");
+    source[8..16].copy_from_slice(&nonce.to_le_bytes());
+    // This is a non-reused owner key bound to an immutable image and policy,
+    // not a content hash. Publication always authenticates exact bytes too.
+    Ok(core::CodeIdentity {
+        source: core::SourceIdentity(source),
+        mapping: nonce,
+        generation: 0,
+    })
+}
+
+fn prepare_cpuid(image: &Image, site: Candidate) -> Result<PreparedCpuid, GateError> {
+    let offset = (site.address - image.mapping.start) as usize;
+    let mut decoder = Decoder::with_ip(
+        64,
+        &image.snapshot.bytes()[offset..],
+        site.address,
+        DecoderOptions::NONE,
+    );
+    while decoder.ip() < site.address + 5 {
+        if !image.entries.heads().contains_key(&decoder.ip()) {
+            return Err(GateError::Refused(
+                "pun dependency lacks a verified instruction head",
+            ));
+        }
+        let instruction = decoder.decode();
+        if instruction.is_invalid() {
+            return Err(GateError::Refused(
+                "pun dependency is not complete instructions",
+            ));
+        }
+    }
+    let size = (decoder.ip() - site.address) as usize;
+    let entries = core::LegalEntrySet {
+        identity: image.core_identity,
+        scope: core::AddressRange::new(image.mapping.start, image.snapshot.bytes().len())
+            .map_err(GateError::Core)?,
+        provenance: core::EntryProvenance::Declared(
+            "immutable launch instruction-head census".into(),
+        ),
+        completeness: core::EntryCompleteness::AllInstructionHeads,
+        entries: image
+            .entries
+            .heads()
+            .keys()
+            .map(|&address| core::LegalEntry {
+                address,
+                requires_endbr: false,
+            })
+            .collect(),
+        // A conservative superset: the unsafe constructor certifies that any
+        // saved continuation is a declared head. NX history proves nothing.
+        resumes: core::ResumeObligation::Enumerated(
+            image.entries.heads().keys().copied().collect(),
+        ),
+    };
+    let allocation = AllocationPolicy::near(site.address).map_err(GateError::Core)?;
+    PreparedCpuid::prepare(CpuidPlanRequest {
+        identity: image.core_identity,
+        address: site.address,
+        code: &image.snapshot.bytes()[offset..offset + size],
+        entries: &entries,
+        allocation: &allocation,
+    })
+    .map_err(GateError::Core)
+}
+
+fn control_remaining(deadline: Instant) -> Result<Duration, LaunchError> {
+    deadline
+        .checked_duration_since(Instant::now())
+        .filter(|duration| !duration.is_zero())
+        .ok_or(LaunchError::Timeout("whole-event deadline"))
 }
 
 fn remaining(deadline: Instant) -> Result<Duration, GateError> {

@@ -222,6 +222,9 @@ page/dependency ledger. It exports facts through `liteinst2::contracts`. The
 model never changes executable memory and is not a live admission gate.
 
 [liteinst-launch](crates/liteinst-launch/README.md) captures an ELF process at
-its exec stop before the executable/interpreter's first instruction, exposes
-bounded read-only checkpoint evidence, and terminates the child. It is B1
-launch groundwork; it does not yet admit or resume application code.
+its exec stop before the executable/interpreter's first instruction. Its
+restricted controller gates initial executable mappings and admits scanned
+pages under a held task stop. A native CPUID trap reference and an A1 remote
+generalized-pun adapter are separate paths. The current envelope is one owned
+task with caller-certified immutable code and complete instruction heads;
+concurrent first-fault rendezvous and broader instruction coverage remain open.

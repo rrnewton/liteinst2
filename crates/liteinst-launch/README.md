@@ -23,8 +23,12 @@ space**. Missing support is a refusal.
 
 `StoppedProcess::hold` returns a scoped, non-transferable stopped-task borrow.
 It supports expected-byte writes with readback, checked page permissions,
-register access and native single-step. It is not a core quiescence lease:
-external writers, aliases and saved resumes still need separate proof. Signals
+register access and native single-step. Its held stop alone is not a core
+quiescence lease: external writers, aliases and saved resumes need separate
+proof. `with_core_lease` accepts those explicit unsafe owner certifications and
+borrows the actual stopped-process owner through a restricted publication view.
+It exposes no application-resume operation; callback errors, poisoned leases
+and unwinding terminate the child. Signals
 remain unowned until the caller authenticates the exact stop. Partial or
 uncertain control failures terminate the child. The syscall policy permits
 only native read on fd 0, write on fd 1/2, getpid, gettid, exit and exit_group.
@@ -65,11 +69,38 @@ records that difference; it is not accepted as a no-op observation.
 The broader default scan policy still finds those sites; it does not silently
 deselect them.
 
+`SingleThreadPageGate::new_core` selects a separate A1 path. It requires a
+generalized pun for every selected CPUID; a refusal does not fall back to the
+trap reference. The complete five-byte E9 fetch range participates in page
+admission, including unchanged successor bytes. Source dependency locks refuse
+interacting plans. The publisher creates child mappings with
+`MAP_FIXED_NOREPLACE`, initializes and verifies generated code before source
+publication, uses one native exact-width MOV for the pun, restores scanned
+page permissions and completes child-mm sync-core before issuing a receipt.
+
+The core embeds a genuine callback function value. The remote adapter reserves
+the same numeric address in the child and installs its separately authenticated
+callback there; a collision refuses. No child address becomes a supervisor
+function pointer. A callback INT3 yields the original logical PC and saved
+context. On continuation, its native CPUID writes EAX/EBX/ECX/EDX results into
+that context before the core restores state. This uses `ReplaceFirst` with the
+instruction's real semantics. It does not skip CPUID or change the core's
+observing allowlist. Code mappings remain owned until child termination.
+
+The A1 constructor additionally requires owner certification of the exact
+emitter/child extended-state layout, System V ABI, no CET or AMX use, sufficient
+writable callback stack, no reads of instrumentation-private stack, and entry
+to generated code only through installed source entries. These are unsafe
+closed-world preconditions, not properties inferred from the parent's CPU or
+from a private VMA. Every saved continuation must be a declared head; the core
+receives all such heads as a conservative resume superset, never an empty list
+inferred from NX history.
+
 The reference currently supports one task, immutable private code, 4 KiB pages,
 at most 64 initial executable mappings/censuses, at most 64 MiB of initial
 executable mappings and at most 64 KiB per census. It is groundwork
-for B1 and the B2 reference path. **It does not complete B1:** there is no A1
-remote trampoline publisher or concurrent first-fault rendezvous yet. The
+for B1 and the B2 reference path. **It does not complete B1:** concurrent
+first-fault rendezvous remains open. The
 custom interpreter fixture is not general dynamic-loader support. Mapping
 churn, threads, application signal handlers, aliases, self-modifying code and
 the broader B2 instruction-class/ISA campaign remain unsupported.
