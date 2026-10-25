@@ -204,7 +204,7 @@ pub fn plan_successor_detailed(
                 continue;
             }
             let patch = near_redirect(victim_pc, target)?;
-            let evicted = victim_member(
+            let evicted = instruction_member(
                 request, source, displaced, image, allocation, patch, candidate,
             )?;
             let mut overlay = request.code.to_vec();
@@ -277,7 +277,7 @@ pub fn plan_successor_detailed(
     result.map_err(|reason| EvictionFailure { reason, attempts })
 }
 
-fn qualify_victim(
+pub(crate) fn qualify_victim(
     request: &InstallRequest<'_>,
     scan: &ScanResult,
     victim: &ScannedInstruction,
@@ -320,7 +320,7 @@ fn qualify_victim(
     Ok(displaced)
 }
 
-fn image_allocation(image: &TrampolineImage) -> Result<AddressRange, Refusal> {
+pub(crate) fn image_allocation(image: &TrampolineImage) -> Result<AddressRange, Refusal> {
     let start = image.address() & !4095;
     let end = image
         .address()
@@ -331,7 +331,7 @@ fn image_allocation(image: &TrampolineImage) -> Result<AddressRange, Refusal> {
     AddressRange::new(start, (end - start) as usize)
 }
 
-fn near_redirect(source: u64, target: u64) -> Result<Vec<u8>, Refusal> {
+pub(crate) fn near_redirect(source: u64, target: u64) -> Result<Vec<u8>, Refusal> {
     let displacement = i32::try_from(i128::from(target) - i128::from(source) - 5)
         .map_err(|_| Refusal::AllocationUnavailable)?;
     let mut bytes = vec![0xe9];
@@ -339,7 +339,7 @@ fn near_redirect(source: u64, target: u64) -> Result<Vec<u8>, Refusal> {
     Ok(bytes)
 }
 
-fn victim_member(
+pub(crate) fn instruction_member(
     request: &InstallRequest<'_>,
     source: AddressRange,
     displaced: AddressRange,

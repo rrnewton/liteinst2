@@ -499,10 +499,27 @@ mod ordered_trace {
         pub generated_ranges: Vec<Range<u64>>,
     }
 
+    /// One explicitly authorized internal source relay. The victim extent is
+    /// derived from a pristine native execution, never accepted from this record.
+    /// Exact independent grammars qualify CS-prefixed MOVABS, JNZ, RIP-relative
+    /// loads, MOFFS loads and self-LOOP. Conditional witnesses must establish
+    /// fallthrough: a branch's observed destination alone never proves length.
+    pub struct SourceRelay<'a> {
+        pub logical_pc: u64,
+        pub relay_pc: u64,
+        pub target: u64,
+        pub victim_trace: &'a NativeTrace,
+    }
+
     pub struct NativeTrace {
         baseline: Baseline,
         heads: BTreeSet<u64>,
         terminals: BTreeSet<u64>,
+        source_base: u64,
+        original_code: Vec<u8>,
+        /// Captured immediately around the first raw PTRACE_SINGLESTEP, before
+        /// any subsequent head lookup or snapshot can classify its destination.
+        first_step: Option<(u64, u64)>,
     }
 
     impl NativeTrace {
@@ -542,6 +559,7 @@ mod ordered_trace {
             child.set_registers(&baseline.initial);
             child.set_xstate(&baseline.xstate);
             baseline.points.clear();
+            let mut first_step = None;
             for step in 0..=MAX_STEPS {
                 assert!(
                     Instant::now() < child.deadline,
@@ -560,6 +578,9 @@ mod ordered_trace {
                         baseline,
                         heads,
                         terminals,
+                        source_base: self.code.address(),
+                        original_code: self.original_code.clone(),
+                        first_step,
                     };
                 }
                 assert!(
@@ -567,6 +588,9 @@ mod ordered_trace {
                     "original trace instruction budget exhausted"
                 );
                 child.step(&[]);
+                if step == 0 {
+                    first_step = Some((pc, child.registers().rip));
+                }
             }
             unreachable!()
         }
@@ -579,6 +603,21 @@ mod ordered_trace {
             trace: &NativeTrace,
             entry: u64,
             map: &TraceMap,
+            owned_sigill_heads: &[u64],
+            hooks: Option<HookExpectation<'_>>,
+        ) {
+            self.assert_trace_with_relays(trace, entry, map, &[], owned_sigill_heads, hooks);
+        }
+
+        /// Add strictly proved source relays to the unchanged ordered oracle.
+        /// A relay is checked before its E9 and does not consume a native visit
+        /// or callback event. Its next raw step must reach the exact image entry.
+        pub fn assert_trace_with_relays(
+            &self,
+            trace: &NativeTrace,
+            entry: u64,
+            map: &TraceMap,
+            relays: &[SourceRelay<'_>],
             owned_sigill_heads: &[u64],
             hooks: Option<HookExpectation<'_>>,
         ) {
@@ -615,6 +654,7 @@ mod ordered_trace {
                     "gateway is a restored boundary"
                 );
             }
+            let relay_map = self.validate_relays(trace, map, &physical, relays);
             if let Some(hooks) = &hooks {
                 let mut ids = BTreeSet::new();
                 for event in hooks.enabled {
@@ -637,12 +677,20 @@ mod ordered_trace {
             child.set_xstate(&trace.baseline.xstate);
             let mut next = 0;
             let mut events = Vec::new();
+            let mut relay_visits = BTreeMap::<u64, usize>::new();
+            let mut relay_target = None;
             for step in 0..=MAX_STEPS {
                 assert!(
                     Instant::now() < child.deadline,
                     "patched trace wall deadline exhausted"
                 );
                 let pc = child.registers().rip;
+                if let Some(target) = relay_target.take() {
+                    assert_eq!(
+                        pc, target,
+                        "source relay did not reach its exact image entry"
+                    );
+                }
                 if let Some(&original) = physical.get(&pc) {
                     let expected = trace
                         .baseline
@@ -674,8 +722,41 @@ mod ordered_trace {
                             trace.baseline.points.len(),
                             "missing native trace visits"
                         );
+                        for relay in relays {
+                            let required = trace
+                                .baseline
+                                .points
+                                .iter()
+                                .filter(|point| point.logical_pc == relay.logical_pc)
+                                .count();
+                            assert_eq!(
+                                relay_visits.get(&relay.relay_pc).copied().unwrap_or(0),
+                                required,
+                                "missing or duplicate source relay visits"
+                            );
+                        }
                         return;
                     }
+                } else if let Some(&index) = relay_map.get(&pc) {
+                    let relay = &relays[index];
+                    let expected = trace
+                        .baseline
+                        .points
+                        .get(next)
+                        .expect("extra source relay after native trace");
+                    assert_eq!(
+                        relay.logical_pc, expected.logical_pc,
+                        "unexpected source relay at visit {next}"
+                    );
+                    assert_state(
+                        expected,
+                        &self.snapshot(&child, relay.logical_pc, self.code.bytes()),
+                    );
+                    if let Some(hooks) = &hooks {
+                        hooks.log.assert_events(&child, &events);
+                    }
+                    *relay_visits.entry(pc).or_default() += 1;
+                    relay_target = Some(relay.target);
                 } else if (self.code.address()..self.code.address() + PAGE as u64).contains(&pc) {
                     assert!(
                         map.gateways.contains(&pc),
@@ -690,6 +771,248 @@ mod ordered_trace {
             }
             unreachable!()
         }
+
+        fn validate_relays(
+            &self,
+            trace: &NativeTrace,
+            map: &TraceMap,
+            physical: &BTreeMap<u64, u64>,
+            relays: &[SourceRelay<'_>],
+        ) -> BTreeMap<u64, usize> {
+            let source_start = self.code.address();
+            let source_end = source_start.checked_add(PAGE as u64).unwrap();
+            let source_range = source_start..source_end;
+            let mut result = BTreeMap::new();
+            let mut victims = Vec::<Range<u64>>::new();
+            for (index, relay) in relays.iter().enumerate() {
+                let witness = relay.victim_trace;
+                assert_eq!(
+                    witness.source_base, source_start,
+                    "foreign relay victim witness"
+                );
+                assert_eq!(
+                    witness.original_code, self.original_code,
+                    "relay witness uses a different original source snapshot"
+                );
+                assert_eq!(
+                    trace.source_base, source_start,
+                    "foreign relay execution trace"
+                );
+                assert_eq!(
+                    trace.original_code, self.original_code,
+                    "relay execution uses a different original source snapshot"
+                );
+                let (victim, native_next) = witness
+                    .first_step
+                    .expect("relay victim lacks a raw native first-step witness");
+                assert_eq!(
+                    witness.baseline.initial.rip, victim,
+                    "relay witness did not enter its victim"
+                );
+                assert_eq!(
+                    witness.baseline.points.first().unwrap().logical_pc,
+                    victim,
+                    "relay witness omitted its initial instruction"
+                );
+                assert!(
+                    source_range.contains(&victim),
+                    "relay victim outside source"
+                );
+                let offset = usize::try_from(victim - source_start).unwrap();
+                let original = &self.original_code[offset..];
+                let prefixes = original.iter().take_while(|&&byte| byte == 0x2e).count();
+                // Independent literal grammars, never production decoder output.
+                // Branch witnesses additionally prove the fallthrough condition;
+                // a raw taken branch alone would not establish instruction size.
+                let opcode = &original[prefixes..];
+                let victim_len = if prefixes <= 5 && opcode.starts_with(&[0x48, 0xb8]) {
+                    prefixes + 10 // MOVABS RAX,imm64 (the original grammar)
+                } else if (4..=9).contains(&prefixes) && opcode.starts_with(&[0x0f, 0x85]) {
+                    assert_ne!(
+                        witness.baseline.initial.eflags & (1 << 6),
+                        0,
+                        "JNZ relay witness must start with ZF set"
+                    );
+                    prefixes + 6
+                } else if (3..=8).contains(&prefixes) && opcode.starts_with(&[0x48, 0x8b, 0x0d]) {
+                    prefixes + 7 // MOV RCX,[RIP+disp32]
+                } else if prefixes <= 5 && opcode.starts_with(&[0x48, 0xa1]) {
+                    prefixes + 10 // MOV RAX,moffs64; witness must complete natively
+                } else if (8..=13).contains(&prefixes) && opcode.first() == Some(&0xe2) {
+                    assert_eq!(
+                        witness.baseline.initial.rcx, 1,
+                        "LOOP relay witness must start with RCX one"
+                    );
+                    let len = prefixes + 2;
+                    assert_eq!(
+                        opcode.get(1).copied().map(|byte| byte as i8),
+                        Some(-(len as i8)),
+                        "LOOP relay witness must target its own original head"
+                    );
+                    len
+                } else {
+                    panic!(
+                        "relay victim is not an independently qualified MOVABS, JNZ, RIP load, MOFFS load or self-LOOP"
+                    );
+                };
+                assert!(
+                    (10..=15).contains(&victim_len) && original.len() >= victim_len,
+                    "malformed relay victim encoding"
+                );
+                let victim_end = victim.checked_add(victim_len as u64).unwrap();
+                assert_eq!(
+                    native_next, victim_end,
+                    "native relay victim step disagrees with its exact encoding"
+                );
+                let victim_range = victim..victim_end;
+                assert!(victim_end <= source_end, "relay victim exceeds source");
+                assert_eq!(
+                    relay.relay_pc,
+                    victim.checked_add(5).unwrap(),
+                    "relay is not the second five-byte victim jump"
+                );
+                assert!(
+                    relay.relay_pc.checked_add(5).unwrap() <= victim_end,
+                    "relay exceeds native victim span"
+                );
+                assert!(
+                    trace.heads.contains(&victim),
+                    "undeclared relay victim head"
+                );
+                assert!(
+                    trace.heads.contains(&relay.logical_pc),
+                    "undeclared relay logical head"
+                );
+                assert!(
+                    map.gateways.contains(&victim) && map.gateways.contains(&relay.logical_pc),
+                    "relay requires both original source gateways"
+                );
+                assert!(
+                    !victim_range.contains(&relay.logical_pc),
+                    "selected relay head overlaps victim"
+                );
+                for &head in trace
+                    .heads
+                    .iter()
+                    .chain(&trace.terminals)
+                    .chain(&witness.heads)
+                    .chain(&witness.terminals)
+                {
+                    assert!(
+                        head == victim || !victim_range.contains(&head),
+                        "original head overlaps relay victim interior"
+                    );
+                }
+                assert!(
+                    physical.keys().all(|pc| !victim_range.contains(pc)),
+                    "restored boundary overlaps relay victim span"
+                );
+                assert!(
+                    map.gateways
+                        .iter()
+                        .all(|pc| *pc == victim || !victim_range.contains(pc)),
+                    "source gateway overlaps relay victim interior"
+                );
+                assert!(
+                    victims
+                        .iter()
+                        .all(|range| range.end <= victim || victim_end <= range.start),
+                    "overlapping relay victim spans"
+                );
+                victims.push(victim_range);
+                assert!(
+                    result.insert(relay.relay_pc, index).is_none(),
+                    "duplicate source relay"
+                );
+                let logical_offset = usize::try_from(
+                    relay
+                        .logical_pc
+                        .checked_sub(source_start)
+                        .expect("relay logical head below source"),
+                )
+                .unwrap();
+                let selected = self
+                    .code
+                    .bytes()
+                    .get(logical_offset..logical_offset + 2)
+                    .expect("relay logical jump exceeds source");
+                assert_eq!(
+                    selected[0], 0xeb,
+                    "selected relay gateway is not exact EB rel8"
+                );
+                assert_eq!(
+                    i128::from(relay.logical_pc) + 2 + i128::from(selected[1] as i8),
+                    i128::from(relay.relay_pc),
+                    "selected EB does not reach source relay"
+                );
+                let relay_offset = usize::try_from(relay.relay_pc - source_start).unwrap();
+                let relay_bytes = &self.code.bytes()[relay_offset..relay_offset + 5];
+                let expected = exact_e9(relay.relay_pc, relay.target);
+                assert_eq!(relay_bytes, expected, "source relay E9 target mismatch");
+                let victim_bytes = &self.code.bytes()[offset..offset + 5];
+                assert_eq!(victim_bytes[0], 0xe9, "victim entry is not exact E9 rel32");
+                let victim_target = u64::try_from(
+                    i128::from(victim)
+                        + 5
+                        + i128::from(i32::from_le_bytes(victim_bytes[1..].try_into().unwrap())),
+                )
+                .expect("victim E9 target outside address space");
+                assert_ne!(
+                    victim_target, relay.target,
+                    "victim and selected images coincide"
+                );
+                let mut owned_images = Vec::<Range<u64>>::new();
+                for (target, logical) in [(victim_target, victim), (relay.target, relay.logical_pc)]
+                {
+                    let images: Vec<_> = map
+                        .generated_ranges
+                        .iter()
+                        .filter(|range| range.start == target)
+                        .collect();
+                    assert_eq!(images.len(), 1, "relay target is not one exact image entry");
+                    let image = images[0];
+                    assert!(image.start < image.end, "malformed relay image range");
+                    assert!(
+                        owned_images
+                            .iter()
+                            .all(|range| range.end <= image.start || image.end <= range.start),
+                        "relay image ranges overlap"
+                    );
+                    owned_images.push((*image).clone());
+                    assert!(
+                        image.end <= source_start || source_end <= image.start,
+                        "relay image overlaps original source"
+                    );
+                    assert!(
+                        map.boundaries
+                            .iter()
+                            .any(|&(pc, generated)| pc == logical && image.contains(&generated)),
+                        "relay image has no matching logical restored boundary"
+                    );
+                    assert!(
+                        map.boundaries
+                            .iter()
+                            .all(|&(pc, generated)| !image.contains(&generated) || pc == logical),
+                        "relay image owns a different logical instruction"
+                    );
+                }
+                assert_eq!(
+                    &self.code.bytes()[offset + 10..offset + victim_len],
+                    &original[10..victim_len],
+                    "relay changed original victim tail"
+                );
+            }
+            result
+        }
+    }
+
+    fn exact_e9(source: u64, target: u64) -> [u8; 5] {
+        let displacement = i32::try_from(i128::from(target) - i128::from(source) - 5)
+            .expect("relay target is outside rel32 reach");
+        let mut bytes = [0; 5];
+        bytes[0] = 0xe9;
+        bytes[1..].copy_from_slice(&displacement.to_le_bytes());
+        bytes
     }
 }
 

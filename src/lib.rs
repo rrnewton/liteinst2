@@ -10,6 +10,7 @@ pub mod contracts;
 mod entry_router;
 pub mod eviction;
 pub mod grouping;
+pub mod neighbor;
 pub mod patcher;
 pub mod planner;
 pub mod probe;
