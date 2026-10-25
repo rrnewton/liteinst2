@@ -61,3 +61,18 @@ all-thread/data-reader/writer rendezvous, saved-PC routing/refusal, explicit
 instruction-stream synchronization and core publication. Later cache oracles must
 fall back to this runtime scan on every miss/stale/corrupt entry; no cache fast path
 is implemented here.
+# Potential CALL returns
+
+`returns::CallReturnLedger` records verified direct and indirect CALL
+fallthroughs before admitting their source page, including instructions that
+start in the preceding page. A CALL ending at a page boundary can push a return
+address on the next page while that page is still NX and has never executed.
+Its execution history therefore cannot establish that no saved resumes exist.
+
+The ledger checks source identity, bytes, generation and complete verified-head
+facts. It retains potential returns across generation changes and unmapping;
+there is no release API without a separately qualified drain proof. These are
+conservative source facts, not a dynamic stack census or publication authority.
+A live gate must authenticate them while execution is excluded and preserve,
+route or refuse affected resumes before granting execution. Signal frames,
+syscall returns and other saved contexts remain separate obligations.

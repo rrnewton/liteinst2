@@ -6,6 +6,7 @@
 
 pub mod entries;
 pub mod model;
+pub mod returns;
 pub mod scan;
 
 use std::ops::Range;
