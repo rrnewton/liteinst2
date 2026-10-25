@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 /// Version of the in-memory standalone interface (not a serialized ABI).
-pub const CONTRACT_VERSION: u32 = 1;
+pub const CONTRACT_VERSION: u32 = 2;
 
 /// Original content and policy identity supplied by the mapping owner.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -165,6 +165,29 @@ pub struct ByteEdit {
     pub bytes: Vec<u8>,
 }
 
+/// Source encoding tactic, independent of the instrumentation lifetime.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum PlanKind {
+    /// A whole-instruction relocation window supplies the redirect bytes.
+    Relocation,
+    /// An E9 consumes unchanged successor bytes as fixed high displacement bits.
+    GeneralizedPun(GeneralizedPun),
+}
+
+/// Generalized short-instruction pun; distinct from RapidProbe's opcode toggle.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct GeneralizedPun {
+    /// Entire original instruction replaced, from one through four bytes.
+    pub instruction_len: u8,
+    /// Five executable bytes consumed by E9, including unchanged successors.
+    pub consumed: AddressRange,
+    /// All destinations allowed by the fixed high displacement bytes.
+    pub target_window: AddressRange,
+    /// One actual byte/word/dword store, including authenticated unchanged padding.
+    /// `PlanParts::writes` separately records exactly the instruction's L bytes.
+    pub store: ByteEdit,
+}
+
 /// Equivalent entry in generated code.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct EntryRoute {
@@ -213,7 +236,7 @@ pub struct GeneratedCode {
 /// Publication mechanisms required by a plan.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct PublicationRequirements {
-    /// A held dependency lease is always required by version 1.
+    /// A held dependency lease is always required by this interface.
     pub quiescent: bool,
     /// Require Linux private expedited sync-core completion.
     pub sync_core: bool,
@@ -228,6 +251,8 @@ pub struct PlanParts {
     pub identity: CodeIdentity,
     /// Application lifetime.
     pub profile: ApplicationProfile,
+    /// Explicit source encoding tactic; never inferred from write length.
+    pub kind: PlanKind,
     /// Where instrumentation logically runs.
     pub logical_pc: u64,
     /// Where the redirect is written.
@@ -300,6 +325,9 @@ impl PatchPlan {
                 return Err(Refusal::InvalidPlan);
             }
         }
+        if let PlanKind::GeneralizedPun(pun) = &parts.kind {
+            check_generalized_pun(&parts, pun)?;
+        }
         Ok(Self(parts))
     }
     /// Read-only complete contract; no mutable access is exposed.
@@ -320,6 +348,73 @@ impl PatchPlan {
         }
         Ok(())
     }
+}
+
+fn original_bytes(parts: &PlanParts, range: AddressRange) -> Result<&[u8], Refusal> {
+    for read in &parts.reads {
+        if AddressRange::new(read.address, read.bytes.len())?.covers(range) {
+            let offset = (range.start() - read.address) as usize;
+            return Ok(&read.bytes[offset..offset + range.len() as usize]);
+        }
+    }
+    Err(Refusal::InvalidPlan)
+}
+
+fn check_generalized_pun(parts: &PlanParts, pun: &GeneralizedPun) -> Result<(), Refusal> {
+    let len = usize::from(pun.instruction_len);
+    if !(1..=4).contains(&len)
+        || parts.profile != ApplicationProfile::InstallOnce
+        || parts.logical_pc != parts.physical_pc
+        || parts.displaced.len() != len as u64
+        || pun.consumed != AddressRange::new(parts.physical_pc, 5)?
+        || parts.writes.len() != 1
+        || parts.writes[0].address != parts.physical_pc
+        || parts.writes[0].bytes.len() != len
+        || parts.writes[0].bytes[0] != 0xe9
+        || parts.generated.len() != 1
+        || parts.requirements.sigill_router
+        || parts
+            .obligations
+            .iter()
+            .any(|entry| !matches!(entry, EntryObligation::Preserved(_)))
+    {
+        return Err(Refusal::InvalidPlan);
+    }
+    let store = AddressRange::new(pun.store.address, pun.store.bytes.len())?;
+    if pun.store.bytes.len() != len.next_power_of_two()
+        || !store.covers(parts.displaced)
+        || store.start() / 64 != (store.end() - 1) / 64
+        || !parts.dependencies.iter().any(|range| range.covers(store))
+        || !parts
+            .dependencies
+            .iter()
+            .any(|range| range.covers(pun.consumed))
+    {
+        return Err(Refusal::InvalidPlan);
+    }
+    let mut expected_store = original_bytes(parts, store)?.to_vec();
+    let offset = (parts.physical_pc - store.start()) as usize;
+    expected_store[offset..offset + len].copy_from_slice(&parts.writes[0].bytes);
+    if pun.store.bytes != expected_store {
+        return Err(Refusal::InvalidPlan);
+    }
+    let original = original_bytes(parts, pun.consumed)?;
+    let mut displacement = [0; 4];
+    displacement[len - 1..].copy_from_slice(&original[len..5]);
+    let next = i128::from(parts.physical_pc) + 5;
+    let low = u64::try_from(next + i128::from(i32::from_le_bytes(displacement)))
+        .map_err(|_| Refusal::InvalidPlan)?;
+    let size = 1_usize << (8 * (len - 1));
+    if pun.target_window != AddressRange::new(low, size)? {
+        return Err(Refusal::InvalidPlan);
+    }
+    displacement[..len - 1].copy_from_slice(&parts.writes[0].bytes[1..]);
+    let target = u64::try_from(next + i128::from(i32::from_le_bytes(displacement)))
+        .map_err(|_| Refusal::InvalidPlan)?;
+    if !pun.target_window.contains(target) || parts.generated[0].address != target {
+        return Err(Refusal::InvalidPlan);
+    }
+    Ok(())
 }
 
 /// Fail-closed refusal. A caller must never treat it as an installed fallback.
@@ -544,6 +639,7 @@ mod tests {
         PatchPlan::checked(PlanParts {
             identity: identity(),
             profile: ApplicationProfile::InstallOnce,
+            kind: PlanKind::Relocation,
             logical_pc: 0x1000,
             physical_pc: 0x1000,
             displaced: scope,
@@ -635,5 +731,57 @@ mod tests {
             PatchPlan::checked(parts),
             Err(Refusal::InvalidPlan)
         ));
+    }
+
+    #[test]
+    fn generalized_pun_contract_rejects_forged_padding_window_and_profile() {
+        let mut parts = plan().parts().clone();
+        let pc = parts.physical_pc;
+        parts.reads[0].bytes = vec![0x0f, 0x1f, 0x00, 0x48, 0x01, 0xc0, 0x90, 0x90];
+        parts.displaced = AddressRange::new(pc, 3).unwrap();
+        parts.writes[0].bytes = vec![0xe9, 0x34, 0x12];
+        let low = pc + 5 + 0x0148_0000;
+        let target = low + 0x1234;
+        parts.kind = PlanKind::GeneralizedPun(GeneralizedPun {
+            instruction_len: 3,
+            consumed: AddressRange::new(pc, 5).unwrap(),
+            target_window: AddressRange::new(low, 65536).unwrap(),
+            store: ByteEdit {
+                address: pc,
+                bytes: vec![0xe9, 0x34, 0x12, 0x48],
+            },
+        });
+        parts.generated = vec![GeneratedCode {
+            address: target,
+            bytes: vec![0xc3],
+            program_counters: vec![],
+        }];
+        parts.allocations = vec![AllocationRequest {
+            range: AddressRange::new(target & !4095, 4096).unwrap(),
+            alignment: 4096,
+        }];
+        let valid = PatchPlan::checked(parts).unwrap();
+        for mutation in 0..6 {
+            let mut parts = valid.parts().clone();
+            let PlanKind::GeneralizedPun(pun) = &mut parts.kind else {
+                unreachable!()
+            };
+            match mutation {
+                0 => pun.store.bytes[3] ^= 1, // unchanged successor must stay exact
+                1 => {
+                    pun.store.bytes.pop();
+                } // no native three-byte store
+                2 => pun.target_window = AddressRange::new(low + 1, 65536).unwrap(),
+                3 => parts.generated[0].address += 1, // target must match E9 bytes
+                4 => parts.profile = ApplicationProfile::ToggleProfile(TogglePolicy::OpcodeByte),
+                5 => pun.consumed = AddressRange::new(pc, 4).unwrap(),
+                _ => unreachable!(),
+            }
+            assert_eq!(
+                PatchPlan::checked(parts),
+                Err(Refusal::InvalidPlan),
+                "mutation {mutation}"
+            );
+        }
     }
 }

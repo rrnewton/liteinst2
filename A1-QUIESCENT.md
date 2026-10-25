@@ -10,11 +10,39 @@ or syscall-policy dependency.
 `plan_install(&InstallRequest)` consumes authenticated original bytes, a
 mapping incarnation/generation, containing function/basic-block bounds, legal
 entry and saved-resume facts, a callback and allocation/search budgets. It
-tries same-site relocation and then bounded upstream instruction heads within
-that block. Among upstream candidates it prefers a single-cache-line start,
+tries a generalized instruction pun, then same-site relocation, then bounded
+upstream instruction heads within that block. This install-once ordering follows
+the owner's generalized-pun clarification. `SearchPolicy::tactics` can force
+either tactic for qualification. Among upstream candidates it prefers a single-cache-line start,
 then shorter upstream distance. `plan_install_detailed` retains every attempted
 physical site's refusal. `PlannedInstall::metrics` records upstream distance,
-displaced bytes, extra prefix instructions, and allocation attempts.
+displaced bytes, extra prefix instructions, and allocation attempts. Every
+`SiteAttempt` identifies its tactic, so a refused pun and successful relocation
+at the same PC remain distinct outcomes.
+
+`PlanKind::GeneralizedPun` replaces exactly one original instruction of length
+L=1–4 with E9 followed by L−1 chosen low displacement bytes. The unchanged
+successor bytes supply the remaining high displacement bytes. Thus L=1,2,3,4
+permits 1, 256, 65,536 and 16,777,216 consecutive target addresses respectively,
+including negative signed rel32 displacements. The allocator tries addresses
+inside that window under the existing placement, candidate and mapping budgets.
+It never changes a successor to make an address fit. The generated stream
+observes/replaces only the original instruction and rejoins at original PC+L;
+successor entries continue at their original addresses without SIGILL routing.
+
+`GeneralizedPun::consumed` records all five bytes fetched by E9;
+`target_window` records the mathematical destination interval. `PlanParts::writes`
+contains exactly the L instruction bytes, while `GeneralizedPun::store` records
+the actual one-, two- or four-byte machine store. A three-byte instruction uses
+one four-byte MOV preserving the following byte. At cache-line offset 61 the
+store shifts left one byte instead, preserving the preceding byte. All padding
+must be present in the authenticated snapshot and held dependency range. A
+line-crossing instruction or unavailable padding refuses the pun; default policy
+then tries relocation. Publication and retirement each use one explicit MOV for
+the pun, with unchanged padding included. Quiescence, final permissions and
+sync-core remain required. All five consumed bytes must be executable after
+permission finalization, including across a page boundary. RapidProbe's exact
+opcode-byte activation/deactivation API remains separate.
 
 The generated stream executes the prefix, saves application state, invokes the
 callback with the **logical** PC, restores state, executes the suffix, and
@@ -24,8 +52,8 @@ logical callback from entering a later displaced instruction. Separate
 `instruction_boundaries` identify restored application state before an original
 instruction; callback save/restore PCs are not differential comparison points.
 
-Every possible displaced entry is either redirected, preserved behaviorally,
-or refused. Inside E9's four displacement bytes, a legal instruction head
+For a relocation plan, every possible displaced entry is either redirected,
+preserved behaviorally, or refused. Inside E9's four displacement bytes, a legal instruction head
 constrains the chosen address to an architecturally illegal long-mode opcode.
 The planner never overwrites a chosen displacement byte afterward. Outside
 E9, it prefers `0x62` only with EVEX's reserved P1 bit 2 clear under the
@@ -41,8 +69,8 @@ Publication checks the trusted plan, lease identity, full snapshot, byte
 ownership shared with legacy publishers, mapping budget, and router ownership.
 It allocates exact RX trampoline mappings using MAP_FIXED_NOREPLACE, initializes
 code, stages immutable routes, and rechecks source/lease before the first store.
-Source writes cover precisely the recorded edits, with no hidden eight-byte
-store beyond them. The caller excludes **all** concurrent source fetches, data
+Source stores cover the recorded edits and explicit generalized-pun padding;
+there is no hidden store span. The caller excludes **all** concurrent source fetches, data
 readers/writers, signal reentry and aliases for the full read dependency.
 
 A dual-alias client uses `publish`; a client changing its source page permissions

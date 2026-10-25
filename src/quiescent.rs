@@ -13,9 +13,32 @@ use crate::planner::HookSemantics;
 use crate::scanner::{InstructionScanner, ScanResult};
 use crate::trampoline::{ExecutableTrampoline, HookCallback, TrampolineImage, TrampolinePlan};
 
+/// Install-once ordering, with explicit modes for forced tactic qualification.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum TacticPolicy {
+    /// Try the generalized instruction pun before any relocation window.
+    #[default]
+    PreferGeneralizedPun,
+    /// Require a generalized pun; never substitute relocation for a refusal.
+    GeneralizedPunOnly,
+    /// Require the same-site/upstream relocation engine.
+    RelocationOnly,
+}
+
+/// Tactic associated with one successful or refused candidate.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum PatchTactic {
+    /// Change the original instruction while consuming unchanged successor bytes.
+    GeneralizedPun,
+    /// Relocate a whole-instruction redirect window.
+    Relocation,
+}
+
 /// Bounded same-block search. Bounds are refusals, never permission to skip sites.
 #[derive(Clone, Copy, Debug)]
 pub struct SearchPolicy {
+    /// Tactic ordering; forced modes retain required-positive coverage.
+    pub tactics: TacticPolicy,
     /// Maximum backward distance from logical to physical PC.
     pub max_upstream_bytes: usize,
     /// Maximum whole-instruction displaced interval.
@@ -26,6 +49,7 @@ pub struct SearchPolicy {
 impl Default for SearchPolicy {
     fn default() -> Self {
         Self {
+            tactics: TacticPolicy::PreferGeneralizedPun,
             max_upstream_bytes: 64,
             max_displaced_bytes: 80,
             max_sites: 65,
@@ -94,6 +118,8 @@ pub struct InstallRequest<'a> {
 /// One bounded physical-site search result.
 #[derive(Clone, Debug)]
 pub struct SiteAttempt {
+    /// Explicit attempted tactic, including attempts at the same physical PC.
+    pub tactic: PatchTactic,
     /// Candidate physical PC.
     pub physical_pc: u64,
     /// None means this physical site was selected.
@@ -144,6 +170,8 @@ impl PlannedInstall {
     /// quiescence, alias, saved-context and signal contracts. Execution must
     /// meet the declared System V/no-CET ABI and have sufficient writable stack
     /// below the red zone for the callback and extended-state image.
+    /// A generalized pun requires executable fetch permissions for all five
+    /// bytes in its `consumed` range, including unchanged successor bytes.
     pub unsafe fn publish(
         &self,
         writable_base: *mut u8,
@@ -218,6 +246,32 @@ pub fn plan_install_detailed(
             }
         }
         let occupied = occupied_ranges()?;
+        if request.search.max_sites == 0 {
+            return Err(Refusal::NoPatchWindow);
+        }
+        if request.search.tactics != TacticPolicy::RelocationOnly {
+            match plan_generalized_pun(request, &scan, source, &occupied) {
+                Ok(mut plan) => {
+                    attempts.push(SiteAttempt {
+                        tactic: PatchTactic::GeneralizedPun,
+                        physical_pc: request.logical_pc,
+                        refusal: None,
+                    });
+                    plan.metrics.attempts = attempts.clone();
+                    return Ok(plan);
+                }
+                Err(reason) => {
+                    attempts.push(SiteAttempt {
+                        tactic: PatchTactic::GeneralizedPun,
+                        physical_pc: request.logical_pc,
+                        refusal: Some(reason.clone()),
+                    });
+                    if request.search.tactics == TacticPolicy::GeneralizedPunOnly {
+                        return Err(reason);
+                    }
+                }
+            }
+        }
         let mut candidates: Vec<_> = scan
             .instructions()
             .iter()
@@ -242,6 +296,7 @@ pub fn plan_install_detailed(
             match plan_at(request, &scan, source, physical, &occupied) {
                 Ok(mut plan) => {
                     attempts.push(SiteAttempt {
+                        tactic: PatchTactic::Relocation,
                         physical_pc: physical,
                         refusal: None,
                     });
@@ -249,6 +304,7 @@ pub fn plan_install_detailed(
                     return Ok(plan);
                 }
                 Err(reason) => attempts.push(SiteAttempt {
+                    tactic: PatchTactic::Relocation,
                     physical_pc: physical,
                     refusal: Some(reason),
                 }),
@@ -260,6 +316,216 @@ pub fn plan_install_detailed(
             .unwrap_or(Refusal::NoPatchWindow))
     })();
     result.map_err(|reason| PlanningFailure { reason, attempts })
+}
+
+fn plan_generalized_pun(
+    request: &InstallRequest<'_>,
+    scan: &ScanResult,
+    source: AddressRange,
+    occupied: &[AddressRange],
+) -> Result<PlannedInstall, Refusal> {
+    let physical = request.logical_pc;
+    let instruction = scan
+        .instructions()
+        .iter()
+        .find(|item| item.address() == physical)
+        .ok_or(Refusal::NotInstructionHead)?;
+    let len = instruction.len();
+    let displaced = AddressRange::new(physical, len)?;
+    let consumed = AddressRange::new(physical, 5)?;
+    if !(1..=4).contains(&len)
+        || len > request.search.max_displaced_bytes
+        || !request.block.covers(displaced)
+        || !source.covers(consumed)
+        || physical / 64 != (displaced.end() - 1) / 64
+    {
+        return Err(Refusal::NoPatchWindow);
+    }
+    if request.semantics != HookSemantics::ReplaceFirst {
+        qualify_instruction(instruction.instruction())?;
+    }
+    if request
+        .entries
+        .entries
+        .iter()
+        .any(|entry| displaced.contains(entry.address) && entry.requires_endbr)
+    {
+        return Err(Refusal::UnsupportedSemantics(
+            "CET IBT landing pad in pun".into(),
+        ));
+    }
+    // A direct branch into the middle of the original instruction is positive
+    // evidence against the caller's non-overlapping stream claim.
+    if scan.instructions().iter().any(|item| {
+        matches!(
+            item.instruction().op0_kind(),
+            iced_x86::OpKind::NearBranch16
+                | iced_x86::OpKind::NearBranch32
+                | iced_x86::OpKind::NearBranch64
+        ) && displaced.contains(item.instruction().near_branch_target())
+            && item.instruction().near_branch_target() != physical
+    }) {
+        return Err(Refusal::NotInstructionHead);
+    }
+    let store_len = len.next_power_of_two();
+    // x86 has no three-byte MOV. Keep a four-byte store in this cache line by
+    // preserving the successor byte, or the preceding byte at offset 61.
+    let store_address = physical.min((physical | 63) - (store_len as u64 - 1));
+    let store_range = AddressRange::new(store_address, store_len)?;
+    if !source.covers(store_range) {
+        return Err(Refusal::NoPatchWindow);
+    }
+    let offset = (physical - source.start()) as usize;
+    let mut fixed = [0_u8; 4];
+    fixed[len - 1..].copy_from_slice(&request.code[offset + len..offset + 5]);
+    let next = i128::from(physical) + 5;
+    let low = u64::try_from(next + i128::from(i32::from_le_bytes(fixed)))
+        .map_err(|_| Refusal::AllocationUnavailable)?;
+    let window = AddressRange::new(low, 1_usize << (8 * (len - 1)))?;
+    let policy = request.allocation;
+    if policy.max_mappings == 0 || policy.max_mapped_bytes < 4096 {
+        return Err(Refusal::AllocationUnavailable);
+    }
+    let trampoline = TrampolinePlan::from_short_instruction(
+        scan,
+        physical,
+        request.hook,
+        request.semantics == HookSemantics::ReplaceFirst,
+    )
+    .map_err(|e| Refusal::Backend(e.to_string()))?;
+    let candidates = pun_candidates(window, policy);
+    let mut last_error = Refusal::AllocationUnavailable;
+    for (attempt, target) in candidates.into_iter().enumerate() {
+        let image = match trampoline.emit_at(target) {
+            Ok(image) => image,
+            Err(error) => {
+                last_error = Refusal::Backend(error.to_string());
+                continue;
+            }
+        };
+        let page_start = target & !4095;
+        let page_end = target
+            .checked_add(image.bytes().len() as u64)
+            .and_then(|end| end.checked_add(4095))
+            .map(|end| end & !4095)
+            .ok_or(Refusal::InvalidRange)?;
+        let allocation = AddressRange::new(page_start, (page_end - page_start) as usize)?;
+        if allocation.len() > policy.max_mapped_bytes as u64
+            || !policy.ranges.iter().any(|range| range.covers(allocation))
+            || occupied.iter().any(|range| range.overlaps(allocation))
+        {
+            continue;
+        }
+        let displacement = i32::try_from(i128::from(target) - next)
+            .map_err(|_| Refusal::AllocationUnavailable)?
+            .to_le_bytes();
+        debug_assert_eq!(&displacement[len - 1..], &fixed[len - 1..]);
+        let mut bytes = vec![0xe9];
+        bytes.extend_from_slice(&displacement[..len - 1]);
+        let store_offset = (store_address - source.start()) as usize;
+        let mut stored = request.code[store_offset..store_offset + store_len].to_vec();
+        let within_store = (physical - store_address) as usize;
+        stored[within_store..within_store + len].copy_from_slice(&bytes);
+        // Successor entries remain at their original addresses and need no router.
+        let mut preserved = vec![physical];
+        preserved.extend(
+            scan.instructions()
+                .iter()
+                .filter(|item| consumed.contains(item.address()))
+                .map(|item| item.address()),
+        );
+        preserved.sort_unstable();
+        preserved.dedup();
+        let plan = PatchPlan::checked(PlanParts {
+            identity: request.identity,
+            profile: ApplicationProfile::InstallOnce,
+            kind: PlanKind::GeneralizedPun(GeneralizedPun {
+                instruction_len: len as u8,
+                consumed,
+                target_window: window,
+                store: ByteEdit {
+                    address: store_address,
+                    bytes: stored,
+                },
+            }),
+            logical_pc: physical,
+            physical_pc: physical,
+            displaced,
+            reads: vec![ExpectedBytes {
+                address: source.start(),
+                bytes: request.code.to_vec(),
+            }],
+            writes: vec![ByteEdit {
+                address: physical,
+                bytes,
+            }],
+            dependencies: vec![source],
+            entries: request.entries.clone(),
+            obligations: preserved
+                .into_iter()
+                .map(EntryObligation::Preserved)
+                .collect(),
+            allocations: vec![AllocationRequest {
+                range: allocation,
+                alignment: 4096,
+            }],
+            generated: vec![GeneratedCode {
+                address: target,
+                bytes: image.bytes().to_vec(),
+                program_counters: image.program_counter_mappings().to_vec(),
+            }],
+            requirements: PublicationRequirements {
+                quiescent: true,
+                sync_core: true,
+                sigill_router: false,
+            },
+        })?;
+        return Ok(PlannedInstall {
+            plan,
+            image,
+            metrics: PlanMetrics {
+                upstream_bytes: 0,
+                displaced_bytes: len,
+                prefix_instructions: 0,
+                allocation_attempts: attempt + 1,
+                attempts: vec![],
+            },
+        });
+    }
+    Err(last_error)
+}
+
+fn pun_candidates(window: AddressRange, policy: &AllocationPolicy) -> Vec<u64> {
+    let mut addresses = Vec::new();
+    let mut seen = std::collections::BTreeSet::new();
+    let mut add = |address| {
+        if addresses.len() < policy.max_candidates && seen.insert(address) {
+            addresses.push(address);
+        }
+    };
+    if let Some(preferred) = policy.preferred_address.filter(|&pc| window.contains(pc)) {
+        add(preferred);
+    }
+    for range in &policy.ranges {
+        let Some(first_page) = range.start().checked_add(4095).map(|x| x & !4095) else {
+            continue;
+        };
+        let mut address = window.start().max(first_page);
+        let end = window.end().min(range.end());
+        // At most one candidate per mapping boundary, plus the preferred target.
+        // Avoid work proportional to a caller's arbitrarily broad address range.
+        for _ in 0..policy.max_candidates {
+            if address >= end {
+                break;
+            }
+            add(address);
+            let Some(next) = (address | 4095).checked_add(1) else {
+                break;
+            };
+            address = next;
+        }
+    }
+    addresses
 }
 
 fn plan_at(
@@ -443,6 +709,7 @@ fn plan_at(
         let plan = PatchPlan::checked(PlanParts {
             identity: request.identity,
             profile: ApplicationProfile::InstallOnce,
+            kind: PlanKind::Relocation,
             logical_pc: request.logical_pc,
             physical_pc: physical,
             displaced,
@@ -746,6 +1013,11 @@ impl PlannedInstall {
         }
         prepare_sync_core().map_err(before)?;
         let source = &self.plan.parts().reads[0];
+        if matches!(self.plan.parts().kind, PlanKind::GeneralizedPun(_))
+            && writable_base as usize % 64 != source.address as usize % 64
+        {
+            return Err(before(Refusal::InvalidRange));
+        }
         check_bytes(writable_base, &source.bytes).map_err(before)?;
         let reservation = crate::trap::reserve(
             self.plan.parts().physical_pc as usize,
@@ -800,19 +1072,9 @@ impl PlannedInstall {
             retired: false,
         };
         lease.poison();
-        for edit in &self.plan.parts().writes {
-            let offset = (edit.address - source.address) as usize;
-            // SAFETY: source ownership and complete read bounds were checked;
-            // the constructor's writable-alias and lease contracts exclude all
-            // concurrent accesses. There is no widened eight-byte store.
-            unsafe {
-                std::ptr::copy_nonoverlapping(
-                    edit.bytes.as_ptr(),
-                    writable_base.add(offset),
-                    edit.bytes.len(),
-                );
-            }
-        }
+        // SAFETY: every changed and preserved store byte is authenticated and
+        // held; the alias and signal contracts exclude concurrent accesses.
+        unsafe { write_source(&self.plan, writable_base, false) };
         // Dropping the installed handle on error deliberately retains reachable
         // code, routing and byte ownership. The caller must keep the gate held.
         if let Err(reason) = finalize().and_then(|()| sync_core()) {
@@ -918,18 +1180,9 @@ impl InstalledOnce {
         check_bytes(self.writable_base, &expected).map_err(before)?;
         prepare_sync_core().map_err(before)?;
         lease.poison();
-        for edit in &self.plan.parts().writes {
-            let offset = (edit.address - source.address) as usize;
-            // SAFETY: the live alias remains valid by construction, and the
-            // retirement lease drains every reader/executor/saved continuation.
-            unsafe {
-                std::ptr::copy_nonoverlapping(
-                    source.bytes.as_ptr().add(offset),
-                    self.writable_base.add(offset),
-                    edit.bytes.len(),
-                );
-            }
-        }
+        // SAFETY: the original alias is writable and every source/generated
+        // reader, executor and saved continuation has been drained.
+        unsafe { write_source(&self.plan, self.writable_base, true) };
         if let Err(reason) = finalize().and_then(|()| sync_core()) {
             return Err(PublicationFailure {
                 reason,
@@ -959,6 +1212,59 @@ fn before(reason: Refusal) -> PublicationFailure {
     PublicationFailure {
         reason,
         stage: FailureStage::BeforeWrite,
+    }
+}
+
+unsafe fn write_source(plan: &PatchPlan, writable: *mut u8, restore: bool) {
+    let source = &plan.parts().reads[0];
+    if let PlanKind::GeneralizedPun(pun) = &plan.parts().kind {
+        let offset = (pun.store.address - source.address) as usize;
+        let bytes = if restore {
+            &source.bytes[offset..offset + pun.store.bytes.len()]
+        } else {
+            &pun.store.bytes
+        };
+        // SAFETY: checked plan authenticates the complete byte/word/dword span;
+        // caller holds its lease and a valid writable alias with equal line offset.
+        unsafe { single_store(writable.add(offset), bytes) };
+    } else {
+        for edit in &plan.parts().writes {
+            let offset = (edit.address - source.address) as usize;
+            let bytes = if restore {
+                &source.bytes[offset..offset + edit.bytes.len()]
+            } else {
+                &edit.bytes
+            };
+            // SAFETY: caller owns every planned edit under the source lease.
+            unsafe {
+                std::ptr::copy_nonoverlapping(bytes.as_ptr(), writable.add(offset), bytes.len())
+            };
+        }
+    }
+}
+
+unsafe fn single_store(address: *mut u8, bytes: &[u8]) {
+    #[cfg(target_arch = "x86_64")]
+    // SAFETY: caller certifies writable, line-contained span and no concurrent
+    // accesses. Explicit MOV prevents compiler splitting, including L3's pad.
+    unsafe {
+        match bytes {
+            [value] => core::arch::asm!("mov byte ptr [{address}], {value}",
+                address=in(reg) address, value=in(reg_byte) *value,
+                options(nostack, preserves_flags)),
+            [a, b] => core::arch::asm!("mov word ptr [{address}], {value:x}",
+                address=in(reg) address, value=in(reg) u16::from_le_bytes([*a, *b]),
+                options(nostack, preserves_flags)),
+            [a, b, c, d] => core::arch::asm!("mov dword ptr [{address}], {value:e}",
+                address=in(reg) address, value=in(reg) u32::from_le_bytes([*a, *b, *c, *d]),
+                options(nostack, preserves_flags)),
+            _ => unreachable!("checked generalized-pun store width"),
+        }
+    }
+    #[cfg(not(target_arch = "x86_64"))]
+    {
+        let _ = (address, bytes);
+        unreachable!("publication qualification requires x86-64");
     }
 }
 fn check_bytes(pointer: *mut u8, expected: &[u8]) -> Result<(), Refusal> {
@@ -991,5 +1297,63 @@ fn sync_core() -> Result<(), Refusal> {
         Ok(())
     } else {
         Err(Refusal::Synchronization)
+    }
+}
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+mod tests {
+    use super::*;
+
+    unsafe extern "C" fn noop(_: *mut crate::trampoline::HookContext) {}
+
+    #[test]
+    fn unmappable_last_cache_line_refuses_without_address_overflow() {
+        // A pure plan accepts synthetic addresses as input. Even impossible
+        // userspace placements must refuse instead of overflowing line-end math.
+        let pc = u64::MAX - 31;
+        let code = [0x66, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90];
+        let scope = AddressRange::new(pc, code.len()).unwrap();
+        let identity = CodeIdentity {
+            source: SourceIdentity([1; 32]),
+            mapping: 1,
+            generation: 1,
+        };
+        let entries = LegalEntrySet {
+            identity,
+            scope,
+            provenance: EntryProvenance::Declared(
+                "synthetic overflowing-address regression".into(),
+            ),
+            completeness: EntryCompleteness::AllInstructionHeads,
+            entries: vec![],
+            resumes: ResumeObligation::NoneExist,
+        };
+        let allocation = AllocationPolicy {
+            ranges: vec![AddressRange::new(0x10000, 4096).unwrap()],
+            preferred_address: None,
+            max_candidates: 4,
+            max_mappings: 1,
+            max_mapped_bytes: 4096,
+        };
+        let request = InstallRequest {
+            identity,
+            code: &code,
+            base_address: pc,
+            function: scope,
+            block: scope,
+            logical_pc: pc,
+            entries: &entries,
+            hook: noop,
+            semantics: HookSemantics::Observe,
+            allocation: &allocation,
+            search: SearchPolicy {
+                tactics: TacticPolicy::GeneralizedPunOnly,
+                ..SearchPolicy::default()
+            },
+        };
+        assert!(matches!(
+            plan_install(&request),
+            Err(Refusal::AllocationUnavailable)
+        ));
     }
 }

@@ -2,7 +2,10 @@
 
 This document describes the legacy `plan_hook` / `InstalledHook` interface.
 The separate generation-bound `quiescent::plan_install` interface now implements
-same-block upstream search, logical-PC hooks, and owned displaced-entry routing.
+generalized puns before same-block upstream relocation, logical-PC hooks, and
+owned displaced-entry routing. A generalized pun changes the full original
+1–4-byte instruction, leaving successor bytes as fixed high displacement bytes;
+it is a distinct plan kind from RapidProbe's opcode-byte toggle.
 Its contract and restrictions are in [A1-QUIESCENT.md](A1-QUIESCENT.md); it does
 not change the concurrent publication decision tree below.
 

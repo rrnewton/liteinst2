@@ -1,7 +1,7 @@
 #![deny(warnings)]
 #![cfg(all(target_os = "linux", target_arch = "x86_64"))]
 
-//! Fixed native state-oracle corpus for the first quiescent relocation tactics.
+//! Fixed native state-oracle corpus for quiescent relocation and generalized puns.
 //! These are required positive fixtures: refusal is a test failure. Byte heads
 //! are handwritten alongside the fixture bytes, independent of iced-x86.
 
@@ -10,10 +10,12 @@ mod oracle;
 
 use liteinst2::contracts::{
     AddressRange, CodeIdentity, EntryCompleteness, EntryObligation, EntryProvenance, LegalEntry,
-    LegalEntrySet, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
+    LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
 };
 use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, plan_install};
+use liteinst2::quiescent::{
+    AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_install,
+};
 use liteinst2::trampoline::HookContext;
 use oracle::NativeOracle;
 
@@ -200,7 +202,10 @@ fn native_no_op_oracle_covers_same_site_upstream_and_every_entry() {
             hook: no_op_observer,
             semantics: HookSemantics::Observe,
             allocation: &allocation,
-            search: SearchPolicy::default(),
+            search: SearchPolicy {
+                tactics: TacticPolicy::RelocationOnly,
+                ..SearchPolicy::default()
+            },
         })
         .unwrap_or_else(|error| {
             panic!(
@@ -208,6 +213,10 @@ fn native_no_op_oracle_covers_same_site_upstream_and_every_entry() {
                 puzzle.name
             )
         });
+        assert!(matches!(
+            &prepared.plan().parts().kind,
+            PlanKind::Relocation
+        ));
         assert_eq!(
             prepared.plan().parts().physical_pc,
             base + puzzle.physical as u64,
@@ -357,6 +366,233 @@ fn native_no_op_oracle_covers_same_site_upstream_and_every_entry() {
 }
 
 #[test]
+fn native_no_op_oracle_covers_generalized_puns_and_unchanged_successors() {
+    // The bytes after each first instruction freeze the high rel32 bytes.
+    // These four independently chosen streams force disjoint far windows,
+    // away from adjacent loader mappings and the relocation corpus's targets.
+    // MOV/LEA/RET preserve every compared flag; no new comparator mask is needed.
+    let puzzles: [(&str, &[u8], &[usize], u32); 4] = [
+        (
+            "L1-NOP-LEA",
+            &[
+                0x90, // NOP: no free displacement byte after writing E9
+                0x48, 0x8d, 0x4f, 0x08, // LEA RCX,[RDI+8]
+                0xc3, // RET
+            ],
+            &[0, 1, 5],
+            0x084f_8d48,
+        ),
+        (
+            "L2-MOV-LEA",
+            &[
+                0x89, 0xc0, // MOV EAX,EAX
+                0x48, 0x8d, 0x4f, 0x08, // LEA RCX,[RDI+8]
+                0xc3, // RET
+            ],
+            &[0, 2, 6],
+            0x4f8d_4800,
+        ),
+        (
+            "L3-LEA-memory-store",
+            &[
+                0x48, 0x8d, 0x07, // LEA RAX,[RDI]
+                0x48, 0x89, 0x07, // MOV [RDI],RAX
+                0xc3, // RET
+            ],
+            &[0, 3, 6],
+            0x8948_0000,
+        ),
+        (
+            "L4-LEA-memory-store",
+            &[
+                0x48, 0x8d, 0x4f, 0x08, // LEA RCX,[RDI+8]
+                0x48, 0x89, 0x0f, // MOV [RDI],RCX
+                0xc3, // RET
+            ],
+            &[0, 4, 7],
+            0x4800_0000,
+        ),
+    ];
+    let mut executions = 0;
+    let mut retired_executions = 0;
+    let mut retained_fixtures = Vec::new();
+    for (index, &(name, code, heads, frozen_displacement)) in puzzles.iter().enumerate() {
+        let length = heads[1];
+        let mut oracle = NativeOracle::new(code);
+        let base = oracle.code.address();
+        let range = AddressRange::new(base, code.len()).unwrap();
+        let identity = CodeIdentity {
+            source: SourceIdentity([0x90 + index as u8; 32]),
+            mapping: 0x90 + index as u64,
+            generation: 1,
+        };
+        let entries = LegalEntrySet {
+            identity,
+            scope: range,
+            provenance: EntryProvenance::Declared(name.into()),
+            completeness: EntryCompleteness::AllInstructionHeads,
+            entries: heads
+                .iter()
+                .map(|&offset| LegalEntry {
+                    address: base + offset as u64,
+                    requires_endbr: false,
+                })
+                .collect(),
+            resumes: ResumeObligation::NoneExist,
+        };
+        let width = 1_usize << (8 * (length - 1));
+        let start =
+            u64::try_from(i128::from(base + 5) + i128::from(frozen_displacement as i32)).unwrap();
+        let expected_window = AddressRange::new(start, width).unwrap();
+        assert_eq!(width, [1, 256, 65_536, 16_777_216][index]);
+        assert_eq!(
+            &frozen_displacement.to_le_bytes()[length - 1..],
+            &code[length..5],
+            "the handwritten successor bytes must force the declared window"
+        );
+        let mut allocation = AllocationPolicy::near(base).unwrap();
+        allocation.preferred_address = Some(start + width as u64 / 2);
+        let mut request = InstallRequest {
+            identity,
+            code,
+            base_address: base,
+            function: range,
+            block: range,
+            logical_pc: base,
+            entries: &entries,
+            hook: no_op_observer,
+            semantics: HookSemantics::Observe,
+            allocation: &allocation,
+            // Default ranking must choose the feasible generalized pun before
+            // the independently feasible same-site relocation alternative.
+            search: SearchPolicy::default(),
+        };
+        let prepared = plan_install(&request)
+            .unwrap_or_else(|reason| panic!("required generalized-pun puzzle {name}: {reason:?}"));
+        request.search.tactics = TacticPolicy::RelocationOnly;
+        let alternative = plan_install(&request)
+            .unwrap_or_else(|reason| panic!("{name}: required relocation alternative: {reason:?}"));
+        assert!(matches!(
+            &alternative.plan().parts().kind,
+            PlanKind::Relocation
+        ));
+        assert_eq!(alternative.plan().parts().physical_pc, base);
+        let parts = prepared.plan().parts();
+        let PlanKind::GeneralizedPun(pun) = &parts.kind else {
+            panic!("{name}: default ranking did not select generalized pun");
+        };
+        assert_eq!(parts.physical_pc, base);
+        assert_eq!(parts.logical_pc, base);
+        assert_eq!(parts.displaced, AddressRange::new(base, length).unwrap());
+        assert_eq!(pun.instruction_len as usize, length);
+        assert_eq!(pun.consumed, AddressRange::new(base, 5).unwrap());
+        assert_eq!(pun.target_window, expected_window);
+        assert!(expected_window.contains(prepared.image().address()));
+        assert_eq!(parts.writes.len(), 1);
+        assert_eq!(parts.writes[0].address, base);
+        assert_eq!(parts.writes[0].bytes.len(), length);
+        assert_eq!(parts.writes[0].bytes[0], 0xe9);
+        assert_eq!(pun.store.address, base);
+        assert_eq!(pun.store.bytes.len(), if length == 3 { 4 } else { length });
+        assert_eq!(&pun.store.bytes[..length], &parts.writes[0].bytes);
+        assert_eq!(
+            &pun.store.bytes[length..],
+            &code[length..pun.store.bytes.len()],
+            "the three-byte pun's wider store must preserve its successor pad"
+        );
+        let mut encoded = code[..5].to_vec();
+        encoded[..length].copy_from_slice(&parts.writes[0].bytes);
+        assert_eq!(&encoded[length..], &code[length..5]);
+        let displacement = i32::from_le_bytes(encoded[1..5].try_into().unwrap());
+        assert_eq!(
+            i128::from(base + 5) + i128::from(displacement),
+            i128::from(prepared.image().address())
+        );
+        assert_eq!(prepared.image().instruction_boundaries().len(), 1);
+        assert_eq!(prepared.image().instruction_boundaries()[0].0, base);
+        assert!(
+            parts
+                .obligations
+                .iter()
+                .all(|obligation| !matches!(obligation, EntryObligation::Routed(_)))
+        );
+        assert!(!parts.requirements.sigill_router);
+        let edits: Vec<_> = parts
+            .writes
+            .iter()
+            .map(|edit| (edit.address, edit.bytes.clone()))
+            .collect();
+        let mut baselines = Vec::new();
+        for seed in [0x1234_5678_8765_4320_u64, 0xfedc_ba98_0123_4567] {
+            for entry in 0..heads.len() {
+                let mut boundaries: Vec<_> = heads[entry..]
+                    .iter()
+                    .map(|&offset| base + offset as u64)
+                    .collect();
+                boundaries.push(oracle.return_pc());
+                baselines.push((boundaries[0], oracle.original(&boundaries, seed)));
+            }
+        }
+        let writable = oracle.code.writable();
+        let (mut installed, receipt) = {
+            // SAFETY: the exclusive fixture owner excludes every executor and
+            // saved continuation; all baseline children have been reaped.
+            let mut lease = unsafe { QuiescenceLease::new(&mut oracle, identity, vec![range]) };
+            source_permissions(writable, libc::PROT_READ | libc::PROT_WRITE).unwrap();
+            // SAFETY: the private source and any preserved store pad are fully
+            // authenticated and held. Final RX permissions precede the receipt.
+            unsafe {
+                prepared.publish_with(writable, &mut lease, || {
+                    source_permissions(writable, libc::PROT_READ | libc::PROT_EXEC)
+                })
+            }
+            .unwrap()
+        };
+        assert_eq!(receipt.plan(), prepared.plan());
+        oracle.assert_publication(&edits);
+        for (entry, baseline) in &baselines {
+            oracle.assert_patched(
+                baseline,
+                *entry,
+                prepared.image().instruction_boundaries(),
+                &[],
+            );
+            executions += 1;
+        }
+        assert_eq!(installed.routed_entries(), 0);
+        {
+            let mut ranges = vec![range];
+            ranges.extend(parts.allocations.iter().map(|allocation| allocation.range));
+            // SAFETY: all patched children have been reaped, draining both the
+            // source and generated allocation before any restoration store.
+            let mut lease = unsafe { QuiescenceLease::new(&mut oracle, identity, ranges) };
+            source_permissions(writable, libc::PROT_READ | libc::PROT_WRITE).unwrap();
+            // SAFETY: finalization only changes this owned page's permissions.
+            unsafe {
+                installed.retire_with(&mut lease, || {
+                    source_permissions(writable, libc::PROT_READ | libc::PROT_EXEC)
+                })
+            }
+            .unwrap();
+        }
+        oracle.assert_publication(&[]);
+        for (entry, baseline) in &baselines {
+            oracle.assert_patched(baseline, *entry, &[], &[]);
+            retired_executions += 1;
+        }
+        retained_fixtures.push(oracle);
+    }
+    assert_eq!(
+        executions, 24,
+        "all twelve heads must execute with both seeds"
+    );
+    assert_eq!(retired_executions, 24);
+    eprintln!(
+        "native generalized-pun oracle: L1/L2/L3/L4; twelve original heads; 24 paired entry/seed executions; 24 retired comparisons; successor bytes unchanged; zero mismatches"
+    );
+}
+
+#[test]
 fn native_no_op_oracle_preserves_synchronous_fault_state() {
     // MOV EAX,0; MOV RAX,[RAX]; RET. The 3-byte load plus RET cannot host a
     // same-site patch, forcing the five-byte zeroing prefix before the hook.
@@ -394,7 +630,10 @@ fn native_no_op_oracle_preserves_synchronous_fault_state() {
         hook: no_op_observer,
         semantics: HookSemantics::Observe,
         allocation: &allocation,
-        search: SearchPolicy::default(),
+        search: SearchPolicy {
+            tactics: TacticPolicy::RelocationOnly,
+            ..SearchPolicy::default()
+        },
     })
     .expect("required fault-preserving upstream puzzle refused");
     assert_eq!(prepared.plan().parts().physical_pc, base);
@@ -462,5 +701,131 @@ fn native_no_op_oracle_preserves_synchronous_fault_state() {
     oracle.assert_publication(&[]);
     eprintln!(
         "native fault oracle: 2 seeds; SIGSEGV/SEGV_MAPERR at address0 and original PC+5; full state matched"
+    );
+}
+
+#[test]
+fn native_no_op_oracle_preserves_generalized_pun_fault_state() {
+    // The original zeroing prefix remains in place. Only the three-byte load
+    // becomes a generalized pun; RET and authenticated padding freeze its high
+    // displacement bytes, and the four-byte store must preserve the RET pad.
+    let code = [0xb8, 0, 0, 0, 0, 0x48, 0x8b, 0, 0xc3, 0x90];
+    let mut oracle = NativeOracle::new(&code);
+    let base = oracle.code.address();
+    let range = AddressRange::new(base, code.len()).unwrap();
+    let block = AddressRange::new(base, 9).unwrap();
+    let identity = CodeIdentity {
+        source: SourceIdentity([0xa0; 32]),
+        mapping: 0xa0,
+        generation: 1,
+    };
+    let entries = LegalEntrySet {
+        identity,
+        scope: block,
+        provenance: EntryProvenance::Declared("generalized-pun null-load synchronous fault".into()),
+        completeness: EntryCompleteness::Complete,
+        entries: vec![LegalEntry {
+            address: base,
+            requires_endbr: false,
+        }],
+        resumes: ResumeObligation::NoneExist,
+    };
+    let window_start =
+        u64::try_from(i128::from(base + 10) + i128::from(0x90c3_0000_u32 as i32)).unwrap();
+    let expected_window = AddressRange::new(window_start, 65_536).unwrap();
+    let mut allocation = AllocationPolicy::near(base + 5).unwrap();
+    allocation.preferred_address = Some(window_start + 32_768);
+    let prepared = plan_install(&InstallRequest {
+        identity,
+        code: &code,
+        base_address: base,
+        function: block,
+        block,
+        logical_pc: base + 5,
+        entries: &entries,
+        hook: no_op_observer,
+        semantics: HookSemantics::Observe,
+        allocation: &allocation,
+        search: SearchPolicy {
+            tactics: TacticPolicy::GeneralizedPunOnly,
+            ..SearchPolicy::default()
+        },
+    })
+    .expect("required fault-preserving generalized pun refused");
+    let parts = prepared.plan().parts();
+    let PlanKind::GeneralizedPun(pun) = &parts.kind else {
+        panic!("required generalized-pun fault fixture used another tactic");
+    };
+    assert_eq!(parts.physical_pc, base + 5);
+    assert_eq!(parts.logical_pc, base + 5);
+    assert_eq!(parts.displaced, AddressRange::new(base + 5, 3).unwrap());
+    assert_eq!(pun.consumed, AddressRange::new(base + 5, 5).unwrap());
+    assert_eq!(pun.instruction_len, 3);
+    assert_eq!(pun.target_window, expected_window);
+    assert!(expected_window.contains(prepared.image().address()));
+    assert_eq!(parts.writes.len(), 1);
+    assert_eq!(parts.writes[0].address, base + 5);
+    assert_eq!(parts.writes[0].bytes.len(), 3);
+    assert_eq!(pun.store.address, base + 5);
+    assert_eq!(pun.store.bytes.len(), 4);
+    assert_eq!(pun.store.bytes[3], 0xc3);
+    assert!(!parts.requirements.sigill_router);
+    assert_eq!(prepared.metrics().upstream_bytes, 0);
+    assert_eq!(prepared.metrics().prefix_instructions, 0);
+    let baselines: Vec<_> = [0x1234_5678_8765_4320_u64, 0xfedc_ba98_0123_4567]
+        .into_iter()
+        .map(|seed| oracle.original_fault(&[base, base + 5], seed, (libc::SIGSEGV, 1, 0)))
+        .collect();
+    let writable = oracle.code.writable();
+    let (mut installed, _) = {
+        // SAFETY: the exclusive fixture owner holds all source and padding,
+        // and all original faulting children have been killed and reaped.
+        let mut lease = unsafe { QuiescenceLease::new(&mut oracle, identity, vec![range]) };
+        source_permissions(writable, libc::PROT_READ | libc::PROT_WRITE).unwrap();
+        // SAFETY: the private source is authenticated and excludes execution;
+        // finalization restores executable permissions before the receipt.
+        unsafe {
+            prepared.publish_with(writable, &mut lease, || {
+                source_permissions(writable, libc::PROT_READ | libc::PROT_EXEC)
+            })
+        }
+        .unwrap()
+    };
+    let edits: Vec<_> = parts
+        .writes
+        .iter()
+        .map(|edit| (edit.address, edit.bytes.clone()))
+        .collect();
+    oracle.assert_publication(&edits);
+    for baseline in &baselines {
+        oracle.assert_patched(
+            baseline,
+            base,
+            prepared.image().instruction_boundaries(),
+            &[],
+        );
+    }
+    assert_eq!(installed.routed_entries(), 0);
+    {
+        let mut ranges = vec![range];
+        ranges.extend(parts.allocations.iter().map(|allocation| allocation.range));
+        // SAFETY: patched faulting children are killed/reaped, so no execution
+        // or saved continuation survives in source or generated allocations.
+        let mut lease = unsafe { QuiescenceLease::new(&mut oracle, identity, ranges) };
+        source_permissions(writable, libc::PROT_READ | libc::PROT_WRITE).unwrap();
+        // SAFETY: finalization changes only the retained source permissions.
+        unsafe {
+            installed.retire_with(&mut lease, || {
+                source_permissions(writable, libc::PROT_READ | libc::PROT_EXEC)
+            })
+        }
+        .unwrap();
+    }
+    oracle.assert_publication(&[]);
+    for baseline in &baselines {
+        oracle.assert_patched(baseline, base, &[], &[]);
+    }
+    eprintln!(
+        "native generalized-pun fault oracle: 2 seeds; SIGSEGV/SEGV_MAPERR at address0 and original PC+5; installed and retired full state matched"
     );
 }

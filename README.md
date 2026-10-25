@@ -61,7 +61,8 @@ Each module owns one correctness boundary:
 
 - `contracts`: immutable plans, legal entries, mapping generations, scoped leases,
   publication receipts, and separate interception/profiling lifetimes.
-- `quiescent`: bounded same-block upstream selection, logical-PC hooks, qualified
+- `quiescent`: generalized short-instruction puns preferred for install-once,
+  bounded same-block upstream selection, logical-PC hooks, qualified
   displaced-entry routing and generation retirement under a held lease. See the
   [standalone interface](INTERFACES.md) and [quiescent contract](A1-QUIESCENT.md)
   for its supported envelope and explicit refusals.

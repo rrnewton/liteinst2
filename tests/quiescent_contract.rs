@@ -187,6 +187,7 @@ impl Fixture {
             semantics: HookSemantics::Observe,
             allocation,
             search: SearchPolicy {
+                tactics: liteinst2::quiescent::TacticPolicy::RelocationOnly,
                 max_upstream_bytes: 0,
                 max_sites: 1,
                 max_displaced_bytes: block_len,
