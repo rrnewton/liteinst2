@@ -96,14 +96,46 @@ from a private VMA. Every saved continuation must be a declared head; the core
 receives all such heads as a conservative resume superset, never an empty list
 inferred from NX history.
 
-The reference currently supports one task, immutable private code, 4 KiB pages,
+The single-task reference supports immutable private code, 4 KiB pages,
 at most 64 initial executable mappings/censuses, at most 64 MiB of initial
 executable mappings and at most 64 KiB per census. It is groundwork
-for B1 and the B2 reference path. **It does not complete B1:** concurrent
-first-fault rendezvous remains open. The
-custom interpreter fixture is not general dynamic-loader support. Mapping
-churn, threads, application signal handlers, aliases, self-modifying code and
-the broader B2 instruction-class/ISA campaign remain unsupported.
+for B1 and the B2 reference path. The custom interpreter fixture is not general
+dynamic-loader support. Mapping churn, application signal handlers, aliases,
+self-modifying code and the broader B2 instruction-class/ISA campaign remain
+unsupported.
+
+`gate::ConcurrentPageGate` adds a fixed-membership cooperative B1 envelope.
+Its initial clean factory page creates two through eight real native threads
+with one exact clone-flags set and distinct private writable stacks. Each child
+is captured before its first instruction. The leader reaches a declared INT3
+and stays held permanently. Later clone, fork, exec, mapping and signal syscalls
+refuse; workers may call only getpid, gettid and individual exit. This limited
+registration phase does not claim general B3 thread lifecycle support.
+
+The controller resumes every live worker before waiting for any event, then
+collects all task stops under one deadline. It never advances a stopped worker
+while collecting. A real all-thread borrow requires the kernel task registry to
+match exactly and GETREGS to succeed for every live task. Only the selected
+worker runs the trusted island during publication; all others remain stopped.
+An uncooperative spinner causes whole-group termination, not partial admission.
+External data readers/writers and aliases remain explicit ownership obligations.
+Workers may not read or write another worker's instrumentation-private frame.
+
+Before any source change, every stopped worker PC or authenticated callback
+logical PC must be a declared head, including syscall-return stops. Retained
+CALL-return obligations still apply. Competing same-generation NX faults are
+collected before publication; one task publishes the complete dependency bundle,
+and the other pending faults consume that completed generation without writes.
+Callbacks remain per worker and per logical execution. Page publication is not
+counted once per callback. Errors permanently close the gate; the group owner
+kills and reaps all its tasks with a reserved delayed-cleanup owner if needed.
+
+The native group fixtures exercise four simultaneous first faults, a cross-page
+E9 fetch, complete held-task exclusion, forbidden lifecycle calls and timeout
+cleanup. An independent raw-ptrace group executes original CPUID before its own
+marker; the comparison checks every worker's GPRs, flags, full kernel extended
+state and initialized stack bytes against A1 execution. Fixed worker stack
+addresses allow exact RSP comparison without normalization.
 
 Dropping any owner kills and reaps only its child. The caller must not trace or
 reap it independently, install a competing global child reaper, or change
@@ -126,4 +158,7 @@ cargo run -p liteinst-launch --example checkpoint -- /bin/true
 The example captures and terminates a checkpoint. Its timing is exec inspection,
 not page admission or application startup. Gate metrics separately report
 bootstrap/NX setup, successful first-touch bundles, admitted/untouched pages
-and observation counts; debug shared-host samples are diagnostic only.
+and delivered observation counts. Concurrent metrics additionally record
+selected publication transactions, faults collected before publication, and
+time from the first observed stop through verified collective exclusion.
+Debug shared-host samples are diagnostic only.

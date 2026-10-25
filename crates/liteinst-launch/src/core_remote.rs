@@ -11,7 +11,8 @@
 //! exhaustive entry/resume facts. It supports only generalized puns and refuses
 //! interacting source dependencies. Task rendezvous and first-fault arbitration
 //! belong to the execution owner. This adapter does not implement A2
-//! composition, application signal delivery, or the full B1 contract.
+//! composition, application signal delivery or general lifecycle support. Its
+//! sealed stop interface accepts one stopped task or an actual all-thread stop.
 
 use std::collections::BTreeSet;
 use std::mem::{offset_of, size_of};
@@ -385,7 +386,8 @@ impl CpuidPublisher {
     /// child must have the emitter's exact enabled extended-state layout, native
     /// System V ABI, no CET or AMX use, and sufficient mapped writable callback
     /// stack below its preserved red zone. Code and instrumentation-private
-    /// stack may not be inspected as application data. Application control may
+    /// stack may not be read or written as application data, including by other
+    /// workers. Application control may
     /// enter generated code only through published entries, never the callback
     /// or syscall island directly. No application signal handlers/delivery are
     /// supported. The finalizer must not execute application code or change

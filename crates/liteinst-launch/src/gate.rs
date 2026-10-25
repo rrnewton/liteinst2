@@ -1,10 +1,10 @@
 //! First-touch page gating with separate A1 and ptrace-reference CPUID paths.
 //!
-//! This deliberately slow reference supports one owned task and declared,
-//! immutable code. It does not implement B1 concurrent-fault rendezvous. The
-//! selected CPUID runs natively under SINGLESTEP in reference mode, or through
-//! a native replacement callback in A1 mode. Other selected classes remain
-//! explicit prepublication refusals.
+//! The single-task gate offers a slow native SINGLESTEP reference and a native
+//! replacement callback through A1. The concurrent gate registers a fixed set
+//! of real shared-mm workers and publishes under collective stopped exclusion.
+//! Both require declared immutable code. Other selected classes remain explicit
+//! prepublication refusals; general lifecycle support is outside this module.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -21,6 +21,9 @@ use liteinst2::contracts as core;
 use liteinst2::quiescent::AllocationPolicy;
 
 use crate::core_remote::{CpuidPlanRequest, CpuidPublisher, MAX_CPUID_BUNDLE, PreparedCpuid};
+
+mod concurrent;
+pub use concurrent::*;
 
 use crate::{
     ExecCheckpoint, LaunchError, MemoryMapping, ProcessEvent, RegisterSnapshot, SignalStop,
@@ -291,7 +294,7 @@ impl SingleThreadPageGate {
     /// for A1's extended-state frame. The target must have the emitter's exact
     /// enabled extended-state layout, with no CET or AMX use or dynamic
     /// extended-state permission changes. Instrumentation-private stack must
-    /// never be inspected as application data. Generated code may be entered
+    /// never be read or written as application data. Generated code may be entered
     /// only through published source entries, never the callback directly.
     /// Every saved application continuation must refer
     /// to a declared instruction head; arbitrary synthetic interior resumes are
@@ -503,74 +506,18 @@ impl SingleThreadPageGate {
             .iter()
             .find(|image| image.snapshot.range().contains(page))
             .ok_or(GateError::Refused("missing image facts"))?;
-        // Close over complete pages required by every selected straddler.
-        // Granting X to a halo without scanning its entire page is forbidden.
-        let mut bundle = BTreeSet::from([page]);
-        let mut scanned = BTreeSet::new();
-        let mut candidates = BTreeMap::new();
-        let mut prepared = BTreeMap::new();
-        while let Some(next) = bundle.difference(&scanned).next().copied() {
-            remaining(deadline)?;
-            if !image
-                .snapshot
-                .range()
-                .covers(AddressRange::new(next, next + PAGE).unwrap())
-            {
-                return Err(GateError::Refused(
-                    "selected instruction crosses image census",
-                ));
-            }
-            let target = AddressRange::new(next, next + PAGE).unwrap();
-            let report = RuntimeScan.inspect(&image.snapshot, target, &image.entries, &self.policy);
-            remaining(deadline)?;
-            if report.verdict() == Verdict::Refused {
-                return Err(GateError::Scan(report.obligations().to_vec()));
-            }
-            // NX history is never an exhaustive proof that no resumes exist.
-            if !report.candidates().is_empty()
-                && self
-                    .returns
-                    .obligations_in(report.dependency())
-                    .next()
-                    .is_some()
-            {
-                return Err(GateError::Refused(
-                    "potential saved CALL return intersects selected publication",
-                ));
-            }
-            for site in report.candidates() {
-                remaining(deadline)?;
-                if site.class != liteinst_admission::scan::SiteClass::Cpuid {
-                    return Err(GateError::Refused(
-                        "selected class lacks reference single-step qualification",
-                    ));
-                }
-                candidates.insert(site.address, *site);
-                bundle.insert(site.address & !(PAGE - 1));
-                bundle.insert((site.address + u64::from(site.len) - 1) & !(PAGE - 1));
-                if let Some(publisher) = &self.core {
-                    if !publisher
-                        .installed()
-                        .iter()
-                        .any(|installed| installed.plan().parts().logical_pc == site.address)
-                        && !prepared.contains_key(&site.address)
-                    {
-                        if prepared.len() == MAX_CPUID_BUNDLE {
-                            return Err(GateError::Refused(
-                                "core publication bundle budget exceeded",
-                            ));
-                        }
-                        let plan = prepare_cpuid(image, *site)?;
-                        remaining(deadline)?;
-                        let consumed = plan.consumed();
-                        bundle.insert(consumed.start() & !(PAGE - 1));
-                        bundle.insert((consumed.end() - 1) & !(PAGE - 1));
-                        prepared.insert(site.address, plan);
-                    }
-                }
-            }
-            scanned.insert(next);
-        }
+        let AdmissionBundle {
+            pages: bundle,
+            candidates,
+            prepared,
+        } = prepare_admission(
+            image,
+            page,
+            &self.policy,
+            &self.returns,
+            self.core.as_ref(),
+            deadline,
+        )?;
         for &next in &bundle {
             remaining(deadline)?;
             self.returns
@@ -663,6 +610,91 @@ impl SingleThreadPageGate {
         self.metrics.first_touch.push(started.elapsed());
         Ok(())
     }
+}
+
+struct AdmissionBundle {
+    pages: BTreeSet<u64>,
+    candidates: BTreeMap<u64, Candidate>,
+    prepared: BTreeMap<u64, PreparedCpuid>,
+}
+
+fn prepare_admission(
+    image: &Image,
+    page: u64,
+    policy: &Policy,
+    returns: &CallReturnLedger,
+    publisher: Option<&CpuidPublisher>,
+    deadline: Instant,
+) -> Result<AdmissionBundle, GateError> {
+    // Close over complete pages required by every selected straddler.
+    // Granting X to a halo without scanning its entire page is forbidden.
+    let mut bundle = BTreeSet::from([page]);
+    let mut scanned = BTreeSet::new();
+    let mut candidates = BTreeMap::new();
+    let mut prepared = BTreeMap::new();
+    while let Some(next) = bundle.difference(&scanned).next().copied() {
+        remaining(deadline)?;
+        if !image
+            .snapshot
+            .range()
+            .covers(AddressRange::new(next, next + PAGE).unwrap())
+        {
+            return Err(GateError::Refused(
+                "selected instruction crosses image census",
+            ));
+        }
+        let target = AddressRange::new(next, next + PAGE).unwrap();
+        let report = RuntimeScan.inspect(&image.snapshot, target, &image.entries, policy);
+        remaining(deadline)?;
+        if report.verdict() == Verdict::Refused {
+            return Err(GateError::Scan(report.obligations().to_vec()));
+        }
+        // NX history is never an exhaustive proof that no resumes exist.
+        if !report.candidates().is_empty()
+            && returns.obligations_in(report.dependency()).next().is_some()
+        {
+            return Err(GateError::Refused(
+                "potential saved CALL return intersects selected publication",
+            ));
+        }
+        for site in report.candidates() {
+            remaining(deadline)?;
+            if site.class != liteinst_admission::scan::SiteClass::Cpuid {
+                return Err(GateError::Refused(
+                    "selected class lacks reference single-step qualification",
+                ));
+            }
+            candidates.insert(site.address, *site);
+            bundle.insert(site.address & !(PAGE - 1));
+            bundle.insert((site.address + u64::from(site.len) - 1) & !(PAGE - 1));
+            if let Some(publisher) = publisher {
+                if !publisher
+                    .installed()
+                    .iter()
+                    .any(|installed| installed.plan().parts().logical_pc == site.address)
+                    && !prepared.contains_key(&site.address)
+                {
+                    if prepared.len() == MAX_CPUID_BUNDLE {
+                        return Err(GateError::Refused(
+                            "core publication bundle budget exceeded",
+                        ));
+                    }
+                    let plan = prepare_cpuid(image, *site)?;
+                    remaining(deadline)?;
+                    let consumed = plan.consumed();
+                    bundle.insert(consumed.start() & !(PAGE - 1));
+                    bundle.insert((consumed.end() - 1) & !(PAGE - 1));
+                    prepared.insert(site.address, plan);
+                }
+            }
+        }
+        scanned.insert(next);
+    }
+    Ok(AdmissionBundle {
+        pages: bundle,
+        candidates,
+        prepared,
+    })
 }
 
 fn new_core_identity() -> Result<core::CodeIdentity, GateError> {

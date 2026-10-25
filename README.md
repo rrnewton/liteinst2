@@ -225,6 +225,8 @@ model never changes executable memory and is not a live admission gate.
 its exec stop before the executable/interpreter's first instruction. Its
 restricted controller gates initial executable mappings and admits scanned
 pages under a held task stop. A native CPUID trap reference and an A1 remote
-generalized-pun adapter are separate paths. The current envelope is one owned
-task with caller-certified immutable code and complete instruction heads;
-concurrent first-fault rendezvous and broader instruction coverage remain open.
+generalized-pun adapter are separate paths. The concurrent gate registers a
+fixed group of real workers, holds every task before publication, and admits
+competing first faults once. Both envelopes require caller-certified immutable
+code and complete instruction heads. Broader instruction coverage and general
+thread, signal and mapping lifecycle support remain open.
