@@ -1,0 +1,553 @@
+{
+  "baseline_revision": "cfc2cceb379a6c091503995b208086e999b301ca",
+  "harness_test_counts": {
+    "serial_launch": {
+      "test/checkpoint": {
+        "ignored": 0,
+        "tests": 23
+      },
+      "test/concurrent_control": {
+        "ignored": 0,
+        "tests": 3
+      },
+      "test/concurrent_gate": {
+        "ignored": 0,
+        "tests": 7
+      },
+      "test/native_selected": {
+        "ignored": 0,
+        "tests": 33
+      },
+      "test/native_syscall": {
+        "ignored": 0,
+        "tests": 7
+      },
+      "test/page_gate": {
+        "ignored": 0,
+        "tests": 17
+      },
+      "test/selected_gate": {
+        "ignored": 0,
+        "tests": 13
+      },
+      "test/selected_semantics": {
+        "ignored": 0,
+        "tests": 14
+      },
+      "unit/liteinst_launch/lib": {
+        "ignored": 0,
+        "tests": 2
+      }
+    },
+    "workspace_tests": {
+      "doc/liteinst2": {
+        "ignored": 0,
+        "tests": 0
+      },
+      "doc/liteinst_admission": {
+        "ignored": 0,
+        "tests": 0
+      },
+      "doc/liteinst_launch": {
+        "ignored": 0,
+        "tests": 0
+      },
+      "doc/rapid_profiler": {
+        "ignored": 0,
+        "tests": 0
+      },
+      "test/a2_oracle": {
+        "ignored": 0,
+        "tests": 33
+      },
+      "test/arena_fork": {
+        "ignored": 0,
+        "tests": 6
+      },
+      "test/boundary_signal_oracle": {
+        "ignored": 0,
+        "tests": 20
+      },
+      "test/bundle_contract": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/call_return_oracle": {
+        "ignored": 0,
+        "tests": 20
+      },
+      "test/checkpoint": {
+        "ignored": 0,
+        "tests": 23
+      },
+      "test/concurrent_control": {
+        "ignored": 0,
+        "tests": 3
+      },
+      "test/concurrent_gate": {
+        "ignored": 0,
+        "tests": 7
+      },
+      "test/concurrent_overlap": {
+        "ignored": 0,
+        "tests": 11
+      },
+      "test/controlled_coalescing_contract": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/controlled_oracle": {
+        "ignored": 0,
+        "tests": 20
+      },
+      "test/core_bridge": {
+        "ignored": 0,
+        "tests": 3
+      },
+      "test/e2e": {
+        "ignored": 0,
+        "tests": 2
+      },
+      "test/entry_backedge": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/entry_paths_oracle": {
+        "ignored": 0,
+        "tests": 20
+      },
+      "test/eviction_chain_contract": {
+        "ignored": 0,
+        "tests": 13
+      },
+      "test/eviction_chain_extensions": {
+        "ignored": 0,
+        "tests": 21
+      },
+      "test/eviction_chain_oracle": {
+        "ignored": 0,
+        "tests": 21
+      },
+      "test/exact_syscall": {
+        "ignored": 0,
+        "tests": 7
+      },
+      "test/exception_landing": {
+        "ignored": 0,
+        "tests": 20
+      },
+      "test/generalized_pun_contract": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/mandatory_prefix_oracle": {
+        "ignored": 0,
+        "tests": 21
+      },
+      "test/model": {
+        "ignored": 0,
+        "tests": 15
+      },
+      "test/native_selected": {
+        "ignored": 0,
+        "tests": 33
+      },
+      "test/native_syscall": {
+        "ignored": 0,
+        "tests": 7
+      },
+      "test/neighbor_eviction_contract": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/neighbor_eviction_oracle": {
+        "ignored": 0,
+        "tests": 63
+      },
+      "test/oracle": {
+        "ignored": 0,
+        "tests": 12
+      },
+      "test/overlap_concurrency": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/page_gate": {
+        "ignored": 0,
+        "tests": 17
+      },
+      "test/parked_context_oracle": {
+        "ignored": 0,
+        "tests": 20
+      },
+      "test/pc_relative": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/prefixed_pun_contract": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/prefixed_pun_oracle": {
+        "ignored": 0,
+        "tests": 20
+      },
+      "test/quiescent_contract": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/quiescent_oracle": {
+        "ignored": 0,
+        "tests": 23
+      },
+      "test/rel32_endpoint_oracle": {
+        "ignored": 0,
+        "tests": 20
+      },
+      "test/replace_first_cet": {
+        "ignored": 0,
+        "tests": 2
+      },
+      "test/return_obligations": {
+        "ignored": 0,
+        "tests": 13
+      },
+      "test/search_eviction_evidence": {
+        "ignored": 0,
+        "tests": 4
+      },
+      "test/search_evidence": {
+        "ignored": 0,
+        "tests": 8
+      },
+      "test/selected_gate": {
+        "ignored": 0,
+        "tests": 13
+      },
+      "test/selected_semantics": {
+        "ignored": 0,
+        "tests": 14
+      },
+      "test/sigtrap_origin": {
+        "ignored": 0,
+        "tests": 2
+      },
+      "test/stress": {
+        "ignored": 3,
+        "tests": 7
+      },
+      "test/successor_eviction_contract": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/successor_eviction_oracle": {
+        "ignored": 0,
+        "tests": 24
+      },
+      "test/sync_core_capability": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/tactic_engine": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "test/trampoline_tail": {
+        "ignored": 0,
+        "tests": 12
+      },
+      "unit/liteinst2/lib": {
+        "ignored": 1,
+        "tests": 176
+      },
+      "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
+        "ignored": 0,
+        "tests": 0
+      },
+      "unit/liteinst_admission/lib": {
+        "ignored": 0,
+        "tests": 1
+      },
+      "unit/liteinst_launch/lib": {
+        "ignored": 0,
+        "tests": 2
+      },
+      "unit/rapid_profiler/lib": {
+        "ignored": 0,
+        "tests": 7
+      },
+      "unit/rapid_profiler/main": {
+        "ignored": 0,
+        "tests": 3
+      }
+    }
+  },
+  "native_cases": [
+    {
+      "class": "rdrand",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "input_flags": 3799,
+      "test": "rdrand_eax"
+    },
+    {
+      "class": "rdrand",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 1,
+      "input_flags": 3799,
+      "test": "rdrand_ecx"
+    },
+    {
+      "class": "rdrand",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 2,
+      "input_flags": 3799,
+      "test": "rdrand_edx"
+    },
+    {
+      "class": "rdrand",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 3,
+      "input_flags": 3799,
+      "test": "rdrand_ebx"
+    },
+    {
+      "class": "rdrand",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 4,
+      "input_flags": 3799,
+      "test": "rdrand_esp"
+    },
+    {
+      "class": "rdrand",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 5,
+      "input_flags": 3799,
+      "test": "rdrand_ebp"
+    },
+    {
+      "class": "rdrand",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 6,
+      "input_flags": 3799,
+      "test": "rdrand_esi"
+    },
+    {
+      "class": "rdrand",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 7,
+      "input_flags": 3799,
+      "test": "rdrand_edi"
+    },
+    {
+      "class": "rdseed",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "input_flags": 3799,
+      "test": "rdseed_eax"
+    },
+    {
+      "class": "rdseed",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 1,
+      "input_flags": 3799,
+      "test": "rdseed_ecx"
+    },
+    {
+      "class": "rdseed",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 2,
+      "input_flags": 3799,
+      "test": "rdseed_edx"
+    },
+    {
+      "class": "rdseed",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 3,
+      "input_flags": 3799,
+      "test": "rdseed_ebx"
+    },
+    {
+      "class": "rdseed",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 4,
+      "input_flags": 3799,
+      "test": "rdseed_esp"
+    },
+    {
+      "class": "rdseed",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 5,
+      "input_flags": 3799,
+      "test": "rdseed_ebp"
+    },
+    {
+      "class": "rdseed",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 6,
+      "input_flags": 3799,
+      "test": "rdseed_esi"
+    },
+    {
+      "class": "rdseed",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 7,
+      "input_flags": 3799,
+      "test": "rdseed_edi"
+    },
+    {
+      "class": "rdpid",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "input_flags": 3799,
+      "test": "rdpid_rax"
+    },
+    {
+      "class": "rdpid",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 1,
+      "input_flags": 3799,
+      "test": "rdpid_rcx"
+    },
+    {
+      "class": "rdpid",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 2,
+      "input_flags": 3799,
+      "test": "rdpid_rdx"
+    },
+    {
+      "class": "rdpid",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 3,
+      "input_flags": 3799,
+      "test": "rdpid_rbx"
+    },
+    {
+      "class": "rdpid",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 4,
+      "input_flags": 3799,
+      "test": "rdpid_rsp"
+    },
+    {
+      "class": "rdpid",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 5,
+      "input_flags": 3799,
+      "test": "rdpid_rbp"
+    },
+    {
+      "class": "rdpid",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 6,
+      "input_flags": 3799,
+      "test": "rdpid_rsi"
+    },
+    {
+      "class": "rdpid",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 7,
+      "input_flags": 3799,
+      "test": "rdpid_rdi"
+    },
+    {
+      "class": "rdtsc",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "input_flags": 3799,
+      "test": "rdtsc_all_flags"
+    },
+    {
+      "class": "rdtsc",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "input_flags": 514,
+      "test": "rdtsc_clear_flags"
+    },
+    {
+      "class": "rdtsc",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "input_flags": 582,
+      "test": "rdtsc_zero_parity"
+    },
+    {
+      "class": "rdtscp",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "input_flags": 3799,
+      "test": "rdtscp_all_flags"
+    },
+    {
+      "class": "rdtscp",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "input_flags": 514,
+      "test": "rdtscp_clear_flags"
+    },
+    {
+      "class": "rdtscp",
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "input_flags": 582,
+      "test": "rdtscp_zero_parity"
+    },
+    {
+      "class": "cpuid",
+      "cpuid_leaf": 0,
+      "cpuid_subleaf": 0,
+      "destination": 0,
+      "input_flags": 3799,
+      "test": "cpuid_basic_vendor_leaf"
+    },
+    {
+      "class": "cpuid",
+      "cpuid_leaf": 1,
+      "cpuid_subleaf": 0,
+      "destination": 0,
+      "input_flags": 514,
+      "test": "cpuid_processor_features_leaf"
+    },
+    {
+      "class": "cpuid",
+      "cpuid_leaf": 7,
+      "cpuid_subleaf": 0,
+      "destination": 0,
+      "input_flags": 582,
+      "test": "cpuid_structured_features_leaf"
+    }
+  ],
+  "recorder_tests": 53,
+  "schema_version": 1
+}
