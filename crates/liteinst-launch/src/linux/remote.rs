@@ -2,9 +2,19 @@
 //! ptrace or to the tracee's syscall ABI, never dereferenced by this process.
 
 use super::*;
+use std::cell::RefCell;
 use std::ops::Range;
 
+use liteinst2::contracts::{AddressRange, CodeIdentity, QuiescenceLease};
+
 const STUB: [u8; 3] = [0x0f, 0x05, 0xcc];
+// Each entry is one exact native MOV to [RDI], then its own terminating INT3.
+const STORE_STUBS: [(usize, &[u8]); 4] = [
+    (16, &[0x88, 0x07, 0xcc]),
+    (32, &[0x66, 0x89, 0x07, 0xcc]),
+    (48, &[0x89, 0x07, 0xcc]),
+    (64, &[0x48, 0x89, 0x07, 0xcc]),
+];
 const NT_X86_XSTATE: usize = 0x202;
 const MAX_XSTATE: usize = 64 * 1024;
 const SYNC_CORE: u64 = 1 << 5;
@@ -100,6 +110,19 @@ pub struct StoppedProcess {
 /// publisher's entry/resume checks. Every mutating method checks stopped state.
 pub struct SingleThreadStop<'a> {
     process: &'a mut StoppedProcess,
+}
+
+/// Publication operations available while a core lease borrows actual stopped
+/// execution. Application resume, stepping, and register changes are absent.
+pub struct RemoteLeaseOps<'scope, 'process> {
+    held: &'scope RefCell<SingleThreadStop<'process>>,
+}
+
+// This guard references the RefCell that owns the actual process-stop borrow.
+// Neither the guard nor its narrow operation view can release application
+// execution; the outer method retains the borrow until lease destruction.
+struct HeldExclusion<'scope, 'process> {
+    held: &'scope RefCell<SingleThreadStop<'process>>,
 }
 
 impl ExecCheckpoint {
@@ -236,7 +259,7 @@ impl ExecCheckpoint {
             {
                 return Err(LaunchError::Invalid("unexpected syscall island address"));
             }
-            poke_bytes(self.pid(), address, &STUB)?;
+            poke_bytes(self.pid(), address, &island_code())?;
             syscall_result(
                 run_stub(
                     &mut self.child,
@@ -699,6 +722,97 @@ impl StoppedProcess {
 }
 
 impl SingleThreadStop<'_> {
+    /// Returns the exclusively owned stopped task ID.
+    pub fn pid(&self) -> libc::pid_t {
+        self.process.pid()
+    }
+
+    /// Copies the last checked mapping snapshot under the stopped-task borrow.
+    pub fn mappings(&self) -> Vec<MemoryMapping> {
+        self.process.mappings().to_vec()
+    }
+
+    /// Returns the target kernel page size.
+    pub fn page_size(&self) -> usize {
+        self.process.page_size
+    }
+
+    /// Borrows the real held process through a core quiescence lease and a
+    /// restricted publication view. Errors, a poisoned lease, and unwinding
+    /// terminate the child; successful return leaves application execution held.
+    ///
+    /// # Safety
+    /// The caller must authenticate identity and hold every core dependency,
+    /// including external readers/writers, aliases, entries, and saved resumes,
+    /// for the entire callback, as required by `QuiescenceLease::new` and the
+    /// core interface contract. A sole ptrace-stopped task proves only local
+    /// execution exclusion. Operations may execute trusted island instructions
+    /// but cannot resume application code. No independent tracer/reaper or
+    /// process outside the certified ownership envelope may access the ranges.
+    pub unsafe fn with_core_lease<T>(
+        &mut self,
+        identity: CodeIdentity,
+        ranges: Vec<AddressRange>,
+        action: impl FnOnce(
+            &mut RemoteLeaseOps<'_, '_>,
+            &mut QuiescenceLease<'_>,
+        ) -> Result<T, LaunchError>,
+    ) -> Result<T, LaunchError> {
+        self.process.ensure_stopped()?;
+        self.process.owned_signal_stop()?;
+        if let Err(error) = single_task(self.process.pid()) {
+            return self.process.fail(error);
+        }
+        let outcome = {
+            let held = RefCell::new(SingleThreadStop {
+                process: &mut *self.process,
+            });
+            let mut guard = HeldExclusion { held: &held };
+            let mut operations = RemoteLeaseOps { held: &held };
+            // Inspect through the actual guard before lending its lifetime.
+            guard.held.borrow().process.ensure_stopped()?;
+            // SAFETY: the caller certifies the complete core contract; guard
+            // references the real stop owner, which cannot expose a resume
+            // operation until this scope and its lease have ended.
+            let mut lease = unsafe { QuiescenceLease::new(&mut guard, identity, ranges) };
+            let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                action(&mut operations, &mut lease)
+            }));
+            if lease.is_poisoned() {
+                match outcome {
+                    Ok(Ok(_)) => Ok(Err(LaunchError::Invalid(
+                        "core publication lease remained poisoned",
+                    ))),
+                    Ok(Err(error)) => Ok(Err(error)),
+                    Err(payload) => Err(payload),
+                }
+            } else {
+                outcome
+            }
+        };
+        match outcome {
+            Ok(Ok(value)) => {
+                if let Err(error) = self
+                    .process
+                    .ensure_stopped()
+                    .and_then(|()| self.process.owned_signal_stop())
+                    .and_then(|()| single_task(self.process.pid()))
+                    .and_then(|()| read_registers(self.process.pid()).map(|_| ()))
+                {
+                    return self.process.fail(error);
+                }
+                Ok(value)
+            }
+            Ok(Err(error)) => self.process.fail(error),
+            Err(payload) => {
+                let _ = self
+                    .process
+                    .fail::<()>(LaunchError::Invalid("core publication unwound"));
+                std::panic::resume_unwind(payload)
+            }
+        }
+    }
+
     /// Reads stopped general registers.
     pub fn read_registers(&self) -> Result<RegisterSnapshot, LaunchError> {
         self.process.read_registers()
@@ -783,6 +897,203 @@ impl SingleThreadStop<'_> {
             return self.process.fail(error);
         }
         Ok(())
+    }
+
+    /// Allocates exactly the requested unused address range, initializes a
+    /// complete page image while RW, then makes it RX and synchronizes the
+    /// target instruction stream. The image must contain 1..=64 KiB of whole
+    /// pages; callers can place code or data at any offset within those pages.
+    ///
+    /// Existing mappings are never replaced. Any failure after allocation
+    /// terminates the owner rather than returning a partial executable image.
+    pub fn map_private_code(
+        &mut self,
+        address: u64,
+        image: &[u8],
+        timeout: Duration,
+    ) -> Result<Range<u64>, LaunchError> {
+        self.process.ensure_stopped()?;
+        self.process.owned_signal_stop()?;
+        let deadline = deadline(timeout)?;
+        let end = address
+            .checked_add(image.len() as u64)
+            .ok_or(LaunchError::Invalid("code allocation address overflow"))?;
+        if address == 0
+            || address % self.process.page_size as u64 != 0
+            || image.is_empty()
+            || image.len() > MAX_MEMORY_READ
+            || image.len() % self.process.page_size != 0
+        {
+            return Err(LaunchError::Invalid("invalid private code image range"));
+        }
+        self.process.refresh_mappings()?;
+        if self
+            .process
+            .mappings()
+            .iter()
+            .any(|mapping| address < mapping.end && mapping.start < end)
+        {
+            return Err(LaunchError::Invalid(
+                "private code allocation overlaps mapping",
+            ));
+        }
+        let allocated = syscall_result(
+            self.process.remote_syscall(
+                libc::SYS_mmap,
+                [
+                    address,
+                    image.len() as u64,
+                    (libc::PROT_READ | libc::PROT_WRITE) as u64,
+                    (libc::MAP_PRIVATE | libc::MAP_ANONYMOUS | libc::MAP_FIXED_NOREPLACE) as u64,
+                    u64::MAX,
+                    0,
+                ],
+                remaining(deadline)?,
+            )?,
+            "remote fixed private code allocation",
+        )?;
+        let result = (|| {
+            // Older kernels may ignore MAP_FIXED_NOREPLACE. Never accept a
+            // fallback mapping, even when its contents could be initialized.
+            if allocated != address {
+                return Err(LaunchError::Invalid(
+                    "fixed allocation returned another address",
+                ));
+            }
+            self.process.refresh_mappings()?;
+            self.process.require_rw_nx(address, image.len())?;
+            let mut cursor = address;
+            while cursor < end {
+                let mapping = self
+                    .process
+                    .mappings()
+                    .iter()
+                    .find(|mapping| mapping.start <= cursor && cursor < mapping.end)
+                    .ok_or(LaunchError::Invalid("private allocation disappeared"))?;
+                if mapping.pathname.is_some() {
+                    return Err(LaunchError::Invalid(
+                        "private allocation has unexpected backing",
+                    ));
+                }
+                cursor = mapping.end.min(end);
+            }
+            if self
+                .read_memory(address, image.len())?
+                .iter()
+                .any(|byte| *byte != 0)
+            {
+                return Err(LaunchError::Invalid(
+                    "private allocation is not zero initialized",
+                ));
+            }
+            poke_bytes(self.process.pid(), address, image)?;
+            if self.read_memory(address, image.len())? != image {
+                return Err(LaunchError::Invalid(
+                    "private code initialization did not verify",
+                ));
+            }
+            self.mprotect(
+                address,
+                image.len(),
+                libc::PROT_READ | libc::PROT_EXEC,
+                remaining(deadline)?,
+            )?;
+            self.sync_core(remaining(deadline)?)?;
+            if self.read_memory(address, image.len())? != image {
+                return Err(LaunchError::Invalid("finalized private code changed"));
+            }
+            Ok(address..end)
+        })();
+        match result {
+            Ok(range) => Ok(range),
+            Err(error) => self.process.fail(error),
+        }
+    }
+
+    /// Performs one native MOV of exactly 1, 2, 4, or 8 little-endian bytes.
+    /// The entire destination must be private RW and non-executable. Unaligned
+    /// and mapped page-crossing stores are permitted while the sole task is
+    /// held; this does not claim atomicity against external readers or writers.
+    ///
+    /// Expected-byte mismatch leaves memory untouched. The aligned surrounding
+    /// word envelope is verified after the store, and GPRs/XSTATE are restored
+    /// exactly. Any uncertainty after starting the MOV terminates the child.
+    /// The caller must synchronize and finalize permissions before publication.
+    pub fn exact_store_checked(
+        &mut self,
+        address: u64,
+        expected: &[u8],
+        replacement: &[u8],
+        timeout: Duration,
+    ) -> Result<(), LaunchError> {
+        self.process.ensure_stopped()?;
+        self.process.owned_signal_stop()?;
+        let deadline = deadline(timeout)?;
+        let stub_index = match expected.len() {
+            1 => 0,
+            2 => 1,
+            4 => 2,
+            8 => 3,
+            _ => {
+                return Err(LaunchError::Invalid(
+                    "exact store width must be 1, 2, 4, or 8",
+                ));
+            }
+        };
+        if expected.len() != replacement.len() {
+            return Err(LaunchError::Invalid("exact store lengths differ"));
+        }
+        let end = address
+            .checked_add(expected.len() as u64)
+            .ok_or(LaunchError::Invalid("exact store address overflow"))?;
+        let envelope = (address & !7)
+            ..(end
+                .checked_add(7)
+                .ok_or(LaunchError::Invalid("exact store envelope overflow"))?
+                & !7);
+        self.process.refresh_mappings()?;
+        self.process
+            .require_rw_nx(envelope.start, (envelope.end - envelope.start) as usize)?;
+        let mut after =
+            self.read_memory(envelope.start, (envelope.end - envelope.start) as usize)?;
+        let offset = (address - envelope.start) as usize;
+        if &after[offset..offset + expected.len()] != expected {
+            return Err(LaunchError::Invalid("remote expected bytes mismatch"));
+        }
+        after[offset..offset + replacement.len()].copy_from_slice(replacement);
+        if let Err(error) = single_task(self.process.pid()).and_then(|()| {
+            verify_island(
+                self.process.pid(),
+                self.process.mappings(),
+                &self.process.island,
+            )
+        }) {
+            return self.process.fail(error);
+        }
+        let (stub_offset, stub) = STORE_STUBS[stub_index];
+        let mut value = [0_u8; 8];
+        value[..replacement.len()].copy_from_slice(replacement);
+        let stub_address = self.process.island.start + stub_offset as u64;
+        self.process.state = State::Running;
+        let result = run_store(
+            &mut self.process.checkpoint.child,
+            stub_address,
+            stub.len(),
+            address,
+            u64::from_le_bytes(value),
+            deadline,
+        );
+        if let Err(error) = result {
+            return self.process.fail(error);
+        }
+        self.process.state = State::Stopped(Phase::OwnedTrap);
+        match self.read_memory(envelope.start, after.len()) {
+            Ok(actual) if actual == after => Ok(()),
+            Ok(_) => self.process.fail(LaunchError::Invalid(
+                "exact store or adjacent bytes did not verify",
+            )),
+            Err(error) => self.process.fail(error),
+        }
     }
 
     /// Changes page permissions through the private island. The complete range
@@ -870,7 +1181,114 @@ impl SingleThreadStop<'_> {
     }
 }
 
+impl RemoteLeaseOps<'_, '_> {
+    /// Returns the held task ID.
+    pub fn pid(&self) -> libc::pid_t {
+        self.held.borrow().pid()
+    }
+
+    /// Returns the target page size.
+    pub fn page_size(&self) -> usize {
+        self.held.borrow().page_size()
+    }
+
+    /// Copies the most recently checked mappings.
+    pub fn mappings(&self) -> Vec<MemoryMapping> {
+        self.held.borrow().mappings()
+    }
+
+    /// Reads original or published bytes without executing application code.
+    pub fn read_memory(&self, address: u64, len: usize) -> Result<Vec<u8>, LaunchError> {
+        self.held.borrow().read_memory(address, len)
+    }
+
+    /// Reads all general registers under the held exclusion.
+    pub fn read_registers(&self) -> Result<RegisterSnapshot, LaunchError> {
+        self.held.borrow().read_registers()
+    }
+
+    /// Reads the complete extended state under the held exclusion.
+    pub fn read_xstate(&self) -> Result<Vec<u8>, LaunchError> {
+        self.held.borrow().read_xstate()
+    }
+
+    /// Initializes a complete private code image at an exact unused address.
+    pub fn map_private_code(
+        &mut self,
+        address: u64,
+        image: &[u8],
+        timeout: Duration,
+    ) -> Result<Range<u64>, LaunchError> {
+        self.held
+            .borrow_mut()
+            .map_private_code(address, image, timeout)
+    }
+
+    /// Performs a verified ptrace initialization write under the held exclusion.
+    pub fn write_memory_checked(
+        &mut self,
+        address: u64,
+        expected: &[u8],
+        replacement: &[u8],
+    ) -> Result<(), LaunchError> {
+        self.held
+            .borrow_mut()
+            .write_memory_checked(address, expected, replacement)
+    }
+
+    /// Performs one verified native store of the requested exact width.
+    pub fn exact_store_checked(
+        &mut self,
+        address: u64,
+        expected: &[u8],
+        replacement: &[u8],
+        timeout: Duration,
+    ) -> Result<(), LaunchError> {
+        self.held
+            .borrow_mut()
+            .exact_store_checked(address, expected, replacement, timeout)
+    }
+
+    /// Changes permissions while application execution remains excluded.
+    pub fn mprotect(
+        &mut self,
+        address: u64,
+        len: usize,
+        protection: i32,
+        timeout: Duration,
+    ) -> Result<(), LaunchError> {
+        self.held
+            .borrow_mut()
+            .mprotect(address, len, protection, timeout)
+    }
+
+    /// Synchronizes the held target's instruction stream.
+    pub fn sync_core(&mut self, timeout: Duration) -> Result<(), LaunchError> {
+        self.held.borrow_mut().sync_core(timeout)
+    }
+}
+
 impl StoppedProcess {
+    fn require_rw_nx(&self, address: u64, len: usize) -> Result<(), LaunchError> {
+        self.target_range(address, len)?;
+        let end = address + len as u64;
+        let mut cursor = address;
+        while cursor < end {
+            let mapping = self
+                .mappings()
+                .iter()
+                .find(|mapping| mapping.start <= cursor && cursor < mapping.end)
+                .ok_or(LaunchError::Invalid("exact store range is not mapped"))?;
+            if mapping.permissions != "rw-p" {
+                return Err(LaunchError::Invalid(
+                    "exact store requires private RW and NX memory",
+                ));
+            }
+            cursor = mapping.end.min(end);
+        }
+        Ok(())
+    }
+
     fn target_range(&self, address: u64, len: usize) -> Result<(), LaunchError> {
         let end = address
             .checked_add(len as u64)
@@ -973,13 +1391,22 @@ fn verify_island(
             && island.end <= mapping.end
             && mapping.permissions == "r-xp"
             && mapping.pathname.is_none()
-    }) || read_memory(pid, island.start, STUB.len())? != STUB
+    }) || read_memory(pid, island.start, island_code().len())? != island_code()
     {
         return Err(LaunchError::Invalid(
             "immutable RX syscall island did not verify",
         ));
     }
     Ok(())
+}
+
+fn island_code() -> Vec<u8> {
+    let mut bytes = vec![0xcc; 68];
+    bytes[..STUB.len()].copy_from_slice(&STUB);
+    for (offset, stub) in STORE_STUBS {
+        bytes[offset..offset + stub.len()].copy_from_slice(stub);
+    }
+    bytes
 }
 
 fn set_registers(pid: libc::pid_t, snapshot: &RegisterSnapshot) -> Result<(), LaunchError> {
@@ -1164,6 +1591,56 @@ fn run_stub(
             return Err(LaunchError::Invalid("unowned trap during remote syscall"));
         }
         Ok(result.rax)
+    })();
+    if stopped {
+        restore_state(child.pid, &saved, &extended)?;
+    }
+    result
+}
+
+fn run_store(
+    child: &mut ChildOwner,
+    stub_address: u64,
+    stub_len: usize,
+    destination: u64,
+    value: u64,
+    deadline: Instant,
+) -> Result<(), LaunchError> {
+    let saved = read_registers(child.pid)?;
+    let extended = xstate(child.pid)?;
+    let mut registers = saved;
+    registers.rip = stub_address;
+    registers.rax = value;
+    registers.rdi = destination;
+    registers.orig_rax = u64::MAX;
+    // Trusted unaligned stores must not inherit application TF or AC. An NX
+    // fault can also leave RF set; MOV clears RF before the following INT3.
+    // Start trusted execution with RF clear so the exact completion comparison
+    // remains valid. All three bits are restored in the complete original flags.
+    registers.eflags &= !(0x100 | 0x10000 | 0x40000);
+    let mut stopped = true;
+    let result = (|| {
+        set_registers(child.pid, &registers)?;
+        ptrace(libc::PTRACE_CONT, child.pid, 0, 0)?;
+        stopped = false;
+        let status = child.wait(deadline, "trusted exact-width store")?;
+        stopped = libc::WIFSTOPPED(status);
+        if !stopped || libc::WSTOPSIG(status) != libc::SIGTRAP || status >> 16 != 0 {
+            return Err(LaunchError::Invalid(
+                "exact store did not reach its owned trap",
+            ));
+        }
+        let info = siginfo(child.pid)?;
+        registers.rip = stub_address + stub_len as u64;
+        if info.si_signo != libc::SIGTRAP
+            || !matches!(info.si_code, libc::SI_KERNEL | libc::TRAP_BRKPT)
+            || read_registers(child.pid)? != registers
+        {
+            return Err(LaunchError::Invalid(
+                "unowned or state-changing exact-store trap",
+            ));
+        }
+        Ok(())
     })();
     if stopped {
         restore_state(child.pid, &saved, &extended)?;

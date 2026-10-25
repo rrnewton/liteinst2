@@ -9,4 +9,5 @@ license = "BSD-2-Clause"
 [dependencies]
 libc = "0.2.186"
 liteinst-admission = { version = "0.1.0", path = "../liteinst-admission" }
+liteinst2 = { version = "0.1.0", path = "../.." }
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder"] }

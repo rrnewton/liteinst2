@@ -13,6 +13,7 @@ use liteinst_launch::{
     ExecCheckpoint, FirstImage, LaunchCommand, LaunchError, MAX_MEMORY_READ, ProcessEvent,
     SignalStop, StoppedProcess,
 };
+use liteinst2::contracts::{AddressRange, CodeIdentity, SourceIdentity};
 
 const SEGV_ACCERR: i32 = 2;
 const ENTRY_OFFSET: usize = 4096;
@@ -822,4 +823,379 @@ fn application_jump_to_private_syscall_island_is_refused() {
         ))
     ));
     assert_reaped(pid);
+}
+
+fn unused_code_address(stopped: &StoppedProcess, len: usize) -> u64 {
+    for candidate in (0x1000_0000_u64..0x2000_0000).step_by(0x10000) {
+        if stopped
+            .mappings()
+            .iter()
+            .all(|mapping| candidate + len as u64 <= mapping.start || mapping.end <= candidate)
+        {
+            return candidate;
+        }
+    }
+    panic!("no bounded test allocation gap");
+}
+
+#[test]
+fn exact_code_allocation_initializes_offsets_and_refuses_collisions() {
+    let fixtures = Fixtures::new();
+    let path = fixtures.elf("remote-fixed-code", false, None);
+    let mut stopped = process(&path);
+    let page = stopped.page_size();
+    let address = unused_code_address(&stopped, page * 3);
+    let mut image = vec![0_u8; page * 2];
+    image[17..20].copy_from_slice(&[0x0f, 0xa2, 0xc3]);
+    image[page + 31..page + 34].copy_from_slice(&[0x90, 0x90, 0xc3]);
+    let registers = stopped.read_registers().unwrap();
+    let extended = stopped.read_xstate().unwrap();
+    let original_entry = stopped.entries().executable_entry;
+    let original = stopped.read_memory(original_entry, 32).unwrap();
+    let island = stopped.island_range();
+    let mut hold = stopped.hold().unwrap();
+    assert_eq!(
+        hold.map_private_code(address, &image, CONTROL_TIMEOUT)
+            .unwrap(),
+        address..address + image.len() as u64
+    );
+    assert_eq!(hold.read_memory(address, image.len()).unwrap(), image);
+    assert!(hold.mappings().iter().any(|mapping| {
+        mapping.start <= address
+            && address + image.len() as u64 <= mapping.end
+            && mapping.permissions == "r-xp"
+            && mapping.pathname.is_none()
+    }));
+    assert!(
+        hold.map_private_code(address, &vec![0xcc; page], CONTROL_TIMEOUT)
+            .is_err()
+    );
+    assert!(
+        hold.map_private_code(EXEC_BASE, &vec![0xcc; page], CONTROL_TIMEOUT)
+            .is_err()
+    );
+    assert!(
+        hold.map_private_code(island.start, &vec![0xcc; page], CONTROL_TIMEOUT)
+            .is_err()
+    );
+    assert!(
+        hold.map_private_code(address + 1, &image, CONTROL_TIMEOUT)
+            .is_err()
+    );
+    assert!(hold.map_private_code(0, &image, CONTROL_TIMEOUT).is_err());
+    assert!(
+        hold.map_private_code(address + 0x10000, &[], CONTROL_TIMEOUT)
+            .is_err()
+    );
+    assert!(
+        hold.map_private_code(address + 0x10000, &image[..page - 1], CONTROL_TIMEOUT)
+            .is_err()
+    );
+    assert!(
+        hold.map_private_code(
+            address + 0x10000,
+            &vec![0; MAX_MEMORY_READ + page],
+            CONTROL_TIMEOUT
+        )
+        .is_err()
+    );
+    assert_eq!(hold.read_memory(address, image.len()).unwrap(), image);
+    assert_eq!(
+        hold.read_memory(original_entry, original.len()).unwrap(),
+        original
+    );
+    assert_eq!(hold.read_registers().unwrap(), registers);
+    assert_eq!(hold.read_xstate().unwrap(), extended);
+    let pid = hold.pid();
+    stopped.terminate().unwrap();
+    assert_reaped(pid);
+}
+
+#[test]
+fn exact_native_stores_cover_all_widths_alignments_and_page_splits() {
+    let fixtures = Fixtures::new();
+    let path = fixtures.elf("remote-width-stores", false, None);
+    let mut stopped = process(&path);
+    let page = stopped.page_size();
+    let address = unused_code_address(&stopped, page * 3);
+    let island = stopped.island_range();
+    let registers = stopped.read_registers().unwrap();
+    let extended = stopped.read_xstate().unwrap();
+    let mut image = vec![0xa5_u8; page * 2];
+    let mut hold = stopped.hold().unwrap();
+    hold.map_private_code(address, &image, CONTROL_TIMEOUT)
+        .unwrap();
+    hold.mprotect(
+        address,
+        image.len(),
+        libc::PROT_READ | libc::PROT_WRITE,
+        CONTROL_TIMEOUT,
+    )
+    .unwrap();
+    for (offset, bytes) in [
+        (16, &[0x88, 0x07, 0xcc][..]),
+        (32, &[0x66, 0x89, 0x07, 0xcc][..]),
+        (48, &[0x89, 0x07, 0xcc][..]),
+        (64, &[0x48, 0x89, 0x07, 0xcc][..]),
+    ] {
+        assert_eq!(
+            hold.read_memory(island.start + offset, bytes.len())
+                .unwrap(),
+            bytes
+        );
+    }
+    for width in [1_usize, 2, 4, 8] {
+        let offsets = (64..80).chain((1..width).map(|split| page - split));
+        for offset in offsets {
+            let expected = image[offset..offset + width].to_vec();
+            let replacement: Vec<u8> = (0..width)
+                .map(|index| {
+                    (offset as u8)
+                        .wrapping_add(index as u8)
+                        .wrapping_add(width as u8)
+                })
+                .collect();
+            hold.exact_store_checked(
+                address + offset as u64,
+                &expected,
+                &replacement,
+                CONTROL_TIMEOUT,
+            )
+            .unwrap();
+            image[offset..offset + width].copy_from_slice(&replacement);
+            assert_eq!(hold.read_memory(address, image.len()).unwrap(), image);
+            assert_eq!(hold.read_registers().unwrap(), registers);
+            assert_eq!(hold.read_xstate().unwrap(), extended);
+        }
+    }
+    hold.sync_core(CONTROL_TIMEOUT).unwrap();
+    hold.mprotect(
+        address,
+        image.len(),
+        libc::PROT_READ | libc::PROT_EXEC,
+        CONTROL_TIMEOUT,
+    )
+    .unwrap();
+    assert_eq!(hold.read_registers().unwrap(), registers);
+    assert_eq!(hold.read_xstate().unwrap(), extended);
+    let pid = hold.pid();
+    stopped.terminate().unwrap();
+    assert_reaped(pid);
+}
+
+#[test]
+fn exact_stores_reject_stale_rx_readonly_island_and_unmapped_ranges() {
+    let fixtures = Fixtures::new();
+    let path = fixtures.elf("remote-store-refusal", false, None);
+    let mut stopped = process(&path);
+    let page = stopped.page_size();
+    let address = unused_code_address(&stopped, page * 2);
+    let island = stopped.island_range();
+    let image = vec![0x5a; page];
+    let mut hold = stopped.hold().unwrap();
+    hold.map_private_code(address, &image, CONTROL_TIMEOUT)
+        .unwrap();
+    assert!(
+        hold.exact_store_checked(address, &[0x5a], &[0x42], CONTROL_TIMEOUT)
+            .is_err()
+    );
+    assert!(
+        hold.exact_store_checked(island.start, &[0x0f], &[0x42], CONTROL_TIMEOUT)
+            .is_err()
+    );
+    hold.mprotect(address, page, libc::PROT_READ, CONTROL_TIMEOUT)
+        .unwrap();
+    assert!(
+        hold.exact_store_checked(address, &[0x5a], &[0x42], CONTROL_TIMEOUT)
+            .is_err()
+    );
+    hold.mprotect(
+        address,
+        page,
+        libc::PROT_READ | libc::PROT_WRITE,
+        CONTROL_TIMEOUT,
+    )
+    .unwrap();
+    assert!(
+        hold.exact_store_checked(address, &[0xff], &[0x42], CONTROL_TIMEOUT)
+            .is_err()
+    );
+    for width in [0, 3, 16] {
+        assert!(
+            hold.exact_store_checked(
+                address,
+                &vec![0x5a; width],
+                &vec![0x42; width],
+                CONTROL_TIMEOUT
+            )
+            .is_err()
+        );
+    }
+    assert!(
+        hold.exact_store_checked(address, &[0x5a], &[0x42; 2], CONTROL_TIMEOUT)
+            .is_err()
+    );
+    assert!(
+        hold.exact_store_checked(
+            address + page as u64 - 4,
+            &[0x5a; 8],
+            &[0x42; 8],
+            CONTROL_TIMEOUT
+        )
+        .is_err()
+    );
+    assert!(
+        hold.exact_store_checked(u64::MAX - 3, &[0x5a; 8], &[0x42; 8], CONTROL_TIMEOUT)
+            .is_err()
+    );
+    assert_eq!(hold.read_memory(address, image.len()).unwrap(), image);
+    assert_eq!(
+        hold.read_memory(island.start, 3).unwrap(),
+        [0x0f, 0x05, 0xcc]
+    );
+    let pid = hold.pid();
+    stopped.terminate().unwrap();
+    assert_reaped(pid);
+}
+
+#[test]
+fn exact_store_from_resume_flag_state_restores_every_register_and_neighbor() {
+    let fixtures = Fixtures::new();
+    let path = fixtures.elf("remote-store-resume-flag", false, None);
+    let mut stopped = process(&path);
+    let page = stopped.page_size();
+    let address = unused_code_address(&stopped, page);
+    let extended = stopped.read_xstate().unwrap();
+    let mut image = vec![0xa5; page];
+    let mut hold = stopped.hold().unwrap();
+    hold.map_private_code(address, &image, CONTROL_TIMEOUT)
+        .unwrap();
+    hold.mprotect(
+        address,
+        page,
+        libc::PROT_READ | libc::PROT_WRITE,
+        CONTROL_TIMEOUT,
+    )
+    .unwrap();
+    let mut registers = hold.read_registers().unwrap();
+    registers.eflags |= 0x10000; // RF is present at an instruction-fetch fault.
+    hold.write_registers(&registers).unwrap();
+    hold.exact_store_checked(address + 7, &[0xa5; 2], &[0xe9, 0x42], CONTROL_TIMEOUT)
+        .unwrap();
+    image[7..9].copy_from_slice(&[0xe9, 0x42]);
+    assert_eq!(hold.read_memory(address, image.len()).unwrap(), image);
+    assert_eq!(hold.read_registers().unwrap(), registers);
+    assert_eq!(hold.read_xstate().unwrap(), extended);
+    let pid = hold.pid();
+    stopped.terminate().unwrap();
+    assert_reaped(pid);
+}
+
+fn lease_identity() -> CodeIdentity {
+    CodeIdentity {
+        source: SourceIdentity([7; 32]),
+        mapping: 1,
+        generation: 1,
+    }
+}
+
+#[test]
+fn core_lease_borrows_real_stop_and_preserves_state_on_success() {
+    let fixtures = Fixtures::new();
+    let path = fixtures.elf("remote-core-lease", false, None);
+    let mut stopped = process(&path);
+    let page = stopped.page_size();
+    let address = unused_code_address(&stopped, page * 2);
+    let registers = stopped.read_registers().unwrap();
+    let extended = stopped.read_xstate().unwrap();
+    let range = AddressRange::new(address, page).unwrap();
+    let mut hold = stopped.hold().unwrap();
+    // SAFETY: the declared fixture has one exclusively held task, no aliases,
+    // external accesses, handlers, saved resumes, or references to this unused
+    // generated range. Only narrow island operations run within the lease.
+    unsafe {
+        hold.with_core_lease(lease_identity(), vec![range], |ops, lease| {
+            assert_eq!(lease.identity(), lease_identity());
+            assert!(lease.covers(range));
+            assert_eq!(ops.read_registers()?, registers);
+            assert_eq!(ops.read_xstate()?, extended);
+            ops.map_private_code(address, &vec![0; page], CONTROL_TIMEOUT)?;
+            ops.mprotect(
+                address,
+                page,
+                libc::PROT_READ | libc::PROT_WRITE,
+                CONTROL_TIMEOUT,
+            )?;
+            ops.exact_store_checked(address + 3, &[0; 4], &[1, 2, 3, 4], CONTROL_TIMEOUT)?;
+            ops.sync_core(CONTROL_TIMEOUT)?;
+            ops.mprotect(
+                address,
+                page,
+                libc::PROT_READ | libc::PROT_EXEC,
+                CONTROL_TIMEOUT,
+            )?;
+            Ok(())
+        })
+    }
+    .unwrap();
+    assert_eq!(hold.read_registers().unwrap(), registers);
+    assert_eq!(hold.read_xstate().unwrap(), extended);
+    let pid = hold.pid();
+    stopped.terminate().unwrap();
+    assert_reaped(pid);
+}
+
+#[test]
+fn core_lease_error_poison_and_panic_kill_and_reap() {
+    let fixtures = Fixtures::new();
+    let path = fixtures.elf("remote-core-lease-failure", false, None);
+    for failure in 0..3 {
+        let mut stopped = process(&path);
+        let pid = stopped.pid();
+        let page = stopped.page_size();
+        let address = unused_code_address(&stopped, page);
+        let range = AddressRange::new(address, page).unwrap();
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            // SAFETY: same closed-world fixture ownership as the success case;
+            // each failure happens while its sole task remains excluded.
+            unsafe {
+                stopped.hold().unwrap().with_core_lease(
+                    lease_identity(),
+                    vec![range],
+                    |ops, lease| {
+                        ops.map_private_code(address, &vec![0; page], CONTROL_TIMEOUT)?;
+                        match failure {
+                            0 => {
+                                lease.poison();
+                                Err(LaunchError::Invalid("injected publication failure"))
+                            }
+                            1 => {
+                                lease.poison();
+                                Ok(())
+                            }
+                            _ => panic!("injected publication unwind"),
+                        }
+                    },
+                )
+            }
+        }));
+        match result {
+            Ok(result) => match failure {
+                0 => assert!(matches!(
+                    result,
+                    Err(LaunchError::Invalid("injected publication failure"))
+                )),
+                1 => assert!(matches!(
+                    result,
+                    Err(LaunchError::Invalid(
+                        "core publication lease remained poisoned"
+                    ))
+                )),
+                _ => panic!("publication panic was swallowed"),
+            },
+            Err(_) => assert_eq!(failure, 2),
+        }
+        assert!(stopped.read_registers().is_err());
+        assert_reaped(pid);
+    }
 }
