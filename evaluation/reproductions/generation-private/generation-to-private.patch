@@ -1,0 +1,308 @@
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -10,149 +10,98 @@
+ 
+ const CLOSED: usize = 1 << (usize::BITS - 1);
+ const COUNT_MASK: usize = CLOSED - 1;
+-/// Maximum functions admitted when constructing one epoch.
+ pub const MAX_FUNCTIONS: usize = 4096;
+-/// Maximum lifetime invocation records allocated for one epoch.
+ pub const MAX_RECORDS: usize = 1_048_576;
+ static NEXT_GENERATION: AtomicU64 = AtomicU64::new(1);
+ 
+ #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+-/// Process-local generation identity that is never intentionally reused.
+ pub struct GenerationId(u64);
+ 
+ impl GenerationId {
+-    /// Return the opaque numeric identity for diagnostics and record comparison.
+     pub fn get(self) -> u64 {
+         self.0
+     }
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]
+-/// Caller-selected identity of one function within an epoch.
+-pub struct FunctionId(
+-    /// The caller's integer function key.
+-    pub u64,
+-);
+-
+-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+-/// Independent per-function retention and global storage limits.
++pub struct FunctionId(pub u64);
++
++#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+ pub struct Config {
+-    /// Maximum completed records retained for each function (K).
+     pub retained_per_function: usize,
+-    /// Maximum simultaneous reservations across all functions (M).
+     pub max_inflight: usize,
+-    /// Maximum lifetime admissions across all functions (A); slots are not recycled.
+     pub max_invocations: usize,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+-/// A constructor refusal before an epoch is returned.
+ pub enum CreateError {
+-    /// The requested function set is empty.
+     EmptyFunctions,
+-    /// The function count exceeds [`MAX_FUNCTIONS`].
+     TooManyFunctions,
+-    /// The requested function set contains duplicate identities.
+     DuplicateFunction,
+-    /// The per-function retention budget is zero.
+     ZeroRetainedBudget,
+-    /// The global reservation limit is zero or exceeds the counter range.
+     InvalidInflightLimit,
+-    /// The lifetime record limit is zero or exceeds [`MAX_RECORDS`].
+     InvalidInvocationLimit,
+-    /// Bounded storage allocation failed.
+     Allocation,
+-    /// The process-local generation identity space is exhausted.
+     GenerationExhausted,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+-/// A rejected admission that returns no ticket.
+ pub enum AdmissionRefusal {
+-    /// The function is absent from this epoch.
+     UnknownFunction,
+-    /// This function has closed admission.
+     FunctionClosed,
+-    /// The entire epoch has closed admission.
+     EpochClosed,
+-    /// The global concurrent-reservation limit is reached.
+     InflightLimit,
+-    /// Lifetime invocation storage is exhausted; the epoch is closed.
+     StorageExhausted,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+-/// Immutable identity and caller value captured for one accepted invocation.
+ pub struct Admission {
+-    /// The epoch that admitted the invocation.
+     pub generation: GenerationId,
+-    /// The invocation slot in that epoch; never reused within the epoch.
+     pub invocation: usize,
+-    /// The caller-selected function identity.
+     pub function: FunctionId,
+     /// Opaque caller data; this component does not qualify a timestamp source.
+     pub entry_value: u64,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+-/// Whether a completed invocation obtained a retention reservation.
+ pub enum Disposition {
+     /// Zero-based rank in this function's successful retention reservations.
+     Retained {
+-        /// The zero-based retained reservation index for this function.
+         rank: usize,
+     },
+-    /// The invocation completed after all retention reservations were taken.
+     DroppedAfterBudget,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+-/// How a ticket reached cancellation instead of completion.
+ pub enum CancelReason {
+-    /// The owner explicitly called [`Ticket::cancel`].
+     Explicit,
+-    /// An unfinished ticket was dropped through ordinary Rust cleanup.
+     DroppedTicket,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+-/// The single terminal outcome published for an admitted invocation.
+ pub enum Terminal {
+-    /// A completed invocation and its independent retention disposition.
+     Completed {
+-        /// Opaque caller-supplied completion data, not a qualified clock value.
+         value: u64,
+-        /// Whether this completion obtained a retention reservation.
+         disposition: Disposition,
+     },
+-    /// Cancellation without consuming a retention reservation.
+     Cancelled(CancelReason),
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+-/// An admission and its optional terminal observation.
+ pub struct Record {
+-    /// The immutable identity recorded at admission.
+     pub admission: Admission,
+-    /// The terminal outcome, or `None` while its publication is not observed.
+     pub terminal: Option<Terminal>,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+-/// A request to deactivate one function in its original generation.
+ pub struct DeactivationRequest {
+-    /// The generation to which this request belongs.
+     pub generation: GenerationId,
+-    /// The function whose retention reservations reached K.
+     pub function: FunctionId,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+-/// Result of completing one ticket in its admitting epoch.
+ pub struct Completion {
+-    /// The identity retained by the completed ticket.
+     pub admission: Admission,
+-    /// This completion's retention outcome.
+     pub disposition: Disposition,
+     /// A generation-scoped request, not evidence of any physical change.
+     pub deactivate: Option<DeactivationRequest>,
+@@ -162,26 +111,17 @@
+ }
+ 
+ #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+-/// Counts derived from the published records for one function.
+ pub struct Population {
+-    /// Published admissions observed for this function.
+     pub admitted: usize,
+-    /// Observed completed invocations, retained or dropped.
+     pub completed: usize,
+-    /// Completed invocations that reserved retained storage.
+     pub retained: usize,
+-    /// Completed invocations that did not reserve retained storage.
+     pub dropped: usize,
+-    /// Observed explicit or drop cancellations.
+     pub cancelled: usize,
+-    /// Admissions with no terminal outcome observed.
+     pub unfinished: usize,
+ }
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+-/// A per-function record observation with an explicit finality flag.
+ pub struct PopulationObservation {
+-    /// The observed record population.
+     pub population: Population,
+     /// True only after closed+zero was acquired before reading the records.
+     pub final_report: bool,
+@@ -222,8 +162,6 @@
+ }
+ 
+ impl Epoch {
+-    /// Allocate an epoch with distinct functions and validated finite limits.
+-    /// Returns a typed refusal if limits, identities or storage cannot be established.
+     pub fn new(function_ids: &[FunctionId], config: Config) -> Result<Self, CreateError> {
+         if function_ids.is_empty() {
+             return Err(CreateError::EmptyFunctions);
+@@ -278,18 +216,14 @@
+         })
+     }
+ 
+-    /// Return this epoch's process-local identity.
+     pub fn id(&self) -> GenerationId {
+         self.id
+     }
+ 
+-    /// Return the immutable limits with which this epoch was created.
+     pub fn config(&self) -> Config {
+         self.config
+     }
+ 
+-    /// Reserve one invocation in this epoch and return its non-Clone ticket.
+-    /// The entry value is opaque data; acceptance does not qualify a clock or frontend.
+     pub fn enter(
+         &self,
+         function: FunctionId,
+@@ -365,18 +299,14 @@
+         self.state.fetch_or(CLOSED, Ordering::AcqRel) & COUNT_MASK
+     }
+ 
+-    /// Observe whether epoch-wide admission has been closed.
+     pub fn is_closed(&self) -> bool {
+         self.state.load(Ordering::Acquire) & CLOSED != 0
+     }
+ 
+-    /// Observe the current count of global admission reservations.
+-    /// This includes reservations whose admission record is not yet published.
+     pub fn reservations(&self) -> usize {
+         self.state.load(Ordering::Acquire) & COUNT_MASK
+     }
+ 
+-    /// Observe a known function's admission flag, or `None` for an unknown function.
+     pub fn function_closed(&self, function: FunctionId) -> Option<bool> {
+         self.functions
+             .iter()
+@@ -395,8 +325,6 @@
+         })
+     }
+ 
+-    /// Observe one function's records; only a final report is stable after drain.
+-    /// Concurrent partial fields need not form one instantaneous snapshot.
+     pub fn population(&self, function: FunctionId) -> Option<PopulationObservation> {
+         if !self.functions.iter().any(|row| row.id == function) {
+             return None;
+@@ -441,18 +369,15 @@
+     }
+ }
+ 
+-/// Read-only access established after epoch closure and zero reservations.
+ pub struct Drained<'a> {
+     epoch: &'a Epoch,
+ }
+ 
+ impl Drained<'_> {
+-    /// Return the identity of the drained epoch.
+     pub fn generation(&self) -> GenerationId {
+         self.epoch.id
+     }
+ 
+-    /// Iterate every published admission with its required terminal outcome.
+     pub fn records(&self) -> impl Iterator<Item = (Admission, Terminal)> + '_ {
+         self.epoch.records().map(|row| {
+             (
+@@ -462,7 +387,6 @@
+         })
+     }
+ 
+-    /// Return a stable population for a known function after drain.
+     pub fn population(&self, function: FunctionId) -> Option<Population> {
+         self.epoch.population(function).map(|row| {
+             assert!(row.final_report && row.population.unfinished == 0);
+@@ -476,14 +400,14 @@
+ /// Rust cancellation only, not a signal/exception/longjmp frontend guarantee.
+ ///
+ /// ```compile_fail
+-/// use rapid_profiler::generation::{Config, Epoch, FunctionId};
++/// use liteinst2_generation_draft::{Config, Epoch, FunctionId};
+ /// let e = Epoch::new(&[FunctionId(1)], Config { retained_per_function: 1, max_inflight: 1, max_invocations: 1 }).unwrap();
+ /// let t = e.enter(FunctionId(1), 0).unwrap();
+ /// let duplicate = t.clone();
+ /// ```
+ ///
+ /// ```compile_fail
+-/// use rapid_profiler::generation::{Config, Epoch, FunctionId};
++/// use liteinst2_generation_draft::{Config, Epoch, FunctionId};
+ /// let e = Epoch::new(&[FunctionId(1)], Config { retained_per_function: 1, max_inflight: 1, max_invocations: 1 }).unwrap();
+ /// let t = e.enter(FunctionId(1), 0).unwrap();
+ /// t.complete(1);
+@@ -497,7 +421,6 @@
+ }
+ 
+ impl Ticket<'_> {
+-    /// Return the immutable identity held by this ticket.
+     pub fn admission(&self) -> Admission {
+         *self.epoch.slots[self.slot]
+             .admission
+@@ -505,9 +428,6 @@
+             .expect("published ticket")
+     }
+ 
+-    /// Publish completion data and consume this ticket in its original epoch.
+-    /// Only the first K retention reservations per function are retained. The final
+-    /// reservation returns a generation-scoped deactivation request, not a code edit.
+     pub fn complete(self, value: u64) -> Completion {
+         self.complete_before_close(value, || {})
+     }
+@@ -560,7 +480,6 @@
+         }
+     }
+ 
+-    /// Publish explicit cancellation and consume the ticket without consuming K.
+     pub fn cancel(mut self) {
+         self.cancel_inner(CancelReason::Explicit);
+     }

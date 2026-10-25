@@ -1,0 +1,12 @@
+{
+  "binary": {
+    "path": "<actual Cargo executable path>",
+    "sha256": "<actual binary whole-file hash>"
+  },
+  "cargo_stdout_sha256": "<actual Cargo stdout hash>",
+  "compile_receipt_sha256": "<actual compile receipt hash>",
+  "compile_request_sha256": "<actual compile request hash>",
+  "dependency_and_runtime_review_sha256": "<actual independent artifact review hash>",
+  "source_admission_sha256": "<actual source admission hash>",
+  "status": "APPROVED_FRESH_GENERATION_MODEL_ARTIFACT"
+}

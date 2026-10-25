@@ -1,0 +1,71 @@
+{
+  "original_files": {
+    "original/prepare-generation-public.py": "cd0e6e3b93c44f0daf4cb9a7046217d515f12ba86ee515f9b0af37cd2fbd5872",
+    "original/reproductions/generation-public-ed67f752/artifact-admission.example.json": "fcae3ce6c590eece57fa8a39776e522529594097dd8caf1fe2181c85d9bd41ae",
+    "original/reproductions/generation-public-ed67f752/files.json": "528687f1e91ee69a0ed0602b21372dbb9fec3153759717902a555d7ea5f02f27",
+    "original/reproductions/generation-public-ed67f752/inventory.json": "156c4a58e7240b5f9aae792a9d8563a96456a4610d687754c803a73dde8a2123",
+    "original/reproductions/generation-public-ed67f752/list.stdout": "85f153890f1a9df8b5da98388d580006ffa218908c8f0b9144428fbbfec3690c",
+    "original/reproductions/generation-public-ed67f752/request-recipes.json": "b184bd8d4eb58993f8b35023eec3f01478f550d5097f76c038141d188e872a99",
+    "original/reproductions/generation-public-ed67f752/source-files.json": "cfaccbce450b895d4a6b84c53d34b41f270d27fde975943391653542a4cd8980",
+    "original/reproductions/generation-public-ed67f752/tools.json": "1f15a3d5fd29e0347da87cc64d6d54c3d872339812a67a0426b921ea49e99733"
+  },
+  "requests": [
+    {
+      "id": "prepare",
+      "original_request_sha256": "fbfa29bdc6f0e140517d5ad08b8ec9509802b97882426d75a2954dd4d3fec6e1",
+      "template_sha256": "b40f70763ab2a7c5a374eef68cbc27c018ba7fed134691f6d8f6fe7d14be8bef",
+      "full_reverse_equal": true
+    },
+    {
+      "id": "verify-before-compile",
+      "original_request_sha256": "30ec0537c9b011f50c6b479fbb2413295f13ea916349c964a9b96943a36001ad",
+      "template_sha256": "50e2cc8af3514875b67463ca3ed8c5a86012aebdb61d319a3053dae99398268a",
+      "full_reverse_equal": true
+    },
+    {
+      "id": "compile",
+      "original_request_sha256": "08e1083dde92fb6a93feea56244912f36015a4cbd66e8ca849c39c1ccdadd614",
+      "template_sha256": "126d322a14f9a563ebb73a5af4b97072d967da69518497fce330a3449c37a838",
+      "full_reverse_equal": true
+    },
+    {
+      "id": "verify-after-compile",
+      "original_request_sha256": "dfd68d86dd6a061b3a7a1df1b2761c1fe03a2e57c8a015da0017cae27ed0adde",
+      "template_sha256": "04091fd64b2164df4db0b54156982bcf28e4b1e39bdd0c2f53a4d1734c832dab",
+      "full_reverse_equal": true
+    }
+  ],
+  "source_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+  "generator_sha256": "cd0e6e3b93c44f0daf4cb9a7046217d515f12ba86ee515f9b0af37cd2fbd5872",
+  "material_sha256": "528687f1e91ee69a0ed0602b21372dbb9fec3153759717902a555d7ea5f02f27",
+  "scope": "Exact historical source/data copy and reversible request placeholders; no new executable materializer or supervisor",
+  "outer_wrapper": {
+    "argv": [
+      "${TIMEOUT}",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "${INNER_WALL_PLUS_10}s",
+      "${HELPER_PYTHON}",
+      "-B",
+      "${REPO}/tools/word-sync-oracle/bounded_command.py",
+      "--request",
+      "${REQUEST}",
+      "--receipt",
+      "${RECEIPT}"
+    ],
+    "parent_wait_seconds": {
+      "prepare": 55,
+      "verify-before-compile": 55,
+      "compile": 115,
+      "verify-after-compile": 55
+    },
+    "timeout_seconds": {
+      "prepare": 40,
+      "verify-before-compile": 40,
+      "compile": 100,
+      "verify-after-compile": 40
+    },
+    "provenance": "Root controller code/operator-derived; outer.json is exit-only, not an actual outer-argv capture",
+    "helper_and_inner_requests_unchanged": true
+  }
+}

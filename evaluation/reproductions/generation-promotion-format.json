@@ -1,0 +1,58 @@
+{
+  "after": {
+    "src/generation.rs": "b5ce2255f4aa27354a13d6a1ba27c131ca89a7a5d6a67df67af939e8d6486ebb",
+    "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+    "src/interval.rs": "00d57f00a2c5eb5ad085ac775d983d9c5609ac489638611c87159d2d89637a2b",
+    "src/lib.rs": "dc7161c75f46f45f4d0e09d7b81465caf83df240baf6248d9bb9df50f8ce82f3",
+    "src/pmu.rs": "e338d0992d8ba87d1bba76bbc5371a373abeb0b775418d6490d065e6d782c8f8"
+  },
+  "before": {
+    "src/generation.rs": "f72344bf485a54980055069754445a6f16edcea32c2bd9e05af7d822637246b4",
+    "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+    "src/interval.rs": "00d57f00a2c5eb5ad085ac775d983d9c5609ac489638611c87159d2d89637a2b",
+    "src/lib.rs": "dc7161c75f46f45f4d0e09d7b81465caf83df240baf6248d9bb9df50f8ce82f3",
+    "src/pmu.rs": "e338d0992d8ba87d1bba76bbc5371a373abeb0b775418d6490d065e6d782c8f8"
+  },
+  "formatter_only_no_compiler_model_claim": true,
+  "historical_python_timeout_identities_captured": false,
+  "kind": "request_only_five_file_reconstruction",
+  "request_template": {
+    "argv": [
+      "${RUSTFMT}",
+      "--edition",
+      "2024",
+      "${SNAPSHOT}/src/lib.rs"
+    ],
+    "cpu_seconds": 20,
+    "cwd": "${SNAPSHOT}",
+    "env": {
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "file_bytes": 16777216,
+    "stderr": "${RAW}/format.stderr",
+    "stdout": "${RAW}/format.stdout",
+    "wall_seconds": 30
+  },
+  "reversal": {
+    "file": "src/generation.rs",
+    "new": "    /// The caller's integer function key.\n    pub u64\n",
+    "occurrences": 1,
+    "old": "    /// The caller's integer function key.\n    pub u64,\n"
+  },
+  "schema_version": 1,
+  "source_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+  "source_root": "tools/rapid-profiler/src",
+  "tools": {
+    "helper": {
+      "repository_path": "tools/word-sync-oracle/bounded_command.py",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    },
+    "rustfmt": {
+      "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8",
+      "version_basis": "Captured historical rustfmt executable hash; no version banner captured for this invocation."
+    }
+  }
+}

@@ -1,0 +1,191 @@
+{
+  "cases": [],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "heading": "systematic everytactic",
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "claims_scope": "Workspace regression only; these four commands do not establish any complete paper claim or new tactic qualification.",
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 0.9158373600803316,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-fmt",
+      "receipt_sha256": "8426727a3bb35cb186e4ba7272b13fa7a5e0ec033096005189e22b94d6a4c4c4",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 0.4149244020227343,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-clippy",
+      "receipt_sha256": "8426727a3bb35cb186e4ba7272b13fa7a5e0ec033096005189e22b94d6a4c4c4",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "1322c0879870ae0270f2aca67fcf0da2db9c64a12d47165334081635d11a6712",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 269.44527067500167,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-test",
+      "receipt_sha256": "8426727a3bb35cb186e4ba7272b13fa7a5e0ec033096005189e22b94d6a4c4c4",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "3016cd0cc6b66b93d2fc6554a902b2d4b328af7e27a13971d40914f9278f6c91",
+      "wall_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 0.2647289640735835,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-check",
+      "receipt_sha256": "8426727a3bb35cb186e4ba7272b13fa7a5e0ec033096005189e22b94d6a4c4c4",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "ac7e06ec822d5bcb56c2b698641b605063b81b37480d46abbc79969bda1b76f3",
+      "wall_seconds": 180
+    }
+  ],
+  "complete_A4": false,
+  "complete_A5": false,
+  "frontend_activated": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "separate read-only observation on the same host; phase relative to these four commands is not established",
+    "observation_sha256": "a5bda96e4bf7665faa232dd26dea6c7802a2309c4fa116863589ed35335abd89",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "preemption_clock_claim": false,
+  "private_capture_manifest_sha256": "b7459d42607a3cf9df076458a772550fe12af2c013f0f3f5cd42631e41e8744a",
+  "reproduction_script": "evaluation/required-gates.py",
+  "reproduction_script_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+  "run_id": "required-ed67f75-20261025",
+  "schema_version": 1,
+  "scope": "Required workspace regression after integrating ordinary safe-Rust generation metadata. The 17 new model cases and two compile-fail documentation cases are included in this workspace run; focused public-package qualification is a separate gate. No new tactic, preemption-clock, frontend, or full A5 qualification is claimed.",
+  "sources": {
+    "exact_revision": {
+      "base_revision": "c7494cc08d9dd13651017c809d3f72d67284cd4b",
+      "clean_tracked": true,
+      "file_count": 189,
+      "git_tree": "267e09b6c4e40868ac279e7e78597a9a807045a6",
+      "kind": "git_commit",
+      "source_tree_sha256": "39d65a8e5d1ee124ebabffa2fb6fbf6a1fceb911410b1bc3266566e852e0aea5",
+      "tested_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "status": "pass",
+  "suite": "required-workspace-gates",
+  "tested_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tool_selection_note": "This unchanged required runner invokes cargo through PATH and did not record per-command executable identities. No exact tool version is inferred here.",
+  "tools": [],
+  "workspace": {
+    "added_generation_compile_fail_docs": 2,
+    "added_generation_models": 17,
+    "all_old_outer_cases_preserved": true,
+    "failed": 0,
+    "ignored": 4,
+    "nested_guard_passes_not_added": 5,
+    "outer_groups": 44,
+    "passed": 766,
+    "preexisting_ignores": [
+      "rapid::tests::live::benchmark_single_byte_toggle_latency",
+      "live_probe_stress_matrix",
+      "patch_latency::patch_activation_latency_benchmark",
+      "probe_overhead_benchmark"
+    ]
+  }
+}

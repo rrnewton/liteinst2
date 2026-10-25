@@ -1,0 +1,386 @@
+--- a/src/lib.rs
++++ b/src/lib.rs
+@@ -66,9 +66,7 @@
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+ pub enum Disposition {
+     /// Zero-based rank in this function's successful retention reservations.
+-    Retained {
+-        rank: usize,
+-    },
++    Retained { rank: usize },
+     DroppedAfterBudget,
+ }
+ 
+@@ -80,10 +78,7 @@
+ 
+ #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+ pub enum Terminal {
+-    Completed {
+-        value: u64,
+-        disposition: Disposition,
+-    },
++    Completed { value: u64, disposition: Disposition },
+     Cancelled(CancelReason),
+ }
+ 
+@@ -151,11 +146,7 @@
+ 
+ fn allocate_id(next: &AtomicU64) -> Result<GenerationId, CreateError> {
+     next.fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+-        if value == 0 || value == u64::MAX {
+-            None
+-        } else {
+-            Some(value + 1)
+-        }
++        if value == 0 || value == u64::MAX { None } else { Some(value + 1) }
+     })
+     .map(GenerationId)
+     .map_err(|_| CreateError::GenerationExhausted)
+@@ -163,22 +154,12 @@
+ 
+ impl Epoch {
+     pub fn new(function_ids: &[FunctionId], config: Config) -> Result<Self, CreateError> {
+-        if function_ids.is_empty() {
+-            return Err(CreateError::EmptyFunctions);
+-        }
+-        if function_ids.len() > MAX_FUNCTIONS {
+-            return Err(CreateError::TooManyFunctions);
+-        }
+-        if function_ids
+-            .iter()
+-            .enumerate()
+-            .any(|(i, id)| function_ids[..i].contains(id))
+-        {
++        if function_ids.is_empty() { return Err(CreateError::EmptyFunctions); }
++        if function_ids.len() > MAX_FUNCTIONS { return Err(CreateError::TooManyFunctions); }
++        if function_ids.iter().enumerate().any(|(i, id)| function_ids[..i].contains(id)) {
+             return Err(CreateError::DuplicateFunction);
+         }
+-        if config.retained_per_function == 0 {
+-            return Err(CreateError::ZeroRetainedBudget);
+-        }
++        if config.retained_per_function == 0 { return Err(CreateError::ZeroRetainedBudget); }
+         if config.max_inflight == 0 || config.max_inflight > COUNT_MASK {
+             return Err(CreateError::InvalidInflightLimit);
+         }
+@@ -186,72 +167,31 @@
+             return Err(CreateError::InvalidInvocationLimit);
+         }
+         let mut functions = Vec::new();
+-        functions
+-            .try_reserve_exact(function_ids.len())
+-            .map_err(|_| CreateError::Allocation)?;
++        functions.try_reserve_exact(function_ids.len()).map_err(|_| CreateError::Allocation)?;
+         for &id in function_ids {
+-            functions.push(Function {
+-                id,
+-                retained: AtomicUsize::new(0),
+-                closed: AtomicBool::new(false),
+-            });
++            functions.push(Function { id, retained: AtomicUsize::new(0), closed: AtomicBool::new(false) });
+         }
+         let mut slots = Vec::new();
+-        slots
+-            .try_reserve_exact(config.max_invocations)
+-            .map_err(|_| CreateError::Allocation)?;
++        slots.try_reserve_exact(config.max_invocations).map_err(|_| CreateError::Allocation)?;
+         for _ in 0..config.max_invocations {
+-            slots.push(Slot {
+-                admission: OnceLock::new(),
+-                terminal: OnceLock::new(),
+-            });
+-        }
+-        Ok(Self {
+-            id: allocate_id(&NEXT_GENERATION)?,
+-            config,
+-            functions,
+-            slots,
+-            state: AtomicUsize::new(0),
+-            assigned: AtomicUsize::new(0),
+-        })
+-    }
+-
+-    pub fn id(&self) -> GenerationId {
+-        self.id
+-    }
+-
+-    pub fn config(&self) -> Config {
+-        self.config
+-    }
+-
+-    pub fn enter(
+-        &self,
+-        function: FunctionId,
+-        entry_value: u64,
+-    ) -> Result<Ticket<'_>, AdmissionRefusal> {
+-        let index = self
+-            .functions
+-            .iter()
+-            .position(|row| row.id == function)
+-            .ok_or(AdmissionRefusal::UnknownFunction)?;
++            slots.push(Slot { admission: OnceLock::new(), terminal: OnceLock::new() });
++        }
++        Ok(Self { id: allocate_id(&NEXT_GENERATION)?, config, functions, slots, state: AtomicUsize::new(0), assigned: AtomicUsize::new(0) })
++    }
++
++    pub fn id(&self) -> GenerationId { self.id }
++
++    pub fn config(&self) -> Config { self.config }
++
++    pub fn enter(&self, function: FunctionId, entry_value: u64) -> Result<Ticket<'_>, AdmissionRefusal> {
++        let index = self.functions.iter().position(|row| row.id == function).ok_or(AdmissionRefusal::UnknownFunction)?;
+         let row = &self.functions[index];
+-        if row.closed.load(Ordering::Acquire) {
+-            return Err(AdmissionRefusal::FunctionClosed);
+-        }
++        if row.closed.load(Ordering::Acquire) { return Err(AdmissionRefusal::FunctionClosed); }
+         let mut state = self.state.load(Ordering::Acquire);
+         loop {
+-            if state & CLOSED != 0 {
+-                return Err(AdmissionRefusal::EpochClosed);
+-            }
+-            if state & COUNT_MASK >= self.config.max_inflight {
+-                return Err(AdmissionRefusal::InflightLimit);
+-            }
+-            match self.state.compare_exchange_weak(
+-                state,
+-                state + 1,
+-                Ordering::AcqRel,
+-                Ordering::Acquire,
+-            ) {
++            if state & CLOSED != 0 { return Err(AdmissionRefusal::EpochClosed); }
++            if state & COUNT_MASK >= self.config.max_inflight { return Err(AdmissionRefusal::InflightLimit); }
++            match self.state.compare_exchange_weak(state, state + 1, Ordering::AcqRel, Ordering::Acquire) {
+                 Ok(_) => break,
+                 Err(observed) => state = observed,
+             }
+@@ -262,15 +202,9 @@
+             self.release();
+             return Err(AdmissionRefusal::FunctionClosed);
+         }
+-        let slot = match self
+-            .assigned
+-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
+-                if value < self.config.max_invocations {
+-                    Some(value + 1)
+-                } else {
+-                    None
+-                }
+-            }) {
++        let slot = match self.assigned.fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {
++            if value < self.config.max_invocations { Some(value + 1) } else { None }
++        }) {
+             Ok(slot) => slot,
+             Err(_) => {
+                 self.close();
+@@ -278,19 +212,9 @@
+                 return Err(AdmissionRefusal::StorageExhausted);
+             }
+         };
+-        let admission = Admission {
+-            generation: self.id,
+-            invocation: slot,
+-            function,
+-            entry_value,
+-        };
++        let admission = Admission { generation: self.id, invocation: slot, function, entry_value };
+         assert!(self.slots[slot].admission.set(admission).is_ok());
+-        Ok(Ticket {
+-            epoch: self,
+-            function_index: index,
+-            slot,
+-            active: true,
+-        })
++        Ok(Ticket { epoch: self, function_index: index, slot, active: true })
+     }
+ 
+     /// Close admission without cancelling any existing ticket. Returned count
+@@ -299,42 +223,25 @@
+         self.state.fetch_or(CLOSED, Ordering::AcqRel) & COUNT_MASK
+     }
+ 
+-    pub fn is_closed(&self) -> bool {
+-        self.state.load(Ordering::Acquire) & CLOSED != 0
+-    }
+-
+-    pub fn reservations(&self) -> usize {
+-        self.state.load(Ordering::Acquire) & COUNT_MASK
+-    }
++    pub fn is_closed(&self) -> bool { self.state.load(Ordering::Acquire) & CLOSED != 0 }
++
++    pub fn reservations(&self) -> usize { self.state.load(Ordering::Acquire) & COUNT_MASK }
+ 
+     pub fn function_closed(&self, function: FunctionId) -> Option<bool> {
+-        self.functions
+-            .iter()
+-            .find(|row| row.id == function)
+-            .map(|row| row.closed.load(Ordering::Acquire))
++        self.functions.iter().find(|row| row.id == function).map(|row| row.closed.load(Ordering::Acquire))
+     }
+ 
+     /// A partial per-record observation, not a coherent instantaneous snapshot.
+     /// Assigned but unpublished reservations appear only in reservations().
+     pub fn records(&self) -> impl Iterator<Item = Record> + '_ {
+-        self.slots.iter().filter_map(|slot| {
+-            slot.admission.get().copied().map(|admission| Record {
+-                admission,
+-                terminal: slot.terminal.get().copied(),
+-            })
+-        })
++        self.slots.iter().filter_map(|slot| slot.admission.get().copied().map(|admission| Record { admission, terminal: slot.terminal.get().copied() }))
+     }
+ 
+     pub fn population(&self, function: FunctionId) -> Option<PopulationObservation> {
+-        if !self.functions.iter().any(|row| row.id == function) {
+-            return None;
+-        }
++        if !self.functions.iter().any(|row| row.id == function) { return None; }
+         let final_report = self.state.load(Ordering::Acquire) == CLOSED;
+         let mut population = Population::default();
+-        for record in self
+-            .records()
+-            .filter(|record| record.admission.function == function)
+-        {
++        for record in self.records().filter(|record| record.admission.function == function) {
+             population.admitted += 1;
+             match record.terminal {
+                 Some(Terminal::Completed { disposition, .. }) => {
+@@ -348,19 +255,12 @@
+                 None => population.unfinished += 1,
+             }
+         }
+-        Some(PopulationObservation {
+-            population,
+-            final_report,
+-        })
++        Some(PopulationObservation { population, final_report })
+     }
+ 
+     /// Returns final access only after all record writes precede closed+zero.
+     pub fn try_drain(&self) -> Option<Drained<'_>> {
+-        if self.state.load(Ordering::Acquire) == CLOSED {
+-            Some(Drained { epoch: self })
+-        } else {
+-            None
+-        }
++        if self.state.load(Ordering::Acquire) == CLOSED { Some(Drained { epoch: self }) } else { None }
+     }
+ 
+     fn release(&self) {
+@@ -369,22 +269,13 @@
+     }
+ }
+ 
+-pub struct Drained<'a> {
+-    epoch: &'a Epoch,
+-}
++pub struct Drained<'a> { epoch: &'a Epoch }
+ 
+ impl Drained<'_> {
+-    pub fn generation(&self) -> GenerationId {
+-        self.epoch.id
+-    }
++    pub fn generation(&self) -> GenerationId { self.epoch.id }
+ 
+     pub fn records(&self) -> impl Iterator<Item = (Admission, Terminal)> + '_ {
+-        self.epoch.records().map(|row| {
+-            (
+-                row.admission,
+-                row.terminal.expect("drain requires terminal records"),
+-            )
+-        })
++        self.epoch.records().map(|row| (row.admission, row.terminal.expect("drain requires terminal records")))
+     }
+ 
+     pub fn population(&self, function: FunctionId) -> Option<Population> {
+@@ -422,10 +313,7 @@
+ 
+ impl Ticket<'_> {
+     pub fn admission(&self) -> Admission {
+-        *self.epoch.slots[self.slot]
+-            .admission
+-            .get()
+-            .expect("published ticket")
++        *self.epoch.slots[self.slot].admission.get().expect("published ticket")
+     }
+ 
+     pub fn complete(self, value: u64) -> Completion {
+@@ -437,19 +325,10 @@
+     fn complete_before_close(mut self, value: u64, before_close: impl FnOnce()) -> Completion {
+         let epoch = self.epoch;
+         let row = &epoch.functions[self.function_index];
+-        let rank = row
+-            .retained
+-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+-                if count < epoch.config.retained_per_function {
+-                    Some(count + 1)
+-                } else {
+-                    None
+-                }
+-            });
+-        let disposition = match rank {
+-            Ok(rank) => Disposition::Retained { rank },
+-            Err(_) => Disposition::DroppedAfterBudget,
+-        };
++        let rank = row.retained.fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
++            if count < epoch.config.retained_per_function { Some(count + 1) } else { None }
++        });
++        let disposition = match rank { Ok(rank) => Disposition::Retained { rank }, Err(_) => Disposition::DroppedAfterBudget };
+         let mut deactivate = None;
+         let mut other_reservations_after_close = None;
+         if rank.is_ok_and(|rank| rank + 1 == epoch.config.retained_per_function) {
+@@ -458,26 +337,13 @@
+             let count = epoch.state.load(Ordering::Acquire) & COUNT_MASK;
+             assert!(count >= 1 && count <= epoch.config.max_inflight);
+             other_reservations_after_close = Some(count - 1);
+-            deactivate = Some(DeactivationRequest {
+-                generation: epoch.id,
+-                function: row.id,
+-            });
++            deactivate = Some(DeactivationRequest { generation: epoch.id, function: row.id });
+         }
+         let admission = self.admission();
+-        assert!(
+-            epoch.slots[self.slot]
+-                .terminal
+-                .set(Terminal::Completed { value, disposition })
+-                .is_ok()
+-        );
++        assert!(epoch.slots[self.slot].terminal.set(Terminal::Completed { value, disposition }).is_ok());
+         self.active = false;
+         epoch.release();
+-        Completion {
+-            admission,
+-            disposition,
+-            deactivate,
+-            other_reservations_after_close,
+-        }
++        Completion { admission, disposition, deactivate, other_reservations_after_close }
+     }
+ 
+     pub fn cancel(mut self) {
+@@ -485,12 +351,7 @@
+     }
+ 
+     fn cancel_inner(&mut self, reason: CancelReason) {
+-        assert!(
+-            self.epoch.slots[self.slot]
+-                .terminal
+-                .set(Terminal::Cancelled(reason))
+-                .is_ok()
+-        );
++        assert!(self.epoch.slots[self.slot].terminal.set(Terminal::Cancelled(reason)).is_ok());
+         self.active = false;
+         self.epoch.release();
+     }
+@@ -498,9 +359,7 @@
+ 
+ impl Drop for Ticket<'_> {
+     fn drop(&mut self) {
+-        if self.active {
+-            self.cancel_inner(CancelReason::DroppedTicket);
+-        }
++        if self.active { self.cancel_inner(CancelReason::DroppedTicket); }
+     }
+ }
+ 

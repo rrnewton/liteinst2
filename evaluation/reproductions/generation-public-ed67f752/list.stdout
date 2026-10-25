@@ -1,0 +1,19 @@
+generation::tests::checked_generation_exhaustion_never_wraps_or_reuses: test
+generation::tests::close_after_admission_waits_for_terminal_record: test
+generation::tests::close_before_admission_refuses_without_record: test
+generation::tests::close_gap_allows_five_post_k_completions_but_only_one_other_reservation: test
+generation::tests::exact_constructor_refusals_and_largest_budget_do_not_wrap: test
+generation::tests::explicit_and_drop_cancellation_are_distinct_and_do_not_consume_k: test
+generation::tests::final_acquire_observes_all_sixteen_exact_terminal_values: test
+generation::tests::independent_ledger_rejects_six_wrong_populations_or_identities: test
+generation::tests::independent_two_generation_two_function_event_ledger: test
+generation::tests::inflight_refusal_does_not_consume_a_slot: test
+generation::tests::nested_invocations_keep_identity_and_completion_selection_order: test
+generation::tests::old_ticket_completion_does_not_close_or_write_new_epoch: test
+generation::tests::partial_records_keep_unfinished_in_two_epochs_separate: test
+generation::tests::retained_budget_is_per_function_for_one_ten_and_thousand: test
+generation::tests::simultaneous_completions_have_exactly_one_final_retention_and_request: test
+generation::tests::total_storage_exhaustion_closes_epoch_without_losing_records: test
+generation::tests::unknown_function_refusal_and_closed_function_do_not_hide_other_function: test
+
+17 tests, 0 benchmarks

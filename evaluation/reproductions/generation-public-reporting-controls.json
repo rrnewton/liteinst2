@@ -1,0 +1,93 @@
+{
+  "executed": false,
+  "helper_invocation_template": [
+    "${TIMEOUT}",
+    "--signal=TERM",
+    "--kill-after=10s",
+    "40s",
+    "${PYTHON}",
+    "-B",
+    "${REPO}/tools/word-sync-oracle/bounded_command.py",
+    "--request",
+    "${REQUEST}",
+    "--receipt",
+    "${RECEIPT}"
+  ],
+  "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+  "instructions": [
+    "Use the existing published exporter and promotion preparation script with the exact pinned source hashes and their existing reproduction documentation. No additional executable materializer is supplied.",
+    "Bind absolute local REPO/EVALUATION/RAW/PYTHON/TIMEOUT/RUSTFMT/USER_HOME/EXPORT_INPUTS roles and a reviewed EXPORT_INPUTS_SHA256; instantiate each JSON request with fresh log paths and retain its hash before launch.",
+    "RAW must be a fresh ignored directory with the two command log directories present; required-output and promotion-source output directories must not exist. Do not overwrite an earlier capture.",
+    "Historical export requires the original raw required-gate captures and a separately reviewed local input join. Path rebasing needs a new explicit input hash; never generate historical receipts from summaries.",
+    "The helper invocation retains the existing outer40-second TERM/10-second KILL pattern and each unchanged20CPU/30wall/16MiB request. The actual outer records contain exit only, not argv.",
+    "Run each reporting request once through the existing helper and require raw exit0, clean ECHILD/no descendants, unchanged inputs, exact stdout/stderr hashes and the declared output inventories.",
+    "For promotion, stop after the generator prints its newly prepared request path; running that formatter request would be a separate new qualification command, not this reporting control.",
+    "Retain the exact distinction between committed exporter at ed67 and private snapshot preparation script. A later publication commit does not retroactively become the tested revision."
+  ],
+  "kind": "data_only_exact_command_templates_no_new_materializer",
+  "requests": [
+    {
+      "expected_exit": 0,
+      "historical_request_sha256": "0a6e63df49354ed3a826139ef93cd1d3b4e073ff8a89a0ab018cd320fcf4b202",
+      "historical_script_sha256": "65c9e02a4496b72eb3bfdaecd618cd3d4b3f114b8d371725e5b764661bb983a2",
+      "id": "required-export",
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${REPO}/evaluation/export-word.py",
+          "--inputs",
+          "${EXPORT_INPUTS}",
+          "--inputs-sha256",
+          "${EXPORT_INPUTS_SHA256}",
+          "--output",
+          "${RAW}/required-output"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/required-export/stderr",
+        "stdout": "${RAW}/required-export/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "expected_exit": 0,
+      "historical_request_sha256": "0d555abbf5b6ae311e1eb67ce7711dd4c53189969a43033536ee62ece311cd4b",
+      "historical_script_sha256": "13753ece28b4924687bf609e85747d4f0295594e33136b340f77046e3577d815",
+      "id": "promotion-prepare",
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${EVALUATION}/prepare-generation-promotion-format.py",
+          "--repo",
+          "${REPO}",
+          "--raw",
+          "${RAW}/promotion-source",
+          "--rustfmt",
+          "${RUSTFMT}",
+          "--user-home",
+          "${USER_HOME}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/promotion-prepare/stderr",
+        "stdout": "${RAW}/promotion-prepare/stdout",
+        "wall_seconds": 30
+      }
+    }
+  ],
+  "schema_version": 1
+}

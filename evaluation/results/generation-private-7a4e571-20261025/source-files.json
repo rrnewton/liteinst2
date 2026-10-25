@@ -1,0 +1,14 @@
+{
+  "formatted_snapshot": {
+    "Cargo.lock": "4bb791cefb115a48b1f99e6bd8256d667d93ed54611695691082cc2e616cbd54",
+    "Cargo.toml": "b3e0fdd4d6a3c93d127831bb1fa69821e5ae94feafcfc43dc94d89b407f0366c",
+    "src/lib.rs": "981b700d00d0acc05d1717c00d2429eb34976d1ccd310101b8ab5a52c5d72263",
+    "src/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f"
+  },
+  "preformat_snapshot": {
+    "Cargo.lock": "4bb791cefb115a48b1f99e6bd8256d667d93ed54611695691082cc2e616cbd54",
+    "Cargo.toml": "b3e0fdd4d6a3c93d127831bb1fa69821e5ae94feafcfc43dc94d89b407f0366c",
+    "src/lib.rs": "f2779e7bd94297cc1baf32d0ab91b2eafaeff9a237924667044f7d12c55ca658",
+    "src/tests.rs": "5bae159259e10aded68ec84c147868409655b542f01111b6fefc254d33de2be6"
+  }
+}

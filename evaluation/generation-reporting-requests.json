@@ -1,0 +1,238 @@
+{
+  "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+  "requests": [
+    {
+      "expected_exit": 0,
+      "expected_output": "${RAW}/historical-export",
+      "historical_request_sha256": "4352b7af304e6c8216fa6aef8cb81d2240d445513120ee4df4df2e03434ce400",
+      "id": "export",
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${EVALUATION}/export-generation.py",
+          "--inputs",
+          "${EXPORT_INPUTS}",
+          "--inputs-sha256",
+          "${EXPORT_INPUTS_SHA256}",
+          "--output",
+          "${RAW}/historical-export"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/export/stderr",
+        "stdout": "${RAW}/export/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "expected_exit": 0,
+      "expected_output": "${RAW}/reconstruction",
+      "historical_request_sha256": "eb439258057cdcdef558cce93b222287fe3b0368a23b3a9ce3e4a310677c188f",
+      "id": "reconstruct",
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${EVALUATION}/prepare-generation.py",
+          "reconstruct",
+          "--repo",
+          "${REPO}",
+          "--raw",
+          "${RAW}/reconstruction",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--msrv-toolchain",
+          "${MSRV_TOOLCHAIN}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--user-home",
+          "${USER_HOME}",
+          "--helper-python",
+          "${PYTHON}",
+          "--timeout",
+          "${TIMEOUT}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/reconstruct/stderr",
+        "stdout": "${RAW}/reconstruct/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "expected_exit": 1,
+      "expected_output": "${RAW}/wrong-source-repo/ignored/output",
+      "historical_request_sha256": "886f4ab2f99564baa801c472d816391ea13d72e00ddb3cf166a3163937a99cd5",
+      "id": "wrong-source",
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${EVALUATION}/prepare-generation.py",
+          "reconstruct",
+          "--repo",
+          "${RAW}/wrong-source-repo",
+          "--raw",
+          "${RAW}/wrong-source-repo/ignored/output",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--msrv-toolchain",
+          "${MSRV_TOOLCHAIN}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--user-home",
+          "${USER_HOME}",
+          "--helper-python",
+          "${PYTHON}",
+          "--timeout",
+          "${TIMEOUT}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/wrong-source/stderr",
+        "stdout": "${RAW}/wrong-source/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "expected_exit": 1,
+      "expected_output": "${RAW}/wrong-tool-output",
+      "historical_request_sha256": "aaaa5caf470248558018d5cfe5ad2bd6433517fcc8c40b167c9f8238757c59ed",
+      "id": "wrong-tool",
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${EVALUATION}/prepare-generation.py",
+          "reconstruct",
+          "--repo",
+          "${REPO}",
+          "--raw",
+          "${RAW}/wrong-tool-output",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--msrv-toolchain",
+          "${MSRV_TOOLCHAIN}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--user-home",
+          "${USER_HOME}",
+          "--helper-python",
+          "${PYTHON}",
+          "--timeout",
+          "${WRONG_TOOL}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/wrong-tool/stderr",
+        "stdout": "${RAW}/wrong-tool/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "expected_exit": 1,
+      "expected_output": "${RAW}/optimized-generator-output",
+      "historical_request_sha256": "c54e1581a3e0ea3c76403f28b1d9c8878b84760b002aa4862511d9e25adcc312",
+      "id": "optimized-generator",
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-O",
+          "-B",
+          "${EVALUATION}/prepare-generation.py",
+          "reconstruct",
+          "--repo",
+          "${REPO}",
+          "--raw",
+          "${RAW}/optimized-generator-output",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--msrv-toolchain",
+          "${MSRV_TOOLCHAIN}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--user-home",
+          "${USER_HOME}",
+          "--helper-python",
+          "${PYTHON}",
+          "--timeout",
+          "${TIMEOUT}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/optimized-generator/stderr",
+        "stdout": "${RAW}/optimized-generator/stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "expected_exit": 1,
+      "expected_output": "${RAW}/optimized-export-output",
+      "historical_request_sha256": "602bbd33585b83fc4b62b75ecc2d8d134321ac4dfe5626e6e01349c9b9c587f1",
+      "id": "optimized-export",
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-O",
+          "-B",
+          "${EVALUATION}/export-generation.py",
+          "--inputs",
+          "${EXPORT_INPUTS}",
+          "--inputs-sha256",
+          "${EXPORT_INPUTS_SHA256}",
+          "--output",
+          "${RAW}/optimized-export-output"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/optimized-export/stderr",
+        "stdout": "${RAW}/optimized-export/stdout",
+        "wall_seconds": 30
+      }
+    }
+  ],
+  "schema_version": 1,
+  "scope": "Request templates only. Materializing them does not run any command. New outputs and raw receipts must be independently audited.",
+  "scripts_sha256": {
+    "export-generation.py": "e60c23a6508f86353fd0da9ce9c25b1f1b5c35a76f8992537f107f3f42c113f1",
+    "prepare-generation.py": "d3567e57c34679272a2badb0bf6483a9945a305d2f0362a06e128b6de4075aa0"
+  },
+  "source_repository_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d"
+}

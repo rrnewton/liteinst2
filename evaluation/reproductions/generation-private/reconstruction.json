@@ -1,0 +1,2080 @@
+{
+  "before_format": {
+    "Cargo.lock": "4bb791cefb115a48b1f99e6bd8256d667d93ed54611695691082cc2e616cbd54",
+    "Cargo.toml": "b3e0fdd4d6a3c93d127831bb1fa69821e5ae94feafcfc43dc94d89b407f0366c",
+    "src/lib.rs": "f2779e7bd94297cc1baf32d0ab91b2eafaeff9a237924667044f7d12c55ca658",
+    "src/tests.rs": "5bae159259e10aded68ec84c147868409655b542f01111b6fefc254d33de2be6"
+  },
+  "formatted": {
+    "Cargo.lock": "4bb791cefb115a48b1f99e6bd8256d667d93ed54611695691082cc2e616cbd54",
+    "Cargo.toml": "b3e0fdd4d6a3c93d127831bb1fa69821e5ae94feafcfc43dc94d89b407f0366c",
+    "src/lib.rs": "981b700d00d0acc05d1717c00d2429eb34976d1ccd310101b8ab5a52c5d72263",
+    "src/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f"
+  },
+  "formatted_to_original": {
+    "src/lib.rs": [
+      {
+        "end": 71,
+        "new": [
+          "    Retained { rank: usize },\n"
+        ],
+        "old": [
+          "    Retained {\n",
+          "        rank: usize,\n",
+          "    },\n"
+        ],
+        "start": 68
+      },
+      {
+        "end": 86,
+        "new": [
+          "    Completed { value: u64, disposition: Disposition },\n"
+        ],
+        "old": [
+          "    Completed {\n",
+          "        value: u64,\n",
+          "        disposition: Disposition,\n",
+          "    },\n"
+        ],
+        "start": 82
+      },
+      {
+        "end": 158,
+        "new": [
+          "        if value == 0 || value == u64::MAX { None } else { Some(value + 1) }\n"
+        ],
+        "old": [
+          "        if value == 0 || value == u64::MAX {\n",
+          "            None\n",
+          "        } else {\n",
+          "            Some(value + 1)\n",
+          "        }\n"
+        ],
+        "start": 153
+      },
+      {
+        "end": 176,
+        "new": [
+          "        if function_ids.is_empty() { return Err(CreateError::EmptyFunctions); }\n",
+          "        if function_ids.len() > MAX_FUNCTIONS { return Err(CreateError::TooManyFunctions); }\n",
+          "        if function_ids.iter().enumerate().any(|(i, id)| function_ids[..i].contains(id)) {\n"
+        ],
+        "old": [
+          "        if function_ids.is_empty() {\n",
+          "            return Err(CreateError::EmptyFunctions);\n",
+          "        }\n",
+          "        if function_ids.len() > MAX_FUNCTIONS {\n",
+          "            return Err(CreateError::TooManyFunctions);\n",
+          "        }\n",
+          "        if function_ids\n",
+          "            .iter()\n",
+          "            .enumerate()\n",
+          "            .any(|(i, id)| function_ids[..i].contains(id))\n",
+          "        {\n"
+        ],
+        "start": 165
+      },
+      {
+        "end": 181,
+        "new": [
+          "        if config.retained_per_function == 0 { return Err(CreateError::ZeroRetainedBudget); }\n"
+        ],
+        "old": [
+          "        if config.retained_per_function == 0 {\n",
+          "            return Err(CreateError::ZeroRetainedBudget);\n",
+          "        }\n"
+        ],
+        "start": 178
+      },
+      {
+        "end": 191,
+        "new": [
+          "        functions.try_reserve_exact(function_ids.len()).map_err(|_| CreateError::Allocation)?;\n"
+        ],
+        "old": [
+          "        functions\n",
+          "            .try_reserve_exact(function_ids.len())\n",
+          "            .map_err(|_| CreateError::Allocation)?;\n"
+        ],
+        "start": 188
+      },
+      {
+        "end": 197,
+        "new": [
+          "            functions.push(Function { id, retained: AtomicUsize::new(0), closed: AtomicBool::new(false) });\n"
+        ],
+        "old": [
+          "            functions.push(Function {\n",
+          "                id,\n",
+          "                retained: AtomicUsize::new(0),\n",
+          "                closed: AtomicBool::new(false),\n",
+          "            });\n"
+        ],
+        "start": 192
+      },
+      {
+        "end": 202,
+        "new": [
+          "        slots.try_reserve_exact(config.max_invocations).map_err(|_| CreateError::Allocation)?;\n"
+        ],
+        "old": [
+          "        slots\n",
+          "            .try_reserve_exact(config.max_invocations)\n",
+          "            .map_err(|_| CreateError::Allocation)?;\n"
+        ],
+        "start": 199
+      },
+      {
+        "end": 207,
+        "new": [
+          "            slots.push(Slot { admission: OnceLock::new(), terminal: OnceLock::new() });\n"
+        ],
+        "old": [
+          "            slots.push(Slot {\n",
+          "                admission: OnceLock::new(),\n",
+          "                terminal: OnceLock::new(),\n",
+          "            });\n"
+        ],
+        "start": 203
+      },
+      {
+        "end": 216,
+        "new": [
+          "        Ok(Self { id: allocate_id(&NEXT_GENERATION)?, config, functions, slots, state: AtomicUsize::new(0), assigned: AtomicUsize::new(0) })\n"
+        ],
+        "old": [
+          "        Ok(Self {\n",
+          "            id: allocate_id(&NEXT_GENERATION)?,\n",
+          "            config,\n",
+          "            functions,\n",
+          "            slots,\n",
+          "            state: AtomicUsize::new(0),\n",
+          "            assigned: AtomicUsize::new(0),\n",
+          "        })\n"
+        ],
+        "start": 208
+      },
+      {
+        "end": 221,
+        "new": [
+          "    pub fn id(&self) -> GenerationId { self.id }\n"
+        ],
+        "old": [
+          "    pub fn id(&self) -> GenerationId {\n",
+          "        self.id\n",
+          "    }\n"
+        ],
+        "start": 218
+      },
+      {
+        "end": 225,
+        "new": [
+          "    pub fn config(&self) -> Config { self.config }\n"
+        ],
+        "old": [
+          "    pub fn config(&self) -> Config {\n",
+          "        self.config\n",
+          "    }\n"
+        ],
+        "start": 222
+      },
+      {
+        "end": 236,
+        "new": [
+          "    pub fn enter(&self, function: FunctionId, entry_value: u64) -> Result<Ticket<'_>, AdmissionRefusal> {\n",
+          "        let index = self.functions.iter().position(|row| row.id == function).ok_or(AdmissionRefusal::UnknownFunction)?;\n"
+        ],
+        "old": [
+          "    pub fn enter(\n",
+          "        &self,\n",
+          "        function: FunctionId,\n",
+          "        entry_value: u64,\n",
+          "    ) -> Result<Ticket<'_>, AdmissionRefusal> {\n",
+          "        let index = self\n",
+          "            .functions\n",
+          "            .iter()\n",
+          "            .position(|row| row.id == function)\n",
+          "            .ok_or(AdmissionRefusal::UnknownFunction)?;\n"
+        ],
+        "start": 226
+      },
+      {
+        "end": 240,
+        "new": [
+          "        if row.closed.load(Ordering::Acquire) { return Err(AdmissionRefusal::FunctionClosed); }\n"
+        ],
+        "old": [
+          "        if row.closed.load(Ordering::Acquire) {\n",
+          "            return Err(AdmissionRefusal::FunctionClosed);\n",
+          "        }\n"
+        ],
+        "start": 237
+      },
+      {
+        "end": 254,
+        "new": [
+          "            if state & CLOSED != 0 { return Err(AdmissionRefusal::EpochClosed); }\n",
+          "            if state & COUNT_MASK >= self.config.max_inflight { return Err(AdmissionRefusal::InflightLimit); }\n",
+          "            match self.state.compare_exchange_weak(state, state + 1, Ordering::AcqRel, Ordering::Acquire) {\n"
+        ],
+        "old": [
+          "            if state & CLOSED != 0 {\n",
+          "                return Err(AdmissionRefusal::EpochClosed);\n",
+          "            }\n",
+          "            if state & COUNT_MASK >= self.config.max_inflight {\n",
+          "                return Err(AdmissionRefusal::InflightLimit);\n",
+          "            }\n",
+          "            match self.state.compare_exchange_weak(\n",
+          "                state,\n",
+          "                state + 1,\n",
+          "                Ordering::AcqRel,\n",
+          "                Ordering::Acquire,\n",
+          "            ) {\n"
+        ],
+        "start": 242
+      },
+      {
+        "end": 273,
+        "new": [
+          "        let slot = match self.assigned.fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {\n",
+          "            if value < self.config.max_invocations { Some(value + 1) } else { None }\n",
+          "        }) {\n"
+        ],
+        "old": [
+          "        let slot = match self\n",
+          "            .assigned\n",
+          "            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |value| {\n",
+          "                if value < self.config.max_invocations {\n",
+          "                    Some(value + 1)\n",
+          "                } else {\n",
+          "                    None\n",
+          "                }\n",
+          "            }) {\n"
+        ],
+        "start": 264
+      },
+      {
+        "end": 286,
+        "new": [
+          "        let admission = Admission { generation: self.id, invocation: slot, function, entry_value };\n"
+        ],
+        "old": [
+          "        let admission = Admission {\n",
+          "            generation: self.id,\n",
+          "            invocation: slot,\n",
+          "            function,\n",
+          "            entry_value,\n",
+          "        };\n"
+        ],
+        "start": 280
+      },
+      {
+        "end": 293,
+        "new": [
+          "        Ok(Ticket { epoch: self, function_index: index, slot, active: true })\n"
+        ],
+        "old": [
+          "        Ok(Ticket {\n",
+          "            epoch: self,\n",
+          "            function_index: index,\n",
+          "            slot,\n",
+          "            active: true,\n",
+          "        })\n"
+        ],
+        "start": 287
+      },
+      {
+        "end": 304,
+        "new": [
+          "    pub fn is_closed(&self) -> bool { self.state.load(Ordering::Acquire) & CLOSED != 0 }\n"
+        ],
+        "old": [
+          "    pub fn is_closed(&self) -> bool {\n",
+          "        self.state.load(Ordering::Acquire) & CLOSED != 0\n",
+          "    }\n"
+        ],
+        "start": 301
+      },
+      {
+        "end": 308,
+        "new": [
+          "    pub fn reservations(&self) -> usize { self.state.load(Ordering::Acquire) & COUNT_MASK }\n"
+        ],
+        "old": [
+          "    pub fn reservations(&self) -> usize {\n",
+          "        self.state.load(Ordering::Acquire) & COUNT_MASK\n",
+          "    }\n"
+        ],
+        "start": 305
+      },
+      {
+        "end": 314,
+        "new": [
+          "        self.functions.iter().find(|row| row.id == function).map(|row| row.closed.load(Ordering::Acquire))\n"
+        ],
+        "old": [
+          "        self.functions\n",
+          "            .iter()\n",
+          "            .find(|row| row.id == function)\n",
+          "            .map(|row| row.closed.load(Ordering::Acquire))\n"
+        ],
+        "start": 310
+      },
+      {
+        "end": 325,
+        "new": [
+          "        self.slots.iter().filter_map(|slot| slot.admission.get().copied().map(|admission| Record { admission, terminal: slot.terminal.get().copied() }))\n"
+        ],
+        "old": [
+          "        self.slots.iter().filter_map(|slot| {\n",
+          "            slot.admission.get().copied().map(|admission| Record {\n",
+          "                admission,\n",
+          "                terminal: slot.terminal.get().copied(),\n",
+          "            })\n",
+          "        })\n"
+        ],
+        "start": 319
+      },
+      {
+        "end": 331,
+        "new": [
+          "        if !self.functions.iter().any(|row| row.id == function) { return None; }\n"
+        ],
+        "old": [
+          "        if !self.functions.iter().any(|row| row.id == function) {\n",
+          "            return None;\n",
+          "        }\n"
+        ],
+        "start": 328
+      },
+      {
+        "end": 337,
+        "new": [
+          "        for record in self.records().filter(|record| record.admission.function == function) {\n"
+        ],
+        "old": [
+          "        for record in self\n",
+          "            .records()\n",
+          "            .filter(|record| record.admission.function == function)\n",
+          "        {\n"
+        ],
+        "start": 333
+      },
+      {
+        "end": 354,
+        "new": [
+          "        Some(PopulationObservation { population, final_report })\n"
+        ],
+        "old": [
+          "        Some(PopulationObservation {\n",
+          "            population,\n",
+          "            final_report,\n",
+          "        })\n"
+        ],
+        "start": 350
+      },
+      {
+        "end": 363,
+        "new": [
+          "        if self.state.load(Ordering::Acquire) == CLOSED { Some(Drained { epoch: self }) } else { None }\n"
+        ],
+        "old": [
+          "        if self.state.load(Ordering::Acquire) == CLOSED {\n",
+          "            Some(Drained { epoch: self })\n",
+          "        } else {\n",
+          "            None\n",
+          "        }\n"
+        ],
+        "start": 358
+      },
+      {
+        "end": 374,
+        "new": [
+          "pub struct Drained<'a> { epoch: &'a Epoch }\n"
+        ],
+        "old": [
+          "pub struct Drained<'a> {\n",
+          "    epoch: &'a Epoch,\n",
+          "}\n"
+        ],
+        "start": 371
+      },
+      {
+        "end": 379,
+        "new": [
+          "    pub fn generation(&self) -> GenerationId { self.epoch.id }\n"
+        ],
+        "old": [
+          "    pub fn generation(&self) -> GenerationId {\n",
+          "        self.epoch.id\n",
+          "    }\n"
+        ],
+        "start": 376
+      },
+      {
+        "end": 387,
+        "new": [
+          "        self.epoch.records().map(|row| (row.admission, row.terminal.expect(\"drain requires terminal records\")))\n"
+        ],
+        "old": [
+          "        self.epoch.records().map(|row| {\n",
+          "            (\n",
+          "                row.admission,\n",
+          "                row.terminal.expect(\"drain requires terminal records\"),\n",
+          "            )\n",
+          "        })\n"
+        ],
+        "start": 381
+      },
+      {
+        "end": 428,
+        "new": [
+          "        *self.epoch.slots[self.slot].admission.get().expect(\"published ticket\")\n"
+        ],
+        "old": [
+          "        *self.epoch.slots[self.slot]\n",
+          "            .admission\n",
+          "            .get()\n",
+          "            .expect(\"published ticket\")\n"
+        ],
+        "start": 424
+      },
+      {
+        "end": 452,
+        "new": [
+          "        let rank = row.retained.fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {\n",
+          "            if count < epoch.config.retained_per_function { Some(count + 1) } else { None }\n",
+          "        });\n",
+          "        let disposition = match rank { Ok(rank) => Disposition::Retained { rank }, Err(_) => Disposition::DroppedAfterBudget };\n"
+        ],
+        "old": [
+          "        let rank = row\n",
+          "            .retained\n",
+          "            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {\n",
+          "                if count < epoch.config.retained_per_function {\n",
+          "                    Some(count + 1)\n",
+          "                } else {\n",
+          "                    None\n",
+          "                }\n",
+          "            });\n",
+          "        let disposition = match rank {\n",
+          "            Ok(rank) => Disposition::Retained { rank },\n",
+          "            Err(_) => Disposition::DroppedAfterBudget,\n",
+          "        };\n"
+        ],
+        "start": 439
+      },
+      {
+        "end": 464,
+        "new": [
+          "            deactivate = Some(DeactivationRequest { generation: epoch.id, function: row.id });\n"
+        ],
+        "old": [
+          "            deactivate = Some(DeactivationRequest {\n",
+          "                generation: epoch.id,\n",
+          "                function: row.id,\n",
+          "            });\n"
+        ],
+        "start": 460
+      },
+      {
+        "end": 472,
+        "new": [
+          "        assert!(epoch.slots[self.slot].terminal.set(Terminal::Completed { value, disposition }).is_ok());\n"
+        ],
+        "old": [
+          "        assert!(\n",
+          "            epoch.slots[self.slot]\n",
+          "                .terminal\n",
+          "                .set(Terminal::Completed { value, disposition })\n",
+          "                .is_ok()\n",
+          "        );\n"
+        ],
+        "start": 466
+      },
+      {
+        "end": 480,
+        "new": [
+          "        Completion { admission, disposition, deactivate, other_reservations_after_close }\n"
+        ],
+        "old": [
+          "        Completion {\n",
+          "            admission,\n",
+          "            disposition,\n",
+          "            deactivate,\n",
+          "            other_reservations_after_close,\n",
+          "        }\n"
+        ],
+        "start": 474
+      },
+      {
+        "end": 493,
+        "new": [
+          "        assert!(self.epoch.slots[self.slot].terminal.set(Terminal::Cancelled(reason)).is_ok());\n"
+        ],
+        "old": [
+          "        assert!(\n",
+          "            self.epoch.slots[self.slot]\n",
+          "                .terminal\n",
+          "                .set(Terminal::Cancelled(reason))\n",
+          "                .is_ok()\n",
+          "        );\n"
+        ],
+        "start": 487
+      },
+      {
+        "end": 503,
+        "new": [
+          "        if self.active { self.cancel_inner(CancelReason::DroppedTicket); }\n"
+        ],
+        "old": [
+          "        if self.active {\n",
+          "            self.cancel_inner(CancelReason::DroppedTicket);\n",
+          "        }\n"
+        ],
+        "start": 500
+      }
+    ],
+    "src/tests.rs": [
+      {
+        "end": 18,
+        "new": [
+          "    Epoch::new(&[A, B], Config { retained_per_function: k, max_inflight: m, max_invocations: a }).unwrap()\n"
+        ],
+        "old": [
+          "    Epoch::new(\n",
+          "        &[A, B],\n",
+          "        Config {\n",
+          "            retained_per_function: k,\n",
+          "            max_inflight: m,\n",
+          "            max_invocations: a,\n",
+          "        },\n",
+          "    )\n",
+          "    .unwrap()\n"
+        ],
+        "start": 9
+      },
+      {
+        "end": 26,
+        "new": [
+          "    epoch.try_drain().expect(\"required drain\").population(function).unwrap()\n"
+        ],
+        "old": [
+          "    epoch\n",
+          "        .try_drain()\n",
+          "        .expect(\"required drain\")\n",
+          "        .population(function)\n",
+          "        .unwrap()\n"
+        ],
+        "start": 21
+      },
+      {
+        "end": 38,
+        "new": [
+          "                let result = e.enter(function, rank as u64).unwrap().complete(100 + rank as u64);\n"
+        ],
+        "old": [
+          "                let result = e\n",
+          "                    .enter(function, rank as u64)\n",
+          "                    .unwrap()\n",
+          "                    .complete(100 + rank as u64);\n"
+        ],
+        "start": 34
+      },
+      {
+        "end": 56,
+        "new": [
+          "            assert_eq!(final_population(&e, function), Population { admitted: k, completed: k, retained: k, ..Population::default() });\n"
+        ],
+        "old": [
+          "            assert_eq!(\n",
+          "                final_population(&e, function),\n",
+          "                Population {\n",
+          "                    admitted: k,\n",
+          "                    completed: k,\n",
+          "                    retained: k,\n",
+          "                    ..Population::default()\n",
+          "                }\n",
+          "            );\n"
+        ],
+        "start": 47
+      },
+      {
+        "end": 86,
+        "new": [
+          "    assert_eq!(e.population(A), Some(PopulationObservation { population: Population { admitted: 1, unfinished: 1, ..Population::default() }, final_report: false }));\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        e.population(A),\n",
+          "        Some(PopulationObservation {\n",
+          "            population: Population {\n",
+          "                admitted: 1,\n",
+          "                unfinished: 1,\n",
+          "                ..Population::default()\n",
+          "            },\n",
+          "            final_report: false\n",
+          "        })\n",
+          "    );\n"
+        ],
+        "start": 75
+      },
+      {
+        "end": 103,
+        "new": [
+          "    assert_eq!(final_population(&e, A), Population { admitted: 1, completed: 1, retained: 1, ..Population::default() });\n",
+          "    assert_eq!(e.try_drain().unwrap().records().next().unwrap().1, Terminal::Completed { value: 91, disposition: Disposition::Retained { rank: 0 } });\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        final_population(&e, A),\n",
+          "        Population {\n",
+          "            admitted: 1,\n",
+          "            completed: 1,\n",
+          "            retained: 1,\n",
+          "            ..Population::default()\n",
+          "        }\n",
+          "    );\n",
+          "    assert_eq!(\n",
+          "        e.try_drain().unwrap().records().next().unwrap().1,\n",
+          "        Terminal::Completed {\n",
+          "            value: 91,\n",
+          "            disposition: Disposition::Retained { rank: 0 }\n",
+          "        }\n",
+          "    );\n"
+        ],
+        "start": 87
+      },
+      {
+        "end": 113,
+        "new": [
+          "    assert!(matches!(e.enter(B, 2), Err(AdmissionRefusal::InflightLimit)));\n"
+        ],
+        "old": [
+          "    assert!(matches!(\n",
+          "        e.enter(B, 2),\n",
+          "        Err(AdmissionRefusal::InflightLimit)\n",
+          "    ));\n"
+        ],
+        "start": 109
+      },
+      {
+        "end": 132,
+        "new": [
+          "    assert!(matches!(e.enter(A, 4), Err(AdmissionRefusal::StorageExhausted)));\n"
+        ],
+        "old": [
+          "    assert!(matches!(\n",
+          "        e.enter(A, 4),\n",
+          "        Err(AdmissionRefusal::StorageExhausted)\n",
+          "    ));\n"
+        ],
+        "start": 128
+      },
+      {
+        "end": 155,
+        "new": [
+          "    assert_eq!(final_population(&e, A), Population { admitted: 2, completed: 2, retained: 2, ..Population::default() });\n",
+          "    assert_eq!(final_population(&e, B), Population { admitted: 1, cancelled: 1, ..Population::default() });\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        final_population(&e, A),\n",
+          "        Population {\n",
+          "            admitted: 2,\n",
+          "            completed: 2,\n",
+          "            retained: 2,\n",
+          "            ..Population::default()\n",
+          "        }\n",
+          "    );\n",
+          "    assert_eq!(\n",
+          "        final_population(&e, B),\n",
+          "        Population {\n",
+          "            admitted: 1,\n",
+          "            cancelled: 1,\n",
+          "            ..Population::default()\n",
+          "        }\n",
+          "    );\n"
+        ],
+        "start": 138
+      },
+      {
+        "end": 173,
+        "new": [
+          "    assert_eq!(completed.deactivate, Some(DeactivationRequest { generation: old.id(), function: A }));\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        completed.deactivate,\n",
+          "        Some(DeactivationRequest {\n",
+          "            generation: old.id(),\n",
+          "            function: A\n",
+          "        })\n",
+          "    );\n"
+        ],
+        "start": 166
+      },
+      {
+        "end": 188,
+        "new": [
+          "    assert_eq!(old.try_drain().unwrap().records().next().unwrap().0.generation, old.id());\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        old.try_drain()\n",
+          "            .unwrap()\n",
+          "            .records()\n",
+          "            .next()\n",
+          "            .unwrap()\n",
+          "            .0\n",
+          "            .generation,\n",
+          "        old.id()\n",
+          "    );\n"
+        ],
+        "start": 178
+      },
+      {
+        "end": 200,
+        "new": [
+          "    assert_eq!(new.try_drain().unwrap().records().next().unwrap().0.generation, new.id());\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        new.try_drain()\n",
+          "            .unwrap()\n",
+          "            .records()\n",
+          "            .next()\n",
+          "            .unwrap()\n",
+          "            .0\n",
+          "            .generation,\n",
+          "        new.id()\n",
+          "    );\n"
+        ],
+        "start": 190
+      },
+      {
+        "end": 217,
+        "new": [
+          "    assert_eq!(inner.complete(202).disposition, Disposition::Retained { rank: 0 });\n",
+          "    assert_eq!(outer.complete(201).disposition, Disposition::DroppedAfterBudget);\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        inner.complete(202).disposition,\n",
+          "        Disposition::Retained { rank: 0 }\n",
+          "    );\n",
+          "    assert_eq!(\n",
+          "        outer.complete(201).disposition,\n",
+          "        Disposition::DroppedAfterBudget\n",
+          "    );\n"
+        ],
+        "start": 209
+      },
+      {
+        "end": 255,
+        "new": [
+          "    assert_eq!(final_population(&e, A), Population { admitted: 2, completed: 2, retained: 1, dropped: 1, ..Population::default() });\n",
+          "    let values: Vec<_> = e.try_drain().unwrap().records().map(|(a, t)| (a.invocation, a.entry_value, t)).collect();\n",
+          "    assert_eq!(values, vec![(0, 101, Terminal::Completed { value: 201, disposition: Disposition::DroppedAfterBudget }), (1, 102, Terminal::Completed { value: 202, disposition: Disposition::Retained { rank: 0 } })]);\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        final_population(&e, A),\n",
+          "        Population {\n",
+          "            admitted: 2,\n",
+          "            completed: 2,\n",
+          "            retained: 1,\n",
+          "            dropped: 1,\n",
+          "            ..Population::default()\n",
+          "        }\n",
+          "    );\n",
+          "    let values: Vec<_> = e\n",
+          "        .try_drain()\n",
+          "        .unwrap()\n",
+          "        .records()\n",
+          "        .map(|(a, t)| (a.invocation, a.entry_value, t))\n",
+          "        .collect();\n",
+          "    assert_eq!(\n",
+          "        values,\n",
+          "        vec![\n",
+          "            (\n",
+          "                0,\n",
+          "                101,\n",
+          "                Terminal::Completed {\n",
+          "                    value: 201,\n",
+          "                    disposition: Disposition::DroppedAfterBudget\n",
+          "                }\n",
+          "            ),\n",
+          "            (\n",
+          "                1,\n",
+          "                102,\n",
+          "                Terminal::Completed {\n",
+          "                    value: 202,\n",
+          "                    disposition: Disposition::Retained { rank: 0 }\n",
+          "                }\n",
+          "            )\n",
+          "        ]\n",
+          "    );\n"
+        ],
+        "start": 218
+      },
+      {
+        "end": 293,
+        "new": [
+          "    let outcomes: Vec<_> = e.try_drain().unwrap().records().map(|(_, terminal)| terminal).collect();\n",
+          "    assert_eq!(outcomes, vec![Terminal::Cancelled(CancelReason::Explicit), Terminal::Cancelled(CancelReason::DroppedTicket), Terminal::Completed { value: 11, disposition: Disposition::Retained { rank: 0 } }]);\n",
+          "    assert_eq!(final_population(&e, A), Population { admitted: 3, completed: 1, retained: 1, cancelled: 2, ..Population::default() });\n"
+        ],
+        "old": [
+          "    let outcomes: Vec<_> = e\n",
+          "        .try_drain()\n",
+          "        .unwrap()\n",
+          "        .records()\n",
+          "        .map(|(_, terminal)| terminal)\n",
+          "        .collect();\n",
+          "    assert_eq!(\n",
+          "        outcomes,\n",
+          "        vec![\n",
+          "            Terminal::Cancelled(CancelReason::Explicit),\n",
+          "            Terminal::Cancelled(CancelReason::DroppedTicket),\n",
+          "            Terminal::Completed {\n",
+          "                value: 11,\n",
+          "                disposition: Disposition::Retained { rank: 0 }\n",
+          "            }\n",
+          "        ]\n",
+          "    );\n",
+          "    assert_eq!(\n",
+          "        final_population(&e, A),\n",
+          "        Population {\n",
+          "            admitted: 3,\n",
+          "            completed: 1,\n",
+          "            retained: 1,\n",
+          "            cancelled: 2,\n",
+          "            ..Population::default()\n",
+          "        }\n",
+          "    );\n"
+        ],
+        "start": 266
+      },
+      {
+        "end": 308,
+        "new": [
+          "        let worker = scope.spawn(move || kth.complete_before_close(10, || {\n",
+          "            paused_tx.send(()).unwrap();\n",
+          "            release_rx.recv_timeout(Duration::from_secs(2)).unwrap();\n",
+          "        }));\n"
+        ],
+        "old": [
+          "        let worker = scope.spawn(move || {\n",
+          "            kth.complete_before_close(10, || {\n",
+          "                paused_tx.send(()).unwrap();\n",
+          "                release_rx.recv_timeout(Duration::from_secs(2)).unwrap();\n",
+          "            })\n",
+          "        });\n"
+        ],
+        "start": 302
+      },
+      {
+        "end": 325,
+        "new": [
+          "        assert!(matches!(e.enter(A, 8), Err(AdmissionRefusal::FunctionClosed)));\n"
+        ],
+        "old": [
+          "        assert!(matches!(\n",
+          "            e.enter(A, 8),\n",
+          "            Err(AdmissionRefusal::FunctionClosed)\n",
+          "        ));\n"
+        ],
+        "start": 321
+      },
+      {
+        "end": 330,
+        "new": [
+          "        assert_eq!(held.complete(70).disposition, Disposition::DroppedAfterBudget);\n"
+        ],
+        "old": [
+          "        assert_eq!(\n",
+          "            held.complete(70).disposition,\n",
+          "            Disposition::DroppedAfterBudget\n",
+          "        );\n"
+        ],
+        "start": 326
+      },
+      {
+        "end": 343,
+        "new": [
+          "    assert_eq!(final_population(&e, A), Population { admitted: 7, completed: 7, retained: 1, dropped: 6, ..Population::default() });\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        final_population(&e, A),\n",
+          "        Population {\n",
+          "            admitted: 7,\n",
+          "            completed: 7,\n",
+          "            retained: 1,\n",
+          "            dropped: 6,\n",
+          "            ..Population::default()\n",
+          "        }\n",
+          "    );\n"
+        ],
+        "start": 333
+      },
+      {
+        "end": 356,
+        "new": [
+          "        let worker = scope.spawn(|| { barrier.wait(); a.complete(101) });\n"
+        ],
+        "old": [
+          "        let worker = scope.spawn(|| {\n",
+          "            barrier.wait();\n",
+          "            a.complete(101)\n",
+          "        });\n"
+        ],
+        "start": 352
+      },
+      {
+        "end": 378,
+        "new": [
+          "    assert_eq!(outcomes.iter().filter(|r| r.disposition == Disposition::Retained { rank: 0 }).count(), 1);\n",
+          "    assert_eq!(outcomes.iter().filter(|r| r.disposition == Disposition::DroppedAfterBudget).count(), 1);\n",
+          "    assert_eq!(outcomes.iter().filter(|r| r.deactivate.is_some()).count(), 1);\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        outcomes\n",
+          "            .iter()\n",
+          "            .filter(|r| r.disposition == Disposition::Retained { rank: 0 })\n",
+          "            .count(),\n",
+          "        1\n",
+          "    );\n",
+          "    assert_eq!(\n",
+          "        outcomes\n",
+          "            .iter()\n",
+          "            .filter(|r| r.disposition == Disposition::DroppedAfterBudget)\n",
+          "            .count(),\n",
+          "        1\n",
+          "    );\n",
+          "    assert_eq!(\n",
+          "        outcomes.iter().filter(|r| r.deactivate.is_some()).count(),\n",
+          "        1\n",
+          "    );\n"
+        ],
+        "start": 360
+      },
+      {
+        "end": 382,
+        "new": [
+          "        if let Some(count) = outcome.other_reservations_after_close { assert!(count <= 1); }\n"
+        ],
+        "old": [
+          "        if let Some(count) = outcome.other_reservations_after_close {\n",
+          "            assert!(count <= 1);\n",
+          "        }\n"
+        ],
+        "start": 379
+      },
+      {
+        "end": 402,
+        "new": [
+          "    assert_eq!(final_population(&e, A), Population { admitted: 2, completed: 2, retained: 1, dropped: 1, ..Population::default() });\n",
+          "    assert_eq!(e.try_drain().unwrap().records().map(|(admission, _)| admission.entry_value).collect::<Vec<_>>(), vec![100, 200]);\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        final_population(&e, A),\n",
+          "        Population {\n",
+          "            admitted: 2,\n",
+          "            completed: 2,\n",
+          "            retained: 1,\n",
+          "            dropped: 1,\n",
+          "            ..Population::default()\n",
+          "        }\n",
+          "    );\n",
+          "    assert_eq!(\n",
+          "        e.try_drain()\n",
+          "            .unwrap()\n",
+          "            .records()\n",
+          "            .map(|(admission, _)| admission.entry_value)\n",
+          "            .collect::<Vec<_>>(),\n",
+          "        vec![100, 200]\n",
+          "    );\n"
+        ],
+        "start": 384
+      },
+      {
+        "end": 420,
+        "new": [
+          "            if ticket.admission().invocation % 2 == 0 { left.push(ticket); } else { right.push(ticket); }\n"
+        ],
+        "old": [
+          "            if ticket.admission().invocation % 2 == 0 {\n",
+          "                left.push(ticket);\n",
+          "            } else {\n",
+          "                right.push(ticket);\n",
+          "            }\n"
+        ],
+        "start": 415
+      },
+      {
+        "end": 426,
+        "new": [
+          "            for ticket in left { let i = ticket.admission().entry_value; ticket.complete(i ^ 0xfedc_ba98); }\n"
+        ],
+        "old": [
+          "            for ticket in left {\n",
+          "                let i = ticket.admission().entry_value;\n",
+          "                ticket.complete(i ^ 0xfedc_ba98);\n",
+          "            }\n"
+        ],
+        "start": 422
+      },
+      {
+        "end": 433,
+        "new": [
+          "        for ticket in right { let i = ticket.admission().entry_value; ticket.complete(i ^ 0xfedc_ba98); }\n"
+        ],
+        "old": [
+          "        for ticket in right {\n",
+          "            let i = ticket.admission().entry_value;\n",
+          "            ticket.complete(i ^ 0xfedc_ba98);\n",
+          "        }\n"
+        ],
+        "start": 429
+      },
+      {
+        "end": 444,
+        "new": [
+          "            if let Some(drained) = e.try_drain() { break drained; }\n",
+          "            assert!(std::time::Instant::now() < deadline, \"required bounded pre-join drain\");\n"
+        ],
+        "old": [
+          "            if let Some(drained) = e.try_drain() {\n",
+          "                break drained;\n",
+          "            }\n",
+          "            assert!(\n",
+          "                std::time::Instant::now() < deadline,\n",
+          "                \"required bounded pre-join drain\"\n",
+          "            );\n"
+        ],
+        "start": 437
+      },
+      {
+        "end": 475,
+        "new": [
+          "        assert_eq!(prejoin.population(A), Some(Population { admitted: 16, completed: 16, retained: 16, ..Population::default() }));\n",
+          "        assert_eq!(prejoin.records().map(|(admission, terminal)| (admission.invocation, admission.entry_value, match terminal { Terminal::Completed { value, disposition: Disposition::Retained { .. } } => value, _ => panic!(\"required retained completion before join\") })).collect::<Vec<_>>(), (0_usize..16).map(|i| (i, i as u64, (i as u64) ^ 0xfedc_ba98)).collect::<Vec<_>>());\n"
+        ],
+        "old": [
+          "        assert_eq!(\n",
+          "            prejoin.population(A),\n",
+          "            Some(Population {\n",
+          "                admitted: 16,\n",
+          "                completed: 16,\n",
+          "                retained: 16,\n",
+          "                ..Population::default()\n",
+          "            })\n",
+          "        );\n",
+          "        assert_eq!(\n",
+          "            prejoin\n",
+          "                .records()\n",
+          "                .map(|(admission, terminal)| (\n",
+          "                    admission.invocation,\n",
+          "                    admission.entry_value,\n",
+          "                    match terminal {\n",
+          "                        Terminal::Completed {\n",
+          "                            value,\n",
+          "                            disposition: Disposition::Retained { .. },\n",
+          "                        } => value,\n",
+          "                        _ => panic!(\"required retained completion before join\"),\n",
+          "                    }\n",
+          "                ))\n",
+          "                .collect::<Vec<_>>(),\n",
+          "            (0_usize..16)\n",
+          "                .map(|i| (i, i as u64, (i as u64) ^ 0xfedc_ba98))\n",
+          "                .collect::<Vec<_>>()\n",
+          "        );\n"
+        ],
+        "start": 447
+      },
+      {
+        "end": 488,
+        "new": [
+          "    assert_eq!(final_population(&e, A), Population { admitted: 16, completed: 16, retained: 16, ..Population::default() });\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        final_population(&e, A),\n",
+          "        Population {\n",
+          "            admitted: 16,\n",
+          "            completed: 16,\n",
+          "            retained: 16,\n",
+          "            ..Population::default()\n",
+          "        }\n",
+          "    );\n"
+        ],
+        "start": 479
+      },
+      {
+        "end": 492,
+        "new": [
+          "        assert!(matches!(terminal, Terminal::Completed { value, disposition: Disposition::Retained { .. } } if value == admission.entry_value ^ 0xfedc_ba98));\n"
+        ],
+        "old": [
+          "        assert!(\n",
+          "            matches!(terminal, Terminal::Completed { value, disposition: Disposition::Retained { .. } } if value == admission.entry_value ^ 0xfedc_ba98)\n",
+          "        );\n"
+        ],
+        "start": 489
+      },
+      {
+        "end": 517,
+        "new": [
+          "    assert_eq!(old.population(A).unwrap(), PopulationObservation { population: Population { admitted: 1, unfinished: 1, ..Population::default() }, final_report: false });\n"
+        ],
+        "old": [
+          "    assert_eq!(\n",
+          "        old.population(A).unwrap(),\n",
+          "        PopulationObservation {\n",
+          "            population: Population {\n",
+          "                admitted: 1,\n",
+          "                unfinished: 1,\n",
+          "                ..Population::default()\n",
+          "            },\n",
+          "            final_report: false\n",
+          "        }\n",
+          "    );\n"
+        ],
+        "start": 506
+      },
+      {
+        "end": 559,
+        "new": [
+          "    let valid = Config { retained_per_function: 1, max_inflight: 1, max_invocations: 1 };\n",
+          "    assert_eq!(Epoch::new(&[], valid).err(), Some(CreateError::EmptyFunctions));\n",
+          "    assert_eq!(Epoch::new(&[A; MAX_FUNCTIONS + 1], valid).err(), Some(CreateError::TooManyFunctions));\n",
+          "    assert_eq!(Epoch::new(&[A, A], valid).err(), Some(CreateError::DuplicateFunction));\n",
+          "    assert_eq!(Epoch::new(&[A], Config { retained_per_function: 0, ..valid }).err(), Some(CreateError::ZeroRetainedBudget));\n"
+        ],
+        "old": [
+          "    let valid = Config {\n",
+          "        retained_per_function: 1,\n",
+          "        max_inflight: 1,\n",
+          "        max_invocations: 1,\n",
+          "    };\n",
+          "    assert_eq!(\n",
+          "        Epoch::new(&[], valid).err(),\n",
+          "        Some(CreateError::EmptyFunctions)\n",
+          "    );\n",
+          "    assert_eq!(\n",
+          "        Epoch::new(&[A; MAX_FUNCTIONS + 1], valid).err(),\n",
+          "        Some(CreateError::TooManyFunctions)\n",
+          "    );\n",
+          "    assert_eq!(\n",
+          "        Epoch::new(&[A, A], valid).err(),\n",
+          "        Some(CreateError::DuplicateFunction)\n",
+          "    );\n",
+          "    assert_eq!(\n",
+          "        Epoch::new(\n",
+          "            &[A],\n",
+          "            Config {\n",
+          "                retained_per_function: 0,\n",
+          "                ..valid\n",
+          "            }\n",
+          "        )\n",
+          "        .err(),\n",
+          "        Some(CreateError::ZeroRetainedBudget)\n",
+          "    );\n"
+        ],
+        "start": 531
+      },
+      {
+        "end": 571,
+        "new": [
+          "        assert_eq!(Epoch::new(&[A], Config { max_inflight, ..valid }).err(), Some(CreateError::InvalidInflightLimit));\n"
+        ],
+        "old": [
+          "        assert_eq!(\n",
+          "            Epoch::new(\n",
+          "                &[A],\n",
+          "                Config {\n",
+          "                    max_inflight,\n",
+          "                    ..valid\n",
+          "                }\n",
+          "            )\n",
+          "            .err(),\n",
+          "            Some(CreateError::InvalidInflightLimit)\n",
+          "        );\n"
+        ],
+        "start": 560
+      },
+      {
+        "end": 584,
+        "new": [
+          "        assert_eq!(Epoch::new(&[A], Config { max_invocations, ..valid }).err(), Some(CreateError::InvalidInvocationLimit));\n"
+        ],
+        "old": [
+          "        assert_eq!(\n",
+          "            Epoch::new(\n",
+          "                &[A],\n",
+          "                Config {\n",
+          "                    max_invocations,\n",
+          "                    ..valid\n",
+          "                }\n",
+          "            )\n",
+          "            .err(),\n",
+          "            Some(CreateError::InvalidInvocationLimit)\n",
+          "        );\n"
+        ],
+        "start": 573
+      },
+      {
+        "end": 594,
+        "new": [
+          "    let e = Epoch::new(&[A], Config { retained_per_function: usize::MAX, max_inflight: COUNT_MASK, ..valid }).unwrap();\n"
+        ],
+        "old": [
+          "    let e = Epoch::new(\n",
+          "        &[A],\n",
+          "        Config {\n",
+          "            retained_per_function: usize::MAX,\n",
+          "            max_inflight: COUNT_MASK,\n",
+          "            ..valid\n",
+          "        },\n",
+          "    )\n",
+          "    .unwrap();\n"
+        ],
+        "start": 585
+      },
+      {
+        "end": 618,
+        "new": [
+          "    assert!(matches!(e.enter(FunctionId(99), 0), Err(AdmissionRefusal::UnknownFunction)));\n"
+        ],
+        "old": [
+          "    assert!(matches!(\n",
+          "        e.enter(FunctionId(99), 0),\n",
+          "        Err(AdmissionRefusal::UnknownFunction)\n",
+          "    ));\n"
+        ],
+        "start": 614
+      },
+      {
+        "end": 630,
+        "new": [
+          "    assert!(matches!(e.enter(A, 3), Err(AdmissionRefusal::FunctionClosed)));\n",
+          "    assert_eq!(e.enter(B, 4).unwrap().complete(5).disposition, Disposition::Retained { rank: 0 });\n"
+        ],
+        "old": [
+          "    assert!(matches!(\n",
+          "        e.enter(A, 3),\n",
+          "        Err(AdmissionRefusal::FunctionClosed)\n",
+          "    ));\n",
+          "    assert_eq!(\n",
+          "        e.enter(B, 4).unwrap().complete(5).disposition,\n",
+          "        Disposition::Retained { rank: 0 }\n",
+          "    );\n"
+        ],
+        "start": 622
+      },
+      {
+        "end": 659,
+        "new": [
+          "fn reference(generation: GenerationId, entries: &[(usize, FunctionId, u64, Option<Terminal>)]) -> BTreeMap<(GenerationId, usize), Record> {\n",
+          "    entries.iter().map(|&(invocation, function, entry_value, terminal)| {\n",
+          "        let admission = Admission { generation, invocation, function, entry_value };\n",
+          "        ((generation, invocation), Record { admission, terminal })\n",
+          "    }).collect()\n"
+        ],
+        "old": [
+          "fn reference(\n",
+          "    generation: GenerationId,\n",
+          "    entries: &[(usize, FunctionId, u64, Option<Terminal>)],\n",
+          ") -> BTreeMap<(GenerationId, usize), Record> {\n",
+          "    entries\n",
+          "        .iter()\n",
+          "        .map(|&(invocation, function, entry_value, terminal)| {\n",
+          "            let admission = Admission {\n",
+          "                generation,\n",
+          "                invocation,\n",
+          "                function,\n",
+          "                entry_value,\n",
+          "            };\n",
+          "            (\n",
+          "                (generation, invocation),\n",
+          "                Record {\n",
+          "                    admission,\n",
+          "                    terminal,\n",
+          "                },\n",
+          "            )\n",
+          "        })\n",
+          "        .collect()\n"
+        ],
+        "start": 637
+      },
+      {
+        "end": 673,
+        "new": [
+          "            assert!(result.insert((record.admission.generation, record.admission.invocation), record).is_none());\n"
+        ],
+        "old": [
+          "            assert!(\n",
+          "                result\n",
+          "                    .insert(\n",
+          "                        (record.admission.generation, record.admission.invocation),\n",
+          "                        record\n",
+          "                    )\n",
+          "                    .is_none()\n",
+          "            );\n"
+        ],
+        "start": 665
+      },
+      {
+        "end": 699,
+        "new": [
+          "    let retained = |value| Some(Terminal::Completed { value, disposition: Disposition::Retained { rank: 0 } });\n",
+          "    let mut expected = reference(old.id(), &[(0, A, 1, None), (1, A, 2, retained(20)), (2, B, 3, None)]);\n"
+        ],
+        "old": [
+          "    let retained = |value| {\n",
+          "        Some(Terminal::Completed {\n",
+          "            value,\n",
+          "            disposition: Disposition::Retained { rank: 0 },\n",
+          "        })\n",
+          "    };\n",
+          "    let mut expected = reference(\n",
+          "        old.id(),\n",
+          "        &[(0, A, 1, None), (1, A, 2, retained(20)), (2, B, 3, None)],\n",
+          "    );\n"
+        ],
+        "start": 689
+      },
+      {
+        "end": 734,
+        "new": [
+          "    let mut expected = reference(old.id(), &[(0, A, 1, Some(Terminal::Completed { value: 10, disposition: Disposition::DroppedAfterBudget })), (1, A, 2, retained(20)), (2, B, 3, Some(Terminal::Cancelled(CancelReason::Explicit)))]);\n",
+          "    expected.extend(reference(new.id(), &[(0, A, 4, retained(40)), (1, B, 5, Some(Terminal::Cancelled(CancelReason::DroppedTicket)))]));\n"
+        ],
+        "old": [
+          "    let mut expected = reference(\n",
+          "        old.id(),\n",
+          "        &[\n",
+          "            (\n",
+          "                0,\n",
+          "                A,\n",
+          "                1,\n",
+          "                Some(Terminal::Completed {\n",
+          "                    value: 10,\n",
+          "                    disposition: Disposition::DroppedAfterBudget,\n",
+          "                }),\n",
+          "            ),\n",
+          "            (1, A, 2, retained(20)),\n",
+          "            (2, B, 3, Some(Terminal::Cancelled(CancelReason::Explicit))),\n",
+          "        ],\n",
+          "    );\n",
+          "    expected.extend(reference(\n",
+          "        new.id(),\n",
+          "        &[\n",
+          "            (0, A, 4, retained(40)),\n",
+          "            (\n",
+          "                1,\n",
+          "                B,\n",
+          "                5,\n",
+          "                Some(Terminal::Cancelled(CancelReason::DroppedTicket)),\n",
+          "            ),\n",
+          "        ],\n",
+          "    ));\n"
+        ],
+        "start": 706
+      },
+      {
+        "end": 753,
+        "new": [
+          "    let retained = Some(Terminal::Completed { value: 4, disposition: Disposition::Retained { rank: 0 } });\n",
+          "    let expected = reference(id, &[(0, A, 1, retained), (1, B, 2, Some(Terminal::Cancelled(CancelReason::Explicit))), (2, A, 3, None)]);\n"
+        ],
+        "old": [
+          "    let retained = Some(Terminal::Completed {\n",
+          "        value: 4,\n",
+          "        disposition: Disposition::Retained { rank: 0 },\n",
+          "    });\n",
+          "    let expected = reference(\n",
+          "        id,\n",
+          "        &[\n",
+          "            (0, A, 1, retained),\n",
+          "            (1, B, 2, Some(Terminal::Cancelled(CancelReason::Explicit))),\n",
+          "            (2, A, 3, None),\n",
+          "        ],\n",
+          "    );\n"
+        ],
+        "start": 741
+      },
+      {
+        "end": 775,
+        "new": [
+          "    let mut m = expected.clone(); m.get_mut(&(id, 0)).unwrap().admission.generation = GenerationId(18); mutants.push(m);\n",
+          "    let mut m = expected.clone(); m.get_mut(&(id, 0)).unwrap().admission.function = B; mutants.push(m);\n",
+          "    let mut m = expected.clone(); m.get_mut(&(id, 0)).unwrap().terminal = Some(Terminal::Completed { value: 4, disposition: Disposition::DroppedAfterBudget }); mutants.push(m);\n",
+          "    let mut m = expected.clone(); m.remove(&(id, 1)); mutants.push(m);\n",
+          "    let mut m = expected.clone(); m.get_mut(&(id, 1)).unwrap().terminal = retained; mutants.push(m);\n",
+          "    let mut m = expected.clone(); m.get_mut(&(id, 2)).unwrap().terminal = Some(Terminal::Cancelled(CancelReason::DroppedTicket)); mutants.push(m);\n"
+        ],
+        "old": [
+          "    let mut m = expected.clone();\n",
+          "    m.get_mut(&(id, 0)).unwrap().admission.generation = GenerationId(18);\n",
+          "    mutants.push(m);\n",
+          "    let mut m = expected.clone();\n",
+          "    m.get_mut(&(id, 0)).unwrap().admission.function = B;\n",
+          "    mutants.push(m);\n",
+          "    let mut m = expected.clone();\n",
+          "    m.get_mut(&(id, 0)).unwrap().terminal = Some(Terminal::Completed {\n",
+          "        value: 4,\n",
+          "        disposition: Disposition::DroppedAfterBudget,\n",
+          "    });\n",
+          "    mutants.push(m);\n",
+          "    let mut m = expected.clone();\n",
+          "    m.remove(&(id, 1));\n",
+          "    mutants.push(m);\n",
+          "    let mut m = expected.clone();\n",
+          "    m.get_mut(&(id, 1)).unwrap().terminal = retained;\n",
+          "    mutants.push(m);\n",
+          "    let mut m = expected.clone();\n",
+          "    m.get_mut(&(id, 2)).unwrap().terminal = Some(Terminal::Cancelled(CancelReason::DroppedTicket));\n",
+          "    mutants.push(m);\n"
+        ],
+        "start": 754
+      },
+      {
+        "end": 779,
+        "new": [
+          "    for mutant in mutants { assert_ne!(mutant, expected); }\n"
+        ],
+        "old": [
+          "    for mutant in mutants {\n",
+          "        assert_ne!(mutant, expected);\n",
+          "    }\n"
+        ],
+        "start": 776
+      }
+    ]
+  },
+  "module_to_formatted": [
+    {
+      "end": 13,
+      "new": [],
+      "old": [
+        "/// Maximum functions admitted when constructing one epoch.\n"
+      ],
+      "start": 12
+    },
+    {
+      "end": 15,
+      "new": [],
+      "old": [
+        "/// Maximum lifetime invocation records allocated for one epoch.\n"
+      ],
+      "start": 14
+    },
+    {
+      "end": 20,
+      "new": [],
+      "old": [
+        "/// Process-local generation identity that is never intentionally reused.\n"
+      ],
+      "start": 19
+    },
+    {
+      "end": 24,
+      "new": [],
+      "old": [
+        "    /// Return the opaque numeric identity for diagnostics and record comparison.\n"
+      ],
+      "start": 23
+    },
+    {
+      "end": 35,
+      "new": [
+        "pub struct FunctionId(pub u64);\n"
+      ],
+      "old": [
+        "/// Caller-selected identity of one function within an epoch.\n",
+        "pub struct FunctionId(\n",
+        "    /// The caller's integer function key.\n",
+        "    pub u64,\n",
+        ");\n"
+      ],
+      "start": 30
+    },
+    {
+      "end": 38,
+      "new": [],
+      "old": [
+        "/// Independent per-function retention and global storage limits.\n"
+      ],
+      "start": 37
+    },
+    {
+      "end": 40,
+      "new": [],
+      "old": [
+        "    /// Maximum completed records retained for each function (K).\n"
+      ],
+      "start": 39
+    },
+    {
+      "end": 42,
+      "new": [],
+      "old": [
+        "    /// Maximum simultaneous reservations across all functions (M).\n"
+      ],
+      "start": 41
+    },
+    {
+      "end": 44,
+      "new": [],
+      "old": [
+        "    /// Maximum lifetime admissions across all functions (A); slots are not recycled.\n"
+      ],
+      "start": 43
+    },
+    {
+      "end": 49,
+      "new": [],
+      "old": [
+        "/// A constructor refusal before an epoch is returned.\n"
+      ],
+      "start": 48
+    },
+    {
+      "end": 51,
+      "new": [],
+      "old": [
+        "    /// The requested function set is empty.\n"
+      ],
+      "start": 50
+    },
+    {
+      "end": 53,
+      "new": [],
+      "old": [
+        "    /// The function count exceeds [`MAX_FUNCTIONS`].\n"
+      ],
+      "start": 52
+    },
+    {
+      "end": 55,
+      "new": [],
+      "old": [
+        "    /// The requested function set contains duplicate identities.\n"
+      ],
+      "start": 54
+    },
+    {
+      "end": 57,
+      "new": [],
+      "old": [
+        "    /// The per-function retention budget is zero.\n"
+      ],
+      "start": 56
+    },
+    {
+      "end": 59,
+      "new": [],
+      "old": [
+        "    /// The global reservation limit is zero or exceeds the counter range.\n"
+      ],
+      "start": 58
+    },
+    {
+      "end": 61,
+      "new": [],
+      "old": [
+        "    /// The lifetime record limit is zero or exceeds [`MAX_RECORDS`].\n"
+      ],
+      "start": 60
+    },
+    {
+      "end": 63,
+      "new": [],
+      "old": [
+        "    /// Bounded storage allocation failed.\n"
+      ],
+      "start": 62
+    },
+    {
+      "end": 65,
+      "new": [],
+      "old": [
+        "    /// The process-local generation identity space is exhausted.\n"
+      ],
+      "start": 64
+    },
+    {
+      "end": 70,
+      "new": [],
+      "old": [
+        "/// A rejected admission that returns no ticket.\n"
+      ],
+      "start": 69
+    },
+    {
+      "end": 72,
+      "new": [],
+      "old": [
+        "    /// The function is absent from this epoch.\n"
+      ],
+      "start": 71
+    },
+    {
+      "end": 74,
+      "new": [],
+      "old": [
+        "    /// This function has closed admission.\n"
+      ],
+      "start": 73
+    },
+    {
+      "end": 76,
+      "new": [],
+      "old": [
+        "    /// The entire epoch has closed admission.\n"
+      ],
+      "start": 75
+    },
+    {
+      "end": 78,
+      "new": [],
+      "old": [
+        "    /// The global concurrent-reservation limit is reached.\n"
+      ],
+      "start": 77
+    },
+    {
+      "end": 80,
+      "new": [],
+      "old": [
+        "    /// Lifetime invocation storage is exhausted; the epoch is closed.\n"
+      ],
+      "start": 79
+    },
+    {
+      "end": 85,
+      "new": [],
+      "old": [
+        "/// Immutable identity and caller value captured for one accepted invocation.\n"
+      ],
+      "start": 84
+    },
+    {
+      "end": 87,
+      "new": [],
+      "old": [
+        "    /// The epoch that admitted the invocation.\n"
+      ],
+      "start": 86
+    },
+    {
+      "end": 89,
+      "new": [],
+      "old": [
+        "    /// The invocation slot in that epoch; never reused within the epoch.\n"
+      ],
+      "start": 88
+    },
+    {
+      "end": 91,
+      "new": [],
+      "old": [
+        "    /// The caller-selected function identity.\n"
+      ],
+      "start": 90
+    },
+    {
+      "end": 98,
+      "new": [],
+      "old": [
+        "/// Whether a completed invocation obtained a retention reservation.\n"
+      ],
+      "start": 97
+    },
+    {
+      "end": 102,
+      "new": [],
+      "old": [
+        "        /// The zero-based retained reservation index for this function.\n"
+      ],
+      "start": 101
+    },
+    {
+      "end": 105,
+      "new": [],
+      "old": [
+        "    /// The invocation completed after all retention reservations were taken.\n"
+      ],
+      "start": 104
+    },
+    {
+      "end": 110,
+      "new": [],
+      "old": [
+        "/// How a ticket reached cancellation instead of completion.\n"
+      ],
+      "start": 109
+    },
+    {
+      "end": 112,
+      "new": [],
+      "old": [
+        "    /// The owner explicitly called [`Ticket::cancel`].\n"
+      ],
+      "start": 111
+    },
+    {
+      "end": 114,
+      "new": [],
+      "old": [
+        "    /// An unfinished ticket was dropped through ordinary Rust cleanup.\n"
+      ],
+      "start": 113
+    },
+    {
+      "end": 119,
+      "new": [],
+      "old": [
+        "/// The single terminal outcome published for an admitted invocation.\n"
+      ],
+      "start": 118
+    },
+    {
+      "end": 121,
+      "new": [],
+      "old": [
+        "    /// A completed invocation and its independent retention disposition.\n"
+      ],
+      "start": 120
+    },
+    {
+      "end": 123,
+      "new": [],
+      "old": [
+        "        /// Opaque caller-supplied completion data, not a qualified clock value.\n"
+      ],
+      "start": 122
+    },
+    {
+      "end": 125,
+      "new": [],
+      "old": [
+        "        /// Whether this completion obtained a retention reservation.\n"
+      ],
+      "start": 124
+    },
+    {
+      "end": 128,
+      "new": [],
+      "old": [
+        "    /// Cancellation without consuming a retention reservation.\n"
+      ],
+      "start": 127
+    },
+    {
+      "end": 133,
+      "new": [],
+      "old": [
+        "/// An admission and its optional terminal observation.\n"
+      ],
+      "start": 132
+    },
+    {
+      "end": 135,
+      "new": [],
+      "old": [
+        "    /// The immutable identity recorded at admission.\n"
+      ],
+      "start": 134
+    },
+    {
+      "end": 137,
+      "new": [],
+      "old": [
+        "    /// The terminal outcome, or `None` while its publication is not observed.\n"
+      ],
+      "start": 136
+    },
+    {
+      "end": 142,
+      "new": [],
+      "old": [
+        "/// A request to deactivate one function in its original generation.\n"
+      ],
+      "start": 141
+    },
+    {
+      "end": 144,
+      "new": [],
+      "old": [
+        "    /// The generation to which this request belongs.\n"
+      ],
+      "start": 143
+    },
+    {
+      "end": 146,
+      "new": [],
+      "old": [
+        "    /// The function whose retention reservations reached K.\n"
+      ],
+      "start": 145
+    },
+    {
+      "end": 151,
+      "new": [],
+      "old": [
+        "/// Result of completing one ticket in its admitting epoch.\n"
+      ],
+      "start": 150
+    },
+    {
+      "end": 153,
+      "new": [],
+      "old": [
+        "    /// The identity retained by the completed ticket.\n"
+      ],
+      "start": 152
+    },
+    {
+      "end": 155,
+      "new": [],
+      "old": [
+        "    /// This completion's retention outcome.\n"
+      ],
+      "start": 154
+    },
+    {
+      "end": 165,
+      "new": [],
+      "old": [
+        "/// Counts derived from the published records for one function.\n"
+      ],
+      "start": 164
+    },
+    {
+      "end": 167,
+      "new": [],
+      "old": [
+        "    /// Published admissions observed for this function.\n"
+      ],
+      "start": 166
+    },
+    {
+      "end": 169,
+      "new": [],
+      "old": [
+        "    /// Observed completed invocations, retained or dropped.\n"
+      ],
+      "start": 168
+    },
+    {
+      "end": 171,
+      "new": [],
+      "old": [
+        "    /// Completed invocations that reserved retained storage.\n"
+      ],
+      "start": 170
+    },
+    {
+      "end": 173,
+      "new": [],
+      "old": [
+        "    /// Completed invocations that did not reserve retained storage.\n"
+      ],
+      "start": 172
+    },
+    {
+      "end": 175,
+      "new": [],
+      "old": [
+        "    /// Observed explicit or drop cancellations.\n"
+      ],
+      "start": 174
+    },
+    {
+      "end": 177,
+      "new": [],
+      "old": [
+        "    /// Admissions with no terminal outcome observed.\n"
+      ],
+      "start": 176
+    },
+    {
+      "end": 182,
+      "new": [],
+      "old": [
+        "/// A per-function record observation with an explicit finality flag.\n"
+      ],
+      "start": 181
+    },
+    {
+      "end": 184,
+      "new": [],
+      "old": [
+        "    /// The observed record population.\n"
+      ],
+      "start": 183
+    },
+    {
+      "end": 226,
+      "new": [],
+      "old": [
+        "    /// Allocate an epoch with distinct functions and validated finite limits.\n",
+        "    /// Returns a typed refusal if limits, identities or storage cannot be established.\n"
+      ],
+      "start": 224
+    },
+    {
+      "end": 281,
+      "new": [],
+      "old": [
+        "    /// Return this epoch's process-local identity.\n"
+      ],
+      "start": 280
+    },
+    {
+      "end": 286,
+      "new": [],
+      "old": [
+        "    /// Return the immutable limits with which this epoch was created.\n"
+      ],
+      "start": 285
+    },
+    {
+      "end": 292,
+      "new": [],
+      "old": [
+        "    /// Reserve one invocation in this epoch and return its non-Clone ticket.\n",
+        "    /// The entry value is opaque data; acceptance does not qualify a clock or frontend.\n"
+      ],
+      "start": 290
+    },
+    {
+      "end": 368,
+      "new": [],
+      "old": [
+        "    /// Observe whether epoch-wide admission has been closed.\n"
+      ],
+      "start": 367
+    },
+    {
+      "end": 374,
+      "new": [],
+      "old": [
+        "    /// Observe the current count of global admission reservations.\n",
+        "    /// This includes reservations whose admission record is not yet published.\n"
+      ],
+      "start": 372
+    },
+    {
+      "end": 379,
+      "new": [],
+      "old": [
+        "    /// Observe a known function's admission flag, or `None` for an unknown function.\n"
+      ],
+      "start": 378
+    },
+    {
+      "end": 399,
+      "new": [],
+      "old": [
+        "    /// Observe one function's records; only a final report is stable after drain.\n",
+        "    /// Concurrent partial fields need not form one instantaneous snapshot.\n"
+      ],
+      "start": 397
+    },
+    {
+      "end": 444,
+      "new": [],
+      "old": [
+        "/// Read-only access established after epoch closure and zero reservations.\n"
+      ],
+      "start": 443
+    },
+    {
+      "end": 450,
+      "new": [],
+      "old": [
+        "    /// Return the identity of the drained epoch.\n"
+      ],
+      "start": 449
+    },
+    {
+      "end": 455,
+      "new": [],
+      "old": [
+        "    /// Iterate every published admission with its required terminal outcome.\n"
+      ],
+      "start": 454
+    },
+    {
+      "end": 465,
+      "new": [],
+      "old": [
+        "    /// Return a stable population for a known function after drain.\n"
+      ],
+      "start": 464
+    },
+    {
+      "end": 479,
+      "new": [
+        "/// use liteinst2_generation_draft::{Config, Epoch, FunctionId};\n"
+      ],
+      "old": [
+        "/// use rapid_profiler::generation::{Config, Epoch, FunctionId};\n"
+      ],
+      "start": 478
+    },
+    {
+      "end": 486,
+      "new": [
+        "/// use liteinst2_generation_draft::{Config, Epoch, FunctionId};\n"
+      ],
+      "old": [
+        "/// use rapid_profiler::generation::{Config, Epoch, FunctionId};\n"
+      ],
+      "start": 485
+    },
+    {
+      "end": 500,
+      "new": [],
+      "old": [
+        "    /// Return the immutable identity held by this ticket.\n"
+      ],
+      "start": 499
+    },
+    {
+      "end": 510,
+      "new": [],
+      "old": [
+        "    /// Publish completion data and consume this ticket in its original epoch.\n",
+        "    /// Only the first K retention reservations per function are retained. The final\n",
+        "    /// reservation returns a generation-scoped deactivation request, not a code edit.\n"
+      ],
+      "start": 507
+    },
+    {
+      "end": 563,
+      "new": [],
+      "old": [
+        "    /// Publish explicit cancellation and consume the ticket without consuming K.\n"
+      ],
+      "start": 562
+    }
+  ],
+  "schema_version": 1,
+  "source_epoch_note": "Reconstruction starts from the exact formatted public module bytes; the two historical standalone epochs retain their original four-file identities. Matching bytes do not transfer execution credit.",
+  "source_module": {
+    "repository_path": "tools/rapid-profiler/src/generation.rs",
+    "sha256": "b5ce2255f4aa27354a13d6a1ba27c131ca89a7a5d6a67df67af939e8d6486ebb"
+  },
+  "source_tests": {
+    "repository_path": "tools/rapid-profiler/src/generation/tests.rs",
+    "sha256": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f"
+  }
+}

@@ -1,0 +1,42 @@
+{
+  "comparator_controls": {
+    "included_in_model_tests": true,
+    "negative": 6,
+    "positive": 1
+  },
+  "compile_fail": [
+    {
+      "code": "E0599",
+      "id": "ticket_cannot_clone",
+      "line": 402
+    },
+    {
+      "code": "E0382",
+      "id": "ticket_cannot_complete_twice",
+      "line": 409
+    }
+  ],
+  "compile_fail_count": 2,
+  "model_count": 17,
+  "model_names": [
+    "tests::checked_generation_exhaustion_never_wraps_or_reuses",
+    "tests::close_after_admission_waits_for_terminal_record",
+    "tests::close_before_admission_refuses_without_record",
+    "tests::close_gap_allows_five_post_k_completions_but_only_one_other_reservation",
+    "tests::exact_constructor_refusals_and_largest_budget_do_not_wrap",
+    "tests::explicit_and_drop_cancellation_are_distinct_and_do_not_consume_k",
+    "tests::final_acquire_observes_all_sixteen_exact_terminal_values",
+    "tests::independent_ledger_rejects_six_wrong_populations_or_identities",
+    "tests::independent_two_generation_two_function_event_ledger",
+    "tests::inflight_refusal_does_not_consume_a_slot",
+    "tests::nested_invocations_keep_identity_and_completion_selection_order",
+    "tests::old_ticket_completion_does_not_close_or_write_new_epoch",
+    "tests::partial_records_keep_unfinished_in_two_epochs_separate",
+    "tests::retained_budget_is_per_function_for_one_ten_and_thousand",
+    "tests::simultaneous_completions_have_exactly_one_final_retention_and_request",
+    "tests::total_storage_exhaustion_closes_epoch_without_losing_records",
+    "tests::unknown_function_refusal_and_closed_function_do_not_hide_other_function"
+  ],
+  "scope": "Ordinary safe-Rust generation metadata only; no frontend or physical publication.",
+  "source_inventory_sha256": "b445d0c8b31e3ee47cf13ed225f6ebe2bbfa5d5cb2de38c0c5e1780a47a5559c"
+}

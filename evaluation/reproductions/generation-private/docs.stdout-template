@@ -1,0 +1,46 @@
+
+running 2 tests
+test src/lib.rs - Ticket (line 402) - compile fail ... ok
+test src/lib.rs - Ticket (line 409) - compile fail ... ok
+
+successes:
+
+---- src/lib.rs - Ticket (line 402) stdout ----
+error[E0599]: no method named `clone` found for struct `Ticket<'a>` in the current scope
+   --> src/lib.rs:407:19
+    |
+407 | let duplicate = t.clone();
+    |                   ^^^^^ method not found in `Ticket<'_>`
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0599`.
+
+---- src/lib.rs - Ticket (line 409) stdout ----
+error[E0382]: use of moved value: `t`
+   --> src/lib.rs:415:1
+    |
+413 | let t = e.enter(FunctionId(1), 0).unwrap();
+    |     - move occurs because `t` has type `Ticket<'_>`, which does not implement the `Copy` trait
+414 | t.complete(1);
+    |   ----------- `t` moved due to this method call
+415 | t.complete(2);
+    | ^ value used here after move
+    |
+note: `Ticket::<'_>::complete` takes ownership of the receiver `self`, which moves `t`
+   --> src/lib.rs:431:21
+    |
+431 |     pub fn complete(self, value: u64) -> Completion {
+    |                     ^^^^
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0382`.
+
+
+successes:
+    src/lib.rs - Ticket (line 402)
+    src/lib.rs - Ticket (line 409)
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in ${ELAPSED}s
+

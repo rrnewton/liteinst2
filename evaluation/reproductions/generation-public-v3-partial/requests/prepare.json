@@ -1,0 +1,35 @@
+{
+  "argv": [
+    "/usr/bin/python3.9",
+    "-B",
+    "${REPRO}/original/prepare-generation-public.py",
+    "prepare",
+    "--repo",
+    "${REPO}",
+    "--raw",
+    "${RAW}/qualification",
+    "--toolchain",
+    "${TOOLCHAIN}",
+    "--msrv-toolchain",
+    "${MSRV_TOOLCHAIN}",
+    "--cargo-home",
+    "${CARGO_HOME}",
+    "--user-home",
+    "${USER_HOME}",
+    "--helper-python",
+    "/usr/bin/python3.9",
+    "--timeout",
+    "/usr/bin/timeout"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${REPO}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${RAW}/prepare/stderr",
+  "stdout": "${RAW}/prepare/stdout",
+  "wall_seconds": 30
+}

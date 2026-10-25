@@ -1,0 +1,550 @@
+{
+  "artifact_review": {
+    "additive_ancillary_files": 9,
+    "artifact_binding_sha256": "2b06a48cc2a789a7d3d9a2acbe54c7dccae2c932f048ab83f9a8dd63bdeda247",
+    "cargo_record_count": 22,
+    "compiler_artifact_count": 17,
+    "compiler_artifacts_fresh_false": 17,
+    "depfiles": 17,
+    "dt_needed": [
+      "libgcc_s.so.1",
+      "libc.so.6",
+      "ld-linux-x86-64.so.2"
+    ],
+    "fresh_field_interpretation": "Cargo fresh=false means newly compiled in this attempt, not reused",
+    "independent_review_sha256": "2937026fa6ddbb785e2e34928dd97c9a9dac6640a8fa6345fede50bd94a20b16",
+    "initial_archive_files": 58,
+    "interpreter": [
+      "/lib64/ld-linux-x86-64.so.2"
+    ],
+    "local_depfile_sources": 32,
+    "model_binary_bytes": 19720400,
+    "model_binary_sha256": "78731de389ec42cf8e89a5cd0fb37372bb3a410ccfa2c3e8b38f8721cc4fc191",
+    "registry_archives": 11,
+    "registry_source_files": 206,
+    "retained_files": 67,
+    "rpath": [],
+    "runpath": [],
+    "status": "successful_partial_compile_evidence"
+  },
+  "blocker": {
+    "actual_package_id": "path+file://${REPO}/tools/rapid-profiler#0.1.0",
+    "compiler_failed": false,
+    "expected_package_id": "path+file://${REPO}/tools/rapid-profiler#rapid-profiler@0.1.0",
+    "id": "A5-P2",
+    "model_preparation_executed": false,
+    "native_or_model_execution": false,
+    "phase": "source_review_before_model_request_preparation"
+  },
+  "case_denominator": {
+    "compile_fail": 2,
+    "executed": 0,
+    "models": 17
+  },
+  "cases": [
+    {
+      "case_id": "generation::tests::checked_generation_exhaustion_never_wraps_or_reuses",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 1,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::close_after_admission_waits_for_terminal_record",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 2,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::close_before_admission_refuses_without_record",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 3,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::close_gap_allows_five_post_k_completions_but_only_one_other_reservation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 4,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::exact_constructor_refusals_and_largest_budget_do_not_wrap",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 5,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::explicit_and_drop_cancellation_are_distinct_and_do_not_consume_k",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 6,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::final_acquire_observes_all_sixteen_exact_terminal_values",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 7,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::independent_ledger_rejects_six_wrong_populations_or_identities",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 8,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::independent_two_generation_two_function_event_ledger",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 9,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::inflight_refusal_does_not_consume_a_slot",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 10,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::nested_invocations_keep_identity_and_completion_selection_order",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 11,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::old_ticket_completion_does_not_close_or_write_new_epoch",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 12,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::partial_records_keep_unfinished_in_two_epochs_separate",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 13,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::retained_budget_is_per_function_for_one_ten_and_thousand",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 14,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::simultaneous_completions_have_exactly_one_final_retention_and_request",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 15,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::total_storage_exhaustion_closes_epoch_without_losing_records",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 16,
+      "status": "not_run"
+    },
+    {
+      "case_id": "generation::tests::unknown_function_refusal_and_closed_function_do_not_hide_other_function",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "model",
+      "observed": "not_run",
+      "ordinal": 17,
+      "status": "not_run"
+    },
+    {
+      "case_id": "ticket_cannot_clone",
+      "command_id": "docs",
+      "expected": "E0599",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 18,
+      "status": "not_run"
+    },
+    {
+      "case_id": "ticket_cannot_complete_twice",
+      "command_id": "docs",
+      "expected": "E0382",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 19,
+      "status": "not_run"
+    }
+  ],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "heading": "systematic everytactic",
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPRO}/original/prepare-generation-public.py",
+        "prepare",
+        "--repo",
+        "${REPO}",
+        "--raw",
+        "${RAW}/qualification",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--msrv-toolchain",
+        "${MSRV_TOOLCHAIN}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--user-home",
+        "${USER_HOME}",
+        "--helper-python",
+        "/usr/bin/python3.9",
+        "--timeout",
+        "/usr/bin/timeout"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.44277019100263715,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "prepare",
+      "receipt_sha256": "251505298bfe18e53e10e9ef7f9cd22c30cba7554ac404a41263a0e228d34e3b",
+      "source_id": "private_v3_generator",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "bdae8c8b7736f8f6ab04a38dc109f61913fa83cd95f3272a08a723711c242ce8",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPRO}/original/prepare-generation-public.py",
+        "verify",
+        "--raw",
+        "${RAW}/qualification",
+        "--admission-sha256",
+        "${ADMISSION_SHA256}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.2938286589924246,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "verify-before-compile",
+      "receipt_sha256": "4603e952a6cbc43a760a8dd2e03a63cba22bda8027fb810f165ff57a6c8d5715",
+      "source_id": "private_v3_generator",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "00e6f9fed5e6801a53c7dc84b2d86096f21c6d16f1a2d01890bbb9f20f7533e3",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "test",
+        "--manifest-path",
+        "${REPO}/Cargo.toml",
+        "-p",
+        "rapid-profiler",
+        "--lib",
+        "--no-run",
+        "--offline",
+        "--locked",
+        "--message-format=json"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 11.517789901001379,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUSTDOCFLAGS": "-Dwarnings",
+        "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${RAW}/qualification/compile/tmp"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "compile",
+      "receipt_sha256": "43dc53ebd76f3c0023727940d7728a671092b5ed981fd80b5e692914bb97fb15",
+      "source_id": "compiled_ed67",
+      "status": "pass",
+      "stderr_sha256": "f86a3f95c8011e02c665cd6b086f593a46015d9156f2a33314c3ebc3c416c16b",
+      "stdout_sha256": "41e081c4a38a826bdeeb8d08dc76e8e5c035b2485edf861e59569c13352df30a",
+      "wall_seconds": 90
+    },
+    {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPRO}/original/prepare-generation-public.py",
+        "verify",
+        "--raw",
+        "${RAW}/qualification",
+        "--admission-sha256",
+        "${ADMISSION_SHA256}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.29303369601257145,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "verify-after-compile",
+      "receipt_sha256": "48631a32f801b86e4e2ff8eb720fdd3c3853590dc6560577d5598bc488f049b4",
+      "source_id": "private_v3_generator",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "00e6f9fed5e6801a53c7dc84b2d86096f21c6d16f1a2d01890bbb9f20f7533e3",
+      "wall_seconds": 30
+    }
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "before public request preparation and focused compiler/model qualification",
+    "observation_record_scope": "Digest of the sanitized hardware observation record, not the raw CPU capture; no continuous attestation.",
+    "observation_record_sha256": "f28e2f690a0434627a6f2313f7eb7a4356505cdc0c6e9c180e1f531c3b1fc225",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "limitations": [
+    "The earlier 161-row pre/post tool map did not include Clang. The generated C fixture is archived but its historical Clang executable identity is not established. Current later observations do not fill that gap.",
+    "Generation-only models do not execute the generated C fixture; no model or native program was executed in this attempt.",
+    "ELF decoding and specifically enumerated tool observations are not an actual loader-mapping witness, complete runtime closure, or linker trace.",
+    "Two Cargo configuration observations are explicit permission failures, not absence or authentication of hidden contents.",
+    "The planned docs command did not run; later discovery of a missing normal-library compiler prerequisite is not a v3 compiler failure."
+  ],
+  "main_command_denominator": {
+    "not_run": 5,
+    "passed": 1,
+    "total": 6
+  },
+  "planned_main_commands": [
+    {
+      "id": "compile",
+      "reason": null,
+      "status": "pass"
+    },
+    {
+      "id": "list",
+      "reason": "held_before_model_preparation_after_A5-P2_source_review",
+      "status": "not_run"
+    },
+    {
+      "id": "models",
+      "reason": "held_before_model_preparation_after_A5-P2_source_review",
+      "status": "not_run"
+    },
+    {
+      "id": "clippy",
+      "reason": "held_before_model_preparation_after_A5-P2_source_review",
+      "status": "not_run"
+    },
+    {
+      "id": "docs",
+      "reason": "held_before_model_preparation_after_A5-P2_source_review",
+      "status": "not_run"
+    },
+    {
+      "id": "msrv",
+      "reason": "held_before_model_preparation_after_A5-P2_source_review",
+      "status": "not_run"
+    }
+  ],
+  "raw_capture_manifest_sha256": "2b06a48cc2a789a7d3d9a2acbe54c7dccae2c932f048ab83f9a8dd63bdeda247",
+  "reproduction_directory": "evaluation/reproductions/generation-public-v3-partial",
+  "run_id": "generation-public-v3-partial-20261025",
+  "schema_version": 1,
+  "sources": {
+    "compiled_ed67": {
+      "clean_tracked": true,
+      "kind": "git_commit",
+      "source_file_count": 189,
+      "source_files_sha256": "cfaccbce450b895d4a6b84c53d34b41f270d27fde975943391653542a4cd8980",
+      "tested_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d"
+    },
+    "private_v3_generator": {
+      "base_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+      "generator_sha256": "cd0e6e3b93c44f0daf4cb9a7046217d515f12ba86ee515f9b0af37cd2fbd5872",
+      "kind": "source_snapshot",
+      "material_sha256": "528687f1e91ee69a0ed0602b21372dbb9fec3153759717902a555d7ea5f02f27",
+      "scope": "Private source snapshot consumed for preparation and both verifications; no later Git execution credit",
+      "tested_revision": null
+    }
+  },
+  "status": "partial",
+  "suite": "generation-public-v3-partial-qualification",
+  "tested_revision": null,
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tools": [
+    {
+      "path": "${TOOLCHAIN}/bin/cargo",
+      "resolved": "${TOOLCHAIN}/bin/cargo",
+      "role": "cargo",
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "version": null,
+      "version_evidence": "Exact executable bytes pinned; no separate version invocation in this attempt"
+    },
+    {
+      "path": "${TOOLCHAIN}/bin/cargo-clippy",
+      "resolved": "${TOOLCHAIN}/bin/cargo-clippy",
+      "role": "cargo_clippy",
+      "sha256": "a0a3808dddb32f525601e608740ee7c1c5df86db4a7183ea945449f60d29509d",
+      "version": null,
+      "version_evidence": "Exact executable bytes pinned; no separate version invocation in this attempt"
+    },
+    {
+      "path": "${TOOLCHAIN}/bin/clippy-driver",
+      "resolved": "${TOOLCHAIN}/bin/clippy-driver",
+      "role": "clippy_driver",
+      "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373",
+      "version": null,
+      "version_evidence": "Exact executable bytes pinned; no separate version invocation in this attempt"
+    },
+    {
+      "path": "/usr/bin/python3.9",
+      "resolved": "/usr/bin/python3.9",
+      "role": "helper_python",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "version": null,
+      "version_evidence": "Exact executable bytes pinned; no separate version invocation in this attempt"
+    },
+    {
+      "path": "${MSRV_TOOLCHAIN}/bin/cargo",
+      "resolved": "${MSRV_TOOLCHAIN}/bin/cargo",
+      "role": "msrv_cargo",
+      "sha256": "1815642e0eaa0cf4ea86c3ba4299c21c4f2d68ae4a427881ea1f33070b2aae9b",
+      "version": null,
+      "version_evidence": "Exact executable bytes pinned; no separate version invocation in this attempt"
+    },
+    {
+      "path": "${MSRV_TOOLCHAIN}/bin/rustc",
+      "resolved": "${MSRV_TOOLCHAIN}/bin/rustc",
+      "role": "msrv_rustc",
+      "sha256": "07d5a76ba859dc045883efd538d96c7b86cf10166f4e834afbb5981012b461c3",
+      "version": null,
+      "version_evidence": "Exact executable bytes pinned; no separate version invocation in this attempt"
+    },
+    {
+      "path": "${TOOLCHAIN}/bin/rustc",
+      "resolved": "${TOOLCHAIN}/bin/rustc",
+      "role": "rustc",
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "version": null,
+      "version_evidence": "Exact executable bytes pinned; no separate version invocation in this attempt"
+    },
+    {
+      "path": "${TOOLCHAIN}/bin/rustdoc",
+      "resolved": "${TOOLCHAIN}/bin/rustdoc",
+      "role": "rustdoc",
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+      "version": null,
+      "version_evidence": "Exact executable bytes pinned; no separate version invocation in this attempt"
+    },
+    {
+      "path": "/usr/bin/timeout",
+      "resolved": "/usr/bin/timeout",
+      "role": "timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+      "version": null,
+      "version_evidence": "Exact executable bytes pinned; no separate version invocation in this attempt"
+    },
+    {
+      "path": "${REPO}/tools/word-sync-oracle/bounded_command.py",
+      "role": "helper",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "version": "bounded-command-v1"
+    }
+  ]
+}

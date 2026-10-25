@@ -1,0 +1,22 @@
+
+running 17 tests
+test tests::checked_generation_exhaustion_never_wraps_or_reuses ... ok
+test tests::close_after_admission_waits_for_terminal_record ... ok
+test tests::close_before_admission_refuses_without_record ... ok
+test tests::close_gap_allows_five_post_k_completions_but_only_one_other_reservation ... ok
+test tests::exact_constructor_refusals_and_largest_budget_do_not_wrap ... ok
+test tests::explicit_and_drop_cancellation_are_distinct_and_do_not_consume_k ... ok
+test tests::final_acquire_observes_all_sixteen_exact_terminal_values ... ok
+test tests::independent_ledger_rejects_six_wrong_populations_or_identities ... ok
+test tests::independent_two_generation_two_function_event_ledger ... ok
+test tests::inflight_refusal_does_not_consume_a_slot ... ok
+test tests::nested_invocations_keep_identity_and_completion_selection_order ... ok
+test tests::old_ticket_completion_does_not_close_or_write_new_epoch ... ok
+test tests::partial_records_keep_unfinished_in_two_epochs_separate ... ok
+test tests::retained_budget_is_per_function_for_one_ten_and_thousand ... ok
+test tests::simultaneous_completions_have_exactly_one_final_retention_and_request ... ok
+test tests::total_storage_exhaustion_closes_epoch_without_losing_records ... ok
+test tests::unknown_function_refusal_and_closed_function_do_not_hide_other_function ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in ${ELAPSED}s
+

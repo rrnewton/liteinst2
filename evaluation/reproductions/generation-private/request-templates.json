@@ -1,0 +1,211 @@
+{
+  "clippy": {
+    "argv": [
+      "${TOOLCHAIN}/bin/cargo",
+      "clippy",
+      "--manifest-path",
+      "${SNAPSHOT}/Cargo.toml",
+      "--all-targets",
+      "--offline",
+      "--locked",
+      "--message-format=json",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cpu_seconds": 60,
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+      "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOCFLAGS": "-Dwarnings",
+      "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn",
+      "RUST_TEST_THREADS": "1",
+      "TMPDIR": "${COMMAND_RAW}/tmp"
+    },
+    "file_bytes": 134217728,
+    "stderr": "${COMMAND_RAW}/clippy.stderr",
+    "stdout": "${COMMAND_RAW}/clippy.stdout",
+    "wall_seconds": 90
+  },
+  "compile": {
+    "argv": [
+      "${TOOLCHAIN}/bin/cargo",
+      "test",
+      "--manifest-path",
+      "${SNAPSHOT}/Cargo.toml",
+      "--offline",
+      "--locked",
+      "--no-run",
+      "--message-format=json"
+    ],
+    "cpu_seconds": 60,
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+      "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOCFLAGS": "-Dwarnings",
+      "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn",
+      "RUST_TEST_THREADS": "1",
+      "TMPDIR": "${COMMAND_RAW}/tmp"
+    },
+    "file_bytes": 134217728,
+    "stderr": "${COMMAND_RAW}/compile.stderr",
+    "stdout": "${COMMAND_RAW}/compile.stdout",
+    "wall_seconds": 90
+  },
+  "docs": {
+    "argv": [
+      "${TOOLCHAIN}/bin/cargo",
+      "test",
+      "--manifest-path",
+      "${SNAPSHOT}/Cargo.toml",
+      "--doc",
+      "--offline",
+      "--locked",
+      "--",
+      "--show-output"
+    ],
+    "cpu_seconds": 60,
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+      "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUSTDOCFLAGS": "-Dwarnings",
+      "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn",
+      "RUST_TEST_THREADS": "1",
+      "TMPDIR": "${COMMAND_RAW}/tmp"
+    },
+    "file_bytes": 134217728,
+    "stderr": "${COMMAND_RAW}/docs.stderr",
+    "stdout": "${COMMAND_RAW}/docs.stdout",
+    "wall_seconds": 90
+  },
+  "format": {
+    "argv": [
+      "${TOOLCHAIN}/bin/rustfmt",
+      "--edition",
+      "2024",
+      "${SNAPSHOT}/src/lib.rs"
+    ],
+    "cpu_seconds": 20,
+    "cwd": "${SNAPSHOT}",
+    "env": {
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "file_bytes": 16777216,
+    "stderr": "${COMMAND_RAW}/format.stderr",
+    "stdout": "${COMMAND_RAW}/format.stdout",
+    "wall_seconds": 30
+  },
+  "list": {
+    "argv": [
+      "${MODEL_BINARY}",
+      "--list"
+    ],
+    "cpu_seconds": 20,
+    "cwd": "${REPO}",
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "RUST_TEST_THREADS": "1"
+    },
+    "file_bytes": 1048576,
+    "stderr": "${COMMAND_RAW}/list.stderr",
+    "stdout": "${COMMAND_RAW}/list.stdout",
+    "wall_seconds": 30
+  },
+  "models": {
+    "argv": [
+      "${MODEL_BINARY}",
+      "--test-threads=1"
+    ],
+    "cpu_seconds": 20,
+    "cwd": "${REPO}",
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "RUST_TEST_THREADS": "1"
+    },
+    "file_bytes": 1048576,
+    "stderr": "${COMMAND_RAW}/models.stderr",
+    "stdout": "${COMMAND_RAW}/models.stdout",
+    "wall_seconds": 30
+  },
+  "msrv": {
+    "argv": [
+      "${MSRV_TOOLCHAIN}/bin/cargo",
+      "check",
+      "--manifest-path",
+      "${SNAPSHOT}/Cargo.toml",
+      "--all-targets",
+      "--offline",
+      "--locked",
+      "--message-format=json"
+    ],
+    "cpu_seconds": 60,
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+      "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${MSRV_TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${MSRV_TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn",
+      "TMPDIR": "${COMMAND_RAW}/tmp"
+    },
+    "file_bytes": 134217728,
+    "stderr": "${COMMAND_RAW}/check.stderr",
+    "stdout": "${COMMAND_RAW}/check.stdout",
+    "wall_seconds": 90
+  }
+}

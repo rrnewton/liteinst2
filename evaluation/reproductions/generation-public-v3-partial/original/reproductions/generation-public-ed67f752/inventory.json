@@ -1,0 +1,54 @@
+{
+  "comparator_controls": {
+    "included_in_model_tests": true,
+    "negative": 6,
+    "positive": 1
+  },
+  "compile_fail": [
+    {
+      "code": "E0599",
+      "id": "ticket_cannot_clone",
+      "line": 478
+    },
+    {
+      "code": "E0382",
+      "id": "ticket_cannot_complete_twice",
+      "line": 485
+    }
+  ],
+  "compile_fail_count": 2,
+  "fresh_artifact_admission_required": true,
+  "model_count": 17,
+  "model_filter": "generation::tests::",
+  "model_names": [
+    "generation::tests::checked_generation_exhaustion_never_wraps_or_reuses",
+    "generation::tests::close_after_admission_waits_for_terminal_record",
+    "generation::tests::close_before_admission_refuses_without_record",
+    "generation::tests::close_gap_allows_five_post_k_completions_but_only_one_other_reservation",
+    "generation::tests::exact_constructor_refusals_and_largest_budget_do_not_wrap",
+    "generation::tests::explicit_and_drop_cancellation_are_distinct_and_do_not_consume_k",
+    "generation::tests::final_acquire_observes_all_sixteen_exact_terminal_values",
+    "generation::tests::independent_ledger_rejects_six_wrong_populations_or_identities",
+    "generation::tests::independent_two_generation_two_function_event_ledger",
+    "generation::tests::inflight_refusal_does_not_consume_a_slot",
+    "generation::tests::nested_invocations_keep_identity_and_completion_selection_order",
+    "generation::tests::old_ticket_completion_does_not_close_or_write_new_epoch",
+    "generation::tests::partial_records_keep_unfinished_in_two_epochs_separate",
+    "generation::tests::retained_budget_is_per_function_for_one_ten_and_thousand",
+    "generation::tests::simultaneous_completions_have_exactly_one_final_retention_and_request",
+    "generation::tests::total_storage_exhaustion_closes_epoch_without_losing_records",
+    "generation::tests::unknown_function_refusal_and_closed_function_do_not_hide_other_function"
+  ],
+  "public_module_sha256": "b5ce2255f4aa27354a13d6a1ba27c131ca89a7a5d6a67df67af939e8d6486ebb",
+  "public_tests_sha256": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+  "required_commands": [
+    "compile",
+    "list",
+    "models",
+    "clippy",
+    "docs",
+    "msrv"
+  ],
+  "required_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+  "scope": "Ordinary safe-Rust generation metadata only; no frontend or physical publication."
+}

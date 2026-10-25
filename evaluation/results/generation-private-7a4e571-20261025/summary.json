@@ -1,0 +1,811 @@
+{
+  "cases": [
+    {
+      "case_id": "tests::checked_generation_exhaustion_never_wraps_or_reuses",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 0
+    },
+    {
+      "case_id": "tests::close_after_admission_waits_for_terminal_record",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 1
+    },
+    {
+      "case_id": "tests::close_before_admission_refuses_without_record",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 2
+    },
+    {
+      "case_id": "tests::close_gap_allows_five_post_k_completions_but_only_one_other_reservation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 3
+    },
+    {
+      "case_id": "tests::exact_constructor_refusals_and_largest_budget_do_not_wrap",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 4
+    },
+    {
+      "case_id": "tests::explicit_and_drop_cancellation_are_distinct_and_do_not_consume_k",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 5
+    },
+    {
+      "case_id": "tests::final_acquire_observes_all_sixteen_exact_terminal_values",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 6
+    },
+    {
+      "case_id": "tests::independent_ledger_rejects_six_wrong_populations_or_identities",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 7
+    },
+    {
+      "case_id": "tests::independent_two_generation_two_function_event_ledger",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 8
+    },
+    {
+      "case_id": "tests::inflight_refusal_does_not_consume_a_slot",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 9
+    },
+    {
+      "case_id": "tests::nested_invocations_keep_identity_and_completion_selection_order",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 10
+    },
+    {
+      "case_id": "tests::old_ticket_completion_does_not_close_or_write_new_epoch",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 11
+    },
+    {
+      "case_id": "tests::partial_records_keep_unfinished_in_two_epochs_separate",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 12
+    },
+    {
+      "case_id": "tests::retained_budget_is_per_function_for_one_ten_and_thousand",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 13
+    },
+    {
+      "case_id": "tests::simultaneous_completions_have_exactly_one_final_retention_and_request",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 14
+    },
+    {
+      "case_id": "tests::total_storage_exhaustion_closes_epoch_without_losing_records",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 15
+    },
+    {
+      "case_id": "tests::unknown_function_refusal_and_closed_function_do_not_hide_other_function",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "generation_model",
+      "observed": "success",
+      "ordinal": 16
+    },
+    {
+      "case_id": "ticket_cannot_clone",
+      "command_id": "docs",
+      "expected": "E0599",
+      "kind": "ownership_compile_fail",
+      "observed": "E0599",
+      "ordinal": 17
+    },
+    {
+      "case_id": "ticket_cannot_complete_twice",
+      "command_id": "docs",
+      "expected": "E0382",
+      "kind": "ownership_compile_fail",
+      "observed": "E0382",
+      "ordinal": 18
+    }
+  ],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "complete_claim": false,
+      "heading": "systematic everytactic",
+      "number": 4,
+      "scope": "No paper claim established by ordinary generation metadata.",
+      "status": "unqualified"
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "${TOOLCHAIN}/bin/rustfmt",
+        "--edition",
+        "2024",
+        "${SNAPSHOT}/src/lib.rs"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.17280882806517184,
+      "environment": {
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "format",
+      "receipt_sha256": "39dc45a6ed92bfe4bcc563263a78d70d06bae48be262b6296990c058ccac1d63",
+      "source_id": "preformat_snapshot",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "test",
+        "--manifest-path",
+        "${SNAPSHOT}/Cargo.toml",
+        "--offline",
+        "--locked",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 0.8971128440462053,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "-Dwarnings",
+        "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${COMMAND_RAW}/tmp"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "compile",
+      "receipt_sha256": "cdfdcb8935960cf7602db29f6f2e286e6a914701852acd975294835468351aac",
+      "source_id": "formatted_snapshot",
+      "status": "pass",
+      "stderr_sha256": "b07536e17bba24c3f5dd94d1ed46c06c5f7a1a2b4cb283230eae667812bbaa31",
+      "stdout_sha256": "0ced3e584e28e7d12eaf667e6c2655a070e2557f5c58d6ed318d56e4a49cfcb0",
+      "wall_seconds": 90
+    },
+    {
+      "argv": [
+        "${MODEL_BINARY}",
+        "--list"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.14490566891618073,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "RUST_TEST_THREADS": "1"
+      },
+      "exit": 0,
+      "file_bytes": 1048576,
+      "id": "list",
+      "receipt_sha256": "d1ff3c5187d3025f3d5ef998698fc0f590bea77359d57c01803d8e5aac45185d",
+      "source_id": "formatted_snapshot",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "ef2aedbe3088663200f7b930f621af5e436abb327c2bb98693c5d9e04ce1e394",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${MODEL_BINARY}",
+        "--test-threads=1"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.15467600408010185,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "RUST_TEST_THREADS": "1"
+      },
+      "exit": 0,
+      "file_bytes": 1048576,
+      "id": "models",
+      "receipt_sha256": "2098c4a9d236044346b7fccc5a11edb16b0e53064b543d4d832dedefe12b6fa3",
+      "source_id": "formatted_snapshot",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "114a36c82ec21e787e406e734c31dbd675f9879fb377c6e5227aac54f046cca5",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "clippy",
+        "--manifest-path",
+        "${SNAPSHOT}/Cargo.toml",
+        "--all-targets",
+        "--offline",
+        "--locked",
+        "--message-format=json",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 0.4057216348592192,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "-Dwarnings",
+        "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${COMMAND_RAW}/tmp"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "clippy",
+      "receipt_sha256": "ad0faf334b5cecc49ce5f5c1b6b939c5bdb0f67517be519fdfc3b2567092c6e4",
+      "source_id": "formatted_snapshot",
+      "status": "pass",
+      "stderr_sha256": "8cbbf135c1dc4b885af60a06272db313ab1170d9954b5c47501d4737818f1094",
+      "stdout_sha256": "437df99306186e7f969b0d2efec5a08a11db52b8bca5d72ae35f96880ed4f2d0",
+      "wall_seconds": 90
+    },
+    {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "test",
+        "--manifest-path",
+        "${SNAPSHOT}/Cargo.toml",
+        "--doc",
+        "--offline",
+        "--locked",
+        "--",
+        "--show-output"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 0.3494024220854044,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUSTDOCFLAGS": "-Dwarnings",
+        "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${COMMAND_RAW}/tmp"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "docs",
+      "receipt_sha256": "328990591baca67c323e5d54086dbaff5f2e43f6935291c7d5540893017eb5da",
+      "source_id": "formatted_snapshot",
+      "status": "pass",
+      "stderr_sha256": "1b3af466ddd371d28feb75828f05fc7b70115933f9674c960b8d673c6fdf99f6",
+      "stdout_sha256": "3788c99b1e7c9b474b1fd48409aec8b9d16c044c1b621058e8c2ea629844b29a",
+      "wall_seconds": 90
+    },
+    {
+      "argv": [
+        "${MSRV_TOOLCHAIN}/bin/cargo",
+        "check",
+        "--manifest-path",
+        "${SNAPSHOT}/Cargo.toml",
+        "--all-targets",
+        "--offline",
+        "--locked",
+        "--message-format=json"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 0.4559881309978664,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${MSRV_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${MSRV_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn",
+        "TMPDIR": "${COMMAND_RAW}/tmp"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "msrv",
+      "receipt_sha256": "edc263cb2ce7ce31f95d410af8d11973e960ce19e13d9d291ed5aed4a433e8e4",
+      "source_id": "formatted_snapshot",
+      "status": "pass",
+      "stderr_sha256": "8cbbf135c1dc4b885af60a06272db313ab1170d9954b5c47501d4737818f1094",
+      "stdout_sha256": "e20ed0ba9e65db91d2039676c73a783747ddedd6bd0e45f2ced8a78f84454937",
+      "wall_seconds": 90
+    }
+  ],
+  "complete_A5": false,
+  "frontend_activated": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "family": 26,
+    "inherited_observation": true,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "separate read-only observation on the same host; phase relative to these seven A5 commands is not established",
+    "observation_sha256": "a5bda96e4bf7665faa232dd26dea6c7802a2309c4fa116863589ed35335abd89",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "historical_review_events": [
+    {
+      "description": "Read-only token-preservation hypothesis omitted expression-closure block wrappers. The formatter command passed. The complete diff was then reviewed; no test/compiler failure or changed outcome was inferred.",
+      "failure_sha256": "857a7ad761b1b4a73772e42d66e145646c241fa1ee6ac053e73bb408b56eaec5",
+      "formatter_failed": false,
+      "id": "format-token-review-v1",
+      "status": "review_hypothesis_failed",
+      "subsequent_review_sha256": "42ff435e5f9cf11719f79fd9b1b65b568450033793311c54699df2ef6b878338"
+    }
+  ],
+  "identity_provenance_limits": [
+    "Hardware observation a5bda96e was inherited from a separate read-only observation on the same host; its phase relative to all seven A5 commands is not established, and it is not continuous hardware attestation.",
+    "Format admission captures rustfmt and helper source identities. The formatter command passed, but its Python and timeout executable identities were not captured in that admission and are not supplied by later observations.",
+    "The listed admission scopes distinguish captured identity guards from actual executable invocation. They do not assert that every listed tool ran in every command.",
+    "MSRV admission explicitly names the retained b72df3bc identity map with 90 file identities and 16 Cargo configuration observations; the map was prepared earlier and is reused as a bound input, not relabelled as a new capture."
+  ],
+  "limits": {
+    "compiler_cpu_seconds": 60,
+    "compiler_file_bytes": 134217728,
+    "compiler_wall_seconds": 90,
+    "formatter_cpu_seconds": 20,
+    "formatter_file_bytes": 16777216,
+    "formatter_wall_seconds": 30,
+    "max_spawned_model_workers": 1,
+    "model_rendezvous_seconds": 2,
+    "models_cpu_seconds": 20,
+    "models_file_bytes": 1048576,
+    "models_wall_seconds": 30
+  },
+  "preemption_clock_claim": false,
+  "private_capture_manifest_sha256": "932eb1309b91c9bfba23436c9b5e3ce420310ce7acdb9d43e647596528fdd143",
+  "remaining": [
+    "Active profiler entry/exit integration",
+    "Signal, exception and longjmp cancellation",
+    "Physical toggle authority and coordination",
+    "Qualified timestamps and PMU measurement",
+    "Cross-fork identity and lifecycle",
+    "Full A5 and in-place preemption clock"
+  ],
+  "run_id": "generation-private-7a4e571-20261025",
+  "schema_version": 1,
+  "scope_note": "All seven commands ran on private snapshots based on 7a4e571. Public module qualification is separate and not credited here.",
+  "sources": {
+    "formatted_snapshot": {
+      "base_revision": "7a4e5719ed06dfd55eaccb2236867f4d760e402c",
+      "file_count": 4,
+      "kind": "source_snapshot",
+      "scope": "Exact four-file standalone private crate; not a full repository tree or promoted module.",
+      "source_tree_sha256": "4508ce639282ef532465a118f8c314c806ec3af58b30f5b76e154871e779ae5f",
+      "tested_revision": null
+    },
+    "preformat_snapshot": {
+      "base_revision": "7a4e5719ed06dfd55eaccb2236867f4d760e402c",
+      "file_count": 4,
+      "kind": "source_snapshot",
+      "scope": "Exact four-file standalone private crate; not a full repository tree or promoted module.",
+      "source_tree_sha256": "a0195a54a7bb14e1e47ad0631c9744482eb4e50ecfbad660323b40b00c9d7722",
+      "tested_revision": null
+    }
+  },
+  "status": "pass",
+  "suite": "generation-historical-private-snapshot",
+  "tested_revision": null,
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tools": [
+    {
+      "admission_scopes": [
+        {
+          "admission_sha256": "4a316269b2e5330ea2d34e961c48c77c2a725ff8064f9c48ded4e1a471ceee89",
+          "command_id": "format",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        }
+      ],
+      "role": "rustfmt",
+      "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8",
+      "version": "Rust 1.97.1 toolchain directory; version banner not captured",
+      "version_basis": "Retained toolchain label; no new version-banner execution. Identity evidence is limited to the listed command admission scopes."
+    },
+    {
+      "admission_scopes": [
+        {
+          "admission_sha256": "49a1a77e606f719dbfc388dd6b11b25ca8ed6b9bcbd3bd1401268ee7b7100a1c",
+          "command_id": "compile",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "5ea5580a2d8f03087bba0bf2acdb714ad1e6e0b2de3be2dbfe1532ea3fb2019b",
+          "command_id": "list",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "5ea5580a2d8f03087bba0bf2acdb714ad1e6e0b2de3be2dbfe1532ea3fb2019b",
+          "command_id": "models",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "f55eeaaaf9b4e8468da8b654720bf9c4a7855a2e96370d4a5af04c46b5da4e3b",
+          "command_id": "clippy",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "64b4913b571ba4840c129e65927f11dd111a80235a01407010e1986194996e8f",
+          "command_id": "docs",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        }
+      ],
+      "role": "cargo",
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "version": "Cargo 1.97.1 toolchain directory; version banner not captured",
+      "version_basis": "Retained toolchain label; no new version-banner execution. Identity evidence is limited to the listed command admission scopes."
+    },
+    {
+      "admission_scopes": [
+        {
+          "admission_sha256": "49a1a77e606f719dbfc388dd6b11b25ca8ed6b9bcbd3bd1401268ee7b7100a1c",
+          "command_id": "compile",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "5ea5580a2d8f03087bba0bf2acdb714ad1e6e0b2de3be2dbfe1532ea3fb2019b",
+          "command_id": "list",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "5ea5580a2d8f03087bba0bf2acdb714ad1e6e0b2de3be2dbfe1532ea3fb2019b",
+          "command_id": "models",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "f55eeaaaf9b4e8468da8b654720bf9c4a7855a2e96370d4a5af04c46b5da4e3b",
+          "command_id": "clippy",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "64b4913b571ba4840c129e65927f11dd111a80235a01407010e1986194996e8f",
+          "command_id": "docs",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        }
+      ],
+      "role": "rustc",
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "version": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "version_basis": "Retained toolchain label; no new version-banner execution. Identity evidence is limited to the listed command admission scopes."
+    },
+    {
+      "admission_scopes": [
+        {
+          "admission_sha256": "f55eeaaaf9b4e8468da8b654720bf9c4a7855a2e96370d4a5af04c46b5da4e3b",
+          "command_id": "clippy",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "64b4913b571ba4840c129e65927f11dd111a80235a01407010e1986194996e8f",
+          "command_id": "docs",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        }
+      ],
+      "role": "cargo_clippy",
+      "sha256": "a0a3808dddb32f525601e608740ee7c1c5df86db4a7183ea945449f60d29509d",
+      "version": "Rust 1.97.1 toolchain directory; version banner not captured",
+      "version_basis": "Retained toolchain label; no new version-banner execution. Identity evidence is limited to the listed command admission scopes."
+    },
+    {
+      "admission_scopes": [
+        {
+          "admission_sha256": "f55eeaaaf9b4e8468da8b654720bf9c4a7855a2e96370d4a5af04c46b5da4e3b",
+          "command_id": "clippy",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "64b4913b571ba4840c129e65927f11dd111a80235a01407010e1986194996e8f",
+          "command_id": "docs",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        }
+      ],
+      "role": "clippy_driver",
+      "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373",
+      "version": "Rust 1.97.1 toolchain directory; version banner not captured",
+      "version_basis": "Retained toolchain label; no new version-banner execution. Identity evidence is limited to the listed command admission scopes."
+    },
+    {
+      "admission_scopes": [
+        {
+          "admission_sha256": "f55eeaaaf9b4e8468da8b654720bf9c4a7855a2e96370d4a5af04c46b5da4e3b",
+          "command_id": "clippy",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "64b4913b571ba4840c129e65927f11dd111a80235a01407010e1986194996e8f",
+          "command_id": "docs",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        }
+      ],
+      "role": "rustdoc",
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+      "version": "Rust 1.97.1 toolchain directory; version banner not captured",
+      "version_basis": "Retained toolchain label; no new version-banner execution. Identity evidence is limited to the listed command admission scopes."
+    },
+    {
+      "admission_scopes": [
+        {
+          "admission_sha256": "d3317d3ab76f95a1716eba97c046f09fec4687ebc66d1b13da96f08ff9afe4d2",
+          "command_id": "msrv",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command.",
+          "tool_identity_map_sha256": "b72df3bc6ffc8523f242ec28e9888393eae0dc27c0d1f9719c79ce216b2564cc"
+        }
+      ],
+      "role": "msrv_cargo",
+      "sha256": "1815642e0eaa0cf4ea86c3ba4299c21c4f2d68ae4a427881ea1f33070b2aae9b",
+      "version": "Cargo 1.85.0 toolchain directory; version banner not captured",
+      "version_basis": "Retained toolchain label; no new version-banner execution. Identity evidence is limited to the listed command admission scopes."
+    },
+    {
+      "admission_scopes": [
+        {
+          "admission_sha256": "d3317d3ab76f95a1716eba97c046f09fec4687ebc66d1b13da96f08ff9afe4d2",
+          "command_id": "msrv",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command.",
+          "tool_identity_map_sha256": "b72df3bc6ffc8523f242ec28e9888393eae0dc27c0d1f9719c79ce216b2564cc"
+        }
+      ],
+      "role": "msrv_rustc",
+      "sha256": "07d5a76ba859dc045883efd538d96c7b86cf10166f4e834afbb5981012b461c3",
+      "version": "rustc 1.85.0 (4d91de4e4 2025-02-17)",
+      "version_basis": "Retained toolchain label; no new version-banner execution. Identity evidence is limited to the listed command admission scopes."
+    },
+    {
+      "admission_scopes": [
+        {
+          "command_id": "format",
+          "receipt_sha256": "39dc45a6ed92bfe4bcc563263a78d70d06bae48be262b6296990c058ccac1d63",
+          "scope": "Exact helper source hash recorded by this command receipt."
+        },
+        {
+          "command_id": "compile",
+          "receipt_sha256": "cdfdcb8935960cf7602db29f6f2e286e6a914701852acd975294835468351aac",
+          "scope": "Exact helper source hash recorded by this command receipt."
+        },
+        {
+          "command_id": "list",
+          "receipt_sha256": "d1ff3c5187d3025f3d5ef998698fc0f590bea77359d57c01803d8e5aac45185d",
+          "scope": "Exact helper source hash recorded by this command receipt."
+        },
+        {
+          "command_id": "models",
+          "receipt_sha256": "2098c4a9d236044346b7fccc5a11edb16b0e53064b543d4d832dedefe12b6fa3",
+          "scope": "Exact helper source hash recorded by this command receipt."
+        },
+        {
+          "command_id": "clippy",
+          "receipt_sha256": "ad0faf334b5cecc49ce5f5c1b6b939c5bdb0f67517be519fdfc3b2567092c6e4",
+          "scope": "Exact helper source hash recorded by this command receipt."
+        },
+        {
+          "command_id": "docs",
+          "receipt_sha256": "328990591baca67c323e5d54086dbaff5f2e43f6935291c7d5540893017eb5da",
+          "scope": "Exact helper source hash recorded by this command receipt."
+        },
+        {
+          "command_id": "msrv",
+          "receipt_sha256": "edc263cb2ce7ce31f95d410af8d11973e960ce19e13d9d291ed5aed4a433e8e4",
+          "scope": "Exact helper source hash recorded by this command receipt."
+        }
+      ],
+      "role": "helper",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "version": "bounded_command source c0d8d24d",
+      "version_basis": "Retained toolchain label; no new version-banner execution. Identity evidence is limited to the listed command admission scopes."
+    },
+    {
+      "admission_scopes": [
+        {
+          "admission_sha256": "49a1a77e606f719dbfc388dd6b11b25ca8ed6b9bcbd3bd1401268ee7b7100a1c",
+          "command_id": "compile",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "5ea5580a2d8f03087bba0bf2acdb714ad1e6e0b2de3be2dbfe1532ea3fb2019b",
+          "command_id": "list",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "5ea5580a2d8f03087bba0bf2acdb714ad1e6e0b2de3be2dbfe1532ea3fb2019b",
+          "command_id": "models",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "f55eeaaaf9b4e8468da8b654720bf9c4a7855a2e96370d4a5af04c46b5da4e3b",
+          "command_id": "clippy",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "64b4913b571ba4840c129e65927f11dd111a80235a01407010e1986194996e8f",
+          "command_id": "docs",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "d3317d3ab76f95a1716eba97c046f09fec4687ebc66d1b13da96f08ff9afe4d2",
+          "command_id": "msrv",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command.",
+          "tool_identity_map_sha256": "b72df3bc6ffc8523f242ec28e9888393eae0dc27c0d1f9719c79ce216b2564cc"
+        }
+      ],
+      "role": "helper_python",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "uncaptured_command_identities": [
+        "format"
+      ],
+      "version": "Python 3.9 executable; patch banner not captured",
+      "version_basis": "Retained toolchain label; no new version-banner execution. Identity evidence is limited to the listed command admission scopes."
+    },
+    {
+      "admission_scopes": [
+        {
+          "admission_sha256": "49a1a77e606f719dbfc388dd6b11b25ca8ed6b9bcbd3bd1401268ee7b7100a1c",
+          "command_id": "compile",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "5ea5580a2d8f03087bba0bf2acdb714ad1e6e0b2de3be2dbfe1532ea3fb2019b",
+          "command_id": "list",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "5ea5580a2d8f03087bba0bf2acdb714ad1e6e0b2de3be2dbfe1532ea3fb2019b",
+          "command_id": "models",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "f55eeaaaf9b4e8468da8b654720bf9c4a7855a2e96370d4a5af04c46b5da4e3b",
+          "command_id": "clippy",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "64b4913b571ba4840c129e65927f11dd111a80235a01407010e1986194996e8f",
+          "command_id": "docs",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command."
+        },
+        {
+          "admission_sha256": "d3317d3ab76f95a1716eba97c046f09fec4687ebc66d1b13da96f08ff9afe4d2",
+          "command_id": "msrv",
+          "scope": "Identity captured in admission or its explicit identity-map reference; not proof this role was executed by that command.",
+          "tool_identity_map_sha256": "b72df3bc6ffc8523f242ec28e9888393eae0dc27c0d1f9719c79ce216b2564cc"
+        }
+      ],
+      "role": "timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+      "uncaptured_command_identities": [
+        "format"
+      ],
+      "version": "Exact executable hash; version banner not captured",
+      "version_basis": "Retained toolchain label; no new version-banner execution. Identity evidence is limited to the listed command admission scopes."
+    }
+  ],
+  "totals": {
+    "commands": 7,
+    "model_tests_failed": 0,
+    "model_tests_ignored": 0,
+    "model_tests_passed": 17,
+    "ownership_compile_fail_failed": 0,
+    "ownership_compile_fail_ignored": 0,
+    "ownership_compile_fail_passed": 2
+  }
+}

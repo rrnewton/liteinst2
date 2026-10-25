@@ -1,0 +1,115 @@
+{
+  "clippy": {
+    "argv": [
+      "${CARGO}",
+      "clippy",
+      "--manifest-path",
+      "${REPO}/Cargo.toml",
+      "-p",
+      "rapid-profiler",
+      "--all-targets",
+      "--all-features",
+      "--offline",
+      "--locked",
+      "--message-format=json",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cpu_seconds": 60,
+    "file_bytes": 134217728,
+    "wall_seconds": 90
+  },
+  "compile": {
+    "argv": [
+      "${CARGO}",
+      "test",
+      "--manifest-path",
+      "${REPO}/Cargo.toml",
+      "-p",
+      "rapid-profiler",
+      "--lib",
+      "--no-run",
+      "--offline",
+      "--locked",
+      "--message-format=json"
+    ],
+    "cpu_seconds": 60,
+    "file_bytes": 134217728,
+    "wall_seconds": 90
+  },
+  "docs": {
+    "argv": [
+      "${CARGO}",
+      "test",
+      "--manifest-path",
+      "${REPO}/Cargo.toml",
+      "-p",
+      "rapid-profiler",
+      "--doc",
+      "--offline",
+      "--locked",
+      "--",
+      "--test-threads=1",
+      "--show-output"
+    ],
+    "cpu_seconds": 20,
+    "file_bytes": 1048576,
+    "wall_seconds": 30
+  },
+  "library": {
+    "argv": [
+      "${CARGO}",
+      "build",
+      "--manifest-path",
+      "${REPO}/Cargo.toml",
+      "-p",
+      "rapid-profiler",
+      "--lib",
+      "--offline",
+      "--locked",
+      "--message-format=json"
+    ],
+    "cpu_seconds": 60,
+    "file_bytes": 134217728,
+    "wall_seconds": 90
+  },
+  "list": {
+    "argv": [
+      "${ACTUAL_ADMITTED_BINARY}",
+      "generation::tests::",
+      "--list"
+    ],
+    "cpu_seconds": 20,
+    "file_bytes": 1048576,
+    "wall_seconds": 30
+  },
+  "models": {
+    "argv": [
+      "${ACTUAL_ADMITTED_BINARY}",
+      "generation::tests::",
+      "--test-threads=1"
+    ],
+    "cpu_seconds": 20,
+    "file_bytes": 1048576,
+    "wall_seconds": 30
+  },
+  "msrv": {
+    "argv": [
+      "${MSRV_CARGO}",
+      "check",
+      "--manifest-path",
+      "${REPO}/Cargo.toml",
+      "-p",
+      "rapid-profiler",
+      "--all-targets",
+      "--all-features",
+      "--offline",
+      "--locked",
+      "--message-format=json"
+    ],
+    "cpu_seconds": 60,
+    "file_bytes": 134217728,
+    "wall_seconds": 90
+  }
+}

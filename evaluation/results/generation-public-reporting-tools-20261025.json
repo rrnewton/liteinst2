@@ -1,0 +1,152 @@
+{
+  "commands": [
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${REPO}/evaluation/export-word.py",
+        "--inputs",
+        "${EXPORT_INPUTS}",
+        "--inputs-sha256",
+        "bee555431c857a2121014510126e7baba50c659af3045562930927c10a3eecc1",
+        "--output",
+        "${RAW}/required-output"
+      ],
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.19642675085924566,
+      "file_bytes": 16777216,
+      "helper_exit": 0,
+      "id": "required-export",
+      "raw_exit": 0,
+      "receipt_sha256": "8e8854c759d5ef948d74f212bb6a66da9494d8028d841499730be87cdb85a712",
+      "request_sha256": "0a6e63df49354ed3a826139ef93cd1d3b4e073ff8a89a0ab018cd320fcf4b202",
+      "result": "pass",
+      "script_sha256": "65c9e02a4496b72eb3bfdaecd618cd3d4b3f114b8d371725e5b764661bb983a2",
+      "script_source_kind": "git_commit",
+      "source_repository_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+      "source_revision_scope": "Exact committed exporter source bytes; raw metadata and receipts remain separately bound.",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tested_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${EVALUATION}/prepare-generation-promotion-format.py",
+        "--repo",
+        "${REPO}",
+        "--raw",
+        "${RAW}/promotion-source",
+        "--rustfmt",
+        "${RUSTFMT}",
+        "--user-home",
+        "${USER_HOME}"
+      ],
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.19233745383098722,
+      "file_bytes": 16777216,
+      "helper_exit": 0,
+      "id": "promotion-prepare",
+      "raw_exit": 0,
+      "receipt_sha256": "74ceab250791f232ce9ea79e3d90c7f133928ef0c7b93d3567afe8f19e39b63a",
+      "request_sha256": "0d555abbf5b6ae311e1eb67ce7711dd4c53189969a43033536ee62ece311cd4b",
+      "result": "pass",
+      "script_sha256": "13753ece28b4924687bf609e85747d4f0295594e33136b340f77046e3577d815",
+      "script_source_kind": "private_source_snapshot",
+      "source_repository_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+      "source_revision_scope": "ed67 identifies input source bytes only; generator execution was a private snapshot.",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "9513e268b9de8e3aa8719cc2675618b1144abb0d99c1b9674f80d92da04de054",
+      "tested_revision": null,
+      "wall_seconds": 30
+    }
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "family": 26,
+    "inherited_observation": true,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "inherited separate read-only observation on the same host; phase relative to these two reporting/preparation commands is not established",
+    "observation_sha256": "a5bda96e4bf7665faa232dd26dea6c7802a2309c4fa116863589ed35335abd89",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "outputs": {
+    "promotion_formatter_request_executed": false,
+    "promotion_formatter_request_generated": true,
+    "promotion_preformat_input_files": {
+      "src/generation.rs": "f72344bf485a54980055069754445a6f16edcea32c2bd9e05af7d822637246b4",
+      "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+      "src/interval.rs": "00d57f00a2c5eb5ad085ac775d983d9c5609ac489638611c87159d2d89637a2b",
+      "src/lib.rs": "dc7161c75f46f45f4d0e09d7b81465caf83df240baf6248d9bb9df50f8ce82f3",
+      "src/pmu.rs": "e338d0992d8ba87d1bba76bbc5371a373abeb0b775418d6490d065e6d782c8f8"
+    },
+    "required_export": {
+      "cases.csv": "5527894905b2fc719672562b928cd6e93a921a1c8b2a7d6b9e11d82e9328fcd1",
+      "commands.csv": "bfb604b7cbf1777f79f0fb76ca3e6ea74dbaff921619f893fcabc0202a8bdb7b",
+      "files.json": "5e48a990f76e9e4b8a0c4e1a8fbec517f4a5aaaa534f879f33ac1bc42b103281",
+      "source-files.json": "c4c077b6354611d7a057081010c248b459b2b5cc8ddd3ff5e6c97e903b6437c5",
+      "summary.json": "f467c8421ef22560c18400368081cde8e304dc2335cf2d8f9cd387a6de2bedbd"
+    }
+  },
+  "raw_evidence": {
+    "admission_sha256": "df2206aa2bc6fe4dbf805a7f4e186b8f79b29ce9433e5d99169a0e6e7d2533ec",
+    "complete_sha256": "bc727310a0a5f9eab1fc66aca79f8fef9b0ce8981ff01a952c3fe9238d958baf",
+    "export_inputs_sha256": "bee555431c857a2121014510126e7baba50c659af3045562930927c10a3eecc1",
+    "independent_checks_sha256": "855d83ccc2ed25da69ed4bad7e5de74dc18b0c36990e4679a9088b06e0f0b8f4",
+    "independent_review_sha256": "5e619cdf55ea20f55e5fd5fe400e883790346c07f0df5c15db0dde161dcdad60",
+    "original_capture_files": 28,
+    "source_identity_records": 231
+  },
+  "reproduction_templates": "evaluation/reproductions/generation-public-reporting-controls.json",
+  "run_id": "generation-public-reporting-tools-20261025",
+  "schema_version": 1,
+  "scope": [
+    "The four required gates and 766/0/4 outer tests plus five nested guards in the exported files are prior results; these reporting commands do not reexecute or add to them.",
+    "The promotion generator prepares five exact historical formatter inputs and a formatter request; it does not execute that request.",
+    "The exporter consumes reviewed metadata as well as authenticating raw captures; the original receipts and independent audit remain the evidence boundary.",
+    "All paper claims and full A5 qualification remain unqualified by these reporting controls.",
+    "Elapsed seconds are operational diagnostics on a shared host, not performance benchmarks.",
+    "Original outer result JSONs record exit only; no captured wrapper argv is inferred."
+  ],
+  "source_repository_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+  "status": "pass",
+  "tested_revision": null,
+  "tested_revision_scope": "Mixed reporting source epochs: each command states its own exact committed or private snapshot identity.",
+  "tools": [
+    {
+      "identity_scope": "Actual root admission and independent byte recheck; helper also self-attested. No complete runtime closure or unrecorded per-invocation tool identity inferred.",
+      "role": "helper_python",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "version": null
+    },
+    {
+      "identity_scope": "Actual root admission and independent byte recheck; helper also self-attested. No complete runtime closure or unrecorded per-invocation tool identity inferred.",
+      "role": "timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+      "version": null
+    },
+    {
+      "identity_scope": "Actual root admission and independent byte recheck; helper also self-attested. No complete runtime closure or unrecorded per-invocation tool identity inferred.",
+      "role": "helper_source",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "version": null
+    }
+  ],
+  "totals": {
+    "compiler_commands_executed": 0,
+    "exit_zero": 2,
+    "failed": 0,
+    "formatter_commands_executed": 0,
+    "model_tests_executed": 0,
+    "native_commands_executed": 0,
+    "reporting_commands": 2
+  }
+}

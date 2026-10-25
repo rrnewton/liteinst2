@@ -159,3 +159,38 @@ JSON is the authoritative representation. CSV stores nested argv/environment
 values as JSON cells. `cases.csv` never combines trace, baseline, calibration
 and compiler counts into one architectural denominator. No data row is a
 performance measurement or evidence for a broader claim than its scope states.
+
+
+## Generation metadata records
+
+The A5 records below concern generation bookkeeping and ownership. They do not
+activate the profiler frontend or establish an in-place preemption clock. This
+metadata evidence leaves all four claim headings unqualified; the separate Word
+scope described above is unchanged.
+
+| Record | Results | Reproduction |
+| --- | --- | --- |
+| Historical private snapshot based on `7a4e5719` | [Seven commands and 19 cases](results/generation-private-7a4e571-20261025/summary.json), with [named case rows](results/generation-private-7a4e571-20261025/cases.csv) | [Private source reconstruction and requests](generation-private.md) |
+| Required regression at `ed67f752` | [Four required gates](results/required-ed67f75-20261025/summary.json) | [Required gate runner](required-gates.py) |
+| Public promotion formatting | [Actual formatter and source-delta record](results/generation-promotion-format-20261025.json) | [Promotion-format recipe](reproductions/generation-promotion-format.md) |
+| Preserved partial public v3 attempt | [One of six main commands completed](results/generation-public-v3-partial-20261025/summary.json); all 17 model and two doc cases remained unrun | [Exact historical generator and four actual request templates](reproductions/generation-public-v3-partial/README.md) |
+| Focused public generation qualification | [Seven main commands, 16 auxiliary steps, 17 models and two exact ownership docs at ed67f752](results/generation-public-ed67f752-20261025/README.md); metadata only, all four claims unqualified | [Seven-command preparation and artifact-admission procedure](generation-public.md) |
+| Historical reporting controls | [Six reporting/control invocations](results/generation-reporting-tools-20261025.json) | [Commands and expected negative outcomes](generation-reporting.md) |
+| Public-source export and promotion preparation | [Two reporting invocations](results/generation-public-reporting-tools-20261025.json) | [Exact request and wrapper templates](reproductions/generation-public-reporting-controls.json) |
+
+The `ed67f752` required regression has 766 top-level passes, zero failures and
+four preexisting ignores. Its 17 generation models and two compile-fail docs are
+already included in 766; five nested guard successes are reported separately.
+Private, required-regression and focused public repetitions are distinct
+executions, not additional unique semantic coverage, and their totals must not
+be summed into one coverage denominator.
+
+Historical private runs and private reporting scripts retain
+`tested_revision: null` with their actual source snapshots. A committed source
+revision used for reconstruction is not a retroactive tested revision for those
+scripts. The committed required regression names `ed67f752`; later data commits
+do not change that identity. Expected nonzero reporting controls remain
+refusals, unrun cases remain unrun, and formatter-review assertion failures
+remain distinct from the actual successful formatter command. Reporting and
+request preparation do not execute the modeled workload. Timing is operational
+only; per-command tool and hardware provenance limits remain in each record.

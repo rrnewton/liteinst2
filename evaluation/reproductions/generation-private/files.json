@@ -1,0 +1,14 @@
+{
+  "Cargo.lock": "4bb791cefb115a48b1f99e6bd8256d667d93ed54611695691082cc2e616cbd54",
+  "Cargo.toml": "b3e0fdd4d6a3c93d127831bb1fa69821e5ae94feafcfc43dc94d89b407f0366c",
+  "docs.stdout-template": "00aa93bdc6799d2f048fb95c5c7e45f13f34f31f00291ebaf1b1693ac8824cdc",
+  "generation-to-private.patch": "d15c6f3235ee14e391d480000492df33a354922dce2465cfa873d053a80ef758",
+  "inventory.json": "c87ecc2767382c9ecb690d64a45da7e535698058d1b081a1d17bb959ab15e035",
+  "lib.rs.to-original.patch": "6cce0eb12a76b5b3dab0a239d441a2d5a7831326856907461687a36d807e4ff7",
+  "list.stdout": "ef2aedbe3088663200f7b930f621af5e436abb327c2bb98693c5d9e04ce1e394",
+  "models.stdout-template": "d2a83235ddb334ca69b3652bb52244cc9dae873e12d64cb83e3f23d248279471",
+  "reconstruction.json": "22f1606892026fba67ca87f4a6e3a4a37ce91da6c9bc888aa1aa9a186cb69be6",
+  "request-templates.json": "0343c00d7cd6722cf18d3a14eed4cbe1715c81c24d43ce13e2d9fd4229bc8d5d",
+  "tests.rs.to-original.patch": "0c46671add961167edb6f34775420ca3e890aa687426c0bf5903d475212cc676",
+  "tools.json": "a77b8b8a6c0497bf3aa813621c1bf9fa2ebd3e786356168df51e05a1c4de0d89"
+}

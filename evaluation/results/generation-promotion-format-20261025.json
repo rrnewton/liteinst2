@@ -1,0 +1,138 @@
+{
+  "before_after_review_sha256": "85129900f636239d31bad128b752a9bf4ef6b94cbe305cac72796eb82b5210df",
+  "cases": [],
+  "change": "Exactly one optional trailing comma after public tuple field u64; four other files byte-identical.",
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "heading": "systematic everytactic",
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "${RUSTFMT}",
+        "--edition",
+        "2024",
+        "${SNAPSHOT}/src/lib.rs"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.16271485900506377,
+      "environment": {
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "promotion-format",
+      "receipt_sha256": "fa3c5ee0b92a0d203f0b89e4de11afbf66cd562ab908cc384356c26bc55a2d61",
+      "source_id": "private_promotion_preformat",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    }
+  ],
+  "complete_A5": false,
+  "frontend_activated": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "separate read-only observation on the same host; phase relative to this formatter invocation is not established",
+    "observation_sha256": "a5bda96e4bf7665faa232dd26dea6c7802a2309c4fa116863589ed35335abd89",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "historical_private_seven_commands_combined": false,
+  "historical_review_events": [
+    {
+      "description": "The source reversal matcher omitted the literal pub modifier; the actual formatter passed. A subsequent exact matcher recovered the original bytes. No compiler, test, or model result changed.",
+      "failure_sha256": "8fcebee364abd806dfbf1159e5b2fa2459363e17c011ee0bf02138649f811343",
+      "formatter_failed": false,
+      "id": "promotion-format-review-matcher-v1",
+      "status": "review_assertion_failed",
+      "subsequent_review_sha256": "85129900f636239d31bad128b752a9bf4ef6b94cbe305cac72796eb82b5210df"
+    }
+  ],
+  "preemption_clock_claim": false,
+  "reproduction_recipe": "evaluation/reproductions/generation-promotion-format.json",
+  "reproduction_recipe_sha256": "1eafaa9e93ca5fdf2c79b58c365aa73c2c7afbe40ae7e2b60de0ff7ee859a6c2",
+  "reproduction_script": "evaluation/prepare-generation-promotion-format.py",
+  "reproduction_script_sha256": "13753ece28b4924687bf609e85747d4f0295594e33136b340f77046e3577d815",
+  "run_id": "generation-promotion-format-20261025",
+  "schema_version": 1,
+  "scope": "Formatter-only private public-promotion snapshot. No executed model/compiler qualification and no later Git execution credit.",
+  "sources": {
+    "private_promotion_formatted": {
+      "base_revision": "c7494cc08d9dd13651017c809d3f72d67284cd4b",
+      "file_count": 5,
+      "files": {
+        "src/generation.rs": "b5ce2255f4aa27354a13d6a1ba27c131ca89a7a5d6a67df67af939e8d6486ebb",
+        "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+        "src/interval.rs": "00d57f00a2c5eb5ad085ac775d983d9c5609ac489638611c87159d2d89637a2b",
+        "src/lib.rs": "dc7161c75f46f45f4d0e09d7b81465caf83df240baf6248d9bb9df50f8ce82f3",
+        "src/pmu.rs": "e338d0992d8ba87d1bba76bbc5371a373abeb0b775418d6490d065e6d782c8f8"
+      },
+      "kind": "source_snapshot",
+      "source_tree_sha256": "faf03a408869572bdbeb1294ef39786685dc99260e82c598acb2c18a9ac46cfd",
+      "tested_revision": null
+    },
+    "private_promotion_preformat": {
+      "base_basis": "Recorded source_parent in activation record; the formatter input was private/precommit, not a tested Git tree.",
+      "base_revision": "c7494cc08d9dd13651017c809d3f72d67284cd4b",
+      "file_count": 5,
+      "files": {
+        "src/generation.rs": "f72344bf485a54980055069754445a6f16edcea32c2bd9e05af7d822637246b4",
+        "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+        "src/interval.rs": "00d57f00a2c5eb5ad085ac775d983d9c5609ac489638611c87159d2d89637a2b",
+        "src/lib.rs": "dc7161c75f46f45f4d0e09d7b81465caf83df240baf6248d9bb9df50f8ce82f3",
+        "src/pmu.rs": "e338d0992d8ba87d1bba76bbc5371a373abeb0b775418d6490d065e6d782c8f8"
+      },
+      "kind": "source_snapshot",
+      "source_tree_sha256": "8d276f2ceffe00a7be48c0521b8215a03091b5fded199751ae3a5fdf0a0fe29d",
+      "tested_revision": null
+    }
+  },
+  "status": "pass",
+  "suite": "generation-public-promotion-formatter-only",
+  "tested_revision": null,
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tool_provenance_limit": "The historical formatter admission did not capture Python or timeout executable identities; none are inferred from later observations.",
+  "tools": [
+    {
+      "admission_sha256": "22d39d9f5c12008d3a4a18830e4f6f0ed8cd6c5955b0523019b32591910e240c",
+      "role": "rustfmt",
+      "scope": "Actual formatter admission pins this executable hash.",
+      "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8"
+    },
+    {
+      "receipt_sha256": "fa3c5ee0b92a0d203f0b89e4de11afbf66cd562ab908cc384356c26bc55a2d61",
+      "role": "helper",
+      "scope": "Actual formatter receipt pins this helper source hash.",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    }
+  ]
+}

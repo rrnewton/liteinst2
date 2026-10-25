@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "/usr/bin/python3.9",
+    "-B",
+    "${REPRO}/original/prepare-generation-public.py",
+    "verify",
+    "--raw",
+    "${RAW}/qualification",
+    "--admission-sha256",
+    "${ADMISSION_SHA256}"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${REPO}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${RAW}/verify-after-compile/stderr",
+  "stdout": "${RAW}/verify-after-compile/stdout",
+  "wall_seconds": 30
+}
