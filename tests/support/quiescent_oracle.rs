@@ -481,6 +481,15 @@ mod ordered_trace {
     use std::collections::{BTreeMap, BTreeSet};
     use std::ops::Range;
 
+    // Additive genuine signal-resume support; legacy entry methods are exact.
+    mod saved_signal {
+        include!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/tests/support/entry_signal.rs"
+        ));
+    }
+    pub use saved_signal::SignalResume;
+
     const EVENT_CAPACITY: usize = 128;
     thread_local! {
         static ACTIVE_LOG: Cell<(*mut u64, usize)> = const { Cell::new((core::ptr::null_mut(), 0)) };
@@ -766,6 +775,231 @@ mod ordered_trace {
             initial.rip = entry;
             child.set_registers(&initial);
             child.set_xstate(&trace.baseline.xstate);
+            let mut next = 0;
+            let mut events = Vec::new();
+            let mut relay_visits = BTreeMap::<u64, usize>::new();
+            let mut relay_target = None;
+            for step in 0..=MAX_STEPS {
+                assert!(
+                    Instant::now() < child.deadline,
+                    "patched trace wall deadline exhausted"
+                );
+                let pc = child.registers().rip;
+                if let Some(target) = relay_target.take() {
+                    assert_eq!(
+                        pc, target,
+                        "source relay did not reach its exact image entry"
+                    );
+                }
+                if let Some(&original) = physical.get(&pc) {
+                    let expected = trace
+                        .baseline
+                        .points
+                        .get(next)
+                        .expect("extra restored boundary after native trace");
+                    assert_eq!(
+                        original, expected.logical_pc,
+                        "unexpected restored boundary at visit {next}"
+                    );
+                    assert_state(
+                        expected,
+                        &self.snapshot(&child, original, self.code.bytes()),
+                    );
+                    if let Some(hooks) = &hooks {
+                        events.extend(
+                            hooks
+                                .enabled
+                                .iter()
+                                .filter(|event| event.logical_pc == original)
+                                .copied(),
+                        );
+                        hooks.log.assert_events(&child, &events);
+                    }
+                    next += 1;
+                    if trace.terminals.contains(&original) {
+                        assert_eq!(
+                            next,
+                            trace.baseline.points.len(),
+                            "missing native trace visits"
+                        );
+                        for relay in relays {
+                            let required = trace
+                                .baseline
+                                .points
+                                .iter()
+                                .filter(|point| point.logical_pc == relay.logical_pc)
+                                .count();
+                            assert_eq!(
+                                relay_visits.get(&relay.relay_pc).copied().unwrap_or(0),
+                                required,
+                                "missing or duplicate source relay visits"
+                            );
+                        }
+                        return;
+                    }
+                } else if let Some(&index) = relay_map.get(&pc) {
+                    let relay = &relays[index];
+                    let expected = trace
+                        .baseline
+                        .points
+                        .get(next)
+                        .expect("extra source relay after native trace");
+                    assert_eq!(
+                        relay.logical_pc, expected.logical_pc,
+                        "unexpected source relay at visit {next}"
+                    );
+                    assert_state(
+                        expected,
+                        &self.snapshot(&child, relay.logical_pc, self.code.bytes()),
+                    );
+                    if let Some(hooks) = &hooks {
+                        hooks.log.assert_events(&child, &events);
+                    }
+                    *relay_visits.entry(pc).or_default() += 1;
+                    relay_target = Some(relay.target);
+                } else if (self.code.address()..self.code.address() + PAGE as u64).contains(&pc) {
+                    assert!(
+                        map.gateways.contains(&pc),
+                        "unclassified source head {pc:#x}"
+                    );
+                }
+                assert!(
+                    step < MAX_STEPS,
+                    "patched trace instruction budget exhausted"
+                );
+                child.step(owned_sigill_heads);
+            }
+            unreachable!()
+        }
+
+        /// Trace a genuine signal-frame resume, with unchanged comparisons.
+        pub fn trace_original_after_signal(
+            &self,
+            entry: u64,
+            heads: &[u64],
+            terminals: &[u64],
+            seed: u64,
+            signal: &SignalResume,
+        ) -> NativeTrace {
+            self.assert_publication(&[]);
+            let heads: BTreeSet<_> = heads.iter().copied().collect();
+            let terminals: BTreeSet<_> = terminals.iter().copied().collect();
+            assert!(heads.contains(&entry), "undeclared original trace entry");
+            assert!(!terminals.is_empty(), "original trace needs a terminal");
+            assert!(
+                heads.is_disjoint(&terminals),
+                "terminal is an executable head"
+            );
+            // Reuse the existing seed path exactly; this short-lived child is
+            // reaped before tracing begins. The legacy API remains unchanged.
+            let mut baseline = self.original(&[entry], seed);
+            let child = Tracee::fork();
+            child.set_registers(&baseline.initial);
+            child.set_xstate(&baseline.xstate);
+            signal.resume(self, &child);
+            baseline.points.clear();
+            let mut first_step = None;
+            for step in 0..=MAX_STEPS {
+                assert!(
+                    Instant::now() < child.deadline,
+                    "original trace wall deadline exhausted"
+                );
+                let pc = child.registers().rip;
+                assert!(
+                    heads.contains(&pc) || terminals.contains(&pc),
+                    "original trace reached undeclared instruction {pc:#x}"
+                );
+                baseline
+                    .points
+                    .push(self.snapshot(&child, pc, self.code.bytes()));
+                if terminals.contains(&pc) {
+                    return NativeTrace {
+                        baseline,
+                        heads,
+                        terminals,
+                        source_base: self.code.address(),
+                        original_code: self.original_code.clone(),
+                        first_step,
+                    };
+                }
+                assert!(
+                    step < MAX_STEPS,
+                    "original trace instruction budget exhausted"
+                );
+                child.step(&[]);
+                if step == 0 {
+                    first_step = Some((pc, child.registers().rip));
+                }
+            }
+            unreachable!()
+        }
+
+        /// Resume via witnessed rt_sigreturn, then use the exact existing trace comparator.
+        pub fn assert_trace_after_signal(
+            &self,
+            trace: &NativeTrace,
+            entry: u64,
+            map: &TraceMap,
+            owned_sigill_heads: &[u64],
+            hooks: Option<HookExpectation<'_>>,
+            signal: &SignalResume,
+        ) {
+            let relays: &[SourceRelay<'_>] = &[];
+            let logical: BTreeSet<_> = trace.heads.union(&trace.terminals).copied().collect();
+            let mut physical = BTreeMap::new();
+            for &(original, generated) in &map.boundaries {
+                assert!(
+                    logical.contains(&original),
+                    "undeclared logical restored boundary"
+                );
+                assert!(
+                    physical.insert(generated, original).is_none(),
+                    "duplicate physical restored boundary"
+                );
+                assert!(
+                    generated == original
+                        || map
+                            .generated_ranges
+                            .iter()
+                            .any(|range| range.contains(&generated)),
+                    "restored boundary outside declared generated images"
+                );
+            }
+            for original in logical {
+                assert!(
+                    physical.values().any(|&pc| pc == original),
+                    "missing restored boundary for {original:#x}"
+                );
+            }
+            for &gateway in &map.gateways {
+                assert!(trace.heads.contains(&gateway), "undeclared source gateway");
+                assert!(
+                    !physical.contains_key(&gateway),
+                    "gateway is a restored boundary"
+                );
+            }
+            let relay_map = self.validate_relays(trace, map, &physical, relays);
+            if let Some(hooks) = &hooks {
+                let mut ids = BTreeSet::new();
+                for event in hooks.enabled {
+                    assert!(
+                        trace.heads.contains(&event.logical_pc),
+                        "hook outside original heads"
+                    );
+                    assert!(
+                        ids.insert(event.probe_id),
+                        "duplicate enabled probe identity"
+                    );
+                }
+            }
+            let _active_log = hooks.as_ref().map(|hooks| hooks.log.activate());
+            self.code.protect(libc::PROT_READ | libc::PROT_EXEC);
+            let child = Tracee::fork();
+            let mut initial = trace.baseline.initial;
+            initial.rip = entry;
+            child.set_registers(&initial);
+            child.set_xstate(&trace.baseline.xstate);
+            signal.resume(self, &child);
             let mut next = 0;
             let mut events = Vec::new();
             let mut relay_visits = BTreeMap::<u64, usize>::new();

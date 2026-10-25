@@ -146,11 +146,15 @@ campaign completed all 544 required outcomes; its successes, refusals, preserved
 failed attempt and resource/memory observations are recorded in
 `evidence/a2-campaign-20261025.md`.
 
-The full A2 exit gate remains open. Required gaps include explicit jump-table and
-direct-entry paths, successful saved resumes, call-return and exception landing
-entries, mandatory-prefix and native rel32 endpoint inventories, active CET and
-Intel evidence, eviction-chain coverage, and relocation-boundary signal/unwind
-qualification. Existing unsupported refusals and finite AMD results do not
+Additional native entry fixtures execute actual direct branches and every
+jump-table case into displaced heads, and witness kernel signal-frame restoration
+to enumerated resumes. Exact signed rel32 endpoints execute; targets one byte
+outside each endpoint refuse unchanged. See `evidence/a2-entry-paths-20261025.md`.
+
+The full A2 exit gate remains open. Required gaps include contexts parked across
+publication, call-return and exception landing entries, mandatory-prefix coverage,
+active CET and Intel evidence, eviction-chain coverage, and relocation-boundary
+signal/unwind qualification. Existing unsupported refusals and finite AMD results do not
 substitute for those required fixtures. Generalized puns retain first priority
 for install-once clients; ordinary relocation precedes T1. Concurrent toggle
 visibility remains A4 work.
