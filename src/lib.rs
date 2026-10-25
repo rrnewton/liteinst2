@@ -3,7 +3,9 @@
 #![forbid(unsafe_op_in_unsafe_fn)]
 #![warn(missing_docs)]
 
+pub mod bundle;
 pub mod cache_line;
+pub mod composition;
 pub mod contracts;
 mod entry_router;
 pub mod patcher;

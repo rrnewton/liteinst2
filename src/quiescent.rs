@@ -871,7 +871,7 @@ fn qualify_instruction(instruction: &iced_x86::Instruction) -> Result<(), Refusa
 }
 
 #[allow(unused_unsafe)] // CPUID intrinsics are unsafe on the minimum supported Rust.
-fn qualify_host() -> Result<(), Refusal> {
+pub(crate) fn qualify_host() -> Result<(), Refusal> {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     {
         // A1 freezes the legacy+EVEX decoder envelope. APX and MIC's MVEX are
@@ -1243,7 +1243,7 @@ unsafe fn write_source(plan: &PatchPlan, writable: *mut u8, restore: bool) {
     }
 }
 
-unsafe fn single_store(address: *mut u8, bytes: &[u8]) {
+pub(crate) unsafe fn single_store(address: *mut u8, bytes: &[u8]) {
     #[cfg(target_arch = "x86_64")]
     // SAFETY: caller certifies writable, line-contained span and no concurrent
     // accesses. Explicit MOV prevents compiler splitting, including L3's pad.
@@ -1278,7 +1278,7 @@ fn check_bytes(pointer: *mut u8, expected: &[u8]) -> Result<(), Refusal> {
     }
 }
 
-fn prepare_sync_core() -> Result<(), Refusal> {
+pub(crate) fn prepare_sync_core() -> Result<(), Refusal> {
     const SYNC: libc::c_int = 1 << 5;
     const REGISTER: libc::c_int = 1 << 6;
     // SAFETY: Linux membarrier integer arguments, no pointers.
@@ -1291,7 +1291,7 @@ fn prepare_sync_core() -> Result<(), Refusal> {
     }
     Ok(())
 }
-fn sync_core() -> Result<(), Refusal> {
+pub(crate) fn sync_core() -> Result<(), Refusal> {
     // SAFETY: the command was queried and registered before any code write.
     if unsafe { libc::syscall(libc::SYS_membarrier, 1 << 5, 0, 0) } == 0 {
         Ok(())

@@ -66,6 +66,10 @@ Each module owns one correctness boundary:
   displaced-entry routing and generation retirement under a held lease. See the
   [standalone interface](INTERFACES.md) and [quiescent contract](A1-QUIESCENT.md)
   for its supported envelope and explicit refusals.
+- `composition` and `bundle`: ordered virtual source images, persistent byte
+  locks and quiescent transactions spanning several generated images. The
+  [composition contract](A2-COMPOSITION.md) describes staging, retirement,
+  aggregate allocation limits and the remaining tactic-engine work.
 - `cache_line`: overflow-safe patch-span classification.
 - `scanner`: fail-closed x86-64 decoding and cache-line crossing discovery.
 - `patcher`: multi-instruction jump planning and all-front-byte WordPatch++ publication.
