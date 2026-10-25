@@ -33,6 +33,8 @@ commands = [
     ('neighbor-contract', ['cargo', 'test', '--test', 'neighbor_eviction_contract', '--', '--test-threads=1', '--nocapture']),
     ('neighbor-oracle', ['cargo', 'test', '--test', 'neighbor_eviction_oracle', '--', '--test-threads=4', '--nocapture']),
     ('tactic-engine', ['cargo', 'test', '--test', 'tactic_engine', '--', '--test-threads=1', '--nocapture']),
+    ('controls-contract', ['cargo', 'test', '--test', 'controlled_coalescing_contract', '--', '--test-threads=1', '--nocapture']),
+    ('controls-oracle', ['cargo', 'test', '--test', 'controlled_oracle', '--', '--test-threads=1', '--nocapture']),
     ('bundle-contract', ['cargo', 'test', '--test', 'bundle_contract', '--', '--test-threads=1', '--nocapture']),
     ('a2-oracle', ['cargo', 'test', '--test', 'a2_oracle', '--', '--test-threads=1', '--nocapture']),
     ('oracle', ['cargo', 'test', '--test', 'quiescent_oracle', '--', '--test-threads=1', '--nocapture']),
@@ -49,10 +51,15 @@ sources = ['Cargo.toml', 'src/lib.rs', 'src/grouping.rs', 'src/eviction.rs',
            'tests/prefixed_pun_oracle.rs', 'tests/successor_eviction_contract.rs',
            'tests/successor_eviction_oracle.rs', 'src/neighbor.rs', 'src/engine.rs',
            'tests/neighbor_eviction_contract.rs', 'tests/neighbor_eviction_oracle.rs',
-           'tests/tactic_engine.rs', 'evidence/a2/run-checks.py']
+           'tests/tactic_engine.rs', 'evidence/a2/run-checks.py', 'src/controls.rs',
+           'tests/controlled_coalescing_contract.rs', 'tests/controlled_oracle.rs']
 source_sha256 = {path: hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
                  for path in sources}
 for name, argv in commands:
+    # The new controls target adds a separately bounded 170-second wrapper to
+    # a measured 139-second workspace. Declare this aggregate expansion before
+    # controls qualification; every focused command retains its 180-second cap.
+    timeout_seconds = 360 if name == 'test' else 180
     start = time.monotonic()
     utc = datetime.datetime.now(datetime.timezone.utc).isoformat()
     log = RUN / (name + '.log')
@@ -60,12 +67,12 @@ for name, argv in commands:
         process = subprocess.Popen(argv, cwd=ROOT, env=env, stdout=output,
                                    stderr=subprocess.STDOUT, start_new_session=True)
         try:
-            code = process.wait(timeout=180)
+            code = process.wait(timeout=timeout_seconds)
         except subprocess.TimeoutExpired:
             os.killpg(process.pid, signal.SIGKILL)
             process.wait()
             code = 'timeout'
-    record = dict(name=name, argv=argv, start_utc=utc, exit=code,
+    record = dict(name=name, argv=argv, timeout_seconds=timeout_seconds, start_utc=utc, exit=code,
                   seconds=time.monotonic()-start, log=str(log.relative_to(ROOT)),
                   sha256=hashlib.sha256(log.read_bytes()).hexdigest())
     records.append(record)
