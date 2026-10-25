@@ -60,8 +60,8 @@ publishes only its own image's PC maps; another member's bytes appearing at that
 alias have no authenticated execution entry. Mutable probe state is excluded
 from these immutable backing pages.
 
-A2 is not complete at this foundation. T1 and grouping are being qualified by
-forced native and architectural-oracle fixtures. T2/T3, coalesced independent
+A2 is not complete at this foundation. T1 and grouping have forced native and
+architectural-oracle fixtures recorded in `evidence/a2-20261025.md`. T2/T3, coalesced independent
 probe controls and the generated/sampled campaign remain pending. Generalized
 puns retain first priority for install-once clients; ordinary relocation precedes
 T1. Concurrent toggle visibility remains A4 work.
