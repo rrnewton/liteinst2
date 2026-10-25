@@ -16,6 +16,7 @@ include = [
     "INTERFACES.md",
     "A1-QUIESCENT.md",
     "A2-COMPOSITION.md",
+    "COALESCED-CONTROLS.md",
     "PATCH_SITE_DECISION_TREE.md",
     "README.md",
     "examples/preload_consumer.rs",
