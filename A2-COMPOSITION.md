@@ -122,6 +122,11 @@ search performs at most five bounded leaf invocations and may repeat original
 validation; it does not claim decode sharing or improved search performance.
 RapidProbe remains the separate exact-byte toggle interface.
 
+Detailed planners and the engine retain scoped search evidence separately from
+raw refusal reasons. Finite completion and omitted-work certificates apply to
+the existing candidate schedules; unresolved stops remain explicit. No
+whole-tactic exhaustion claim is made. See `SEARCH-EVIDENCE.md`.
+
 `quiescent::plan_coalesced` adds independent observing controls to one shared
 relocation window. The existing certified-basic-block and entry rules apply.
 `controls::ProbeControl` changes data outside immutable generated code and grouped
@@ -135,7 +140,8 @@ A2 is not complete at this foundation. T1 and grouping have forced native and
 architectural-oracle fixtures recorded in `evidence/a2-20261025.md`. T2 qualification is recorded in
 `evidence/a2-successor-20261025.md`. T3 and unified selection are recorded in
 `evidence/a2-neighbor-20261025.md`. Coalesced controls are recorded in
-`evidence/a2-controls-20261025.md`. Classified search termination and the
-generated/sampled campaign remain pending. Generalized
+`evidence/a2-controls-20261025.md`. Scoped search diagnostics are implemented;
+whole-tactic classification remains incomplete and the generated/sampled
+campaign remains pending. Generalized
 puns retain first priority for install-once clients; ordinary relocation precedes
 T1. Concurrent toggle visibility remains A4 work.

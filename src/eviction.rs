@@ -10,6 +10,7 @@ use crate::quiescent::{
     self, AllocationPolicy, InstallRequest, PatchTactic, PlanMetrics, PlannedInstall, TacticPolicy,
 };
 use crate::scanner::{ScanResult, ScannedInstruction};
+use crate::search::{RefusalClass, SearchDomain, SearchEvidence, SearchScope};
 use crate::trampoline::{TrampolineImage, TrampolinePlan};
 
 /// Explicit composition tactic; a successful simpler plan is not an eviction.
@@ -39,6 +40,8 @@ pub struct EvictionAttempt {
 /// Geometry and bounded search accounting, without timing estimates.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EvictionMetrics {
+    /// Explicit bounded-search evidence; incomplete proofs remain marked.
+    pub search: SearchEvidence,
     /// Whole original bytes evicted from the successor.
     pub victim_bytes: usize,
     /// Number of successor image placement candidates examined.
@@ -79,6 +82,8 @@ impl PlannedEviction {
 /// A failed successor search, retaining attempted placement/prefix evidence.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EvictionFailure {
+    /// Explicit bounded-search evidence; incomplete proofs remain marked.
+    pub search: SearchEvidence,
     /// Final fail-closed reason, not successful coverage.
     pub reason: Refusal,
     /// Every attempted joint placement after original validation.
@@ -115,8 +120,10 @@ pub fn plan_successor_detailed(
     budget: BundleBudget,
 ) -> Result<PlannedEviction, EvictionFailure> {
     let mut attempts = Vec::new();
+    let mut search_evidence = SearchEvidence::default();
     let result = (|| {
-        let (source, scan) = quiescent::validated_source(request)?;
+        let (source, scan) = quiescent::validated_source(request)
+            .inspect_err(|reason| search_evidence.qualification(SearchScope::default(), reason))?;
         if request.search.max_sites == 0 {
             return Err(Refusal::NoPatchWindow);
         }
@@ -142,7 +149,12 @@ pub fn plan_successor_detailed(
             .iter()
             .find(|item| item.address() == victim_pc)
             .ok_or(Refusal::NoPatchWindow)?;
-        let displaced = qualify_victim(request, &scan, victim, 5)?;
+        let scope = SearchScope {
+            physical_pc: Some(victim_pc),
+            ..SearchScope::default()
+        };
+        let displaced = qualify_victim(request, &scan, victim, 5)
+            .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
         if budget.max_steps < 2
             || budget.max_mappings < 2
             || budget.max_virtual_bytes < 8192
@@ -150,6 +162,11 @@ pub fn plan_successor_detailed(
             || victim_allocation.max_mappings == 0
             || victim_allocation.max_mapped_bytes < 4096
         {
+            search_evidence.refusal(
+                scope,
+                RefusalClass::ResourceCapacity,
+                &Refusal::AllocationUnavailable,
+            );
             return Err(Refusal::AllocationUnavailable);
         }
         let occupied = quiescent::occupied_ranges()?;
@@ -160,7 +177,14 @@ pub fn plan_successor_detailed(
         // A valid victim placement can expose a more specific selected-site
         // refusal. Later unavailable victim addresses must not erase it.
         let mut selected_error = None;
+        let image_search = search_evidence.begin(
+            SearchDomain::VictimImages,
+            scope,
+            victim_allocation.max_candidates,
+            None,
+        );
         for candidate in 0..victim_allocation.max_candidates {
+            search_evidence.visit(image_search);
             let Some(target) = quiescent::candidate_target(
                 victim_pc,
                 [false; 4],
@@ -228,8 +252,18 @@ pub fn plan_successor_detailed(
                 TacticPolicy::RelocationOnly => unreachable!("refused above"),
             };
             for prefix_count in prefixes {
-                let selected_plan =
-                    quiescent::plan_pun(&overlaid, &scan, source, &held_allocations, prefix_count);
+                let selected_plan = quiescent::plan_pun(
+                    &overlaid,
+                    &scan,
+                    source,
+                    &held_allocations,
+                    prefix_count,
+                    &mut search_evidence,
+                    SearchScope {
+                        victim_target: Some(target),
+                        ..SearchScope::default()
+                    },
+                );
                 let composed = selected_plan.and_then(|mut selected_plan| {
                     selected_plan.metrics.attempts.push(quiescent::SiteAttempt {
                         tactic: if prefix_count == 0 {
@@ -257,10 +291,12 @@ pub fn plan_successor_detailed(
                 });
                 match composed {
                     Ok(bundle) => {
+                        search_evidence.accept(image_search);
                         return Ok(PlannedEviction {
                             bundle,
                             kind: EvictionKind::Successor { victim: victim_pc },
                             metrics: EvictionMetrics {
+                                search: SearchEvidence::default(),
                                 victim_bytes: displaced.len() as usize,
                                 victim_candidates: candidate + 1,
                                 victim_fallthrough_redirects: 2,
@@ -272,9 +308,29 @@ pub fn plan_successor_detailed(
                 }
             }
         }
+        search_evidence.finish_candidates(
+            image_search,
+            quiescent::candidate_target_proof(
+                victim_pc,
+                [false; 4],
+                victim_allocation.preferred_address,
+                victim_allocation.max_candidates,
+            ),
+        );
         Err(selected_error.unwrap_or(last_error))
     })();
-    result.map_err(|reason| EvictionFailure { reason, attempts })
+    match result {
+        Ok(mut plan) => {
+            search_evidence.accepted = true;
+            plan.metrics.search = search_evidence;
+            Ok(plan)
+        }
+        Err(reason) => Err(EvictionFailure {
+            reason,
+            attempts,
+            search: search_evidence,
+        }),
+    }
 }
 
 pub(crate) fn qualify_victim(
@@ -385,6 +441,7 @@ pub(crate) fn instruction_member(
         plan,
         image,
         metrics: PlanMetrics {
+            search: SearchEvidence::default(),
             upstream_bytes: 0,
             displaced_bytes: displaced.len() as usize,
             prefix_instructions: 0,

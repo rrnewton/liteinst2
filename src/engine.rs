@@ -12,6 +12,7 @@ use crate::neighbor::{self, NeighborAttempt, NeighborGeometry, NeighborMetrics, 
 use crate::quiescent::{
     self, AllocationPolicy, InstallRequest, PlanMetrics, SiteAttempt, TacticPolicy,
 };
+use crate::search::{RefusalClass, RefusalEvidence, SearchEvidence, SearchScope};
 
 /// Explicit install-once tactic; forced searches never substitute another one.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -67,6 +68,10 @@ pub enum CandidateEvidence {
 /// One attempted tactic, including a later aggregate-bundle refusal.
 #[derive(Clone, Debug)]
 pub struct EngineAttempt {
+    /// Original leaf search evidence, even when a later bundle check refuses.
+    pub search: SearchEvidence,
+    /// A later single-image bundle refusal, separate from the accepted leaf.
+    pub outer_refusal: Option<RefusalEvidence>,
     /// The exact forced leaf tactic used for this attempt.
     pub tactic: Tactic,
     /// None only when a complete bounded bundle was selected.
@@ -156,7 +161,7 @@ pub fn plan(
     let mut attempts = Vec::new();
     let mut reason = Refusal::NoPatchWindow;
     for &tactic in tactics {
-        let (result, candidates) = match tactic {
+        let (result, candidates, search) = match tactic {
             Tactic::GeneralizedPun | Tactic::Relocation | Tactic::PrefixedPun => {
                 let request = InstallRequest {
                     search: quiescent::SearchPolicy {
@@ -173,6 +178,7 @@ pub fn plan(
                 match quiescent::plan_install_detailed(&request) {
                     Ok(member) => {
                         let metrics = member.metrics().clone();
+                        let search = metrics.search.clone();
                         let candidates = CandidateEvidence::Single(metrics.attempts.clone());
                         let bundle = PlannedBundle::compose(
                             vec![ExpectedBytes {
@@ -185,11 +191,13 @@ pub fn plan(
                         (
                             bundle.map(|bundle| (bundle, SelectedMetrics::Single(metrics))),
                             candidates,
+                            search,
                         )
                     }
                     Err(failure) => (
                         Err(failure.reason),
                         CandidateEvidence::Single(failure.attempts),
+                        failure.search,
                     ),
                 }
             }
@@ -209,10 +217,12 @@ pub fn plan(
                             SelectedMetrics::Successor(plan.metrics().clone()),
                         )),
                         CandidateEvidence::Successor(plan.metrics().attempts.clone()),
+                        plan.metrics().search.clone(),
                     ),
                     Err(failure) => (
                         Err(failure.reason),
                         CandidateEvidence::Successor(failure.attempts),
+                        failure.search,
                     ),
                 }
             }
@@ -228,14 +238,39 @@ pub fn plan(
                         SelectedMetrics::Neighbor(*plan.geometry(), plan.metrics().clone()),
                     )),
                     CandidateEvidence::Neighbor(plan.metrics().attempts.clone()),
+                    plan.metrics().search.clone(),
                 ),
                 Err(failure) => (
                     Err(failure.reason),
                     CandidateEvidence::Neighbor(failure.attempts),
+                    failure.search,
                 ),
             },
         };
+        // Only the single-image arms compose a bundle after a successful leaf.
+        // At that exact call boundary compose's AllocationUnavailable sites are
+        // explicit step or aggregate memory capacities; other errors stay local.
+        let outer_refusal = if search.accepted
+            && matches!(
+                tactic,
+                Tactic::GeneralizedPun | Tactic::Relocation | Tactic::PrefixedPun
+            ) {
+            result.as_ref().err().map(|reason| RefusalEvidence {
+                reason: reason.clone(),
+                class: match reason {
+                    Refusal::AllocationUnavailable => RefusalClass::ResourceCapacity,
+                    Refusal::OwnershipConflict => RefusalClass::Prerequisite,
+                    Refusal::Backend(_) => RefusalClass::Backend,
+                    _ => RefusalClass::Unclassified,
+                },
+                scope: SearchScope::default(),
+            })
+        } else {
+            None
+        };
         attempts.push(EngineAttempt {
+            outer_refusal,
+            search,
             tactic,
             refusal: result.as_ref().err().cloned(),
             candidates,

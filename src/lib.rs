@@ -19,5 +19,6 @@ pub mod probe;
 pub mod quiescent;
 pub mod rapid;
 pub mod scanner;
+pub mod search;
 pub mod trampoline;
 mod trap;

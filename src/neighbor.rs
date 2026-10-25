@@ -10,6 +10,7 @@ use crate::eviction::{image_allocation, instruction_member, near_redirect, quali
 use crate::planner::HookSemantics;
 use crate::quiescent::{self, AllocationPolicy, InstallRequest};
 use crate::scanner::{ScanResult, ScannedInstruction};
+use crate::search::{RefusalClass, SearchDomain, SearchEvidence, SearchScope};
 use crate::trampoline::{TrampolineImage, TrampolinePlan};
 
 /// Independent bounds for the forced neighboring-victim search.
@@ -89,6 +90,8 @@ pub struct NeighborAttempt {
 /// Search and execution geometry without performance estimates.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NeighborMetrics {
+    /// Explicit bounded-search evidence; incomplete proofs remain marked.
+    pub search: SearchEvidence,
     /// Geometrically eligible original heads examined, including qualifications.
     pub victims_examined: usize,
     /// Charged selected-placement candidate slots across all victims/placements.
@@ -127,6 +130,8 @@ impl PlannedNeighbor {
 /// Failed forced search, retaining all attempted-stage evidence.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NeighborFailure {
+    /// Explicit bounded-search evidence; incomplete proofs remain marked.
+    pub search: SearchEvidence,
     /// Final fail-closed reason; a refusal is not successful tactic coverage.
     pub reason: Refusal,
     /// Ordered candidate outcomes after common original-source validation.
@@ -166,9 +171,20 @@ pub fn plan_neighbor_detailed(
     budget: BundleBudget,
 ) -> Result<PlannedNeighbor, NeighborFailure> {
     let mut attempts = Vec::new();
+    let mut search_evidence = SearchEvidence::default();
     let result = (|| {
-        let (source, scan) = quiescent::validated_source(request)?;
-        let selected = qualify_selected(request, &scan)?;
+        let (source, scan) = quiescent::validated_source(request)
+            .inspect_err(|reason| search_evidence.qualification(SearchScope::default(), reason))?;
+        let selected_scope = SearchScope {
+            physical_pc: Some(request.logical_pc),
+            ..SearchScope::default()
+        };
+        let selected = qualify_selected(request, &scan).inspect_err(|reason| {
+            // max_sites=0 is a work limit, not a geometric prerequisite proof.
+            if request.search.max_sites != 0 {
+                search_evidence.qualification(selected_scope, reason);
+            }
+        })?;
         if search.max_victims == 0
             || search.max_pairs == 0
             || budget.max_steps < 2
@@ -183,6 +199,19 @@ pub fn plan_neighbor_detailed(
                         || policy.max_mapped_bytes < 4096
                 })
         {
+            let class = if budget.max_steps < 2
+                || budget.max_mappings < 2
+                || budget.max_virtual_bytes < 8192
+                || budget.max_backing_bytes < 8192
+                || [request.allocation, victim_allocation]
+                    .iter()
+                    .any(|policy| policy.max_mappings == 0 || policy.max_mapped_bytes < 4096)
+            {
+                RefusalClass::ResourceCapacity
+            } else {
+                RefusalClass::Unclassified
+            };
+            search_evidence.refusal(selected_scope, class, &Refusal::AllocationUnavailable);
             return Err(Refusal::AllocationUnavailable);
         }
         let selected_range = AddressRange::new(selected.address(), selected.len())?;
@@ -217,6 +246,18 @@ pub fn plan_neighbor_detailed(
                 })
                 .collect()
         };
+        let victims = search_evidence.begin(
+            SearchDomain::Victims,
+            selected_scope,
+            search.max_victims,
+            Some(candidates.len()),
+        );
+        let pair_search = search_evidence.begin(
+            SearchDomain::JointPairs,
+            selected_scope,
+            search.max_pairs,
+            None,
+        );
         let occupied = quiescent::occupied_ranges()?;
         let selected_plan = TrampolinePlan::from_short_instruction(
             &scan,
@@ -232,6 +273,11 @@ pub fn plan_neighbor_detailed(
         let mut joint_error = None;
         for (victim_index, victim) in candidates.into_iter().take(search.max_victims).enumerate() {
             let victims_examined = victim_index + 1;
+            search_evidence.visit(victims);
+            let victim_scope = SearchScope {
+                physical_pc: Some(victim.address()),
+                ..SearchScope::default()
+            };
             let qualification = (|| {
                 let victim_range = qualify_victim(request, &scan, victim, 10)?;
                 if victim_range.overlaps(selected_range) {
@@ -243,6 +289,7 @@ pub fn plan_neighbor_detailed(
             let (victim_range, relay, rel8, selected_patch) = match qualification {
                 Ok(value) => value,
                 Err(reason) => {
+                    search_evidence.qualification(victim_scope, &reason);
                     attempts.push(NeighborAttempt {
                         victim: victim.address(),
                         stage: NeighborAttemptStage::Qualification,
@@ -256,7 +303,14 @@ pub fn plan_neighbor_detailed(
             };
             let victim_plan = TrampolinePlan::from_instruction(&scan, victim.address())
                 .map_err(|error| Refusal::Backend(error.to_string()))?;
+            let victim_images = search_evidence.begin(
+                SearchDomain::VictimImages,
+                victim_scope,
+                victim_allocation.max_candidates,
+                None,
+            );
             for victim_candidate in 0..victim_allocation.max_candidates {
+                search_evidence.visit(victim_images);
                 let victim_target = quiescent::candidate_target(
                     victim.address(),
                     [false; 4],
@@ -286,11 +340,24 @@ pub fn plan_neighbor_detailed(
                     }
                 };
                 let victim_target = victim_image.address();
+                let selected_images = search_evidence.begin(
+                    SearchDomain::SelectedImages,
+                    SearchScope {
+                        victim_target: Some(victim_target),
+                        ..selected_scope
+                    },
+                    request.allocation.max_candidates,
+                    None,
+                );
                 for selected_candidate in 0..request.allocation.max_candidates {
                     if pairs_examined == search.max_pairs {
+                        // This entered loop has one current, unexamined pair.
+                        search_evidence.known_limit_hit(pair_search, 1);
                         return Err(joint_error.unwrap_or(Refusal::AllocationUnavailable));
                     }
                     pairs_examined += 1;
+                    search_evidence.visit(pair_search);
+                    search_evidence.visit(selected_images);
                     // This E9 starts at V+5: candidate_target adds five to that
                     // actual origin, not to the selected original instruction.
                     let selected_target = quiescent::candidate_target(
@@ -349,6 +416,9 @@ pub fn plan_neighbor_detailed(
                     });
                     match composed {
                         Ok(bundle) => {
+                            for id in [victims, pair_search, victim_images, selected_images] {
+                                search_evidence.accept(id);
+                            }
                             return Ok(PlannedNeighbor {
                                 bundle,
                                 geometry: NeighborGeometry {
@@ -362,6 +432,7 @@ pub fn plan_neighbor_detailed(
                                     victim_target,
                                 },
                                 metrics: NeighborMetrics {
+                                    search: SearchEvidence::default(),
                                     victims_examined,
                                     pairs_examined,
                                     selected_fallthrough_redirects: 3,
@@ -373,11 +444,42 @@ pub fn plan_neighbor_detailed(
                         Err(reason) => joint_error = Some(reason),
                     }
                 }
+                search_evidence.finish_candidates(
+                    selected_images,
+                    quiescent::candidate_target_proof(
+                        relay,
+                        [false; 4],
+                        request.allocation.preferred_address,
+                        request.allocation.max_candidates,
+                    ),
+                );
             }
+            search_evidence.finish_candidates(
+                victim_images,
+                quiescent::candidate_target_proof(
+                    victim.address(),
+                    [false; 4],
+                    victim_allocation.preferred_address,
+                    victim_allocation.max_candidates,
+                ),
+            );
         }
+        search_evidence.finish(victims);
+        search_evidence.finish(pair_search);
         Err(joint_error.unwrap_or(last_error))
     })();
-    result.map_err(|reason| NeighborFailure { reason, attempts })
+    match result {
+        Ok(mut plan) => {
+            search_evidence.accepted = true;
+            plan.metrics.search = search_evidence;
+            Ok(plan)
+        }
+        Err(reason) => Err(NeighborFailure {
+            reason,
+            attempts,
+            search: search_evidence,
+        }),
+    }
 }
 
 fn qualify_selected<'a>(

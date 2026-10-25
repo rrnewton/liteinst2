@@ -11,6 +11,7 @@ use iced_x86::{FlowControl, Mnemonic};
 use crate::contracts::*;
 use crate::planner::HookSemantics;
 use crate::scanner::{InstructionScanner, ScanResult};
+use crate::search::{RefusalClass, SearchDomain, SearchEvidence, SearchScope};
 use crate::trampoline::{ExecutableTrampoline, HookCallback, TrampolineImage, TrampolinePlan};
 
 /// Install-once ordering, with explicit modes for forced tactic qualification.
@@ -135,6 +136,8 @@ pub struct SiteAttempt {
 /// Measured plan shape (no host-dependent performance claim).
 #[derive(Clone, Debug)]
 pub struct PlanMetrics {
+    /// Explicit bounded-search evidence; incomplete proofs remain marked.
+    pub search: SearchEvidence,
     /// Logical minus physical PC.
     pub upstream_bytes: usize,
     /// Whole original instruction bytes displaced.
@@ -192,6 +195,8 @@ impl PlannedInstall {
 /// Failed planning with the attempted-site inventory retained.
 #[derive(Clone, Debug)]
 pub struct PlanningFailure {
+    /// Explicit bounded-search evidence; incomplete proofs remain marked.
+    pub search: SearchEvidence,
     /// Final fail-closed reason.
     pub reason: Refusal,
     /// Ordered candidates and their precise failure reasons.
@@ -208,17 +213,37 @@ pub fn plan_install_detailed(
     request: &InstallRequest<'_>,
 ) -> Result<PlannedInstall, PlanningFailure> {
     let mut attempts = Vec::new();
+    let mut search_evidence = SearchEvidence::default();
     let result = (|| {
-        let (source, scan) = validated_source(request)?;
+        let (source, scan) = validated_source(request).inspect_err(|reason| {
+            search_evidence.qualification(SearchScope::default(), reason);
+        })?;
         let occupied = occupied_ranges()?;
         if request.search.max_sites == 0 {
+            let id =
+                search_evidence.begin(SearchDomain::PhysicalSites, SearchScope::default(), 0, None);
+            if request.search.tactics == TacticPolicy::PrefixPunOnly {
+                // This gate precedes the length-dependent prefix domain. A
+                // validated head alone does not prove any T1 prefix exists.
+                search_evidence.finish(id);
+            } else {
+                search_evidence.known_limit_hit(id, 1);
+            }
             return Err(Refusal::NoPatchWindow);
         }
         if matches!(
             request.search.tactics,
             TacticPolicy::PreferGeneralizedPun | TacticPolicy::GeneralizedPunOnly
         ) {
-            match plan_pun(request, &scan, source, &occupied, 0) {
+            match plan_pun(
+                request,
+                &scan,
+                source,
+                &occupied,
+                0,
+                &mut search_evidence,
+                SearchScope::default(),
+            ) {
                 Ok(mut plan) => {
                     attempts.push(SiteAttempt {
                         tactic: PatchTactic::GeneralizedPun,
@@ -263,9 +288,24 @@ pub fn plan_install_detailed(
         if request.search.tactics == TacticPolicy::PrefixPunOnly {
             candidates.clear();
         }
+        let sites = search_evidence.begin(
+            SearchDomain::PhysicalSites,
+            SearchScope::default(),
+            request.search.max_sites,
+            Some(candidates.len()),
+        );
         for physical in candidates.into_iter().take(request.search.max_sites) {
-            match plan_at(request, &scan, source, physical, &occupied) {
+            search_evidence.visit(sites);
+            match plan_at(
+                request,
+                &scan,
+                source,
+                physical,
+                &occupied,
+                &mut search_evidence,
+            ) {
                 Ok(mut plan) => {
+                    search_evidence.accept(sites);
                     attempts.push(SiteAttempt {
                         tactic: PatchTactic::Relocation,
                         physical_pc: physical,
@@ -281,6 +321,7 @@ pub fn plan_install_detailed(
                 }),
             }
         }
+        search_evidence.finish(sites);
         if matches!(
             request.search.tactics,
             TacticPolicy::PreferGeneralizedPun | TacticPolicy::PrefixPunOnly
@@ -293,7 +334,15 @@ pub fn plan_install_detailed(
                 .len();
             if (2..=4).contains(&len) {
                 for prefix_count in 1..len {
-                    match plan_pun(request, &scan, source, &occupied, prefix_count) {
+                    match plan_pun(
+                        request,
+                        &scan,
+                        source,
+                        &occupied,
+                        prefix_count,
+                        &mut search_evidence,
+                        SearchScope::default(),
+                    ) {
                         Ok(mut plan) => {
                             attempts.push(SiteAttempt {
                                 tactic: PatchTactic::PrefixPun,
@@ -317,7 +366,18 @@ pub fn plan_install_detailed(
             .and_then(|attempt| attempt.refusal.clone())
             .unwrap_or(Refusal::NoPatchWindow))
     })();
-    result.map_err(|reason| PlanningFailure { reason, attempts })
+    match result {
+        Ok(mut plan) => {
+            search_evidence.accepted = true;
+            plan.metrics.search = search_evidence;
+            Ok(plan)
+        }
+        Err(reason) => Err(PlanningFailure {
+            reason,
+            attempts,
+            search: search_evidence,
+        }),
+    }
 }
 
 /// Plans one shared relocation window with independent observing controls.
@@ -343,6 +403,7 @@ pub fn plan_coalesced_detailed(
     actions: &[crate::controls::ControlledAction],
 ) -> Result<PlannedInstall, PlanningFailure> {
     let mut attempts = Vec::new();
+    let mut search_evidence = SearchEvidence::default();
     let result = (|| {
         if request.semantics != HookSemantics::Observe {
             return Err(Refusal::UnsupportedSemantics(
@@ -359,7 +420,8 @@ pub fn plan_coalesced_detailed(
         {
             return Err(Refusal::InvalidPlan);
         }
-        let (source, scan) = validated_source(request)?;
+        let (source, scan) = validated_source(request)
+            .inspect_err(|reason| search_evidence.qualification(SearchScope::default(), reason))?;
         for action in actions {
             if !request.block.contains(action.logical_pc) {
                 return Err(Refusal::InvalidRange);
@@ -369,6 +431,9 @@ pub fn plan_coalesced_detailed(
             }
         }
         if request.search.max_sites == 0 {
+            let id =
+                search_evidence.begin(SearchDomain::PhysicalSites, SearchScope::default(), 0, None);
+            search_evidence.known_limit_hit(id, 1);
             return Err(Refusal::NoPatchWindow);
         }
         let occupied = occupied_ranges()?;
@@ -390,10 +455,25 @@ pub fn plan_coalesced_detailed(
                 request.logical_pc - pc,
             )
         });
+        let sites = search_evidence.begin(
+            SearchDomain::PhysicalSites,
+            SearchScope::default(),
+            request.search.max_sites,
+            Some(candidates.len()),
+        );
         for physical in candidates.into_iter().take(request.search.max_sites) {
-            match plan_at_with_controls(request, &scan, source, physical, &occupied, Some(actions))
-            {
+            search_evidence.visit(sites);
+            match plan_at_with_controls(
+                request,
+                &scan,
+                source,
+                physical,
+                &occupied,
+                Some(actions),
+                &mut search_evidence,
+            ) {
                 Ok(mut plan) => {
+                    search_evidence.accept(sites);
                     attempts.push(SiteAttempt {
                         tactic: PatchTactic::Relocation,
                         physical_pc: physical,
@@ -409,12 +489,24 @@ pub fn plan_coalesced_detailed(
                 }),
             }
         }
+        search_evidence.finish(sites);
         Err(attempts
             .last()
             .and_then(|attempt| attempt.refusal.clone())
             .unwrap_or(Refusal::NoPatchWindow))
     })();
-    result.map_err(|reason| PlanningFailure { reason, attempts })
+    match result {
+        Ok(mut plan) => {
+            search_evidence.accepted = true;
+            plan.metrics.search = search_evidence;
+            Ok(plan)
+        }
+        Err(reason) => Err(PlanningFailure {
+            reason,
+            attempts,
+            search: search_evidence,
+        }),
+    }
 }
 
 pub(crate) fn validated_source(
@@ -471,8 +563,15 @@ pub(crate) fn plan_pun(
     source: AddressRange,
     occupied: &[AddressRange],
     prefixes: usize,
+    search_evidence: &mut SearchEvidence,
+    parent_scope: SearchScope,
 ) -> Result<PlannedInstall, Refusal> {
     let physical = request.logical_pc;
+    let scope = SearchScope {
+        physical_pc: Some(physical),
+        prefix_count: Some(prefixes),
+        ..parent_scope
+    };
     let instruction = scan
         .instructions()
         .iter()
@@ -488,10 +587,12 @@ pub(crate) fn plan_pun(
         || !source.covers(consumed)
         || physical / 64 != (displaced.end() - 1) / 64
     {
+        search_evidence.qualification(scope, &Refusal::NoPatchWindow);
         return Err(Refusal::NoPatchWindow);
     }
     if request.semantics != HookSemantics::ReplaceFirst {
-        qualify_instruction(instruction.instruction())?;
+        qualify_instruction(instruction.instruction())
+            .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
     }
     if request
         .entries
@@ -522,6 +623,7 @@ pub(crate) fn plan_pun(
     let store_address = physical.min((physical | 63) - (store_len as u64 - 1));
     let store_range = AddressRange::new(store_address, store_len)?;
     if !source.covers(store_range) {
+        search_evidence.qualification(scope, &Refusal::NoPatchWindow);
         return Err(Refusal::NoPatchWindow);
     }
     let offset = (physical - source.start()) as usize;
@@ -534,6 +636,11 @@ pub(crate) fn plan_pun(
     let window = AddressRange::new(low, 1_usize << (8 * free))?;
     let policy = request.allocation;
     if policy.max_mappings == 0 || policy.max_mapped_bytes < 4096 {
+        search_evidence.refusal(
+            scope,
+            RefusalClass::ResourceCapacity,
+            &Refusal::AllocationUnavailable,
+        );
         return Err(Refusal::AllocationUnavailable);
     }
     let trampoline = TrampolinePlan::from_short_instruction(
@@ -545,7 +652,14 @@ pub(crate) fn plan_pun(
     .map_err(|e| Refusal::Backend(e.to_string()))?;
     let candidates = pun_candidates(window, policy);
     let mut last_error = Refusal::AllocationUnavailable;
-    for (attempt, target) in candidates.into_iter().enumerate() {
+    let image_search = search_evidence.begin(
+        SearchDomain::SelectedImages,
+        scope,
+        policy.max_candidates,
+        None,
+    );
+    for (attempt, target) in candidates.addresses.into_iter().enumerate() {
+        search_evidence.visit(image_search);
         let image = match trampoline.emit_at(target) {
             Ok(image) => image,
             Err(error) => {
@@ -564,6 +678,12 @@ pub(crate) fn plan_pun(
             || !policy.ranges.iter().any(|range| range.covers(allocation))
             || occupied.iter().any(|range| range.overlaps(allocation))
         {
+            let class = if allocation.len() > policy.max_mapped_bytes as u64 {
+                RefusalClass::ResourceCapacity
+            } else {
+                RefusalClass::AddressPolicy
+            };
+            search_evidence.refusal(scope, class, &Refusal::AllocationUnavailable);
             continue;
         }
         let displacement = i32::try_from(i128::from(target) - next)
@@ -661,10 +781,12 @@ pub(crate) fn plan_pun(
                 sigill_router: false,
             },
         })?;
+        search_evidence.accept(image_search);
         return Ok(PlannedInstall {
             plan,
             image,
             metrics: PlanMetrics {
+                search: SearchEvidence::default(),
                 upstream_bytes: 0,
                 displaced_bytes: len,
                 prefix_instructions: 0,
@@ -673,10 +795,11 @@ pub(crate) fn plan_pun(
             },
         });
     }
+    search_evidence.finish_candidates(image_search, candidates.proof);
     Err(last_error)
 }
 
-fn pun_candidates(window: AddressRange, policy: &AllocationPolicy) -> Vec<u64> {
+fn pun_candidates(window: AddressRange, policy: &AllocationPolicy) -> PunCandidates {
     let mut addresses = Vec::new();
     let mut seen = std::collections::BTreeSet::new();
     let mut add = |address| {
@@ -706,7 +829,8 @@ fn pun_candidates(window: AddressRange, policy: &AllocationPolicy) -> Vec<u64> {
             address = next;
         }
     }
-    addresses
+    let proof = pun_candidate_proof(window, policy, &addresses);
+    PunCandidates { addresses, proof }
 }
 
 fn plan_at(
@@ -715,8 +839,17 @@ fn plan_at(
     source: AddressRange,
     physical: u64,
     occupied: &[AddressRange],
+    search_evidence: &mut SearchEvidence,
 ) -> Result<PlannedInstall, Refusal> {
-    plan_at_with_controls(request, scan, source, physical, occupied, None)
+    plan_at_with_controls(
+        request,
+        scan,
+        source,
+        physical,
+        occupied,
+        None,
+        search_evidence,
+    )
 }
 
 fn plan_at_with_controls(
@@ -726,7 +859,12 @@ fn plan_at_with_controls(
     physical: u64,
     occupied: &[AddressRange],
     controls: Option<&[crate::controls::ControlledAction]>,
+    search_evidence: &mut SearchEvidence,
 ) -> Result<PlannedInstall, Refusal> {
+    let scope = SearchScope {
+        physical_pc: Some(physical),
+        ..SearchScope::default()
+    };
     let last_logical = controls
         .and_then(|actions| actions.last())
         .map_or(request.logical_pc, |action| action.logical_pc);
@@ -742,6 +880,7 @@ fn plan_at_with_controls(
         }
         end = item.address() + item.len() as u64;
         if end > request.block.end() || end - physical > request.search.max_displaced_bytes as u64 {
+            search_evidence.qualification(scope, &Refusal::NoPatchWindow);
             return Err(Refusal::NoPatchWindow);
         }
         instructions.push(item);
@@ -750,6 +889,7 @@ fn plan_at_with_controls(
         }
     }
     if end - physical < 5 || end <= last_logical {
+        search_evidence.qualification(scope, &Refusal::NoPatchWindow);
         return Err(Refusal::NoPatchWindow);
     }
     let displaced = AddressRange::new(physical, (end - physical) as usize)?;
@@ -757,7 +897,8 @@ fn plan_at_with_controls(
         let replaced = item.address() == request.logical_pc
             && request.semantics == HookSemantics::ReplaceFirst;
         if !replaced {
-            qualify_instruction(item.instruction())?;
+            qualify_instruction(item.instruction())
+                .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
             if item.instruction().flow_control() != FlowControl::Next
                 && item.address() + item.len() as u64 != end
             {
@@ -822,11 +963,23 @@ fn plan_at_with_controls(
     }
     let policy = request.allocation;
     if policy.max_mappings == 0 || policy.max_mapped_bytes < 4096 {
+        search_evidence.refusal(
+            scope,
+            RefusalClass::ResourceCapacity,
+            &Refusal::AllocationUnavailable,
+        );
         return Err(Refusal::AllocationUnavailable);
     }
     let mut seen = std::collections::BTreeSet::new();
     let mut last_error = Refusal::AllocationUnavailable;
+    let image_search = search_evidence.begin(
+        SearchDomain::SelectedImages,
+        scope,
+        policy.max_candidates,
+        None,
+    );
     for attempt in 0..policy.max_candidates {
+        search_evidence.visit(image_search);
         let Some(target) = candidate_target(physical, mask, policy.preferred_address, attempt)
         else {
             continue;
@@ -852,6 +1005,12 @@ fn plan_at_with_controls(
             || !policy.ranges.iter().any(|range| range.covers(allocation))
             || occupied.iter().any(|range| range.overlaps(allocation))
         {
+            let class = if allocation.len() > policy.max_mapped_bytes as u64 {
+                RefusalClass::ResourceCapacity
+            } else {
+                RefusalClass::AddressPolicy
+            };
+            search_evidence.refusal(scope, class, &Refusal::AllocationUnavailable);
             continue;
         }
         let offset = (physical - source.start()) as usize;
@@ -937,10 +1096,12 @@ fn plan_at_with_controls(
                 sigill_router: !routes.is_empty(),
             },
         })?;
+        search_evidence.accept(image_search);
         return Ok(PlannedInstall {
             plan,
             image,
             metrics: PlanMetrics {
+                search: SearchEvidence::default(),
                 upstream_bytes: (request.logical_pc - physical) as usize,
                 displaced_bytes: displaced.len() as usize,
                 prefix_instructions: instructions
@@ -952,6 +1113,15 @@ fn plan_at_with_controls(
             },
         });
     }
+    search_evidence.finish_candidates(
+        image_search,
+        candidate_target_proof(
+            physical,
+            mask,
+            policy.preferred_address,
+            policy.max_candidates,
+        ),
+    );
     Err(last_error)
 }
 
@@ -983,6 +1153,193 @@ pub(crate) fn candidate_target(
         }
     }
     u64::try_from(i128::from(next) + i128::from(i32::from_le_bytes(bytes))).ok()
+}
+
+/// Additive proof; it never shortens the existing loop or changes a target.
+pub(crate) fn candidate_target_proof(
+    physical: u64,
+    mask: [bool; 4],
+    preferred: Option<u64>,
+    examined: usize,
+) -> crate::search::CandidateProof {
+    use crate::search::{CandidateProof, CandidateWitness};
+    let empty = || CandidateProof::Indexed {
+        permanent_end_exclusive: Some(0),
+        omitted: None,
+    };
+    let Some(next) = physical.checked_add(5) else {
+        return empty();
+    };
+    // Preserve the original eager unwrap_or argument: even Some(preferred)
+    // evaluates the default's checked_add and can return None here.
+    let Some(default_seed) = next.checked_add(0x1_0000) else {
+        return empty();
+    };
+    let seed = preferred.unwrap_or(default_seed);
+    let combinations = ILLEGAL
+        .len()
+        .pow(mask.iter().filter(|&&value| value).count() as u32);
+    let step = 0x1_0000_u128;
+    let upper = (u128::from(next) + i32::MAX as u128).min(u128::from(u64::MAX));
+    let lower = i128::from(next) + i128::from(i32::MIN);
+    if u128::from(seed) > upper {
+        return empty();
+    }
+    let first = if i128::from(seed) >= lower {
+        0
+    } else {
+        u128::try_from(lower - i128::from(seed))
+            .unwrap()
+            .div_ceil(step)
+    };
+    let last = (upper - u128::from(seed)) / step;
+    if first > last {
+        return empty();
+    }
+    let end = usize::try_from((last + 1) * combinations as u128).ok();
+    if end.is_some_and(|end| examined >= end) {
+        return CandidateProof::Indexed {
+            permanent_end_exclusive: end,
+            omitted: None,
+        };
+    }
+    // Three fixed group probes are independent of the caller's range widths.
+    // Failure of these probes remains unclassified; no absence proof is inferred.
+    let group = (examined / combinations) as u128;
+    let first_probe = group.max(first);
+    let mut witness = None;
+    for probe in [first_probe, first_probe + 1, last] {
+        if probe < first_probe || probe > last {
+            continue;
+        }
+        let start_choice = if probe == group {
+            examined % combinations
+        } else {
+            0
+        };
+        let seed_at = u64::try_from(u128::from(seed) + probe * step).unwrap();
+        let displacement = i32::try_from(i128::from(seed_at) - i128::from(next)).unwrap();
+        // Choice order is monotone in the UNSIGNED displacement word, because
+        // constrained low bytes are the least-significant base-14 choice digits.
+        // The valid signed-target range becomes at most two unsigned intervals.
+        let signed_low = (-i128::from(next)).max(i128::from(i32::MIN)) as i32;
+        let signed_high =
+            (i128::from(u64::MAX) - i128::from(next)).min(i128::from(i32::MAX)) as u32;
+        let intervals = [(0, signed_high), (signed_low as u32, u32::MAX)];
+        for (low, high) in intervals {
+            let mut left = start_choice;
+            let mut right = combinations;
+            while left < right {
+                let mid = left + (right - left) / 2;
+                if candidate_word(displacement, mask, mid) < low {
+                    left = mid + 1;
+                } else {
+                    right = mid;
+                }
+            }
+            if left == combinations || candidate_word(displacement, mask, left) > high {
+                continue;
+            }
+            let Some(slot) = usize::try_from(probe * combinations as u128 + left as u128).ok()
+            else {
+                continue;
+            };
+            let Some(target) = candidate_target(physical, mask, preferred, slot) else {
+                continue;
+            };
+            let found = CandidateWitness { slot, target };
+            if witness.is_none_or(|prior: CandidateWitness| found.slot < prior.slot) {
+                witness = Some(found);
+            }
+        }
+    }
+    CandidateProof::Indexed {
+        permanent_end_exclusive: end,
+        omitted: witness,
+    }
+}
+
+fn candidate_word(displacement: i32, mask: [bool; 4], mut choice: usize) -> u32 {
+    let mut bytes = displacement.to_le_bytes();
+    for (byte, constrained) in bytes.iter_mut().zip(mask) {
+        if constrained {
+            *byte = ILLEGAL[choice % ILLEGAL.len()];
+            choice /= ILLEGAL.len();
+        }
+    }
+    u32::from_le_bytes(bytes)
+}
+
+struct PunCandidates {
+    addresses: Vec<u64>,
+    proof: crate::search::CandidateProof,
+}
+
+fn pun_candidate_proof(
+    window: AddressRange,
+    policy: &AllocationPolicy,
+    addresses: &[u64],
+) -> crate::search::CandidateProof {
+    use crate::search::{CandidateProof, PageWalkEvidence};
+    let returned: std::collections::BTreeSet<_> = addresses.iter().copied().collect();
+    let mut omitted = policy
+        .preferred_address
+        .filter(|&pc| window.contains(pc) && !returned.contains(&pc));
+    let mut walks = Vec::with_capacity(policy.ranges.len());
+    for (range_index, range) in policy.ranges.iter().enumerate() {
+        let Some(first_page) = range.start().checked_add(4095).map(|value| value & !4095) else {
+            walks.push(PageWalkEvidence {
+                range_index,
+                finite_slots: 0,
+                examined: 0,
+            });
+            continue;
+        };
+        let start = window.start().max(first_page);
+        let end = window.end().min(range.end());
+        let finite_slots = if start >= end {
+            0
+        } else {
+            let next = (u128::from(start) | 4095) + 1;
+            1 + if next >= u128::from(end) {
+                0
+            } else {
+                ((u128::from(end) - 1 - next) / 4096 + 1) as u64
+            }
+        };
+        walks.push(PageWalkEvidence {
+            range_index,
+            finite_slots,
+            examined: usize::try_from(finite_slots)
+                .unwrap_or(usize::MAX)
+                .min(policy.max_candidates),
+        });
+        if omitted.is_some() {
+            continue;
+        }
+        let mut address = start;
+        // Each range is strictly increasing. Among returned.len()+1 distinct
+        // items one must be missing; a shorter fully checked range is complete.
+        // This is bounded by already returned work, not the range's byte width.
+        for _ in 0..=addresses.len() {
+            if address >= end {
+                break;
+            }
+            if !returned.contains(&address) {
+                omitted = Some(address);
+                break;
+            }
+            let Some(next) = (address | 4095).checked_add(1) else {
+                break;
+            };
+            address = next;
+        }
+    }
+    CandidateProof::PageBoundary {
+        returned: addresses.len(),
+        omitted,
+        walks,
+    }
 }
 
 pub(crate) fn qualify_instruction(instruction: &iced_x86::Instruction) -> Result<(), Refusal> {
@@ -1559,6 +1916,181 @@ mod tests {
         assert!(matches!(
             plan_install(&request),
             Err(Refusal::AllocationUnavailable)
+        ));
+    }
+}
+
+#[cfg(test)]
+mod search_candidate_tests {
+    use super::*;
+    use crate::search::{CandidateProof, SearchStop};
+
+    fn policy(preferred: Option<u64>, ranges: Vec<AddressRange>, limit: usize) -> AllocationPolicy {
+        AllocationPolicy {
+            preferred_address: preferred,
+            ranges,
+            max_candidates: limit,
+            max_mappings: 1,
+            max_mapped_bytes: 8192,
+        }
+    }
+
+    #[test]
+    fn indexed_endpoint_preserves_invalid_prefix_and_eager_default() {
+        let proof = candidate_target_proof(0x9000_0000, [false; 4], Some(0), 0);
+        let CandidateProof::Indexed {
+            omitted: Some(witness),
+            ..
+        } = proof
+        else {
+            panic!("known later seed required");
+        };
+        assert_eq!(candidate_target(0x9000_0000, [false; 4], Some(0), 0), None);
+        assert_eq!(witness.slot, 4097);
+        assert_eq!(witness.target, 0x1001_0000);
+        assert_eq!(
+            candidate_target(0x9000_0000, [false; 4], Some(0), witness.slot),
+            Some(witness.target)
+        );
+        let physical = u64::MAX - 31;
+        assert_eq!(
+            candidate_target(physical, [false; 4], Some(physical), 0),
+            None
+        );
+        assert_eq!(
+            candidate_target_proof(physical, [false; 4], Some(physical), 0),
+            CandidateProof::Indexed {
+                permanent_end_exclusive: Some(0),
+                omitted: None
+            }
+        );
+    }
+
+    #[test]
+    fn invalid_choice_is_not_permanent_end_and_unproved_tail_stays_unknown() {
+        let mask = [false, false, false, true];
+        assert_eq!(candidate_target(0, mask, Some(5), 13), None);
+        let proof = candidate_target_proof(0, mask, Some(5), 13);
+        let CandidateProof::Indexed {
+            omitted: Some(witness),
+            ..
+        } = proof
+        else {
+            panic!("next group has known work");
+        };
+        assert_eq!(witness.slot, 14);
+        assert_eq!(
+            candidate_target(0, mask, Some(5), witness.slot),
+            Some(witness.target)
+        );
+        let physical = u64::MAX - 65541;
+        let proof =
+            candidate_target_proof(physical, [false, false, true, false], Some(physical + 5), 0);
+        assert_eq!(
+            proof,
+            CandidateProof::Indexed {
+                permanent_end_exclusive: Some(28),
+                omitted: None
+            }
+        );
+        let mut report = SearchEvidence::default();
+        let run = report.begin(
+            SearchDomain::SelectedImages,
+            SearchScope::default(),
+            0,
+            None,
+        );
+        report.finish_candidates(run, proof);
+        assert_eq!(report.runs[run].stop, SearchStop::UnclassifiedBoundedStop);
+        assert!(!report.classification_complete);
+    }
+
+    #[test]
+    fn all_masks_keep_their_original_slots_and_prove_permanent_upper_end() {
+        for bits in 0..16_u8 {
+            let mask = std::array::from_fn(|index| bits & (1 << index) != 0);
+            let physical = 0x4000_0000;
+            let preferred = Some(physical + 5 + i32::MAX as u64);
+            let combinations = 14_usize.pow(bits.count_ones());
+            for examined in [0, 1, combinations - 1, combinations, combinations + 1] {
+                let proof = candidate_target_proof(physical, mask, preferred, examined);
+                let CandidateProof::Indexed {
+                    permanent_end_exclusive,
+                    omitted,
+                } = proof
+                else {
+                    unreachable!();
+                };
+                assert_eq!(permanent_end_exclusive, Some(combinations));
+                if let Some(witness) = omitted {
+                    assert!(witness.slot >= examined && witness.slot < combinations);
+                    assert_eq!(
+                        candidate_target(physical, mask, preferred, witness.slot),
+                        Some(witness.target)
+                    );
+                }
+                for slot in [combinations, combinations + 1, combinations * 2, usize::MAX] {
+                    assert_eq!(candidate_target(physical, mask, preferred, slot), None);
+                }
+            }
+            // This mathematical property licenses the bounded binary search;
+            // all 50,625 byte-choice combinations across the 16 masks are tested.
+            for displacement in [i32::MIN, -5, 0, i32::MAX] {
+                let mut prior = None;
+                for choice in 0..combinations {
+                    let word = candidate_word(displacement, mask, choice);
+                    assert!(prior.is_none_or(|previous| previous < word));
+                    prior = Some(word);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn pun_duplicate_preference_ranges_and_both_caps_have_exact_evidence() {
+        let window = AddressRange::new(0x1003, 0x3000).unwrap();
+        let range = AddressRange::new(0x1000, 0x4000).unwrap();
+        let one = pun_candidates(window, &policy(Some(0x1003), vec![range, range], 1));
+        assert_eq!(one.addresses, [0x1003]);
+        let CandidateProof::PageBoundary { omitted, walks, .. } = one.proof else {
+            unreachable!();
+        };
+        assert_eq!(omitted, Some(0x2000));
+        assert_eq!(walks.len(), 2);
+        assert!(
+            walks
+                .iter()
+                .all(|walk| walk.finite_slots == 4 && walk.examined == 1)
+        );
+        let complete = pun_candidates(window, &policy(Some(0x1003), vec![range, range], 4));
+        assert_eq!(complete.addresses, [0x1003, 0x2000, 0x3000, 0x4000]);
+        assert!(matches!(
+            complete.proof,
+            CandidateProof::PageBoundary { omitted: None, .. }
+        ));
+        // A per-range prefix can spend work on duplicates before reaching a new
+        // address. The proof concerns all distinct scheduled targets, not len==cap.
+        let zero = pun_candidates(window, &policy(Some(0x1003), vec![range], 0));
+        assert!(zero.addresses.is_empty());
+        assert!(matches!(
+            zero.proof,
+            CandidateProof::PageBoundary {
+                omitted: Some(0x1003),
+                ..
+            }
+        ));
+        let singleton = AddressRange::new(0x1003, 1).unwrap();
+        let one = pun_candidates(singleton, &policy(Some(0x1003), vec![range, range], 1));
+        assert_eq!(one.addresses, [0x1003]);
+        assert!(matches!(
+            one.proof,
+            CandidateProof::PageBoundary { omitted: None, .. }
+        ));
+        let empty = pun_candidates(singleton, &policy(None, vec![], 0));
+        assert!(empty.addresses.is_empty());
+        assert!(matches!(
+            empty.proof,
+            CandidateProof::PageBoundary { omitted: None, .. }
         ));
     }
 }

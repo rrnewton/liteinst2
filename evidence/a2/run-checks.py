@@ -24,6 +24,8 @@ commands = [
     ('clippy', ['cargo', 'clippy', '--workspace', '--all-targets', '--all-features', '--', '-D', 'warnings']),
     ('test', ['cargo', 'test', '--workspace']),
     ('check', ['cargo', 'check', '--workspace', '--all-features', '--all-targets']),
+    ('search-unit', ['cargo', 'test', '--lib']),
+    ('search-contract', ['cargo', 'test', '--test', 'search_evidence', '--test', 'search_eviction_evidence', '--', '--test-threads=1']),
     ('contract', ['cargo', 'test', '--test', 'quiescent_contract', '--', '--test-threads=1', '--nocapture']),
     ('pun-contract', ['cargo', 'test', '--test', 'generalized_pun_contract', '--', '--test-threads=1', '--nocapture']),
     ('prefix-contract', ['cargo', 'test', '--test', 'prefixed_pun_contract', '--', '--test-threads=1', '--nocapture']),
@@ -52,7 +54,8 @@ sources = ['Cargo.toml', 'src/lib.rs', 'src/grouping.rs', 'src/eviction.rs',
            'tests/successor_eviction_oracle.rs', 'src/neighbor.rs', 'src/engine.rs',
            'tests/neighbor_eviction_contract.rs', 'tests/neighbor_eviction_oracle.rs',
            'tests/tactic_engine.rs', 'evidence/a2/run-checks.py', 'src/controls.rs',
-           'tests/controlled_coalescing_contract.rs', 'tests/controlled_oracle.rs']
+           'tests/controlled_coalescing_contract.rs', 'tests/controlled_oracle.rs',
+           'src/search.rs', 'tests/search_evidence.rs', 'tests/search_eviction_evidence.rs']
 source_sha256 = {path: hashlib.sha256((ROOT/path).read_bytes()).hexdigest()
                  for path in sources}
 for name, argv in commands:
