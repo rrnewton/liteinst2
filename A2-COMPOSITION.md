@@ -1,4 +1,4 @@
-# A2 composition foundation
+# A2 composition and tactic engine
 
 `composition::Composition` is a pure virtual overlay for ordered source rewrites.
 It authenticates every member's reads against the preceding overlay, retains
@@ -141,7 +141,16 @@ architectural-oracle fixtures recorded in `evidence/a2-20261025.md`. T2 qualific
 `evidence/a2-successor-20261025.md`. T3 and unified selection are recorded in
 `evidence/a2-neighbor-20261025.md`. Coalesced controls are recorded in
 `evidence/a2-controls-20261025.md`. Scoped search diagnostics are implemented;
-whole-tactic classification remains incomplete and the generated/sampled
-campaign remains pending. Generalized
-puns retain first priority for install-once clients; ordinary relocation precedes
-T1. Concurrent toggle visibility remains A4 work.
+whole-tactic classification remains incomplete. The fixed generated/sampled
+campaign completed all 544 required outcomes; its successes, refusals, preserved
+failed attempt and resource/memory observations are recorded in
+`evidence/a2-campaign-20261025.md`.
+
+The full A2 exit gate remains open. Required gaps include explicit jump-table and
+direct-entry paths, successful saved resumes, call-return and exception landing
+entries, mandatory-prefix and native rel32 endpoint inventories, active CET and
+Intel evidence, eviction-chain coverage, and relocation-boundary signal/unwind
+qualification. Existing unsupported refusals and finite AMD results do not
+substitute for those required fixtures. Generalized puns retain first priority
+for install-once clients; ordinary relocation precedes T1. Concurrent toggle
+visibility remains A4 work.
