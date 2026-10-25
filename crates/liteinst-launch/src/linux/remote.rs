@@ -775,20 +775,20 @@ impl SingleThreadStop<'_> {
             // references the real stop owner, which cannot expose a resume
             // operation until this scope and its lease have ended.
             let mut lease = unsafe { QuiescenceLease::new(&mut guard, identity, ranges) };
-            let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                action(&mut operations, &mut lease)
-            }));
-            if lease.is_poisoned() {
-                match outcome {
-                    Ok(Ok(_)) => Ok(Err(LaunchError::Invalid(
-                        "core publication lease remained poisoned",
-                    ))),
-                    Ok(Err(error)) => Ok(Err(error)),
-                    Err(payload) => Err(payload),
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                match action(&mut operations, &mut lease) {
+                    Ok(value) if lease.is_poisoned() => {
+                        // A caller-provided result may panic in Drop. Its
+                        // destruction belongs inside the same unwind boundary
+                        // so exclusion cannot escape without terminating the child.
+                        drop(value);
+                        Err(LaunchError::Invalid(
+                            "core publication lease remained poisoned",
+                        ))
+                    }
+                    result => result,
                 }
-            } else {
-                outcome
-            }
+            }))
         };
         match outcome {
             Ok(Ok(value)) => {

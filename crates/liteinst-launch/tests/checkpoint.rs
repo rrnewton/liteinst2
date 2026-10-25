@@ -1199,3 +1199,41 @@ fn core_lease_error_poison_and_panic_kill_and_reap() {
         assert_reaped(pid);
     }
 }
+
+#[test]
+fn poisoned_core_lease_result_destructor_panic_kills_and_reaps() {
+    struct PanickingResult;
+
+    impl Drop for PanickingResult {
+        fn drop(&mut self) {
+            panic!("injected publication result destructor unwind");
+        }
+    }
+
+    let fixtures = Fixtures::new();
+    let path = fixtures.elf("remote-core-result-unwind", false, None);
+    let mut stopped = process(&path);
+    let pid = stopped.pid();
+    let page = stopped.page_size();
+    let address = unused_code_address(&stopped, page);
+    let range = AddressRange::new(address, page).unwrap();
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        // SAFETY: the private fixture's sole stopped task and this unused range
+        // remain exclusively owned. The result intentionally panics when the
+        // poisoned publication is rejected, after its code allocation exists.
+        unsafe {
+            stopped.hold().unwrap().with_core_lease(
+                lease_identity(),
+                vec![range],
+                |operations, lease| {
+                    operations.map_private_code(address, &vec![0; page], CONTROL_TIMEOUT)?;
+                    lease.poison();
+                    Ok(PanickingResult)
+                },
+            )
+        }
+    }));
+    assert!(result.is_err(), "result destructor panic was swallowed");
+    assert!(stopped.read_registers().is_err());
+    assert_reaped(pid);
+}
