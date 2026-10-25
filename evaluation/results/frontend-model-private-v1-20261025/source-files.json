@@ -1,0 +1,12 @@
+{
+  "preformat_snapshot": {
+    "Cargo.lock": "2b9863cdd1ee433a070cd55901776d756add2e875d0d49c19ed40f60724b3a23",
+    "Cargo.toml": "35e7a224e67781c01f8114733bc4f1361ce1764ef46d6f0a61c51996f39cad16",
+    "src/frontend.rs": "e55cf3eb7b211793271c4274230063f0f5bd31fa4515087bf3f8a48def7800f6",
+    "src/frontend/tests.rs": "8d62c37fa2d81e20b9673151c664a459f046bfa615e6d9160db2c3ddcc955549",
+    "src/generation.rs": "8e46edc632e5da7718243890bb2842f07fde1160c1d862fa96f1de7ea0a2e806",
+    "src/generation/owned_tests.rs": "e37e008ee673b0fe3fa13f03b28f3dc0eb207da74055502b26617ea0628facf6",
+    "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+    "src/lib.rs": "c21beee46df3897e8d0f0413a3613f58ef65ea1bbfcbffe95321573c23832863"
+  }
+}

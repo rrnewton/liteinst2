@@ -15,6 +15,10 @@ use liteinst2::rapid::{RapidProbe, RapidTogglePlan};
 use liteinst2::scanner::InstructionScanner;
 use object::{Object, ObjectSection, ObjectSymbol};
 
+/// Bounded frontend lifecycle model, with no native entry/exit or code publication.
+#[forbid(unsafe_code)]
+pub mod frontend;
+
 /// Generation-owned bookkeeping, independent of the active profiler frontend.
 pub mod generation;
 

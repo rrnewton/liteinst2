@@ -1,0 +1,575 @@
+{
+  "blocker": {
+    "description": "Re-publishing the current open epoch directly or through a clone closed the same owner while leaving the enabled group state. V2 added exact AlreadyCurrent refusal before mutation, preserving every old case and adding one six-subcase model.",
+    "finding_sha256": "58eba19cc2e8e6b081e5cd4519568b7b6bd542689b4dee7e66796ae6d0098801",
+    "id": "A5-F1",
+    "status": "source_held_before_execution"
+  },
+  "case_denominator": {
+    "docs": 8,
+    "docs_not_run": 8,
+    "docs_passed": 0,
+    "models": 52,
+    "models_failed": 0,
+    "models_filtered": 0,
+    "models_ignored": 0,
+    "models_not_run": 52,
+    "models_passed": 0
+  },
+  "cases": [
+    {
+      "case_id": "frontend::tests::g01_per_function_k_two_and_global_storage",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 0
+    },
+    {
+      "case_id": "frontend::tests::g02_old_frame_keeps_removed_owner_and_payload",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 1
+    },
+    {
+      "case_id": "frontend::tests::g03_nested_old_new_frames_keep_two_children",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 2
+    },
+    {
+      "case_id": "frontend::tests::g04_stale_disable_cannot_mutate_new_generation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 3
+    },
+    {
+      "case_id": "frontend::tests::g05_acquired_owner_after_close_refuses",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 4
+    },
+    {
+      "case_id": "frontend::tests::g05_install_and_foreign_handle_refuse_without_slot_change",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 5
+    },
+    {
+      "case_id": "frontend::tests::g05_reserved_before_close_completes_to_old",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 6
+    },
+    {
+      "case_id": "frontend::tests::g06_kth_gap_keeps_seven_terminals_and_one_other",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 7
+    },
+    {
+      "case_id": "frontend::tests::g07_payload_before_release_pause_blocks_drain",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 8
+    },
+    {
+      "case_id": "frontend::tests::g07_sixteen_payloads_visible_after_drain_before_join",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 9
+    },
+    {
+      "case_id": "frontend::tests::g08_explicit_cancel_and_drop_publish_distinct_payloads_first",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 10
+    },
+    {
+      "case_id": "frontend::tests::g08_forgotten_complete_frame_retains_reservation_and_permit",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 11
+    },
+    {
+      "case_id": "frontend::tests::g08_standalone_owned_ticket_has_no_frontend_permit_claim",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 12
+    },
+    {
+      "case_id": "frontend::tests::g09_a_storage_exhaustion_preserves_records_and_slot",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 13
+    },
+    {
+      "case_id": "frontend::tests::g09_constructor_bounds_and_failed_stage_release_permit",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 14
+    },
+    {
+      "case_id": "frontend::tests::g09_d_frame_limit_preserves_owned_frame_and_slot",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 15
+    },
+    {
+      "case_id": "frontend::tests::g09_e_handles_reports_final_owner_and_forgotten_owners",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 16
+    },
+    {
+      "case_id": "frontend::tests::g09_m_reservation_exhaustion_preserves_records_and_slot",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 17
+    },
+    {
+      "case_id": "frontend::tests::g09_t_registration_limit_and_duplicate_are_exact",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 18
+    },
+    {
+      "case_id": "frontend::tests::g10_nonwrapping_sequences_refuse_and_remain_terminal",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 19
+    },
+    {
+      "case_id": "frontend::tests::g10_reentry_and_duplicate_slot_preserve_existing_frames",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 20
+    },
+    {
+      "case_id": "frontend::tests::g10_registry_contention_refuses_before_slot_mutation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 21
+    },
+    {
+      "case_id": "frontend::tests::g10_registry_poison_refuses_before_slot_mutation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 22
+    },
+    {
+      "case_id": "frontend::tests::g10_unregistered_thread_and_empty_binding_are_explicit",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 23
+    },
+    {
+      "case_id": "frontend::tests::g11_mandatory_action_remains_after_all_profiling_functions_close",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 24
+    },
+    {
+      "case_id": "frontend::tests::g11_shared_group_keeps_b_then_disables_after_b_closes",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 25
+    },
+    {
+      "case_id": "frontend::tests::g12_after_mutation_failures_retain_owner_and_refuse_retry",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 26
+    },
+    {
+      "case_id": "frontend::tests::g12_before_mutation_failures_keep_binding_and_group_state",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 27
+    },
+    {
+      "case_id": "frontend::tests::g12_bounded_scan_recovers_closed_actions_without_notification_queue",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 28
+    },
+    {
+      "case_id": "frontend::tests::g12_history_exhaustion_refuses_before_any_controller_mutation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "not_run",
+      "ordinal": 29
+    },
+    {
+      "case_id": "frontend::tests::reference_ledger_rejects_eight_identity_payload_action_mutations",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_reference_calibration",
+      "observed": "not_run",
+      "ordinal": 30
+    },
+    {
+      "case_id": "generation::owned_tests::owned_and_borrowed_records_have_exact_terminal_parity",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "owned_ticket_model",
+      "observed": "not_run",
+      "ordinal": 31
+    },
+    {
+      "case_id": "generation::owned_tests::owned_cancel_and_drop_keep_exact_old_epoch_after_new_creation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "owned_ticket_model",
+      "observed": "not_run",
+      "ordinal": 32
+    },
+    {
+      "case_id": "generation::owned_tests::owned_refusals_preserve_slots_and_original_identity",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "owned_ticket_model",
+      "observed": "not_run",
+      "ordinal": 33
+    },
+    {
+      "case_id": "generation::owned_tests::owned_ticket_retains_original_epoch_until_its_terminal",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "owned_ticket_model",
+      "observed": "not_run",
+      "ordinal": 34
+    },
+    {
+      "case_id": "generation::tests::checked_generation_exhaustion_never_wraps_or_reuses",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 35
+    },
+    {
+      "case_id": "generation::tests::close_after_admission_waits_for_terminal_record",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 36
+    },
+    {
+      "case_id": "generation::tests::close_before_admission_refuses_without_record",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 37
+    },
+    {
+      "case_id": "generation::tests::close_gap_allows_five_post_k_completions_but_only_one_other_reservation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 38
+    },
+    {
+      "case_id": "generation::tests::exact_constructor_refusals_and_largest_budget_do_not_wrap",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 39
+    },
+    {
+      "case_id": "generation::tests::explicit_and_drop_cancellation_are_distinct_and_do_not_consume_k",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 40
+    },
+    {
+      "case_id": "generation::tests::final_acquire_observes_all_sixteen_exact_terminal_values",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 41
+    },
+    {
+      "case_id": "generation::tests::independent_ledger_rejects_six_wrong_populations_or_identities",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 42
+    },
+    {
+      "case_id": "generation::tests::independent_two_generation_two_function_event_ledger",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 43
+    },
+    {
+      "case_id": "generation::tests::inflight_refusal_does_not_consume_a_slot",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 44
+    },
+    {
+      "case_id": "generation::tests::nested_invocations_keep_identity_and_completion_selection_order",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 45
+    },
+    {
+      "case_id": "generation::tests::old_ticket_completion_does_not_close_or_write_new_epoch",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 46
+    },
+    {
+      "case_id": "generation::tests::partial_records_keep_unfinished_in_two_epochs_separate",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 47
+    },
+    {
+      "case_id": "generation::tests::retained_budget_is_per_function_for_one_ten_and_thousand",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 48
+    },
+    {
+      "case_id": "generation::tests::simultaneous_completions_have_exactly_one_final_retention_and_request",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 49
+    },
+    {
+      "case_id": "generation::tests::total_storage_exhaustion_closes_epoch_without_losing_records",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 50
+    },
+    {
+      "case_id": "generation::tests::unknown_function_refusal_and_closed_function_do_not_hide_other_function",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "not_run",
+      "ordinal": 51
+    },
+    {
+      "case_id": "frontend::AdmissionHandle.owner",
+      "command_id": "docs",
+      "expected": "E0616",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 52
+    },
+    {
+      "case_id": "frontend::EpochHandle.owner",
+      "command_id": "docs",
+      "expected": "E0616",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 53
+    },
+    {
+      "case_id": "frontend::Report.owner",
+      "command_id": "docs",
+      "expected": "E0616",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 54
+    },
+    {
+      "case_id": "frontend::ThreadModel.frames",
+      "command_id": "docs",
+      "expected": "E0616",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 55
+    },
+    {
+      "case_id": "generation::OwnedTicket.no_clone",
+      "command_id": "docs",
+      "expected": "E0599",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 56
+    },
+    {
+      "case_id": "generation::OwnedTicket.no_double_finish",
+      "command_id": "docs",
+      "expected": "E0382",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 57
+    },
+    {
+      "case_id": "generation::Ticket.no_clone",
+      "command_id": "docs",
+      "expected": "E0599",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 58
+    },
+    {
+      "case_id": "generation::Ticket.no_double_finish",
+      "command_id": "docs",
+      "expected": "E0382",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 59
+    }
+  ],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "heading": "systematic everytactic",
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "command_denominator": {
+    "executed": 0,
+    "failed": 0,
+    "not_run": 8,
+    "passed": 0,
+    "required": 8
+  },
+  "commands": [],
+  "complete_A5": false,
+  "frontend_activated": false,
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "observation_phase": "No workload executed; no runtime hardware observation credited."
+  },
+  "identity_provenance_limits": [
+    "Selected tool/runtime bytes and configuration observations are not a complete runtime closure.",
+    "Historical root records attest pre/post selected identities; no independent historical stat snapshots are invented.",
+    "Two inaccessible Cargo configuration coordinates were recorded as exact stat EPERM, not absence or authenticated hidden contents.",
+    "Toolchain labels are pinned installed coordinates; this attempt has no fresh version-banner invocation."
+  ],
+  "planned_commands": [
+    "format",
+    "library",
+    "compile",
+    "list",
+    "models",
+    "clippy",
+    "docs",
+    "msrv"
+  ],
+  "preemption_clock_claim": false,
+  "private_capture_manifest_sha256": "58eba19cc2e8e6b081e5cd4519568b7b6bd542689b4dee7e66796ae6d0098801",
+  "reproduction_directory": "evaluation/frontend-model-private",
+  "run_id": "frontend-model-private-v1-20261025",
+  "schema_version": 1,
+  "scope_note": "Pure metadata, reservation/terminal ownership and bounded reference-ledger models; no active frontend/TLS/return-slot/native clock qualification.",
+  "sources": {
+    "preformat_snapshot": {
+      "base_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+      "file_count": 8,
+      "kind": "source_snapshot",
+      "scope": "Standalone private crate; no active frontend, TLS, return-slot or native code publication.",
+      "source_manifest_sha256": "51e3db6b97547e4557abb01aaf7572a2e9db0bf69a49658262368da93707ef40",
+      "source_tree_sha256": "b449eef8f67a45d84a6148f1e4981c25969c74349243798fefc02429748fa011",
+      "tested_revision": null
+    }
+  },
+  "status": "source_held",
+  "suite": "owned-ticket-and-frontend-private-reference-model",
+  "tested_revision": null,
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tools": []
+}

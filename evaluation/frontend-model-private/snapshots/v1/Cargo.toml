@@ -1,0 +1,16 @@
+[package]
+name = "liteinst2-frontend-model-draft"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+publish = false
+autobins = false
+autotests = false
+autoexamples = false
+
+[workspace]
+members = []
+
+[lib]
+name = "rapid_profiler"
+path = "src/lib.rs"

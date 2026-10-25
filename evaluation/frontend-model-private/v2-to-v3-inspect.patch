@@ -1,0 +1,13 @@
+--- v2-formatted/src/frontend.rs
++++ v3/src/frontend.rs
+@@ -272,9 +272,8 @@
+     }
+     /// Iterate exact final records without allocating or releasing the owner.
+     pub fn records(&self) -> impl Iterator<Item = RecordObservation> + '_ {
+-        self.owner.records().map(|row| {
++        self.owner.records().inspect(|row| {
+             assert!(row.record.terminal.is_some() && row.payload.is_some());
+-            row
+         })
+     }
+ }

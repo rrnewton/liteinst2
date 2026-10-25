@@ -1,0 +1,26 @@
+{
+  "attempts": {
+    "1": {
+      "required_docs": 8,
+      "required_models": 52,
+      "run_id": "frontend-model-private-v1-20261025",
+      "source_manifest_sha256": "51e3db6b97547e4557abb01aaf7572a2e9db0bf69a49658262368da93707ef40",
+      "status": "source_held"
+    },
+    "2": {
+      "required_docs": 8,
+      "required_models": 53,
+      "run_id": "frontend-model-private-v2-20261025",
+      "source_manifest_sha256": "b88eba6c8e119ab1d7a9a418857037e6c3d77bb0f2869b8c6ecba50dcbfd0251",
+      "status": "fail"
+    },
+    "3": {
+      "required_docs": 8,
+      "required_models": 53,
+      "run_id": "frontend-model-private-v3-20261025",
+      "source_manifest_sha256": "831afca7e0db7c25f154fe0f4907c9890706f7dc5a92534fd23c82ee3372fe94",
+      "status": "pass"
+    }
+  },
+  "scope": "Data-only reproduction snapshots and exact request templates. The pinned existing helper is the executable boundary; no new runner or materializer is introduced."
+}
