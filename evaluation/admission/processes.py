@@ -3,8 +3,10 @@
 run_command requires one supervisor thread, no pre-existing children, default
 SIGCHLD handling and no competing reaper. These checks are part of its contract:
 subreaper adoption alone cannot distinguish concurrent, unrelated child owners.
-The command may fork, change process groups or create sessions. Only this
-supervisor's direct children are discovered; every wait names an owned child.
+The command may fork, change process groups or create sessions. The optional
+proc children file supplies direct children. Without it, one-level proc entries
+are candidates only: a stable pidfd must pass a nonreaping owned-child wait.
+Global waits only prove absence of children; they never consume a wait status.
 An incomplete cleanup poisons this module and retains its unreaped owners.
 """
 
@@ -33,14 +35,66 @@ class _OwnershipError(Exception):
     pass
 
 
-def _direct_children():
-    # There is exactly one supervisor thread. This is its child list, not a
-    # scan of numeric process directories or the command's mutable descendants.
+def _children_file():
     path = Path(f"/proc/self/task/{os.getpid()}/children")
     words = path.read_text().split()
     if any(not word.isascii() or not word.isdecimal() for word in words):
         raise _OwnershipError()
     return {int(word) for word in words}
+
+
+def _no_children():
+    # None means at least one live child; a status means a terminal child.
+    # Only ECHILD proves absence. WNOWAIT never consumes an existing child.
+    try:
+        os.waitid(os.P_ALL, 0, os.WEXITED | os.WNOHANG | os.WNOWAIT | _WALL)
+    except ChildProcessError:
+        return True
+    return False
+
+
+def _check_deadline(deadline):
+    if time.monotonic() >= deadline:
+        raise _OwnershipError()
+
+
+def _proc_candidates(deadline):
+    # No recursion, PPid inference, numeric signals or proc-derived ownership.
+    _check_deadline(deadline)
+    with os.scandir("/proc") as entries:
+        for entry in entries:
+            _check_deadline(deadline)
+            if entry.name.isascii() and entry.name.isdecimal():
+                yield int(entry.name)
+
+
+def _direct_children(deadline=None, strategy=None):
+    if deadline is None:
+        deadline = time.monotonic() + CLEANUP_SECONDS
+    _check_deadline(deadline)
+    if strategy != "pidfd_authenticated_proc_candidates":
+        try:
+            children = _children_file()
+            _check_deadline(deadline)
+            return children
+        except FileNotFoundError:
+            if strategy == "proc_children":
+                raise
+    children = set()
+    for pid in _proc_candidates(deadline):
+        _check_deadline(deadline)
+        try:
+            candidate = _Child(pid)
+        except (ChildProcessError, ProcessLookupError):
+            continue
+        # There is no competing reaper: an authenticated child cannot lose its
+        # identity while this supervisor closes and later reopens its pidfd.
+        try:
+            children.add(pid)
+        finally:
+            os.close(candidate.pidfd)
+    _check_deadline(deadline)
+    return children
 
 
 def _subreaper(value=None):
@@ -64,7 +118,7 @@ def _preflight():
         raise _OwnershipError()
     if {entry.name for entry in Path("/proc/self/task").iterdir()} != {str(os.getpid())}:
         raise _OwnershipError()
-    if signal.getsignal(signal.SIGCHLD) != signal.SIG_DFL or _direct_children():
+    if signal.getsignal(signal.SIGCHLD) != signal.SIG_DFL or not _no_children():
         raise _OwnershipError()
     # A custom handler could fork or reap while the supervisor is inspecting
     # ownership. Python's ordinary SIGINT handler only raises KeyboardInterrupt.
@@ -83,6 +137,12 @@ def _preflight():
         signal.pidfd_send_signal(descriptor, 0)
     finally:
         os.close(descriptor)
+    try:
+        if _children_file():
+            raise _OwnershipError()
+        return "proc_children"
+    except FileNotFoundError:
+        return "pidfd_authenticated_proc_candidates"
 
 
 class _Child:
@@ -90,12 +150,21 @@ class _Child:
         self.pid = pid
         self.pidfd = os.pidfd_open(pid)
         self.reaped = False
+        try:
+            self.exit_status()
+        except BaseException:
+            os.close(self.pidfd)
+            self.pidfd = None
+            raise
 
     def exit_status(self):
         # WNOWAIT pins both PID and process-group identity until cleanup has
         # finished sending group signals. Never use Popen.poll(), which reaps.
-        return os.waitid(os.P_PIDFD, self.pidfd,
-                         os.WEXITED | os.WNOHANG | os.WNOWAIT | _WALL)
+        status = os.waitid(os.P_PIDFD, self.pidfd,
+                           os.WEXITED | os.WNOHANG | os.WNOWAIT | _WALL)
+        if status is not None and status.si_pid != self.pid:
+            raise _OwnershipError()
+        return status
 
     def kill(self):
         try:
@@ -148,7 +217,7 @@ def run_command(argv, env, log, timeout_seconds, max_log_bytes=8 * 1024 * 1024):
     result = {"start_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
               "exit_code": None, "termination": None, "seconds": None,
               "private_log_sha256": None, "cleanup_complete": True,
-              "reaped_descendants": 0}
+              "reaped_descendants": 0, "child_discovery_strategy": "not_needed"}
     log = Path(log)
     if not log.resolve().is_relative_to((ROOT / "target/evaluation").resolve()):
         raise ValueError("private log must remain under target/evaluation")
@@ -200,7 +269,7 @@ def run_command(argv, env, log, timeout_seconds, max_log_bytes=8 * 1024 * 1024):
                 fail("capture_error")
 
         try:
-            _preflight()
+            result["child_discovery_strategy"] = _preflight()
             # Raising KeyboardInterrupt inside Popen.__init__ can leave a child
             # without an assigned owner. Deferral also makes reap+state updates
             # indivisible with respect to SIGINT. A caught signal disposition is
@@ -250,36 +319,40 @@ def run_command(argv, env, log, timeout_seconds, max_log_bytes=8 * 1024 * 1024):
                     if leader is None:
                         leader = _Child(process.pid)
                     while time.monotonic() < cleanup_deadline:
-                        _kill_group(process.pid)
-                        for pid in _direct_children() - {process.pid}:
+                        if not leader.reaped:
+                            _kill_group(process.pid)
+                            leader.kill()
+                            status = leader.exit_status()
+                            if status is not None:
+                                if result["exit_code"] is None:
+                                    result["exit_code"] = _returncode(status)
+                                # This is the last numeric group signal. Reap
+                                # the pinned leader so ECHILD can subsequently
+                                # prove complete cleanup without trusting a
+                                # proc enumeration's racing snapshot.
+                                _kill_group(process.pid)
+                                if leader.reap():
+                                    process.returncode = result["exit_code"]
+                        if leader.reaped and _no_children():
+                            break
+                        excluded = {process.pid} if not leader.reaped else set()
+                        for pid in _direct_children(
+                                cleanup_deadline, result["child_discovery_strategy"]) - excluded:
                             if pid not in children:
                                 children[pid] = _Child(pid)
-                        leader.kill()
                         for child in children.values():
                             child.kill()
                         for pid, child in list(children.items()):
                             if child.reap():
                                 result["reaped_descendants"] += 1
                                 del children[pid]
-                        status = leader.exit_status()
-                        if status is not None:
-                            if result["exit_code"] is None:
-                                result["exit_code"] = _returncode(status)
-                            # Reparenting precedes terminal status. Re-enumerate
-                            # after reaping parents so newly adopted grandchildren
-                            # cannot disappear between discovery and completion.
-                            if not children and _direct_children() == {process.pid}:
-                                break
+                        if leader.reaped and not children and _no_children():
+                            break
                         drain(0.01)
                     else:
                         cleanup_failed = True
 
-                    # No more group signals after reaping its pinned leader.
-                    if leader.reap():
-                        process.returncode = result["exit_code"]
-                    else:
-                        cleanup_failed = True
-                    if _direct_children() or children:
+                    if not leader.reaped or children or not _no_children():
                         cleanup_failed = True
                     # All owned writers are now dead; drain their finite tail.
                     while selector.get_map() and time.monotonic() < cleanup_deadline:

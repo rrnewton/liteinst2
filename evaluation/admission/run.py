@@ -124,6 +124,7 @@ def hardware():
                    "kernel_upstream_version": upstream[0],
                    "kernel_release_sha256": sha(release.encode()),
                    "effective_uid_is_root": os.geteuid() == 0,
+                   "effective_capabilities": caps,
                    "cap_sys_ptrace": bool(caps & (1 << 19)),
                    "cap_sys_admin": bool(caps & (1 << 21)),
                    "ptrace_scope": ptrace_scope, "ptrace_scope_status": ptrace_scope_status})

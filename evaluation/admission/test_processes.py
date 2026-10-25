@@ -8,6 +8,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 from unittest import mock
 
@@ -33,6 +34,9 @@ class ProcessOwnershipTests(unittest.TestCase):
         self.assertEqual(processes._direct_children(), set())
         self.assertEqual(processes._subreaper(), self.prior_subreaper)
         self.assertEqual(signal.getsignal(signal.SIGINT), self.prior_sigint)
+        self.assertTrue(processes._no_children())
+        self.assertIn(result["child_discovery_strategy"],
+                      ("proc_children", "pidfd_authenticated_proc_candidates"))
         self.assertEqual(result["private_log_sha256"],
                          hashlib.sha256(self.log.read_bytes()).hexdigest())
 
@@ -185,6 +189,71 @@ os._exit(0)
             unrelated.kill()
             unrelated.wait(timeout=3)
         self.assertEqual(processes._direct_children(), set())
+
+    def test_missing_children_file_and_omitted_scan_still_clean_up_detached_child(self):
+        real_candidates = processes._proc_candidates
+        scans = 0
+
+        def omit_first_scan(deadline):
+            nonlocal scans
+            scans += 1
+            if scans == 1:
+                return iter(())
+            return real_candidates(deadline)
+
+        with mock.patch.object(processes, "_children_file", side_effect=FileNotFoundError), \
+                mock.patch.object(processes, "_proc_candidates", omit_first_scan):
+            # Retain this fixture's exact exit, lifecycle-failure, descendant
+            # count, output, no-child and restored-supervisor assertions.
+            self.test_detached_child_holding_stdout_cannot_outlive_a_successful_leader()
+        self.assertGreaterEqual(scans, 2)
+
+    def test_fallback_rejects_nonchild_candidate_without_signaling_or_leaking_pidfd(self):
+        before = set(Path("/proc/self/fd").iterdir())
+        with mock.patch.object(processes, "_children_file", side_effect=FileNotFoundError), \
+                mock.patch.object(processes, "_proc_candidates", return_value=iter((os.getpid(),))), \
+                mock.patch.object(signal, "pidfd_send_signal") as send:
+            self.assertEqual(processes._direct_children(), set())
+            send.assert_not_called()
+        self.assertEqual(set(Path("/proc/self/fd").iterdir()), before)
+        self.assertTrue(processes._no_children())
+
+    def test_missing_children_file_does_not_hide_a_preexisting_live_child(self):
+        with mock.patch.object(processes, "_children_file", side_effect=FileNotFoundError):
+            self.test_existing_child_is_never_adopted_killed_or_reaped_by_the_helper()
+
+    def test_preexisting_terminal_child_is_refused_without_consuming_its_status(self):
+        unrelated = subprocess.Popen([sys.executable, "-c", "raise SystemExit(7)"],
+                                     stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        try:
+            deadline = time.monotonic() + 1
+            status = None
+            while status is None and time.monotonic() < deadline:
+                status = os.waitid(os.P_PID, unrelated.pid,
+                                   os.WEXITED | os.WNOHANG | os.WNOWAIT)
+                if status is None:
+                    time.sleep(0.01)
+            self.assertIsNotNone(status)
+            self.assertEqual(status.si_status, 7)
+            with mock.patch.object(processes, "_children_file", side_effect=FileNotFoundError):
+                result = self.run_python("raise SystemExit(0)")
+            self.assertEqual(result["termination"], "ownership_refused")
+            self.assertIsNone(result["exit_code"])
+            self.assertEqual(result["reaped_descendants"], 0)
+            self.assertTrue(result["cleanup_complete"])
+            retained = os.waitid(os.P_PID, unrelated.pid,
+                                 os.WEXITED | os.WNOHANG | os.WNOWAIT)
+            self.assertEqual(retained, status)
+        finally:
+            unrelated.kill()
+            unrelated.wait(timeout=3)
+        self.assertTrue(processes._no_children())
+
+    def test_proc_candidate_enumeration_refuses_an_expired_deadline(self):
+        with mock.patch.object(os, "scandir") as scan:
+            with self.assertRaises(processes._OwnershipError):
+                next(processes._proc_candidates(0))
+            scan.assert_not_called()
 
 
 if __name__ == "__main__":

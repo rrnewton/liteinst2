@@ -27,7 +27,10 @@ pre-existing children and exclusively own child reaping. It uses subreaper
 adoption and pidfds to clean up descendants that change process groups or
 sessions; violations, incomplete cleanup or descendants left behind by an otherwise
 successful command fail the command. SIGINT is deferred across ownership
-transfers and triggers bounded cleanup.
+transfers and triggers bounded cleanup. If per-task child listings are absent,
+a bounded, one-level process enumeration supplies candidates only; pidfd waits
+authenticate owned children, and an `ECHILD` result proves final emptiness. The
+chosen discovery strategy is recorded per command.
 Failure, output exhaustion or timeout does not become a pass. These are serial
 validation commands, not a benchmark or a contained seed sweep.
 

@@ -548,6 +548,6 @@
       "test": "cpuid_structured_features_leaf"
     }
   ],
-  "recorder_tests": 47,
+  "recorder_tests": 52,
   "schema_version": 1
 }
