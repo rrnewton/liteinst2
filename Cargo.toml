@@ -59,3 +59,11 @@ path = "examples/saved_pkru_probe.rs"
 required-features = ["saved-pkru-probe"]
 test = false
 bench = false
+
+# Native state fixtures execute on a fresh process main thread.
+[[bin]]
+name = "successor-eviction-oracle-driver"
+path = "tests/support/successor_eviction_driver.rs"
+test = false
+bench = false
+doc = false

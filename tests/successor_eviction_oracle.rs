@@ -80,6 +80,10 @@ struct Puzzle {
 
 #[test]
 fn native_state_covers_successor_eviction_into_b2_and_t1_puns() {
+    isolation::run_parent("native_state_covers_successor_eviction_into_b2_and_t1_puns");
+}
+
+pub fn run_native_state_covers_successor_eviction_into_b2_and_t1_puns() {
     let puzzles = [
         Puzzle {
             name: "T2-B2-LEA-MOV-store",
@@ -427,6 +431,10 @@ fn native_state_covers_successor_eviction_into_b2_and_t1_puns() {
 
 #[test]
 fn native_successor_eviction_preserves_seven_byte_victim_fault() {
+    isolation::run_parent("native_successor_eviction_preserves_seven_byte_victim_fault");
+}
+
+pub fn run_native_successor_eviction_preserves_seven_byte_victim_fault() {
     // Independently checked with GNU objdump: MOV EAX,0 at0 (5 bytes),
     // MOV EAX,EAX at5 (2), MOV RCX,[RAX+disp32=0] at7 (7), RET at14.
     // The victim is REX.W + 8B + ModRM88 (mod10, regRCX, baseRAX) + disp32:
@@ -634,6 +642,10 @@ struct AdditionalPuzzle {
 
 #[test]
 fn native_successor_eviction_preserves_bounded_victim_backedge() {
+    isolation::run_parent("native_successor_eviction_preserves_bounded_victim_backedge");
+}
+
+pub fn run_native_successor_eviction_preserves_bounded_victim_backedge() {
     // SHR ECX,1; JNZ selected; RET. The six-byte victim's rel32 is -8.
     // ECX reaches zero within32 selected visits from every initial value.
     // SHR by1 leaves AF architecturally undefined: this fixture deliberately
@@ -655,6 +667,10 @@ fn native_successor_eviction_preserves_bounded_victim_backedge() {
 
 #[test]
 fn native_successor_eviction_preserves_victim_rip_relative_data() {
+    isolation::run_parent("native_successor_eviction_preserves_victim_rip_relative_data");
+}
+
+pub fn run_native_successor_eviction_preserves_victim_rip_relative_data() {
     // MOV EAX,EAX; MOV RCX,[RIP+55]; MOV [RDI],RCX; RET.
     // The load's original nextPC is9 and its controlled data target is64.
     // Only bytes0..13 are scanner input/function code. The constant at64 is
@@ -989,4 +1005,17 @@ fn run_additional_puzzle(puzzle: AdditionalPuzzle) {
         originals.len(),
         expected_hook_visits
     );
+}
+
+#[path = "support/successor_eviction_isolation.rs"]
+mod isolation;
+
+/// Standalone fixture-binary entry; never starts Rust's test harness.
+pub fn isolated_main() {
+    isolation::main_thread_driver();
+}
+
+#[test]
+fn occupied_successor_page_refuses_without_mutation() {
+    isolation::run_parent("occupied_successor_page_refuses_without_mutation");
 }
