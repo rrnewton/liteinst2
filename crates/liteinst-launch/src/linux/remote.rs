@@ -5,6 +5,7 @@ use super::*;
 use std::cell::RefCell;
 use std::ops::Range;
 
+use iced_x86::{Code, Decoder, DecoderOptions};
 use liteinst2::contracts::{AddressRange, CodeIdentity, QuiescenceLease};
 
 mod group;
@@ -66,6 +67,50 @@ pub enum ProcessEvent {
     /// The owned child died from a signal and has been reaped.
     Signaled {
         /// Terminating signal.
+        signal: i32,
+    },
+}
+
+/// Actual kernel result of one authenticated native SYSCALL instruction.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct NativeSyscallCompletion {
+    /// Complete registers at the syscall-exit stop, including its original
+    /// application continuation and kernel `orig_rax` bookkeeping.
+    pub registers: RegisterSnapshot,
+    /// Complete kernel extended state at that same exit stop.
+    pub xstate: Vec<u8>,
+    /// Raw signed return value, authenticated against GET_SYSCALL_INFO.
+    pub result: i64,
+    /// Kernel classification of an errno return. An errno is a completion,
+    /// rather than an instruction fault or an instrumentation failure.
+    pub is_error: bool,
+}
+
+/// Result of executing a selected native SYSCALL without debugger trap flags.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum NativeSyscallOutcome {
+    /// The syscall returned and an actual private INT3 established a safe
+    /// injection stop. The exact kernel-exit state has been restored, so source
+    /// rearming and sync-core operations may now run under the held owner.
+    Completed(Box<NativeSyscallCompletion>),
+    /// An application signal interrupted execution. It remains unacknowledged;
+    /// no bridge or instruction completion is inferred from this stop.
+    ApplicationSignal {
+        /// Exact pending kernel signal and stop identity.
+        stop: SignalStop,
+        /// Complete application registers at the signal stop.
+        registers: Box<RegisterSnapshot>,
+        /// Complete kernel extended state at the signal stop.
+        xstate: Vec<u8>,
+    },
+    /// The syscall terminated the child, which has been reaped.
+    Exited {
+        /// Native exit status.
+        code: i32,
+    },
+    /// The child died from a signal and has been reaped.
+    Signaled {
+        /// Native terminating signal.
         signal: i32,
     },
 }
@@ -593,8 +638,18 @@ impl StoppedProcess {
     }
 
     fn resume(&mut self, request: u32, timeout: Duration) -> Result<ProcessEvent, LaunchError> {
+        self.resume_before(request, deadline(timeout)?)
+    }
+
+    fn resume_before(
+        &mut self,
+        request: u32,
+        deadline: Instant,
+    ) -> Result<ProcessEvent, LaunchError> {
         self.ensure_stopped()?;
-        let deadline = deadline(timeout)?;
+        if Instant::now() >= deadline {
+            return self.fail(LaunchError::Timeout("owned process event"));
+        }
         if let Err(error) = single_task(self.pid()) {
             return self.fail(error);
         }
@@ -1182,6 +1237,167 @@ impl SingleThreadStop<'_> {
     ) -> Result<ProcessEvent, LaunchError> {
         self.process.resume(libc::PTRACE_SINGLESTEP, timeout)
     }
+
+    /// Executes one authenticated native SYSCALL through kernel entry and exit
+    /// stops, without installing TF or executing its application continuation.
+    ///
+    /// The task must be at an acknowledged signal or trusted island stop, with
+    /// RIP equal to `expected_pc` and TF clear. `expected_bytes` must match one
+    /// complete decoded x86-64 SYSCALL (including any valid ignored prefixes).
+    /// SYSENTER and INT 0x80 are different ABIs and refuse before execution.
+    /// The ordinary single-task syscall allowlist remains in force.
+    ///
+    /// The caller is responsible for source publication and synchronization
+    /// before this call. Successful completion executes a neutral private INT3,
+    /// authenticates it, and restores the *actual* complete syscall-exit state.
+    /// That real signal stop permits subsequent source rearming and sync-core;
+    /// a syscall-exit stop is never merely relabelled as an injection stop.
+    /// Entry, exit, and bridge share one cumulative deadline. An uncertain
+    /// execution or bridge failure terminates the owned child.
+    pub fn execute_native_syscall(
+        &mut self,
+        expected_pc: u64,
+        expected_bytes: &[u8],
+        timeout: Duration,
+    ) -> Result<NativeSyscallOutcome, LaunchError> {
+        let deadline = deadline(timeout)?;
+        self.process.owned_signal_stop()?;
+        if expected_bytes.is_empty() || expected_bytes.len() > 15 {
+            return Err(LaunchError::Invalid(
+                "invalid native syscall encoding length",
+            ));
+        }
+        let next_pc = expected_pc
+            .checked_add(expected_bytes.len() as u64)
+            .ok_or(LaunchError::Invalid("native syscall address overflow"))?;
+        let instruction =
+            Decoder::with_ip(64, expected_bytes, expected_pc, DecoderOptions::NONE).decode();
+        if instruction.code() != Code::Syscall || instruction.next_ip() != next_pc {
+            return Err(LaunchError::Invalid(
+                "requires one native SYSCALL instruction",
+            ));
+        }
+        let before = self.process.read_registers()?;
+        if before.rip != expected_pc || before.cs != 0x33 || before.eflags & 0x100 != 0 {
+            return Err(LaunchError::Invalid(
+                "native syscall needs exact PC, native CS and clear TF",
+            ));
+        }
+        if self
+            .process
+            .read_memory(expected_pc, expected_bytes.len())?
+            != expected_bytes
+        {
+            return Err(LaunchError::Invalid("native syscall source bytes differ"));
+        }
+        permitted_syscall(before.rax, arguments(&before))?;
+        let outcome = (|| {
+            single_task(self.pid())?;
+            verify_island(self.pid(), &self.mappings(), &self.process.island)?;
+            let entry = self.process.resume_before(libc::PTRACE_SYSCALL, deadline)?;
+            match entry {
+                ProcessEvent::SyscallEntry {
+                    number,
+                    arguments: actual,
+                } => {
+                    let info = syscall_info(self.pid())?;
+                    let registers = self.read_registers()?;
+                    if number != before.rax
+                        || actual != arguments(&before)
+                        || info.op != libc::PTRACE_SYSCALL_INFO_ENTRY
+                        || info.arch != AUDIT_ARCH_X86_64
+                        || info.instruction_pointer != next_pc
+                        || info.stack_pointer != before.rsp
+                        || registers.rip != next_pc
+                        || registers.rsp != before.rsp
+                        || registers.orig_rax != before.rax
+                    {
+                        return Err(LaunchError::Invalid(
+                            "native syscall entry did not authenticate",
+                        ));
+                    }
+                }
+                ProcessEvent::Exited { .. } => {
+                    return Err(LaunchError::Invalid(
+                        "native syscall terminated before its entry stop",
+                    ));
+                }
+                other => return self.native_syscall_terminal(other),
+            }
+            let exit = self.process.resume_before(libc::PTRACE_SYSCALL, deadline)?;
+            match exit {
+                ProcessEvent::SyscallExit { result, is_error } => {
+                    let info = syscall_info(self.pid())?;
+                    let registers = self.read_registers()?;
+                    let extended = self.read_xstate()?;
+                    if info.op != libc::PTRACE_SYSCALL_INFO_EXIT
+                        || info.arch != AUDIT_ARCH_X86_64
+                        || info.instruction_pointer != next_pc
+                        || info.stack_pointer != before.rsp
+                        || registers.rip != next_pc
+                        || registers.rsp != before.rsp
+                        || registers.orig_rax != before.rax
+                        || registers.rax != result as u64
+                        || is_error != (-4095..=-1).contains(&result)
+                    {
+                        return Err(LaunchError::Invalid(
+                            "native syscall exit did not authenticate",
+                        ));
+                    }
+                    syscall_time_left(deadline)?;
+                    let island = self.process.island.clone();
+                    verify_island(self.pid(), &self.mappings(), &island)?;
+                    self.process.state = State::Running;
+                    syscall_return_bridge(
+                        &mut self.process.checkpoint.child,
+                        island.start + 2,
+                        &registers,
+                        &extended,
+                        deadline,
+                    )?;
+                    single_task(self.pid())?;
+                    verify_island(self.pid(), &self.mappings(), &island)?;
+                    syscall_time_left(deadline)?;
+                    // The bridge has now executed and authenticated an actual
+                    // owned trap and restored every saved kernel-exit byte.
+                    self.process.state = State::Stopped(Phase::OwnedTrap);
+                    Ok(NativeSyscallOutcome::Completed(Box::new(
+                        NativeSyscallCompletion {
+                            registers,
+                            xstate: extended,
+                            result,
+                            is_error,
+                        },
+                    )))
+                }
+                other => self.native_syscall_terminal(other),
+            }
+        })();
+        match outcome {
+            Ok(outcome) => Ok(outcome),
+            Err(error) => self.process.fail(error),
+        }
+    }
+
+    fn native_syscall_terminal(
+        &self,
+        event: ProcessEvent,
+    ) -> Result<NativeSyscallOutcome, LaunchError> {
+        Ok(match event {
+            ProcessEvent::Signal(stop) => NativeSyscallOutcome::ApplicationSignal {
+                stop,
+                registers: Box::new(self.read_registers()?),
+                xstate: self.read_xstate()?,
+            },
+            ProcessEvent::Exited { code } => NativeSyscallOutcome::Exited { code },
+            ProcessEvent::Signaled { signal } => NativeSyscallOutcome::Signaled { signal },
+            _ => {
+                return Err(LaunchError::Invalid(
+                    "native syscall entry/exit order differs",
+                ));
+            }
+        })
+    }
 }
 
 impl RemoteLeaseOps<'_, '_> {
@@ -1344,6 +1560,14 @@ fn remaining(deadline: Instant) -> Result<Duration, LaunchError> {
         .checked_duration_since(Instant::now())
         .filter(|duration| !duration.is_zero())
         .ok_or(LaunchError::Timeout("remote permission transaction"))
+}
+
+fn syscall_time_left(deadline: Instant) -> Result<(), LaunchError> {
+    if Instant::now() >= deadline {
+        Err(LaunchError::Timeout("native syscall completion"))
+    } else {
+        Ok(())
+    }
 }
 
 fn single_task(pid: libc::pid_t) -> Result<(), LaunchError> {
@@ -1551,6 +1775,52 @@ fn siginfo(pid: libc::pid_t) -> Result<libc::siginfo_t, LaunchError> {
     ptrace(libc::PTRACE_GETSIGINFO, pid, 0, info.as_mut_ptr() as usize)?;
     // SAFETY: GETSIGINFO initialized the entire siginfo object on success.
     Ok(unsafe { info.assume_init() })
+}
+
+// A syscall-exit stop precedes the actual kernel return to user mode. Execute
+// only the already authenticated island INT3, then restore the actual syscall
+// result before permitting any source-publication operation.
+fn syscall_return_bridge(
+    child: &mut ChildOwner,
+    trap: u64,
+    saved: &RegisterSnapshot,
+    extended: &[u8],
+    deadline: Instant,
+) -> Result<(), LaunchError> {
+    syscall_time_left(deadline)?;
+    let mut temporary = *saved;
+    temporary.rip = trap;
+    temporary.orig_rax = u64::MAX;
+    // These bits affect trusted execution or its completion comparison. Their
+    // actual application values, including RF, are restored without masking.
+    temporary.eflags &= !(0x100 | 0x10000 | 0x40000);
+    set_registers(child.pid, &temporary)?;
+    if read_registers(child.pid)? != temporary || xstate(child.pid)? != extended {
+        return Err(LaunchError::Invalid("syscall bridge setup changed state"));
+    }
+    ptrace(libc::PTRACE_CONT, child.pid, 0, 0)?;
+    let status = child.wait(deadline, "native syscall user-return bridge")?;
+    if !libc::WIFSTOPPED(status) || libc::WSTOPSIG(status) != libc::SIGTRAP || status >> 16 != 0 {
+        return Err(LaunchError::Invalid(
+            "syscall bridge did not reach its owned trap",
+        ));
+    }
+    let signal = siginfo(child.pid)?;
+    temporary.rip = trap
+        .checked_add(1)
+        .ok_or(LaunchError::Invalid("syscall bridge address overflow"))?;
+    if signal.si_signo != libc::SIGTRAP
+        || !matches!(signal.si_code, libc::SI_KERNEL | libc::TRAP_BRKPT)
+        || read_registers(child.pid)? != temporary
+        || xstate(child.pid)? != extended
+        || read_memory(child.pid, trap, 1)? != [0xcc]
+    {
+        return Err(LaunchError::Invalid(
+            "unowned or state-changing syscall bridge trap",
+        ));
+    }
+    syscall_time_left(deadline)?;
+    restore_state(child.pid, saved, extended)
 }
 
 fn run_stub(
