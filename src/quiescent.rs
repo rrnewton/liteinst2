@@ -1342,7 +1342,63 @@ fn pun_candidate_proof(
     }
 }
 
+/// Initial four-byte legacy SSE/SSE2 move forms only. Length excludes extra
+/// legacy/address/REX prefixes; explicit operands exclude other forms sharing
+/// these iced Codes. Wider encodings need their own native qualification.
+fn qualify_mandatory_prefix_move(instruction: &iced_x86::Instruction) -> bool {
+    use iced_x86::{Code, OpKind, Register};
+    let low_xmm = |index| {
+        instruction.op_kind(index) == OpKind::Register
+            && matches!(
+                instruction.op_register(index),
+                Register::XMM0
+                    | Register::XMM1
+                    | Register::XMM2
+                    | Register::XMM3
+                    | Register::XMM4
+                    | Register::XMM5
+                    | Register::XMM6
+                    | Register::XMM7
+            )
+    };
+    let plain_memory = |index| {
+        instruction.op_kind(index) == OpKind::Memory
+            && matches!(
+                instruction.memory_base(),
+                Register::RAX
+                    | Register::RCX
+                    | Register::RDX
+                    | Register::RBX
+                    | Register::RSI
+                    | Register::RDI
+            )
+            && instruction.memory_index() == Register::None
+            && instruction.memory_displ_size() == 0
+            && instruction.memory_displacement64() == 0
+    };
+    instruction.len() == 4
+        && instruction.op_count() == 2
+        && instruction.segment_prefix() == Register::None
+        && !instruction.has_lock_prefix()
+        && !instruction.has_rep_prefix()
+        && !instruction.has_repne_prefix()
+        && match instruction.code() {
+            Code::Movss_xmm_xmmm32 | Code::Movsd_xmm_xmmm64 | Code::Movdqa_xmm_xmmm128 => {
+                low_xmm(0) && low_xmm(1)
+            }
+            Code::Movdqu_xmm_xmmm128 => low_xmm(0) && plain_memory(1),
+            Code::Movdqu_xmmm128_xmm => plain_memory(0) && low_xmm(1),
+            _ => false,
+        }
+}
+
 pub(crate) fn qualify_instruction(instruction: &iced_x86::Instruction) -> Result<(), Refusal> {
+    // The exact initial legacy mandatory-prefix move envelope has independent
+    // native normal/fault fixtures. This is separate from the unchanged GPR
+    // envelope below: no mnemonic-wide SIMD/string or VEX/EVEX admission.
+    if qualify_mandatory_prefix_move(instruction) {
+        return Ok(());
+    }
     use Mnemonic::*;
     // Deliberately explicit initial ABI envelope. Expanding it requires a
     // forced puzzle and independent state/fault evidence, not just decoding.
@@ -2092,5 +2148,133 @@ mod search_candidate_tests {
             empty.proof,
             CandidateProof::PageBoundary { omitted: None, .. }
         ));
+    }
+}
+
+#[cfg(test)]
+mod mandatory_prefix_qualification_tests {
+    use super::qualify_instruction;
+    use crate::contracts::Refusal;
+    use iced_x86::{Decoder, DecoderOptions, Instruction, OpKind, Register};
+
+    fn decode(bytes: &[u8]) -> Instruction {
+        let mut decoder = Decoder::with_ip(64, bytes, 0x1234_5000, DecoderOptions::NONE);
+        let instruction = decoder.decode();
+        assert_eq!(instruction.len(), bytes.len());
+        assert!(!decoder.can_decode());
+        instruction
+    }
+
+    #[test]
+    fn exact_five_mandatory_prefix_forms_require_admission() {
+        for bytes in [
+            [0xf3, 0x0f, 0x10, 0xc1], // MOVSS register source
+            [0xf2, 0x0f, 0x10, 0xc1], // MOVSD register source, not string MOVSD
+            [0x66, 0x0f, 0x6f, 0xc1], // MOVDQA register source
+            [0xf3, 0x0f, 0x6f, 0x07], // MOVDQU memory load
+            [0xf3, 0x0f, 0x7f, 0x07], // MOVDQU memory store
+        ] {
+            let instruction = decode(&bytes);
+            assert!(!instruction.is_invalid());
+            assert_eq!(qualify_instruction(&instruction), Ok(()));
+        }
+    }
+
+    #[test]
+    fn nearby_simd_string_address_and_extra_prefix_forms_stay_refused() {
+        let valid: &[&[u8]] = &[
+            &[0xf3, 0x0f, 0x58, 0xc1],             // ADDSS
+            &[0xf2, 0x0f, 0x58, 0xc1],             // ADDSD
+            &[0x66, 0x0f, 0x7f, 0x07],             // MOVDQA store
+            &[0xf3, 0x0f, 0x10, 0x07],             // MOVSS memory load
+            &[0xf2, 0x0f, 0x10, 0x07],             // MOVSD memory load
+            &[0x66, 0x0f, 0x6f, 0x07],             // MOVDQA memory load
+            &[0xf3, 0x0f, 0x6f, 0xc1],             // MOVDQU register source is not in this matrix
+            &[0xc5, 0xfa, 0x6f, 0xc1],             // valid VEX VMOVDQU
+            &[0x62, 0xf1, 0x7e, 0x48, 0x6f, 0xc1], // valid EVEX VMOVDQU32
+            &[0xa5],                               // string MOVSD
+            &[0xf3, 0xa5],                         // REP string MOVSD
+            &[0xf3, 0xf3, 0x0f, 0x10, 0xc1],       // duplicate mandatory prefix
+            &[0xf2, 0xf3, 0x0f, 0x10, 0xc1],       // mixed extra REP prefix
+            &[0x67, 0xf3, 0x0f, 0x6f, 0x07],       // address-size override
+            &[0x64, 0xf3, 0x0f, 0x6f, 0x07],       // FS memory addressing
+            &[0xf3, 0x44, 0x0f, 0x10, 0xc1],       // REX extended register
+            &[0xf3, 0x0f, 0x6f, 0x47, 0x10],       // displacement form
+        ];
+        for &bytes in valid {
+            let instruction = decode(bytes);
+            assert!(
+                !instruction.is_invalid(),
+                "negative fixture must be a real nearby encoding: {bytes:x?}"
+            );
+            assert!(
+                matches!(
+                    qualify_instruction(&instruction),
+                    Err(Refusal::UnsupportedSemantics(_))
+                ),
+                "unexpected qualification: {bytes:x?}"
+            );
+        }
+        let locked = decode(&[0xf0, 0xf3, 0x0f, 0x10, 0xc1]);
+        assert!(locked.is_invalid());
+        assert!(matches!(
+            qualify_instruction(&locked),
+            Err(Refusal::UnsupportedSemantics(_))
+        ));
+    }
+
+    #[test]
+    fn exact_codes_do_not_bypass_register_or_memory_operand_checks() {
+        for register in [
+            Register::EAX,
+            Register::RAX,
+            Register::MM0,
+            Register::YMM0,
+            Register::XMM8,
+        ] {
+            let mut instruction = decode(&[0xf3, 0x0f, 0x10, 0xc1]);
+            instruction.set_op1_register(register);
+            assert!(matches!(
+                qualify_instruction(&instruction),
+                Err(Refusal::UnsupportedSemantics(_))
+            ));
+        }
+        let mut instruction = decode(&[0xf3, 0x0f, 0x6f, 0x07]);
+        instruction.set_op1_kind(OpKind::Register);
+        instruction.set_op1_register(Register::XMM1);
+        assert!(matches!(
+            qualify_instruction(&instruction),
+            Err(Refusal::UnsupportedSemantics(_))
+        ));
+        let mut instruction = decode(&[0xf3, 0x0f, 0x6f, 0x07]);
+        instruction.set_memory_base(Register::EDI);
+        assert!(matches!(
+            qualify_instruction(&instruction),
+            Err(Refusal::UnsupportedSemantics(_))
+        ));
+    }
+
+    #[test]
+    fn existing_gpr_and_refused_special_forms_keep_their_outcomes() {
+        for bytes in [
+            &[0x89, 0xc0][..],
+            &[0x48, 0x8d, 0x07],
+            &[0x01, 0xc8],
+            &[0x90],
+            &[0xc3],
+        ] {
+            assert_eq!(qualify_instruction(&decode(bytes)), Ok(()));
+        }
+        for bytes in [
+            &[0x8e, 0xd8][..],
+            &[0x9d],
+            &[0xd9, 0xe8],
+            &[0xe8, 0, 0, 0, 0],
+        ] {
+            assert!(matches!(
+                qualify_instruction(&decode(bytes)),
+                Err(Refusal::UnsupportedSemantics(_))
+            ));
+        }
     }
 }

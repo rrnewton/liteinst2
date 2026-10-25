@@ -150,10 +150,13 @@ Additional native entry fixtures execute actual direct branches and every
 jump-table case into displaced heads, and witness kernel signal-frame restoration
 to enumerated resumes. Exact signed rel32 endpoints execute; targets one byte
 outside each endpoint refuse unchanged. See `evidence/a2-entry-paths-20261025.md`.
+Five four-byte mandatory-prefix move forms now have forced B1/B2/T1 normal and
+synchronous-fault evidence, with exact code/operand qualification and nearby
+refusals. See `evidence/a2-mandatory-prefixes-20261025.md` for the bounded envelope.
 
 The full A2 exit gate remains open. Required gaps include contexts parked across
-publication, call-return and exception landing entries, mandatory-prefix coverage,
-active CET and Intel evidence, eviction-chain coverage, and relocation-boundary
+publication, call-return and exception landing entries, active CET and Intel
+evidence, eviction-chain coverage, and relocation-boundary
 signal/unwind qualification. Existing unsupported refusals and finite AMD results do not
 substitute for those required fixtures. Generalized puns retain first priority
 for install-once clients; ordinary relocation precedes T1. Concurrent toggle

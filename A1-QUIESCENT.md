@@ -119,7 +119,14 @@ debug-register writes, far branches, POPFQ, calls, x87 operations, locked/repeat
 instructions and unqualified instructions are refused. Calls need original
 application-visible return addresses, and x87 instructions can expose the
 relocated instruction pointer; the current implementation does not pretend to
-preserve those semantics. Replacements may intercept a logical instruction
+preserve those semantics. An additive A2 envelope admits five four-byte legacy
+mandatory-prefix move forms: low-XMM MOVSS/MOVSD/MOVDQA register copies and
+MOVDQU loads/stores with plain RAX/RCX/RDX/RBX/RSI/RDI addressing. Exact
+instruction-code, length and operand checks exclude wider addressing, extra
+prefixes, other SIMD forms and string MOVSD. See
+`evidence/a2-mandatory-prefixes-20261025.md` for the forced normal/fault matrix
+and the distinction between tested literal operands and admitted substitutions.
+Replacements may intercept a logical instruction
 outside the observing allowlist but must implement its declared behavior.
 
 The client owns signal policy. SIGILL routing installs only over SIG_DFL,
