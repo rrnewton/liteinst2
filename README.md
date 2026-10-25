@@ -216,3 +216,20 @@ cargo test --release --lib rapid::tests::live::benchmark_single_byte_toggle_late
 `LITEINST_STRESS_RAPID_FUNCTIONS`, `LITEINST_STRESS_RAPID_ITERATIONS`,
 `LITEINST_STRESS_GENERAL_FUNCTIONS`, `LITEINST_STRESS_GENERAL_CYCLES`, and
 `LITEINST_STRESS_SIGNAL_ROUNDS` scale the matrix without changing source.
+
+## Admission development
+
+The workspace also contains [liteinst-admission](crates/liteinst-admission/README.md),
+a standalone all-start instruction scanner, versioned entry facts and a mock
+page/dependency ledger. It exports facts through `liteinst2::contracts`. The
+model never changes executable memory and is not a live admission gate.
+
+[liteinst-launch](crates/liteinst-launch/README.md) captures an ELF process at
+its exec stop before the executable/interpreter's first instruction. Its
+restricted controller gates initial executable mappings and admits scanned
+pages under a held task stop. A native CPUID trap reference and an A1 remote
+generalized-pun adapter are separate paths. The concurrent gate registers a
+fixed group of real workers, holds every task before publication, and admits
+competing first faults once. Both envelopes require caller-certified immutable
+code and complete instruction heads. Broader instruction coverage and general
+thread, signal and mapping lifecycle support remain open.
