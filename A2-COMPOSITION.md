@@ -160,8 +160,14 @@ also preserve return addresses inside unchanged generalized-pun displacement
 bytes. These bounded fixtures and their explicit lifecycle/relocation limits
 are recorded in `evidence/a2-parked-call-20261025.md`.
 
-The full A2 exit gate remains open. Required gaps include exception landing
-entries, active CET and Intel evidence, eviction-chain coverage, and
+An authored C++ exception now reaches its literal LSDA landing entry in the
+original, installed and retired phases. The fixture also compares architectural state
+across the relocated landing prefix and requires exact prepublication refusals.
+See `evidence/a2-exception-landing-20261025.md` for the bounded envelope and the
+fixture package's C++ compiler requirement.
+
+The full A2 exit gate remains open. Required gaps include broader exception
+and generated-unwind support, active CET and Intel evidence, eviction-chain coverage, and
 relocation-boundary signal/unwind qualification. Existing unsupported refusals and finite AMD results do not
 substitute for those required fixtures. Generalized puns retain first priority
 for install-once clients; ordinary relocation precedes T1. Concurrent toggle

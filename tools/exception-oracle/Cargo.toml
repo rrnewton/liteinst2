@@ -1,0 +1,14 @@
+[package]
+name = "liteinst2-exception-oracle"
+version = "0.1.0"
+edition = "2024"
+publish = false
+description = "Native C++ exception landing fixture for LiteInst validation"
+
+[dev-dependencies]
+liteinst2 = { path = "../.." }
+libc = "0.2.186"
+
+[[test]]
+name = "exception_landing"
+path = "tests/exception_landing.rs"

@@ -483,19 +483,13 @@ mod ordered_trace {
 
     // Additive genuine signal-resume support; legacy entry methods are exact.
     mod saved_signal {
-        include!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/tests/support/entry_signal.rs"
-        ));
+        include!("entry_signal.rs");
     }
     pub use saved_signal::SignalResume;
 
     // Additive private prepublication parked-context fixture support.
     mod parked_signal {
-        include!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/tests/support/parked_signal.rs"
-        ));
+        include!("parked_signal.rs");
     }
     pub use parked_signal::ParkedPublication;
 
@@ -1984,3 +1978,8 @@ mod calibration {
         );
     }
 }
+
+// Borrowed process-text adapter for the standalone exception fixture.
+#[allow(dead_code)]
+#[path = "process_text.rs"]
+pub mod process_text;
