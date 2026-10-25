@@ -6,8 +6,11 @@
 
 use crate::composition::Composition;
 use crate::contracts::*;
+use crate::grouping::{GroupingBudget, GroupingPlan, StagedGrouping};
 use crate::quiescent::{self, PlannedInstall};
-use crate::trampoline::{ExecutableTrampoline, SavedExtendedStateLayout, TrampolineImage};
+use crate::trampoline::{
+    ExecutableTrampoline, PendingExecutableTrampoline, SavedExtendedStateLayout, TrampolineImage,
+};
 
 /// Aggregate transaction limits, independent of each member's search limits.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -40,9 +43,13 @@ impl Default for BundleBudget {
 pub struct BundleMemory {
     /// Number of requested executable mappings, not measured kernel VMA merges.
     pub mappings: usize,
+    /// Distinct virtual pages, including every page in a multi-page image.
+    pub virtual_pages: usize,
+    /// Backing pages counted once across immutable aliases.
+    pub backing_pages: usize,
     /// Sum of all executable mapping lengths.
     pub virtual_bytes: u64,
-    /// Physical allocation bytes; initially one private backing per mapping.
+    /// Physical allocation bytes, counted once across immutable aliases.
     pub backing_bytes: u64,
     /// Last mapping end minus first mapping start.
     pub virtual_span: u64,
@@ -111,6 +118,7 @@ impl BundlePlan {
 pub struct PlannedBundle {
     plan: BundlePlan,
     images: Vec<TrampolineImage>,
+    grouping: Option<GroupingPlan>,
 }
 impl PlannedBundle {
     /// Composes trusted plans against the supplied original snapshots.
@@ -124,6 +132,29 @@ impl PlannedBundle {
         originals: Vec<ExpectedBytes>,
         members: Vec<PlannedInstall>,
         budget: BundleBudget,
+    ) -> Result<Self, Refusal> {
+        Self::compose_inner(originals, members, budget, None)
+    }
+
+    /// Composes the same transaction with sealed immutable backing groups.
+    ///
+    /// Both budgets apply. Sharing reduces backing consumption only: every
+    /// dictated virtual mapping and page remains charged. Images whose page
+    /// offsets overlap use separate backing; overlapping virtual extents refuse.
+    pub fn compose_grouped(
+        originals: Vec<ExpectedBytes>,
+        members: Vec<PlannedInstall>,
+        budget: BundleBudget,
+        grouping: GroupingBudget,
+    ) -> Result<Self, Refusal> {
+        Self::compose_inner(originals, members, budget, Some(grouping))
+    }
+
+    fn compose_inner(
+        originals: Vec<ExpectedBytes>,
+        members: Vec<PlannedInstall>,
+        budget: BundleBudget,
+        grouping_budget: Option<GroupingBudget>,
     ) -> Result<Self, Refusal> {
         let identity = members
             .first()
@@ -159,10 +190,36 @@ impl PlannedBundle {
             .map(|a| a.range.end())
             .max()
             .ok_or(Refusal::InvalidPlan)?;
+        let images: Vec<_> = members
+            .iter()
+            .map(|member| member.image().clone())
+            .collect();
+        let grouping = grouping_budget
+            .map(|limits| GroupingPlan::new(images.clone(), limits))
+            .transpose()?;
+        if let Some(grouped) = &grouping {
+            // A trusted image and its contract must name the exact same extent.
+            // Refuse instead of accounting one layout while mapping another.
+            for group in grouped.groups() {
+                for (&index, &alias) in group.image_indices().iter().zip(group.aliases()) {
+                    let requests = &members[index].plan().parts().allocations;
+                    if requests.len() != 1 || requests[0].range != alias {
+                        return Err(Refusal::InvalidPlan);
+                    }
+                }
+            }
+        }
+        let backing_bytes = grouping
+            .as_ref()
+            .map_or(virtual_bytes, |group| group.memory().backing_bytes);
         let memory = BundleMemory {
             mappings: allocations.len(),
+            virtual_pages: usize::try_from(virtual_bytes / 4096)
+                .map_err(|_| Refusal::InvalidRange)?,
+            backing_pages: usize::try_from(backing_bytes / 4096)
+                .map_err(|_| Refusal::InvalidRange)?,
             virtual_bytes,
-            backing_bytes: virtual_bytes,
+            backing_bytes,
             virtual_span: high - low,
         };
         if memory.mappings > budget.max_mappings
@@ -181,10 +238,8 @@ impl PlannedBundle {
                 steps: members.iter().map(|member| member.plan().clone()).collect(),
                 memory,
             },
-            images: members
-                .iter()
-                .map(|member| member.image().clone())
-                .collect(),
+            images,
+            grouping,
         })
     }
     /// Full inspectable transaction contract.
@@ -194,6 +249,11 @@ impl PlannedBundle {
     /// Every generated image and its explicit entry/state-comparison maps.
     pub fn images(&self) -> &[TrampolineImage] {
         &self.images
+    }
+
+    /// Inspectable immutable backing groups, when grouping was requested.
+    pub const fn grouping(&self) -> Option<&GroupingPlan> {
+        self.grouping.as_ref()
     }
 
     /// Installs every member with final source permissions already established.
@@ -257,13 +317,18 @@ impl PlannedBundle {
                 .map_err(|_| before(Refusal::OwnershipConflict))?,
             );
         }
-        let mut staged = Vec::with_capacity(self.images.len());
-        for image in &self.images {
-            staged.push(
-                ExecutableTrampoline::allocate_image_at(image, image.address())
-                    .map_err(|e| before(Refusal::Backend(e.to_string())))?,
-            );
-        }
+        let staged = if let Some(grouping) = &self.grouping {
+            StagedImages::Grouped(grouping.stage().map_err(before)?)
+        } else {
+            let mut images = Vec::with_capacity(self.images.len());
+            for image in &self.images {
+                images.push(
+                    ExecutableTrampoline::allocate_image_at(image, image.address())
+                        .map_err(|e| before(Refusal::Backend(e.to_string())))?,
+                );
+            }
+            StagedImages::Private(images)
+        };
         let routes: Vec<_> = self
             .plan
             .steps
@@ -286,7 +351,7 @@ impl PlannedBundle {
         if routing.is_some() {
             crate::entry_router::verify().map_err(before)?;
         }
-        let trampolines: Vec<_> = staged.into_iter().map(|image| image.commit()).collect();
+        let trampolines = staged.commit();
         for trampoline in &trampolines {
             trampoline.publish_program_counter_mappings();
         }
@@ -318,6 +383,19 @@ impl PlannedBundle {
             plan: self.plan.clone(),
         };
         Ok((installed, receipt))
+    }
+}
+
+enum StagedImages {
+    Private(Vec<PendingExecutableTrampoline>),
+    Grouped(StagedGrouping),
+}
+impl StagedImages {
+    fn commit(self) -> Vec<ExecutableTrampoline> {
+        match self {
+            Self::Private(images) => images.into_iter().map(|image| image.commit()).collect(),
+            Self::Grouped(grouping) => grouping.commit(),
+        }
     }
 }
 

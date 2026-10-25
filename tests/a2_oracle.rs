@@ -336,11 +336,21 @@ fn action_images_preserve_state_for_four_masks_and_three_entries() {
 
 #[test]
 fn mixed_bundle_publication_and_retirement_preserve_complete_state() {
+    mixed_bundle_state(false);
+}
+
+#[test]
+fn grouped_bundle_publication_and_retirement_preserve_complete_state() {
+    mixed_bundle_state(true);
+}
+
+fn mixed_bundle_state(grouped: bool) {
     use liteinst2::bundle::{BundleBudget, PlannedBundle, WritableAlias};
     use liteinst2::contracts::{
         AddressRange, CodeIdentity, EntryCompleteness, EntryProvenance, ExpectedBytes, LegalEntry,
         LegalEntrySet, PlanKind, QuiescenceLease, Refusal, ResumeObligation, SourceIdentity,
     };
+    use liteinst2::grouping::{BackingKind, GroupingBudget};
     use liteinst2::planner::HookSemantics;
     use liteinst2::quiescent::{
         AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy, plan_install,
@@ -348,9 +358,16 @@ fn mixed_bundle_publication_and_retirement_preserve_complete_state() {
 
     // One original execution traverses both independent images: a five-byte
     // MOV relocated by B1, then an exact two-byte NOP punned by B2, MOV and RET.
-    let code = [
+    let mut code = [
         0xb8, 0x21, 0x43, 0x65, 0x07, 0x66, 0x90, 0xb8, 0x03, 0x02, 0x10, 0x00, 0xc3,
     ];
+    if grouped {
+        // Different immutable MOV data fixes a disjoint pun target window, so
+        // this required case cannot collide with the ungrouped case's retained
+        // generated mapping if the original source address is later reused.
+        code[8] = 0x04;
+        code[9] = 0x03;
+    }
     let mut oracle = NativeOracle::new(&code);
     let base = oracle.code.address();
     let offsets = [0, 5, 7, 12];
@@ -403,7 +420,11 @@ fn mixed_bundle_publication_and_retirement_preserve_complete_state() {
         };
         let mut allocation = AllocationPolicy::near(source.address).unwrap();
         if index == 0 {
-            allocation.preferred_address = Some(base + 64 * 1024 * 1024);
+            allocation.preferred_address = Some(base + if grouped { 80 } else { 64 } * 1024 * 1024);
+        } else if grouped {
+            // NOP2's unchanged B8 04 03 suffix fixes this positive rel32 window.
+            // Its start places the second image at byte 0x80a of another page.
+            allocation.preferred_address = Some(base + 10 + 0x0304_b800);
         }
         let member = plan_install(&InstallRequest {
             identity,
@@ -436,10 +457,54 @@ fn mixed_bundle_publication_and_retirement_preserve_complete_state() {
         }
         members.push(member);
     }
-    let bundle = PlannedBundle::compose(snapshots, members, BundleBudget::default())
-        .expect("mixed bundle composition is a required positive");
+    let bundle = if grouped {
+        PlannedBundle::compose_grouped(
+            snapshots,
+            members,
+            BundleBudget::default(),
+            GroupingBudget {
+                max_mappings: 2,
+                max_virtual_pages: 2,
+                max_virtual_bytes: 8192,
+                max_backing_bytes: 4096,
+                ..GroupingBudget::default()
+            },
+        )
+    } else {
+        PlannedBundle::compose(snapshots, members, BundleBudget::default())
+    }
+    .expect("mixed bundle composition is a required positive");
     assert_eq!(bundle.plan().steps().len(), 2);
     assert_eq!(bundle.plan().memory().mappings, 2);
+    if grouped {
+        let grouping = bundle
+            .grouping()
+            .expect("grouped bundle must retain its grouping proof");
+        assert_eq!(grouping.memory().mappings, 2);
+        assert_eq!(grouping.memory().virtual_pages, 2);
+        assert_eq!(grouping.memory().backing_pages, 1);
+        assert_eq!(grouping.memory().virtual_bytes, 8192);
+        assert_eq!(grouping.memory().backing_bytes, 4096);
+        assert_eq!(bundle.plan().memory().virtual_pages, 2);
+        assert_eq!(bundle.plan().memory().backing_pages, 1);
+        assert_eq!(bundle.plan().memory().virtual_bytes, 8192);
+        assert_eq!(bundle.plan().memory().backing_bytes, 4096);
+        assert_eq!(grouping.groups().len(), 1);
+        let group = &grouping.groups()[0];
+        assert_eq!(group.kind(), BackingKind::SharedPage);
+        assert_eq!(group.backing_len(), 4096);
+        assert_eq!(group.image_indices(), &[0, 1]);
+        assert_eq!(group.aliases().len(), 2);
+        assert!(!group.aliases()[0].overlaps(group.aliases()[1]));
+        let images = bundle.images();
+        assert_eq!(images[0].address() % 4096, 0);
+        assert_eq!(images[1].address() % 4096, 0x80a);
+        assert_ne!(images[0].address() / 4096, images[1].address() / 4096);
+        assert!(images[0].bytes().len() <= 0x80a);
+        assert!(0x80a + images[1].bytes().len() <= 4096);
+    } else {
+        assert!(bundle.grouping().is_none());
+    }
     let mut map = TraceMap {
         boundaries: vec![
             (base + 7, base + 7),
@@ -500,6 +565,66 @@ fn mixed_bundle_publication_and_retirement_preserve_complete_state() {
     };
     assert_eq!(receipt.plan().identity(), identity);
     assert_eq!(receipt.plan().steps(), bundle.plan().steps());
+    if grouped {
+        // Check actual kernel aliases after publication, not only planned
+        // accounting: both RX shared mappings must name offset zero in the same
+        // nonanonymous backing inode, and neither can acquire write permission.
+        let maps = std::fs::read_to_string("/proc/self/maps").unwrap();
+        let mut backing = None;
+        for image in bundle.images() {
+            let page = image.address() & !4095;
+            let fields: Vec<_> = maps
+                .lines()
+                .map(|line| line.split_whitespace().collect::<Vec<_>>())
+                .find(|fields| {
+                    let (low, high) = fields[0].split_once('-').unwrap();
+                    u64::from_str_radix(low, 16).unwrap() == page
+                        && u64::from_str_radix(high, 16).unwrap() == page + 4096
+                })
+                .expect("required grouped virtual page is missing");
+            assert_eq!(fields[1], "r-xs");
+            assert_eq!(u64::from_str_radix(fields[2], 16).unwrap(), 0);
+            let inode = fields[4].parse::<u64>().unwrap();
+            assert_ne!(inode, 0, "grouped backing must be a shared file");
+            let identity = (fields[3].to_owned(), inode);
+            if let Some(prior) = &backing {
+                assert_eq!(
+                    prior, &identity,
+                    "grouped aliases must share one backing inode"
+                );
+            } else {
+                backing = Some(identity);
+            }
+            // SAFETY: no trace child exists during this permission probe. A
+            // sealed shared mapping must reject it without changing permissions.
+            assert_eq!(
+                unsafe {
+                    libc::mprotect(
+                        page as usize as *mut _,
+                        4096,
+                        libc::PROT_READ | libc::PROT_WRITE,
+                    )
+                },
+                -1,
+                "sealed grouped code acquired write permission"
+            );
+            assert_eq!(
+                std::io::Error::last_os_error().raw_os_error(),
+                Some(libc::EACCES)
+            );
+            // SAFETY: successful publication retains this complete readable RX
+            // image throughout its lifetime; no executor or writer is active.
+            assert_eq!(
+                unsafe {
+                    std::slice::from_raw_parts(
+                        image.address() as usize as *const u8,
+                        image.bytes().len(),
+                    )
+                },
+                image.bytes()
+            );
+        }
+    }
     oracle.assert_publication(&edits);
     let log = HookEventLog::new();
     let enabled = [

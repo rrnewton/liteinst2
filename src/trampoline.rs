@@ -2479,6 +2479,37 @@ pub(crate) struct PendingExecutableTrampoline {
 }
 
 impl PendingExecutableTrampoline {
+    /// Takes exclusive ownership of an initialized, immutable RX mapping.
+    ///
+    /// # Safety
+    /// `mapping_address..mapping_address + allocation_len` must be one owned
+    /// live mapping, contain the complete image at its encoded address, and
+    /// have no writable shared aliases. No source entry or global PC metadata
+    /// may reference it yet. The caller relinquishes unmapping ownership.
+    pub(crate) unsafe fn from_owned_mapping(
+        image: &TrampolineImage,
+        mapping_address: u64,
+        allocation_len: usize,
+    ) -> Self {
+        debug_assert_ne!(mapping_address, 0);
+        debug_assert!(image.address >= mapping_address);
+        debug_assert!(
+            image.address as u128 + image.bytes.len() as u128
+                <= mapping_address as u128 + allocation_len as u128
+        );
+        Self {
+            trampoline: Some(ExecutableTrampoline {
+                address: image.address,
+                mapping_address,
+                allocation_len,
+                code_len: image.bytes.len(),
+                layout: image.layout,
+                program_counters: image.program_counters.clone().into_boxed_slice(),
+                program_counters_published: AtomicBool::new(false),
+            }),
+        }
+    }
+
     /// Returns the staged allocation without publishing global PC metadata.
     pub(crate) fn trampoline(&self) -> &ExecutableTrampoline {
         self.trampoline.as_ref().unwrap()

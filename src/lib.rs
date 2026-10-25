@@ -8,6 +8,7 @@ pub mod cache_line;
 pub mod composition;
 pub mod contracts;
 mod entry_router;
+pub mod grouping;
 pub mod patcher;
 pub mod planner;
 pub mod probe;
