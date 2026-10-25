@@ -146,7 +146,11 @@ def parse_harnesses(output, expected, exit_code):
             # observations of the existing fixtures, not successful child counts.
             if count != stack[-1]:
                 known = (current["id"], current["declared_outer_tests"], current["expected_ignored"])
-                require(known in (("unit/liteinst2/lib", 176, 1), ("test/stress", 7, 3))
+                # Main's synchronized publisher adds eight tests to the same
+                # core fixture. Retain the exact historical cohort for replay;
+                # the current corpus still requires the new 184-test cohort.
+                require(known in (("unit/liteinst2/lib", 176, 1),
+                                  ("unit/liteinst2/lib", 184, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,

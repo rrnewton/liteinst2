@@ -53,19 +53,25 @@ class HarnessParsingTests(unittest.TestCase):
         self.assertEqual(len({row["id"] for row in rows}), 2)
 
     def test_nested_summaries_and_reviewed_unmatched_child_are_not_outer_counts(self):
-        text = "\n".join([header("liteinst2"), "running 176 tests", "running 1 test",
-                           summary(1, filtered=175), "running 1 test", summary(1, filtered=175),
-                           "running 1 test", summary(175, ignored=1)])
-        row = parsing.parse_harnesses(text, {"unit/liteinst2/lib": counts(176, 1)}, 0)[0]
-        self.assertEqual(row["outer"]["passed"], 175)
-        self.assertEqual(row["outer"]["ignored"], 1)
-        self.assertEqual(len(row["nested"]), 2)
-        self.assertEqual(row["nested_starts"], 3)
-        self.assertEqual(row["unmatched_nested_starts"], 1)
+        for declared in (176, 184):
+            with self.subTest(declared=declared):
+                text = "\n".join([header("liteinst2"), f"running {declared} tests", "running 1 test",
+                                   summary(1, filtered=declared - 1), "running 1 test",
+                                   summary(1, filtered=declared - 1), "running 1 test",
+                                   summary(declared - 1, ignored=1)])
+                row = parsing.parse_harnesses(
+                    text, {"unit/liteinst2/lib": counts(declared, 1)}, 0)[0]
+                self.assertEqual(row["outer"]["passed"], declared - 1)
+                self.assertEqual(row["outer"]["ignored"], 1)
+                self.assertEqual(len(row["nested"]), 2)
+                self.assertEqual(row["nested_starts"], 3)
+                self.assertEqual(row["unmatched_nested_starts"], 1)
 
     def test_unmatched_child_exception_does_not_generalize(self):
         for name, child, declared in [("example", 1, 176), ("liteinst2", 2, 176),
-                                      ("liteinst2", 1, 175)]:
+                                      ("liteinst2", 1, 175), ("example", 1, 184),
+                                      ("liteinst2", 2, 184), ("liteinst2", 1, 183),
+                                      ("liteinst2", 1, 185)]:
             text = "\n".join([header(name), f"running {declared} tests", f"running {child} tests",
                                summary(declared - 1, ignored=1)])
             with self.subTest(name=name, child=child, declared=declared), self.assertRaises(
@@ -252,12 +258,19 @@ class DeclaredCorpusTests(unittest.TestCase):
         expected = self.corpus["harness_test_counts"]
         self.assertEqual(len(expected["workspace_tests"]), 60)
         self.assertEqual(len(expected["serial_launch"]), 9)
-        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 801)
+        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 933)
         self.assertEqual(sum(row["ignored"] for row in expected["workspace_tests"].values()), 4)
         self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 119)
         self.assertEqual(sum(row["ignored"] for row in expected["serial_launch"].values()), 0)
-        self.assertEqual(expected["workspace_tests"]["unit/rapid_profiler/lib"], counts(7))
+        self.assertEqual(expected["workspace_tests"]["unit/liteinst2/lib"], counts(184, 1))
+        self.assertEqual(expected["workspace_tests"]["unit/rapid_profiler/lib"], counts(24))
         self.assertEqual(expected["workspace_tests"]["unit/rapid_profiler/main"], counts(3))
+        self.assertEqual(expected["workspace_tests"]["doc/rapid_profiler"], counts(2))
+        historical = "\n".join([header("liteinst2"), "running 176 tests", "running 1 test",
+                                 summary(175, ignored=1)])
+        with self.assertRaisesRegex(parsing.InvalidEvidence, "changed_outer_cohort"):
+            parsing.parse_harnesses(historical, {
+                "unit/liteinst2/lib": expected["workspace_tests"]["unit/liteinst2/lib"]}, 0)
 
     def test_all_33_native_case_records_and_exact_class_counts(self):
         cases = self.corpus["native_cases"]

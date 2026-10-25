@@ -81,12 +81,22 @@ equivalence is inferred from matching this protocol.
 Update it explicitly when adding/removing tests, and review denominator changes.
 The parser requires exactly one final unfiltered outer summary matching each
 declared cohort. Nested child summaries are separate observations and never
-added to outer totals. Two exact existing child-start exceptions are declared: `unit/liteinst2/lib`
-(176 outer tests, one unreported single-test child) and `test/stress` (seven
-outer tests, one unreported single-test child). Their reviewed children exit
+added to outer totals. Two exact existing child-start fixtures are declared: `unit/liteinst2/lib`
+(184 outer tests, plus the historical 176-test cohort for replay) and `test/stress`
+(seven outer tests), each with one unreported single-test child. Their reviewed children exit
 without libtest summaries and the parent assertions check those exit statuses.
 Other unmatched child starts refuse; these starts never increase passed totals. Missing, duplicate,
 ambiguous or changed outer cohorts invalidate the evidence.
+
+The corpus for source revision `27df290bd203a8235bb478a210fa700d3b8feaa3` has 60 workspace
+harnesses and 933 outer tests, including four existing ignores. Relative to the
+previous admission corpus, core adds eight synchronized-publisher tests,
+17 generation tests, two generation compile-fail doctests and seven shared
+Word calibration tests in each of 15 importing harnesses. These 132 additional
+outer test instances give 929 possible outer passes; repeated calibrations are
+not distinct scenarios. The five nested child passes remain
+separate; summing all libtest summaries would report 934 passes and count those
+children twice. The serial launch cohort remains 119 tests and 33 native cases.
 
 Native receipts are emitted only after existing original/replay/native checks
 and owned-child cleanup succeed. `LITEINST_EVALUATION=1` enables their fixed
