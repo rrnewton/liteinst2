@@ -81,3 +81,10 @@ path = "tests/support/eviction_chain_extension_driver.rs"
 test = false
 bench = false
 doc = false
+
+[[bin]]
+name = "boundary-signal-oracle-driver"
+path = "tests/support/boundary_signal_driver.rs"
+test = false
+bench = false
+doc = false

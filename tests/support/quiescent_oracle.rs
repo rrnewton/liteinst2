@@ -493,6 +493,11 @@ mod ordered_trace {
     }
     pub use parked_signal::ParkedPublication;
 
+    // Additive restored-boundary signal oracle; all prior methods stay exact.
+    pub mod boundary_signal {
+        include!("boundary_signal.rs");
+    }
+
     const EVENT_CAPACITY: usize = 128;
     thread_local! {
         static ACTIVE_LOG: Cell<(*mut u64, usize)> = const { Cell::new((core::ptr::null_mut(), 0)) };

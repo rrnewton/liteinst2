@@ -107,12 +107,14 @@ explicit API rather than an implicit fallback.
 Local search evidence retains failed suffixes and original refusal reasons.
 A global cutoff requires a witnessed unentered candidate; reaching the cap
 alone is insufficient. `classification_complete` remains false. The initial
-private qualification covers genuine depth-two/depth-three straight-line chains,
-all declared original entries, and transaction failures; it does not establish
-native branch/fault-chain coverage or grouping. See
-`evidence/a2-eviction-chains-20261025.md`. A separate 72-record legacy planner/emitter parity gate passes with exact bytes,
-maps, contracts and diagnostics; exact active-head workspace validation remains
-pending for this integration proposal.
+qualification covers genuine depth-two/depth-three straight-line chains,
+all declared original entries, and transaction failures. See
+`evidence/a2-eviction-chains-20261025.md`. A separate 72-record legacy planner/emitter
+parity gate passes with exact bytes, maps, contracts and diagnostics; the
+integrated workspace passes its required checks. Additive native fixtures now
+cover a short conditional backedge and a readable/protected-page load anchor;
+see `evidence/a2-chain-branches-faults-20261025.md`. Chain grouping and broader
+branch/memory families remain open.
 
 `neighbor::plan_neighbor` forces T3. A selected 2–4-byte instruction receives
 EB rel8 to a private relay at V+5 inside a whole 10–15-byte victim at V. The
@@ -195,9 +197,17 @@ across the relocated landing prefix and requires exact prepublication refusals.
 See `evidence/a2-exception-landing-20261025.md` for the bounded envelope and the
 fixture package's C++ compiler requirement.
 
+Real kernel SIGUSR1 delivery and rt_sigreturn now have a bounded witness at
+every restored-state instruction visit and owned return terminal of same-site
+and upstream relocation fixtures. The physical kernel RIP is preserved, while
+logical-PC lookup is checked separately. See
+`evidence/a2-boundary-signals-20261025.md` for the exact native inventory and the
+remaining asynchronous-delivery and unwind limits.
+
 The full A2 exit gate remains open. Required gaps include broader exception
-and generated-unwind support, active CET and Intel evidence, chain branch/fault
-qualification and active integration gates, and relocation-boundary signal/unwind qualification. Existing unsupported refusals and finite AMD results do not
+and generated-unwind support, active CET and Intel evidence, broader chain
+qualification/grouping, arbitrary asynchronous signal delivery and generated
+unwind qualification. Existing unsupported refusals and finite AMD results do not
 substitute for those required fixtures. Generalized puns retain first priority
 for install-once clients; ordinary relocation precedes T1. Concurrent toggle
 visibility remains A4 work.
