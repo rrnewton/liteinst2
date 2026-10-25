@@ -13,7 +13,9 @@ contain Cargo.lock's dependencies: resolution is offline. Child ptrace and
 child-mm membarrier sync-core must be available; tests fail if requirements are
 missing. Do not use root to turn a failed unprivileged run into a claimed
 unprivileged success. The result records effective-root status, relevant
-capabilities and Yama ptrace policy explicitly.
+capabilities and Yama ptrace policy explicitly. An absent or unreadable policy
+interface is recorded as unknown, never inferred to mean policy zero; the
+actual child ptrace assertions still must pass.
 
 The runner checks its recorder regressions, the four required workspace
 commands, then all launch tests serially with explicit native-case telemetry.

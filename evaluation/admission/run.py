@@ -111,6 +111,13 @@ def hardware():
     release = os.uname().release
     upstream = re.match(r"\d+\.\d+(?:\.\d+)?", release)
     require(upstream is not None, "unsupported_kernel_version")
+    try:
+        ptrace_scope = int(Path("/proc/sys/kernel/yama/ptrace_scope").read_text())
+        ptrace_scope_status = "observed"
+    except FileNotFoundError:
+        ptrace_scope, ptrace_scope_status = None, "interface_absent"
+    except PermissionError:
+        ptrace_scope, ptrace_scope_status = None, "unreadable"
     fields.update({"architecture": "x86_64", "isa_flags": sorted(flags),
                    "logical_cpus_visible": os.cpu_count(),
                    "affinity_cpu_count": len(os.sched_getaffinity(0)),
@@ -119,7 +126,7 @@ def hardware():
                    "effective_uid_is_root": os.geteuid() == 0,
                    "cap_sys_ptrace": bool(caps & (1 << 19)),
                    "cap_sys_admin": bool(caps & (1 << 21)),
-                   "ptrace_scope": int(Path("/proc/sys/kernel/yama/ptrace_scope").read_text())})
+                   "ptrace_scope": ptrace_scope, "ptrace_scope_status": ptrace_scope_status})
     return fields
 
 

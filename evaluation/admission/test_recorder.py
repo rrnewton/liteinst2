@@ -19,6 +19,18 @@ class RecorderTests(unittest.TestCase):
         root.mkdir(parents=True, exist_ok=True)
         return tempfile.TemporaryDirectory(dir=root)
 
+    def test_absent_ptrace_policy_metadata_is_unknown_never_implicitly_zero(self):
+        original = Path.read_text
+        def without_policy(path, *args, **kwargs):
+            if path == Path("/proc/sys/kernel/yama/ptrace_scope"):
+                raise FileNotFoundError()
+            return original(path, *args, **kwargs)
+        with patch.object(Path, "read_text", without_policy):
+            hardware = run.hardware()
+        self.assertIsNone(hardware["ptrace_scope"])
+        self.assertEqual(hardware["ptrace_scope_status"], "interface_absent")
+        self.assertIs(type(hardware["cap_sys_ptrace"]), bool)
+
     def test_ambient_campaign_and_compiler_overrides_cannot_select_the_run(self):
         inherited = {"PATH": "/usr/bin", "HOME": "/cache", "CARGO_HOME": "/cargo-cache",
                      "LITEINST_RUNTIME_CONTROL_ORACLE_MODE": "emitter",
