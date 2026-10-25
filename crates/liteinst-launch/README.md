@@ -1,51 +1,98 @@
 # liteinst-launch
 
-This Linux x86-64 crate captures an owned ELF process at the kernel's exec
-event, before its first executable or interpreter instruction. It exposes
-registers, bounded memory reads, and entry evidence derived from the kernel's
-auxiliary vector, mapped ELF headers, and `/proc/<pid>/maps`.
+This Linux x86-64 crate owns an ELF child from its kernel exec event, before
+its first executable or interpreter instruction. It provides a stopped launch
+checkpoint, a restricted remote-control adapter and a first-touch page gate
+with a deliberately slow trap reference for selected instructions.
 
-`ExecCheckpoint::launch` takes an explicit executable path and argument list;
-it never invokes a shell or searches `PATH`. The child inherits an environment
-snapshot. A private pre-exec stop lets the parent install `PTRACE_O_EXITKILL`
-before allowing `execve`. The returned checkpoint has no resume or memory-write
-API. Dropping it sends `SIGKILL` and reaps its child. `terminate` also reports
-cleanup errors. All waits address that child only. The caller must not reap or
-trace this child independently; changing the process-wide `SIGCHLD` disposition
-to ignore children or using an unrelated global child reaper is unsupported.
+`ExecCheckpoint::launch` accepts an explicit executable path and arguments; it
+never invokes a shell or searches `PATH`. A private pre-exec stop installs
+`PTRACE_O_EXITKILL` before `execve`. The checkpoint exposes bounded memory reads,
+registers and entry evidence from the auxiliary vector and mapped ELF headers.
+Its exec-event registers describe that kernel stop; the kernel still has to
+complete exec before the first user instruction.
 
-Launch waits have a caller-selected limit of at most 30 seconds. Each cleanup attempt waits
-up to two seconds after `SIGKILL`; a failed explicit `terminate` followed by
-Drop may spend four seconds total. If the kernel delays exit, a dedicated
-reaper retains ownership until exit. No application instructions are released during
-cleanup. `PTRACE_O_EXITKILL` also kills a stopped child if its tracer exits.
+`into_stopped_process` completes that kernel transition and creates a private
+RX `syscall; int3` island. Bootstrap temporarily modifies original entry bytes
+while the sole child task is stopped. It restores and verifies original bytes
+and the actual first-user GPR/extended-state image before returning. Remote
+operations always pass numeric child addresses to ptrace or the child syscall
+ABI; they never dereference them as supervisor pointers. Instruction-stream
+synchronization uses queried/registered sync-core in the **child's address
+space**. Missing support is a refusal.
 
-This is B1 launch groundwork. It does **not** remove execute permission, scan
-pages, publish patches, provide a quiescence lease, synchronize instruction
-streams, or admit application code. It does not satisfy the B1 page-gate exit
-criterion. An initial exec stop alone is insufficient to publish into a running
-multithreaded application.
+`StoppedProcess::hold` returns a scoped, non-transferable stopped-task borrow.
+It supports expected-byte writes with readback, checked page permissions,
+register access and native single-step. It is not a core quiescence lease:
+external writers, aliases and saved resumes still need separate proof. Signals
+remain unowned until the caller authenticates the exact stop. Partial or
+uncertain control failures terminate the child. The syscall policy permits
+only native read on fd 0, write on fd 1/2, getpid, gettid, exit and exit_group.
+Other syscalls, compatibility ABIs and lifecycle operations refuse before
+kernel execution. Ordinary execution into the private island is refused.
 
-The initial envelope is native x86-64 ELF executables, including PIE and ELF
-executables with an ET_DYN interpreter. Script interpreters, other ELF machines,
-and fixed-address ET_EXEC interpreters are refused. The interpreter must map
-its ELF header at AT_BASE (the usual zero-based first PT_LOAD layout). The metadata is evidence of
-the stopped process; it is not a persistent source-content certificate or proof
-against external mutation. General registers are exposed; extended register
-state is not yet captured. No core publisher is called.
+`gate::SingleThreadPageGate` revokes execute permission on all initial user
+executable mappings, including the vDSO. A supplied `ImageFacts` is an explicit,
+complete instruction-head census and original byte snapshot for one mapping;
+code without a census stays gated and refuses on first touch. The unsafe
+constructor requires a closed-world ownership contract, including no external
+writers/aliases, no code reads as data, and no execution in the private island
+or fixed kernel vsyscall pseudo-mapping. Census assertions are not inferred
+from symbols or a linear disassembly.
 
-The tests construct tiny ELF files directly. Their first instruction is CPUID,
-including a custom PT_INTERP image, so successful checks do not depend on a C
-compiler or an instruction having already run. Tests also check unchanged
-registers/bytes, invalid inputs, memory bounds, and child reaping. They require
-permission to trace a child; a ptrace denial is a failure, not a skipped pass.
+On an authenticated instruction-fetch fault, RuntimeScan checks complete pages
+and all-start boundary candidates. Selected straddlers bring both complete
+pages into the admission bundle. Source bytes are reauthenticated while the
+sole task is stopped, INT3 reference sites are installed, original permissions
+are restored, and sync-core completes before release. Each admitted selected trap yields
+an immutable pre-instruction observation. The next call executes the original
+instruction once under SINGLESTEP, reinstalls its trap and synchronizes again.
+An unowned application signal is reported at its original PC and closes the
+loop. Each `next_event` has one overall deadline, including permitted syscall
+stops, so a syscall loop cannot renew the timeout indefinitely.
 
-Inspect a checkpoint without running the program:
+Before caller admission, the gate records potential CALL fallthroughs. A CALL
+ending at an admitted page boundary can push a return into a still-NX next
+page. The live fixture checks the stack and actual permissions. The initial
+gate permits a clean destination but refuses selected publication overlapping
+a retained return obligation; it does not invent an empty resume census from
+page history. Records persist across the entire execution domain.
+
+The initially qualified selected class is CPUID; all other selected classes
+refuse before publication. In particular, native SYSCALL stepping produces a
+different trap cause and exposes debugger TF in R11. Its raw primitive test
+records that difference; it is not accepted as a no-op observation.
+The broader default scan policy still finds those sites; it does not silently
+deselect them.
+
+The reference currently supports one task, immutable private code, 4 KiB pages,
+at most 64 initial executable mappings/censuses, at most 64 MiB of initial
+executable mappings and at most 64 KiB per census. It is groundwork
+for B1 and the B2 reference path. **It does not complete B1:** there is no A1
+remote trampoline publisher or concurrent first-fault rendezvous yet. The
+custom interpreter fixture is not general dynamic-loader support. Mapping
+churn, threads, application signal handlers, aliases, self-modifying code and
+the broader B2 instruction-class/ISA campaign remain unsupported.
+
+Dropping any owner kills and reaps only its child. The caller must not trace or
+reap it independently, install a competing global child reaper, or change
+SIGCHLD disposition to discard children. Launch/control waits are bounded by
+at most 30 seconds. Cleanup waits two seconds per attempt; a failed explicit
+termination followed by Drop may spend four seconds. A reserved cleanup worker
+retains delayed reaping duty. No original instructions are released for cleanup.
+
+Native tests construct tiny ELF images directly, with static and PIE programs
+and a custom ET_DYN interpreter. They require child-ptrace permission; denial
+fails instead of skipping. The page-gate differential observer uses independent
+raw ptrace operations and compares seeded GPRs, flags, full kernel extended
+state and initialized stack memory against native execution.
 
 ```console
+cargo test -p liteinst-launch
 cargo run -p liteinst-launch --example checkpoint -- /bin/true
 ```
 
-The example prints entry addresses and exec-checkpoint startup time, then kills
-and reaps the child. Its timing includes inspection; it is not page first-touch
-latency or the application's startup time.
+The example captures and terminates a checkpoint. Its timing is exec inspection,
+not page admission or application startup. Gate metrics separately report
+bootstrap/NX setup, successful first-touch bundles, admitted/untouched pages
+and observation counts; debug shared-host samples are diagnostic only.

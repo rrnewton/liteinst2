@@ -53,7 +53,9 @@ dependencies = [
 name = "liteinst-launch"
 version = "0.1.0"
 dependencies = [
+ "iced-x86",
  "libc",
+ "liteinst-admission",
 ]
 
 [[package]]
