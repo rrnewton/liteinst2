@@ -11,9 +11,9 @@ or syscall-policy dependency.
 mapping incarnation/generation, containing function/basic-block bounds, legal
 entry and saved-resume facts, a callback and allocation/search budgets. It
 tries a generalized instruction pun, then same-site relocation, then bounded
-upstream instruction heads within that block. This install-once ordering follows
+upstream instruction heads within that block, then T1 prefixed puns. This install-once ordering follows
 the owner's generalized-pun clarification. `SearchPolicy::tactics` can force
-either tactic for qualification. Among upstream candidates it prefers a single-cache-line start,
+each tactic for qualification. Among upstream candidates it prefers a single-cache-line start,
 then shorter upstream distance. `plan_install_detailed` retains every attempted
 physical site's refusal. `PlannedInstall::metrics` records upstream distance,
 displaced bytes, extra prefix instructions, and allocation attempts. Every
@@ -44,6 +44,17 @@ sync-core remain required. All five consumed bytes must be executable after
 permission finalization, including across a page boundary. RapidProbe's exact
 opcode-byte activation/deactivation API remains separate.
 
+`PlanKind::PrefixedPun` is the T1 fallback. For an original length L=2–4,
+the planner tries P=1 through L−1 redundant `0x2e` CS prefixes before E9.
+These shift the fixed successor displacement bytes and leave L−P−1 free low
+bytes. There are six qualified length/prefix combinations, with 1, 256 or
+65,536 possible targets. The exact 5+P-byte jump is decoded and its destination
+checked before a plan is returned. All 5+P bytes must be executable and remain
+locked; the same single-MOV padding and cache-line requirements apply. T1
+changes only the selected instruction and preserves every successor entry.
+It cannot create prefix room in a one-byte instruction. `PrefixPunOnly` forces
+this tactic; ordinary relocation retains priority over T1 in default searches.
+
 The generated stream executes the prefix, saves application state, invokes the
 callback with the **logical** PC, restores state, executes the suffix, and
 continues at the original boundary. Replacement skips only the logical
@@ -69,7 +80,7 @@ Publication checks the trusted plan, lease identity, full snapshot, byte
 ownership shared with legacy publishers, mapping budget, and router ownership.
 It allocates exact RX trampoline mappings using MAP_FIXED_NOREPLACE, initializes
 code, stages immutable routes, and rechecks source/lease before the first store.
-Source stores cover the recorded edits and explicit generalized-pun padding;
+Source stores cover the recorded edits and explicit pun padding;
 there is no hidden store span. The caller excludes **all** concurrent source fetches, data
 readers/writers, signal reentry and aliases for the full read dependency.
 
@@ -126,8 +137,9 @@ Allocation search is bounded and reports exhaustion. Constrained placements can
 remain impossible even with ample virtual memory. The fixed corpus declares
 placement regions and retains its source mappings to avoid unrelated loader
 adjacency and address reuse; it does not establish arbitrary-binary coverage.
-T1/T2/T3, preserved-original/INT3 pun alternatives, coalescing, grouping, ELF
-output and qualified repeated toggles remain later milestones.
+T2/T3, preserved-original/INT3 pun alternatives, runtime coalesced controls,
+ELF output and qualified repeated toggles remain later milestones. The additive
+A2 bundle and immutable grouping interfaces are documented in `A2-COMPOSITION.md`.
 
 ## Evidence
 

@@ -111,6 +111,10 @@ impl Composition {
                 new_locks.push(pun.consumed);
                 edits.push(&pun.store);
             }
+            PlanKind::PrefixedPun(pun) => {
+                new_locks.push(pun.consumed);
+                edits.push(&pun.store);
+            }
         }
         for (index, edit) in edits.iter().enumerate() {
             let range = byte_range(edit.address, &edit.bytes)?;
@@ -349,8 +353,8 @@ mod tests {
     use super::*;
     use crate::contracts::{
         AllocationRequest, ApplicationProfile, EntryCompleteness, EntryProvenance, EntryRoute,
-        GeneralizedPun, LegalEntrySet, PlanParts, PublicationRequirements, ResumeObligation,
-        SourceIdentity,
+        GeneralizedPun, LegalEntrySet, PlanParts, PrefixedPun, PublicationRequirements,
+        ResumeObligation, SourceIdentity,
     };
 
     const BASE: u64 = 0x1000;
@@ -463,6 +467,102 @@ mod tests {
         parts.displaced = AddressRange::new(pc, 3).unwrap();
         parts.obligations = vec![EntryObligation::Preserved(pc)];
         PatchPlan::checked(parts).unwrap()
+    }
+
+    fn prefixed_pun(reads: &[ExpectedBytes], pc: u64, prefixes: usize) -> PatchPlan {
+        let read = reads
+            .iter()
+            .find(|read| byte_range(read.address, &read.bytes).unwrap().contains(pc))
+            .unwrap();
+        let offset = (pc - read.address) as usize;
+        let free = 2 - prefixes;
+        let mut displacement = [0_u8; 4];
+        displacement[free..].copy_from_slice(&read.bytes[offset + 3..offset + 5 + prefixes]);
+        let low = u64::try_from(
+            i128::from(pc + 5 + prefixes as u64) + i128::from(i32::from_le_bytes(displacement)),
+        )
+        .unwrap();
+        let target = low + if free == 0 { 0 } else { 0x12 };
+        let mut bytes = vec![0x2e; prefixes];
+        bytes.push(0xe9);
+        if free != 0 {
+            bytes.push(0x12);
+        }
+        let mut parts = relocation_parts(reads, pc, &bytes, target);
+        let store_address = if pc % 64 == 61 { pc - 1 } else { pc };
+        let store_offset = (store_address - read.address) as usize;
+        let mut stored = read.bytes[store_offset..store_offset + 4].to_vec();
+        let changed = (pc - store_address) as usize;
+        stored[changed..changed + 3].copy_from_slice(&bytes);
+        parts.kind = PlanKind::PrefixedPun(PrefixedPun {
+            instruction_len: 3,
+            prefix_count: prefixes as u8,
+            consumed: AddressRange::new(pc, 5 + prefixes).unwrap(),
+            target_window: AddressRange::new(low, 1 << (8 * free)).unwrap(),
+            store: ByteEdit {
+                address: store_address,
+                bytes: stored,
+            },
+        });
+        parts.displaced = AddressRange::new(pc, 3).unwrap();
+        parts.obligations = vec![EntryObligation::Preserved(pc)];
+        PatchPlan::checked(parts).unwrap()
+    }
+
+    #[test]
+    fn prefixed_pun_locks_extended_fetch_and_both_store_padding_positions() {
+        for prefixes in [1, 2] {
+            for offset in [8, 61] {
+                let pc = BASE + offset as u64;
+                let mut original = originals();
+                // NOP3; MOV EAX,0x123456; RET. The public checked contract
+                // authenticates the exact prefixed E9 and untouched successors.
+                original[0].bytes[offset..offset + 9]
+                    .copy_from_slice(&[0x0f, 0x1f, 0, 0xb8, 0x56, 0x34, 0x12, 0, 0xc3]);
+                let plan = prefixed_pun(&original, pc, prefixes);
+                let PlanKind::PrefixedPun(pun) = &plan.parts().kind else {
+                    unreachable!()
+                };
+                let pad = if offset == 61 { pc - 1 } else { pc + 3 };
+                let mut composition = Composition::new(identity(), original).unwrap();
+                composition.append(&plan).unwrap();
+                assert!(
+                    composition
+                        .locks()
+                        .iter()
+                        .any(|range| range.covers(pun.consumed))
+                );
+                assert!(composition.locks().iter().any(|range| {
+                    range.covers(
+                        AddressRange::new(pun.store.address, pun.store.bytes.len()).unwrap(),
+                    )
+                }));
+                let saved = composition.clone();
+                // The extra T1 fetch bytes extend beyond B2's five-byte read.
+                // These synthetic later edits isolate byte ownership, not native
+                // instruction semantics; they are never executed or published.
+                for address in [pun.consumed.end() - 1, pad] {
+                    let byte = composition.final_bytes()[0].bytes[(address - BASE) as usize] ^ 1;
+                    let later =
+                        relocation(composition.final_bytes(), address, &[byte], 0x7000_0000);
+                    assert_eq!(composition.append(&later), Err(Refusal::OwnershipConflict));
+                    assert_eq!(
+                        composition, saved,
+                        "refusal must preserve all overlay/lock/allocation state"
+                    );
+                }
+                // A later member beyond the consumed jump and actual MOV span
+                // remains composable; the original T1 bytes stay identical.
+                let later_pc = pc + 8;
+                let later = relocation(composition.final_bytes(), later_pc, &[0xcc], 0x7000_0000);
+                composition.append(&later).unwrap();
+                assert_eq!(composition.final_bytes()[0].bytes[offset + 8], 0xcc);
+                assert_eq!(
+                    &composition.final_bytes()[0].bytes[offset..offset + 5 + prefixes],
+                    &saved.final_bytes()[0].bytes[offset..offset + 5 + prefixes]
+                );
+            }
+        }
     }
 
     #[test]

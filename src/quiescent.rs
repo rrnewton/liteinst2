@@ -21,6 +21,8 @@ pub enum TacticPolicy {
     PreferGeneralizedPun,
     /// Require a generalized pun; never substitute relocation for a refusal.
     GeneralizedPunOnly,
+    /// Require T1 prefix padding; never substitute an ordinary pun or relocation.
+    PrefixPunOnly,
     /// Require the same-site/upstream relocation engine.
     RelocationOnly,
 }
@@ -30,6 +32,8 @@ pub enum TacticPolicy {
 pub enum PatchTactic {
     /// Change the original instruction while consuming unchanged successor bytes.
     GeneralizedPun,
+    /// T1: redundant CS prefixes shift the fixed successor displacement bytes.
+    PrefixPun,
     /// Relocate a whole-instruction redirect window.
     Relocation,
 }
@@ -64,7 +68,9 @@ pub struct AllocationPolicy {
     pub ranges: Vec<AddressRange>,
     /// First target to try (constraints may change its displacement bytes).
     pub preferred_address: Option<u64>,
-    /// Bound on generated address candidates per physical site.
+    /// Bound on generated addresses per tactic candidate (one site and, for
+    /// T1, one prefix count). A search tries at most `max_sites` relocation
+    /// candidates, one generalized pun and three prefixed puns.
     pub max_candidates: usize,
     /// Maximum new executable mappings; this implementation needs one.
     pub max_mappings: usize,
@@ -170,8 +176,8 @@ impl PlannedInstall {
     /// quiescence, alias, saved-context and signal contracts. Execution must
     /// meet the declared System V/no-CET ABI and have sufficient writable stack
     /// below the red zone for the callback and extended-state image.
-    /// A generalized pun requires executable fetch permissions for all five
-    /// bytes in its `consumed` range, including unchanged successor bytes.
+    /// A pun requires executable fetch permissions for its entire `consumed`
+    /// range (five bytes, or 5+P with T1 prefixes), including unchanged successors.
     pub unsafe fn publish(
         &self,
         writable_base: *mut u8,
@@ -249,8 +255,11 @@ pub fn plan_install_detailed(
         if request.search.max_sites == 0 {
             return Err(Refusal::NoPatchWindow);
         }
-        if request.search.tactics != TacticPolicy::RelocationOnly {
-            match plan_generalized_pun(request, &scan, source, &occupied) {
+        if matches!(
+            request.search.tactics,
+            TacticPolicy::PreferGeneralizedPun | TacticPolicy::GeneralizedPunOnly
+        ) {
+            match plan_pun(request, &scan, source, &occupied, 0) {
                 Ok(mut plan) => {
                     attempts.push(SiteAttempt {
                         tactic: PatchTactic::GeneralizedPun,
@@ -292,6 +301,9 @@ pub fn plan_install_detailed(
                 request.logical_pc - pc,
             )
         });
+        if request.search.tactics == TacticPolicy::PrefixPunOnly {
+            candidates.clear();
+        }
         for physical in candidates.into_iter().take(request.search.max_sites) {
             match plan_at(request, &scan, source, physical, &occupied) {
                 Ok(mut plan) => {
@@ -310,6 +322,37 @@ pub fn plan_install_detailed(
                 }),
             }
         }
+        if matches!(
+            request.search.tactics,
+            TacticPolicy::PreferGeneralizedPun | TacticPolicy::PrefixPunOnly
+        ) {
+            let len = scan
+                .instructions()
+                .iter()
+                .find(|item| item.address() == request.logical_pc)
+                .ok_or(Refusal::NotInstructionHead)?
+                .len();
+            if (2..=4).contains(&len) {
+                for prefix_count in 1..len {
+                    match plan_pun(request, &scan, source, &occupied, prefix_count) {
+                        Ok(mut plan) => {
+                            attempts.push(SiteAttempt {
+                                tactic: PatchTactic::PrefixPun,
+                                physical_pc: request.logical_pc,
+                                refusal: None,
+                            });
+                            plan.metrics.attempts = attempts.clone();
+                            return Ok(plan);
+                        }
+                        Err(reason) => attempts.push(SiteAttempt {
+                            tactic: PatchTactic::PrefixPun,
+                            physical_pc: request.logical_pc,
+                            refusal: Some(reason),
+                        }),
+                    }
+                }
+            }
+        }
         Err(attempts
             .last()
             .and_then(|attempt| attempt.refusal.clone())
@@ -318,11 +361,12 @@ pub fn plan_install_detailed(
     result.map_err(|reason| PlanningFailure { reason, attempts })
 }
 
-fn plan_generalized_pun(
+fn plan_pun(
     request: &InstallRequest<'_>,
     scan: &ScanResult,
     source: AddressRange,
     occupied: &[AddressRange],
+    prefixes: usize,
 ) -> Result<PlannedInstall, Refusal> {
     let physical = request.logical_pc;
     let instruction = scan
@@ -332,8 +376,9 @@ fn plan_generalized_pun(
         .ok_or(Refusal::NotInstructionHead)?;
     let len = instruction.len();
     let displaced = AddressRange::new(physical, len)?;
-    let consumed = AddressRange::new(physical, 5)?;
+    let consumed = AddressRange::new(physical, 5 + prefixes)?;
     if !(1..=4).contains(&len)
+        || prefixes >= len
         || len > request.search.max_displaced_bytes
         || !request.block.covers(displaced)
         || !source.covers(consumed)
@@ -377,11 +422,12 @@ fn plan_generalized_pun(
     }
     let offset = (physical - source.start()) as usize;
     let mut fixed = [0_u8; 4];
-    fixed[len - 1..].copy_from_slice(&request.code[offset + len..offset + 5]);
-    let next = i128::from(physical) + 5;
+    let free = len - prefixes - 1;
+    fixed[free..].copy_from_slice(&request.code[offset + len..offset + 5 + prefixes]);
+    let next = i128::from(physical) + 5 + prefixes as i128;
     let low = u64::try_from(next + i128::from(i32::from_le_bytes(fixed)))
         .map_err(|_| Refusal::AllocationUnavailable)?;
-    let window = AddressRange::new(low, 1_usize << (8 * (len - 1)))?;
+    let window = AddressRange::new(low, 1_usize << (8 * free))?;
     let policy = request.allocation;
     if policy.max_mappings == 0 || policy.max_mapped_bytes < 4096 {
         return Err(Refusal::AllocationUnavailable);
@@ -419,9 +465,28 @@ fn plan_generalized_pun(
         let displacement = i32::try_from(i128::from(target) - next)
             .map_err(|_| Refusal::AllocationUnavailable)?
             .to_le_bytes();
-        debug_assert_eq!(&displacement[len - 1..], &fixed[len - 1..]);
-        let mut bytes = vec![0xe9];
-        bytes.extend_from_slice(&displacement[..len - 1]);
+        debug_assert_eq!(&displacement[free..], &fixed[free..]);
+        let mut bytes = vec![0x2e; prefixes];
+        bytes.push(0xe9);
+        bytes.extend_from_slice(&displacement[..free]);
+        if prefixes != 0 {
+            // Qualify the exact consumed encoding under the supported legacy/
+            // EVEX no-CET envelope; only redundant CS prefixes are admitted.
+            let mut fetch = request.code[offset..offset + 5 + prefixes].to_vec();
+            fetch[..len].copy_from_slice(&bytes);
+            let mut decoder =
+                iced_x86::Decoder::with_ip(64, &fetch, physical, iced_x86::DecoderOptions::NONE);
+            let jump = decoder.decode();
+            if jump.code() != iced_x86::Code::Jmp_rel32_64
+                || jump.len() != fetch.len()
+                || jump.near_branch_target() != target
+                || decoder.can_decode()
+            {
+                return Err(Refusal::UnsupportedSemantics(
+                    "unqualified prefixed E9 encoding".into(),
+                ));
+            }
+        }
         let store_offset = (store_address - source.start()) as usize;
         let mut stored = request.code[store_offset..store_offset + store_len].to_vec();
         let within_store = (physical - store_address) as usize;
@@ -436,18 +501,30 @@ fn plan_generalized_pun(
         );
         preserved.sort_unstable();
         preserved.dedup();
-        let plan = PatchPlan::checked(PlanParts {
-            identity: request.identity,
-            profile: ApplicationProfile::InstallOnce,
-            kind: PlanKind::GeneralizedPun(GeneralizedPun {
+        let store = ByteEdit {
+            address: store_address,
+            bytes: stored,
+        };
+        let kind = if prefixes == 0 {
+            PlanKind::GeneralizedPun(GeneralizedPun {
                 instruction_len: len as u8,
                 consumed,
                 target_window: window,
-                store: ByteEdit {
-                    address: store_address,
-                    bytes: stored,
-                },
-            }),
+                store,
+            })
+        } else {
+            PlanKind::PrefixedPun(PrefixedPun {
+                instruction_len: len as u8,
+                prefix_count: prefixes as u8,
+                consumed,
+                target_window: window,
+                store,
+            })
+        };
+        let plan = PatchPlan::checked(PlanParts {
+            identity: request.identity,
+            profile: ApplicationProfile::InstallOnce,
+            kind,
             logical_pc: physical,
             physical_pc: physical,
             displaced,
@@ -1013,8 +1090,10 @@ impl PlannedInstall {
         }
         prepare_sync_core().map_err(before)?;
         let source = &self.plan.parts().reads[0];
-        if matches!(self.plan.parts().kind, PlanKind::GeneralizedPun(_))
-            && writable_base as usize % 64 != source.address as usize % 64
+        if matches!(
+            self.plan.parts().kind,
+            PlanKind::GeneralizedPun(_) | PlanKind::PrefixedPun(_)
+        ) && writable_base as usize % 64 != source.address as usize % 64
         {
             return Err(before(Refusal::InvalidRange));
         }
@@ -1217,12 +1296,17 @@ fn before(reason: Refusal) -> PublicationFailure {
 
 unsafe fn write_source(plan: &PatchPlan, writable: *mut u8, restore: bool) {
     let source = &plan.parts().reads[0];
-    if let PlanKind::GeneralizedPun(pun) = &plan.parts().kind {
-        let offset = (pun.store.address - source.address) as usize;
+    let store = match &plan.parts().kind {
+        PlanKind::GeneralizedPun(pun) => Some(&pun.store),
+        PlanKind::PrefixedPun(pun) => Some(&pun.store),
+        PlanKind::Relocation => None,
+    };
+    if let Some(store) = store {
+        let offset = (store.address - source.address) as usize;
         let bytes = if restore {
-            &source.bytes[offset..offset + pun.store.bytes.len()]
+            &source.bytes[offset..offset + store.bytes.len()]
         } else {
-            &pun.store.bytes
+            &store.bytes
         };
         // SAFETY: checked plan authenticates the complete byte/word/dword span;
         // caller holds its lease and a valid writable alias with equal line offset.

@@ -6,7 +6,7 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 
 /// Version of the in-memory standalone interface (not a serialized ABI).
-pub const CONTRACT_VERSION: u32 = 2;
+pub const CONTRACT_VERSION: u32 = 3;
 
 /// Original content and policy identity supplied by the mapping owner.
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Hash)]
@@ -172,6 +172,8 @@ pub enum PlanKind {
     Relocation,
     /// An E9 consumes unchanged successor bytes as fixed high displacement bits.
     GeneralizedPun(GeneralizedPun),
+    /// Redundant CS prefixes shift which unchanged successor bytes E9 consumes.
+    PrefixedPun(PrefixedPun),
 }
 
 /// Generalized short-instruction pun; distinct from RapidProbe's opcode toggle.
@@ -185,6 +187,21 @@ pub struct GeneralizedPun {
     pub target_window: AddressRange,
     /// One actual byte/word/dword store, including authenticated unchanged padding.
     /// `PlanParts::writes` separately records exactly the instruction's L bytes.
+    pub store: ByteEdit,
+}
+
+/// T1 instruction pun with an exact sequence of redundant `0x2e` prefixes.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct PrefixedPun {
+    /// Entire original instruction replaced, from two through four bytes.
+    pub instruction_len: u8,
+    /// Number of `0x2e` bytes before E9, from one through L minus one.
+    pub prefix_count: u8,
+    /// All 5+P executable bytes consumed by the prefixed near jump.
+    pub consumed: AddressRange,
+    /// Destinations allowed by the unchanged high displacement bytes.
+    pub target_window: AddressRange,
+    /// One byte/word/dword store, including authenticated unchanged padding.
     pub store: ByteEdit,
 }
 
@@ -325,8 +342,29 @@ impl PatchPlan {
                 return Err(Refusal::InvalidPlan);
             }
         }
-        if let PlanKind::GeneralizedPun(pun) = &parts.kind {
-            check_generalized_pun(&parts, pun)?;
+        match &parts.kind {
+            PlanKind::GeneralizedPun(pun) => check_pun(
+                &parts,
+                usize::from(pun.instruction_len),
+                0,
+                pun.consumed,
+                pun.target_window,
+                &pun.store,
+            )?,
+            PlanKind::PrefixedPun(pun) => {
+                if pun.prefix_count == 0 {
+                    return Err(Refusal::InvalidPlan);
+                }
+                check_pun(
+                    &parts,
+                    usize::from(pun.instruction_len),
+                    usize::from(pun.prefix_count),
+                    pun.consumed,
+                    pun.target_window,
+                    &pun.store,
+                )?;
+            }
+            PlanKind::Relocation => {}
         }
         Ok(Self(parts))
     }
@@ -360,17 +398,27 @@ fn original_bytes(parts: &PlanParts, range: AddressRange) -> Result<&[u8], Refus
     Err(Refusal::InvalidPlan)
 }
 
-fn check_generalized_pun(parts: &PlanParts, pun: &GeneralizedPun) -> Result<(), Refusal> {
-    let len = usize::from(pun.instruction_len);
+fn check_pun(
+    parts: &PlanParts,
+    len: usize,
+    prefixes: usize,
+    consumed: AddressRange,
+    target_window: AddressRange,
+    actual_store: &ByteEdit,
+) -> Result<(), Refusal> {
     if !(1..=4).contains(&len)
+        || prefixes >= len
         || parts.profile != ApplicationProfile::InstallOnce
         || parts.logical_pc != parts.physical_pc
         || parts.displaced.len() != len as u64
-        || pun.consumed != AddressRange::new(parts.physical_pc, 5)?
+        || consumed != AddressRange::new(parts.physical_pc, 5 + prefixes)?
         || parts.writes.len() != 1
         || parts.writes[0].address != parts.physical_pc
         || parts.writes[0].bytes.len() != len
-        || parts.writes[0].bytes[0] != 0xe9
+        || parts.writes[0].bytes[..prefixes]
+            .iter()
+            .any(|&byte| byte != 0x2e)
+        || parts.writes[0].bytes[prefixes] != 0xe9
         || parts.generated.len() != 1
         || parts.requirements.sigill_router
         || parts
@@ -380,38 +428,39 @@ fn check_generalized_pun(parts: &PlanParts, pun: &GeneralizedPun) -> Result<(), 
     {
         return Err(Refusal::InvalidPlan);
     }
-    let store = AddressRange::new(pun.store.address, pun.store.bytes.len())?;
-    if pun.store.bytes.len() != len.next_power_of_two()
+    let store = AddressRange::new(actual_store.address, actual_store.bytes.len())?;
+    if actual_store.bytes.len() != len.next_power_of_two()
         || !store.covers(parts.displaced)
         || store.start() / 64 != (store.end() - 1) / 64
         || !parts.dependencies.iter().any(|range| range.covers(store))
         || !parts
             .dependencies
             .iter()
-            .any(|range| range.covers(pun.consumed))
+            .any(|range| range.covers(consumed))
     {
         return Err(Refusal::InvalidPlan);
     }
     let mut expected_store = original_bytes(parts, store)?.to_vec();
     let offset = (parts.physical_pc - store.start()) as usize;
     expected_store[offset..offset + len].copy_from_slice(&parts.writes[0].bytes);
-    if pun.store.bytes != expected_store {
+    if actual_store.bytes != expected_store {
         return Err(Refusal::InvalidPlan);
     }
-    let original = original_bytes(parts, pun.consumed)?;
+    let original = original_bytes(parts, consumed)?;
     let mut displacement = [0; 4];
-    displacement[len - 1..].copy_from_slice(&original[len..5]);
-    let next = i128::from(parts.physical_pc) + 5;
+    let free = len - prefixes - 1;
+    displacement[free..].copy_from_slice(&original[len..5 + prefixes]);
+    let next = i128::from(parts.physical_pc) + 5 + prefixes as i128;
     let low = u64::try_from(next + i128::from(i32::from_le_bytes(displacement)))
         .map_err(|_| Refusal::InvalidPlan)?;
-    let size = 1_usize << (8 * (len - 1));
-    if pun.target_window != AddressRange::new(low, size)? {
+    let size = 1_usize << (8 * free);
+    if target_window != AddressRange::new(low, size)? {
         return Err(Refusal::InvalidPlan);
     }
-    displacement[..len - 1].copy_from_slice(&parts.writes[0].bytes[1..]);
+    displacement[..free].copy_from_slice(&parts.writes[0].bytes[1 + prefixes..]);
     let target = u64::try_from(next + i128::from(i32::from_le_bytes(displacement)))
         .map_err(|_| Refusal::InvalidPlan)?;
-    if !pun.target_window.contains(target) || parts.generated[0].address != target {
+    if !target_window.contains(target) || parts.generated[0].address != target {
         return Err(Refusal::InvalidPlan);
     }
     Ok(())

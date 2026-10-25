@@ -427,6 +427,7 @@ fn mixed_bundle_publication_and_retirement_preserve_complete_state() {
         })
         .expect("mixed bundle member is a required positive");
         match &member.plan().parts().kind {
+            PlanKind::PrefixedPun(_) => panic!("mixed B1/B2 fixture must not select T1"),
             PlanKind::Relocation => assert_eq!(index, 0),
             PlanKind::GeneralizedPun(pun) => {
                 assert_eq!(index, 1);

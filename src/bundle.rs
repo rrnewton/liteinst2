@@ -519,6 +519,7 @@ fn source_stores(
     for step in &plan.steps {
         let (edits, single) = match &step.parts().kind {
             PlanKind::GeneralizedPun(pun) => (std::slice::from_ref(&pun.store), true),
+            PlanKind::PrefixedPun(pun) => (std::slice::from_ref(&pun.store), true),
             PlanKind::Relocation => (step.parts().writes.as_slice(), false),
         };
         for edit in edits {

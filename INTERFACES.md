@@ -1,4 +1,4 @@
-# Standalone core contract, version 2
+# Standalone core contract, version 3
 
 This is the A0 boundary shared by the core and admission clients. The public
 types live in `liteinst2::contracts`; no loader, scheduler, or syscall policy
@@ -21,7 +21,7 @@ protocols for a new application.
   PC maps, allocation requests, profile, and synchronization requirements.
   Constructing or inspecting it does not write executable memory. An unresolved
   obligation refuses publication; requesting a fallback does not install one.
-  Version 2 uses bound virtual addresses; ELF load-bias fixups are later work.
+  Plans use bound virtual addresses; ELF load-bias fixups are later work.
 * `PlanParts::kind` distinguishes `Relocation` from
   `GeneralizedPun(GeneralizedPun)`. A generalized pun replaces one entire
   1–4-byte instruction with E9 and free low displacement bytes; unchanged
@@ -31,6 +31,12 @@ protocols for a new application.
   authenticated unchanged store padding. Both remain covered by reads and
   dependencies. It is an install-once tactic; RapidProbe retains its separate
   exact opcode-byte toggle contract.
+* Version 3 adds `PrefixedPun(PrefixedPun)` for T1. It replaces one 2–4-byte
+  instruction with P redundant `0x2e` CS prefixes, E9, and L−P−1 free low
+  displacement bytes, where 1 ≤ P < L. Its consumed range is 5+P bytes;
+  unchanged successor bytes determine the remaining high displacement bytes.
+  The original generalized-pun contract remains unchanged. Both kinds record
+  and authenticate the actual single-store padding and all consumed bytes.
 * `QuiescenceLease<'a>` borrows an exclusive gate guard. It is neither Send nor
   Sync, cannot be cloned, and is bound to one identity and a dependency set.
   Its unsafe constructor is the admission/rendezvous implementor's proof
@@ -63,7 +69,10 @@ Version 1 clients constructing `PlanParts` must add `kind: PlanKind::Relocation`
 for their existing relocation/mock plans. Version 2 checks generalized-pun
 shape, destination encoding, padding, fetch dependencies and install-once
 profile. The quiescent planner defaults to `TacticPolicy::PreferGeneralizedPun`;
-explicit `RelocationOnly` and `GeneralizedPunOnly` retain forced qualification.
+it tries generalized puns, same-site/upstream relocation, then T1 prefixes.
+Explicit `RelocationOnly`, `GeneralizedPunOnly` and `PrefixPunOnly` retain
+forced qualification. Version 2 clients must handle the new `PlanKind` and
+tactic-policy variants; existing plan fields retain their meaning.
 
 Linux x86-64, the System V AMD64 callback ABI, and little-endian 64-bit addresses.
 Callbacks may not unwind and must honor `HookCallback`'s documented extended
