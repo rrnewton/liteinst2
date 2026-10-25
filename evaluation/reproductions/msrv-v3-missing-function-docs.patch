@@ -1,0 +1,119 @@
+--- a/tests/boundary_signal_oracle.rs
++++ b/tests/boundary_signal_oracle.rs
+@@ -117,7 +117,6 @@
+         image.bytes()
+     );
+ }
+-/// Compare native state across signal returns at every restored visit.
+ pub fn run_boundary_signals_every_restored_visit() {
+     assert_eq!(PUZZLES.iter().map(|p| p.heads.len()).sum::<usize>(), 5);
+     assert_eq!(
+@@ -403,7 +402,6 @@
+         "boundary-signal complete: layouts=2 heads=5 seeds=2 baseline=10 traces=30 original=10 installed=10 retired=10 signal_roundtrips=84 generated_boundaries=8 source_boundaries=76 selected_events=6 unwind_qualified=false"
+     );
+ }
+-/// Dispatch the selected fixture on the fresh process main thread.
+ pub fn isolated_main() {
+     isolation::main_thread_driver();
+ }
+--- a/tests/eviction_chain_extensions.rs
++++ b/tests/eviction_chain_extensions.rs
+@@ -218,7 +218,6 @@
+ fn native_chain_short_conditional_backedge() {
+     isolation::run_parent("native_chain_short_conditional_backedge");
+ }
+-/// Compare native state through the short conditional chain backedge.
+ pub fn run_native_chain_short_conditional_backedge() {
+     RECORD_EVENTS.store(true, Ordering::Relaxed);
+     assert_eq!(SEEDS.map(seeded_ecx), [0xfa97ac78, 0x6f659161]);
+@@ -341,7 +340,6 @@
+ fn native_chain_anchor_readable_and_fault() {
+     isolation::run_parent("native_chain_anchor_readable_and_fault");
+ }
+-/// Compare readable and faulting loads in the eviction-chain fixture.
+ pub fn run_native_chain_anchor_readable_and_fault() {
+     RECORD_EVENTS.store(true, Ordering::Relaxed);
+     let operand = Mapping::new(4096);
+@@ -474,7 +472,6 @@
+     );
+ }
+ 
+-/// Dispatch the selected fixture on the fresh process main thread.
+ pub fn isolated_main() {
+     isolation::main_thread_driver();
+ }
+--- a/tests/eviction_chain_oracle.rs
++++ b/tests/eviction_chain_oracle.rs
+@@ -252,7 +252,6 @@
+     isolation::run_parent("native_eviction_chains_all_original_entries");
+ }
+ 
+-/// Compare native eviction-chain execution from every declared original entry.
+ pub fn run_native_eviction_chains_all_original_entries() {
+     let mut retained = Vec::new();
+     let mut original_count = 0;
+@@ -414,7 +413,6 @@
+     isolation::run_parent("native_eviction_chain_postwrite_failure_keeps_every_image");
+ }
+ 
+-/// Check that postwrite failure retains every eviction-chain image.
+ pub fn run_native_eviction_chain_postwrite_failure_keeps_every_image() {
+     let mut native = NativeOracle::new(CASES[1].code);
+     let f = Fixture::new(&CASES[1], native.code.address());
+@@ -463,7 +461,6 @@
+     );
+ }
+ 
+-/// Dispatch the selected fixture on the fresh process main thread.
+ pub fn isolated_main() {
+     isolation::main_thread_driver();
+ }
+--- a/tests/successor_eviction_oracle.rs
++++ b/tests/successor_eviction_oracle.rs
+@@ -83,7 +83,6 @@
+     isolation::run_parent("native_state_covers_successor_eviction_into_b2_and_t1_puns");
+ }
+ 
+-/// Compare native state for successor eviction with B2 and T1 puns.
+ pub fn run_native_state_covers_successor_eviction_into_b2_and_t1_puns() {
+     let puzzles = [
+         Puzzle {
+@@ -435,7 +434,6 @@
+     isolation::run_parent("native_successor_eviction_preserves_seven_byte_victim_fault");
+ }
+ 
+-/// Compare the original fault and state for a seven-byte evicted victim.
+ pub fn run_native_successor_eviction_preserves_seven_byte_victim_fault() {
+     // Independently checked with GNU objdump: MOV EAX,0 at0 (5 bytes),
+     // MOV EAX,EAX at5 (2), MOV RCX,[RAX+disp32=0] at7 (7), RET at14.
+@@ -647,7 +645,6 @@
+     isolation::run_parent("native_successor_eviction_preserves_bounded_victim_backedge");
+ }
+ 
+-/// Compare repeated native visits through the bounded victim backedge.
+ pub fn run_native_successor_eviction_preserves_bounded_victim_backedge() {
+     // SHR ECX,1; JNZ selected; RET. The six-byte victim's rel32 is -8.
+     // ECX reaches zero within32 selected visits from every initial value.
+@@ -673,7 +670,6 @@
+     isolation::run_parent("native_successor_eviction_preserves_victim_rip_relative_data");
+ }
+ 
+-/// Compare native state and data for a RIP-relative evicted victim.
+ pub fn run_native_successor_eviction_preserves_victim_rip_relative_data() {
+     // MOV EAX,EAX; MOV RCX,[RIP+55]; MOV [RDI],RCX; RET.
+     // The load's original nextPC is9 and its controlled data target is64.
+--- a/tests/sync_core_capability.rs
++++ b/tests/sync_core_capability.rs
+@@ -8,12 +8,10 @@
+ #[path = "support/sync_core_witness.rs"]
+ mod witness;
+ 
+-/// Run the process-bound synchronization capability lifetime witness.
+ pub fn run_sync_core_capability_lifetime() {
+     witness::run();
+ }
+ 
+-/// Dispatch the selected fixture on the fresh process main thread.
+ pub fn isolated_main() {
+     isolation::main_thread_driver();
+ }

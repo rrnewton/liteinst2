@@ -1,0 +1,106 @@
+{
+  "all_successor_native_steps": "not_run",
+  "cases": [],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "complete_claim": false,
+      "heading": "systematic everytactic",
+      "number": 4,
+      "scope": "no positive scope from this failed compilation",
+      "status": "unqualified"
+    }
+  ],
+  "commands": [
+    {
+      "argv": [
+        "${CARGO_1_85}",
+        "check",
+        "--manifest-path",
+        "${REPO}/Cargo.toml",
+        "-p",
+        "liteinst2",
+        "--all-targets",
+        "--all-features",
+        "--offline",
+        "--locked",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 0.6945063109742478,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "LC_ALL": "C",
+        "RUSTFLAGS": "-Dwarnings -Wmissing-docs -Funsafe-op-in-unsafe-fn -Ccodegen-units=1"
+      },
+      "exit": 101,
+      "file_bytes": 134217728,
+      "id": "msrv-v3",
+      "receipt_sha256": "110c8421719378567da1982fc2a17876755f7537a069b451e9450f41037d3d3e",
+      "source_id": "failed_worktree_snapshot",
+      "status": "fail",
+      "stderr_sha256": "677ca04b65bd1a4e0575ede34c5fe016c00591f62289d27654105e3773a0ac28",
+      "stdout_sha256": "9739ed650b64df9aa7463036b6b6e4e56dadc6bb00800a6ef039aecc1a3c5ca7",
+      "wall_seconds": 90
+    }
+  ],
+  "complete_A4": false,
+  "failure_class": "missing_documentation_for_three_public_functions",
+  "flags_unchanged": true,
+  "hardware": {
+    "architecture": "x86_64",
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "post-run read-only observation on the same host",
+    "observation_sha256": "a5bda96e4bf7665faa232dd26dea6c7802a2309c4fa116863589ed35335abd89",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "private_capture_manifest_sha256": "c7348411d4d9fc2e9ef724362c591a033560f8f1df69294f99b07c1adb00ebdc",
+  "run_id": "msrv-v3-failed-snapshot-20261025",
+  "schema_version": 1,
+  "sources": {
+    "failed_worktree_snapshot": {
+      "base_revision": "6e99b849513799a35e6be3827ad484e4c5521e6d",
+      "file_count": 165,
+      "kind": "worktree_snapshot",
+      "reproduction_from_later_revision": "7a4e5719ed06dfd55eaccb2236867f4d760e402c",
+      "reproduction_is_not_the_original_revision": true,
+      "reproduction_patch_sha256": "b37e4c904e43c88cc53f2bf811837872691d720f7d80064c5578a3c079a326b0",
+      "source_admission_sha256": "30eb74ef98f549368617b6f95654fb32a1570292f5a9c7291aa99ef51a94f300",
+      "source_tree_sha256": "010eed93c4bcce61872f381516b7e6001e1f20b7a433c9f6e06b905395fccbd6",
+      "tested_revision": null
+    }
+  },
+  "status": "fail",
+  "suite": "word-msrv",
+  "tested_revision": null,
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tools": [
+    {
+      "role": "msrv_rustc",
+      "sha256": "07d5a76ba859dc045883efd538d96c7b86cf10166f4e834afbb5981012b461c3",
+      "version": "rustc 1.85.0 (4d91de4e4 2025-02-17)",
+      "version_capture_sha256": "be9e105cd61ce407c0e06d80a25240f93cc48de72942117e1886f09aa08f9a2a"
+    }
+  ]
+}
