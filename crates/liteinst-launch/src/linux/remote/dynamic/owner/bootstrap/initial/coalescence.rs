@@ -19,10 +19,10 @@ const PAIR_BYTES: usize = 2 * PAGE;
 fn invalid() -> LaunchError {
     LaunchError::Invalid("initial coalescence native evidence differs")
 }
-fn native_error(error: crate::GateError) -> LaunchError {
+fn native_error(error: crate::gate::GateError) -> LaunchError {
     match error {
-        crate::GateError::Control(error) => error,
-        crate::GateError::Refused(reason) => LaunchError::Invalid(reason),
+        crate::gate::GateError::Control(error) => error,
+        crate::gate::GateError::Refused(reason) => LaunchError::Invalid(reason),
         _ => invalid(),
     }
 }
@@ -692,10 +692,15 @@ impl PreparedInitialCoalescence {
         Ok(())
     }
 
-    pub(in crate::linux::remote::dynamic::owner) fn fail_gate(&mut self, error: &crate::GateError) {
+    pub(in crate::linux::remote::dynamic::owner) fn fail_gate(
+        &mut self,
+        error: &crate::gate::GateError,
+    ) {
         match error {
-            crate::GateError::Control(error) => self.fail(Some(error)),
-            crate::GateError::Refused(reason) => self.fail(Some(&LaunchError::Invalid(reason))),
+            crate::gate::GateError::Control(error) => self.fail(Some(error)),
+            crate::gate::GateError::Refused(reason) => {
+                self.fail(Some(&LaunchError::Invalid(reason)))
+            }
             _ => self.fail(Some(&LaunchError::Invalid(
                 "initial coalescence startup refused",
             ))),
