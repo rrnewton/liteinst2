@@ -203,6 +203,8 @@ impl AdmissionOwner {
         }
         .validate()
         .map_err(census_error)?;
+        let mapping_census = owner.admission_mapping_census(&initial)?;
+        let mapping_catalog_bytes = Domain::mapping_catalog_bytes(&mapping_census)?;
         // Establish a finite startup envelope before the initial entry patch,
         // island allocation or any original permission change. Actual retained
         // bootstrap/origin bytes are debited from this same lifetime budget.
@@ -216,6 +218,7 @@ impl AdmissionOwner {
             })
             .and_then(|value| value.checked_add(MAX_XSTATE.checked_mul(8)?))
             .and_then(|value| value.checked_add(64 * 1024))
+            .and_then(|value| value.checked_add(mapping_catalog_bytes))
             .and_then(|value| {
                 value.checked_add(signal.as_ref().map_or(0, |(_, budget)| budget.bytes))
             })
@@ -230,7 +233,7 @@ impl AdmissionOwner {
         let started = Instant::now();
         // SAFETY: the only public caller is the unsafe pristine launch wrapper,
         // which supplies the unchanged complete static-image ownership contract.
-        let boot = unsafe { owner.bootstrap_admission(&initial, until)? };
+        let boot = unsafe { owner.bootstrap_admission(&initial, &mapping_census, until)? };
         let signals = signal
             .map(|(profile, _)| signals::SignalTransaction::new(owner, profile, &boot, until))
             .transpose()?;

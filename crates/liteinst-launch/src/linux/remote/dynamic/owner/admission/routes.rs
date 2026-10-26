@@ -714,6 +714,7 @@ pub(super) fn revoke_all(
     window: Option<OriginalWindow>,
     until: Instant,
 ) -> Result<RevokedDomain, GateError> {
+    domain.audit_history()?;
     if held.membership().generation != domain.generation {
         return Err(GateError::Refused(
             "dynamic revocation has another native generation",
@@ -785,6 +786,7 @@ pub(super) fn revoke_all(
     let retired = super::domain::RetiredGeneration {
         generation: domain.generation,
         entry_version: domain.entry_version,
+        source_binding: domain.source_binding,
         executable_pages: domain.executable_pages(),
         guards: std::mem::take(&mut domain.guards),
         sites: std::mem::take(&mut domain.sites),
@@ -860,6 +862,7 @@ pub(super) fn finish_rebind(
     domain.images = images;
     domain.generation = generation;
     domain.entry_version = version;
+    domain.audit_history()?;
     authenticate_source(held, domain)
 }
 

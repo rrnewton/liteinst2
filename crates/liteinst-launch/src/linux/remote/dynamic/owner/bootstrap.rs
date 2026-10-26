@@ -22,6 +22,26 @@ pub(in crate::linux::remote::dynamic) struct BootstrapMm {
 }
 
 impl Owner {
+    /// Read-only sizing census at the original owned EXEC stop. Bootstrap must
+    /// match it again at actual EXIT, before modifying any application byte.
+    pub(in crate::linux::remote::dynamic) fn admission_mapping_census(
+        &self,
+        initial: &DynamicStop,
+    ) -> Result<Vec<MemoryMapping>, LaunchError> {
+        let event = self.require_stop(initial)?;
+        if !matches!(event.kind, DynamicEventKind::Exec { .. })
+            || self.lifecycle.is_some()
+            || self.lifecycle_options.is_none()
+            || self.owned.len() != 1
+        {
+            return Err(LaunchError::Invalid(
+                "admission requires the original singleton EXEC event",
+            ));
+        }
+        single_task(self.pid)?;
+        Ok(original_executables(read_maps(self.pid)?))
+    }
+
     /// # Safety
     /// The admission frontend supplies the whole-image ownership/no-external-
     /// writer/no-code-as-data contract before this first original-entry patch.
@@ -29,6 +49,7 @@ impl Owner {
     pub(in crate::linux::remote::dynamic) unsafe fn bootstrap_admission(
         &mut self,
         initial: &DynamicStop,
+        expected_mappings: &[MemoryMapping],
         until: Instant,
     ) -> Result<BootstrapMm, LaunchError> {
         self.time_left(until, "admission bootstrap")?;
@@ -85,8 +106,15 @@ impl Owner {
             let exit_token = exit.stop_token().ok_or(LaunchError::Invalid(
                 "actual exec EXIT lacks its held token",
             ))?;
-            let result =
-                bootstrap_inner(self, &mut native, exit_token, exec_event, exec_exit, until);
+            let result = bootstrap_inner(
+                self,
+                &mut native,
+                exit_token,
+                exec_event,
+                exec_exit,
+                expected_mappings,
+                until,
+            );
             self.lifecycle = Some(native);
             result
         })();
@@ -103,12 +131,22 @@ impl Owner {
     }
 }
 
+fn original_executables(maps: Vec<MemoryMapping>) -> Vec<MemoryMapping> {
+    maps.into_iter()
+        .filter(|m| {
+            m.permissions.as_bytes().get(2) == Some(&b'x')
+                && m.pathname.as_deref() != Some("[vsyscall]")
+        })
+        .collect()
+}
+
 fn bootstrap_inner(
     owner: &mut Owner,
     native: &mut lifecycle::NativeLifecycle,
     exit: &DynamicStop,
     exec_event: TaskStateSnapshot,
     exec_exit: TaskStateSnapshot,
+    expected_mappings: &[MemoryMapping],
     until: Instant,
 ) -> Result<BootstrapMm, LaunchError> {
     let tid = owner.pid;
@@ -116,15 +154,12 @@ fn bootstrap_inner(
     if size != 4096 {
         return Err(LaunchError::Invalid("admission requires 4096-byte pages"));
     }
-    let maps = read_maps(tid)?;
-    let originals = maps
-        .iter()
-        .filter(|m| {
-            m.permissions.as_bytes().get(2) == Some(&b'x')
-                && m.pathname.as_deref() != Some("[vsyscall]")
-        })
-        .cloned()
-        .collect::<Vec<_>>();
+    let originals = original_executables(read_maps(tid)?);
+    if originals != expected_mappings {
+        return Err(LaunchError::Invalid(
+            "bootstrap executable census changed after its resource reservation",
+        ));
+    }
     let mut pages = 0_u64;
     for mapping in &originals {
         if mapping.end <= mapping.start

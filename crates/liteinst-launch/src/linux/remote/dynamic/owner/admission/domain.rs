@@ -13,7 +13,9 @@ use liteinst_admission::scan::{Candidate, Policy, Snapshot};
 use std::collections::{BTreeMap, BTreeSet};
 
 mod resource;
-use resource::ResourceBasis;
+#[cfg(test)]
+mod tests;
+use resource::{ResourceBasis, SourceBinding};
 
 pub(super) struct Domain {
     pub(super) images: Vec<Image>,
@@ -29,6 +31,7 @@ pub(super) struct Domain {
     pub(super) entry_version: u64,
     pub(super) plans: Vec<InstalledPlan>,
     pub(super) generations: Vec<RetiredGeneration>,
+    pub(super) source_binding: SourceBinding,
     resource_basis: ResourceBasis,
     next_plan: u64,
 }
@@ -37,6 +40,7 @@ pub(super) struct Domain {
 /// exclusion capability. Every later release reauthenticates its current facts.
 pub(super) struct InstalledPlan {
     pub(super) id: u64,
+    pub(super) source_binding: SourceBinding,
     pub(super) pending: PendingAdmission,
     pub(super) routes: Vec<super::routes::ResolvedRoute>,
 }
@@ -44,12 +48,19 @@ pub(super) struct InstalledPlan {
 pub(super) struct RetiredGeneration {
     pub(super) generation: u64,
     pub(super) entry_version: u64,
+    pub(super) source_binding: SourceBinding,
     pub(super) executable_pages: BTreeSet<u64>,
     pub(super) guards: BTreeMap<u64, TrapGuard>,
     pub(super) sites: BTreeMap<u64, Candidate>,
 }
 
 impl Domain {
+    pub(super) fn mapping_catalog_bytes(mappings: &[MemoryMapping]) -> Result<usize, GateError> {
+        ResourceBasis::mapping_bytes(mappings)?
+            .checked_add(std::mem::size_of::<SourceBinding>())
+            .ok_or(GateError::Refused("dynamic resource basis size overflows"))
+    }
+
     pub(super) fn new(
         facts: Vec<crate::gate::ImageFacts>,
         original_executables: Vec<MemoryMapping>,
@@ -61,7 +72,8 @@ impl Domain {
         let pages = planning::initial_pages(&original_executables)?;
         let images = planning::prepare_images(facts, &original_executables, read)?;
         let policy = Policy::default();
-        let resource_basis = ResourceBasis::new(&images, &policy, until)?;
+        let (resource_basis, source_binding) =
+            ResourceBasis::new(&images, &original_executables, &policy, until)?;
         Ok(Self {
             images,
             original_executables,
@@ -76,13 +88,19 @@ impl Domain {
             entry_version: 0,
             plans: Vec::new(),
             generations: Vec::new(),
+            source_binding,
             resource_basis,
             next_plan: 1,
         })
     }
 
     pub(super) fn source_candidate_bound(&self) -> Result<usize, GateError> {
-        self.resource_basis.candidates(&self.images, &self.policy)
+        self.resource_basis.candidates(
+            self.source_binding,
+            &self.images,
+            &self.original_executables,
+            &self.policy,
+        )
     }
 
     pub(super) fn resource_scan_decoded_starts(&self) -> usize {
@@ -181,6 +199,7 @@ impl Domain {
     }
 
     pub(super) fn validate_plan(&self, plan: &PendingAdmission) -> Result<(), GateError> {
+        self.validate_live_source()?;
         let image = self.image(plan.target().start())?;
         if plan.snapshot() != &image.snapshot
             || plan.entries() != &image.entries
@@ -272,6 +291,7 @@ impl Domain {
         }
         self.plans.push(InstalledPlan {
             id,
+            source_binding: self.source_binding,
             pending: plan,
             routes,
         });
@@ -359,6 +379,46 @@ impl Domain {
     /// Audit retained receipts without treating them as a fresh native permit.
     /// Invalidation never erases old guard geometry or changes a source version.
     pub(super) fn audit_history(&self) -> Result<(), GateError> {
+        self.validate_live_source()?;
+        self.audit_retained_history()
+    }
+
+    /// Match live source geometry separately from historical evidence. A later
+    /// native replacement transaction must establish a new live binding; an
+    /// old receipt never licenses changed bytes or mapping permissions.
+    fn validate_live_source(&self) -> Result<(), GateError> {
+        self.source_candidate_bound()?;
+        self.resource_basis
+            .validate_pages(self.source_binding, &self.pages)?;
+        if self.images.iter().any(|image| {
+            image.snapshot.generation != Generation(self.generation)
+                || image.entries.generation() != image.snapshot.generation
+                || image.entries.version() != self.entry_version
+                || image.core_identity.generation != self.generation
+        }) {
+            return Err(GateError::Refused("dynamic live source epoch differs"));
+        }
+        Ok(())
+    }
+
+    fn source_for_generation(&self, generation: u64) -> Result<SourceBinding, GateError> {
+        if generation == self.generation {
+            return Ok(self.source_binding);
+        }
+        let retired = usize::try_from(generation)
+            .ok()
+            .and_then(|index| self.generations.get(index))
+            .filter(|retired| retired.generation == generation)
+            .ok_or(GateError::Refused(
+                "dynamic historical source epoch is absent",
+            ))?;
+        Ok(retired.source_binding)
+    }
+
+    /// Retained evidence is checked against the separately owned original
+    /// census. Neither a mutable live image nor a plan's own bytes can vouch
+    /// for that plan. This is an audit, never native release authority.
+    fn audit_retained_history(&self) -> Result<(), GateError> {
         if self.generation != self.entry_version || self.generations.len() as u64 != self.generation
         {
             return Err(GateError::Refused(
@@ -366,22 +426,33 @@ impl Domain {
             ));
         }
         for (index, retired) in self.generations.iter().enumerate() {
-            if retired.generation != index as u64
-                || retired.entry_version != index as u64
-                || retired
-                    .executable_pages
-                    .iter()
-                    .any(|page| !self.pages.contains_key(page))
-            {
+            if retired.generation != index as u64 || retired.entry_version != index as u64 {
                 return Err(GateError::Refused(
                     "dynamic retired generation identity differs",
                 ));
             }
+            for &page in &retired.executable_pages {
+                if !self
+                    .resource_basis
+                    .contains_page(retired.source_binding, page)?
+                {
+                    return Err(GateError::Refused(
+                        "dynamic retired page lost its source identity",
+                    ));
+                }
+            }
+            // Authenticate even an empty retired generation's source binding.
+            self.resource_basis
+                .validate_binding(retired.source_binding)?;
             for (&pc, guard) in &retired.guards {
                 if pc != guard.address()
-                    || self.original_candidate_decode(pc)? != guard.original_bytes()
+                    || self
+                        .resource_basis
+                        .original_candidate_decode(retired.source_binding, pc)?
+                        != guard.original_bytes()
                     || !self.plans.iter().any(|plan| {
                         plan.pending.snapshot().generation.0 == retired.generation
+                            && plan.source_binding == retired.source_binding
                             && plan.pending.guards().get(&pc) == Some(guard)
                     })
                     || !retired.executable_pages.contains(&(pc & !(PAGE - 1)))
@@ -417,16 +488,26 @@ impl Domain {
                 || generation > self.generation
                 || plan.pending.entries().generation() != plan.pending.snapshot().generation
                 || plan.pending.entries().version() != generation
+                || plan.source_binding != self.source_for_generation(generation)?
             {
                 return Err(GateError::Refused(
                     "dynamic retained plan identity is reused or stale",
                 ));
             }
+            self.resource_basis.validate_retained(
+                plan.source_binding,
+                plan.pending.snapshot(),
+                plan.pending.entries(),
+                plan.pending.policy(),
+            )?;
             for route in &plan.routes {
                 if route.generation != generation
                     || route.entry_version != generation
                     || route.plan != plan.id
-                    || self.original_decode(route.pc)? != route.original
+                    || self
+                        .resource_basis
+                        .original_decode(plan.source_binding, route.pc)?
+                        != route.original
                 {
                     return Err(GateError::Refused(
                         "dynamic retained route lost its original plan facts",
