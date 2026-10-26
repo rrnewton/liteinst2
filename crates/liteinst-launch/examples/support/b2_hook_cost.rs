@@ -61,6 +61,9 @@ fn class_name(class: SiteClass) -> &'static str {
         SiteClass::Rdtsc => "rdtsc",
         SiteClass::Rdtscp => "rdtscp",
         SiteClass::Syscall => "syscall",
+        SiteClass::Sysenter | SiteClass::Int80 => {
+            panic!("instruction class is outside the fixed cost cohort")
+        }
     }
 }
 #[derive(Clone, Copy)]
