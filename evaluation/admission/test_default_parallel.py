@@ -39,8 +39,8 @@ class DefaultParallelTests(unittest.TestCase):
     def test_fork_cohort_authenticates_its_own_exact_corpus_and_commands(self):
         expected = {dp.FORK: counts(7)}
         corpus = {"schema_version": 1, "harness_test_counts": {
-            "workspace_tests": EXPECTED | expected,
-            "serial_launch": EXPECTED | expected}}
+            "workspace_tests": copy.deepcopy(EXPECTED | expected),
+            "serial_launch": copy.deepcopy(EXPECTED | expected)}}
         data = json.dumps(corpus).encode()
         source = {"source_sha256": {"evaluation/admission/corpus.json": dp.sha(data)}}
         self.assertEqual(dp.authenticated_corpus(data, source, "fork"), expected)
