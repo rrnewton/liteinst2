@@ -362,6 +362,29 @@ impl State {
                     );
                     10
                 }
+                [0x66, rest @ ..] => {
+                    let (index, immediate, len) = match rest {
+                        [0x41, opcode @ 0xb8..=0xbf, immediate @ ..] => {
+                            (usize::from(opcode - 0xb8) + 8, immediate, 5)
+                        }
+                        [opcode @ 0xb8..=0xbf, immediate @ ..] => {
+                            (usize::from(opcode - 0xb8), immediate, 4)
+                        }
+                        _ => panic!("unsupported fixture MOV16"),
+                    };
+                    let old = reg(&self.registers, index);
+                    let value = u64::from(u16::from_le_bytes(immediate[..2].try_into().unwrap()));
+                    set_reg(&mut self.registers, index, (old & !0xffff) | value);
+                    len
+                }
+                [0x41, opcode @ 0xb8..=0xbf, rest @ ..] => {
+                    set_reg(
+                        &mut self.registers,
+                        usize::from(opcode - 0xb8) + 8,
+                        u64::from(u32::from_le_bytes(rest[..4].try_into().unwrap())),
+                    );
+                    6
+                }
                 [opcode @ 0xb8..=0xbf, rest @ ..] => {
                     set_reg(
                         &mut self.registers,
@@ -1782,6 +1805,410 @@ fn undeclared_mismatched_and_misplaced_aliases_refuse_before_publication_or_call
             assert!(gate.next_event().is_err());
             assert_eq!(gate.provider().calls, 0);
             assert_eq!(gate.metrics().refusals, 1);
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum CacheMode {
+    Disabled,
+    Cold,
+    Prepared,
+}
+
+fn configure_cache(
+    gate: &mut SelectedPageGate<RecordingProvider>,
+    mode: CacheMode,
+    pages: &[u64],
+) -> Vec<liteinst_admission::oracle_chain::Inspection> {
+    use liteinst_admission::oracle_chain::CacheLimits;
+    if matches!(mode, CacheMode::Disabled) {
+        // Leave the constructor's runtime-only default untouched.
+        return Vec::new();
+    }
+    gate.configure_oracle(CacheLimits::default()).unwrap();
+    if matches!(mode, CacheMode::Cold) {
+        return Vec::new();
+    }
+    let registers = gate.read_registers().unwrap();
+    let xstate = gate.read_xstate().unwrap();
+    let memory = gate.read_memory(STACK, STACK_LEN).unwrap();
+    let reports = gate.prepare_oracle(pages).unwrap();
+    assert_eq!(gate.read_registers().unwrap(), registers);
+    assert_eq!(gate.read_xstate().unwrap(), xstate);
+    assert_eq!(gate.read_memory(STACK, STACK_LEN).unwrap(), memory);
+    assert_eq!(gate.gate_metrics().admitted_pages, 0);
+    assert_eq!(gate.provider().calls, 0);
+    for &page in pages {
+        assert!(!gate.is_admitted(page));
+        assert_nx(gate.pid(), page);
+    }
+    reports
+}
+
+fn assert_single_page_cache_work(gate: &SelectedPageGate<RecordingProvider>, mode: CacheMode) {
+    let work = gate.oracle_metrics();
+    assert_eq!(work.demand.inspections, 1);
+    assert_eq!(work.demand.stale, 0);
+    assert_eq!(work.demand.corrupt, 0);
+    assert!(!work.demand.saturated);
+    if matches!(mode, CacheMode::Prepared) {
+        assert_eq!(work.preparation.inspections, 1);
+        assert_eq!(work.preparation.runtime_scans, 1);
+        assert_eq!(work.preparation.hits, 0);
+        assert!(work.preparation.decoded_starts > 0);
+        assert_eq!(work.demand.hits, 1);
+        assert_eq!(work.demand.runtime_scans, 0);
+        assert_eq!(work.demand.decoded_starts, 0);
+        assert_eq!(work.demand.fresh_scan_elapsed, Duration::ZERO);
+    } else {
+        assert_eq!(work.preparation.inspections, 0);
+        assert_eq!(work.demand.hits, 0);
+        assert_eq!(work.demand.runtime_scans, 1);
+        assert!(work.demand.decoded_starts > 0);
+    }
+}
+
+#[test]
+fn cache_modes_preserve_strict_selected_complete_states_and_callback_order() {
+    let directory = Directory::new();
+    let mut image = Elf::new(2, false);
+    image.setup();
+    image.mov32(0, 1);
+    image.mov32(1, 0);
+    let first = image.emit(&[0x0f, 0xa2]);
+    image.store(0, 0);
+    image.emit(&[0x0f, 0xc7, 0xf0]);
+    image.store(0, 8);
+    image.emit(&[0x0f, 0xc7, 0xfa]);
+    image.store(2, 16);
+    image.emit(&[0x0f, 0x31]);
+    image.emit(&[0x0f, 0x0b]);
+    let expected = rows(
+        &image,
+        native_seed(&directory, &image, first),
+        &[
+            Reply::Cpuid([1, 0x1234_5678, 0, 0]),
+            Reply::Random {
+                seed: false,
+                value: 0x8765_4321,
+                carry: true,
+            },
+            Reply::Random {
+                seed: true,
+                value: 0,
+                carry: false,
+            },
+            Reply::Counter {
+                value: 0x8877_6655_4433_2211,
+                auxiliary: None,
+            },
+        ],
+    );
+    let path = image.write(&directory, "cache-strict");
+    let mut original_mapping = None;
+    for mode in [CacheMode::Disabled, CacheMode::Cold, CacheMode::Prepared] {
+        let mut gate = page_gate(
+            launch(&path),
+            vec![image.facts(BASE)],
+            Policy::default(),
+            &expected,
+        );
+        let reports = configure_cache(&mut gate, mode, &[BASE + PAGE as u64]);
+        if let Some(report) = reports.first() {
+            assert_eq!(
+                report.report.verdict(),
+                liteinst_admission::scan::Verdict::Sites
+            );
+            original_mapping = Some(report.report.snapshot().mapping);
+        }
+        assert_eq!(
+            gate.read_memory(BASE, image.bytes.len()).unwrap(),
+            image.bytes
+        );
+        for row in &expected {
+            check_completed(&mut gate, row);
+        }
+        assert_single_page_cache_work(&gate, mode);
+        assert_eq!(gate.provider().calls, 4);
+        assert_eq!(gate.provider().consumed, 4);
+        assert!(gate.provider().rows.is_empty());
+        for class in [
+            SiteClass::Cpuid,
+            SiteClass::Rdrand,
+            SiteClass::Rdseed,
+            SiteClass::Rdtsc,
+        ] {
+            assert_eq!(gate.metrics().callbacks.get(&class), Some(&1));
+        }
+        assert_eq!(gate.metrics().callbacks.len(), 4);
+        let mut armed = image.bytes.clone();
+        for row in &expected {
+            armed[(row.before.rip - BASE) as usize] = 0xcc;
+        }
+        assert_eq!(gate.read_memory(BASE, armed.len()).unwrap(), armed);
+        assert!(gate.prepare_oracle(&[BASE + PAGE as u64]).is_err());
+        assert!(gate.configure_oracle(Default::default()).is_err());
+        assert_single_page_cache_work(&gate, mode);
+    }
+    // A later owner at the same VA receives a different non-reused incarnation.
+    let mut later = page_gate(
+        launch(&path),
+        vec![image.facts(BASE)],
+        Policy::default(),
+        &[],
+    );
+    later.configure_oracle(Default::default()).unwrap();
+    let report = later.prepare_oracle(&[BASE + PAGE as u64]).unwrap();
+    assert_ne!(Some(report[0].report.snapshot().mapping), original_mapping);
+    assert_eq!(
+        report[0].source,
+        liteinst_admission::oracle_chain::InspectionSource::RuntimeScan
+    );
+}
+
+#[test]
+fn cache_modes_preserve_refused_reports_and_full_covered_execution_states() {
+    let directory = Directory::new();
+    let mut image = Elf::new(2, false);
+    image.setup();
+    let first = image.cursor;
+    image.mov64(3, 0x9090_9090_f8c7_0f90);
+    image.store(3, 0);
+    image.emit(&[0x0f, 0x31]);
+    image
+        .heads
+        .extend([first + 3, first + 6, first + 7, first + 8, first + 9]);
+    image.jump(first + 3);
+    image.emit(&[0x0f, 0x0b]);
+    let expected = rows(
+        &image,
+        native_seed(&directory, &image, first),
+        &[
+            Reply::Counter {
+                value: 0x1122_3344_5566_7788,
+                auxiliary: None,
+            },
+            Reply::Random {
+                seed: true,
+                value: 0xfedc_1234,
+                carry: true,
+            },
+            Reply::Counter {
+                value: 0x8877_6655_4433_2211,
+                auxiliary: None,
+            },
+        ],
+    );
+    let path = image.write(&directory, "cache-covered");
+    for mode in [CacheMode::Disabled, CacheMode::Cold, CacheMode::Prepared] {
+        let mut gate = covered_gate(launch(&path), vec![image.facts(BASE)], &expected);
+        let prepared = configure_cache(&mut gate, mode, &[BASE + PAGE as u64]);
+        if let Some(report) = prepared.first() {
+            assert_eq!(
+                report.report.verdict(),
+                liteinst_admission::scan::Verdict::Refused
+            );
+            assert!(!report.report.obligations().is_empty());
+        }
+        assert_eq!(
+            gate.read_memory(BASE, image.bytes.len()).unwrap(),
+            image.bytes
+        );
+        for row in &expected {
+            check_completed(&mut gate, row);
+        }
+        assert_single_page_cache_work(&gate, mode);
+        assert_eq!(gate.oracle_metrics().demand.refused, 1);
+        assert_eq!(gate.metrics().callbacks.len(), 2);
+        assert_eq!(gate.metrics().callbacks.get(&SiteClass::Rdtsc), Some(&2));
+        assert_eq!(gate.metrics().callbacks.get(&SiteClass::Rdseed), Some(&1));
+        assert_eq!(gate.provider().consumed, 3);
+        assert!(gate.provider().rows.is_empty());
+        assert_eq!(gate.gate_metrics().collateral_guards, 1);
+        assert_eq!(gate.gate_metrics().collateral_completions, 1);
+    }
+}
+
+#[test]
+fn cached_strict_prefix_reports_still_refuse_before_any_publication() {
+    for encoding in [&[0x66, 0x0f, 0xc7, 0xf0][..], &[0xf3, 0x0f, 0xc7, 0xf8]] {
+        let directory = Directory::new();
+        let mut image = Elf::new(2, false);
+        image.emit(encoding);
+        image.emit(&[0x0f, 0x0b]);
+        let path = image.write(&directory, "cached-refusal");
+        for mode in [CacheMode::Disabled, CacheMode::Cold, CacheMode::Prepared] {
+            let mut gate = page_gate(
+                launch(&path),
+                vec![image.facts(BASE)],
+                Policy::default(),
+                &[],
+            );
+            let prepared = configure_cache(&mut gate, mode, &[BASE + PAGE as u64]);
+            let expected = prepared
+                .first()
+                .map(|row| row.report.obligations().to_vec());
+            let liteinst_launch::gate::GateError::Scan(obligations) =
+                gate.next_event().unwrap_err()
+            else {
+                panic!("strict cached candidate must preserve its scanner refusal");
+            };
+            assert!(!obligations.is_empty());
+            if let Some(expected) = expected {
+                assert_eq!(obligations, expected);
+            }
+            assert_single_page_cache_work(&gate, mode);
+            assert_eq!(gate.oracle_metrics().demand.refused, 1);
+            assert_eq!(
+                gate.read_memory(BASE, image.bytes.len()).unwrap(),
+                image.bytes
+            );
+            assert_nx(gate.pid(), BASE + PAGE as u64);
+            assert_eq!(gate.gate_metrics().admitted_pages, 0);
+            assert_eq!(gate.provider().calls, 0);
+            assert!(gate.next_event().is_err());
+            assert_single_page_cache_work(&gate, mode);
+        }
+    }
+}
+
+#[test]
+fn oracle_preparation_is_bounded_atomic_on_bad_batches_and_eviction_falls_back() {
+    use liteinst_admission::oracle_chain::{CacheLimits, InspectionSource};
+    let directory = Directory::new();
+    let mut image = Elf::new(2, false);
+    image.setup();
+    let first = image.emit(&[0x0f, 0x31]);
+    image.emit(&[0x0f, 0x0b]);
+    let expected = rows(
+        &image,
+        native_seed(&directory, &image, first),
+        &[Reply::Counter {
+            value: 0x1234_5678_8765_4321,
+            auxiliary: None,
+        }],
+    );
+    let path = image.write(&directory, "cache-bounds");
+    let mut gate = page_gate(
+        launch(&path),
+        vec![image.facts(BASE)],
+        Policy::default(),
+        &expected,
+    );
+    assert!(
+        gate.configure_oracle(CacheLimits {
+            max_entries: 1,
+            max_snapshot_bytes: 0,
+            max_metadata_items: 1
+        })
+        .is_err()
+    );
+    gate.configure_oracle(CacheLimits {
+        max_entries: 1,
+        ..CacheLimits::default()
+    })
+    .unwrap();
+    let before = gate.read_registers().unwrap();
+    let xstate = gate.read_xstate().unwrap();
+    for bad in [
+        vec![BASE + 1],
+        vec![BASE, BASE],
+        vec![BASE + PAGE as u64, BASE + 20 * PAGE as u64],
+        vec![BASE; 65],
+    ] {
+        assert!(gate.prepare_oracle(&bad).is_err());
+        assert_eq!(gate.oracle_metrics().preparation.inspections, 0);
+        assert_eq!(gate.oracle_usage().unwrap().entries, 0);
+    }
+    // The second distinct page evicts the first under the one-entry bound.
+    let reports = gate.prepare_oracle(&[BASE + PAGE as u64, BASE]).unwrap();
+    assert!(
+        reports
+            .iter()
+            .all(|row| row.source == InspectionSource::RuntimeScan)
+    );
+    assert_eq!(gate.oracle_usage().unwrap().entries, 1);
+    // The lifetime bound also applies across individually valid calls.
+    for _ in 0..62 {
+        gate.prepare_oracle(&[BASE]).unwrap();
+    }
+    assert_eq!(gate.oracle_metrics().preparation.inspections, 64);
+    assert!(gate.prepare_oracle(&[BASE]).is_err());
+    assert_eq!(gate.oracle_metrics().preparation.inspections, 64);
+    assert_eq!(gate.read_registers().unwrap(), before);
+    assert_eq!(gate.read_xstate().unwrap(), xstate);
+    assert_eq!(
+        gate.read_memory(BASE, image.bytes.len()).unwrap(),
+        image.bytes
+    );
+    assert_nx(gate.pid(), BASE + PAGE as u64);
+    check_completed(&mut gate, &expected[0]);
+    let metrics = gate.oracle_metrics();
+    assert_eq!(metrics.preparation.inspections, 64);
+    assert_eq!(metrics.demand.inspections, 1);
+    assert_eq!(metrics.demand.runtime_scans, 1);
+    assert_eq!(metrics.demand.hits, 0);
+    assert_eq!(metrics.demand.no_entry, 1);
+    assert!(metrics.demand.decoded_starts > 0);
+    assert_eq!(gate.oracle_usage().unwrap().entries, 1);
+}
+
+#[test]
+fn covered_mov_immediate_all_widths_and_gprs_match_independent_complete_state() {
+    // Forty-eight separate original CPU MOV executions, including SP/ESP/RSP.
+    // The following RDTSC is scripted; neither it nor teardown uses the changed
+    // application stack. The oracle reads the fixed initialized stack mapping.
+    for bits in [16, 32, 64] {
+        for destination in 0..16 {
+            let directory = Directory::new();
+            let mut image = Elf::new(2, false);
+            image.setup();
+            let first = image.cursor;
+            let mut bytes = Vec::new();
+            if bits == 16 {
+                bytes.push(0x66);
+            }
+            if bits == 64 || destination >= 8 {
+                bytes.push(
+                    0x40 | if bits == 64 { 8 } else { 0 } | if destination >= 8 { 1 } else { 0 },
+                );
+            }
+            bytes.push(0xb8 | (destination & 7) as u8);
+            let immediate_offset = bytes.len();
+            let immediate = [0x0f, 0x31, 0x90, 0x90, 0x90, 0x90, 0x90, 0x90];
+            bytes.extend_from_slice(&immediate[..bits / 8]);
+            image.emit(&bytes);
+            image.emit(&[0x0f, 0x31]);
+            image.emit(&[0x0f, 0x0b]);
+            let expected = rows(
+                &image,
+                native_seed(&directory, &image, first),
+                &[Reply::Counter {
+                    value: 0x1122_3344_5566_7788,
+                    auxiliary: None,
+                }],
+            );
+            let path = image.write(&directory, "covered-mov-width");
+            let mut gate = covered_gate(launch(&path), vec![image.facts(BASE)], &expected);
+            let prepared = configure_cache(&mut gate, CacheMode::Prepared, &[BASE + PAGE as u64]);
+            assert_eq!(
+                prepared[0].report.verdict(),
+                liteinst_admission::scan::Verdict::Refused
+            );
+            check_completed(&mut gate, &expected[0]);
+            assert_single_page_cache_work(&gate, CacheMode::Prepared);
+            assert_eq!(gate.gate_metrics().collateral_guards, 1);
+            assert_eq!(gate.gate_metrics().collateral_completions, 1);
+            assert_eq!(gate.metrics().callbacks.len(), 1);
+            assert_eq!(gate.metrics().callbacks.get(&SiteClass::Rdtsc), Some(&1));
+            assert_eq!(gate.provider().calls, 1);
+            assert_eq!(gate.provider().consumed, 1);
+            let mut armed = image.bytes.clone();
+            armed[first] = 0xcc;
+            armed[first + immediate_offset] = 0xcc;
+            armed[first + bytes.len()] = 0xcc;
+            assert_eq!(gate.read_memory(BASE, armed.len()).unwrap(), armed);
         }
     }
 }

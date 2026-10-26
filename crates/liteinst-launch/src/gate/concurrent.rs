@@ -57,6 +57,7 @@ pub struct ConcurrentMetrics {
 /// or application-signal support.
 pub struct ConcurrentPageGate {
     process: Option<SharedMmProcess>,
+    oracle: GateOracle,
     pid: libc::pid_t,
     worker_ids: Vec<libc::pid_t>,
     images: Vec<Image>,
@@ -93,11 +94,44 @@ impl ConcurrentPageGate {
         config: ConcurrentConfig,
         timeout: Duration,
     ) -> Result<Self, GateError> {
+        // SAFETY: forwards the complete fixed-membership owner certification.
+        unsafe {
+            Self::new_with_oracle(
+                checkpoint,
+                facts,
+                policy,
+                config,
+                timeout,
+                CacheLimits::DISABLED,
+                &[],
+            )
+        }
+    }
+
+    /// Configures bounded scan reuse and prepares selected whole pages before
+    /// the factory's first application resume. The same cache and its separate
+    /// work counters move into the collective owner. No persistent artifact is
+    /// accepted; factory and worker admission retain all live checks.
+    ///
+    /// # Safety
+    /// All certifications of [`Self::new`] apply without modification.
+    pub unsafe fn new_with_oracle(
+        checkpoint: ExecCheckpoint,
+        facts: Vec<ImageFacts>,
+        policy: Policy,
+        config: ConcurrentConfig,
+        timeout: Duration,
+        limits: CacheLimits,
+        prepared_pages: &[u64],
+    ) -> Result<Self, GateError> {
         let started = Instant::now();
         let deadline = started + timeout;
         // SAFETY: the caller supplies the complete core owner certifications.
         let mut gate =
             unsafe { SingleThreadPageGate::new_core(checkpoint, facts, policy, timeout)? };
+        gate.configure_oracle(limits)?;
+        gate.prepare_oracle(prepared_pages)?;
+        gate.application_started = true;
         let event = gate.process.resume_until_event(remaining(deadline)?)?;
         let ProcessEvent::Signal(signal) = event else {
             return Err(GateError::Refused("factory did not first enter an NX page"));
@@ -119,7 +153,7 @@ impl ConcurrentPageGate {
             .iter()
             .find(|image| image.snapshot.range().contains(page))
             .ok_or(GateError::Refused("factory has no census"))?;
-        let report = RuntimeScan.inspect(
+        let report = gate.oracle.inspect(
             &image.snapshot,
             AddressRange::new(page, page + PAGE).unwrap(),
             &image.entries,
@@ -135,6 +169,7 @@ impl ConcurrentPageGate {
         gate.admit(&signal, deadline)?;
         let SingleThreadPageGate {
             process,
+            oracle,
             images,
             pages,
             returns,
@@ -162,6 +197,7 @@ impl ConcurrentPageGate {
         metrics.gate.startup = started.elapsed();
         Ok(Self {
             process: Some(process),
+            oracle,
             pid,
             worker_ids,
             images,
@@ -188,6 +224,14 @@ impl ConcurrentPageGate {
     /// Recorded admission, exactly-once publication and rendezvous measurements.
     pub fn metrics(&self) -> &ConcurrentMetrics {
         &self.metrics
+    }
+    /// Actual preparation/demand work, retained across factory registration.
+    pub fn oracle_metrics(&self) -> GateOracleMetrics {
+        self.oracle.metrics.borrow().clone()
+    }
+    /// Bounded immutable scan-report storage owned by this address space.
+    pub fn oracle_usage(&self) -> Result<CacheUsage, CacheCorruption> {
+        self.oracle.chain.usage()
     }
     /// Whether an original page has been admitted under this generation.
     pub fn is_admitted(&self, address: u64) -> bool {
@@ -347,7 +391,7 @@ impl ConcurrentPageGate {
             .find(|image| image.snapshot.range().contains(page))
             .ok_or(GateError::Refused("missing concurrent image facts"))?;
         let bundle = prepare_admission(
-            image,
+            (image, &self.oracle),
             page,
             &self.policy,
             &self.returns,

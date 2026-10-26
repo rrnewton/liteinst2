@@ -82,6 +82,8 @@ pub enum TrapCoverageRefusal {
         /// Exact obligations; none is silently discarded.
         obligations: Vec<Obligation>,
     },
+    /// An oracle returned facts belonging to a different request.
+    OracleFactsMismatch,
     /// The immutable scan and original-byte decode disagree.
     CandidateDecodeMismatch(u64),
 }
@@ -169,7 +171,22 @@ impl TrapCoveragePlan {
         policy: &Policy,
         budget: TrapCoverageBudget,
     ) -> Result<Self, TrapCoverageRefusal> {
-        Builder::new(snapshot, target, entries, policy, budget)?.build()
+        Self::build_with_oracle(snapshot, target, entries, policy, budget, &RuntimeScan)
+    }
+
+    /// Reuses immutable scan facts through an explicit pure oracle seam.
+    /// Every returned report must match the complete snapshot, entries, target
+    /// and policy. This is no live authority; live gates use a private typed
+    /// OracleChain adapter whose runtime terminal cannot be replaced.
+    pub fn build_with_oracle(
+        snapshot: &Snapshot,
+        target: AddressRange,
+        entries: &LegalEntrySet,
+        policy: &Policy,
+        budget: TrapCoverageBudget,
+        oracle: &impl AdmissionOracle,
+    ) -> Result<Self, TrapCoverageRefusal> {
+        Builder::new(snapshot, target, entries, policy, budget)?.build(oracle)
     }
     /// Original immutable source and mapping identity/generation.
     pub fn snapshot(&self) -> &Snapshot {
@@ -407,14 +424,24 @@ impl<'a> Builder<'a> {
         Ok(())
     }
 
-    fn build(mut self) -> Result<TrapCoveragePlan, TrapCoverageRefusal> {
+    fn build(
+        mut self,
+        oracle: &impl AdmissionOracle,
+    ) -> Result<TrapCoveragePlan, TrapCoverageRefusal> {
         let mut stable = false;
         for _ in 0..self.budget.max_rounds {
             let before = (self.pages.len(), self.guards.len());
             let pending: Vec<_> = self.pages.difference(&self.scanned).copied().collect();
             for page in pending {
                 let target = AddressRange::new(page, page + self.budget.page_size).unwrap();
-                let report = RuntimeScan.inspect(self.snapshot, target, self.entries, self.policy);
+                let report = oracle.inspect(self.snapshot, target, self.entries, self.policy);
+                if report.snapshot() != self.snapshot
+                    || report.entries() != self.entries
+                    || report.target() != target
+                    || report.policy() != self.policy
+                {
+                    return Err(TrapCoverageRefusal::OracleFactsMismatch);
+                }
                 let unresolved_obligations: Vec<_> = report
                     .obligations()
                     .iter()

@@ -7,15 +7,19 @@
 //! typed CPU/syscall dispatch and optional overlap guards; general lifecycle
 //! support is outside this module.
 
+use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use iced_x86::{Decoder, DecoderOptions};
 use liteinst_admission::entries::{Completeness, EntryProvenance, LegalEntrySet};
+use liteinst_admission::oracle_chain::{
+    CacheCorruption, CacheLimits, CacheUsage, Inspection, InspectionSource, OracleChain, OracleMiss,
+};
 use liteinst_admission::returns::CallReturnLedger;
 use liteinst_admission::scan::{
-    AdmissionOracle, Boundary, Candidate, Policy, RuntimeScan, Snapshot, Verdict, WriteControl,
+    AdmissionOracle, Boundary, Candidate, Policy, ScanReport, Snapshot, Verdict, WriteControl,
 };
 use liteinst_admission::{AddressRange, Generation, MappingId};
 use liteinst2::contracts as core;
@@ -151,6 +155,145 @@ pub struct GateMetrics {
     pub collateral_completions: usize,
 }
 
+/// Work in one live-owner inspection phase, never historical report metrics.
+#[derive(Clone, Debug, Default)]
+pub struct OraclePhaseMetrics {
+    /// Actual calls to the oracle; admitted-page revisits do not increment this.
+    pub inspections: u64,
+    /// Exact immutable report reuse.
+    pub hits: u64,
+    /// Actual mandatory terminal scans, including cache misses and corruption.
+    pub runtime_scans: u64,
+    /// Misses with no matching target entry.
+    pub no_entry: u64,
+    /// Entries whose complete facts no longer match.
+    pub stale: u64,
+    /// Cache integrity failures followed by RuntimeScan.
+    pub corrupt: u64,
+    /// Reports retaining unresolved scanner obligations, even if a separate
+    /// coverage proof subsequently preserves the affected instruction streams.
+    pub refused: u64,
+    /// Actual decoded starts; a cache hit contributes zero.
+    pub decoded_starts: u64,
+    /// Exact-fact lookup, including lock acquisition; no hashing is performed.
+    pub lookup_elapsed: Duration,
+    /// Time in newly executed RuntimeScan calls only.
+    pub fresh_scan_elapsed: Duration,
+    /// Cache insertion/eviction work.
+    pub store_elapsed: Duration,
+    /// Saturated values are lower bounds, not exact observations.
+    pub saturated: bool,
+}
+
+impl OraclePhaseMetrics {
+    fn record(&mut self, inspection: &Inspection) {
+        let increments = [
+            (&mut self.inspections, 1),
+            (
+                &mut self.hits,
+                u64::from(inspection.source == InspectionSource::Cache),
+            ),
+            (
+                &mut self.runtime_scans,
+                u64::from(inspection.source == InspectionSource::RuntimeScan),
+            ),
+            (
+                &mut self.no_entry,
+                u64::from(matches!(inspection.miss, Some(OracleMiss::NoEntry))),
+            ),
+            (
+                &mut self.stale,
+                u64::from(matches!(inspection.miss, Some(OracleMiss::Stale(_)))),
+            ),
+            (
+                &mut self.corrupt,
+                u64::from(matches!(inspection.miss, Some(OracleMiss::Corrupt(_)))),
+            ),
+            (
+                &mut self.refused,
+                u64::from(inspection.report.verdict() == Verdict::Refused),
+            ),
+            (
+                &mut self.decoded_starts,
+                inspection.work.decoded_starts as u64,
+            ),
+        ];
+        for (counter, increment) in increments {
+            let next = counter.checked_add(increment);
+            self.saturated |= next.is_none();
+            *counter = next.unwrap_or(u64::MAX);
+        }
+        for (total, elapsed) in [
+            (&mut self.lookup_elapsed, inspection.work.lookup_elapsed),
+            (
+                &mut self.fresh_scan_elapsed,
+                inspection.work.fresh_scan_elapsed.unwrap_or_default(),
+            ),
+            (&mut self.store_elapsed, inspection.work.store_elapsed),
+        ] {
+            let next = total.checked_add(elapsed);
+            self.saturated |= next.is_none();
+            *total = next.unwrap_or(Duration::MAX);
+        }
+    }
+}
+
+/// Preparation is explicit work before any original application resume. Demand
+/// includes actual admission and the concurrent factory's clean-page preflight.
+#[derive(Clone, Debug, Default)]
+pub struct GateOracleMetrics {
+    /// Optional same-owner scans used to seed the bounded in-memory cache.
+    pub preparation: OraclePhaseMetrics,
+    /// Inspections required by actual page admission and guard closure.
+    pub demand: OraclePhaseMetrics,
+}
+
+// No live API accepts an arbitrary AdmissionOracle or caller-created report.
+// This private adapter can only call the chain's mandatory RuntimeScan terminal.
+struct GateOracle {
+    chain: OracleChain,
+    metrics: RefCell<GateOracleMetrics>,
+}
+
+impl GateOracle {
+    fn new(limits: CacheLimits) -> Result<Self, GateError> {
+        Ok(Self {
+            chain: OracleChain::new(limits)
+                .map_err(|_| GateError::Refused("invalid oracle cache limits"))?,
+            metrics: RefCell::new(GateOracleMetrics::default()),
+        })
+    }
+
+    fn inspect_preparation(
+        &self,
+        image: &Image,
+        target: AddressRange,
+        policy: &Policy,
+    ) -> Inspection {
+        let inspection =
+            self.chain
+                .inspect_with_evidence(&image.snapshot, target, &image.entries, policy);
+        self.metrics.borrow_mut().preparation.record(&inspection);
+        inspection
+    }
+}
+
+impl AdmissionOracle for GateOracle {
+    fn inspect(
+        &self,
+        snapshot: &Snapshot,
+        target: AddressRange,
+        entries: &LegalEntrySet,
+        policy: &Policy,
+    ) -> ScanReport {
+        let inspection = self
+            .chain
+            .inspect_with_evidence(snapshot, target, entries, policy);
+        self.metrics.borrow_mut().demand.record(&inspection);
+        inspection.report
+    }
+}
+
 struct Image {
     mapping: MemoryMapping,
     snapshot: Snapshot,
@@ -162,6 +305,8 @@ struct Image {
 /// Uncertain events poison the loop; dropping the owner kills and reaps it.
 pub struct SingleThreadPageGate {
     process: StoppedProcess,
+    oracle: GateOracle,
+    application_started: bool,
     images: Vec<Image>,
     pages: BTreeMap<u64, bool>,
     sites: BTreeMap<u64, Candidate>,
@@ -262,7 +407,8 @@ impl SingleThreadPageGate {
                     "adjacent executable VMAs need a joint census",
                 ));
             }
-            let identity = MappingId(images.len() as u64 + 1);
+            let core_identity = new_core_identity()?;
+            let identity = MappingId(core_identity.mapping);
             let snapshot = Snapshot::new(
                 identity,
                 Generation(0),
@@ -289,7 +435,7 @@ impl SingleThreadPageGate {
                 mapping,
                 snapshot,
                 entries,
-                core_identity: new_core_identity()?,
+                core_identity,
             });
         }
         let metrics = GateMetrics {
@@ -299,6 +445,8 @@ impl SingleThreadPageGate {
         };
         Ok(Self {
             process,
+            oracle: GateOracle::new(CacheLimits::DISABLED)?,
+            application_started: false,
             images,
             pages,
             sites: BTreeMap::new(),
@@ -345,6 +493,86 @@ impl SingleThreadPageGate {
         Ok(gate)
     }
 
+    /// Chooses bounded in-memory reuse before any application resume or scan.
+    /// The default is [`CacheLimits::DISABLED`]; every mode retains RuntimeScan.
+    /// A cache cannot be imported from another owner or configured after use.
+    pub fn configure_oracle(&mut self, limits: CacheLimits) -> Result<(), GateError> {
+        let metrics = self.oracle.metrics.borrow();
+        if self.application_started
+            || metrics.preparation.inspections != 0
+            || metrics.demand.inspections != 0
+        {
+            return Err(GateError::Refused("oracle configuration is already in use"));
+        }
+        drop(metrics);
+        self.oracle = GateOracle::new(limits)?;
+        Ok(())
+    }
+
+    /// Inspects at most 64 whole original pages over this owner's lifetime,
+    /// before its first application resume. The complete batch is validated
+    /// before scanning. This changes cache facts only: no code writes, execute
+    /// permission, publication, CALL census or callback invocation occurs.
+    /// Refused reports remain refused in the returned evidence and cache.
+    /// Preparation work is distinct from subsequent demand work; this is not
+    /// an offline artifact load or a cross-process cache hit.
+    pub fn prepare_oracle(&mut self, pages: &[u64]) -> Result<Vec<Inspection>, GateError> {
+        if self.application_started {
+            return Err(GateError::Refused(
+                "oracle preparation requires an unstarted owner",
+            ));
+        }
+        if pages.len() > 64
+            || self.oracle.metrics.borrow().preparation.inspections + pages.len() as u64 > 64
+        {
+            return Err(GateError::Refused(
+                "oracle preparation page budget exceeded",
+            ));
+        }
+        let unique: BTreeSet<_> = pages.iter().copied().collect();
+        if unique.len() != pages.len()
+            || pages.iter().any(|&page| {
+                page % PAGE != 0
+                    || self.pages.get(&page) != Some(&false)
+                    || !self
+                        .images
+                        .iter()
+                        .any(|image| image.snapshot.range().contains(page))
+            })
+        {
+            return Err(GateError::Refused(
+                "oracle preparation requires distinct censused whole pages",
+            ));
+        }
+        let deadline = Instant::now() + self.timeout;
+        let mut inspections = Vec::with_capacity(pages.len());
+        for &page in pages {
+            remaining(deadline)?;
+            let image = self
+                .images
+                .iter()
+                .find(|image| image.snapshot.range().contains(page))
+                .expect("batch validated");
+            inspections.push(self.oracle.inspect_preparation(
+                image,
+                AddressRange::new(page, page + PAGE).unwrap(),
+                &self.policy,
+            ));
+            remaining(deadline)?;
+        }
+        Ok(inspections)
+    }
+
+    /// Separate actual work before execution and during first-touch admission.
+    pub fn oracle_metrics(&self) -> GateOracleMetrics {
+        self.oracle.metrics.borrow().clone()
+    }
+
+    /// Current bounded cache storage; poisoning is explicit and uses runtime fallback.
+    pub fn oracle_usage(&self) -> Result<CacheUsage, CacheCorruption> {
+        self.oracle.chain.usage()
+    }
+
     /// The owned child identifier, for diagnostics only.
     pub fn pid(&self) -> libc::pid_t {
         self.process.pid()
@@ -380,6 +608,7 @@ impl SingleThreadPageGate {
         if self.poisoned || self.stopped_signal {
             return Err(GateError::Refused("execution loop is closed"));
         }
+        self.application_started = true;
         let result = self.advance();
         if result.is_err() {
             self.poisoned = true;
@@ -567,7 +796,7 @@ impl SingleThreadPageGate {
             candidates,
             prepared,
         } = prepare_admission(
-            image,
+            (image, &self.oracle),
             page,
             &self.policy,
             &self.returns,
@@ -676,7 +905,7 @@ struct AdmissionBundle {
 }
 
 fn prepare_admission(
-    image: &Image,
+    source: (&Image, &GateOracle),
     page: u64,
     policy: &Policy,
     returns: &CallReturnLedger,
@@ -684,6 +913,7 @@ fn prepare_admission(
     selected_aliases: Option<&crate::selected::SyscallAliases>,
     deadline: Instant,
 ) -> Result<AdmissionBundle, GateError> {
+    let (image, oracle) = source;
     // Close over complete pages required by every selected straddler.
     // Granting X to a halo without scanning its entire page is forbidden.
     let mut bundle = BTreeSet::from([page]);
@@ -702,7 +932,7 @@ fn prepare_admission(
             ));
         }
         let target = AddressRange::new(next, next + PAGE).unwrap();
-        let report = RuntimeScan.inspect(&image.snapshot, target, &image.entries, policy);
+        let report = oracle.inspect(&image.snapshot, target, &image.entries, policy);
         remaining(deadline)?;
         if report.verdict() == Verdict::Refused {
             return Err(GateError::Scan(report.obligations().to_vec()));

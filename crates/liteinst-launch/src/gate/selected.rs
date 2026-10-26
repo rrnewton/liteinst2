@@ -192,6 +192,39 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
         Ok(gate)
     }
 
+    /// Configures the same-owner in-memory oracle before any application resume.
+    /// See [`SingleThreadPageGate::configure_oracle`]; RuntimeScan remains mandatory.
+    pub fn configure_oracle(
+        &mut self,
+        limits: liteinst_admission::oracle_chain::CacheLimits,
+    ) -> Result<(), GateError> {
+        self.inner.configure_oracle(limits)
+    }
+
+    /// Bounded preparation with no publication or execution effects. Original
+    /// refused reports remain refused; any coverage proof is performed on demand.
+    pub fn prepare_oracle(
+        &mut self,
+        pages: &[u64],
+    ) -> Result<Vec<liteinst_admission::oracle_chain::Inspection>, GateError> {
+        self.inner.prepare_oracle(pages)
+    }
+
+    /// Preparation and demand work, excluding admitted-page revisits.
+    pub fn oracle_metrics(&self) -> super::GateOracleMetrics {
+        self.inner.oracle_metrics()
+    }
+
+    /// Current bounded retained cache storage, with explicit corruption errors.
+    pub fn oracle_usage(
+        &self,
+    ) -> Result<
+        liteinst_admission::oracle_chain::CacheUsage,
+        liteinst_admission::oracle_chain::CacheCorruption,
+    > {
+        self.inner.oracle_usage()
+    }
+
     /// Owned task identity, for diagnostics only.
     pub fn pid(&self) -> libc::pid_t {
         self.inner.pid()

@@ -42,12 +42,13 @@ impl SingleThreadPageGate {
             .iter()
             .find(|image| image.snapshot.range().contains(page))
             .ok_or(GateError::Refused("missing image facts"))?;
-        let plan = TrapCoveragePlan::build(
+        let plan = TrapCoveragePlan::build_with_oracle(
             &image.snapshot,
             AddressRange::new(page, page + PAGE).unwrap(),
             &image.entries,
             &self.policy,
             budget,
+            &self.oracle,
         )
         .map_err(GateError::Coverage)?;
         remaining(deadline)?;

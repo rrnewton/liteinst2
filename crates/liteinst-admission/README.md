@@ -68,8 +68,10 @@ Disabled, missing, stale or poisoned cache entries use the mandatory RuntimeScan
 terminal. Range invalidation includes adjacent boundary dependencies, and
 serialization prevents an older scan from being inserted after invalidation.
 Metrics separate actual scan work from cached historical report metrics. This
-is an optional oracle seam; it is not wired into the live gate and does not parse
-offline metadata or authorize sparse overlays.
+is an optional facts seam. The standalone launch gate now owns such a chain,
+with runtime-only defaults and bounded same-owner preparation; live execution
+still requires its independent byte, continuation and exclusion checks. This
+cache does not parse offline metadata or authorize sparse overlays.
 # Potential CALL returns
 
 `returns::CallReturnLedger` records verified direct and indirect CALL

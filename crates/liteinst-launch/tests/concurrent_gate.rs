@@ -1113,3 +1113,304 @@ fn concurrent_saved_call_returns_refuse_selected_destination_while_still_nx() {
     drop(gate);
     assert_reaped(&owned);
 }
+
+fn cached_gate(image: &ElfImage, prepared_pages: &[u64]) -> ConcurrentPageGate {
+    let checkpoint = {
+        let _fork_guard = FIXTURE_FORK_LOCK.lock().unwrap();
+        ExecCheckpoint::launch(&LaunchCommand::new(&image.path), TIMEOUT).unwrap()
+    };
+    // SAFETY: identical fixed-worker, complete-head, private-code and System V
+    // certifications to gate(). Preparing immutable reports grants no execution.
+    unsafe {
+        ConcurrentPageGate::new_with_oracle(
+            checkpoint,
+            vec![image.facts()],
+            Policy {
+                version: 1,
+                selected: [SiteClass::Cpuid].into_iter().collect(),
+            },
+            ConcurrentConfig {
+                worker_count: WORKERS,
+                freeze_pc: BASE + image.freeze as u64,
+            },
+            TIMEOUT,
+            liteinst_admission::oracle_chain::CacheLimits::default(),
+            prepared_pages,
+        )
+    }
+    .unwrap()
+}
+
+#[test]
+fn cached_cross_page_publication_hits_prepared_page_and_scans_cold_neighbor_once() {
+    let directory = FixtureDirectory::new();
+    let image = fixture(&directory, true, WorkerProgram::Exit);
+    let source = BASE + image.site as u64;
+    let source_page = source & !(PAGE as u64 - 1);
+    let mut gate = cached_gate(&image, &[source_page]);
+    let mut owned = gate.worker_ids().to_vec();
+    assert_eq!(
+        owned.iter().copied().collect::<BTreeSet<_>>().len(),
+        WORKERS
+    );
+    owned.push(gate.pid());
+    assert_kernel_nx(gate.pid(), source);
+    assert_kernel_nx(gate.pid(), source + 2);
+    assert_eq!(
+        gate.read_memory(source, 5).unwrap(),
+        image.bytes[image.site..image.site + 5]
+    );
+    assert_eq!(gate.metrics().gate.admitted_pages, 1);
+    assert_eq!(gate.metrics().publication_bundles, 0);
+    assert_eq!(gate.metrics().gate.observations, 0);
+    let before = gate.oracle_metrics();
+    assert_eq!(before.preparation.inspections, 1);
+    assert_eq!(before.preparation.runtime_scans, 1);
+    assert_eq!(before.preparation.hits, 0);
+    assert!(before.preparation.decoded_starts > 0);
+    assert!(!before.preparation.saturated);
+    assert_eq!(gate.oracle_usage().unwrap().entries, 2); // Prepared page and clean factory.
+    let mut observed = BTreeMap::new();
+    let mut exited = BTreeMap::new();
+    loop {
+        match gate.next_event().unwrap() {
+            ConcurrentEvent::Observe { tid, observation } => {
+                let id = observation.registers.r12;
+                assert!((1..=WORKERS as u64).contains(&id));
+                assert!(gate.worker_ids().contains(&tid));
+                assert!(
+                    observed.insert(tid, id).is_none(),
+                    "duplicate cached callback"
+                );
+                assert_eq!(observation.site.address, source);
+                assert_eq!(observation.site.len, 2);
+                assert_eq!(observation.registers.rip, source);
+                assert_eq!(observation.registers.rax, 0);
+                assert_eq!(observation.registers.rcx, 0);
+                assert_eq!(observation.registers.eflags, 0x202);
+                assert_eq!(observation.registers.rsp, STACK_BASE + STACK_SIZE * id);
+                assert!(gate.is_admitted(source));
+                assert!(gate.is_admitted(source + 2));
+                let bytes = gate.read_memory(source, 5).unwrap();
+                assert_eq!(bytes[0], 0xe9);
+                assert_eq!(&bytes[2..], &image.bytes[image.site + 2..image.site + 5]);
+            }
+            ConcurrentEvent::WorkerExited { tid, code } => {
+                assert_eq!(code as u64, *observed.get(&tid).unwrap());
+                assert!(exited.insert(tid, code).is_none());
+            }
+            ConcurrentEvent::Complete => break,
+        }
+    }
+    assert_eq!(observed.len(), WORKERS);
+    assert_eq!(
+        observed.values().copied().collect::<BTreeSet<_>>(),
+        (1..=4).collect()
+    );
+    assert_eq!(exited.len(), WORKERS);
+    assert_eq!(gate.metrics().gate.observations, WORKERS);
+    assert_eq!(gate.metrics().gate.admitted_pages, 3);
+    assert_eq!(gate.metrics().publication_bundles, 1);
+    assert!(
+        gate.metrics()
+            .faults_per_rendezvous
+            .iter()
+            .any(|&faults| faults >= 2)
+    );
+    assert_eq!(
+        gate.metrics().rendezvous.len(),
+        gate.metrics().faults_per_rendezvous.len()
+    );
+    let after = gate.oracle_metrics();
+    assert_eq!(
+        after.preparation.inspections,
+        before.preparation.inspections
+    );
+    assert_eq!(after.demand.inspections - before.demand.inspections, 2);
+    assert_eq!(after.demand.hits - before.demand.hits, 1);
+    assert_eq!(after.demand.runtime_scans - before.demand.runtime_scans, 1);
+    assert_eq!(after.demand.no_entry - before.demand.no_entry, 1);
+    assert!(after.demand.decoded_starts > before.demand.decoded_starts);
+    assert_eq!(after.demand.stale, 0);
+    assert_eq!(after.demand.corrupt, 0);
+    assert!(!after.demand.saturated);
+    assert_eq!(gate.oracle_usage().unwrap().entries, 3);
+    assert_reaped(&owned);
+    assert!(gate.next_event().is_err());
+}
+
+#[test]
+fn pre_call_cache_hit_still_refuses_new_saved_return_into_nx_selected_page() {
+    let directory = FixtureDirectory::new();
+    let image = fixture(&directory, false, WorkerProgram::SavedReturn);
+    NativeGroup::launch(&image).run_to_exit(&image);
+    let destination = BASE + image.marker.unwrap() as u64;
+    let mut gate = cached_gate(&image, &[destination]);
+    let mut owned = gate.worker_ids().to_vec();
+    owned.push(gate.pid());
+    assert_eq!(gate.call_returns().obligations().count(), 0);
+    assert_kernel_nx(gate.pid(), destination);
+    assert!(!gate.is_admitted(destination));
+    assert_eq!(
+        gate.read_memory(destination, PAGE).unwrap(),
+        image.bytes[3 * PAGE..4 * PAGE]
+    );
+    let prepared = gate.oracle_metrics();
+    assert_eq!(prepared.preparation.inspections, 1);
+    assert_eq!(prepared.preparation.runtime_scans, 1);
+    assert_eq!(prepared.preparation.hits, 0);
+    assert!(prepared.preparation.decoded_starts > 0);
+    assert!(!prepared.preparation.saturated);
+    let mut observed = BTreeSet::new();
+    for _ in 0..WORKERS {
+        let ConcurrentEvent::Observe { tid, observation } = gate.next_event().unwrap() else {
+            panic!("cached fixture did not reach the callee before its saved return");
+        };
+        assert!(observed.insert(tid));
+        assert_eq!(observation.site.address, BASE + image.site as u64);
+        let id = observation.registers.r12;
+        assert!((1..=WORKERS as u64).contains(&id));
+        assert_eq!(observation.registers.rsp, STACK_BASE + STACK_SIZE * id - 8);
+        let saved: [u8; 8] = gate
+            .read_memory(observation.registers.rsp, 8)
+            .unwrap()
+            .try_into()
+            .unwrap();
+        assert_eq!(u64::from_le_bytes(saved), destination);
+        assert!(!gate.is_admitted(destination));
+        assert_kernel_nx(gate.pid(), destination);
+        let obligations: Vec<_> = gate
+            .call_returns()
+            .obligations_in(
+                liteinst_admission::AddressRange::new(destination, destination + PAGE as u64)
+                    .unwrap(),
+            )
+            .collect();
+        assert_eq!(obligations.len(), 1);
+        assert_eq!(obligations[0].call_address, destination - 5);
+        assert_eq!(obligations[0].return_pc, destination);
+        assert_eq!(obligations[0].call_bytes[0], 0xe8);
+    }
+    let before = gate.oracle_metrics();
+    assert!(matches!(
+        gate.next_event(),
+        Err(GateError::Refused(
+            "potential saved CALL return intersects selected publication"
+        ))
+    ));
+    let after = gate.oracle_metrics();
+    // A real cache hit from before the CALL is necessary for this regression.
+    // A stale miss or an uncalled preparation method cannot satisfy it.
+    assert_eq!(after.demand.inspections - before.demand.inspections, 1);
+    assert_eq!(after.demand.hits - before.demand.hits, 1);
+    assert_eq!(after.demand.runtime_scans, before.demand.runtime_scans);
+    assert_eq!(after.demand.decoded_starts, before.demand.decoded_starts);
+    assert_eq!(after.demand.stale, 0);
+    assert_eq!(after.demand.corrupt, 0);
+    assert!(!after.demand.saturated);
+    assert!(!gate.is_admitted(destination));
+    assert_kernel_nx(gate.pid(), destination);
+    assert_eq!(
+        gate.read_memory(destination, PAGE).unwrap(),
+        image.bytes[3 * PAGE..4 * PAGE]
+    );
+    assert_eq!(gate.metrics().gate.observations, WORKERS);
+    assert_eq!(gate.metrics().gate.admitted_pages, 2);
+    assert_eq!(gate.metrics().publication_bundles, 1);
+    assert!(gate.next_event().is_err());
+    let closed = gate.oracle_metrics();
+    assert_eq!(closed.demand.inspections, after.demand.inspections);
+    assert_eq!(closed.demand.hits, after.demand.hits);
+    drop(gate);
+    assert_reaped(&owned);
+}
+
+#[test]
+fn cached_cpuid_matches_independent_native_group_state_for_every_worker() {
+    let directory = FixtureDirectory::new();
+    let image = fixture(&directory, false, WorkerProgram::Differential);
+    let native = NativeGroup::launch(&image).after_native_cpuid(&image);
+    let marker = BASE + image.marker.unwrap() as u64;
+    let source_page = (BASE + image.site as u64) & !(PAGE as u64 - 1);
+    let mut gate = cached_gate(&image, &[source_page]);
+    let before = gate.oracle_metrics();
+    assert_eq!(before.preparation.inspections, 1);
+    assert_eq!(before.preparation.runtime_scans, 1);
+    assert_eq!(before.preparation.hits, 0);
+    let mut owned = gate.worker_ids().to_vec();
+    owned.push(gate.pid());
+    let mut first = BTreeMap::new();
+    let mut compared = BTreeSet::new();
+    let mut exited = BTreeSet::new();
+    loop {
+        match gate.next_event().unwrap() {
+            ConcurrentEvent::Observe { tid, observation } => {
+                let id = observation.registers.r12;
+                assert!((1..=WORKERS as u64).contains(&id));
+                if observation.site.address == BASE + image.site as u64 {
+                    assert!(first.insert(tid, id).is_none());
+                    assert_eq!(observation.registers.rax, 0);
+                    assert_eq!(observation.registers.rcx, 0);
+                    assert_eq!(observation.registers.rsp, STACK_BASE + STACK_SIZE * id - 32);
+                } else {
+                    assert_eq!(observation.site.address, marker);
+                    assert_eq!(first.get(&tid), Some(&id));
+                    assert!(compared.insert(id), "worker was compared twice");
+                    let actual = NativeEvidence {
+                        registers: observation.registers,
+                        xstate: observation.xstate,
+                        initialized_stack: gate.read_memory(observation.registers.rsp, 32).unwrap(),
+                    };
+                    let expected = native.get(&id).unwrap();
+                    // Worker stacks have fixed ELF addresses: no GPR, flags,
+                    // xstate byte, memory byte or RSP delta is normalized.
+                    assert_eq!(
+                        &actual, expected,
+                        "worker {id} diverged from native execution"
+                    );
+                    let mut wrong = expected.clone();
+                    wrong.registers.rsp += 16;
+                    assert_ne!(actual, wrong, "RSP+16 must not pass the comparator");
+                    let mut wrong = expected.clone();
+                    wrong.registers.r11 ^= 1;
+                    assert_ne!(actual, wrong);
+                    let mut wrong = expected.clone();
+                    wrong.registers.eflags ^= 1;
+                    assert_ne!(actual, wrong);
+                    let mut wrong = expected.clone();
+                    wrong.xstate[160] ^= 1;
+                    assert_ne!(actual, wrong);
+                    let mut wrong = expected.clone();
+                    wrong.initialized_stack[0] ^= 1;
+                    assert_ne!(actual, wrong);
+                }
+            }
+            ConcurrentEvent::WorkerExited { tid, code } => {
+                let id = *first.get(&tid).unwrap();
+                assert_eq!(code as u64, id);
+                assert!(compared.contains(&id));
+                assert!(exited.insert(tid));
+            }
+            ConcurrentEvent::Complete => break,
+        }
+    }
+    assert_eq!(first.len(), WORKERS);
+    assert_eq!(compared.len(), WORKERS);
+    assert_eq!(exited.len(), WORKERS);
+    assert_eq!(gate.metrics().gate.observations, WORKERS * 2);
+    assert_eq!(gate.metrics().publication_bundles, 1);
+    assert_eq!(gate.metrics().gate.admitted_pages, 2);
+    assert!(
+        gate.metrics()
+            .faults_per_rendezvous
+            .iter()
+            .any(|&faults| faults >= 2)
+    );
+    let after = gate.oracle_metrics();
+    assert_eq!(after.demand.inspections - before.demand.inspections, 1);
+    assert_eq!(after.demand.hits - before.demand.hits, 1);
+    assert_eq!(after.demand.runtime_scans, before.demand.runtime_scans);
+    assert_eq!(after.demand.decoded_starts, before.demand.decoded_starts);
+    assert!(!after.demand.saturated);
+    assert_reaped(&owned);
+}

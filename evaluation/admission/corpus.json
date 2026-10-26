@@ -1,5 +1,5 @@
 {
-  "baseline_revision": "b6f23bf243baaa6d576c3d8754d701bb718757ad",
+  "baseline_revision": "e698d0affa85a69f74866c9309a54894c389f059",
   "harness_test_counts": {
     "serial_launch": {
       "test/checkpoint": {
@@ -12,7 +12,7 @@
       },
       "test/concurrent_gate": {
         "ignored": 0,
-        "tests": 7
+        "tests": 10
       },
       "test/lifecycle": {
         "ignored": 0,
@@ -26,13 +26,17 @@
         "ignored": 0,
         "tests": 7
       },
+      "test/oracle_gate": {
+        "ignored": 0,
+        "tests": 3
+      },
       "test/page_gate": {
         "ignored": 0,
         "tests": 17
       },
       "test/selected_gate": {
         "ignored": 0,
-        "tests": 19
+        "tests": 24
       },
       "test/selected_semantics": {
         "ignored": 0,
@@ -94,7 +98,7 @@
       },
       "test/concurrent_gate": {
         "ignored": 0,
-        "tests": 7
+        "tests": 10
       },
       "test/concurrent_overlap": {
         "ignored": 0,
@@ -184,6 +188,10 @@
         "ignored": 0,
         "tests": 21
       },
+      "test/oracle_gate": {
+        "ignored": 0,
+        "tests": 3
+      },
       "test/overlap_concurrency": {
         "ignored": 0,
         "tests": 1
@@ -238,7 +246,7 @@
       },
       "test/selected_gate": {
         "ignored": 0,
-        "tests": 19
+        "tests": 24
       },
       "test/selected_semantics": {
         "ignored": 0,

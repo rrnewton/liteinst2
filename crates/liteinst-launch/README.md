@@ -180,3 +180,28 @@ An exclusion candidate is a consistent registry snapshot, never a core lease
 or native exclusion proof. It does not trace tasks, authenticate kernel events,
 reap children, revoke mappings or deliver application signals; the existing
 runtime's lifecycle restrictions remain in force.
+
+The live gates own a bounded `OracleChain`, disabled by default. Before the first
+application resume, `configure_oracle` chooses storage bounds and
+`prepare_oracle` may inspect at most 64 original pages over that owner's lifetime.
+Preparation changes no code, execute permissions, callback state or CALL census.
+It returns the original immutable reports, including refusals. The concurrent
+constructor `new_with_oracle` performs preparation before its factory resumes and
+transfers the same cache into the registered group. Incarnations are non-reused
+owner identities, so a report from another process cannot manufacture a hit.
+
+Actual strict, overlap-coverage and concurrent factory inspections share the
+chain's mandatory RuntimeScan terminal. A hit still undergoes current CALL-return
+checks, complete page/guard closure, source-byte reauthentication and actual held
+publication. Already admitted page visits are not inspections or cache hits.
+`oracle_metrics` separates preparation from demand work, including fresh decoded
+starts, misses, refused reports and durations; reused report metrics remain
+historical. Cache lookup compares exact bytes/facts, not content hashes.
+
+The cache fixtures compare disabled, cold and prepared execution against the
+same independent state oracle, retain strict refusals, and require an actual
+pre-CALL cache hit to refuse a newly recorded return. They include mixed
+cross-page reuse and cached A1 full-state observations. These are finite
+immutable-owner reuse checks. No persisted artifact, load-bias binding, lazy
+hashing, file-backed sparse overlay, mapping-lifecycle integration or full B4
+completion is established; preparation cost must not be omitted from timing.

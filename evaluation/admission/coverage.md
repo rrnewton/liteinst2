@@ -10,12 +10,12 @@ qualifies. Existing strict-backend negative fixtures remain required.
 | Default selected policy | CPUID, RDRAND, RDSEED, RDPID, RDTSC, RDTSCP and SYSCALL dispatch; masked CPUID does not disable later callbacks | General loader/JIT/signal paths and complete per-class cost measurements |
 | Random operand effects | Independent scripted model: both carry outcomes, all 16 GPRs, all three widths; raw CPU/replay/native-provider comparisons for the declared native corpus | Additional hardware and encodings outside the corpus |
 | Overlapping selected starts | Default RDPID and deliberate RDSEED suffix entry; whole-instruction restoration and exact rearming | Unrestricted collateral instruction execution |
-| Embedded selected bytes | MOV retains its original immediate and no extra callback; deliberate entry into the embedded instruction and continuation match the independent model | Other enclosing instructions explicitly refuse until separately qualified |
+| Embedded selected bytes | All three MOV immediate widths and 16 GPR destinations preserve independent complete state in 48 warmed-cache cases; deliberate embedded entry and continuation retain the original model checks | Other enclosing instructions explicitly refuse until separately qualified |
 | Partial operation failures | Six private injections after real writes/protection/restoration/steps; exact held state, closed API, unexecuted continuation and pidfd-authenticated cleanup | No source-byte rollback claim after partial publication |
 | Boundary publication | Cross-page selected decode and conservative CALL return into a never-executed page retain complete closure | Arbitrary saved frames and concurrent dynamic contexts |
 | Declared syscall aliases | INT 0x80/SYSENTER input conventions, declaration refusals and explicit provider faults | Successful alias execution/return conventions |
 | Lifecycle registry | Non-reused task/mm IDs, clone/fork/vfork/exec ordering, retained signals/resumes, invalidation and rollback on bookkeeping errors | Actual native dynamic ownership, signal delivery, exception return, mapping churn, dlopen, JIT and real applications |
-| In-memory oracle chain | Exact fact reuse, immutable refusals, bounded storage, stale/poison fallback, dependency invalidation | Live integration, verified persistent metadata and sparse overlays using the core artifact contract |
+| In-memory oracle chain | Exact fact reuse, immutable refusals, bounded storage, stale/poison fallback, dependency invalidation; bounded preparation and demand accounting in strict, coverage and fixed-worker live owners; full-state comparisons and fresh saved-return refusal on an actual hit | Verified persistent metadata and sparse overlays using the core artifact contract; dynamic lifecycle integration |
 
 B2 is still incomplete while selected aliases and broader execution coverage
 remain unqualified and its required cost metrics are missing. The registry is a

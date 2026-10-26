@@ -131,3 +131,12 @@ This is a closed-world single-task reference increment. It does not establish
 general alias returns, unrestricted collateral/prefix/overlap decodes, full-class A1 publication,
 multi-task selected providers, application signal delivery, lifecycle/JIT
 support, or a cross-vendor/CET release envelope. Those remain separate work.
+
+Optional in-memory scan reuse uses the same gate-owned cache as the CPUID paths.
+The constructor keeps runtime-only defaults. Explicit preparation before the
+first application resume can warm this owner's complete immutable facts without
+publication. Both strict and overlap-coverage paths preserve their original
+scanner verdicts and perform all live admission checks on demand. Separate
+preparation/demand metrics prevent cached historical scan time or admitted-page
+revisits from being reported as fresh work or cache hits. This is no persistent
+metadata or sparse-overlay interface.
