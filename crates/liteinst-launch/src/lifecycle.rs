@@ -124,10 +124,13 @@ impl std::error::Error for LifecycleError {}
 /// Why an authenticated task stop is held.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum HoldReason {
-    /// First user entry following a checked exec transition.
+    /// Legacy exec marker; the constructor or transition defines its phase.
+    /// `new` holds first-user entry, while `observe_exec` retains a pending EXIT.
     Exec,
     /// Authenticated initial exec syscall exit, before the kernel user return.
     ExecSyscallExit,
+    /// Actual successful exec event, before its syscall-exit and user-return phases.
+    ExecEvent,
     /// Automatic newborn stop before its pending creation syscall-exit phase.
     Newborn,
     /// Authenticated automatic newborn stop after exit tracing and before user return.
@@ -1037,6 +1040,9 @@ impl LifecycleRegistry {
     }
 
     /// Records failed exec without changing task/mm identities or obligations.
+    /// The caller must independently prove the original mm survived. A negative
+    /// return without an EXEC event is insufficient: kernel failures after the
+    /// point of no return may have already replaced or destroyed the old image.
     pub fn observe_exec_failure(
         &mut self,
         ticket: ExecTicket,
@@ -1060,7 +1066,10 @@ impl LifecycleRegistry {
         })
     }
 
-    /// Commits an authenticated successful exec, including nonleader TID rebasing.
+    /// Legacy successful exec transition, including nonleader TID rebasing.
+    /// The new task retains a pending syscall EXIT under `HoldReason::Exec`;
+    /// unlike `new`, this method does not claim first-user state. New native
+    /// controllers should use [`Self::observe_exec_event`] for the explicit phase.
     ///
     /// The controller must authenticate the exec event and its former-TID payload,
     /// and own cleanup of all superseded threads. Supersession is not a claim
@@ -1073,6 +1082,40 @@ impl LifecycleRegistry {
         former_tid: i32,
         new_tid: i32,
         pc: u64,
+    ) -> Result<ExecTransition, LifecycleError> {
+        self.observe_exec_phase(ticket, sequence, former_tid, new_tid, pc, HoldReason::Exec)
+    }
+
+    /// Commits an authenticated kernel EXEC event, before syscall exit or user
+    /// return. Identity and obligation rules match [`Self::observe_exec`]; the
+    /// distinct held reason prevents claiming a first-user checkpoint. The
+    /// caller owns former-TID authentication and superseded-thread cleanup.
+    pub fn observe_exec_event(
+        &mut self,
+        ticket: ExecTicket,
+        sequence: u64,
+        former_tid: i32,
+        new_tid: i32,
+        pc: u64,
+    ) -> Result<ExecTransition, LifecycleError> {
+        self.observe_exec_phase(
+            ticket,
+            sequence,
+            former_tid,
+            new_tid,
+            pc,
+            HoldReason::ExecEvent,
+        )
+    }
+
+    fn observe_exec_phase(
+        &mut self,
+        ticket: ExecTicket,
+        sequence: u64,
+        former_tid: i32,
+        new_tid: i32,
+        pc: u64,
+        reason: HoldReason,
     ) -> Result<ExecTransition, LifecycleError> {
         self.transaction(|state| {
             let old = state.running(ticket.task, sequence)?.clone();
@@ -1148,10 +1191,7 @@ impl LifecycleRegistry {
                     process: old.process,
                     address_space: space,
                     sequence: 0,
-                    state: TaskState::Held {
-                        pc,
-                        reason: HoldReason::Exec,
-                    },
+                    state: TaskState::Held { pc, reason },
                     origin: TaskOrigin::Exec { previous: old.id },
                     syscall_open: true,
                     pending: None,

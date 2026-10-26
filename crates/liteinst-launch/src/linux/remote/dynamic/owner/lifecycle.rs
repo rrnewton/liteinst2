@@ -1,7 +1,10 @@
-//! Opt-in native fork ownership. This module authenticates kernel events; the
+//! Opt-in bounded native fork/exec ownership. This module authenticates kernel events; the
 //! pure registry only retains their identities and obligations. No code bytes,
 //! executable permissions, publication leases or instrumentation are involved.
 use super::*;
+
+mod exec;
+use exec::ExecPending;
 
 #[cfg(test)]
 mod tests;
@@ -40,6 +43,9 @@ struct ForkPending {
 pub(super) struct NativeLifecycle {
     session: u64,
     options: DynamicLifecycleOptions,
+    exec_policy: DynamicExecPolicy,
+    exec_successes: usize,
+    exec_pending: Option<ExecPending>,
     registry: LifecycleRegistry,
     tasks: BTreeMap<libc::pid_t, Task>,
     pending: Option<ForkPending>,
@@ -56,12 +62,22 @@ impl NativeLifecycle {
         pid: libc::pid_t,
         registers: RegisterSnapshot,
         options: DynamicLifecycleOptions,
+        exec_policy: DynamicExecPolicy,
     ) -> Result<(Self, DynamicEvent), LaunchError> {
+        // At most max_tasks physical records are ever inserted, including
+        // terminals. Exec replaces one slot at most once and reserves one extra
+        // retained task/mm record; it never consumes a process record. Pending
+        // lifecycle transactions are serialized and no retirement refunds either
+        // budget, so this bound covers either fork/exec order before release.
+        let incarnation_limit = options
+            .max_tasks
+            .checked_add(usize::from(exec_policy == DynamicExecPolicy::ExecveOnce))
+            .ok_or(LaunchError::Invalid("native incarnation budget overflow"))?;
         let registry = recorded(LifecycleRegistry::new_after_exec_syscall_exit(
             Limits {
-                tasks: options.max_tasks,
+                tasks: incarnation_limit,
                 processes: options.max_tasks,
-                address_spaces: options.max_tasks,
+                address_spaces: incarnation_limit,
                 obligations: 4096,
             },
             pid,
@@ -103,6 +119,9 @@ impl NativeLifecycle {
             Self {
                 session,
                 options,
+                exec_policy,
+                exec_successes: 0,
+                exec_pending: None,
                 registry,
                 tasks,
                 pending: None,
@@ -140,9 +159,15 @@ impl NativeLifecycle {
                 }
                 self.wait(owner, until).map(Response::Event)
             }
-            Request::Interrupt => self
-                .interrupt(owner, self.registry.root_task(), until)
-                .map(Response::Event),
+            Request::Interrupt => {
+                let task = self
+                    .tasks
+                    .get(&owner.pid)
+                    .ok_or(LaunchError::Invalid("original native process is unknown"))?
+                    .identity
+                    .task;
+                self.interrupt(owner, task, until).map(Response::Event)
+            }
             Request::InterruptTask(task) => self.interrupt(owner, task, until).map(Response::Event),
             Request::Registers(token) => {
                 self.require_stop(&token)?;
@@ -224,7 +249,8 @@ impl NativeLifecycle {
                 | DynamicEventKind::Interrupted
                 | DynamicEventKind::GroupContinued
                 | DynamicEventKind::Created { .. }
-                | DynamicEventKind::Newborn { .. },
+                | DynamicEventKind::Newborn { .. }
+                | DynamicEventKind::ExecReplaced { .. },
                 DynamicResume::Continue,
             ) => (libc::PTRACE_SYSCALL, 0),
             _ => {
@@ -242,7 +268,10 @@ impl NativeLifecycle {
                     if self.options.creation != DynamicCreationPolicy::Fork {
                         return Err(LaunchError::Invalid("dynamic fork policy refuses creation"));
                     }
-                    if self.tasks.len() >= self.options.max_tasks || self.pending.is_some() {
+                    if self.tasks.len() >= self.options.max_tasks
+                        || self.pending.is_some()
+                        || self.exec_pending.is_some()
+                    {
                         return Err(LaunchError::Invalid(
                             "dynamic lifetime task bound exhausted",
                         ));
@@ -281,6 +310,10 @@ impl NativeLifecycle {
                         parent_event: false,
                         newborn: None,
                     });
+                } else if number == libc::SYS_execve as u64
+                    && self.exec_policy == DynamicExecPolicy::ExecveOnce
+                {
+                    self.prepare_native_exec(token.tid)?;
                 } else if matches!(
                     number as libc::c_long,
                     libc::SYS_clone
@@ -337,7 +370,9 @@ impl NativeLifecycle {
         let result = (|| loop {
             let (observed, status) = owner.wait_raw(until, "targeted lifecycle interruption")?;
             if let Some(event) = self.observe(owner, observed, status)? {
-                if event.task.is_some_and(|task| task.task == id) {
+                if event.task.is_some_and(|task| task.task == id)
+                    || matches!(&event.kind, DynamicEventKind::ExecReplaced { previous, .. } if previous.task == id)
+                {
                     return Ok(event);
                 }
                 self.events.push_back(event);
@@ -405,6 +440,12 @@ impl NativeLifecycle {
             ptrace(libc::PTRACE_CONT, tid, 0, 0)?;
             owner.released(tid);
             return Ok(None);
+        }
+        if event == libc::PTRACE_EVENT_EXEC {
+            if signal != libc::SIGTRAP {
+                return Err(LaunchError::Invalid("exec event has wrong stop signal"));
+            }
+            return self.observe_native_exec(owner, tid).map(Some);
         }
         if event == libc::PTRACE_EVENT_FORK {
             if signal != libc::SIGTRAP {
@@ -521,7 +562,20 @@ impl NativeLifecycle {
                         "dynamic syscall exit is out of order or changed",
                     ));
                 }
-                if let Some(returned) = self.tasks.get_mut(&tid).unwrap().fork_return.take() {
+                if self
+                    .exec_pending
+                    .as_ref()
+                    .is_some_and(|pending| pending.task == id)
+                {
+                    self.complete_native_exec(
+                        tid,
+                        sequence,
+                        &registers,
+                        exit.sval,
+                        exit.is_error != 0,
+                    )?;
+                } else if let Some(returned) = self.tasks.get_mut(&tid).unwrap().fork_return.take()
+                {
                     if registers != returned.registers
                         || xstate(tid)? != returned.xstate
                         || exit.is_error != 0

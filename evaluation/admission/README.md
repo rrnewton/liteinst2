@@ -122,6 +122,16 @@ summary and cleanup witness without adding it to outer totals. Exact current har
 independently asserted by `test_parsing.py`. These additions do not change the
 separate 50-case native telemetry denominator or the four existing ignores.
 
+The later-exec increment adds 21 outer tests: eight public native cases, seven
+private event-order/refusal/cleanup cases and six pure phase/identity cases.
+Its three state oracles, three failure oracles and one explicit output-unwind
+control run as seven captured single-test subprocesses with exact one-test
+summaries and physical-cleanup witnesses; they do not increase outer or
+parser-nested pass totals. Event, actual syscall exit
+and first-user phases remain distinct. Failed exec refuses continuation,
+including the independently observed post-point-of-no-return case. The original
+workspace, serial, telemetry, cleanup and recorder gates remain unchanged.
+
 The new scripted random matrix forces 192 invocations covering both classes,
 all 16 GPR destinations, 16/32/64-bit widths and both carry outcomes. Native
 coverage adds 14 prefixed random cases and three default-policy RDPID cases to
@@ -154,6 +164,11 @@ raw native oracle and exact distinction between native and scripted bookkeeping.
 profile, independent original-state comparison, actual stop-order fixtures and
 physical-reaping distinction. It does not extend the 50 selected-instruction
 telemetry cases.
+[Bounded native exec](native-exec.md) records separate physical-process and
+logical-incarnation budgets, authenticated image replacement and actual syscall
+exit, independent original first-user state, and conservative failed-exec
+refusal. These uninstrumented ownership fixtures also remain separate from the
+selected-instruction telemetry cohort.
 
 ## Claim mapping
 

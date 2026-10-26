@@ -344,6 +344,17 @@ fn child_error(fd: i32, status: i32) -> LaunchError {
     }
 }
 
+/// Authenticate the actual installed image while held at a later EXEC event.
+/// Opening proc's executable file object avoids guessing from an old pathname.
+/// Unlike bootstrap, this read-only path never changes the application mask.
+pub(super) fn replaced_entry_evidence(
+    pid: libc::pid_t,
+    registers: &RegisterSnapshot,
+) -> Result<EntryEvidence, LaunchError> {
+    let executable = Elf::read_file(Path::new(&format!("/proc/{pid}/exe")))?;
+    entry_evidence(pid, &executable, registers)
+}
+
 fn entry_evidence(
     pid: libc::pid_t,
     executable: &Elf,

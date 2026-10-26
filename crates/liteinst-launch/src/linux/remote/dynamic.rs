@@ -5,7 +5,8 @@
 //! It is not an admission gate or a quiescence lease. Application creation and
 //! subsequent exec syscalls refuse by default. An explicit bounded lifecycle
 //! option qualifies at most one successful fork and two lifetime task records, without
-//! granting publication authority or extending exec/clone/vfork support.
+//! granting publication authority. Separate composed options permit one native
+//! leader exec; clone/vfork and native failed-exec continuation remain unqualified.
 
 use super::*;
 use std::sync::Arc;
@@ -81,6 +82,30 @@ impl DynamicLifecycleOptions {
         }
         Ok(self)
     }
+}
+
+/// Explicit later native exec policy, independent of creation.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum DynamicExecPolicy {
+    /// Later exec refuses before kernel entry.
+    #[default]
+    Refuse,
+    /// At most one successful native SYS_execve per session. Failed exec
+    /// outcomes close the owner because errno alone cannot prove old-mm survival.
+    ExecveOnce,
+}
+
+/// Composed native ownership options. No option grants page admission.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub struct DynamicSessionOptions {
+    /// Creation policy and lifetime physical-process budget. Only this composed
+    /// API interprets `lifecycle.max_tasks` as the creation/physical budget and
+    /// separately reserves one extra task/mm record for `ExecveOnce`: a limit of
+    /// two physical processes can retain three task/mm incarnations. The older
+    /// `launch_with_lifecycle` keeps its original total task-record bound.
+    pub lifecycle: DynamicLifecycleOptions,
+    /// Later image-replacement policy.
+    pub exec: DynamicExecPolicy,
 }
 
 /// Non-reused task/process/mm identity from the native owner's registry.
@@ -205,6 +230,15 @@ pub enum DynamicEventKind {
         /// GET_SYSCALL_INFO errno classification.
         is_error: bool,
     },
+    /// Actual later EXEC event. The event's task/token belong to the new
+    /// incarnation; physical PID, pidfd, real parent and ProcessId are retained.
+    /// Syscall EXIT and first user execution have not yet occurred.
+    ExecReplaced {
+        /// Superseded logical task, never a physical terminal receipt.
+        previous: DynamicTask,
+        /// Authenticated new executable/interpreter entry.
+        evidence: EntryEvidence,
+    },
     /// Application signal delivery; the signal has not been suppressed.
     SignalDelivery(DynamicSignalInfo),
     /// Actual EVENT_STOP/SIGTRAP while an interruption may still be pending.
@@ -326,6 +360,7 @@ struct TracerStart {
     session: u64,
     inherited_mask: u64,
     lifecycle: Option<DynamicLifecycleOptions>,
+    exec: DynamicExecPolicy,
     until: Instant,
     cancel: Arc<AtomicBool>,
     commands: Receiver<Command>,
@@ -376,7 +411,7 @@ impl DynamicSession {
     /// A failed or timed-out launch can leave cleanup running on its dedicated
     /// tracer; returning an error does not assert synchronous terminal reaping.
     pub fn launch(command: &LaunchCommand, timeout: Duration) -> Result<Self, LaunchError> {
-        Self::launch_options(command, timeout, None)
+        Self::launch_options(command, timeout, None, DynamicExecPolicy::Refuse)
     }
 
     /// Opts into bounded native lifecycle ownership. The first event remains
@@ -393,13 +428,37 @@ impl DynamicSession {
         options: DynamicLifecycleOptions,
         timeout: Duration,
     ) -> Result<Self, LaunchError> {
-        Self::launch_options(command, timeout, Some(options.validate()?))
+        Self::launch_options(
+            command,
+            timeout,
+            Some(options.validate()?),
+            DynamicExecPolicy::Refuse,
+        )
+    }
+
+    /// Composes bounded fork ownership with one native leader exec. Registry
+    /// task/mm limits include the additional exec incarnation; physical process
+    /// lifetime remains bounded by `lifecycle.max_tasks`. Both old entry points
+    /// retain their existing refusal behavior. Exec requires native x86-64,
+    /// TF-clear syscall entry, one thread in the process and the tracer's PID
+    /// namespace. Failed exec cannot resume through this initial profile.
+    pub fn launch_with_options(
+        command: &LaunchCommand,
+        options: DynamicSessionOptions,
+        timeout: Duration,
+    ) -> Result<Self, LaunchError> {
+        let lifecycle = options.lifecycle.validate()?;
+        if options == DynamicSessionOptions::default() {
+            return Self::launch(command, timeout);
+        }
+        Self::launch_options(command, timeout, Some(lifecycle), options.exec)
     }
 
     fn launch_options(
         command: &LaunchCommand,
         timeout: Duration,
         lifecycle: Option<DynamicLifecycleOptions>,
+        exec: DynamicExecPolicy,
     ) -> Result<Self, LaunchError> {
         let until = deadline(timeout)?;
         let session = NEXT_SESSION
@@ -423,6 +482,7 @@ impl DynamicSession {
                     session,
                     inherited_mask,
                     lifecycle,
+                    exec,
                     until,
                     cancel: thread_cancel,
                     commands: receiver,
@@ -460,7 +520,7 @@ impl DynamicSession {
         })
     }
 
-    /// Original numeric PID, retained for diagnostics after terminal events.
+    /// Original numeric PID, retained across exec and for diagnostics after terminal events.
     pub fn pid(&self) -> libc::pid_t {
         self.pid
     }
@@ -511,6 +571,8 @@ impl DynamicSession {
     }
     /// Interrupts one running opt-in incarnation. Foreign or retired identities
     /// cannot select a numeric PID. Other task stops remain held independently.
+    /// If the requested incarnation execs while interruption is pending, the
+    /// returned ExecReplaced event names it in `previous` and holds the new task.
     pub fn interrupt_task(
         &mut self,
         task: crate::lifecycle::TaskId,

@@ -18,6 +18,7 @@ pub(super) struct Owner {
     pub(super) pid: libc::pid_t,
     pub(super) initial_exec: Option<RegisterSnapshot>,
     lifecycle_options: Option<DynamicLifecycleOptions>,
+    exec_policy: DynamicExecPolicy,
     lifecycle: Option<lifecycle::NativeLifecycle>,
     session: u64,
     sequence: u64,
@@ -59,6 +60,7 @@ pub(super) fn run(start: TracerStart) {
         session,
         inherited_mask,
         lifecycle,
+        exec,
         until,
         cancel,
         commands,
@@ -67,6 +69,7 @@ pub(super) fn run(start: TracerStart) {
     } = start;
     let mut owner = Owner::new(session, cancel);
     owner.lifecycle_options = lifecycle;
+    owner.exec_policy = exec;
     let mut announced = false;
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         // NPTL may unblock its own reserved cancellation signal during thread
@@ -102,6 +105,7 @@ impl Owner {
             pid: 0,
             initial_exec: None,
             lifecycle_options: None,
+            exec_policy: DynamicExecPolicy::Refuse,
             lifecycle: None,
             session,
             sequence: 0,
@@ -665,6 +669,7 @@ impl Owner {
                         self.pid,
                         registers,
                         options,
+                        self.exec_policy,
                     )?;
                     self.lifecycle = Some(lifecycle);
                     return Ok(event);
