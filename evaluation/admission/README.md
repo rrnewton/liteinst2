@@ -290,6 +290,9 @@ selected-instruction telemetry cohort.
 per-task CET observation, full-state acceptance predicate, shared process/mm
 identities, and distinct nonleader removal and delayed leader exit.
 
+[Reset-launch deadline isolation](reset-deadline.md) explains the controlled
+live-reaper timeout and the separate recorded default-parallelism recipe.
+
 ## Claim mapping
 
 These identifiers match the owner's candidate claims; they are evaluation

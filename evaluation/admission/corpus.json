@@ -6053,13 +6053,21 @@
         "ignored": 0,
         "tests": 0
       },
+      "doc/liteinst_artifact": {
+        "ignored": 0,
+        "tests": 0
+      },
       "doc/liteinst_launch": {
+        "ignored": 0,
+        "tests": 0
+      },
+      "doc/liteinst_rewrite": {
         "ignored": 0,
         "tests": 0
       },
       "doc/rapid_profiler": {
         "ignored": 0,
-        "tests": 2
+        "tests": 10
       },
       "test/a2_oracle": {
         "ignored": 0,
@@ -6084,6 +6092,10 @@
       "test/boundary_signal_oracle": {
         "ignored": 0,
         "tests": 27
+      },
+      "test/bounded_proc_stat": {
+        "ignored": 0,
+        "tests": 7
       },
       "test/bundle_contract": {
         "ignored": 0,
@@ -6149,6 +6161,10 @@
         "ignored": 0,
         "tests": 2
       },
+      "test/elf_exec_provider_contract": {
+        "ignored": 0,
+        "tests": 8
+      },
       "test/entry_backedge": {
         "ignored": 0,
         "tests": 1
@@ -6165,9 +6181,13 @@
         "ignored": 0,
         "tests": 28
       },
+      "test/eviction_chain_grouping_contract": {
+        "ignored": 0,
+        "tests": 5
+      },
       "test/eviction_chain_oracle": {
         "ignored": 0,
-        "tests": 28
+        "tests": 29
       },
       "test/exact_syscall": {
         "ignored": 0,
@@ -6177,9 +6197,17 @@
         "ignored": 0,
         "tests": 27
       },
+      "test/frontend_native_calibrations": {
+        "ignored": 0,
+        "tests": 26
+      },
       "test/generalized_pun_contract": {
         "ignored": 0,
         "tests": 1
+      },
+      "test/integration": {
+        "ignored": 0,
+        "tests": 11
       },
       "test/lifecycle": {
         "ignored": 0,
@@ -6335,7 +6363,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 184
+        "tests": 208
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6345,13 +6373,25 @@
         "ignored": 0,
         "tests": 2
       },
+      "unit/liteinst_artifact/lib": {
+        "ignored": 0,
+        "tests": 20
+      },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
         "tests": 278
       },
+      "unit/liteinst_rewrite/lib": {
+        "ignored": 0,
+        "tests": 62
+      },
+      "unit/liteinst_rewrite/main": {
+        "ignored": 0,
+        "tests": 0
+      },
       "unit/rapid_profiler/lib": {
         "ignored": 0,
-        "tests": 24
+        "tests": 98
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,
@@ -7073,6 +7113,6 @@
       "test": "full_native_mapping_comparator_rejects_each_state_source_and_map_corruption"
     }
   ],
-  "recorder_tests": 219,
+  "recorder_tests": 230,
   "schema_version": 1
 }

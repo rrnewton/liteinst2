@@ -259,9 +259,9 @@ class DeclaredCorpusTests(unittest.TestCase):
 
     def test_fixed_workspace_and_launch_denominators(self):
         expected = self.corpus["harness_test_counts"]
-        self.assertEqual(len(expected["workspace_tests"]), 78)
+        self.assertEqual(len(expected["workspace_tests"]), 88)
         self.assertEqual(len(expected["serial_launch"]), 26)
-        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 1403)
+        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 1649)
         self.assertEqual(sum(row["ignored"] for row in expected["workspace_tests"].values()), 4)
         self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 565)
         self.assertEqual(sum(row["ignored"] for row in expected["serial_launch"].values()), 0)
@@ -288,10 +288,10 @@ class DeclaredCorpusTests(unittest.TestCase):
                 "test/lifecycle_exec_exit": 11,
             }.items():
                 self.assertEqual(cohort[identity], counts(total))
-        self.assertEqual(expected["workspace_tests"]["unit/liteinst2/lib"], counts(184, 1))
-        self.assertEqual(expected["workspace_tests"]["unit/rapid_profiler/lib"], counts(24))
+        self.assertEqual(expected["workspace_tests"]["unit/liteinst2/lib"], counts(208, 1))
+        self.assertEqual(expected["workspace_tests"]["unit/rapid_profiler/lib"], counts(98))
         self.assertEqual(expected["workspace_tests"]["unit/rapid_profiler/main"], counts(3))
-        self.assertEqual(expected["workspace_tests"]["doc/rapid_profiler"], counts(2))
+        self.assertEqual(expected["workspace_tests"]["doc/rapid_profiler"], counts(10))
         historical = "\n".join([header("liteinst2"), "running 176 tests", "running 1 test",
                                  summary(175, ignored=1)])
         with self.assertRaisesRegex(parsing.InvalidEvidence, "changed_outer_cohort"):
