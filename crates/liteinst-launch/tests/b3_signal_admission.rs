@@ -11,6 +11,7 @@ use liteinst_launch::{
     DynamicAdmissionCompletion, DynamicAdmissionEvent, DynamicAdmissionOptions,
     DynamicAdmissionSession, DynamicAdmissionState, DynamicSignalEntry, DynamicSignalFrameEdits,
     DynamicSignalProfile, DynamicSignalReturn, DynamicSignalSession, LaunchCommand,
+    MAX_MEMORY_READ,
 };
 use oracle::image::*;
 use oracle::*;
@@ -87,13 +88,32 @@ fn state(session: &mut Session, observed: &DynamicAdmissionState) -> State {
     let task = observed.task.task;
     let current = session.state(task).unwrap();
     assert_eq!(&current, observed);
+    // The task remains held throughout these read-only requests. Preserve the
+    // complete original ranges and one original timeout per range while
+    // respecting the public per-request memory bound.
+    let mut memory = |address: u64, length: usize| {
+        let until = Instant::now() + TIMEOUT;
+        let mut bytes = Vec::with_capacity(length);
+        for offset in (0..length).step_by(MAX_MEMORY_READ) {
+            assert!(Instant::now() < until, "complete held-memory read deadline");
+            let count = (length - offset).min(MAX_MEMORY_READ);
+            let chunk = session
+                .read_memory(task, address.checked_add(offset as u64).unwrap(), count)
+                .unwrap();
+            assert!(Instant::now() < until, "complete held-memory read deadline");
+            assert_eq!(chunk.len(), count);
+            bytes.extend_from_slice(&chunk);
+        }
+        assert_eq!(bytes.len(), length);
+        bytes
+    };
     State {
         registers: observed.registers,
         xstate: observed.xstate.clone(),
         mask: observed.signal_mask,
-        data: session.read_memory(task, DATA, PAGE).unwrap(),
-        normal: session.read_memory(task, NORMAL, STACK_LEN).unwrap(),
-        alternate: session.read_memory(task, ALT, STACK_LEN).unwrap(),
+        data: memory(DATA, PAGE),
+        normal: memory(NORMAL, STACK_LEN),
+        alternate: memory(ALT, STACK_LEN),
     }
 }
 fn completion(session: &mut Session) -> (DynamicAdmissionCompletion, State) {
