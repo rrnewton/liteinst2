@@ -267,8 +267,8 @@ impl AdmissionOwner {
             )
             && pending.input.registers().rax == libc::SYS_clone as u64;
         let successors = if clone { 2 } else { 1 };
-        let reservation = self.reserve_transition(successors, true, 1)?;
-        self.check_completion_budget(reservation, successors, true, 1)?;
+        let reservation = self.reserve_transition(owner, successors, true, 1)?;
+        self.check_completion_budget(owner, reservation, successors, true, 1)?;
         self.reserve_completion_events()?;
         self.completion_history
             .try_reserve(1)
@@ -327,7 +327,7 @@ impl AdmissionOwner {
                     "dynamic original restoration changed invocation input",
                 ));
             }
-            self.check_completion_budget(reservation, successors, true, 1)?;
+            self.check_completion_budget(owner, reservation, successors, true, 1)?;
             let current = self.native.admission_current(task)?;
             // SAFETY: the exact finite syscall policy was checked before any
             // release. The whole decode is restored RX, all siblings are held,
@@ -920,8 +920,8 @@ impl AdmissionOwner {
             ));
         }
         crate::gate::domain::qualify_collateral(&guard)?;
-        let reservation = self.reserve_transition(1, true, 1)?;
-        self.check_completion_budget(reservation, 1, true, 1)?;
+        let reservation = self.reserve_transition(owner, 1, true, 1)?;
+        self.check_completion_budget(owner, reservation, 1, true, 1)?;
         self.reserve_completion_events()?;
         self.completion_history
             .try_reserve(1)
@@ -942,7 +942,7 @@ impl AdmissionOwner {
                 "dynamic collateral restoration changed its input",
             ));
         }
-        self.check_completion_budget(reservation, 1, true, 1)?;
+        self.check_completion_budget(owner, reservation, 1, true, 1)?;
         let current = self.native.admission_current(task)?;
         let state = TaskStateSnapshot {
             registers: actual.registers,

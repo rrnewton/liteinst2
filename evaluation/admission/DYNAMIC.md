@@ -65,6 +65,17 @@ page reports still charge repeated candidates and all retained facts. This work
 is reported separately as `resource_scan_decoded_starts`, outside demand/cache
 metrics. The implementation makes no incremental-startup or performance claim.
 
+Transition reservations use the authenticated held task count. Exact native
+membership, current full states and census identities must agree, with no
+running permit or queued native event. Ordinary execution uses `PTRACE_SYSCALL`:
+an unexpected syscall is stopped and refused before entering the kernel.
+An allowed clone reserves the two-task envelope before source restoration and
+kernel entry. Thus singleton execution need not reserve impossible sibling
+refreshes, while clone and two-task accounting retain their full bounds. The
+64 MiB lifetime limit, 64 KiB bound per XSTATE snapshot, actual retained-fact
+charges and no-refund rule remain unchanged. The pure arithmetic tests do not
+substitute for the native membership checks.
+
 The provider runs on the caller's thread. Advance, callback and completion share
 one deadline established before the exchange; returning from a callback does
 not renew it. The tracer independently watches a pending callback deadline and

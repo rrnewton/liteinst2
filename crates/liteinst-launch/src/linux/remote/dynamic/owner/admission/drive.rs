@@ -88,7 +88,7 @@ impl AdmissionOwner {
         self.settle_private_controls(owner, reservation, until)?;
         let started = Instant::now();
         let plan = self.domain.plan(page, until)?;
-        self.account_plan(reservation, &plan)?;
+        self.account_plan(owner, reservation, &plan)?;
         let id = self.domain.allocate_plan_id()?;
         self.metrics.pages.first_touch.try_reserve(1).map_err(|_| {
             GateError::Refused("dynamic publication timing history allocation failed")
@@ -135,7 +135,7 @@ impl AdmissionOwner {
                 match work {
                     PendingWork::Fetch { task, page } => {
                         if self.domain.pages.get(&page) == Some(&false) {
-                            let reservation = self.reserve_transition(0, false, 1)?;
+                            let reservation = self.reserve_transition(owner, 0, false, 1)?;
                             self.publish_page(owner, reservation, task, page, until)?;
                             self.census
                                 .finish_reservation(reservation)
@@ -150,7 +150,7 @@ impl AdmissionOwner {
                         // not create a second original invocation or callback.
                         let page = pc & !(PAGE - 1);
                         if self.domain.pages.get(&page) == Some(&false) {
-                            let reservation = self.reserve_transition(0, false, 1)?;
+                            let reservation = self.reserve_transition(owner, 0, false, 1)?;
                             self.publish_page(owner, reservation, task, page, until)?;
                             self.census
                                 .finish_reservation(reservation)
@@ -181,7 +181,12 @@ impl AdmissionOwner {
             // Reserve every possible retained continuation, old/new state and
             // generation receipt before any original task can execute. Unused
             // lifetime budget is intentionally not refunded.
-            let reservation = self.reserve_transition(2, true, 0)?;
+            // Ordinary release uses PTRACE_SYSCALL. Any actual syscall ENTRY
+            // outside the selected completion dispatcher is refused before the
+            // kernel effect, including undeclared creation aliases. Membership
+            // therefore cannot grow during this original-run transaction.
+            let successors = self.held_task_bound(owner, 0)?;
+            let reservation = self.reserve_transition(owner, successors, true, 0)?;
             if self
                 .ready
                 .iter()
@@ -667,7 +672,7 @@ impl AdmissionOwner {
             let _proof =
                 routes::check_release(&held, &self.domain, &self.census, &BTreeSet::new())?;
         }
-        let reservation = self.reserve_transition(0, false, 0)?;
+        let reservation = self.reserve_transition(owner, 0, false, 0)?;
         self.census
             .account_external(
                 reservation,

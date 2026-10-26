@@ -304,6 +304,160 @@ fn actual_plan_charge(
     shape.charge()
 }
 
+/// Pure size bound only. Native callers must first authenticate the complete
+/// held-mm set and its exact current census records. A larger successor count
+/// reserves a possible child; it never authorizes creation or any native effect.
+fn checked_task_bound(
+    actual: &[DynamicTask],
+    retained: &[DynamicTask],
+    successors: usize,
+) -> Result<usize, GateError> {
+    if actual.is_empty()
+        || actual.len() > MAX_TASKS
+        || retained.len() > MAX_TASKS
+        || successors > MAX_TASKS
+    {
+        return Err(GateError::Refused(
+            "dynamic task bound exceeds finite membership",
+        ));
+    }
+    let actual_set = actual
+        .iter()
+        .map(|task| (task.task, *task))
+        .collect::<BTreeMap<_, _>>();
+    let retained_set = retained
+        .iter()
+        .map(|task| (task.task, *task))
+        .collect::<BTreeMap<_, _>>();
+    let first = actual[0];
+    if actual_set.len() != actual.len()
+        || retained_set.len() != retained.len()
+        || actual_set != retained_set
+        || actual.iter().any(|task| {
+            task.process != first.process
+                || task.address_space != first.address_space
+                || task.generation != first.generation
+        })
+    {
+        return Err(GateError::Refused(
+            "dynamic task bound differs from retained membership",
+        ));
+    }
+    Ok(actual.len().max(successors))
+}
+
+fn rebind_charge(
+    domain: &super::domain::Domain,
+    active_origins: usize,
+    extra_origins: usize,
+    tasks: usize,
+) -> Result<BudgetCharge, GateError> {
+    let (bytes, heads, resumes) = image_facts_bound(domain, active_origins, extra_origins)?;
+    let mapping_strings = domain.images.iter().try_fold(0, |sum, image| {
+        add(
+            sum,
+            add(
+                image.mapping.permissions.len(),
+                image.mapping.pathname.as_ref().map_or(0, String::len),
+            )?,
+        )
+    })?;
+    let retained = total([
+        facts_bytes(bytes, heads, resumes)?,
+        mul(domain.images.len(), size_of::<crate::gate::domain::Image>())?,
+        mapping_strings,
+        size_of::<super::domain::RetiredGeneration>(),
+        size_of::<census::HistoryRecord>(),
+        mul(domain.pages.len(), size_of::<u64>())?,
+        mul(
+            domain.guards.len(),
+            size_of::<TrapGuard>() + INSTRUCTION_BYTES,
+        )?,
+        mul(domain.sites.len(), size_of::<Candidate>())?,
+    ])?;
+    combine(
+        BudgetCharge {
+            epochs: 1,
+            source_fact_bytes: retained,
+            ..BudgetCharge::default()
+        },
+        refresh_charge(2 * tasks)?,
+    )
+}
+
+fn effect_charge(
+    domain: &super::domain::Domain,
+    active_origins: usize,
+    tasks: usize,
+    successors: usize,
+    rebind: bool,
+    plans: usize,
+) -> Result<BudgetCharge, GateError> {
+    if tasks == 0 || tasks > MAX_TASKS || successors > tasks || plans > 1 {
+        return Err(GateError::Refused(
+            "dynamic transition exceeds finite task or plan shape",
+        ));
+    }
+    let mut charge = BudgetCharge::default();
+    if successors != 0 {
+        charge.origins = successors;
+        charge.witnesses = successors;
+        charge.source_fact_bytes = mul(successors, add(origin_bound()?, consume_bound()?)?)?;
+        // Full external completion, pending input, two event copies in
+        // each diagnostic queue, and all scalar/owned-window metadata.
+        charge.source_fact_bytes = add(
+            charge.source_fact_bytes,
+            total([
+                mul(8, state_bound()?)?,
+                mul(4, size_of::<DynamicEvent>())?,
+                8192,
+            ])?,
+        )?;
+        charge = combine(charge, refresh_charge(tasks)?)?;
+    } else {
+        charge.source_fact_bytes = total([state_bound()?, size_of::<PendingInvocation>(), 1024])?;
+    }
+    if rebind {
+        charge = combine(
+            charge,
+            rebind_charge(domain, active_origins, successors, tasks)?,
+        )?;
+    }
+    for _ in 0..plans {
+        charge = combine(
+            charge,
+            plan_upper_bound(domain, active_origins, successors)?,
+        )?;
+        // Whole-mm settlement may happen before publish_page's planner,
+        // even for a plan-only transaction. Together with the separate
+        // held-mm prefix, reserve the bounded prepublication refresh slots
+        // plus the whole-mm postpublication slots without relying on no-op debits.
+        charge = combine(charge, refresh_charge(2 * tasks)?)?;
+    }
+    if successors != 0 {
+        // Original release/completion: reconcile/normalize plus up to two
+        // deferred interrupt stops and one actual NX fault or guard for
+        // EACH authenticated task, before any affected page publication.
+        // The at-most-six probes do not create origins or consume continuations.
+        charge = combine(charge, refresh_charge(tasks + 3 * tasks)?)?;
+        charge.source_fact_bytes = add(
+            charge.source_fact_bytes,
+            mul(
+                tasks + 3 * tasks,
+                add(state_bound()?, size_of::<RunPermit>() + INSTRUCTION_BYTES)?,
+            )?,
+        )?;
+        // Each private task may need one neutral control-settling operation
+        // before batch release; refreshes retain the real before/after,
+        // never one fabricated row per internal kernel control stop.
+        // One pass before revocation and another after real boundary
+        // probes: a Fetch must become an actual neutral checkpoint even
+        // when its interrupt-credit counter was already zero.
+        charge = combine(charge, refresh_charge(2 * tasks * tasks)?)?;
+    }
+    Ok(charge)
+}
+
 impl AdmissionOwner {
     /// Re-read a current held incarnation. A raw instrumentation fault remains
     /// raw here; logical RIP does not silently change the register snapshot.
@@ -486,115 +640,65 @@ impl AdmissionOwner {
         })
     }
 
-    fn rebind_charge(&self, extra_origins: usize) -> Result<BudgetCharge, GateError> {
-        let (bytes, heads, resumes) =
-            image_facts_bound(&self.domain, self.census.active().count(), extra_origins)?;
-        let mapping_strings = self.domain.images.iter().try_fold(0, |sum, image| {
-            add(
-                sum,
-                add(
-                    image.mapping.permissions.len(),
-                    image.mapping.pathname.as_ref().map_or(0, String::len),
-                )?,
-            )
-        })?;
-        let retained = total([
-            facts_bytes(bytes, heads, resumes)?,
-            mul(
-                self.domain.images.len(),
-                size_of::<crate::gate::domain::Image>(),
-            )?,
-            mapping_strings,
-            size_of::<super::domain::RetiredGeneration>(),
-            size_of::<census::HistoryRecord>(),
-            mul(self.domain.pages.len(), size_of::<u64>())?,
-            mul(
-                self.domain.guards.len(),
-                size_of::<TrapGuard>() + INSTRUCTION_BYTES,
-            )?,
-            mul(self.domain.sites.len(), size_of::<Candidate>())?,
-        ])?;
-        combine(
-            BudgetCharge {
-                epochs: 1,
-                source_fact_bytes: retained,
-                ..BudgetCharge::default()
-            },
-            refresh_charge(2 * MAX_TASKS)?,
-        )
-    }
-
-    fn effect_charge(
+    /// Authenticate the whole real held mm before shrinking a resource bound.
+    /// The census is corroboration of the native set, never a stopped-task proof.
+    pub(super) fn held_task_bound(
         &self,
+        owner: &Owner,
         successors: usize,
-        rebind: bool,
-        plans: usize,
-    ) -> Result<BudgetCharge, GateError> {
-        if successors > MAX_TASKS || plans > 1 {
+    ) -> Result<usize, GateError> {
+        if !self.running.is_empty() || !self.native.admission_events_empty() {
             return Err(GateError::Refused(
-                "dynamic transition exceeds finite task or plan shape",
+                "dynamic task bound has unresolved execution or events",
             ));
         }
-        let mut charge = BudgetCharge::default();
-        if successors != 0 {
-            charge.origins = successors;
-            charge.witnesses = successors;
-            charge.source_fact_bytes = mul(successors, add(origin_bound()?, consume_bound()?)?)?;
-            // Full external completion, pending input, two event copies in
-            // each diagnostic queue, and all scalar/owned-window metadata.
-            charge.source_fact_bytes = add(
-                charge.source_fact_bytes,
-                total([
-                    mul(8, state_bound()?)?,
-                    mul(4, size_of::<DynamicEvent>())?,
-                    8192,
-                ])?,
-            )?;
-            charge = combine(charge, refresh_charge(MAX_TASKS)?)?;
-        } else {
-            charge.source_fact_bytes =
-                total([state_bound()?, size_of::<PendingInvocation>(), 1024])?;
+        if self.domain.generation != self.census.generation() {
+            return Err(GateError::Refused("dynamic task bound generation differs"));
         }
-        if rebind {
-            charge = combine(charge, self.rebind_charge(successors)?)?;
+        let selected = *self.origins.keys().next().ok_or(GateError::Refused(
+            "dynamic task bound has no retained held origin",
+        ))?;
+        let members = self.native.check_admission_mm(owner, selected)?;
+        if members.generation != self.domain.generation {
+            return Err(GateError::Refused(
+                "dynamic task bound native generation differs",
+            ));
         }
-        for _ in 0..plans {
-            charge = combine(
-                charge,
-                plan_upper_bound(&self.domain, self.census.active().count(), successors)?,
-            )?;
-            // Two-task settlement may happen before publish_page's planner,
-            // even for a plan-only transaction. Together with the separate
-            // two-task prefix, reserve all four prepublication refresh slots
-            // plus both postpublication slots without relying on no-op debits.
-            charge = combine(charge, refresh_charge(2 * MAX_TASKS)?)?;
+        let retained = self.census.active().take(MAX_TASKS + 1).collect::<Vec<_>>();
+        if retained.len() > MAX_TASKS
+            || self.origins.len() != retained.len()
+            || retained
+                .iter()
+                .any(|origin| self.origins.get(&origin.current.task.task) != Some(&origin.row.id))
+        {
+            return Err(GateError::Refused(
+                "dynamic task bound origin index differs",
+            ));
         }
-        if successors != 0 {
-            // Original release/completion: reconcile/normalize plus up to two
-            // deferred interrupt stops and one actual NX fault or guard for
-            // EACH of two tasks, before any affected page publication.
-            // The six probes do not create origins or consume continuations.
-            charge = combine(charge, refresh_charge(MAX_TASKS + 3 * MAX_TASKS)?)?;
-            charge.source_fact_bytes = add(
-                charge.source_fact_bytes,
-                mul(
-                    MAX_TASKS + 3 * MAX_TASKS,
-                    add(state_bound()?, size_of::<RunPermit>() + INSTRUCTION_BYTES)?,
-                )?,
-            )?;
-            // Each private task may need one neutral control-settling operation
-            // before batch release; refreshes retain the real before/after,
-            // never one fabricated row per internal kernel control stop.
-            // One pass before revocation and another after real boundary
-            // probes: a Fetch must become an actual neutral checkpoint even
-            // when its interrupt-credit counter was already zero.
-            charge = combine(charge, refresh_charge(2 * MAX_TASKS * MAX_TASKS)?)?;
+        let mut actual = Vec::new();
+        for task in members.candidate.tasks {
+            let observed = self.observe_current(owner, task)?;
+            let origin = *self.origins.get(&task).ok_or(GateError::Refused(
+                "dynamic task bound has an untracked native task",
+            ))?;
+            self.census
+                .check_current_origin(origin, &observed)
+                .map_err(census_error)?;
+            actual.push(observed.task);
         }
-        Ok(charge)
+        checked_task_bound(
+            &actual,
+            &retained
+                .iter()
+                .map(|origin| origin.current.task)
+                .collect::<Vec<_>>(),
+            successors,
+        )
     }
 
     pub(super) fn reserve_transition(
         &mut self,
+        owner: &Owner,
         successors: usize,
         rebind: bool,
         plans: usize,
@@ -602,9 +706,17 @@ impl AdmissionOwner {
         // Restoration may use a runner before the actual completion. Reserve
         // that prefix separately so a second pre-effect check uses the same
         // complete remaining envelope after the prefix has been debited.
+        let tasks = self.held_task_bound(owner, successors)?;
         let charge = combine(
-            self.effect_charge(successors, rebind, plans)?,
-            refresh_charge(MAX_TASKS)?,
+            effect_charge(
+                &self.domain,
+                self.census.active().count(),
+                tasks,
+                successors,
+                rebind,
+                plans,
+            )?,
+            refresh_charge(tasks)?,
         )?;
         self.domain
             .plans
@@ -619,25 +731,39 @@ impl AdmissionOwner {
 
     pub(super) fn check_completion_budget(
         &self,
+        owner: &Owner,
         reservation: Reservation,
         successors: usize,
         rebind: bool,
         plans: usize,
     ) -> Result<(), GateError> {
+        let tasks = self.held_task_bound(owner, successors)?;
         self.census
-            .check_reserved(reservation, self.effect_charge(successors, rebind, plans)?)
+            .check_reserved(
+                reservation,
+                effect_charge(
+                    &self.domain,
+                    self.census.active().count(),
+                    tasks,
+                    successors,
+                    rebind,
+                    plans,
+                )?,
+            )
             .map_err(census_error)
     }
 
     pub(super) fn account_plan(
         &mut self,
+        owner: &Owner,
         reservation: Reservation,
         plan: &PendingAdmission,
     ) -> Result<(), GateError> {
         self.domain.validate_plan(plan)?;
+        let tasks = self.held_task_bound(owner, 0)?;
         let charge = actual_plan_charge(plan, self.census.active().count())?;
         self.census
-            .check_reserved(reservation, combine(charge, refresh_charge(MAX_TASKS)?)?)
+            .check_reserved(reservation, combine(charge, refresh_charge(tasks)?)?)
             .map_err(census_error)?;
         self.census
             .account_external(reservation, charge)
@@ -785,6 +911,7 @@ impl AdmissionOwner {
             return Ok(());
         };
         let members = self.native.check_admission_mm(owner, selected)?;
+        let tasks = self.held_task_bound(owner, 0)?;
         for task in members.candidate.tasks {
             owner.time_left(until, "dynamic owned guard normalization")?;
             let before = self.observe_current(owner, task)?;
@@ -799,7 +926,7 @@ impl AdmissionOwner {
                 .check_current_origin(origin, &before)
                 .map_err(census_error)?;
             self.census
-                .check_reserved(reservation, refresh_charge(MAX_TASKS)?)
+                .check_reserved(reservation, refresh_charge(tasks)?)
                 .map_err(census_error)?;
             let current = self.native.admission_current(task)?;
             let mut after = before.registers;
@@ -884,6 +1011,7 @@ impl AdmissionOwner {
             return Ok(());
         };
         let members = self.native.check_admission_mm(owner, selected)?;
+        let tasks = self.held_task_bound(owner, 0)?;
         let mut pending = Vec::new();
         for &task in &members.candidate.tasks {
             if let Ok(current) = self.native.admission_current(task) {
@@ -896,7 +1024,7 @@ impl AdmissionOwner {
             }
         }
         self.census
-            .check_reserved(reservation, refresh_charge(mul(pending.len(), MAX_TASKS)?)?)
+            .check_reserved(reservation, refresh_charge(mul(pending.len(), tasks)?)?)
             .map_err(census_error)?;
         for task in pending {
             owner.time_left(until, "dynamic private control settling")?;
@@ -922,7 +1050,7 @@ impl AdmissionOwner {
                 .check_current_origin(origin, &before)
                 .map_err(census_error)?;
             self.census
-                .check_reserved(reservation, refresh_charge(MAX_TASKS)?)
+                .check_reserved(reservation, refresh_charge(tasks)?)
                 .map_err(census_error)?;
             {
                 let mut held =
@@ -970,7 +1098,8 @@ impl AdmissionOwner {
             .generation_changes
             .checked_add(1)
             .ok_or_else(overflow)?;
-        let charge = self.rebind_charge(0)?;
+        let tasks = self.held_task_bound(owner, 0)?;
+        let charge = rebind_charge(&self.domain, self.census.active().count(), 0, tasks)?;
         self.census
             .check_reserved(reservation, charge)
             .map_err(census_error)?;
@@ -1007,7 +1136,7 @@ impl AdmissionOwner {
         let staged = self.domain.projected_images(next, &projection)?;
         // Charge retained source/metadata before revocation. Epoch/history and
         // actual refreshes debit their own categories below; no refund occurs.
-        let refresh = refresh_charge(2 * MAX_TASKS)?;
+        let refresh = refresh_charge(2 * tasks)?;
         let source_bytes = charge
             .source_fact_bytes
             .checked_sub(refresh.source_fact_bytes)
