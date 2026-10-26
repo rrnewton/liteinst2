@@ -123,7 +123,7 @@
     "expected/supervisor_calibrate.stdout": "e4085ea36ae3e46417e207ec949cdd9e72c891b778e61be72caf6b785a024ac5",
     "legacy/audit.py": "3e4f89cb388c265fd8bc02db786c5fd0fc552cb62e9c77b6c1ced8529bbd55f5",
     "legacy/calibrate.py": "4a9f7f98d687294ed9aea9927c946e56e09cc522b3e91ecd77bc52c3009ba135",
-    "legacy/calibrate_prerequisites.py": "87a0387ff7a929000dbb8610d5f95125c864a5d7d582bb437f3b3dfcf1716f99",
+    "legacy/calibrate_prerequisites.py": "eb0db14035477a940f4a3dabbe30a0edcab102e4896ded06c181f1e5cd50e497",
     "legacy/prerequisites.py": "260c8679bbfbf9e6df5dc987a4c88f0157580f25cfe18dc093d774a455d0b182",
     "legacy/runner.py": "72ab67208cad907eb135d1676dc6a1f8c29ccfaa5bfbc35b8f17e1d761aeb3bb",
     "legacy/supervisor_calibrate.py": "99bf16cc79f2c542f80f68308be217a44ec4e8900d5ddd979e4ba13e2ea9d6e0",
@@ -3992,6 +3992,18 @@
   "source_directory": "sources-legacy-v1",
   "source_manifest_sha256": "10156e1de5c089840279fae2395282ab9bc62fa4f4e68964dec521915487a434",
   "source_transformations": {
+    "legacy/calibrate_prerequisites.py": {
+      "added_keyword": "dir=Path(__file__).resolve().parent",
+      "after_sha256": "eb0db14035477a940f4a3dabbe30a0edcab102e4896ded06c181f1e5cd50e497",
+      "before_sha256": "87a0387ff7a929000dbb8610d5f95125c864a5d7d582bb437f3b3dfcf1716f99",
+      "cases_unchanged": {
+        "negative": 19,
+        "positive": 1
+      },
+      "delta_sha256": "75630530681d9a747ac4fb6e18e744ad7d13eaa1b25c1dcce54f965f1d0c96c1",
+      "expected_stdout_unchanged": true,
+      "kind": "explicit_staged_source_parent_scratch_only"
+    },
     "state/quiescent_oracle.rs": {
       "after_sha256": "7b766a95e8ef564ee061ac3a3cb07e4cfbaef0131c8599fb0fb5ac002ad2a17b",
       "before_sha256": "f5b480a016e0c56db88bdc06ee11398387cc06914657b9315a5f7f71371008fd",

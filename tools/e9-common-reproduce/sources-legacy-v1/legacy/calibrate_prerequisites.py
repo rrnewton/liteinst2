@@ -38,7 +38,7 @@ def calibrate():
             rejected.append(name)
         else:
             raise AssertionError('invalid prerequisite accepted: ' + name)
-    with tempfile.TemporaryDirectory(prefix='e9-prerequisite-negative-') as empty:
+    with tempfile.TemporaryDirectory(prefix='e9-prerequisite-negative-', dir=Path(__file__).resolve().parent) as empty:
         refuse(REFUSED[0], lambda: validate(Path(empty), {}))
     def changed(name, key, value):
         value_map = copy.deepcopy(original); value_map[key] = value
