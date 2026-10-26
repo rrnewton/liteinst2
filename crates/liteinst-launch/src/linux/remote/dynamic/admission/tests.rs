@@ -141,6 +141,7 @@ fn fixture<P: InstructionProvider>(
             session,
             provider,
             initial: state,
+            kernel_progress: owner::kernel_journal::KernelJournalWriter::new(SESSION).reader(),
             timeout: TIMEOUT,
             closed: false,
         },
@@ -489,7 +490,13 @@ fn malformed_inspection_reply_closes_every_public_inspection() {
                 }
                 _ => panic!("wrong inspection request"),
             }
-            respond(inspection, AdmissionReply::Ready(state));
+            respond(
+                inspection,
+                AdmissionReply::Ready(
+                    state,
+                    owner::kernel_journal::KernelJournalWriter::new(SESSION).reader(),
+                ),
+            );
         });
         match kind {
             0 => assert!(matches!(
@@ -536,7 +543,10 @@ fn wrong_complete_phases_do_not_reopen_or_invoke_provider_twice() {
             respond(
                 complete,
                 match kind {
-                    0 => AdmissionReply::Ready(state),
+                    0 => AdmissionReply::Ready(
+                        state,
+                        owner::kernel_journal::KernelJournalWriter::new(SESSION).reader(),
+                    ),
                     1 => AdmissionReply::Provider(Box::new(pending)),
                     2 => AdmissionReply::Bytes(vec![1, 2, 3]),
                     _ => unreachable!(),

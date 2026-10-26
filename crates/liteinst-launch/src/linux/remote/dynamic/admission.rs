@@ -255,7 +255,7 @@ pub(super) enum AdmissionRequest {
 }
 
 pub(super) enum AdmissionReply {
-    Ready(DynamicAdmissionState),
+    Ready(DynamicAdmissionState, KernelProgressReader),
     Provider(Box<ProviderInput>),
     Event(DynamicAdmissionEvent),
     State(DynamicAdmissionState),
@@ -274,6 +274,7 @@ pub struct DynamicAdmissionSession<P: InstructionProvider> {
     session: DynamicSession,
     provider: P,
     initial: DynamicAdmissionState,
+    kernel_progress: KernelProgressReader,
     timeout: Duration,
     closed: bool,
 }
@@ -343,7 +344,7 @@ impl<P: InstructionProvider> DynamicAdmissionSession<P> {
             until,
             response_until,
         )?;
-        let AdmissionReply::Ready(initial) = reply else {
+        let AdmissionReply::Ready(initial, kernel_progress) = reply else {
             return Err(GateError::Refused(
                 "dynamic admission bootstrap returned the wrong phase",
             ));
@@ -353,9 +354,17 @@ impl<P: InstructionProvider> DynamicAdmissionSession<P> {
             session,
             provider,
             initial,
+            kernel_progress,
             timeout,
             closed: false,
         })
+    }
+
+    /// In-memory original kernel progress. This reader remains usable after an
+    /// error, cancellation or session drop. Partial evidence never authorizes
+    /// replay, completion, release or physical cleanup.
+    pub fn kernel_progress(&self) -> KernelProgressReader {
+        self.kernel_progress.clone()
     }
 
     /// Numeric leader PID for diagnostics and read-only observation, not control authority.
@@ -523,6 +532,16 @@ impl<P: InstructionProvider> DynamicAdmissionSession<P> {
 }
 
 impl DynamicSession {
+    #[cfg(test)]
+    pub(super) fn admission_call_for_journal_test(
+        &mut self,
+        request: AdmissionRequest,
+        until: Instant,
+        response_until: Instant,
+    ) -> Result<AdmissionReply, GateError> {
+        self.admission_call(request, until, response_until)
+    }
+
     // Unlike call_with_response_timeout, this private transport receives already
     // established absolute budgets and must not recreate them after callbacks.
     fn admission_call(

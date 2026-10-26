@@ -703,6 +703,17 @@ impl AdmissionOwner {
         rebind: bool,
         plans: usize,
     ) -> Result<Reservation, GateError> {
+        self.reserve_transition_with_prefix(owner, successors, rebind, plans, 0)
+    }
+
+    pub(super) fn reserve_transition_with_prefix(
+        &mut self,
+        owner: &Owner,
+        successors: usize,
+        rebind: bool,
+        plans: usize,
+        prefix_bytes: usize,
+    ) -> Result<Reservation, GateError> {
         // Restoration may use a runner before the actual completion. Reserve
         // that prefix separately so a second pre-effect check uses the same
         // complete remaining envelope after the prefix has been debited.
@@ -717,6 +728,13 @@ impl AdmissionOwner {
                 plans,
             )?,
             refresh_charge(tasks)?,
+        )?;
+        let charge = combine(
+            charge,
+            BudgetCharge {
+                source_fact_bytes: prefix_bytes,
+                ..BudgetCharge::default()
+            },
         )?;
         self.domain
             .plans

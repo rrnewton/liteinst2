@@ -5,6 +5,9 @@ use std::collections::{BTreeMap, BTreeSet};
 mod tests;
 
 mod admission;
+pub(super) mod kernel_journal;
+#[cfg(test)]
+use kernel_journal::fault::{JournalFault, JournalFaultPoint};
 pub(crate) mod bootstrap;
 mod lifecycle;
 pub(crate) mod publication;
@@ -38,6 +41,9 @@ pub(super) struct Owner {
     exec_policy: DynamicExecPolicy,
     lifecycle: Option<lifecycle::NativeLifecycle>,
     admission: Option<admission::AdmissionOwner>,
+    kernel_journal: kernel_journal::KernelJournalWriter,
+    #[cfg(test)]
+    journal_fault: Option<JournalFault>,
     session: u64,
     sequence: u64,
     state: State,
@@ -105,9 +111,14 @@ pub(super) fn run(start: TracerStart) {
     let failure = match result {
         Ok(Ok(())) => None,
         Ok(Err(error)) => Some(error),
-        Err(_) => Some(LaunchError::Invalid(
-            "dynamic tracer unwound; cleanup remains owned",
-        )),
+        Err(_) => {
+            owner
+                .kernel_journal
+                .fail_active(kernel_journal::KernelFailureKind::CaughtPanic);
+            Some(LaunchError::Invalid(
+                "dynamic tracer unwound; cleanup remains owned",
+            ))
+        }
     };
     if !announced {
         let _ = ready.send(Err(
@@ -128,6 +139,9 @@ impl Owner {
             exec_policy: DynamicExecPolicy::Refuse,
             lifecycle: None,
             admission: None,
+            kernel_journal: kernel_journal::KernelJournalWriter::new(session),
+            #[cfg(test)]
+            journal_fault: None,
             session,
             sequence: 0,
             state: State::Startup,
@@ -839,6 +853,22 @@ impl Owner {
         });
     }
     fn cleanup(&mut self) -> Result<DynamicCleanup, LaunchError> {
+        self.kernel_journal.close(
+            kernel_journal::KernelWriterStatus::Closing,
+            Some(kernel_journal::KernelFailureKind::Cancelled),
+        );
+        let result = self.cleanup_inner();
+        self.kernel_journal.close(
+            if result.is_ok() {
+                kernel_journal::KernelWriterStatus::Cleaned
+            } else {
+                kernel_journal::KernelWriterStatus::FailedCleanup
+            },
+            None,
+        );
+        result
+    }
+    fn cleanup_inner(&mut self) -> Result<DynamicCleanup, LaunchError> {
         self.closing = true;
         if self.broker.is_none() {
             return Ok(DynamicCleanup { reaped: Vec::new() });

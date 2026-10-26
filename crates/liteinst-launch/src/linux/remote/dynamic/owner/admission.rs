@@ -107,11 +107,15 @@ impl Owner {
         request: AdmissionRequest,
         until: Instant,
     ) -> Result<AdmissionReply, GateError> {
+        let _journal_unwind = self.kernel_journal.panic_scope();
         if let Some(mut admission) = self.admission.take() {
             // A panic keeps all kernel pins/wait ownership in Owner. The outer
             // owner catch-unwind enters physical cleanup; no handle escapes.
             let result = admission.execute(self, request, until);
             self.admission = Some(admission);
+            if let Err(error) = &result {
+                self.kernel_journal.fail_gate(error);
+            }
             return result;
         }
         let AdmissionRequest::Start {
@@ -124,7 +128,7 @@ impl Owner {
         };
         let (admission, ready) = AdmissionOwner::start(self, initial, facts, options, until)?;
         self.admission = Some(admission);
-        Ok(AdmissionReply::Ready(ready))
+        Ok(AdmissionReply::Ready(ready, self.kernel_journal.reader()))
     }
 }
 

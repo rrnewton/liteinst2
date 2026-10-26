@@ -17,6 +17,7 @@ ptrace operation or publication lease.
 | `unsafe launch(...)` | Certify the finite image/continuation envelope, bootstrap the owned process and return held initial state. |
 | `next_event()` | Advance to a selected completion or diagnostic event under one absolute operation deadline. |
 | `initial_state()`, `state(task)`, `read_memory(...)` | Inspect retained initial evidence or an authenticated current held task; snapshots confer no release authority. |
+| `kernel_progress()` | Retain a read-only in-memory journal of selected-kernel attempts, including incomplete and failed prefixes. |
 | `provider()`, `provider_mut()` | Inspect or update caller-owned policy between operations. |
 | `metrics()`, `terminate(timeout)` | Read diagnostic work/history counters, or request complete physical cleanup. |
 
@@ -96,6 +97,28 @@ fork and later exec fail closed. Census terminal retirement remains test-only;
 physical cleanup continues to require the native owner's terminal waits,
 process/thread pidfd evidence and natural-parent reaping protocol. `Drop`
 requests cancellation; `terminate` waits for its cleanup receipt.
+
+`kernel_progress()` returns an independent `KernelProgressReader`. Its snapshot
+survives a closed or dropped session while the embedding process remains alive.
+Historical identities and captured states authorize no replay or continuation.
+The owner reserves and debits the full journal allocation before original source
+restoration: 32 fact slots and eight distinct 64 KiB state buffers, under the same
+nonrefundable lifetime bound. Scripted and CPU completions create no kernel attempt.
+
+Raw capture begins after successful pinned wait delivery, before lifecycle
+validation. It retains the raw header even if a later payload or state read fails.
+Raw observations, validated ENTRY/creation/EXIT, each neutral return bridge,
+transport completion and final admission completion are separate facts. A raw
+newborn remains logically unbound until the actual creation join; it never gets
+an invented syscall EXIT. A later error or panic preserves the committed prefix
+and first failure even while admission state is temporarily moved out of the
+native owner. Partial state buffers never become complete snapshots.
+
+Archive writer status reports cleanup separately. It is not an independent
+physical-removal receipt, and this in-memory diagnostic handle supplies no
+process-crash durability. Failures before pinned wait delivery are outside the
+capture boundary. Reading a bounded snapshot under its archive mutex does not
+renew any operation deadline or extend the accepted native syscall profile.
 
 The initial [seven native fixtures](../../crates/liteinst-launch/tests/dynamic_admission.rs)
 cover executable/interpreter first-entry CPUID, scripted/native CPUID state,

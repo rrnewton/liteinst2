@@ -1,6 +1,7 @@
 //! One provider decision or qualified collateral instruction, under the
 //! original owner's closed release interlock. No publication lease spans an
 //! original instruction. Actual completion evidence survives failed rearming.
+use super::super::kernel_journal::{KernelAttemptBinding, KernelAttemptHandle, KernelFailureKind};
 use super::super::selected::{
     self as native_selected, OriginalCompletion, OriginalEvidence, OriginalOutcome,
 };
@@ -12,6 +13,9 @@ use crate::gate::{SelectedCompletion, SelectedExecution};
 use crate::lifecycle::TaskState;
 use crate::selected::{CompletedInstruction, Operation, SyscallAbi};
 use crate::trap_coverage::{TrapGuard, TrapGuardRole};
+
+#[cfg(test)]
+mod journal_tests;
 
 /// Append-only evidence of a single already-used execution identity. Retaining
 /// this record does not authorize another invocation, source edit or release.
@@ -25,6 +29,7 @@ pub(super) struct CompletionRecord {
     window: Option<routes::OriginalWindow>,
     rearmed_generation: Option<u64>,
     copied_events: usize,
+    kernel_attempt: Option<KernelAttemptHandle>,
 }
 
 enum CompletionEvidence {
@@ -112,7 +117,8 @@ impl AdmissionOwner {
         until: Instant,
     ) -> Result<AdmissionReply, GateError> {
         let result = self.complete_inner(owner, token, decision, until);
-        if result.is_err() {
+        if let Err(error) = &result {
+            owner.kernel_journal.fail_gate(error);
             self.close_completion(owner);
         }
         result
@@ -267,12 +273,53 @@ impl AdmissionOwner {
             )
             && pending.input.registers().rax == libc::SYS_clone as u64;
         let successors = if clone { 2 } else { 1 };
-        let reservation = self.reserve_transition(owner, successors, true, 1)?;
+        let prepared_kernel = if scripted.is_none()
+            && matches!(
+                pending.input.instruction().operation(),
+                Operation::Syscall {
+                    abi: SyscallAbi::LinuxX64
+                }
+            ) {
+            Some(owner.kernel_journal.prepare(KernelAttemptBinding {
+                pending: pending.token.clone(),
+                original_stop: pending.stop.clone(),
+                input: pending.input.clone(),
+                before: trusted::TaskStateSnapshot {
+                    registers: pending.before.registers,
+                    xstate: pending.before.xstate.clone(),
+                    mask: pending.before.signal_mask,
+                },
+                until,
+            })?)
+        } else {
+            None
+        };
+        let journal_bytes = prepared_kernel
+            .as_ref()
+            .map_or(0, |prepared| prepared.retained_bytes());
+        let reservation =
+            self.reserve_transition_with_prefix(owner, successors, true, 1, journal_bytes)?;
         self.check_completion_budget(owner, reservation, successors, true, 1)?;
         self.reserve_completion_events()?;
         self.completion_history
             .try_reserve(1)
             .map_err(|_| GateError::Refused("dynamic completion history allocation failed"))?;
+        // Every archive allocation and its entire nonrefundable lifetime debit
+        // precedes source restoration and the first original execution release.
+        let kernel_attempt = if let Some(prepared) = prepared_kernel {
+            self.census
+                .account_external(
+                    reservation,
+                    BudgetCharge {
+                        source_fact_bytes: journal_bytes,
+                        ..BudgetCharge::default()
+                    },
+                )
+                .map_err(census_error)?;
+            Some(owner.kernel_journal.attach(prepared)?)
+        } else {
+            None
+        };
         let pending = self.pending.take().expect("authenticated pending");
         let invocation = ExecutionId::from_owner(owner.session, pending.token.invocation)
             .map_err(census_error)?;
@@ -342,6 +389,7 @@ impl AdmissionOwner {
                         input: &pending.input,
                         before_xstate: &before.xstate,
                         before_mask: before.signal_mask,
+                        journal: kernel_attempt,
                     },
                     until,
                 )?
@@ -363,6 +411,7 @@ impl AdmissionOwner {
             window,
             rearmed_generation: None,
             copied_events: 0,
+            kernel_attempt,
         });
         self.retain_completion_events(index)?;
         self.account_completion(reservation, index)?;
@@ -370,6 +419,11 @@ impl AdmissionOwner {
             &self.completion_history[index].evidence,
             CompletionEvidence::Event(_)
         ) {
+            if kernel_attempt.is_some() {
+                owner
+                    .kernel_journal
+                    .fail_active(KernelFailureKind::AdmissionRejected);
+            }
             return self.original_event_reply(owner, index);
         }
         self.finish_completed(owner, reservation, index, until)?;
@@ -413,6 +467,11 @@ impl AdmissionOwner {
         self.census
             .finish_reservation(reservation)
             .map_err(census_error)?;
+        if let Some(handle) = kernel_attempt {
+            owner
+                .kernel_journal
+                .finish_admission(handle, event.after_task)?;
+        }
         Ok(AdmissionReply::Event(DynamicAdmissionEvent::Completed(
             Box::new(event),
         )))
@@ -540,6 +599,19 @@ impl AdmissionOwner {
         until: Instant,
     ) -> Result<(), GateError> {
         let record = &self.completion_history[index];
+        if let CompletionEvidence::Native(completed) = &record.evidence {
+            if let OriginalEvidence::Syscall(kernel) = &completed.evidence {
+                if record.kernel_attempt.map(|handle| handle.id()) != Some(kernel.attempt) {
+                    return Err(GateError::Refused(
+                        "dynamic completion kernel journal identity differs",
+                    ));
+                }
+            } else if record.kernel_attempt.is_some() {
+                return Err(GateError::Refused(
+                    "dynamic CPU completion has a syscall journal",
+                ));
+            }
+        }
         let task = record.before.task.task;
         let invocation = record.invocation;
         let before = record.before.clone();
@@ -790,7 +862,15 @@ impl AdmissionOwner {
         // immutable rows; refresh records bind them to the genuine neutral stops.
         self.refresh_all_same_pc(owner, reservation, task, until)?;
         let window = self.completion_history[index].window.take();
+        #[cfg(test)]
+        if self.completion_history[index].kernel_attempt.is_some() {
+            owner.journal_fault_at(JournalFaultPoint::BeforeRebind)?;
+        }
         self.rebind(owner, reservation, task, window, until)?;
+        #[cfg(test)]
+        if self.completion_history[index].kernel_attempt.is_some() {
+            owner.journal_fault_at(JournalFaultPoint::AfterRebind)?;
+        }
         // All application pages are NX here. While the completed private task
         // remains held, materialize any generic sibling interruption as its
         // genuine same-PC fetch, before source publication could grant it X.
@@ -979,6 +1059,7 @@ impl AdmissionOwner {
             window: Some(window),
             rearmed_generation: None,
             copied_events: 0,
+            kernel_attempt: None,
         });
         self.retain_completion_events(index)?;
         self.account_completion(reservation, index)?;

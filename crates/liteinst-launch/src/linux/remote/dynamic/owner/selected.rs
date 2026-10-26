@@ -3,6 +3,9 @@
 //! This transport holds siblings but has no publication lease while original
 //! instructions run. The caller owns source restoration/rearming and policy;
 //! every native stop, creation pairing and physical cleanup remains Owner's.
+use super::kernel_journal::{
+    KernelAttemptHandle, KernelAttemptId, KernelReleasePhase, KernelStateSlot,
+};
 use super::trusted::{AdmissionPhase, AdmissionStop, TaskStateSnapshot, TrustedIsland};
 use super::*;
 use crate::lifecycle::TaskId;
@@ -15,6 +18,7 @@ pub(in crate::linux::remote::dynamic) struct OriginalInvocation<'a> {
     pub(in crate::linux::remote::dynamic) input: &'a SelectedInput,
     pub(in crate::linux::remote::dynamic) before_xstate: &'a [u8],
     pub(in crate::linux::remote::dynamic) before_mask: u64,
+    pub(in crate::linux::remote::dynamic) journal: Option<KernelAttemptHandle>,
 }
 
 pub(in crate::linux::remote::dynamic) enum OriginalOutcome {
@@ -41,6 +45,7 @@ pub(in crate::linux::remote::dynamic) enum OriginalEvidence {
 }
 
 pub(in crate::linux::remote::dynamic) struct OriginalSyscallEvidence {
+    pub(in crate::linux::remote::dynamic) attempt: KernelAttemptId,
     pub(in crate::linux::remote::dynamic) entry: DynamicEvent,
     pub(in crate::linux::remote::dynamic) entry_state: TaskStateSnapshot,
     pub(in crate::linux::remote::dynamic) exit: DynamicEvent,
@@ -81,7 +86,10 @@ pub(in crate::linux::remote::dynamic) unsafe fn execute(
     until: Instant,
 ) -> Result<OriginalOutcome, LaunchError> {
     let result = execute_inner(owner, native, island, invocation, until);
-    if result.is_err() {
+    if let Err(error) = &result {
+        owner
+            .kernel_journal
+            .fail_active(kernel_journal::failure_kind(error));
         owner.closing = true;
         owner.cancel.store(true, Ordering::Release);
     }
@@ -217,6 +225,23 @@ fn execute_inner(
             instruction.bytes(),
         )?;
         let syscall = matches!(instruction.operation(), Operation::Syscall { .. });
+        if syscall != invocation.journal.is_some() {
+            return Err(LaunchError::Invalid(
+                "native syscall journal binding is missing or unexpected",
+            ));
+        }
+        if let Some(handle) = invocation.journal {
+            owner
+                .kernel_journal
+                .check_invocation(handle, &current, input, &saved, until)?;
+        }
+        if let Some(handle) = invocation.journal {
+            owner.kernel_journal.release_attempt(
+                handle,
+                KernelReleasePhase::Original,
+                &current.token,
+            )?;
+        }
         owner.time_left(until, "native selected invocation")?;
         // SAFETY: the outer caller supplied the exact original permit; all
         // native membership/source/state checks above hold at this release.
@@ -231,8 +256,15 @@ fn execute_inner(
                 },
             )?;
         }
+        if let Some(handle) = invocation.journal {
+            owner.kernel_journal.release_succeeded(
+                handle,
+                KernelReleasePhase::Original,
+                &current.token,
+            )?;
+        }
         let outcome = if syscall {
-            run_syscall(owner, native, island, &current, input, &saved, until)?
+            run_syscall(owner, native, island, &current, &saved, invocation, until)?
         } else {
             run_cpu(owner, native, &current, &saved, until, |after| {
                 input
@@ -545,6 +577,7 @@ fn run_cpu(
 fn next_syscall_event(
     owner: &mut Owner,
     native: &mut lifecycle::NativeLifecycle,
+    journal: KernelAttemptHandle,
     until: Instant,
 ) -> Result<DynamicEvent, LaunchError> {
     loop {
@@ -552,6 +585,7 @@ fn next_syscall_event(
             return Ok(event);
         }
         let (tid, status) = owner.wait_raw(until, "native selected syscall lifecycle")?;
+        owner.capture_kernel_raw(journal, tid, status)?;
         if let Some(event) = native.observe_admission_other(owner, tid, status)? {
             return Ok(event);
         }
@@ -563,11 +597,15 @@ fn run_syscall(
     native: &mut lifecycle::NativeLifecycle,
     island: &TrustedIsland,
     current: &AdmissionStop,
-    input: &SelectedInput,
     before: &TaskStateSnapshot,
+    invocation: OriginalInvocation<'_>,
     until: Instant,
 ) -> Result<OriginalOutcome, LaunchError> {
-    let entry = next_syscall_event(owner, native, until)?;
+    let input = invocation.input;
+    let journal = invocation
+        .journal
+        .ok_or(LaunchError::Invalid("native syscall journal is absent"))?;
+    let entry = next_syscall_event(owner, native, journal, until)?;
     let tid = entry.tid;
     let next = input.instruction().next_pc();
     let number = before.registers.rax;
@@ -605,19 +643,30 @@ fn run_syscall(
             "native selected syscall ENTRY full state differs",
         ));
     }
+    owner
+        .kernel_journal
+        .validated_entry(journal, &entry, &entry_state)?;
+    #[cfg(test)]
+    owner.journal_fault_at(JournalFaultPoint::AfterValidatedEntry)?;
     let entry_token = entry
         .stop_token()
         .ok_or(LaunchError::Invalid("native syscall ENTRY lacks token"))?;
     // SAFETY: the outer original permit supplied policy and source/rearm bounds.
     // This uses the real lifecycle dispatcher, including its exact clone checks.
     owner.time_left(until, "native selected syscall ENTRY release")?;
+    owner
+        .kernel_journal
+        .release_attempt(journal, KernelReleasePhase::Entry, entry_token)?;
     unsafe {
         native.resume_admission_event(owner, entry_token, DynamicResume::Continue)?;
     }
+    owner
+        .kernel_journal
+        .release_succeeded(journal, KernelReleasePhase::Entry, entry_token)?;
     let mut events = Vec::new();
     let mut newborn_events = Vec::new();
     let exit = loop {
-        let event = next_syscall_event(owner, native, until)?;
+        let event = next_syscall_event(owner, native, journal, until)?;
         match &event.kind {
             DynamicEventKind::Created { .. } if event.tid == tid => {
                 if number != libc::SYS_clone as u64 || !events.is_empty() {
@@ -625,13 +674,30 @@ fn run_syscall(
                         "unexpected native selected creation event",
                     ));
                 }
+                let DynamicEventKind::Created { child } = &event.kind else {
+                    unreachable!()
+                };
+                let newborn = native.admission_held_event(child.task)?;
+                owner
+                    .kernel_journal
+                    .validated_creation(journal, &event, &newborn)?;
                 let token = event
                     .stop_token()
                     .ok_or(LaunchError::Invalid("native creation lacks parent token"))?;
                 owner.time_left(until, "native selected creation return")?;
+                owner.kernel_journal.release_attempt(
+                    journal,
+                    KernelReleasePhase::Creation,
+                    token,
+                )?;
                 unsafe {
                     native.resume_admission_event(owner, token, DynamicResume::Continue)?;
                 }
+                owner.kernel_journal.release_succeeded(
+                    journal,
+                    KernelReleasePhase::Creation,
+                    token,
+                )?;
                 events.push(event);
             }
             DynamicEventKind::Newborn { .. }
@@ -687,6 +753,11 @@ fn run_syscall(
             "non-creation syscall produced lifecycle events",
         ));
     }
+    owner
+        .kernel_journal
+        .validated_exit(journal, &exit, &exit_state)?;
+    #[cfg(test)]
+    owner.journal_fault_at(JournalFaultPoint::AfterValidatedExit)?;
     // Preserve the actual automatic newborn observation before either return
     // bridge. A later restored checkpoint cannot reconstruct this evidence.
     let mut newborn_observations = Vec::new();
@@ -707,7 +778,16 @@ fn run_syscall(
     let exit_token = exit
         .stop_token()
         .ok_or(LaunchError::Invalid("native syscall EXIT lacks token"))?;
+    owner
+        .kernel_journal
+        .bridge_begin(journal, current.identity, false)?;
     let stop = trusted::return_bridge(owner, native, island, exit_token, until)?;
+    native.require_admission_stop(&stop)?;
+    owner
+        .kernel_journal
+        .capture_bridge(journal, KernelStateSlot::ParentBridge, &stop)?;
+    #[cfg(test)]
+    owner.journal_fault_at(JournalFaultPoint::AfterParentBridge)?;
     let mut newborns = Vec::new();
     let mut newborn_evidence = Vec::new();
     for (event, before_bridge) in newborn_observations {
@@ -724,7 +804,16 @@ fn run_syscall(
                 "parent return bridge changed actual newborn state",
             ));
         }
+        owner.kernel_journal.bridge_begin(journal, identity, true)?;
         let after_bridge = trusted::return_bridge(owner, native, island, token, until)?;
+        native.require_admission_stop(&after_bridge)?;
+        owner.kernel_journal.capture_bridge(
+            journal,
+            KernelStateSlot::NewbornBridge,
+            &after_bridge,
+        )?;
+        #[cfg(test)]
+        owner.journal_fault_at(JournalFaultPoint::AfterChildBridge)?;
         if after_bridge.identity != identity || TaskStateSnapshot::read(event.tid)? != before_bridge
         {
             return Err(LaunchError::Invalid(
@@ -743,10 +832,16 @@ fn run_syscall(
             "native selected return bridges changed actual EXIT state",
         ));
     }
+    owner
+        .kernel_journal
+        .transport_complete(journal, &stop, newborns.first())?;
+    #[cfg(test)]
+    owner.journal_fault_at(JournalFaultPoint::AfterTransport)?;
     Ok(OriginalOutcome::Completed(Box::new(OriginalCompletion {
         stop,
         state: exit_state.clone(),
         evidence: OriginalEvidence::Syscall(Box::new(OriginalSyscallEvidence {
+            attempt: journal.id(),
             entry,
             entry_state,
             exit,

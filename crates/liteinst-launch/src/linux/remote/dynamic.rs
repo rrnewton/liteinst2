@@ -21,6 +21,12 @@ use admission::{AdmissionReply, AdmissionRequest};
 mod broker;
 mod launch;
 mod owner;
+pub use owner::kernel_journal::{
+    KernelAttemptId, KernelAttemptSnapshot, KernelCaptureStatus, KernelCapturedState,
+    KernelFailureKind, KernelJournalFact, KernelJournalFailure, KernelJournalStage, KernelPinKind,
+    KernelProgressReader, KernelProgressSnapshot, KernelReleasePhase, KernelStateRecord,
+    KernelStateSlot, KernelStopIdentity, KernelSyscallInfo, KernelWriterStatus,
+};
 
 static NEXT_SESSION: AtomicU64 = AtomicU64::new(1);
 const KERNEL_SIGSET_BYTES: usize = 8;
