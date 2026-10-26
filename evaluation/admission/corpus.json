@@ -6045,7 +6045,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 351
+        "tests": 355
       }
     },
     "workspace_tests": {
@@ -6387,7 +6387,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 351
+        "tests": 355
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,

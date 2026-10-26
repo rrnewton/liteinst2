@@ -36,6 +36,37 @@ The complete maps parser has a 64 KiB/512-row bound. Visible overlapping
 backing aliases refuse, including read-only aliases; pathname equality alone
 does not establish backing identity.
 
+File metadata and VMA metadata are distinct kernel ABI projections. The owner
+opens the held task's actual procfs executable descriptor, retains its regular
+file identity, and observes its VMA identity through a temporary one-page
+`PROT_NONE`, private tracer mapping at offset zero. The probe is never accessed
+or executed. Its complete bounded maps observation must contain the exact
+allocated interval, `---p` permissions, zero offset and a nonzero inode; a
+merged, split or ambiguous interval refuses. The owner compares that complete
+device/inode tuple with the child's executable-entry mapping and rechecks both
+identity projections after the resolver. There is no device-number exception,
+pathname substitution or inode-only comparison. The probe's page and metadata
+are reserved before the original exec effect; cleanup must unmap the exact
+interval before closing its descriptor or reporting a successful certificate.
+An unproved emergency descriptor close or failed unmap aborts the tracer
+process; it cannot become a successful source result. The native failure
+controls must distinguish this fail-stop policy from ordinary source refusal.
+
+This identity observation relies on the authenticated fresh ELF exec and entry
+roles before the first original instruction. A VMA tuple is not a globally
+unique file identifier: main/interpreter collisions and visible overlapping
+aliases still refuse, and hidden backing aliases remain outside the existing
+unsafe caller contract. The observation grants no arbitrary post-loader module
+discovery authority.
+
+The distinction follows Linux v7.1.3's
+[VMA reporting](https://github.com/gregkh/linux/blob/v7.1.3/fs/proc/task_mmu.c),
+[file-user inode selection](https://github.com/gregkh/linux/blob/v7.1.3/include/linux/fs.h),
+[filesystem stat projection](https://github.com/gregkh/linux/blob/v7.1.3/fs/overlayfs/inode.c)
+and [backing-file mapping](https://github.com/gregkh/linux/blob/v7.1.3/fs/backing-file.c).
+This source argument does not establish any host's mount configuration or
+replace native qualification of the descriptor/mapping/child relation.
+
 The source resolver receives immutable owner-captured bytes and returns only
 complete legal instruction heads. The owner reauthenticates the exact held
 stop, full state, maps, backing identity and bytes after the callback. No

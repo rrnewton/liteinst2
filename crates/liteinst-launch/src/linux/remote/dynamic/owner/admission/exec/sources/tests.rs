@@ -491,6 +491,11 @@ fn exec_source_image_binding_rejects_short_bytes_stale_ids_and_neighbor_changes(
         until: Instant::now(),
         exit_ordinal: 2,
         executable: f.executable,
+        opened: backing::DescriptorIdentity {
+            file: f.executable,
+            mode: libc::S_IFREG | 0o555,
+            length: 8192,
+        },
         rows: moved,
         images: Arc::from(vec![make()]),
     };

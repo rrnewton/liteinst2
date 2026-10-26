@@ -42,7 +42,7 @@ FAILURE_NAMES = (
 FAILURE_ROWS = [{"cohort": "b3_exec_failure", "harness": fixtures.UNIT,
                  "test": fixtures.EXEC_FAILURE_PREFIX + name} for name in FAILURE_NAMES]
 # Source-derived additive cohorts. Every count is bound to its exact file below.
-UNIT_INCREMENT = 73
+UNIT_INCREMENT = 77
 FIELDS = {"cohort", "harness", "test", "status", "test_result",
           "command_succeeded", "qualified_run"}
 
@@ -359,6 +359,7 @@ class ExecFixtureTests(unittest.TestCase):
             "owner/admission/census/exec/tests.rs": 11,
             "owner/admission/exec/inputs/tests.rs": 12,
             "owner/admission/exec/sources/tests.rs": 8,
+            "owner/admission/exec/sources/backing/tests.rs": 4,
             "owner/exec_journal/tests.rs": 13,
             "owner/selected/exec/tests.rs": 2,
             "owner/admission/exec/seal/tests.rs": 3,

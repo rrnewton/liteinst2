@@ -14,13 +14,14 @@ use std::alloc::Layout;
 use std::fs::{File, OpenOptions};
 use std::io::Read;
 use std::os::fd::{AsRawFd, FromRawFd};
-use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
+use std::os::unix::fs::OpenOptionsExt;
 use std::sync::Arc;
 
 const MAP_BYTES: usize = 64 * 1024;
 const MAP_ROWS: usize = 512;
 const PAGE: u64 = 4096;
 
+mod backing;
 #[cfg(test)]
 mod tests;
 
@@ -88,6 +89,7 @@ pub(super) struct CapturedExecSources {
     until: Instant,
     exit_ordinal: u8,
     executable: FileIdentity,
+    opened: backing::DescriptorIdentity,
     rows: Vec<SourceRow>,
     images: Arc<[DynamicSourceImage]>,
 }
@@ -159,7 +161,9 @@ impl PreparedExecSources {
         // Proc query strings and complete scalar/descriptor request storage.
         checked_add(
             bytes,
-            256 + size_of::<libc::statfs>() + size_of::<FileIdentity>(),
+            256 + size_of::<libc::statfs>()
+                + size_of::<FileIdentity>()
+                + backing::temporary_bytes(),
         )
     }
 
@@ -237,7 +241,9 @@ impl PreparedExecSources {
             return Err(refused("exec source request identity differs"));
         }
         current(context, boot)?;
-        let executable = executable_object(context)?;
+        // This scratch is not borrowed by the journal or source parser here.
+        let object = backing::observe(context, &mut self.maps)?;
+        let executable = object.vma;
         let entry = match &transition.exec_event().kind {
             DynamicEventKind::ExecReplaced { previous, evidence }
                 if *previous == transition.previous() =>
@@ -352,7 +358,8 @@ impl PreparedExecSources {
             }
             Ok::<_, GateError>(())
         })??;
-        if executable_object(context)? != executable {
+        // All child-map borrows above have ended; the probe wipes/reuses scratch.
+        if backing::observe(context, &mut self.maps)? != object {
             return Err(refused("exec executable object changed during capture"));
         }
         current(context, boot)?;
@@ -368,6 +375,7 @@ impl PreparedExecSources {
             until: context.until,
             exit_ordinal,
             executable,
+            opened: object.opened,
             rows: std::mem::take(&mut self.rows),
             images: Arc::from(std::mem::take(&mut self.images)),
         })
@@ -424,7 +432,12 @@ impl CapturedExecSources {
             return Err(refused("exec source receipt no longer binds the capture"));
         }
         current(context, boot)?;
-        if executable_object(context)? != self.executable {
+        if backing::observe(context, &mut scratch.maps)?
+            != (backing::ExecutableIdentity {
+                opened: self.opened,
+                vma: self.executable,
+            })
+        {
             return Err(refused("exec source executable object identity differs"));
         }
         let len = read_maps_into(context, &mut scratch.maps)?;
@@ -501,7 +514,12 @@ impl CapturedExecSources {
             }
             Ok::<_, GateError>(())
         })??;
-        if executable_object(context)? != self.executable {
+        if backing::observe(context, &mut scratch.maps)?
+            != (backing::ExecutableIdentity {
+                opened: self.opened,
+                vma: self.executable,
+            })
+        {
             return Err(refused(
                 "exec source executable object changed during recheck",
             ));
@@ -563,42 +581,6 @@ fn proc_directory(context: &ExecSourceContext<'_>) -> Result<File, GateError> {
         .owner
         .time_left(context.until, "exec source proc directory")?;
     Ok(file)
-}
-
-fn executable_object(context: &ExecSourceContext<'_>) -> Result<FileIdentity, GateError> {
-    let directory = proc_directory(context)?;
-    // Follow proc's actual exe object, not a readlink pathname. The task/pin
-    // remains held; fstatfs applies to directory, not the executable filesystem.
-    // SAFETY: fixed NUL-terminated component and owned directory descriptor.
-    let fd = unsafe {
-        libc::openat(
-            directory.as_raw_fd(),
-            c"exe".as_ptr(),
-            libc::O_PATH | libc::O_CLOEXEC,
-        )
-    };
-    if fd < 0 {
-        return Err(system("open actual exec source object").into());
-    }
-    // SAFETY: this is the successful new descriptor's sole owner.
-    let file = unsafe { File::from_raw_fd(fd) };
-    let stat = file
-        .metadata()
-        .map_err(|error| io_error("stat actual exec source object", error))?;
-    if !stat.is_file() || stat.ino() == 0 {
-        return Err(refused(
-            "exec source object is not an identified regular file",
-        ));
-    }
-    let identity = FileIdentity {
-        major: libc::major(stat.dev()),
-        minor: libc::minor(stat.dev()),
-        inode: stat.ino(),
-    };
-    context
-        .owner
-        .time_left(context.until, "exec source object authentication")?;
-    Ok(identity)
 }
 
 fn read_maps_into(context: &ExecSourceContext<'_>, storage: &mut [u8]) -> Result<usize, GateError> {
@@ -862,14 +844,6 @@ fn derive_rows(
         || main.inode == 0
         || file_identity(main) != geometry.executable
     {
-        #[cfg(test)]
-        eprintln!(
-            "exec backing mismatch: map={:?}, executable={:?}, permissions={:?}, entry={:#x}",
-            file_identity(main),
-            geometry.executable,
-            main.permissions.bytes(),
-            geometry.entry.executable_entry,
-        );
         return Err(refused(
             "exec main entry is not the actual executable object",
         ));
