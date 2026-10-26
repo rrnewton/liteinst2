@@ -201,6 +201,13 @@ pub(super) enum OriginKind {
     },
     /// Signal frames, nonlocal buffers and other unqualified persistent facts.
     /// Equal addresses/kinds do not merge their independent origin identities.
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "unqualified persistent origins remain an explicit refused class; native import is not enabled"
+        )
+    )]
     UnknownPersistent {
         kind: ResumeKind,
     },
@@ -414,12 +421,15 @@ impl CompletedKernel {
         })
     }
 
+    #[cfg(test)]
     pub(super) fn invocation(&self) -> ExecutionId {
         self.invocation
     }
+    #[cfg(test)]
     pub(super) fn parent_exit(&self) -> &ObservedStop {
         &self.parent_exit
     }
+    #[cfg(test)]
     pub(super) fn newborn(&self) -> &ObservedStop {
         &self.newborn
     }
@@ -451,6 +461,7 @@ pub(super) struct OwnerConsumption {
 /// A terminal wait is not a held stop. The owner must authenticate the actual
 /// wait and the retained incarnation's pidfd poll; these are recorded facts,
 /// not a numeric PID reacquisition or a native physical-reap capability.
+#[cfg(test)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct ObservedTerminal {
     pub(super) session: u64,
@@ -461,12 +472,14 @@ pub(super) struct ObservedTerminal {
     pub(super) pidfd_events: i16,
 }
 
+#[cfg(test)]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct OwnerTerminal {
     before: ObservedStop,
     terminal: ObservedTerminal,
 }
 
+#[cfg(test)]
 impl OwnerTerminal {
     pub(super) fn from_owner(
         before: ObservedStop,
@@ -659,6 +672,8 @@ pub(super) enum HistoryRecord {
         origin: OriginId,
         evidence: OwnerConsumption,
     },
+    // Model-only until physical terminal evidence is wired into the dispatcher.
+    #[cfg(test)]
     Terminal {
         origin: OriginId,
         evidence: OwnerTerminal,
@@ -1011,6 +1026,7 @@ impl ResumeCensus {
 
     /// Physical task removal retires only its register continuation. No saved
     /// memory context or potential CALL return is removed, even at the same PC.
+    #[cfg(test)]
     pub(super) fn retire_terminal(
         &mut self,
         token: Reservation,

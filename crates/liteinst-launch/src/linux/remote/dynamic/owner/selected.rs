@@ -637,7 +637,7 @@ fn run_syscall(
             DynamicEventKind::Newborn { .. }
                 if number == libc::SYS_clone as u64 && event.tid != tid =>
             {
-                if newborn_events.len() >= 1 {
+                if !newborn_events.is_empty() {
                     return Err(LaunchError::Invalid(
                         "native selected clone exceeded newborn bound",
                     ));

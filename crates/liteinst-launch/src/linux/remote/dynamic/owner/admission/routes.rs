@@ -236,6 +236,36 @@ impl<'a, 'owner> HeldRoutes<'a, 'owner> {
             ));
         }
         for requirement in plan.resume_requirements() {
+            use crate::trap_coverage::pending::ResumeRequirementSource;
+            let source_matches = match requirement.source() {
+                ResumeRequirementSource::Report {
+                    report_index,
+                    obligation_index,
+                } => {
+                    plan.reports()
+                        .get(report_index)
+                        .filter(|report| {
+                            report.snapshot() == plan.snapshot()
+                                && report.entries() == plan.entries()
+                                && report.policy() == plan.policy()
+                        })
+                        .and_then(|report| report.obligations().get(obligation_index))
+                        == Some(&liteinst_admission::scan::Obligation::SavedResume(
+                            requirement.address(),
+                        ))
+                }
+                ResumeRequirementSource::Dependency { index, range } => {
+                    plan.dependencies().get(index) == Some(&range)
+                        && range.contains(requirement.address())
+                }
+            };
+            if !source_matches
+                || plan.entries().resumes().get(&requirement.address()) != Some(requirement.kinds())
+            {
+                return Err(GateError::Refused(
+                    "dynamic saved-resume requirement lost its original source",
+                ));
+            }
             for &kind in requirement.kinds() {
                 let origins = census
                     .active()
@@ -263,6 +293,13 @@ impl<'a, 'owner> HeldRoutes<'a, 'owner> {
         }
         for requirement in plan.call_requirements() {
             let call = requirement.obligation();
+            if !plan.dependencies().contains(&requirement.dependency())
+                || !requirement.dependency().contains(call.return_pc)
+            {
+                return Err(GateError::Refused(
+                    "dynamic CALL requirement lost its original dependency",
+                ));
+            }
             let (original, route) =
                 whole_route(domain, call.return_pc, &final_executable, &final_guards)?;
             routes.push(ResolvedRoute {
@@ -340,7 +377,7 @@ impl<'a, 'owner> HeldRoutes<'a, 'owner> {
                 ));
             }
         }
-        for (&page, _) in &domain.pages {
+        for &page in domain.pages.keys() {
             let mapping = maps
                 .iter()
                 .find(|map| map.start <= page && page + PAGE <= map.end)

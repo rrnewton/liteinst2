@@ -6,10 +6,10 @@ use crate::gate::domain::{
     self as planning, GateOracle, Image, PAGE, PendingAdmission, PendingTrapBackend,
 };
 use crate::trap_coverage::{TrapCoverageBudget, TrapGuard, TrapGuardRole};
+use liteinst_admission::Generation;
 use liteinst_admission::entries::LegalEntrySet;
 use liteinst_admission::returns::CallReturnLedger;
 use liteinst_admission::scan::{Candidate, Policy, Snapshot};
-use liteinst_admission::{AddressRange, Generation};
 use std::collections::{BTreeMap, BTreeSet};
 
 pub(super) struct Domain {
