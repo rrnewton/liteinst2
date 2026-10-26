@@ -2,7 +2,7 @@
 //! unrelated libtest cases from the tracer mm, not the real public API threads.
 //! A child result and a separately owned post-body receipt are both mandatory.
 use std::fs::File;
-use std::io;
+use std::io::{self, Write};
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::os::unix::fs::{FileExt, MetadataExt};
 use std::os::unix::process::CommandExt;
@@ -378,7 +378,9 @@ impl Drop for ChildOwner {
         // A direct-child reap alone is not proof that its applications/broker
         // were cleaned. Without the complete body receipt the validation
         // command must fail-stop; its outer supervisor retains subtree cleanup.
-        eprintln!(
+        // Write directly: libtest's thread-local print capture is lost on abort.
+        let _ = writeln!(
+            io::stderr().lock(),
             "runtime isolation failed closed; direct child reaped={}",
             self.reaped
         );
@@ -487,13 +489,22 @@ fn run_parent(name: &str) {
     })();
     if let Err(error) = outcome {
         // Escaped, bounded diagnostics cannot masquerade as outer libtest rows.
-        eprintln!("runtime isolated case {name:?} failed: {error}");
-        for (label, file) in [("stdout", &stdout), ("stderr", &stderr)] {
-            if let Ok(bytes) = read_bounded(file, OUTPUT_LIMIT) {
-                eprintln!(
-                    "isolated {label} prefix: {:?}",
-                    String::from_utf8_lossy(&bytes[..bytes.len().min(8192)])
-                );
+        // Bypass libtest capture so fail-stop cannot discard the diagnosis.
+        // These bounded escaped bytes stay in the recorder's private log.
+        {
+            let mut diagnostics = io::stderr().lock();
+            let _ = writeln!(
+                diagnostics,
+                "runtime isolated case {name:?} failed: {error}"
+            );
+            for (label, file) in [("stdout", &stdout), ("stderr", &stderr)] {
+                if let Ok(bytes) = read_bounded(file, OUTPUT_LIMIT) {
+                    let _ = writeln!(
+                        diagnostics,
+                        "isolated {label} prefix: {:?}",
+                        String::from_utf8_lossy(&bytes[..bytes.len().min(8192)])
+                    );
+                }
             }
         }
         drop(owner); // Kill/reap attempt then command abort; never a passing test.
