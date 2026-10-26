@@ -6962,6 +6962,6 @@
       "test": "strict_reference_refuses_unknown_heads_bytes_and_scripts_without_execution"
     }
   ],
-  "recorder_tests": 119,
+  "recorder_tests": 192,
   "schema_version": 1
 }

@@ -1,0 +1,199 @@
+{
+  "schema_version": 1,
+  "prefix": "LITEINST_EVALUATION_B2_HOOK_COST:",
+  "all_objects_closed": true,
+  "integer_domain": "u64; bool is never integer",
+  "snapshot": {
+    "pages": {
+      "startup_ns": "u64",
+      "admitted_pages": "u64",
+      "untouched_pages": "u64",
+      "observations": "u64",
+      "covered_candidates": "u64",
+      "collateral_guards": "u64",
+      "collateral_completions": "u64",
+      "first_touch_ns": "array<u64> cumulative publication intervals, not exclusive timing"
+    },
+    "selected": {
+      "native_completions": "u64",
+      "scripted_completions": "u64",
+      "provider_faults": "u64",
+      "native_signals": "u64",
+      "refusals": "u64",
+      "callbacks": "array<u64> length7, CASE-INVENTORY class_order"
+    },
+    "oracle": {
+      "preparation": {
+        "inspections": "u64",
+        "hits": "u64",
+        "runtime_scans": "u64",
+        "no_entry": "u64",
+        "stale": "u64",
+        "corrupt": "u64",
+        "refused": "u64",
+        "decoded_starts": "u64",
+        "lookup_elapsed_ns": "u64",
+        "fresh_scan_elapsed_ns": "u64",
+        "store_elapsed_ns": "u64",
+        "saturated": "bool"
+      },
+      "demand": {
+        "inspections": "u64",
+        "hits": "u64",
+        "runtime_scans": "u64",
+        "no_entry": "u64",
+        "stale": "u64",
+        "corrupt": "u64",
+        "refused": "u64",
+        "decoded_starts": "u64",
+        "lookup_elapsed_ns": "u64",
+        "fresh_scan_elapsed_ns": "u64",
+        "store_elapsed_ns": "u64",
+        "saturated": "bool"
+      }
+    },
+    "dynamic": {
+      "nullable": "null only for static_trap; object for dynamic_page",
+      "fields": {
+        "resource_scan_decoded_starts": "u64",
+        "retained_origins": "u64",
+        "continuation_history_records": "u64",
+        "retained_call_obligations": "u64",
+        "charged_source_bytes": "u64",
+        "retained_source_bytes": "u64",
+        "bootstrap_xstate_bytes": "u64",
+        "fetch_faults": "u64",
+        "guard_stops": "u64",
+        "generation_changes": "u64",
+        "oldest_call_generation": "null|u64"
+      }
+    }
+  },
+  "row_fields": {
+    "ordinal": "u64 catalog ordinal",
+    "class": "catalog class",
+    "site_offset": "u64 catalog relative image offset",
+    "encoding_hex": "catalog encoding",
+    "script_id": "catalog relative script id",
+    "completion_ns": "u64",
+    "before_provider_ns": "u64",
+    "checked_provider_ns": "u64",
+    "after_provider_ns": "u64",
+    "validation_ns": "u64",
+    "metrics_before": "Snapshot",
+    "metrics_after": "Snapshot"
+  },
+  "kinds": {
+    "calibration": {
+      "schema_version": "integer1",
+      "kind": "row kind literal",
+      "clock": "std_instant",
+      "monotonic_resolution_ns": "positive u64",
+      "subtracted": "false",
+      "samples_ns": "array<u64> length1000"
+    },
+    "session": {
+      "schema_version": "integer1",
+      "kind": "row kind literal",
+      "fixture": "catalog fixture id",
+      "phase": "warmup|measured",
+      "pair_index": "u64 0..64",
+      "round": "u64 phase-local 0..2 or 0..9",
+      "order_index": "u64 0..1",
+      "lane": "static_trap|dynamic_page",
+      "covered": "catalog bool",
+      "raw_reference_completed": "true",
+      "callbacks": "u64 catalog row count",
+      "collateral_completions": "u64 catalog count",
+      "launch_total_ns": "u64",
+      "validation_ns": "u64",
+      "cleanup_ns": "u64",
+      "completed": "true",
+      "cleanup": "true"
+    },
+    "completion": {
+      "schema_version": "integer1",
+      "kind": "row kind literal",
+      "fixture": "catalog fixture id",
+      "phase": "warmup|measured",
+      "pair_index": "u64 0..64",
+      "round": "u64 phase-local 0..2 or 0..9",
+      "order_index": "u64 0..1",
+      "lane": "static_trap|dynamic_page",
+      "ordinal": "u64 catalog ordinal",
+      "class": "catalog class",
+      "site_offset": "u64 catalog relative image offset",
+      "encoding_hex": "catalog encoding",
+      "script_id": "catalog relative script id",
+      "completion_ns": "u64",
+      "before_provider_ns": "u64",
+      "checked_provider_ns": "u64",
+      "after_provider_ns": "u64",
+      "validation_ns": "u64",
+      "metrics_before": "Snapshot",
+      "metrics_after": "Snapshot",
+      "completed": "integer1",
+      "cleanup": "true"
+    },
+    "failure": {
+      "schema_version": "integer1",
+      "kind": "row kind literal",
+      "fixture": "null|catalog fixture id",
+      "phase": "null|warmup|measured",
+      "pair_index": "null|u64 0..64",
+      "round": "null|u64 phase-local 0..2 or 0..9",
+      "order_index": "null|u64 0..1",
+      "lane": "null|static_trap|dynamic_page",
+      "stage": "arguments|calibration|fixture|raw_reference|launch|validation|completion|cleanup|agreement|output|run_validation",
+      "ordinal": "null|u64 catalog ordinal",
+      "completion_ns": "null|u64",
+      "before_provider_ns": "null|u64",
+      "checked_provider_ns": "null|u64",
+      "after_provider_ns": "null|u64",
+      "partial_session": {
+        "nullable": true,
+        "fields": {
+          "covered": "catalog bool",
+          "launch_total_ns": "u64",
+          "validation_ns": "u64",
+          "cleanup_ns": "null|u64"
+        }
+      },
+      "partial_rows": "array<RowFields> length0..4, validated prefix observations only; never qualified by this record",
+      "cleanup": "bool; proof for active reference/session only",
+      "emitted_sessions": "u64",
+      "emitted_completions": "u64",
+      "qualified": "false"
+    },
+    "run_complete": {
+      "schema_version": "integer1",
+      "kind": "row kind literal",
+      "pairs": 65,
+      "raw_references": 65,
+      "production_sessions": 130,
+      "selected_completions": 442,
+      "warmup_completions": 102,
+      "measured_completions": 340,
+      "collateral_completions": 26,
+      "semantic_mismatches": 0,
+      "refusals": 0,
+      "fallbacks": 0,
+      "cleanup": true
+    }
+  },
+  "ordering": [
+    "one calibration",
+    "fixture-major catalog pairs: session order0 then its exact completion ordinals, session order1 then its exact completion ordinals",
+    "one run_complete only after all paired equality/count/physical-cleanup checks",
+    "on failure: at most one failure row then nonzero command exit; preserve all prior observed rows unqualified"
+  ],
+  "invariants": [
+    "completion_ns equals exact sum of before_provider_ns+checked_provider_ns+after_provider_ns",
+    "metrics are raw before/after snapshots; admitted_pages and untouched_pages may decrease",
+    "first_touch_ns is cumulative and prior values are retained; never subtract overlapping intervals from wall latency",
+    "session emission follows own physical cleanup; pair and whole-run qualification still pending",
+    "partial_rows are retained observations, not qualified completed rows; missing rows are not_observed, never inferred unexecuted",
+    "no counter saturation/cache hits/preparation or selected faults/signals/refusals in qualified cohort",
+    "all stdout values are fixed IDs, relative offsets, booleans, counters and durations; no native state/addresses/PIDs/paths/host identifiers"
+  ]
+}
