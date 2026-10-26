@@ -145,7 +145,7 @@ impl Executable {
             let memory = word(&bytes, p + 40);
             match kind {
                 1 => {
-                    assert!(matches!(flags, 4 | 5 | 6));
+                    assert!(matches!(flags, 4..=6));
                     assert!(len > 0 && len == memory, "no anonymous BSS fixture pages");
                     assert_eq!(address % 4096, 0);
                     assert_eq!(offset % 4096, 0);
