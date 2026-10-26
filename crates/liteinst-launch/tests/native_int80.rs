@@ -215,6 +215,7 @@ impl Fixture {
                 self.aliases(),
                 provider,
                 TIMEOUT,
+                liteinst_launch::trap_coverage::TrapCoverageBudget::default(),
             )
             .unwrap()
         }
