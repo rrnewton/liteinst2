@@ -1,0 +1,2601 @@
+[
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/e9-common-app/build_inventory.py",
+        "--raw",
+        "${RAW_OLD}",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--inputs",
+        "${BUILD_INPUTS}/inputs.json",
+        "--inputs-sha256",
+        "957fab84e46b91e9a07cf1c1e80a456e66ac46265c0631095b81be59f16e4e51"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "inner_limits_unchanged": true,
+      "parent_wait": "blocking wait on the one recipe child; fixed finite stage waits remain in the reviewed recipe",
+      "recipe_sha256": "01a500aa807b131c94d158efb95a625eb777b11846013cd14fbddf33f63ee1b9",
+      "source_revision": "8ff87a0a14c9348610c843063516c79190f6dede"
+    },
+    "command_sha256": "4bdb151d39c60a00d03868f654c2495f4b6a1975de571fc14fc72ce6cb8d0f4a",
+    "kind": "launcher",
+    "result": {
+      "exit": 0,
+      "operational_seconds": 385.40944138215855,
+      "parent_wait_returned": true,
+      "pid": 1625777,
+      "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "d02e82172561f8f6640e9e7d9066b41caecdfe915b846124ec0b5bea6e6f19aa"
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/required-gates.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW_OLD}/required/gates"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_OLD}/required/tmp"
+      },
+      "name": "required",
+      "outer_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/required-gates.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW_OLD}/required/gates"
+      ],
+      "outer_env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_OLD}/required/tmp"
+      },
+      "parent_timeout_seconds": 1000
+    },
+    "kind": "stage",
+    "name": "required",
+    "receipt": null
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "build",
+        "-p",
+        "liteinst2",
+        "-p",
+        "liteinst-rewrite",
+        "--bin",
+        "elf-exec-oracle",
+        "--bin",
+        "liteinst-rewrite",
+        "--offline",
+        "--locked",
+        "--message-format=json"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_OLD}/native-compile/tmp"
+      },
+      "name": "native-compile",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_OLD}/native-compile/request.json",
+        "--receipt",
+        "${RAW_OLD}/native-compile/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 115,
+      "request": {
+        "argv": [
+          "${TOOLCHAIN}/bin/cargo",
+          "build",
+          "-p",
+          "liteinst2",
+          "-p",
+          "liteinst-rewrite",
+          "--bin",
+          "elf-exec-oracle",
+          "--bin",
+          "liteinst-rewrite",
+          "--offline",
+          "--locked",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${RAW_OLD}/native-compile/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${RAW_OLD}/native-compile/stderr.txt",
+        "stdout": "${RAW_OLD}/native-compile/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "kind": "stage",
+    "name": "native-compile",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.16447300114668906,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "593689aa20250f0c9670d7a178498cd398f85f23b260c2c82476a9778288a746",
+      "stderr_sha256": "736e2582f563605dd272e5fb977840b0c0767377d27b6940c440caf75eec7157",
+      "stdout_sha256": "c78f95fcd8e1df840693ac9c4aedd56dc9eb8d9e138a8d99ad7b0300cea37db2",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "build",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "common_sites",
+        "--offline",
+        "--locked",
+        "--message-format=json"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_OLD}/common-sites-compile/tmp"
+      },
+      "name": "common-sites-compile",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_OLD}/common-sites-compile/request.json",
+        "--receipt",
+        "${RAW_OLD}/common-sites-compile/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 115,
+      "request": {
+        "argv": [
+          "${TOOLCHAIN}/bin/cargo",
+          "build",
+          "-p",
+          "liteinst-rewrite",
+          "--example",
+          "common_sites",
+          "--offline",
+          "--locked",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${RAW_OLD}/common-sites-compile/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${RAW_OLD}/common-sites-compile/stderr.txt",
+        "stdout": "${RAW_OLD}/common-sites-compile/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "kind": "stage",
+    "name": "common-sites-compile",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.8142809718847275,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "11bbe2c24740ad1c8eece69b74ecb9ec68e49d43b19e55d0ddd9c3569d063947",
+      "stderr_sha256": "4d17b42cd88e5f670eacd78d870448a355a4fb3c9812f5b0ad0c64ebc1d91392",
+      "stdout_sha256": "b86c16c955765404cf586bace85bc80b4a09186d1eec2b9793a87fd30f822397",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "${RAW_OLD}/artifacts/native-compile/product-39",
+        "target"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_OLD}/target/tmp"
+      },
+      "name": "target",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_OLD}/target/request.json",
+        "--receipt",
+        "${RAW_OLD}/target/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_OLD}/artifacts/native-compile/product-39",
+          "target"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_OLD}/target/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_OLD}/target/stderr.txt",
+        "stdout": "${RAW_OLD}/target/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "target",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.10510778380557895,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "4d118061cd0e68f0a1bf2c78bb60cb769b2ed9b41d96dd074787685a3c128e38",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "6ac466f4721cc43cbecd450cd3f37cb75cfc8d372e22f1295ae6d2ba2182788c",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-unstripped",
+        "${RAW_OLD}/policies/unstripped.txt",
+        "${RAW_OLD}/target/stdout.txt",
+        "jump-site",
+        "null",
+        "${RAW_OLD}/inventories/null-jump-site-unstripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_OLD}/inventory-null-jump-site-unstripped/tmp"
+      },
+      "name": "inventory-null-jump-site-unstripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_OLD}/inventory-null-jump-site-unstripped/request.json",
+        "--receipt",
+        "${RAW_OLD}/inventory-null-jump-site-unstripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-unstripped",
+          "${RAW_OLD}/policies/unstripped.txt",
+          "${RAW_OLD}/target/stdout.txt",
+          "jump-site",
+          "null",
+          "${RAW_OLD}/inventories/null-jump-site-unstripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_OLD}/inventory-null-jump-site-unstripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_OLD}/inventory-null-jump-site-unstripped/stderr.txt",
+        "stdout": "${RAW_OLD}/inventory-null-jump-site-unstripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-null-jump-site-unstripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11680566798895597,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "4b05c768e321dc7456d80f6b0b89df9cdaf407facc069c915005aaefc6900783",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "662b3ff3bc98e29fe202061ac10dd88e1ed7b2456e111aef8eea1f4326d84279",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-stripped",
+        "${RAW_OLD}/policies/stripped.txt",
+        "${RAW_OLD}/target/stdout.txt",
+        "jump-site",
+        "null",
+        "${RAW_OLD}/inventories/null-jump-site-stripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_OLD}/inventory-null-jump-site-stripped/tmp"
+      },
+      "name": "inventory-null-jump-site-stripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_OLD}/inventory-null-jump-site-stripped/request.json",
+        "--receipt",
+        "${RAW_OLD}/inventory-null-jump-site-stripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-stripped",
+          "${RAW_OLD}/policies/stripped.txt",
+          "${RAW_OLD}/target/stdout.txt",
+          "jump-site",
+          "null",
+          "${RAW_OLD}/inventories/null-jump-site-stripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_OLD}/inventory-null-jump-site-stripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_OLD}/inventory-null-jump-site-stripped/stderr.txt",
+        "stdout": "${RAW_OLD}/inventory-null-jump-site-stripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-null-jump-site-stripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11417828500270844,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "fbb4dc9af30c89746bcfa3a5cb278cba17253102126580e6aca54d00d333424f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "662b3ff3bc98e29fe202061ac10dd88e1ed7b2456e111aef8eea1f4326d84279",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-unstripped",
+        "${RAW_OLD}/policies/unstripped.txt",
+        "${RAW_OLD}/target/stdout.txt",
+        "heap-write",
+        "null",
+        "${RAW_OLD}/inventories/null-heap-write-unstripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_OLD}/inventory-null-heap-write-unstripped/tmp"
+      },
+      "name": "inventory-null-heap-write-unstripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_OLD}/inventory-null-heap-write-unstripped/request.json",
+        "--receipt",
+        "${RAW_OLD}/inventory-null-heap-write-unstripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-unstripped",
+          "${RAW_OLD}/policies/unstripped.txt",
+          "${RAW_OLD}/target/stdout.txt",
+          "heap-write",
+          "null",
+          "${RAW_OLD}/inventories/null-heap-write-unstripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_OLD}/inventory-null-heap-write-unstripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_OLD}/inventory-null-heap-write-unstripped/stderr.txt",
+        "stdout": "${RAW_OLD}/inventory-null-heap-write-unstripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-null-heap-write-unstripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11610709014348686,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "21f40d072442642e4f354063ae2a22edd8039c9ca82161e5dc13cadd416a971a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "95abaf0ddb1b757fed8cc9378b7cea809bf9f8e3b515ad6a9264f1bccae8f371",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-stripped",
+        "${RAW_OLD}/policies/stripped.txt",
+        "${RAW_OLD}/target/stdout.txt",
+        "heap-write",
+        "null",
+        "${RAW_OLD}/inventories/null-heap-write-stripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_OLD}/inventory-null-heap-write-stripped/tmp"
+      },
+      "name": "inventory-null-heap-write-stripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_OLD}/inventory-null-heap-write-stripped/request.json",
+        "--receipt",
+        "${RAW_OLD}/inventory-null-heap-write-stripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-stripped",
+          "${RAW_OLD}/policies/stripped.txt",
+          "${RAW_OLD}/target/stdout.txt",
+          "heap-write",
+          "null",
+          "${RAW_OLD}/inventories/null-heap-write-stripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_OLD}/inventory-null-heap-write-stripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_OLD}/inventory-null-heap-write-stripped/stderr.txt",
+        "stdout": "${RAW_OLD}/inventory-null-heap-write-stripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-null-heap-write-stripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11577555094845593,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "4ee74160d6050121c2d2122932e8006b8ffb1dbcf3183dcbfcc2d993ee020029",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "95abaf0ddb1b757fed8cc9378b7cea809bf9f8e3b515ad6a9264f1bccae8f371",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-unstripped",
+        "${RAW_OLD}/policies/unstripped.txt",
+        "${RAW_OLD}/target/stdout.txt",
+        "jump-site",
+        "journal",
+        "${RAW_OLD}/inventories/journal-jump-site-unstripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_OLD}/inventory-journal-jump-site-unstripped/tmp"
+      },
+      "name": "inventory-journal-jump-site-unstripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_OLD}/inventory-journal-jump-site-unstripped/request.json",
+        "--receipt",
+        "${RAW_OLD}/inventory-journal-jump-site-unstripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-unstripped",
+          "${RAW_OLD}/policies/unstripped.txt",
+          "${RAW_OLD}/target/stdout.txt",
+          "jump-site",
+          "journal",
+          "${RAW_OLD}/inventories/journal-jump-site-unstripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_OLD}/inventory-journal-jump-site-unstripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_OLD}/inventory-journal-jump-site-unstripped/stderr.txt",
+        "stdout": "${RAW_OLD}/inventory-journal-jump-site-unstripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-journal-jump-site-unstripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11650420492514968,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "ee77b9a7cf27ebb0a712f3532ae3bae35b8a543beb0a887f072ca9a43252cc7a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "5702acc00f23a651996e8c50d6457807a5ea42f6903567b72ec79e67ed427825",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-stripped",
+        "${RAW_OLD}/policies/stripped.txt",
+        "${RAW_OLD}/target/stdout.txt",
+        "jump-site",
+        "journal",
+        "${RAW_OLD}/inventories/journal-jump-site-stripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_OLD}/inventory-journal-jump-site-stripped/tmp"
+      },
+      "name": "inventory-journal-jump-site-stripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_OLD}/inventory-journal-jump-site-stripped/request.json",
+        "--receipt",
+        "${RAW_OLD}/inventory-journal-jump-site-stripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-stripped",
+          "${RAW_OLD}/policies/stripped.txt",
+          "${RAW_OLD}/target/stdout.txt",
+          "jump-site",
+          "journal",
+          "${RAW_OLD}/inventories/journal-jump-site-stripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_OLD}/inventory-journal-jump-site-stripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_OLD}/inventory-journal-jump-site-stripped/stderr.txt",
+        "stdout": "${RAW_OLD}/inventory-journal-jump-site-stripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-journal-jump-site-stripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.1178190081845969,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "4f9d3360b84bafe3227cd4575c88a2ef91f1ef9ca1c427e9b7bee1c58da18c66",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "5702acc00f23a651996e8c50d6457807a5ea42f6903567b72ec79e67ed427825",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-unstripped",
+        "${RAW_OLD}/policies/unstripped.txt",
+        "${RAW_OLD}/target/stdout.txt",
+        "heap-write",
+        "journal",
+        "${RAW_OLD}/inventories/journal-heap-write-unstripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_OLD}/inventory-journal-heap-write-unstripped/tmp"
+      },
+      "name": "inventory-journal-heap-write-unstripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_OLD}/inventory-journal-heap-write-unstripped/request.json",
+        "--receipt",
+        "${RAW_OLD}/inventory-journal-heap-write-unstripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-unstripped",
+          "${RAW_OLD}/policies/unstripped.txt",
+          "${RAW_OLD}/target/stdout.txt",
+          "heap-write",
+          "journal",
+          "${RAW_OLD}/inventories/journal-heap-write-unstripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_OLD}/inventory-journal-heap-write-unstripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_OLD}/inventory-journal-heap-write-unstripped/stderr.txt",
+        "stdout": "${RAW_OLD}/inventory-journal-heap-write-unstripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-journal-heap-write-unstripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.1175992691423744,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "2c61c71c4b217df4a94e2407c4f2c2ba19f2f1825c527303863de9ac774b910c",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "9d13439c13b65b82127eef0ac59c13e610f142c8d53696a757fbb8b7b4c75a31",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "command": {
+      "argv": [
+        "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-stripped",
+        "${RAW_OLD}/policies/stripped.txt",
+        "${RAW_OLD}/target/stdout.txt",
+        "heap-write",
+        "journal",
+        "${RAW_OLD}/inventories/journal-heap-write-stripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_OLD}/inventory-journal-heap-write-stripped/tmp"
+      },
+      "name": "inventory-journal-heap-write-stripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_OLD}/inventory-journal-heap-write-stripped/request.json",
+        "--receipt",
+        "${RAW_OLD}/inventory-journal-heap-write-stripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_OLD}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-stripped",
+          "${RAW_OLD}/policies/stripped.txt",
+          "${RAW_OLD}/target/stdout.txt",
+          "heap-write",
+          "journal",
+          "${RAW_OLD}/inventories/journal-heap-write-stripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_OLD}/inventory-journal-heap-write-stripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_OLD}/inventory-journal-heap-write-stripped/stderr.txt",
+        "stdout": "${RAW_OLD}/inventory-journal-heap-write-stripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-journal-heap-write-stripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11584800109267235,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "b3ecb6111e98a62852261a9e258a5fa63887557f366b28d14b7bec42ca1c3b7e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "9d13439c13b65b82127eef0ac59c13e610f142c8d53696a757fbb8b7b4c75a31",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "cwd": "${REPO}",
+    "effective_env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_OLD}/required/gates"
+    },
+    "env_provenance": "Derived from saved parent env plus exact pinned required-gates.py overrides; not a captured /proc environment.",
+    "kind": "required-gate",
+    "name": "fmt",
+    "record": {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "log": "ignored/a3/e9-common-build-8ff87a0-v1/required/gates/fmt.log",
+      "name": "fmt",
+      "seconds": 3.0707993069663644,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start_utc": "2026-10-26T18:19:56.495207+00:00",
+      "timeout_seconds": 180
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "cwd": "${REPO}",
+    "effective_env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_OLD}/required/gates"
+    },
+    "env_provenance": "Derived from saved parent env plus exact pinned required-gates.py overrides; not a captured /proc environment.",
+    "kind": "required-gate",
+    "name": "clippy",
+    "record": {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "log": "ignored/a3/e9-common-build-8ff87a0-v1/required/gates/clippy.log",
+      "name": "clippy",
+      "seconds": 16.248787003802136,
+      "sha256": "010561f5589caf65c49d3d54a871278c9e288905e3de867be30075383c9add88",
+      "start_utc": "2026-10-26T18:19:59.567914+00:00",
+      "timeout_seconds": 180
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "cwd": "${REPO}",
+    "effective_env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_OLD}/required/gates"
+    },
+    "env_provenance": "Derived from saved parent env plus exact pinned required-gates.py overrides; not a captured /proc environment.",
+    "kind": "required-gate",
+    "name": "test",
+    "record": {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit": 0,
+      "log": "ignored/a3/e9-common-build-8ff87a0-v1/required/gates/test.log",
+      "name": "test",
+      "seconds": 350.3142238049768,
+      "sha256": "ca1cc2c595ef868e8cd9d29ce967bce1415ef3f40e23103d6542382005393491",
+      "start_utc": "2026-10-26T18:20:15.819466+00:00",
+      "timeout_seconds": 360
+    }
+  },
+  {
+    "attempt": "historical-8ff",
+    "cwd": "${REPO}",
+    "effective_env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_OLD}/required/gates"
+    },
+    "env_provenance": "Derived from saved parent env plus exact pinned required-gates.py overrides; not a captured /proc environment.",
+    "kind": "required-gate",
+    "name": "check",
+    "record": {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "exit": 0,
+      "log": "ignored/a3/e9-common-build-8ff87a0-v1/required/gates/check.log",
+      "name": "check",
+      "seconds": 10.186912480043247,
+      "sha256": "7d689697109127421500a1cb5d217f2a7cedeacd2dd739c2b2cc4fd39457f094",
+      "start_utc": "2026-10-26T18:26:06.137215+00:00",
+      "timeout_seconds": 180
+    }
+  },
+  {
+    "attempt": "failed-c956",
+    "command": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/e9-common-app/build_inventory.py",
+        "--raw",
+        "${RAW_FAILED}",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--inputs",
+        "${BUILD_INPUTS}/inputs.json",
+        "--inputs-sha256",
+        "957fab84e46b91e9a07cf1c1e80a456e66ac46265c0631095b81be59f16e4e51"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "inner_limits_unchanged": true,
+      "parent_wait": "blocking wait on the one recipe child; fixed finite stage waits remain in the reviewed recipe",
+      "recipe_sha256": "01a500aa807b131c94d158efb95a625eb777b11846013cd14fbddf33f63ee1b9",
+      "source_revision": "c95662fed9cc139d556ad42c80d38d9b24189a6e"
+    },
+    "command_sha256": "7c8144ac374c4d738045946a2650d3ed9bbbfa53392cec950c7cec581a3caf7d",
+    "kind": "launcher",
+    "result": {
+      "exit": 1,
+      "operational_seconds": 6.171184729086235,
+      "parent_wait_returned": true,
+      "pid": 3538947,
+      "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+      "stderr_sha256": "2d9808681a7e249648def993759dea13fe09664150cd245805055fbe28b02e8e",
+      "stdout_sha256": "f8e50387af3a3f548983efdb2578abe7462be46dfe96add84b7ea4e35d656483"
+    }
+  },
+  {
+    "attempt": "failed-c956",
+    "command": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/required-gates.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW_FAILED}/required/gates"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_FAILED}/required/tmp"
+      },
+      "name": "required",
+      "outer_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/required-gates.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW_FAILED}/required/gates"
+      ],
+      "outer_env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_FAILED}/required/tmp"
+      },
+      "parent_timeout_seconds": 1000
+    },
+    "kind": "stage",
+    "name": "required",
+    "receipt": null
+  },
+  {
+    "attempt": "failed-c956",
+    "cwd": "${REPO}",
+    "effective_env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_FAILED}/required/gates"
+    },
+    "env_provenance": "Derived from saved parent env plus exact pinned required-gates.py overrides; not a captured /proc environment.",
+    "kind": "required-gate",
+    "name": "fmt",
+    "record": {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "log": "ignored/a3/e9-common-build-c95662f-v1/required/gates/fmt.log",
+      "name": "fmt",
+      "seconds": 3.4708569701761007,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start_utc": "2026-10-26T19:28:17.230808+00:00",
+      "timeout_seconds": 180
+    }
+  },
+  {
+    "attempt": "failed-c956",
+    "cwd": "${REPO}",
+    "effective_env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_FAILED}/required/gates"
+    },
+    "env_provenance": "Derived from saved parent env plus exact pinned required-gates.py overrides; not a captured /proc environment.",
+    "kind": "required-gate",
+    "name": "clippy",
+    "record": {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 101,
+      "log": "ignored/a3/e9-common-build-c95662f-v1/required/gates/clippy.log",
+      "name": "clippy",
+      "seconds": 1.7678443351760507,
+      "sha256": "0b2f785180c82e2d403d59742de250c0834f4f8bd6f85aad59b60db88486fd35",
+      "start_utc": "2026-10-26T19:28:20.703407+00:00",
+      "timeout_seconds": 180
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/e9-common-app/build_inventory.py",
+        "--raw",
+        "${RAW_CURRENT}",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--inputs",
+        "${BUILD_INPUTS}/inputs.json",
+        "--inputs-sha256",
+        "957fab84e46b91e9a07cf1c1e80a456e66ac46265c0631095b81be59f16e4e51"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "inner_limits_unchanged": true,
+      "parent_wait": "blocking wait on the one recipe child; fixed finite stage waits remain in the reviewed recipe",
+      "recipe_sha256": "01a500aa807b131c94d158efb95a625eb777b11846013cd14fbddf33f63ee1b9",
+      "source_revision": "cbb189d1d17f947c97194842129b66eb68b0531f"
+    },
+    "command_sha256": "fd5ed4c1b288b655abb810900aa8e546ff150e2b771fefb4e2af67ff3835e555",
+    "kind": "launcher",
+    "result": {
+      "exit": 0,
+      "operational_seconds": 352.29253662284464,
+      "parent_wait_returned": true,
+      "pid": 561614,
+      "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "d02e82172561f8f6640e9e7d9066b41caecdfe915b846124ec0b5bea6e6f19aa"
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/required-gates.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW_CURRENT}/required/gates"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_CURRENT}/required/tmp"
+      },
+      "name": "required",
+      "outer_argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/required-gates.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW_CURRENT}/required/gates"
+      ],
+      "outer_env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_CURRENT}/required/tmp"
+      },
+      "parent_timeout_seconds": 1000
+    },
+    "kind": "stage",
+    "name": "required",
+    "receipt": null
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "build",
+        "-p",
+        "liteinst2",
+        "-p",
+        "liteinst-rewrite",
+        "--bin",
+        "elf-exec-oracle",
+        "--bin",
+        "liteinst-rewrite",
+        "--offline",
+        "--locked",
+        "--message-format=json"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_CURRENT}/native-compile/tmp"
+      },
+      "name": "native-compile",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_CURRENT}/native-compile/request.json",
+        "--receipt",
+        "${RAW_CURRENT}/native-compile/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 115,
+      "request": {
+        "argv": [
+          "${TOOLCHAIN}/bin/cargo",
+          "build",
+          "-p",
+          "liteinst2",
+          "-p",
+          "liteinst-rewrite",
+          "--bin",
+          "elf-exec-oracle",
+          "--bin",
+          "liteinst-rewrite",
+          "--offline",
+          "--locked",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${RAW_CURRENT}/native-compile/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${RAW_CURRENT}/native-compile/stderr.txt",
+        "stdout": "${RAW_CURRENT}/native-compile/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "kind": "stage",
+    "name": "native-compile",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.16010316112078726,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "5abb014832dfe837f00b45e8aaf16363768ee38eb4fd2a23e3b43b7f65ea3f14",
+      "stderr_sha256": "02db5a66fa0c60ca8618bd08aac556eac4f3ec863e8630a0d353dba6a0f6e126",
+      "stdout_sha256": "fd04ae9488e403b88c7c3edd25b82ed16b17f8c6dbea26c968b185b1ac49b165",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "build",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "common_sites",
+        "--offline",
+        "--locked",
+        "--message-format=json"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_CURRENT}/common-sites-compile/tmp"
+      },
+      "name": "common-sites-compile",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_CURRENT}/common-sites-compile/request.json",
+        "--receipt",
+        "${RAW_CURRENT}/common-sites-compile/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 115,
+      "request": {
+        "argv": [
+          "${TOOLCHAIN}/bin/cargo",
+          "build",
+          "-p",
+          "liteinst-rewrite",
+          "--example",
+          "common_sites",
+          "--offline",
+          "--locked",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${RAW_CURRENT}/common-sites-compile/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${RAW_CURRENT}/common-sites-compile/stderr.txt",
+        "stdout": "${RAW_CURRENT}/common-sites-compile/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "kind": "stage",
+    "name": "common-sites-compile",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.8666770497802645,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "85ffd8cc030c14061994a194b1d5b623d3d0f31ff16d73f26788ca398e6d8c9c",
+      "stderr_sha256": "ddc69bd4827b6412054c41d6ed77b64dc08817ee3f62f9aa00087357470fb39a",
+      "stdout_sha256": "df582aee2cceb0926f07eccf9753705232fa7a38b2458ac07e18c1f6e4079900",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "${RAW_CURRENT}/artifacts/native-compile/product-39",
+        "target"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_CURRENT}/target/tmp"
+      },
+      "name": "target",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_CURRENT}/target/request.json",
+        "--receipt",
+        "${RAW_CURRENT}/target/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_CURRENT}/artifacts/native-compile/product-39",
+          "target"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_CURRENT}/target/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_CURRENT}/target/stderr.txt",
+        "stdout": "${RAW_CURRENT}/target/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "target",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.09883675491437316,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "d6aee78966484d7bc7b7c202b4eb4b674f05d8092a90ce268b4faf8d3346c405",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "6ac466f4721cc43cbecd450cd3f37cb75cfc8d372e22f1295ae6d2ba2182788c",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-unstripped",
+        "${RAW_CURRENT}/policies/unstripped.txt",
+        "${RAW_CURRENT}/target/stdout.txt",
+        "jump-site",
+        "null",
+        "${RAW_CURRENT}/inventories/null-jump-site-unstripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_CURRENT}/inventory-null-jump-site-unstripped/tmp"
+      },
+      "name": "inventory-null-jump-site-unstripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_CURRENT}/inventory-null-jump-site-unstripped/request.json",
+        "--receipt",
+        "${RAW_CURRENT}/inventory-null-jump-site-unstripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-unstripped",
+          "${RAW_CURRENT}/policies/unstripped.txt",
+          "${RAW_CURRENT}/target/stdout.txt",
+          "jump-site",
+          "null",
+          "${RAW_CURRENT}/inventories/null-jump-site-unstripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_CURRENT}/inventory-null-jump-site-unstripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_CURRENT}/inventory-null-jump-site-unstripped/stderr.txt",
+        "stdout": "${RAW_CURRENT}/inventory-null-jump-site-unstripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-null-jump-site-unstripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11160287191160023,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "2064aaa6082c1b87726525e09d6831d7eb5f9212a7f164f274adbca229e22529",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "662b3ff3bc98e29fe202061ac10dd88e1ed7b2456e111aef8eea1f4326d84279",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-stripped",
+        "${RAW_CURRENT}/policies/stripped.txt",
+        "${RAW_CURRENT}/target/stdout.txt",
+        "jump-site",
+        "null",
+        "${RAW_CURRENT}/inventories/null-jump-site-stripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_CURRENT}/inventory-null-jump-site-stripped/tmp"
+      },
+      "name": "inventory-null-jump-site-stripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_CURRENT}/inventory-null-jump-site-stripped/request.json",
+        "--receipt",
+        "${RAW_CURRENT}/inventory-null-jump-site-stripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-stripped",
+          "${RAW_CURRENT}/policies/stripped.txt",
+          "${RAW_CURRENT}/target/stdout.txt",
+          "jump-site",
+          "null",
+          "${RAW_CURRENT}/inventories/null-jump-site-stripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_CURRENT}/inventory-null-jump-site-stripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_CURRENT}/inventory-null-jump-site-stripped/stderr.txt",
+        "stdout": "${RAW_CURRENT}/inventory-null-jump-site-stripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-null-jump-site-stripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11360372602939606,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "d399d4d2d074fc869942c81c3d5a9f37bf9deb55a81580597f1f7cd928b6842a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "662b3ff3bc98e29fe202061ac10dd88e1ed7b2456e111aef8eea1f4326d84279",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-unstripped",
+        "${RAW_CURRENT}/policies/unstripped.txt",
+        "${RAW_CURRENT}/target/stdout.txt",
+        "heap-write",
+        "null",
+        "${RAW_CURRENT}/inventories/null-heap-write-unstripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_CURRENT}/inventory-null-heap-write-unstripped/tmp"
+      },
+      "name": "inventory-null-heap-write-unstripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_CURRENT}/inventory-null-heap-write-unstripped/request.json",
+        "--receipt",
+        "${RAW_CURRENT}/inventory-null-heap-write-unstripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-unstripped",
+          "${RAW_CURRENT}/policies/unstripped.txt",
+          "${RAW_CURRENT}/target/stdout.txt",
+          "heap-write",
+          "null",
+          "${RAW_CURRENT}/inventories/null-heap-write-unstripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_CURRENT}/inventory-null-heap-write-unstripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_CURRENT}/inventory-null-heap-write-unstripped/stderr.txt",
+        "stdout": "${RAW_CURRENT}/inventory-null-heap-write-unstripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-null-heap-write-unstripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.116389679023996,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "f9e696bd3b025b815b929a7da3bf6117a9a9745bc41440c42278ecae2b2ae4fb",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "95abaf0ddb1b757fed8cc9378b7cea809bf9f8e3b515ad6a9264f1bccae8f371",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-stripped",
+        "${RAW_CURRENT}/policies/stripped.txt",
+        "${RAW_CURRENT}/target/stdout.txt",
+        "heap-write",
+        "null",
+        "${RAW_CURRENT}/inventories/null-heap-write-stripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_CURRENT}/inventory-null-heap-write-stripped/tmp"
+      },
+      "name": "inventory-null-heap-write-stripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_CURRENT}/inventory-null-heap-write-stripped/request.json",
+        "--receipt",
+        "${RAW_CURRENT}/inventory-null-heap-write-stripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-stripped",
+          "${RAW_CURRENT}/policies/stripped.txt",
+          "${RAW_CURRENT}/target/stdout.txt",
+          "heap-write",
+          "null",
+          "${RAW_CURRENT}/inventories/null-heap-write-stripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_CURRENT}/inventory-null-heap-write-stripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_CURRENT}/inventory-null-heap-write-stripped/stderr.txt",
+        "stdout": "${RAW_CURRENT}/inventory-null-heap-write-stripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-null-heap-write-stripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11323682614602149,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "0b4b858acfc3cd2a72fc2030b3914a0020587409cea16c25679dde26f7c4186e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "95abaf0ddb1b757fed8cc9378b7cea809bf9f8e3b515ad6a9264f1bccae8f371",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-unstripped",
+        "${RAW_CURRENT}/policies/unstripped.txt",
+        "${RAW_CURRENT}/target/stdout.txt",
+        "jump-site",
+        "journal",
+        "${RAW_CURRENT}/inventories/journal-jump-site-unstripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_CURRENT}/inventory-journal-jump-site-unstripped/tmp"
+      },
+      "name": "inventory-journal-jump-site-unstripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_CURRENT}/inventory-journal-jump-site-unstripped/request.json",
+        "--receipt",
+        "${RAW_CURRENT}/inventory-journal-jump-site-unstripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-unstripped",
+          "${RAW_CURRENT}/policies/unstripped.txt",
+          "${RAW_CURRENT}/target/stdout.txt",
+          "jump-site",
+          "journal",
+          "${RAW_CURRENT}/inventories/journal-jump-site-unstripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_CURRENT}/inventory-journal-jump-site-unstripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_CURRENT}/inventory-journal-jump-site-unstripped/stderr.txt",
+        "stdout": "${RAW_CURRENT}/inventory-journal-jump-site-unstripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-journal-jump-site-unstripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11301102605648339,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "434f47ec1dc6c5fa193556c4e719560fffd988dccdc3154d95de711c7011a78f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "5702acc00f23a651996e8c50d6457807a5ea42f6903567b72ec79e67ed427825",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-stripped",
+        "${RAW_CURRENT}/policies/stripped.txt",
+        "${RAW_CURRENT}/target/stdout.txt",
+        "jump-site",
+        "journal",
+        "${RAW_CURRENT}/inventories/journal-jump-site-stripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_CURRENT}/inventory-journal-jump-site-stripped/tmp"
+      },
+      "name": "inventory-journal-jump-site-stripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_CURRENT}/inventory-journal-jump-site-stripped/request.json",
+        "--receipt",
+        "${RAW_CURRENT}/inventory-journal-jump-site-stripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-stripped",
+          "${RAW_CURRENT}/policies/stripped.txt",
+          "${RAW_CURRENT}/target/stdout.txt",
+          "jump-site",
+          "journal",
+          "${RAW_CURRENT}/inventories/journal-jump-site-stripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_CURRENT}/inventory-journal-jump-site-stripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_CURRENT}/inventory-journal-jump-site-stripped/stderr.txt",
+        "stdout": "${RAW_CURRENT}/inventory-journal-jump-site-stripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-journal-jump-site-stripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11380492802709341,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "e2f90db3b5bbd1bac0e0b145c101fb4da7c9752241b38607298de59f0081f81b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "5702acc00f23a651996e8c50d6457807a5ea42f6903567b72ec79e67ed427825",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-unstripped",
+        "${RAW_CURRENT}/policies/unstripped.txt",
+        "${RAW_CURRENT}/target/stdout.txt",
+        "heap-write",
+        "journal",
+        "${RAW_CURRENT}/inventories/journal-heap-write-unstripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_CURRENT}/inventory-journal-heap-write-unstripped/tmp"
+      },
+      "name": "inventory-journal-heap-write-unstripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_CURRENT}/inventory-journal-heap-write-unstripped/request.json",
+        "--receipt",
+        "${RAW_CURRENT}/inventory-journal-heap-write-unstripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-unstripped",
+          "${RAW_CURRENT}/policies/unstripped.txt",
+          "${RAW_CURRENT}/target/stdout.txt",
+          "heap-write",
+          "journal",
+          "${RAW_CURRENT}/inventories/journal-heap-write-unstripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_CURRENT}/inventory-journal-heap-write-unstripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_CURRENT}/inventory-journal-heap-write-unstripped/stderr.txt",
+        "stdout": "${RAW_CURRENT}/inventory-journal-heap-write-unstripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-journal-heap-write-unstripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11253730487078428,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "0d600c41848c93632a5e20c163a20014c3fe7cca5921fdc3bf0847f094a44009",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "9d13439c13b65b82127eef0ac59c13e610f142c8d53696a757fbb8b7b4c75a31",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "current",
+    "command": {
+      "argv": [
+        "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+        "${PREPARATION}/original-stripped",
+        "${RAW_CURRENT}/policies/stripped.txt",
+        "${RAW_CURRENT}/target/stdout.txt",
+        "heap-write",
+        "journal",
+        "${RAW_CURRENT}/inventories/journal-heap-write-stripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW_CURRENT}/inventory-journal-heap-write-stripped/tmp"
+      },
+      "name": "inventory-journal-heap-write-stripped",
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW_CURRENT}/inventory-journal-heap-write-stripped/request.json",
+        "--receipt",
+        "${RAW_CURRENT}/inventory-journal-heap-write-stripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${RAW_CURRENT}/artifacts/common-sites-compile/product-41",
+          "${PREPARATION}/original-stripped",
+          "${RAW_CURRENT}/policies/stripped.txt",
+          "${RAW_CURRENT}/target/stdout.txt",
+          "heap-write",
+          "journal",
+          "${RAW_CURRENT}/inventories/journal-heap-write-stripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW_CURRENT}/inventory-journal-heap-write-stripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_CURRENT}/inventory-journal-heap-write-stripped/stderr.txt",
+        "stdout": "${RAW_CURRENT}/inventory-journal-heap-write-stripped/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "kind": "stage",
+    "name": "inventory-journal-heap-write-stripped",
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11291349888779223,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "dbb0e41802c17fd0e4ca7913b9fea0f3a99f24051f9fa41950bcae785573f8f1",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "9d13439c13b65b82127eef0ac59c13e610f142c8d53696a757fbb8b7b4c75a31",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  },
+  {
+    "attempt": "current",
+    "cwd": "${REPO}",
+    "effective_env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_CURRENT}/required/gates"
+    },
+    "env_provenance": "Derived from saved parent env plus exact pinned required-gates.py overrides; not a captured /proc environment.",
+    "kind": "required-gate",
+    "name": "fmt",
+    "record": {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "log": "ignored/a3/e9-common-build-cbb189d-v1/required/gates/fmt.log",
+      "name": "fmt",
+      "seconds": 3.4702163441106677,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start_utc": "2026-10-26T21:05:52.929530+00:00",
+      "timeout_seconds": 180
+    }
+  },
+  {
+    "attempt": "current",
+    "cwd": "${REPO}",
+    "effective_env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_CURRENT}/required/gates"
+    },
+    "env_provenance": "Derived from saved parent env plus exact pinned required-gates.py overrides; not a captured /proc environment.",
+    "kind": "required-gate",
+    "name": "clippy",
+    "record": {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "log": "ignored/a3/e9-common-build-cbb189d-v1/required/gates/clippy.log",
+      "name": "clippy",
+      "seconds": 17.860086150001734,
+      "sha256": "a2abd08523f93c461b45975e1310c56cfa6582f64ba249fd46e3eab051895041",
+      "start_utc": "2026-10-26T21:05:56.401618+00:00",
+      "timeout_seconds": 180
+    }
+  },
+  {
+    "attempt": "current",
+    "cwd": "${REPO}",
+    "effective_env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_CURRENT}/required/gates"
+    },
+    "env_provenance": "Derived from saved parent env plus exact pinned required-gates.py overrides; not a captured /proc environment.",
+    "kind": "required-gate",
+    "name": "test",
+    "record": {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit": 0,
+      "log": "ignored/a3/e9-common-build-cbb189d-v1/required/gates/test.log",
+      "name": "test",
+      "seconds": 324.5544912489131,
+      "sha256": "38838ee87960c146526c4bb0843f5da9f5d7c114783c13959fa685ec62030b46",
+      "start_utc": "2026-10-26T21:06:14.264458+00:00",
+      "timeout_seconds": 360
+    }
+  },
+  {
+    "attempt": "current",
+    "cwd": "${REPO}",
+    "effective_env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_CURRENT}/required/gates"
+    },
+    "env_provenance": "Derived from saved parent env plus exact pinned required-gates.py overrides; not a captured /proc environment.",
+    "kind": "required-gate",
+    "name": "check",
+    "record": {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "exit": 0,
+      "log": "ignored/a3/e9-common-build-cbb189d-v1/required/gates/check.log",
+      "name": "check",
+      "seconds": 1.0165022099390626,
+      "sha256": "38841c1eb9e22ba8305f01d32c32208c3420532ae6004edb161fb91624d3a89c",
+      "start_utc": "2026-10-26T21:11:38.823155+00:00",
+      "timeout_seconds": 180
+    }
+  }
+]
