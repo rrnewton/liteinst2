@@ -226,3 +226,37 @@ finite native-control checks, not instrumented signal-entry or general lifecycle
 qualification. `Drop` requests cancellation without waiting. `terminate` returns
 a cleanup receipt only after terminal waits and an empty owned wait domain; on
 a client timeout the original tracer keeps cleanup ownership in the background.
+
+
+## Finite original-signal admission
+
+`DynamicAdmissionSession::launch_with_signals` accepts an explicit
+`DynamicSignalProfile` and returns a `DynamicSignalSession`. The unsafe source,
+head and writer-exclusion contract covers one task, one queued real-time signal,
+its original handler/restorer, complete private stacks and any declared edited
+return target. The handler begins with CPUID and the delivery boundary is a
+declared syscall-free loop. Original instructions install the exact action and
+optional alternate stack. Nested delivery, arbitrary frame writers and other
+lifecycle changes remain outside this profile.
+
+The launcher captures inherited exception metadata before its first observation
+trap, using a kernel-reset rseq lineage. At actual delivery, the handler is still
+NX. The owner retains the genuine kernel frame, projects exactly its saved
+trap/error/CR2 words from that original metadata, and verifies every remaining
+byte. Original and prospective saved-PC routes protect the whole live frame
+while handler code executes. Only declared whole-field edits are accepted.
+
+`SignalPending` supplies a same-deadline delivery token; `deliver_signal` returns
+the authenticated handler state and frame. Genuine original `rt_sigreturn`
+produces a separate `SignalReturned` event after complete native ENTRY/EXIT
+checks and NX rearming. Its restored RAX retains register meaning even when it
+resembles an errno. The wrapper exposes no raw resume or publication permit.
+Read-only anchor and signal progress retain partial observations and the first
+failure; physical cleanup is reported separately. A failed constructor can
+retain a running cleanup owner, as indicated by its typed failure record.
+
+The [signal validation protocol](../../evaluation/admission/b3-signals.md)
+compares original and admitted full state and frames for normal-stack,
+alternate-stack, edited-return and nonzero inherited-metadata trajectories.
+These finite fixtures do not establish general application signal transparency
+or the complete B3 lifecycle and real-application milestone.

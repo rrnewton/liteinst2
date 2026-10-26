@@ -231,7 +231,7 @@ impl AdmissionOwner {
                     .ok_or(GateError::Refused(
                         "dynamic original run produced an unresolved native event",
                     ))?;
-                if let Some(reply) = self.handle_generic(owner, reservation, event)? {
+                if let Some(reply) = self.handle_generic(owner, reservation, event, until)? {
                     return Ok(reply);
                 }
                 None
@@ -252,7 +252,7 @@ impl AdmissionOwner {
                 observed.insert(0, first);
             }
             while let Some(event) = self.native.take_admission_event() {
-                if let Some(reply) = self.handle_generic(owner, reservation, event)? {
+                if let Some(reply) = self.handle_generic(owner, reservation, event, until)? {
                     return Ok(reply);
                 }
             }
@@ -444,7 +444,7 @@ impl AdmissionOwner {
                                 "dynamic NX continuation did not remain at its user boundary",
                             ));
                         }
-                        self.handle_generic(owner, reservation, event)?;
+                        self.handle_generic(owner, reservation, event, until)?;
                         None
                     }
                 };
@@ -504,7 +504,11 @@ impl AdmissionOwner {
         Ok(())
     }
 
-    fn release_ready(&mut self, owner: &mut Owner, until: Instant) -> Result<(), GateError> {
+    pub(super) fn release_ready(
+        &mut self,
+        owner: &mut Owner,
+        until: Instant,
+    ) -> Result<(), GateError> {
         let selected = *self
             .ready
             .first()
@@ -563,6 +567,7 @@ impl AdmissionOwner {
         owner: &mut Owner,
         reservation: Reservation,
         event: DynamicEvent,
+        until: Instant,
     ) -> Result<Option<AdmissionReply>, GateError> {
         self.census
             .account_external(
@@ -590,6 +595,11 @@ impl AdmissionOwner {
                 Ok(None)
             }
             DynamicEventKind::SignalDelivery(signal) => {
+                if self.signals.is_some() {
+                    return self
+                        .prepare_signal_pending(owner, reservation, event, until)
+                        .map(Some);
+                }
                 let task = event
                     .task
                     .ok_or(GateError::Refused("dynamic signal lacks task identity"))?;

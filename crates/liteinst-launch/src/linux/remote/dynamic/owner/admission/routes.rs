@@ -16,6 +16,7 @@ pub(super) enum RouteOrigin {
         id: OriginId,
         task: DynamicTask,
         token: DynamicStop,
+        frame: Option<(SignalFrameId, u64)>,
     },
     Call {
         obligation: CallReturnObligation,
@@ -52,6 +53,63 @@ struct HeldRoutes<'a, 'owner> {
 
 fn refuse_census(_: super::census::CensusError) -> GateError {
     GateError::Refused("dynamic resume census does not match the current native hold")
+}
+
+fn frame_identity(
+    census: &ResumeCensus,
+    id: OriginId,
+) -> Result<Option<(SignalFrameId, u64)>, GateError> {
+    let row = census
+        .active()
+        .find(|row| row.row.id == id)
+        .ok_or(GateError::Refused("dynamic route origin is not active"))?;
+    match row.row.kind {
+        OriginKind::SignalFrame { frame, .. } => {
+            let (_, facts) = census
+                .active_frames()
+                .find(|(active, _)| active.row.id == id)
+                .ok_or(GateError::Refused(
+                    "dynamic frame route lacks immutable facts",
+                ))?;
+            if frame != facts.id {
+                return Err(GateError::Refused("dynamic frame route identity differs"));
+            }
+            Ok(Some((frame, facts.version)))
+        }
+        _ => Ok(None),
+    }
+}
+fn check_origin(
+    census: &ResumeCensus,
+    active: census::ActiveOrigin<'_>,
+    token: &DynamicStop,
+) -> Result<Option<(SignalFrameId, u64)>, GateError> {
+    if active.current.token != *token {
+        return Err(GateError::Refused(
+            "dynamic route origin has a stale native token",
+        ));
+    }
+    match active.row.kind {
+        OriginKind::SignalFrame { .. } => {
+            let (_, facts) = census
+                .active_frames()
+                .find(|(row, _)| row.row.id == active.row.id)
+                .ok_or(GateError::Refused(
+                    "dynamic saved frame has no exact version",
+                ))?;
+            let bytes = read_memory(token.tid, facts.address, facts.bytes.len())?;
+            census
+                .check_frame_origin(active.row.id, active.current, facts.address, &bytes)
+                .map_err(refuse_census)?;
+            Ok(Some((facts.id, facts.version)))
+        }
+        _ => {
+            census
+                .check_current_origin(active.row.id, active.current)
+                .map_err(refuse_census)?;
+            Ok(None)
+        }
+    }
 }
 
 fn whole_route(
@@ -157,11 +215,9 @@ impl<'a, 'owner> HeldRoutes<'a, 'owner> {
                 "dynamic route generation differs from the native hold",
             ));
         }
-        if !held.membership().candidate.obligations.is_empty() {
-            return Err(GateError::Refused(
-                "dynamic native registry retains an unresolved signal or saved context",
-            ));
-        }
+        census
+            .check_signal_obligations(&held.membership().candidate.obligations)
+            .map_err(refuse_census)?;
         census
             .validate_projection(
                 &domain
@@ -192,10 +248,8 @@ impl<'a, 'owner> HeldRoutes<'a, 'owner> {
                     "dynamic unknown saved context has no native routing proof",
                 ));
             }
-            census
-                .check_current_origin(active.row.id, active.current)
-                .map_err(refuse_census)?;
             let token = held.native.admission_held_token(active.current.task.task)?;
+            let frame = check_origin(census, active, &token)?;
             let state = super::super::trusted::TaskStateSnapshot::read(token.tid)?;
             if token != active.current.token
                 || !held
@@ -221,6 +275,7 @@ impl<'a, 'owner> HeldRoutes<'a, 'owner> {
                     id: active.row.id,
                     task: active.current.task,
                     token,
+                    frame,
                 },
                 pc: active.row.pc,
                 original,
@@ -394,12 +449,31 @@ impl<'a, 'owner> HeldRoutes<'a, 'owner> {
         }
         domain.validate_plan(plan)?;
         for resolved in &mut self.routes {
-            if let RouteOrigin::Census { id, task, token } = &mut resolved.origin {
+            if let RouteOrigin::Census {
+                id,
+                task,
+                token,
+                frame,
+            } = &mut resolved.origin
+            {
                 let active = census.active().find(|active| active.row.id == *id).ok_or(
                     GateError::Refused("dynamic origin disappeared during native publication"),
                 )?;
                 let current = self.held.native.admission_held_token(task.task)?;
                 let state = super::super::trusted::TaskStateSnapshot::read(current.tid)?;
+                // Private runner stops may refresh the token, but publication
+                // may not alter an original live frame or its version.
+                if frame_identity(census, *id)? != *frame {
+                    return Err(GateError::Refused(
+                        "dynamic final frame route version differs",
+                    ));
+                }
+                if let Some((_, facts)) = census.active_frames().find(|(row, _)| row.row.id == *id)
+                {
+                    if read_memory(current.tid, facts.address, facts.bytes.len())? != facts.bytes {
+                        return Err(GateError::Refused("dynamic final saved frame bytes differ"));
+                    }
+                }
                 if current.session != token.session
                     || current.task != token.task
                     || current.tid != token.tid
@@ -897,13 +971,15 @@ fn release_view(
     if members.len() != membership.candidate.tasks.len()
         || membership.generation != domain.generation
         || census.generation() != domain.generation
-        || !membership.candidate.obligations.is_empty()
         || !ready.is_subset(&members)
     {
         return Err(GateError::Refused(
             "dynamic release membership or obligations differ",
         ));
     }
+    census
+        .check_signal_obligations(&membership.candidate.obligations)
+        .map_err(refuse_census)?;
     census
         .validate_projection(
             &domain
@@ -943,9 +1019,7 @@ fn release_view(
                     "dynamic release retains an unknown saved context",
                 ));
             }
-            census
-                .check_current_origin(active.row.id, active.current)
-                .map_err(refuse_census)?;
+            let frame = check_origin(census, active, &token)?;
             if active.current.token != token
                 || active.current.task.address_space != membership.address_space
                 || active.current.task.process != membership.process
@@ -979,6 +1053,7 @@ fn release_view(
                     id: active.row.id,
                     task: active.current.task,
                     token: token.clone(),
+                    frame,
                 },
                 pc: active.row.pc,
                 original,

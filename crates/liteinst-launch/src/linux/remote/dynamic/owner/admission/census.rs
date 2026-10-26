@@ -8,12 +8,16 @@
 #![forbid(unsafe_code)]
 
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
+mod signal;
+pub(super) use signal::{FrameFacts, SignalReturnWitness};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use iced_x86::{Decoder, DecoderOptions};
 use liteinst_admission::entries::{LegalEntrySet, ResumeKind};
 use liteinst_admission::{AddressRange, Generation, MappingId};
 
+use super::super::super::SignalFrameId;
 use crate::lifecycle::{AddressSpaceId, TaskId};
 use crate::selected::{CompletedInstruction, SelectedInput};
 use crate::{DynamicSignalInfo, DynamicStop, DynamicTask, RegisterSnapshot};
@@ -192,6 +196,12 @@ impl ExecutionId {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum OriginKind {
     CurrentHeldPc,
+    /// A separately retained actual frame return or declared prospective edit.
+    /// It is never consumed by an ordinary selected instruction or task exit.
+    SignalFrame {
+        frame: SignalFrameId,
+        prospective: bool,
+    },
     ParentSyscallReturn {
         syscall: u64,
     },
@@ -219,6 +229,7 @@ impl OriginKind {
             Self::CurrentHeldPc | Self::NewbornStart { .. } => ResumeKind::ParkedThread,
             Self::ParentSyscallReturn { .. } => ResumeKind::SyscallReturn,
             Self::UnknownPersistent { kind } => kind,
+            Self::SignalFrame { .. } => ResumeKind::SignalFrame,
         }
     }
 }
@@ -228,6 +239,8 @@ impl OriginKind {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum StopPhase {
     UserCheckpoint,
+    OriginalSignal,
+    SignalReturn,
     OwnedFetch,
     Interrupted,
     OwnedGuard,
@@ -284,6 +297,12 @@ impl ObservedStop {
             return Err(CensusError::InvalidObservation);
         }
         match self.phase {
+            StopPhase::OriginalSignal if self.signal.is_none() => {
+                return Err(CensusError::InvalidObservation);
+            }
+            StopPhase::SignalReturn if self.registers.orig_rax != u64::MAX => {
+                return Err(CensusError::InvalidObservation);
+            }
             StopPhase::OwnedFetch
                 if self.signal.as_ref().map(DynamicSignalInfo::signal) != Some(libc::SIGSEGV) =>
             {
@@ -345,6 +364,7 @@ struct StoredOrigin {
     row: OriginRow,
     current: ObservedStop,
     active: bool,
+    frame: Option<Arc<FrameFacts>>,
 }
 
 /// Full evidence of the one already-authorized native clone invocation.
@@ -447,6 +467,7 @@ enum Consumption {
         first_instruction: Vec<u8>,
     },
     KernelClone(Box<CompletedKernel>),
+    Signal(Box<signal::SignalConsumption>),
 }
 
 /// Private owner-issued evidence, with semantic consistency checks here. Only
@@ -592,6 +613,7 @@ impl OwnerConsumption {
             Consumption::OriginalProgress {
                 first_instruction, ..
             } => first_instruction.len(),
+            Consumption::Signal(signal) => signal.retained_bytes(),
             Consumption::KernelClone(kernel) => {
                 kernel.before.retained_bytes()
                     + kernel.entry.retained_bytes()
@@ -678,6 +700,9 @@ pub(super) enum HistoryRecord {
         origin: OriginId,
         evidence: OwnerTerminal,
     },
+    SignalFrameRefreshed(Box<signal::FrameRefresh>),
+    SignalFrameReturned(Box<signal::FrameReturn>),
+    SignalDelivered(Box<signal::SignalDelivered>),
     Epoch {
         before: u64,
         after: u64,
@@ -919,6 +944,7 @@ impl ResumeCensus {
             },
             current: observed,
             active: true,
+            frame: None,
         });
         self.state.next_serial = next;
         self.commit_debit(token, remaining, used);
@@ -936,7 +962,10 @@ impl ResumeCensus {
     ) -> Result<(), CensusError> {
         let index = self.active_index(id)?;
         let stored = &self.state.origins[index];
-        if matches!(stored.row.kind, OriginKind::UnknownPersistent { .. }) {
+        if matches!(
+            stored.row.kind,
+            OriginKind::UnknownPersistent { .. } | OriginKind::SignalFrame { .. }
+        ) {
             return Err(CensusError::PersistentUnknown);
         }
         after.validate(self.session, self.space)?;
@@ -1000,7 +1029,10 @@ impl ResumeCensus {
     ) -> Result<(), CensusError> {
         let index = self.active_index(id)?;
         let stored = &self.state.origins[index];
-        if matches!(stored.row.kind, OriginKind::UnknownPersistent { .. }) {
+        if matches!(
+            stored.row.kind,
+            OriginKind::UnknownPersistent { .. } | OriginKind::SignalFrame { .. }
+        ) {
             return Err(CensusError::PersistentUnknown);
         }
         if evidence.before != stored.current
@@ -1035,7 +1067,10 @@ impl ResumeCensus {
     ) -> Result<(), CensusError> {
         let index = self.active_index(id)?;
         let stored = &self.state.origins[index];
-        if matches!(stored.row.kind, OriginKind::UnknownPersistent { .. }) {
+        if matches!(
+            stored.row.kind,
+            OriginKind::UnknownPersistent { .. } | OriginKind::SignalFrame { .. }
+        ) {
             return Err(CensusError::PersistentUnknown);
         }
         if evidence.before != stored.current
@@ -1092,7 +1127,10 @@ impl ResumeCensus {
         actual: &ObservedStop,
     ) -> Result<&OriginRow, CensusError> {
         let stored = &self.state.origins[self.active_index(id)?];
-        if matches!(stored.row.kind, OriginKind::UnknownPersistent { .. }) {
+        if matches!(
+            stored.row.kind,
+            OriginKind::UnknownPersistent { .. } | OriginKind::SignalFrame { .. }
+        ) {
             return Err(CensusError::PersistentUnknown);
         }
         actual.validate(self.session, self.space)?;

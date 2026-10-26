@@ -259,16 +259,17 @@ class DeclaredCorpusTests(unittest.TestCase):
 
     def test_fixed_workspace_and_launch_denominators(self):
         expected = self.corpus["harness_test_counts"]
-        self.assertEqual(len(expected["workspace_tests"]), 76)
-        self.assertEqual(len(expected["serial_launch"]), 24)
-        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 1253)
+        self.assertEqual(len(expected["workspace_tests"]), 77)
+        self.assertEqual(len(expected["serial_launch"]), 25)
+        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 1321)
         self.assertEqual(sum(row["ignored"] for row in expected["workspace_tests"].values()), 4)
-        self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 415)
+        self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 483)
         self.assertEqual(sum(row["ignored"] for row in expected["serial_launch"].values()), 0)
         for cohort in expected.values():
             for identity, total in {
-                "unit/liteinst_launch/lib": 138,
+                "unit/liteinst_launch/lib": 201,
                 "test/b2_mode_reference": 6,
+                "test/b3_signal_admission": 5,
                 "test/dynamic_admission": 15,
                 "test/selected_semantics": 17,
                 "test/native_int80": 6,

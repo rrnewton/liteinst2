@@ -183,6 +183,50 @@ impl NativeLifecycle {
         Ok(event)
     }
 
+    /// Exact current application signal in a closed user phase. The original
+    /// Unknown registry record remains unchanged and must receive a separate
+    /// delivery/frame resolution before any publication relies on it.
+    pub(in crate::linux::remote::dynamic) fn admission_original_signal(
+        &self,
+        id: TaskId,
+    ) -> Result<(DynamicEvent, crate::lifecycle::ObligationRecord), LaunchError> {
+        let event = self.admission_held_event(id)?;
+        let task = self
+            .tasks
+            .get(&event.tid)
+            .ok_or(LaunchError::Invalid("signal admission task is unknown"))?;
+        let DynamicEventKind::SignalDelivery(info) = &event.kind else {
+            return Err(LaunchError::Invalid(
+                "admission event is not an original signal",
+            ));
+        };
+        let obligation = task
+            .signal_obligation
+            .and_then(|id| self.registry.obligations().find(|row| row.id == id))
+            .ok_or(LaunchError::Invalid(
+                "original signal lacks its exact retained obligation",
+            ))?;
+        if task.syscall_open
+            || task.fork_return.is_some()
+            || self.pending.is_some()
+            || self.exec_pending.is_some()
+            || obligation.task != task.identity.task
+            || obligation.address_space != task.identity.address_space
+            || obligation.inherited_from.is_some()
+            || obligation.kind
+                != (crate::lifecycle::ObligationKind::PendingSignal {
+                    signal: info.signal() as u8,
+                    code: info.code(),
+                    scope: SignalScope::Unknown,
+                })
+        {
+            return Err(LaunchError::Invalid(
+                "signal admission is not the exact closed user delivery",
+            ));
+        }
+        Ok((event, obligation.clone()))
+    }
+
     pub(in crate::linux::remote::dynamic) fn admission_held_token(
         &self,
         id: TaskId,
@@ -286,6 +330,62 @@ impl NativeLifecycle {
         self.tasks.get_mut(&token.tid).unwrap().state = State::Running;
         self.events
             .retain(|queued| queued.stop.as_ref() != Some(token));
+        Ok(())
+    }
+
+    /// # Safety
+    /// The signal transport observed the original rt_sigreturn ENTRY and this
+    /// exact EXIT, and authenticated `expected` from the complete live frame.
+    /// An arbitrary syscall EXIT cannot use this phase-specific bridge. Restored
+    /// RAX is application state, including values in Linux's restart/errno range.
+    pub(in crate::linux::remote::dynamic) unsafe fn begin_admission_sigreturn_bridge(
+        &mut self,
+        token: &DynamicStop,
+        expected: &super::super::trusted::TaskStateSnapshot,
+    ) -> Result<(), LaunchError> {
+        let event = self.require_stop(token)?.clone();
+        let task = &self.tasks[&token.tid];
+        let DynamicEventKind::SyscallExit { result, is_error } = event.kind else {
+            return Err(LaunchError::Invalid(
+                "signal return bridge is not at actual syscall EXIT",
+            ));
+        };
+        if self.tasks.len() != 1
+            || task.syscall_open
+            || self.pending.is_some()
+            || self.exec_pending.is_some()
+            || task.fork_return.is_some()
+            || !self.events.is_empty()
+            || expected.registers.orig_rax != u64::MAX
+            || super::super::trusted::TaskStateSnapshot::read(token.tid)? != *expected
+        {
+            return Err(LaunchError::Invalid(
+                "signal return bridge lost exact singleton restored state",
+            ));
+        }
+        let info = syscall_info(token.tid)?;
+        if info.op != libc::PTRACE_SYSCALL_INFO_EXIT
+            || info.arch != AUDIT_ARCH_X86_64
+            || info.instruction_pointer != expected.registers.rip
+            || info.stack_pointer != expected.registers.rsp
+        {
+            return Err(LaunchError::Invalid(
+                "signal return bridge lost native EXIT ABI",
+            ));
+        }
+        let exit = unsafe { info.u.exit };
+        if exit.is_error > 1
+            || exit.sval != result
+            || (exit.is_error != 0) != is_error
+            || result as u64 != expected.registers.rax
+        {
+            return Err(LaunchError::Invalid(
+                "signal return bridge raw result changed",
+            ));
+        }
+        let id = task.identity.task;
+        recorded(self.registry.resume(id, token.sequence))?;
+        self.tasks.get_mut(&token.tid).unwrap().state = State::Running;
         Ok(())
     }
 

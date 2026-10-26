@@ -75,6 +75,10 @@ impl Owner {
                     "admission exec EXIT changed unrelated state",
                 ));
             }
+            if let Some(receipt) = &self.anchor_receipt {
+                receipt.authenticate_exec_exit(self.pid, &exec_exit)?;
+                self.anchor_exit_authenticated = true;
+            }
             let mut native = self.lifecycle.take().ok_or(LaunchError::Invalid(
                 "admission lacks initialized lifecycle registry",
             ))?;
@@ -87,6 +91,11 @@ impl Owner {
             result
         })();
         if result.is_err() {
+            if !self.anchor_exit_authenticated {
+                if let (Some(archive), Err(error)) = (&self.anchor_archive, &result) {
+                    archive.record_failure(error);
+                }
+            }
             self.closing = true;
             self.cancel.store(true, Ordering::Release);
         }

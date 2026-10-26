@@ -40,15 +40,45 @@ fn combine(a: BudgetCharge, b: BudgetCharge) -> Result<BudgetCharge, GateError> 
         plan_history: add(a.plan_history, b.plan_history)?,
     })
 }
-fn state_bound() -> Result<usize, GateError> {
-    add(size_of::<ObservedStop>(), MAX_XSTATE)
+/// Logical retained XSTATE payload geometry, never native authority. The only
+/// production short-bound caller reads the immutable certificate retained by
+/// SignalTransaction; every observed state is independently checked against it.
+/// Raw journals, frame buffers and allocation capacity keep their MAX bounds.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct StatePayload {
+    xstate_bytes: usize,
 }
-fn refresh_charge(count: usize) -> Result<BudgetCharge, GateError> {
+impl StatePayload {
+    const fn maximum() -> Self {
+        Self {
+            xstate_bytes: MAX_XSTATE,
+        }
+    }
+
+    fn from_retained_extent(bytes: usize) -> Result<Self, GateError> {
+        if !(512..MAX_XSTATE).contains(&bytes) || bytes % 8 != 0 {
+            return Err(GateError::Refused(
+                "signal retained XSTATE extent geometry differs",
+            ));
+        }
+        Ok(Self {
+            xstate_bytes: bytes,
+        })
+    }
+}
+
+fn state_bound_with_payload(payload: StatePayload) -> Result<usize, GateError> {
+    add(size_of::<ObservedStop>(), payload.xstate_bytes)
+}
+fn refresh_charge_with_payload(
+    payload: StatePayload,
+    count: usize,
+) -> Result<BudgetCharge, GateError> {
     // Two history snapshots plus possible growth of the separately retained
     // current XSTATE. Shrinking a later state never refunds this reservation.
     let one = total([
-        mul(2, state_bound()?)?,
-        MAX_XSTATE,
+        mul(2, state_bound_with_payload(payload)?)?,
+        payload.xstate_bytes,
         size_of::<census::HistoryRecord>(),
     ])?;
     Ok(BudgetCharge {
@@ -57,19 +87,61 @@ fn refresh_charge(count: usize) -> Result<BudgetCharge, GateError> {
         ..BudgetCharge::default()
     })
 }
-fn origin_bound() -> Result<usize, GateError> {
+fn frame_refresh_charge_with_payload(
+    payload: StatePayload,
+    frames: usize,
+    passes: usize,
+) -> Result<BudgetCharge, GateError> {
+    // The model retains each holder's full before/after plus its immutable
+    // frame version. This is additional to register-origin accounting.
+    let count = mul(frames, passes)?;
+    let one = total([
+        mul(2, state_bound_with_payload(payload)?)?,
+        payload.xstate_bytes,
+        size_of::<census::HistoryRecord>(),
+        size_of::<census::FrameFacts>(),
+        MAX_XSTATE + 4096,
+        256,
+    ])?;
+    Ok(BudgetCharge {
+        witnesses: count,
+        source_fact_bytes: mul(count, one)?,
+        ..BudgetCharge::default()
+    })
+}
+fn frame_effect_charge_with_payload(
+    payload: StatePayload,
+    frames: usize,
+    tasks: usize,
+    successors: usize,
+    rebind: bool,
+    plans: usize,
+) -> Result<BudgetCharge, GateError> {
+    let passes = total([
+        usize::from(successors != 0),
+        2 * usize::from(rebind),
+        mul(2, plans)?,
+        if successors == 0 {
+            0
+        } else {
+            add(4, mul(2, tasks)?)?
+        },
+    ])?;
+    frame_refresh_charge_with_payload(payload, frames, passes)
+}
+fn origin_bound_with_payload(payload: StatePayload) -> Result<usize, GateError> {
     total([
-        mul(2, state_bound()?)?,
+        mul(2, state_bound_with_payload(payload)?)?,
         size_of::<census::OriginRow>(),
         size_of::<ObservedStop>(),
         64,
     ])
 }
-fn consume_bound() -> Result<usize, GateError> {
+fn consume_bound_with_payload(payload: StatePayload) -> Result<usize, GateError> {
     // CompletedKernel retains before/entry/parent/newborn in addition to the
     // generic before/successor, typed input and complete instruction bytes.
     total([
-        mul(8, state_bound()?)?,
+        mul(8, state_bound_with_payload(payload)?)?,
         size_of::<OwnerConsumption>(),
         size_of::<census::HistoryRecord>(),
         1024,
@@ -346,7 +418,8 @@ fn checked_task_bound(
     Ok(actual.len().max(successors))
 }
 
-fn rebind_charge(
+fn rebind_charge_with_payload(
+    payload: StatePayload,
     domain: &super::domain::Domain,
     active_origins: usize,
     extra_origins: usize,
@@ -381,11 +454,12 @@ fn rebind_charge(
             source_fact_bytes: retained,
             ..BudgetCharge::default()
         },
-        refresh_charge(2 * tasks)?,
+        refresh_charge_with_payload(payload, 2 * tasks)?,
     )
 }
 
-fn effect_charge(
+fn effect_charge_with_payload(
+    payload: StatePayload,
     domain: &super::domain::Domain,
     active_origins: usize,
     tasks: usize,
@@ -402,25 +476,35 @@ fn effect_charge(
     if successors != 0 {
         charge.origins = successors;
         charge.witnesses = successors;
-        charge.source_fact_bytes = mul(successors, add(origin_bound()?, consume_bound()?)?)?;
+        charge.source_fact_bytes = mul(
+            successors,
+            add(
+                origin_bound_with_payload(payload)?,
+                consume_bound_with_payload(payload)?,
+            )?,
+        )?;
         // Full external completion, pending input, two event copies in
         // each diagnostic queue, and all scalar/owned-window metadata.
         charge.source_fact_bytes = add(
             charge.source_fact_bytes,
             total([
-                mul(8, state_bound()?)?,
+                mul(8, state_bound_with_payload(payload)?)?,
                 mul(4, size_of::<DynamicEvent>())?,
                 8192,
             ])?,
         )?;
-        charge = combine(charge, refresh_charge(tasks)?)?;
+        charge = combine(charge, refresh_charge_with_payload(payload, tasks)?)?;
     } else {
-        charge.source_fact_bytes = total([state_bound()?, size_of::<PendingInvocation>(), 1024])?;
+        charge.source_fact_bytes = total([
+            state_bound_with_payload(payload)?,
+            size_of::<PendingInvocation>(),
+            1024,
+        ])?;
     }
     if rebind {
         charge = combine(
             charge,
-            rebind_charge(domain, active_origins, successors, tasks)?,
+            rebind_charge_with_payload(payload, domain, active_origins, successors, tasks)?,
         )?;
     }
     for _ in 0..plans {
@@ -432,19 +516,25 @@ fn effect_charge(
         // even for a plan-only transaction. Together with the separate
         // held-mm prefix, reserve the bounded prepublication refresh slots
         // plus the whole-mm postpublication slots without relying on no-op debits.
-        charge = combine(charge, refresh_charge(2 * tasks)?)?;
+        charge = combine(charge, refresh_charge_with_payload(payload, 2 * tasks)?)?;
     }
     if successors != 0 {
         // Original release/completion: reconcile/normalize plus up to two
         // deferred interrupt stops and one actual NX fault or guard for
         // EACH authenticated task, before any affected page publication.
         // The at-most-six probes do not create origins or consume continuations.
-        charge = combine(charge, refresh_charge(tasks + 3 * tasks)?)?;
+        charge = combine(
+            charge,
+            refresh_charge_with_payload(payload, tasks + 3 * tasks)?,
+        )?;
         charge.source_fact_bytes = add(
             charge.source_fact_bytes,
             mul(
                 tasks + 3 * tasks,
-                add(state_bound()?, size_of::<RunPermit>() + INSTRUCTION_BYTES)?,
+                add(
+                    state_bound_with_payload(payload)?,
+                    size_of::<RunPermit>() + INSTRUCTION_BYTES,
+                )?,
             )?,
         )?;
         // Each private task may need one neutral control-settling operation
@@ -453,12 +543,260 @@ fn effect_charge(
         // One pass before revocation and another after real boundary
         // probes: a Fetch must become an actual neutral checkpoint even
         // when its interrupt-credit counter was already zero.
-        charge = combine(charge, refresh_charge(2 * tasks * tasks)?)?;
+        charge = combine(
+            charge,
+            refresh_charge_with_payload(payload, 2 * tasks * tasks)?,
+        )?;
     }
     Ok(charge)
 }
 
+fn signal_return_charge_with_payload(
+    payload: StatePayload,
+    domain: &super::domain::Domain,
+    active_origins: usize,
+    frames: usize,
+) -> Result<BudgetCharge, GateError> {
+    combine(
+        combine(
+            effect_charge_with_payload(payload, domain, active_origins, 1, 1, true, 0)?,
+            refresh_charge_with_payload(payload, 1)?,
+        )?,
+        combine(
+            frame_refresh_charge_with_payload(payload, frames, 2)?,
+            BudgetCharge {
+                witnesses: frames,
+                source_fact_bytes: mul(
+                    frames,
+                    total([
+                        mul(6, state_bound_with_payload(payload)?)?,
+                        MAX_XSTATE + 4096,
+                        2048,
+                    ])?,
+                )?,
+                ..BudgetCharge::default()
+            },
+        )?,
+    )
+}
+
+fn signal_delivery_charge_with_payload(
+    payload: StatePayload,
+    domain: &super::domain::Domain,
+    active_origins: usize,
+    frames: usize,
+) -> Result<BudgetCharge, GateError> {
+    let mut charge =
+        effect_charge_with_payload(payload, domain, add(active_origins, frames)?, 1, 1, true, 1)?;
+    charge = combine(charge, refresh_charge_with_payload(payload, 1)?)?;
+    charge = combine(
+        charge,
+        frame_refresh_charge_with_payload(payload, frames, 12)?,
+    )?;
+    charge = combine(
+        charge,
+        BudgetCharge {
+            origins: frames,
+            witnesses: 1,
+            source_fact_bytes: total([
+                mul(
+                    frames,
+                    total([origin_bound_with_payload(payload)?, MAX_XSTATE + 4096, 256])?,
+                )?,
+                mul(8, state_bound_with_payload(payload)?)?,
+                mul(3, MAX_XSTATE + 4096)?,
+                8192,
+            ])?,
+            ..BudgetCharge::default()
+        },
+    )?;
+    Ok(charge)
+}
+
+// Legacy pure-test entry points retain the exact MAX envelope and signatures.
+// Production's non-signal branch selects StatePayload::maximum() explicitly.
+#[cfg(test)]
+fn state_bound() -> Result<usize, GateError> {
+    state_bound_with_payload(StatePayload::maximum())
+}
+#[cfg(test)]
+fn refresh_charge(count: usize) -> Result<BudgetCharge, GateError> {
+    refresh_charge_with_payload(StatePayload::maximum(), count)
+}
+#[cfg(test)]
+fn frame_refresh_charge(frames: usize, passes: usize) -> Result<BudgetCharge, GateError> {
+    frame_refresh_charge_with_payload(StatePayload::maximum(), frames, passes)
+}
+#[cfg(test)]
+fn frame_effect_charge(
+    frames: usize,
+    tasks: usize,
+    successors: usize,
+    rebind: bool,
+    plans: usize,
+) -> Result<BudgetCharge, GateError> {
+    frame_effect_charge_with_payload(
+        StatePayload::maximum(),
+        frames,
+        tasks,
+        successors,
+        rebind,
+        plans,
+    )
+}
+#[cfg(test)]
+fn origin_bound() -> Result<usize, GateError> {
+    origin_bound_with_payload(StatePayload::maximum())
+}
+#[cfg(test)]
+fn consume_bound() -> Result<usize, GateError> {
+    consume_bound_with_payload(StatePayload::maximum())
+}
+#[cfg(test)]
+fn rebind_charge(
+    domain: &super::domain::Domain,
+    active_origins: usize,
+    extra_origins: usize,
+    tasks: usize,
+) -> Result<BudgetCharge, GateError> {
+    rebind_charge_with_payload(
+        StatePayload::maximum(),
+        domain,
+        active_origins,
+        extra_origins,
+        tasks,
+    )
+}
+#[cfg(test)]
+fn effect_charge(
+    domain: &super::domain::Domain,
+    active_origins: usize,
+    tasks: usize,
+    successors: usize,
+    rebind: bool,
+    plans: usize,
+) -> Result<BudgetCharge, GateError> {
+    effect_charge_with_payload(
+        StatePayload::maximum(),
+        domain,
+        active_origins,
+        tasks,
+        successors,
+        rebind,
+        plans,
+    )
+}
 impl AdmissionOwner {
+    fn state_payload(&self) -> Result<StatePayload, GateError> {
+        match &self.signals {
+            Some(signals) => StatePayload::from_retained_extent(signals.xstate_extent()),
+            None => Ok(StatePayload::maximum()),
+        }
+    }
+
+    pub(super) fn reserve_signal_return(
+        &mut self,
+        owner: &Owner,
+    ) -> Result<Reservation, GateError> {
+        let frames = self.census.active_frames().count();
+        if !(1..=2).contains(&frames) || self.held_task_bound(owner, 1)? != 1 {
+            return Err(GateError::Refused(
+                "signal return lacks complete bounded frame membership",
+            ));
+        }
+        let payload = self.state_payload()?;
+        let charge = signal_return_charge_with_payload(
+            payload,
+            &self.domain,
+            self.census.active().count(),
+            frames,
+        )?;
+        self.domain
+            .generations
+            .try_reserve(1)
+            .map_err(|_| GateError::Refused("signal return generation allocation failed"))?;
+        self.census.reserve(charge).map_err(census_error)
+    }
+
+    pub(super) fn check_signal_return_budget(
+        &self,
+        owner: &Owner,
+        reservation: Reservation,
+    ) -> Result<(), GateError> {
+        let frames = self.census.active_frames().count();
+        if !(1..=2).contains(&frames) || self.held_task_bound(owner, 1)? != 1 {
+            return Err(GateError::Refused(
+                "signal return remaining task/frame shape differs",
+            ));
+        }
+        let payload = self.state_payload()?;
+        self.census
+            .check_reserved(
+                reservation,
+                combine(
+                    effect_charge_with_payload(
+                        payload,
+                        &self.domain,
+                        self.census.active().count(),
+                        1,
+                        1,
+                        true,
+                        0,
+                    )?,
+                    BudgetCharge {
+                        witnesses: frames,
+                        source_fact_bytes: mul(
+                            frames,
+                            total([
+                                mul(6, state_bound_with_payload(payload)?)?,
+                                MAX_XSTATE + 4096,
+                                2048,
+                            ])?,
+                        )?,
+                        ..BudgetCharge::default()
+                    },
+                )?,
+            )
+            .map_err(census_error)
+    }
+
+    /// Delivery can introduce one current register origin and the independently
+    /// retained original/prospective frame roles. Reserve their complete bounded
+    /// history before allowing the kernel to create the frame.
+    pub(super) fn reserve_signal_delivery(
+        &mut self,
+        owner: &Owner,
+        frames: usize,
+    ) -> Result<Reservation, GateError> {
+        if !(1..=2).contains(&frames)
+            || self.held_task_bound(owner, 1)? != 1
+            || self.census.active_frames().count() != 0
+        {
+            return Err(GateError::Refused(
+                "signal delivery exceeds its fixed singleton/frame shape",
+            ));
+        }
+        let payload = self.state_payload()?;
+        let charge = signal_delivery_charge_with_payload(
+            payload,
+            &self.domain,
+            self.census.active().count(),
+            frames,
+        )?;
+        self.domain
+            .plans
+            .try_reserve(1)
+            .map_err(|_| GateError::Refused("signal plan allocation failed"))?;
+        self.domain
+            .generations
+            .try_reserve(1)
+            .map_err(|_| GateError::Refused("signal generation allocation failed"))?;
+        self.work
+            .try_reserve(1)
+            .map_err(|_| GateError::Refused("signal guard work allocation failed"))?;
+        self.census.reserve(charge).map_err(census_error)
+    }
+
     /// Re-read a current held incarnation. A raw instrumentation fault remains
     /// raw here; logical RIP does not silently change the register snapshot.
     pub(super) fn observe_current(
@@ -517,6 +855,9 @@ impl AdmissionOwner {
             address_space: record.address_space,
             generation: self.island.generation,
         };
+        if let Some(signals) = &self.signals {
+            signals.verify_extent(&token, identity, &raw)?;
+        }
         let (logical_pc, phase, signal) = match self.native.admission_current(task) {
             Ok(current) => {
                 self.native.require_admission_stop(&current)?;
@@ -613,6 +954,41 @@ impl AdmissionOwner {
                 }
             }
             Err(_) => {
+                if self.signals.is_some() {
+                    if let Ok((event, _)) = self.native.admission_original_signal(task) {
+                        let DynamicEventKind::SignalDelivery(signal) = &event.kind else {
+                            unreachable!()
+                        };
+                        let mut raw_signal = [0_u8; 128];
+                        ptrace(
+                            libc::PTRACE_GETSIGINFO,
+                            token.tid,
+                            0,
+                            raw_signal.as_mut_ptr() as usize,
+                        )?;
+                        if event.stop_token() != Some(&token)
+                            || event.task != Some(identity)
+                            || status >> 16 != 0
+                            || libc::WSTOPSIG(status) != signal.signal()
+                            || signal.raw_bytes() != &raw_signal
+                        {
+                            return Err(GateError::Refused(
+                                "signal observation lost its exact original held delivery",
+                            ));
+                        }
+                        self.domain.original_decode(raw.registers.rip)?;
+                        return Ok(ObservedStop {
+                            token,
+                            task: identity,
+                            logical_pc: raw.registers.rip,
+                            registers: raw.registers,
+                            xstate: raw.xstate,
+                            signal_mask: raw.mask,
+                            phase: StopPhase::OriginalSignal,
+                            signal: Some(signal.clone()),
+                        });
+                    }
+                }
                 let event = self.native.admission_original_interrupt(task)?;
                 if event.stop_token() != Some(&token)
                     || event.task != Some(identity)
@@ -664,7 +1040,11 @@ impl AdmissionOwner {
                 "dynamic task bound native generation differs",
             ));
         }
-        let retained = self.census.active().take(MAX_TASKS + 1).collect::<Vec<_>>();
+        let retained = self
+            .census
+            .active_registers()
+            .take(MAX_TASKS + 1)
+            .collect::<Vec<_>>();
         if retained.len() > MAX_TASKS
             || self.origins.len() != retained.len()
             || retained
@@ -718,8 +1098,10 @@ impl AdmissionOwner {
         // that prefix separately so a second pre-effect check uses the same
         // complete remaining envelope after the prefix has been debited.
         let tasks = self.held_task_bound(owner, successors)?;
+        let payload = self.state_payload()?;
         let charge = combine(
-            effect_charge(
+            effect_charge_with_payload(
+                payload,
                 &self.domain,
                 self.census.active().count(),
                 tasks,
@@ -727,7 +1109,7 @@ impl AdmissionOwner {
                 rebind,
                 plans,
             )?,
-            refresh_charge(tasks)?,
+            refresh_charge_with_payload(payload, tasks)?,
         )?;
         let charge = combine(
             charge,
@@ -735,6 +1117,16 @@ impl AdmissionOwner {
                 source_fact_bytes: prefix_bytes,
                 ..BudgetCharge::default()
             },
+        )?;
+        let frames = self.census.active_frames().count();
+        let charge = combine(
+            charge,
+            combine(
+                frame_effect_charge_with_payload(
+                    payload, frames, tasks, successors, rebind, plans,
+                )?,
+                frame_refresh_charge_with_payload(payload, frames, 1)?,
+            )?,
         )?;
         self.domain
             .plans
@@ -756,16 +1148,28 @@ impl AdmissionOwner {
         plans: usize,
     ) -> Result<(), GateError> {
         let tasks = self.held_task_bound(owner, successors)?;
+        let payload = self.state_payload()?;
         self.census
             .check_reserved(
                 reservation,
-                effect_charge(
-                    &self.domain,
-                    self.census.active().count(),
-                    tasks,
-                    successors,
-                    rebind,
-                    plans,
+                combine(
+                    effect_charge_with_payload(
+                        payload,
+                        &self.domain,
+                        self.census.active().count(),
+                        tasks,
+                        successors,
+                        rebind,
+                        plans,
+                    )?,
+                    frame_effect_charge_with_payload(
+                        payload,
+                        self.census.active_frames().count(),
+                        tasks,
+                        successors,
+                        rebind,
+                        plans,
+                    )?,
                 )?,
             )
             .map_err(census_error)
@@ -779,9 +1183,23 @@ impl AdmissionOwner {
     ) -> Result<(), GateError> {
         self.domain.validate_plan(plan)?;
         let tasks = self.held_task_bound(owner, 0)?;
+        let payload = self.state_payload()?;
         let charge = actual_plan_charge(plan, self.census.active().count())?;
         self.census
-            .check_reserved(reservation, combine(charge, refresh_charge(tasks)?)?)
+            .check_reserved(
+                reservation,
+                combine(
+                    charge,
+                    combine(
+                        refresh_charge_with_payload(payload, tasks)?,
+                        frame_refresh_charge_with_payload(
+                            payload,
+                            self.census.active_frames().count(),
+                            1,
+                        )?,
+                    )?,
+                )?,
+            )
             .map_err(census_error)?;
         self.census
             .account_external(reservation, charge)
@@ -818,14 +1236,26 @@ impl AdmissionOwner {
             }
             observations.push((id, actual));
         }
+        let payload = self.state_payload()?;
         self.census
-            .check_reserved(reservation, refresh_charge(observations.len())?)
+            .check_reserved(
+                reservation,
+                combine(
+                    refresh_charge_with_payload(payload, observations.len())?,
+                    frame_refresh_charge_with_payload(
+                        payload,
+                        self.census.active_frames().count(),
+                        1,
+                    )?,
+                )?,
+            )
             .map_err(census_error)?;
         for (id, actual) in observations {
             self.census
                 .refresh_same_pc(reservation, id, actual)
                 .map_err(census_error)?;
         }
+        self.refresh_signal_frames(owner, reservation, until)?;
         owner.time_left(until, "dynamic admission census refresh")?;
         Ok(())
     }
@@ -839,6 +1269,7 @@ impl AdmissionOwner {
     ) -> Result<(), GateError> {
         owner.time_left(until, "dynamic admission original progress")?;
         let actual = self.observe_current(owner, task)?;
+        let payload = self.state_payload()?;
         let origin = *self.origins.get(&task).ok_or(GateError::Refused(
             "dynamic running task has no retained origin",
         ))?;
@@ -865,7 +1296,7 @@ impl AdmissionOwner {
         }
         if actual.logical_pc == before.logical_pc {
             self.census
-                .check_reserved(reservation, refresh_charge(1)?)
+                .check_reserved(reservation, refresh_charge_with_payload(payload, 1)?)
                 .map_err(census_error)?;
             self.census
                 .refresh_same_pc(reservation, origin, actual)
@@ -889,7 +1320,10 @@ impl AdmissionOwner {
             let charge = BudgetCharge {
                 origins: 1,
                 witnesses: 1,
-                source_fact_bytes: add(origin_bound()?, consume_bound()?)?,
+                source_fact_bytes: add(
+                    origin_bound_with_payload(payload)?,
+                    consume_bound_with_payload(payload)?,
+                )?,
                 ..BudgetCharge::default()
             };
             self.census
@@ -910,6 +1344,7 @@ impl AdmissionOwner {
             self.origins.insert(task, next);
         }
         self.running.remove(&task);
+        self.refresh_signal_frames(owner, reservation, until)?;
         owner.time_left(until, "dynamic admission original progress")?;
         Ok(())
     }
@@ -930,6 +1365,7 @@ impl AdmissionOwner {
         };
         let members = self.native.check_admission_mm(owner, selected)?;
         let tasks = self.held_task_bound(owner, 0)?;
+        let payload = self.state_payload()?;
         for task in members.candidate.tasks {
             owner.time_left(until, "dynamic owned guard normalization")?;
             let before = self.observe_current(owner, task)?;
@@ -944,7 +1380,7 @@ impl AdmissionOwner {
                 .check_current_origin(origin, &before)
                 .map_err(census_error)?;
             self.census
-                .check_reserved(reservation, refresh_charge(tasks)?)
+                .check_reserved(reservation, refresh_charge_with_payload(payload, tasks)?)
                 .map_err(census_error)?;
             let current = self.native.admission_current(task)?;
             let mut after = before.registers;
@@ -1030,6 +1466,7 @@ impl AdmissionOwner {
         };
         let members = self.native.check_admission_mm(owner, selected)?;
         let tasks = self.held_task_bound(owner, 0)?;
+        let payload = self.state_payload()?;
         let mut pending = Vec::new();
         for &task in &members.candidate.tasks {
             if let Ok(current) = self.native.admission_current(task) {
@@ -1042,7 +1479,10 @@ impl AdmissionOwner {
             }
         }
         self.census
-            .check_reserved(reservation, refresh_charge(mul(pending.len(), tasks)?)?)
+            .check_reserved(
+                reservation,
+                refresh_charge_with_payload(payload, mul(pending.len(), tasks)?)?,
+            )
             .map_err(census_error)?;
         for task in pending {
             owner.time_left(until, "dynamic private control settling")?;
@@ -1068,7 +1508,7 @@ impl AdmissionOwner {
                 .check_current_origin(origin, &before)
                 .map_err(census_error)?;
             self.census
-                .check_reserved(reservation, refresh_charge(tasks)?)
+                .check_reserved(reservation, refresh_charge_with_payload(payload, tasks)?)
                 .map_err(census_error)?;
             {
                 let mut held =
@@ -1117,9 +1557,26 @@ impl AdmissionOwner {
             .checked_add(1)
             .ok_or_else(overflow)?;
         let tasks = self.held_task_bound(owner, 0)?;
-        let charge = rebind_charge(&self.domain, self.census.active().count(), 0, tasks)?;
+        let payload = self.state_payload()?;
+        let charge = rebind_charge_with_payload(
+            payload,
+            &self.domain,
+            self.census.active().count(),
+            0,
+            tasks,
+        )?;
         self.census
-            .check_reserved(reservation, charge)
+            .check_reserved(
+                reservation,
+                combine(
+                    charge,
+                    frame_refresh_charge_with_payload(
+                        payload,
+                        self.census.active_frames().count(),
+                        2,
+                    )?,
+                )?,
+            )
             .map_err(census_error)?;
         let members = self.native.check_admission_mm(owner, selected)?;
         for &task in &members.candidate.tasks {
@@ -1154,7 +1611,7 @@ impl AdmissionOwner {
         let staged = self.domain.projected_images(next, &projection)?;
         // Charge retained source/metadata before revocation. Epoch/history and
         // actual refreshes debit their own categories below; no refund occurs.
-        let refresh = refresh_charge(2 * tasks)?;
+        let refresh = refresh_charge_with_payload(payload, 2 * tasks)?;
         let source_bytes = charge
             .source_fact_bytes
             .checked_sub(refresh.source_fact_bytes)
@@ -1211,3 +1668,6 @@ impl AdmissionOwner {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod sizing_tests;

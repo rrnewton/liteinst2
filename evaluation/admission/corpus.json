@@ -5943,6 +5943,10 @@
         "ignored": 0,
         "tests": 6
       },
+      "test/b3_signal_admission": {
+        "ignored": 0,
+        "tests": 5
+      },
       "test/checkpoint": {
         "ignored": 0,
         "tests": 23
@@ -6033,7 +6037,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 138
+        "tests": 201
       }
     },
     "workspace_tests": {
@@ -6064,6 +6068,10 @@
       "test/b2_mode_reference": {
         "ignored": 0,
         "tests": 6
+      },
+      "test/b3_signal_admission": {
+        "ignored": 0,
+        "tests": 5
       },
       "test/boundary_signal_oracle": {
         "ignored": 0,
@@ -6331,7 +6339,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 138
+        "tests": 201
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,
@@ -6960,8 +6968,73 @@
       "cohort": "b2_reference",
       "harness": "test/b2_mode_reference",
       "test": "strict_reference_refuses_unknown_heads_bytes_and_scripts_without_execution"
+    },
+    {
+      "cohort": "b3_reset",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::launch::anchor::reset::tests::packet_send_failure_retains_real_reaper_cleanup"
+    },
+    {
+      "cohort": "b3_reset",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::launch::anchor::reset::tests::transient_killed_before_reaper_clone_is_actually_empty"
+    },
+    {
+      "cohort": "b3_reset",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::launch::anchor::reset::tests::transient_killed_after_reaper_clone_retains_both_pins"
+    },
+    {
+      "cohort": "b3_reset",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::launch::anchor::reset::tests::absent_pid_publication_does_not_mean_no_reaper"
+    },
+    {
+      "cohort": "b3_reset",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::launch::anchor::reset::tests::live_reaper_before_self_stop_is_recovered_through_procfs"
+    },
+    {
+      "cohort": "b3_reset",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::launch::anchor::reset::tests::original_deadline_expires_with_live_pre_stop_reaper"
+    },
+    {
+      "cohort": "b3_reset",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::launch::anchor::reset::tests::missing_reaper_pin_retains_wait_authority_and_failure"
+    },
+    {
+      "cohort": "b3_reset",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::launch::anchor::reset::tests::abort_before_start_receives_empty_done_without_application"
+    },
+    {
+      "cohort": "b3_signal",
+      "harness": "test/b3_signal_admission",
+      "test": "ordinary_stack_frame_matches_pristine_original"
+    },
+    {
+      "cohort": "b3_signal",
+      "harness": "test/b3_signal_admission",
+      "test": "configured_altstack_frame_matches_pristine_original"
+    },
+    {
+      "cohort": "b3_signal",
+      "harness": "test/b3_signal_admission",
+      "test": "edited_frame_returns_to_untouched_nx_landing"
+    },
+    {
+      "cohort": "b3_signal",
+      "harness": "test/b3_signal_admission",
+      "test": "inherited_nonzero_exception_metadata_matches_pristine_original"
+    },
+    {
+      "cohort": "b3_signal",
+      "harness": "test/b3_signal_admission",
+      "test": "pristine_comparator_rejects_metadata_and_unrelated_state_corruption"
     }
   ],
-  "recorder_tests": 200,
+  "recorder_tests": 208,
   "schema_version": 1
 }

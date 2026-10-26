@@ -16,7 +16,14 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 
 mod admission;
 pub use admission::*;
+mod signal;
 use admission::{AdmissionReply, AdmissionRequest};
+pub use launch::anchor::{
+    AnchorCaptureProgress, AnchorCapturedState, AnchorFailure, AnchorObservation, AnchorPhase,
+    AnchorProgress, AnchorReader, AnchorResetObservation, AnchorResetPhase, AnchorRseqObservation,
+    AnchorSyscallObservation,
+};
+pub use signal::*;
 
 mod broker;
 mod launch;
@@ -26,6 +33,11 @@ pub use owner::kernel_journal::{
     KernelFailureKind, KernelJournalFact, KernelJournalFailure, KernelJournalStage, KernelPinKind,
     KernelProgressReader, KernelProgressSnapshot, KernelReleasePhase, KernelStateRecord,
     KernelStateSlot, KernelStopIdentity, KernelSyscallInfo, KernelWriterStatus,
+};
+pub use owner::signal_journal::{
+    SignalFrameRecord, SignalJournalFact, SignalJournalFailure, SignalJournalPhase, SignalMaskRead,
+    SignalProgressReader, SignalProgressSnapshot, SignalRegisterRead, SignalStateRecord,
+    SignalXstateRead,
 };
 
 static NEXT_SESSION: AtomicU64 = AtomicU64::new(1);
@@ -395,6 +407,8 @@ struct Ready {
     event: DynamicEvent,
 }
 struct TracerStart {
+    signal_journal: Option<owner::signal_journal::SignalJournalWriter>,
+    anchor: Option<(launch::anchor::AnchorRequest, launch::anchor::AnchorArchive)>,
     command: LaunchCommand,
     session: u64,
     inherited_mask: u64,
@@ -568,6 +582,8 @@ impl DynamicSession {
             .name("liteinst-dynamic-tracer".into())
             .spawn(move || {
                 owner::run(TracerStart {
+                    anchor: None,
+                    signal_journal: None,
                     command,
                     session,
                     inherited_mask,
@@ -608,6 +624,124 @@ impl DynamicSession {
             done,
             operation_timeout: timeout,
         })
+    }
+
+    // Opt-in counterpart of the unchanged default launcher. The archive is
+    // allocated and retained by the caller before a tracer/child can exist.
+    fn launch_options_until_with_anchor(
+        command: &LaunchCommand,
+        timeout: Duration,
+        lifecycle: DynamicLifecycleOptions,
+        until: Instant,
+        request: launch::anchor::AnchorRequest,
+    ) -> Result<
+        (Self, launch::anchor::AnchorArchive, SignalProgressReader),
+        DynamicSignalLaunchFailure,
+    > {
+        let session = NEXT_SESSION
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
+            .map_err(|_| {
+                DynamicSignalLaunchFailure::before_anchor(LaunchError::Invalid(
+                    "dynamic session identity exhausted",
+                ))
+            })?;
+        let archive = launch::anchor::AnchorArchive::new(request, session)
+            .map_err(DynamicSignalLaunchFailure::before_anchor)?;
+        let reader = archive.reader();
+        let signal_journal =
+            owner::signal_journal::SignalJournalWriter::new(session, reader.clone()).map_err(
+                |error| {
+                    archive.record_initial_failure(&error);
+                    DynamicSignalLaunchFailure {
+                        error: error.into(),
+                        anchor: Some(reader.clone()),
+                        native_owner_started: false,
+                    }
+                },
+            )?;
+        let signal_reader = signal_journal.reader();
+        // Retain a writer before moving the owner copy into the tracer. A
+        // failed spawn has no Owner, and a failed client handshake must remain
+        // visible even when background cleanup has not finished.
+        let creator_archive = archive.clone();
+        let mut native_owner_started = false;
+        let lifecycle = Some(lifecycle);
+        let exec = DynamicExecPolicy::Refuse;
+        let result = (|| -> Result<Self, LaunchError> {
+            let command = command.clone();
+            let cancel = Arc::new(AtomicBool::new(false));
+            let thread_cancel = Arc::clone(&cancel);
+            let (commands, receiver) = channel();
+            let (ready_tx, ready_rx) = channel();
+            let (done_tx, done) = channel();
+            // Block before spawn, not merely at the thread's first instruction:
+            // otherwise an embedding signal handler could run before owner::run.
+            let blocked = launch::BlockedSignals::new()?;
+            let inherited_mask = blocked.original();
+            let spawned = std::thread::Builder::new()
+                .name("liteinst-dynamic-tracer".into())
+                .spawn(move || {
+                    owner::run(TracerStart {
+                        anchor: Some((request, archive)),
+                        signal_journal: Some(signal_journal),
+                        command,
+                        session,
+                        inherited_mask,
+                        lifecycle,
+                        exec,
+                        until,
+                        cancel: thread_cancel,
+                        commands: receiver,
+                        ready: ready_tx,
+                        done: done_tx,
+                    })
+                })
+                .map_err(|error| io_error("start dynamic tracer", error));
+            native_owner_started = spawned.is_ok();
+            if let Err(error) = &spawned {
+                creator_archive.record_initial_failure(error);
+            }
+            if let Err(error) = blocked.restore() {
+                creator_archive.record_initial_failure(&error);
+                cancel.store(true, Ordering::Release);
+                return Err(error);
+            }
+            spawned?;
+            let ready = match ready_rx.recv_timeout(until.saturating_duration_since(Instant::now()))
+            {
+                Ok(Ok(ready)) => ready,
+                Ok(Err(error)) => {
+                    cancel.store(true, Ordering::Release);
+                    return Err(error);
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                    cancel.store(true, Ordering::Release);
+                    return Err(LaunchError::Timeout("seized launch"));
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                    cancel.store(true, Ordering::Release);
+                    return Err(LaunchError::Invalid("dynamic launch tracer closed"));
+                }
+            };
+            Ok(Self {
+                pid: ready.pid,
+                initial: ready.event,
+                commands,
+                cancel,
+                done,
+                operation_timeout: timeout,
+            })
+        })();
+        result
+            .map(|session| (session, creator_archive.clone(), signal_reader))
+            .map_err(|error| {
+                creator_archive.record_initial_failure(&error);
+                DynamicSignalLaunchFailure {
+                    error: error.into(),
+                    anchor: Some(reader),
+                    native_owner_started,
+                }
+            })
     }
 
     /// Original numeric PID, retained across exec and for diagnostics after terminal events.

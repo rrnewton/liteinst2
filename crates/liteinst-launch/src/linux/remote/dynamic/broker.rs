@@ -11,6 +11,7 @@ const DONE: u32 = 3;
 const FAILED: u32 = 4;
 const SEIZED: u32 = 5;
 const ABORT: u32 = 6;
+const ANCHOR_START: u32 = 7;
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -57,6 +58,8 @@ pub(super) struct Broker {
     terminal: Option<i32>,
     failed: bool,
     ready_seen: bool,
+    anchor_start_pending: bool,
+    anchor_grant_sent: bool,
     #[cfg(test)]
     pub(super) failure_root: Option<i32>,
 }
@@ -149,6 +152,8 @@ impl Broker {
             terminal: None,
             failed: false,
             ready_seen: false,
+            anchor_start_pending: false,
+            anchor_grant_sent: false,
             #[cfg(test)]
             failure_root: None,
         })
@@ -174,7 +179,47 @@ impl Broker {
             Err(system("send private reaper command"))
         }
     }
+    // The reset launcher installs this Broker before START can allow A to exist.
+    pub(super) fn anchor_start_pending(&self) -> bool {
+        self.anchor_start_pending
+    }
+    pub(super) fn anchor_no_application_possible(&self) -> bool {
+        self.anchor_start_pending && !self.anchor_grant_sent
+    }
+    pub(super) fn release_anchor(&mut self) -> Result<(), LaunchError> {
+        if !self.anchor_start_pending || self.acknowledged {
+            return Err(LaunchError::Invalid(
+                "anchor broker is not awaiting its start grant",
+            ));
+        }
+        let packet = Packet::new(self.session, 0, ANCHOR_START);
+        if unsafe { raw::send(self.channel.as_raw_fd(), &packet, -1) } != 1 {
+            return Err(system("grant anchored reaper start"));
+        }
+        self.anchor_grant_sent = true;
+        self.continue_anchor()
+    }
+    fn continue_anchor(&self) -> Result<(), LaunchError> {
+        if unsafe {
+            libc::syscall(
+                libc::SYS_pidfd_send_signal,
+                self.handle.as_raw_fd(),
+                libc::SIGCONT,
+                std::ptr::null::<libc::siginfo_t>(),
+                0,
+            )
+        } != 0
+        {
+            return Err(system("continue anchored reaper barrier"));
+        }
+        Ok(())
+    }
     pub(super) fn cancel(&mut self) {
+        // Before READY, R may still be held at its genuine pre-A SIGSTOP.
+        // Continuing only R enters the private authenticated command barrier.
+        if self.anchor_start_pending {
+            let _ = self.continue_anchor();
+        }
         if self.abort_sent || self.done {
             return;
         }
@@ -259,6 +304,7 @@ impl Broker {
                     }
                     self.root = Some((packet.pid, descriptor));
                     self.ready_seen = true;
+                    self.anchor_start_pending = false;
                 }
                 REAPED
                     if descriptor.is_none()
@@ -278,7 +324,8 @@ impl Broker {
                     && packet.error == 0
                     && packet.count == self.physical.len() as u64 =>
                 {
-                    self.done = true
+                    self.done = true;
+                    self.anchor_start_pending = false;
                 }
                 FAILED
                     if descriptor.is_none()
@@ -345,4 +392,127 @@ pub(super) fn hup(handle: &OwnedFd) -> bool {
     // SAFETY: initialized entry and stable original process identity. Linux
     // pidfd_poll returns HUP only after PIDTYPE_PID has no remaining task.
     unsafe { libc::poll(&raw mut event, 1, 0) == 1 && event.revents & libc::POLLHUP != 0 }
+}
+
+/// Prepared descriptor ownership for the opt-in reset lineage; no child exists.
+pub(super) struct AnchorBroker {
+    channel: OwnedFd,
+    child_channel: OwnedFd,
+    host_handle: OwnedFd,
+    raw: AnchorRaw,
+}
+#[derive(Clone, Copy)]
+pub(super) struct AnchorRaw {
+    sockets: [i32; 2],
+    session: u64,
+    host: libc::ucred,
+    host_fd: i32,
+    bootstrap: launch::Bootstrap,
+    #[cfg(test)]
+    hold_before_stop: bool,
+}
+impl AnchorBroker {
+    pub(super) fn prepare(session: u64, bootstrap: launch::Bootstrap) -> Result<Self, LaunchError> {
+        let mut sockets = [-1; 2];
+        if unsafe {
+            libc::socketpair(
+                libc::AF_UNIX,
+                libc::SOCK_SEQPACKET | libc::SOCK_CLOEXEC | libc::SOCK_NONBLOCK,
+                0,
+                sockets.as_mut_ptr(),
+            )
+        } != 0
+        {
+            return Err(system("create anchored reaper protocol"));
+        }
+        let channel = unsafe { OwnedFd::from_raw_fd(sockets[0]) };
+        let child_channel = unsafe { OwnedFd::from_raw_fd(sockets[1]) };
+        let enable = 1_i32;
+        for fd in sockets {
+            if unsafe {
+                libc::setsockopt(
+                    fd,
+                    libc::SOL_SOCKET,
+                    libc::SO_PASSCRED,
+                    (&raw const enable).cast(),
+                    std::mem::size_of_val(&enable) as _,
+                )
+            } != 0
+            {
+                return Err(system("authenticate anchored reaper protocol"));
+            }
+        }
+        let host = libc::ucred {
+            pid: unsafe { libc::getpid() },
+            uid: unsafe { libc::getuid() },
+            gid: unsafe { libc::getgid() },
+        };
+        let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, host.pid, 0) };
+        if fd < 0 {
+            return Err(system("pin anchored reaper host"));
+        }
+        let host_handle = unsafe { OwnedFd::from_raw_fd(fd as i32) };
+        let raw = AnchorRaw {
+            sockets,
+            session,
+            host,
+            host_fd: host_handle.as_raw_fd(),
+            bootstrap,
+            #[cfg(test)]
+            hold_before_stop: false,
+        };
+        Ok(Self {
+            channel,
+            child_channel,
+            host_handle,
+            raw,
+        })
+    }
+    pub(super) fn raw(&self) -> AnchorRaw {
+        self.raw
+    }
+    pub(super) fn adopt(self, pid: i32, handle: OwnedFd) -> Broker {
+        // Drop only H's private copies; R already inherited its own table.
+        drop(self.child_channel);
+        drop(self.host_handle);
+        Broker {
+            pid,
+            handle,
+            channel: self.channel,
+            session: self.raw.session,
+            credentials: libc::ucred {
+                pid,
+                ..self.raw.host
+            },
+            next_sequence: 1,
+            acknowledged: false,
+            abort_sent: false,
+            root: None,
+            physical: Default::default(),
+            done: false,
+            terminal: None,
+            failed: false,
+            ready_seen: false,
+            anchor_start_pending: true,
+            anchor_grant_sent: false,
+            #[cfg(test)]
+            failure_root: None,
+        }
+    }
+}
+pub(super) unsafe fn anchor_child(input: AnchorRaw, reset_channels: [i32; 2]) -> ! {
+    unsafe {
+        for fd in reset_channels {
+            libc::syscall(libc::SYS_close, fd);
+        }
+        raw::anchor_prelude(input)
+    }
+}
+
+#[cfg(test)]
+impl AnchorRaw {
+    pub(super) fn hold_before_stop(mut self) -> Self {
+        self.hold_before_stop = true;
+        self
+    }
 }

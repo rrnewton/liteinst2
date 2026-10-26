@@ -14,7 +14,7 @@ use exec::ExecPending;
 mod tests;
 use crate::lifecycle::{
     CreationEvent, CreationEventKind, CreationRequest, CreationTicket, ExitStatus, HoldReason,
-    LifecycleRegistry, Limits, SignalEvent, SignalScope, TaskId,
+    LifecycleRegistry, Limits, ObligationId, SignalEvent, SignalScope, TaskId,
 };
 use std::collections::VecDeque;
 use std::os::unix::fs::MetadataExt;
@@ -25,6 +25,7 @@ struct Task {
     interrupt_stops_remaining: u8,
     syscall_open: bool,
     fork_return: Option<ForkReturn>,
+    signal_obligation: Option<ObligationId>,
 }
 
 struct ForkReturn {
@@ -135,6 +136,7 @@ impl NativeLifecycle {
                 interrupt_stops_remaining: 0,
                 syscall_open: false,
                 fork_return: None,
+                signal_obligation: None,
             },
         )]);
         Ok((
@@ -533,7 +535,14 @@ impl NativeLifecycle {
             return self.syscall(tid).map(Some);
         }
         let mut raw = [0_u8; 128];
-        ptrace(libc::PTRACE_GETSIGINFO, tid, 0, raw.as_mut_ptr() as usize)?;
+        if let Some(journal) = &owner.signal_journal {
+            // Both independent raw observations are retained before a shared
+            // failure gate or any signal/registry authentication can reject.
+            let (captured, _) = journal.capture_signal_state(tid, status)?;
+            raw = captured;
+        } else {
+            ptrace(libc::PTRACE_GETSIGINFO, tid, 0, raw.as_mut_ptr() as usize)?;
+        }
         let info = DynamicSignalInfo { raw };
         if info.signal() != signal {
             return Err(LaunchError::Invalid(
@@ -543,7 +552,7 @@ impl NativeLifecycle {
         let registers = read_registers(tid)?;
         // siginfo does not authenticate pending-queue provenance. Preserve an
         // explicitly Unknown obligation, even for familiar SI_* codes.
-        recorded(self.registry.observe_signal(
+        let obligation = recorded(self.registry.observe_signal(
             id,
             self.sequence(tid)?,
             SignalEvent {
@@ -553,6 +562,7 @@ impl NativeLifecycle {
                 scope: SignalScope::Unknown,
             },
         ))?;
+        self.tasks.get_mut(&tid).unwrap().signal_obligation = Some(obligation);
         self.held(tid, DynamicEventKind::SignalDelivery(info))
             .map(Some)
     }
@@ -859,6 +869,7 @@ impl NativeLifecycle {
                 // here can observe its next entry, not a fork-exit event.
                 syscall_open: false,
                 fork_return: None,
+                signal_obligation: None,
             },
         );
         let mut parent_return = pending.entry;
@@ -902,4 +913,10 @@ fn same_pid_namespace(tid: libc::pid_t) -> Result<(), LaunchError> {
         }
     }
     Ok(())
+}
+
+// The initial anchor uses exactly the existing per-task disabled-state proof.
+// Ownership authentication is performed by Owner before this read-only call.
+pub(super) fn anchor_shadow_stack_disabled(tid: i32) -> Result<(), LaunchError> {
+    thread::shadow_stack_disabled(tid)
 }

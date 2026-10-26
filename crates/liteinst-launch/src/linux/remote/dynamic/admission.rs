@@ -11,6 +11,9 @@ use crate::selected::{FaultedInstruction, InstructionProvider, ProviderDecision,
 use crate::trap_coverage::TrapCoverageBudget;
 use liteinst_admission::oracle_chain::CacheLimits;
 
+mod signal_session;
+pub use signal_session::DynamicSignalSession;
+
 /// Explicit trap backend; neither choice is an implicit fallback from A1.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum DynamicAdmissionBackend {
@@ -149,6 +152,11 @@ pub struct DynamicAdmissionCompletion {
 pub enum DynamicAdmissionEvent {
     /// One provider decision and one completed instruction, with guards rearmed.
     Completed(Box<DynamicAdmissionCompletion>),
+    /// An actual original delivery waiting on its immutable transaction deadline.
+    /// Available only through the explicitly selected signal-session profile.
+    SignalPending(Box<DynamicSignalPending>),
+    /// Actual native rt_sigreturn EXIT; no ordinary completion is substituted.
+    SignalReturned(Box<DynamicSignalReturn>),
     /// Provider-generated fault; no native signal or completion is fabricated.
     Fault {
         /// Task on which the invocation remains incomplete.
@@ -240,6 +248,14 @@ pub(super) enum AdmissionRequest {
         facts: Vec<ImageFacts>,
         options: DynamicAdmissionOptions,
     },
+    StartSignals {
+        initial: DynamicStop,
+        facts: Vec<ImageFacts>,
+        options: DynamicAdmissionOptions,
+        profile: DynamicSignalProfile,
+        budget: signal::SignalBudget,
+    },
+    DeliverSignal(SignalDeliveryToken),
     Advance,
     Complete {
         token: PendingToken,
@@ -256,6 +272,8 @@ pub(super) enum AdmissionRequest {
 
 pub(super) enum AdmissionReply {
     Ready(DynamicAdmissionState, KernelProgressReader),
+    ReadySignals(DynamicAdmissionState, KernelProgressReader),
+    SignalEntered(Box<DynamicSignalEntry>),
     Provider(Box<ProviderInput>),
     Event(DynamicAdmissionEvent),
     State(DynamicAdmissionState),

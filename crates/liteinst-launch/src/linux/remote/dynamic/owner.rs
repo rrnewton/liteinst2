@@ -6,6 +6,8 @@ mod tests;
 
 mod admission;
 pub(super) mod kernel_journal;
+pub(super) mod signal_journal;
+mod signal_return;
 #[cfg(test)]
 use kernel_journal::fault::{JournalFault, JournalFaultPoint};
 pub(crate) mod bootstrap;
@@ -37,6 +39,11 @@ pub(super) struct Owner {
     _thread: std::marker::PhantomData<std::rc::Rc<()>>,
     pub(super) pid: libc::pid_t,
     pub(super) initial_exec: Option<RegisterSnapshot>,
+    anchor_archive: Option<launch::anchor::AnchorArchive>,
+    anchor_receipt: Option<launch::anchor::InitialExceptionMetadata>,
+    anchor_reset: Option<launch::anchor::ResetLaunch>,
+    anchor_exit_authenticated: bool,
+    signal_journal: Option<signal_journal::SignalJournalWriter>,
     lifecycle_options: Option<DynamicLifecycleOptions>,
     exec_policy: DynamicExecPolicy,
     lifecycle: Option<lifecycle::NativeLifecycle>,
@@ -81,6 +88,8 @@ pub(super) struct Owner {
 
 pub(super) fn run(start: TracerStart) {
     let TracerStart {
+        signal_journal,
+        anchor,
         command,
         session,
         inherited_mask,
@@ -93,6 +102,11 @@ pub(super) fn run(start: TracerStart) {
         done,
     } = start;
     let mut owner = Owner::new(session, cancel);
+    owner.signal_journal = signal_journal;
+    let anchor_request = anchor.map(|(request, archive)| {
+        owner.anchor_archive = Some(archive);
+        request
+    });
     owner.lifecycle_options = lifecycle;
     owner.exec_policy = exec;
     let mut announced = false;
@@ -101,7 +115,14 @@ pub(super) fn run(start: TracerStart) {
         // initialization. Ordinary application-handler signals were inherited
         // blocked; finish the exact kernel mask before touching the wait domain.
         launch::set_current_mask(u64::MAX)?;
-        let initial = launch::start(&mut owner, &command, inherited_mask, until)?;
+        let initial = if let Some(request) = anchor_request {
+            let (ready, receipt) =
+                launch::start_with_anchor(&mut owner, &command, inherited_mask, until, request)?;
+            owner.anchor_receipt = Some(receipt);
+            ready
+        } else {
+            launch::start(&mut owner, &command, inherited_mask, until)?
+        };
         ready
             .send(Ok(initial))
             .map_err(|_| LaunchError::Invalid("seized launch client disconnected"))?;
@@ -110,8 +131,26 @@ pub(super) fn run(start: TracerStart) {
     }));
     let failure = match result {
         Ok(Ok(())) => None,
-        Ok(Err(error)) => Some(error),
+        Ok(Err(error)) => {
+            if let Some(journal) = &owner.signal_journal {
+                journal.fail_error(&error);
+            }
+            if !owner.anchor_exit_authenticated {
+                if let Some(archive) = &owner.anchor_archive {
+                    archive.record_failure(&error);
+                }
+            }
+            Some(error)
+        }
         Err(_) => {
+            if let Some(journal) = &owner.signal_journal {
+                journal.fail(signal_journal::SignalJournalFailure::CaughtPanic);
+            }
+            if !owner.anchor_exit_authenticated {
+                if let Some(archive) = &owner.anchor_archive {
+                    archive.record_panic();
+                }
+            }
             owner
                 .kernel_journal
                 .fail_active(kernel_journal::KernelFailureKind::CaughtPanic);
@@ -135,6 +174,11 @@ impl Owner {
             _thread: std::marker::PhantomData,
             pid: 0,
             initial_exec: None,
+            anchor_archive: None,
+            anchor_receipt: None,
+            anchor_reset: None,
+            anchor_exit_authenticated: false,
+            signal_journal: None,
             lifecycle_options: None,
             exec_policy: DynamicExecPolicy::Refuse,
             lifecycle: None,
@@ -172,6 +216,53 @@ impl Owner {
             #[cfg(test)]
             deny_pin_for_test: false,
         }
+    }
+    pub(super) fn anchor_session(&self) -> u64 {
+        self.session
+    }
+    pub(super) fn spawn_anchor_broker(
+        &mut self,
+        bootstrap: launch::Bootstrap,
+        until: Instant,
+    ) -> Result<(), LaunchError> {
+        if self.broker.is_some() || self.anchor_reset.is_some() {
+            return Err(LaunchError::Invalid("duplicate anchored broker start"));
+        }
+        let archive = self.anchor_archive()?;
+        self.anchor_reset = Some(launch::anchor::ResetLaunch::prepare(
+            self.session,
+            bootstrap,
+            archive,
+        )?);
+        let broker = self
+            .anchor_reset
+            .as_mut()
+            .unwrap()
+            .launch(until, &self.cancel)?;
+        // Transfer the real parent owner before granting permission to create A.
+        self.broker = Some(broker);
+        self.anchor_reset = None;
+        self.time_left(until, "grant anchored reaper start")?;
+        self.broker.as_mut().unwrap().release_anchor()
+    }
+    pub(super) fn anchor_archive(&self) -> Result<launch::anchor::AnchorArchive, LaunchError> {
+        self.anchor_archive.clone().ok_or(LaunchError::Invalid(
+            "anchor archive was not reserved before launch",
+        ))
+    }
+    pub(super) fn anchor_shadow_stack_disabled(&self, tid: i32) -> Result<(), LaunchError> {
+        if tid != self.pid
+            || !self.attached
+            || self.owned.len() != 1
+            || !self.owned.contains(&tid)
+            || !self.stopped.contains_key(&tid)
+            || self.handles.get(&tid).is_none_or(broker::hup)
+        {
+            return Err(LaunchError::Invalid(
+                "anchor CET query lacks original stopped incarnation",
+            ));
+        }
+        lifecycle::anchor_shadow_stack_disabled(tid)
     }
     pub(super) fn spawn_broker(&mut self, bootstrap: launch::Bootstrap) -> Result<(), LaunchError> {
         self.broker = Some(broker::Broker::spawn(self.session, bootstrap)?);
@@ -710,6 +801,13 @@ impl Owner {
         result
     }
     fn syscall_event(&mut self) -> Result<DynamicEvent, LaunchError> {
+        // Capture the actual initial syscall stop before syscall-info parsing,
+        // ABI/phase checks or the old EXEC->EXIT equality can refuse it.
+        if self.initial_exec.is_some() {
+            if let Some(receipt) = &self.anchor_receipt {
+                receipt.capture_exec_exit(self.pid)?;
+            }
+        }
         let info = syscall_info(self.pid)?;
         let registers = read_registers(self.pid)?;
         if info.arch != AUDIT_ARCH_X86_64
@@ -857,7 +955,16 @@ impl Owner {
             kernel_journal::KernelWriterStatus::Closing,
             Some(kernel_journal::KernelFailureKind::Cancelled),
         );
+        if let Some(journal) = &self.signal_journal {
+            journal.close(None);
+        }
         let result = self.cleanup_inner();
+        if let Some(journal) = &self.signal_journal {
+            journal.close(Some(result.is_ok()));
+        }
+        if let Some(archive) = &self.anchor_archive {
+            archive.record_cleanup(result.is_ok());
+        }
         self.kernel_journal.close(
             if result.is_ok() {
                 kernel_journal::KernelWriterStatus::Cleaned
@@ -870,8 +977,20 @@ impl Owner {
     }
     fn cleanup_inner(&mut self) -> Result<DynamicCleanup, LaunchError> {
         self.closing = true;
+        if let Some(reset) = &mut self.anchor_reset {
+            if reset.cleanup().is_err() {
+                self.lost_wait = true;
+            }
+            self.anchor_reset = None;
+        }
         if self.broker.is_none() {
-            return Ok(DynamicCleanup { reaped: Vec::new() });
+            return if self.lost_wait {
+                Err(LaunchError::Invalid(
+                    "initial reset cleanup evidence failed",
+                ))
+            } else {
+                Ok(DynamicCleanup { reaped: Vec::new() })
+            };
         }
         loop {
             // Receive Ready before Abort: R keeps the root unreaped until the
@@ -879,7 +998,13 @@ impl Owner {
             if self.poll_broker().is_err() {
                 self.lost_wait = true;
             }
-            if self.pid > 0 || self.lost_wait {
+            if self.pid > 0
+                || self.lost_wait
+                || self
+                    .broker
+                    .as_ref()
+                    .is_some_and(|broker| broker.anchor_start_pending())
+            {
                 self.broker.as_mut().unwrap().cancel();
             }
             let mut domain_empty = false;
@@ -935,7 +1060,10 @@ impl Owner {
                         // Without an authenticated root, absence of Ready says
                         // nothing about whether R already cloned A. Likewise a
                         // lost later pin needs an authenticated helper drain.
-                        if broker.done || (self.pid > 0 && !self.missing_pin) {
+                        if broker.done
+                            || (self.pid > 0 && !self.missing_pin)
+                            || broker.anchor_no_application_possible()
+                        {
                             return Err(error);
                         }
                     }

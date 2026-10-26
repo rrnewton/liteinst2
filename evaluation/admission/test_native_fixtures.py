@@ -185,6 +185,141 @@ class NamedFixtureParsingTests(unittest.TestCase):
         self.assertFalse(any(row["command_succeeded"] or row["qualified_run"] for row in rows))
 
 
+class SignalFixtureParsingTests(unittest.TestCase):
+    # Synthetic protocol examples only. The real corpus pins actual native
+    # trajectories and comparator controls separately by their exact names.
+    rows = [
+        {"cohort": "b3_signal", "harness": fixtures.SIGNAL_REFERENCE,
+         "test": "ordinary_stack_frame_matches_pristine_original"},
+        {"cohort": "b3_signal", "harness": fixtures.SIGNAL_REFERENCE,
+         "test": "pristine_comparator_rejects_metadata_and_unrelated_state_corruption"},
+    ]
+
+    def capture(self, terminal="ok"):
+        return (header(fixtures.SIGNAL_REFERENCE) + "\nrunning 2 tests\n"
+                + f"test {self.rows[0]['test']} ... PRIVATE_SENTINEL\nok\n"
+                + f"test {self.rows[1]['test']} ... {terminal}\n" + summary(2))
+
+    def test_signal_cohort_retains_exact_named_outcomes_without_sample_claims(self):
+        actual = fixtures.fixture_outcomes(self.capture(), self.rows, True)
+        self.assertEqual(actual, [row | {
+            "status": "complete", "test_result": "ok", "command_succeeded": True,
+            "qualified_run": False} for row in self.rows])
+        self.assertNotIn("PRIVATE_SENTINEL", json.dumps(actual))
+        self.assertTrue(all(set(row) == {"cohort", "harness", "test", "status", "test_result",
+                                        "command_succeeded", "qualified_run"} for row in actual))
+
+    def test_signal_scope_cannot_substitute_reference_or_unit_harnesses(self):
+        for changes in ({"cohort": "b2_reference"}, {"harness": fixtures.REFERENCE},
+                        {"harness": fixtures.UNIT}, {"test": "nested::ordinary"},
+                        {"cohort": "b3_signal_extra"}):
+            with self.subTest(changes=changes), self.assertRaisesRegex(
+                    InvalidEvidence, "invalid_native_fixture_scope"):
+                fixtures.fixture_outcomes(self.capture(), [self.rows[0] | changes], True)
+        foreign = self.capture().replace(header(fixtures.SIGNAL_REFERENCE), header("test/foreign"))
+        with self.assertRaisesRegex(InvalidEvidence, "native_fixture_wrong_harness"):
+            fixtures.fixture_outcomes(foreign, self.rows, True)
+
+    def test_signal_failure_ignore_missing_and_unknown_keep_partial_evidence(self):
+        cases = [(self.capture(terminal), "native_fixture_not_passed", "failed", result)
+                 for terminal, result in (("FAILED", "FAILED"), ("ignored", "ignored"))]
+        missing = self.capture().replace(f"test {self.rows[1]['test']} ... ok\n", "")
+        cases.append((missing, "native_fixture_cohort_differs", "not_observed", None))
+        cases.append((self.capture().replace(self.rows[1]["test"], "unknown_private_name"),
+                      "native_fixture_cohort_differs", "not_observed", None))
+        for output, error, status, result in cases:
+            with self.subTest(error=error, result=result), self.assertRaisesRegex(
+                    InvalidEvidence, error) as caught:
+                fixtures.fixture_outcomes(output, self.rows, True)
+            rows = caught.exception.partial
+            self.assertEqual(rows[0]["status"], "complete")
+            self.assertEqual(rows[1]["status"], status)
+            self.assertEqual(rows[1]["test_result"], result)
+            self.assertFalse(any(row["qualified_run"] for row in rows))
+            self.assertNotIn("PRIVATE_SENTINEL", json.dumps(rows))
+            self.assertNotIn("unknown_private_name", json.dumps(rows))
+
+    def test_signal_observations_require_command_and_whole_protocol_success(self):
+        for succeeded in (False, True):
+            for source_ok in (False, True):
+                for terminal in ("passed", "failed", "not_run"):
+                    with self.subTest(command=succeeded, source=source_ok, terminal=terminal):
+                        rows = fixtures.fixture_outcomes(self.capture(), self.rows, succeeded)
+                        record = {"source_unchanged": source_ok, "configuration_unchanged": True,
+                                  "commands": [{"status": "passed" if succeeded else "failed",
+                                                "native_validation_fixtures": rows},
+                                               {"status": terminal}]}
+                        run.qualify(record)
+                        expected = succeeded and source_ok and terminal == "passed"
+                        self.assertEqual(record["status"], "passed" if expected else "failed")
+                        self.assertEqual([row["qualified_run"] for row in rows], [expected] * 2)
+                        self.assertTrue(all(row["test_result"] == "ok" for row in rows))
+
+
+class ResetFixtureParsingTests(unittest.TestCase):
+    # These synthetic protocol rows do not run any reset helper or certify an
+    # actual failure injection. The tracked corpus supplies the native names.
+    rows = [
+        {"cohort": "b3_reset", "harness": fixtures.UNIT,
+         "test": fixtures.RESET_PREFIX + "packet_send_failure_retains_real_reaper_cleanup"},
+        {"cohort": "b3_reset", "harness": fixtures.UNIT,
+         "test": fixtures.RESET_PREFIX + "absent_pid_publication_does_not_mean_no_reaper"},
+    ]
+
+    def capture(self, terminal="ok"):
+        return (header(fixtures.UNIT) + "\nrunning 3 tests\n"
+                + "test ordinary::model ... ok\n"
+                + f"test {self.rows[0]['test']} ... PRIVATE_SENTINEL\nok\n"
+                + f"test {self.rows[1]['test']} ... {terminal}\n" + summary(3))
+
+    def test_reset_cohort_records_exact_outcomes_without_native_sample_counts(self):
+        rows = fixtures.fixture_outcomes(self.capture(), self.rows, True)
+        self.assertEqual(rows, [row | {
+            "status": "complete", "test_result": "ok", "command_succeeded": True,
+            "qualified_run": False} for row in self.rows])
+        self.assertNotIn("PRIVATE_SENTINEL", json.dumps(rows))
+        self.assertTrue(all(set(row) == {"cohort", "harness", "test", "status", "test_result",
+                                        "command_succeeded", "qualified_run"} for row in rows))
+
+    def test_reset_scope_cannot_be_relabelled_as_journal_signal_or_ordinary(self):
+        for changes in ({"cohort": "kernel_journal"}, {"cohort": "b3_signal"},
+                        {"cohort": "b3_reset_extra"}, {"harness": fixtures.SIGNAL_REFERENCE},
+                        {"test": "ordinary::model"},
+                        {"test": self.rows[0]["test"].replace("reset::tests::", "reset_extra::tests::")}):
+            with self.subTest(changes=changes), self.assertRaisesRegex(
+                    InvalidEvidence, "invalid_native_fixture_scope"):
+                fixtures.fixture_outcomes(self.capture(), [self.rows[0] | changes], True)
+
+    def test_unlisted_reset_tests_and_wrong_harnesses_cannot_supply_evidence(self):
+        unknown = self.capture().replace(self.rows[1]["test"], fixtures.RESET_PREFIX + "unlisted")
+        duplicate = self.capture().replace(self.rows[1]["test"], self.rows[0]["test"])
+        wrong = self.capture().replace(header(fixtures.UNIT), header("test/foreign"))
+        for text, code in ((unknown, "native_fixture_cohort_differs"),
+                           (duplicate, "duplicate_native_fixture_test"),
+                           (wrong, "native_fixture_wrong_harness")):
+            with self.subTest(code=code), self.assertRaisesRegex(InvalidEvidence, code) as caught:
+                fixtures.fixture_outcomes(text, self.rows, True)
+            self.assertEqual(len(caught.exception.partial), len(self.rows))
+            self.assertFalse(any(row["qualified_run"] for row in caught.exception.partial))
+
+    def test_reset_failures_missing_cases_and_failed_commands_stay_unqualified(self):
+        missing = self.capture().replace(f"test {self.rows[1]['test']} ... ok\n", "")
+        for text, code, status, result in (
+                (self.capture("FAILED"), "native_fixture_not_passed", "failed", "FAILED"),
+                (self.capture("ignored"), "native_fixture_not_passed", "failed", "ignored"),
+                (missing, "native_fixture_cohort_differs", "not_observed", None)):
+            with self.subTest(code=code, result=result), self.assertRaisesRegex(InvalidEvidence, code) as caught:
+                fixtures.fixture_outcomes(text, self.rows, True)
+            rows = caught.exception.partial
+            self.assertEqual(rows[0]["status"], "complete")
+            self.assertEqual((rows[1]["status"], rows[1]["test_result"]), (status, result))
+            self.assertFalse(any(row["qualified_run"] for row in rows))
+            self.assertNotIn("PRIVATE_SENTINEL", json.dumps(rows))
+        rows = fixtures.fixture_outcomes(self.capture(), self.rows, False)
+        self.assertTrue(all(row["test_result"] == "ok" for row in rows))
+        self.assertFalse(any(row["command_succeeded"] or row["qualified_run"] for row in rows))
+
+
 class NamedFixtureRecorderTests(unittest.TestCase):
     def evidence(self, suffix=None, status="passed", exit_code=0):
         expected = corpus()

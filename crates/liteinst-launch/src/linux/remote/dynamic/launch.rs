@@ -1,5 +1,17 @@
 use super::*;
 
+pub(in crate::linux::remote::dynamic) mod anchor;
+
+pub(super) fn start_with_anchor(
+    owner: &mut owner::Owner,
+    command: &LaunchCommand,
+    inherited_mask: u64,
+    until: Instant,
+    request: anchor::AnchorRequest,
+) -> Result<(Ready, anchor::InitialExceptionMetadata), LaunchError> {
+    anchor::start(owner, command, inherited_mask, until, request)
+}
+
 pub(super) fn current_mask() -> Result<u64, LaunchError> {
     let mut mask = 0_u64;
     // SAFETY: Linux x86-64 takes an eight-byte kernel mask, unlike libc sigset_t.
@@ -159,6 +171,7 @@ pub(super) fn start(
         ));
     }
     let bootstrap = Bootstrap {
+        anchor: None,
         release: child_fd,
         parent_release: parent_fd,
         error_read: error_reader,
@@ -250,6 +263,7 @@ pub(super) fn start(
 
 #[derive(Clone, Copy)]
 pub(super) struct Bootstrap {
+    anchor: Option<anchor::ChildConfig>,
     release: i32,
     parent_release: i32,
     error_read: i32,
@@ -266,6 +280,9 @@ impl Bootstrap {
     pub(super) unsafe fn close_all(self) {
         // SAFETY: this runs only in the raw helper's copied descriptor table.
         unsafe {
+            if let Some(anchor) = self.anchor {
+                anchor.close_all();
+            }
             libc::syscall(libc::SYS_close, self.release);
             libc::syscall(libc::SYS_close, self.parent_release);
             libc::syscall(libc::SYS_close, self.error_read);
@@ -275,6 +292,11 @@ impl Bootstrap {
 }
 
 pub(super) unsafe fn child_bootstrap(bootstrap: Bootstrap) -> ! {
+    if let Some(anchor) = bootstrap.anchor {
+        // The opt-in branch enters fixed raw assembly and never returns into
+        // inherited Rust state or runs a caller-supplied callback.
+        unsafe { anchor.run() }
+    }
     let Bootstrap {
         release,
         parent_release,

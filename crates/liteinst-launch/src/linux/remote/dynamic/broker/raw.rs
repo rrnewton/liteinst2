@@ -374,3 +374,154 @@ pub(super) unsafe fn run(
         }
     }
 }
+
+/// R owns no application until an authenticated START. H remains the exact
+/// retained parent thread; getppid below checks only TGID, never wait authority.
+pub(super) unsafe fn anchor_prelude(input: AnchorRaw) -> ! {
+    unsafe {
+        let channel = input.sockets[1];
+        libc::syscall(libc::SYS_close, input.sockets[0]);
+        let mut host_event = libc::pollfd {
+            fd: input.host_fd,
+            events: libc::POLLIN,
+            revents: 0,
+        };
+        if libc::syscall(
+            libc::SYS_prctl,
+            libc::PR_SET_PDEATHSIG,
+            libc::SIGKILL,
+            0,
+            0,
+            0,
+        ) != 0
+            || libc::syscall(libc::SYS_getppid) != i64::from(input.host.pid)
+            || libc::syscall(libc::SYS_poll, &raw mut host_event, 1, 0) != 0
+        {
+            libc::_exit(125);
+        }
+        #[cfg(test)]
+        if input.hold_before_stop {
+            // Per-instance native control: R remains live before its SIGSTOP,
+            // with no application and no way to receive a start grant.
+            loop {
+                host_event.revents = 0;
+                if libc::syscall(libc::SYS_poll, &raw mut host_event, 1, 1) != 0 {
+                    libc::_exit(125);
+                }
+            }
+        }
+        let pid = libc::syscall(libc::SYS_getpid);
+        let tid = libc::syscall(libc::SYS_gettid);
+        if libc::syscall(libc::SYS_tgkill, pid, tid, libc::SIGSTOP) != 0 {
+            libc::_exit(125);
+        }
+        loop {
+            host_event.revents = 0;
+            if libc::syscall(libc::SYS_poll, &raw mut host_event, 1, 0) != 0 {
+                libc::_exit(125);
+            }
+            let mut command = Received::empty();
+            let read = receive(channel, &mut command);
+            if command.descriptor >= 0 {
+                libc::syscall(libc::SYS_close, command.descriptor);
+                command.valid = false;
+            }
+            if read < 0 {
+                libc::_exit(125);
+            }
+            if read == 1 {
+                let p = command.packet;
+                let authentic = command.valid
+                    && command.credentials.pid == input.host.pid
+                    && command.credentials.uid == input.host.uid
+                    && command.credentials.gid == input.host.gid
+                    && p.magic == MAGIC
+                    && p.session == input.session
+                    && p.reserved == [0; 2]
+                    && p.pid == 0
+                    && p.status == 0
+                    && p.error == 0
+                    && p.count == 0;
+                if authentic && p.kind == ANCHOR_START && p.sequence == 0 {
+                    // After this clear, R must survive host loss and drain A.
+                    if libc::syscall(libc::SYS_prctl, libc::PR_SET_PDEATHSIG, 0, 0, 0, 0) != 0 {
+                        anchor_failed(input, *libc::__errno_location());
+                    }
+                    // sockets[0] is already closed in R. run closes it once;
+                    // no descriptor allocation occurred in this prelude.
+                    run(
+                        input.sockets,
+                        input.session,
+                        input.host,
+                        input.host_fd,
+                        input.bootstrap,
+                    )
+                }
+                if authentic && p.kind == ABORT && p.sequence == 1 {
+                    input.bootstrap.close_all();
+                    let done = Packet::new(input.session, 1, DONE);
+                    loop {
+                        let result = send(channel, &done, -1);
+                        if result != 0 {
+                            libc::_exit(if result == 1 { 0 } else { 125 });
+                        }
+                        host_event.revents = 0;
+                        if libc::syscall(libc::SYS_poll, &raw mut host_event, 1, 0) != 0 {
+                            libc::_exit(125);
+                        }
+                        let mut event = libc::pollfd {
+                            fd: channel,
+                            events: libc::POLLOUT,
+                            revents: 0,
+                        };
+                        libc::syscall(libc::SYS_poll, &raw mut event, 1, 1);
+                    }
+                }
+                anchor_failed(input, libc::EPROTO);
+            }
+            let mut event = libc::pollfd {
+                fd: channel,
+                events: libc::POLLIN,
+                revents: 0,
+            };
+            libc::syscall(libc::SYS_poll, &raw mut event, 1, 1);
+        }
+    }
+}
+
+/// No application exists on this branch. Retain an explicit failed prefix and
+/// actual empty-drain receipt when the authenticated transport is still alive.
+unsafe fn anchor_failed(input: AnchorRaw, error: i32) -> ! {
+    unsafe {
+        input.bootstrap.close_all();
+        let mut failed = Packet::new(input.session, 1, FAILED);
+        failed.error = error.max(1);
+        let done = Packet::new(input.session, 2, DONE);
+        for packet in [failed, done] {
+            loop {
+                let result = send(input.sockets[1], &packet, -1);
+                if result == 1 {
+                    break;
+                }
+                if result < 0 {
+                    libc::_exit(125);
+                }
+                let mut host = libc::pollfd {
+                    fd: input.host_fd,
+                    events: libc::POLLIN,
+                    revents: 0,
+                };
+                if libc::syscall(libc::SYS_poll, &raw mut host, 1, 0) != 0 {
+                    libc::_exit(125);
+                }
+                let mut output = libc::pollfd {
+                    fd: input.sockets[1],
+                    events: libc::POLLOUT,
+                    revents: 0,
+                };
+                libc::syscall(libc::SYS_poll, &raw mut output, 1, 1);
+            }
+        }
+        libc::_exit(125)
+    }
+}

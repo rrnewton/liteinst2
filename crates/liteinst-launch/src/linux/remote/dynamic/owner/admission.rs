@@ -18,6 +18,7 @@ mod completion;
 mod domain;
 mod drive;
 mod routes;
+mod signals;
 mod transitions;
 use census::{
     BudgetCharge, ExecutionId, ObservedStop, OriginId, OriginKind, ResumeCensus, StopPhase,
@@ -39,6 +40,7 @@ pub(super) struct AdmissionOwner {
     creation: DynamicCreationPolicy,
     completion_history: Vec<completion::CompletionRecord>,
     pending: Option<PendingInvocation>,
+    signals: Option<signals::SignalTransaction>,
     next_execution: u64,
     metrics: DynamicAdmissionMetrics,
     closed: bool,
@@ -115,20 +117,51 @@ impl Owner {
             self.admission = Some(admission);
             if let Err(error) = &result {
                 self.kernel_journal.fail_gate(error);
+                if let Some(journal) = &self.signal_journal {
+                    match error {
+                        GateError::Control(error) => journal.fail_error(error),
+                        _ => {
+                            journal.fail(super::signal_journal::SignalJournalFailure::InvalidState)
+                        }
+                    }
+                }
             }
             return result;
         }
-        let AdmissionRequest::Start {
-            initial,
-            facts,
-            options,
-        } = request
-        else {
-            return Err(GateError::Refused("dynamic admission is not initialized"));
+        let (initial, facts, options, signal) = match request {
+            AdmissionRequest::Start {
+                initial,
+                facts,
+                options,
+            } => (initial, facts, options, None),
+            AdmissionRequest::StartSignals {
+                initial,
+                facts,
+                options,
+                profile,
+                budget,
+            } => (initial, facts, options, Some((profile, budget))),
+            _ => return Err(GateError::Refused("dynamic admission is not initialized")),
         };
-        let (admission, ready) = AdmissionOwner::start(self, initial, facts, options, until)?;
+        let signal_enabled = signal.is_some();
+        let (admission, ready) = AdmissionOwner::start(
+            self, initial, facts, options, signal, until,
+        )
+        .map_err(|error| {
+            if let Some(journal) = &self.signal_journal {
+                match &error {
+                    GateError::Control(error) => journal.fail_error(error),
+                    _ => journal.fail(super::signal_journal::SignalJournalFailure::InvalidState),
+                }
+            }
+            error
+        })?;
         self.admission = Some(admission);
-        Ok(AdmissionReply::Ready(ready, self.kernel_journal.reader()))
+        Ok(if signal_enabled {
+            AdmissionReply::ReadySignals(ready, self.kernel_journal.reader())
+        } else {
+            AdmissionReply::Ready(ready, self.kernel_journal.reader())
+        })
     }
 }
 
@@ -138,10 +171,26 @@ impl AdmissionOwner {
         initial: DynamicStop,
         facts: Vec<ImageFacts>,
         options: DynamicAdmissionOptions,
+        signal: Option<(DynamicSignalProfile, super::super::signal::SignalBudget)>,
         until: Instant,
     ) -> Result<(Self, DynamicAdmissionState), GateError> {
         options.validate()?;
         crate::gate::domain::validate_image_count(&facts)?;
+        if let Some((profile, budget)) = &signal {
+            profile.validate(&options, &facts)?;
+            if *budget != super::super::signal::SignalBudget::new(&facts, &options)?
+                || owner.anchor_archive.is_none()
+                || owner.signal_journal.is_none()
+            {
+                return Err(GateError::Refused(
+                    "signal startup lacks its pre-clone reserved evidence",
+                ));
+            }
+        } else if owner.anchor_archive.is_some() || owner.signal_journal.is_some() {
+            return Err(GateError::Refused(
+                "anchored launch requires its explicit signal owner",
+            ));
+        }
         // Validate every non-native configuration before bootstrap mutates the
         // owned process. Native authentication still occurs after real EXEC.
         let _oracle = crate::gate::domain::GateOracle::new(options.cache)?;
@@ -168,6 +217,9 @@ impl AdmissionOwner {
             })
             .and_then(|value| value.checked_add(MAX_XSTATE.checked_mul(8)?))
             .and_then(|value| value.checked_add(64 * 1024))
+            .and_then(|value| {
+                value.checked_add(signal.as_ref().map_or(0, |(_, budget)| budget.bytes))
+            })
             .ok_or(GateError::Refused(
                 "dynamic initial evidence size overflows",
             ))?;
@@ -180,6 +232,9 @@ impl AdmissionOwner {
         // SAFETY: the only public caller is the unsafe pristine launch wrapper,
         // which supplies the unchanged complete static-image ownership contract.
         let boot = unsafe { owner.bootstrap_admission(&initial, until)? };
+        let signals = signal
+            .map(|(profile, _)| signals::SignalTransaction::new(owner, profile, &boot, until))
+            .transpose()?;
         let native = owner.lifecycle.take().ok_or(GateError::Refused(
             "admission bootstrap lost native lifecycle ownership",
         ))?;
@@ -204,6 +259,9 @@ impl AdmissionOwner {
             }
         }
         let raw = TaskStateSnapshot::read(boot.stop.token.tid)?;
+        if let Some(signals) = &signals {
+            signals.verify_extent(&boot.stop.token, boot.stop.identity, &raw)?;
+        }
         let state = DynamicAdmissionState {
             task: boot.stop.identity,
             registers: raw.registers,
@@ -258,6 +316,28 @@ impl AdmissionOwner {
             .and_then(|value| value.checked_add(boot.evidence.entry_trap.xstate.len()))
             .and_then(|value| value.checked_add(boot.evidence.restored_entry.xstate.len()))
             .and_then(|value| value.checked_add(std::mem::size_of::<BootstrapEvidence>()))
+            .and_then(|value| {
+                value.checked_add(
+                    owner
+                        .anchor_archive
+                        .as_ref()
+                        .map_or(0, |archive| archive.retained_bytes()),
+                )
+            })
+            .and_then(|value| {
+                value.checked_add(if owner.signal_journal.is_some() {
+                    super::signal_journal::evidence_bound()
+                } else {
+                    0
+                })
+            })
+            .and_then(|value| {
+                value.checked_add(
+                    signals
+                        .as_ref()
+                        .map_or(0, |signal| signal.initial_storage_bytes()),
+                )
+            })
             .ok_or(GateError::Refused(
                 "dynamic retained bootstrap evidence size overflows",
             ))?;
@@ -313,6 +393,7 @@ impl AdmissionOwner {
                 creation: options.lifecycle.creation,
                 completion_history: Vec::new(),
                 pending: None,
+                signals,
                 next_execution: 1,
                 metrics,
                 closed: false,
@@ -325,6 +406,11 @@ impl AdmissionOwner {
         self.pending
             .as_ref()
             .is_some_and(|pending| now >= pending.until)
+            || self
+                .signals
+                .as_ref()
+                .and_then(|signals| signals.pending_until())
+                .is_some_and(|until| now >= until)
     }
 
     fn execute(
@@ -344,11 +430,28 @@ impl AdmissionOwner {
                 "dynamic admission has an outstanding provider invocation",
             ));
         }
+        if self
+            .signals
+            .as_ref()
+            .is_some_and(|signals| signals.has_pending())
+            && !matches!(
+                request,
+                AdmissionRequest::DeliverSignal(_)
+                    | AdmissionRequest::State(_)
+                    | AdmissionRequest::Memory { .. }
+                    | AdmissionRequest::Metrics
+            )
+        {
+            return Err(GateError::Refused(
+                "signal delivery remains pending at its original deadline",
+            ));
+        }
         match request {
-            AdmissionRequest::Start { .. } => Err(GateError::Refused(
-                "dynamic admission cannot restart an existing domain",
-            )),
+            AdmissionRequest::Start { .. } | AdmissionRequest::StartSignals { .. } => Err(
+                GateError::Refused("dynamic admission cannot restart an existing domain"),
+            ),
             AdmissionRequest::Advance => self.advance(owner, until),
+            AdmissionRequest::DeliverSignal(token) => self.deliver_signal(owner, token, until),
             AdmissionRequest::Complete { token, decision } => {
                 self.complete(owner, token, decision, until)
             }
@@ -394,13 +497,17 @@ impl AdmissionOwner {
                 "dynamic inspected task is not registered",
             ))?;
         let raw = TaskStateSnapshot::read(token.tid)?;
+        let identity = DynamicTask {
+            task,
+            process: current.process,
+            address_space: current.address_space,
+            generation: self.island.generation,
+        };
+        if let Some(signals) = &self.signals {
+            signals.verify_extent(&token, identity, &raw)?;
+        }
         Ok(DynamicAdmissionState {
-            task: DynamicTask {
-                task,
-                process: current.process,
-                address_space: current.address_space,
-                generation: self.island.generation,
-            },
+            task: identity,
             registers: raw.registers,
             xstate: raw.xstate,
             signal_mask: raw.mask,

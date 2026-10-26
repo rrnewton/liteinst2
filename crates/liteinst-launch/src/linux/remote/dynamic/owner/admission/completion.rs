@@ -246,7 +246,27 @@ impl AdmissionOwner {
         until: Instant,
     ) -> Result<AdmissionReply, GateError> {
         self.authenticate_pending(owner, &token, until)?;
+        if self.signals.is_some()
+            && self.pending.as_ref().is_some_and(|pending| {
+                matches!(
+                    pending.input.instruction().operation(),
+                    Operation::Syscall {
+                        abi: SyscallAbi::LinuxX64
+                    }
+                ) && pending.input.registers().rax == libc::SYS_rt_sigreturn as u64
+            })
+        {
+            return self.complete_signal_return(owner, decision, until);
+        }
         let pending = self.pending.as_ref().expect("authenticated pending");
+        if self.signals.is_some()
+            && signals::SignalTransaction::is_setup(&pending.input)
+            && matches!(decision, ProviderDecision::Complete(_))
+        {
+            return Err(GateError::Refused(
+                "signal setup requires its actual native kernel execution",
+            ));
+        }
         let scripted = match decision {
             ProviderDecision::Complete(result) => Some(Box::new(pending.input.complete(result)?)),
             ProviderDecision::Native => {
@@ -402,6 +422,7 @@ impl AdmissionOwner {
                 OriginalOutcome::Event(event) => CompletionEvidence::Event(event),
             }
         };
+        self.verify_completion_extent(&evidence)?;
         let index = self.completion_history.len();
         // Capacity was reserved before mutation. Preserve already-completed
         // kernel/user evidence before any fallible census, accounting or rebind.
@@ -492,6 +513,9 @@ impl AdmissionOwner {
         }
         let registers = input.registers();
         match registers.rax as libc::c_long {
+            libc::SYS_rt_sigaction | libc::SYS_sigaltstack if self.signals.is_some() => {
+                self.signals.as_ref().unwrap().check_setup(owner.pid, input)
+            }
             libc::SYS_getpid | libc::SYS_gettid | libc::SYS_exit | libc::SYS_exit_group => Ok(()),
             libc::SYS_clone => {
                 if self.creation != DynamicCreationPolicy::ThreadClone
@@ -590,6 +614,42 @@ impl AdmissionOwner {
                 },
             )
             .map_err(census_error)
+    }
+
+    /// The signal profile's smaller logical envelope is valid only for its
+    /// certified incarnation and full ABI extent. Syscall/signal raw failures
+    /// retain their existing MAX-sized journals. CPU/collateral mismatch state
+    /// remains local and is not newly archived: it cannot become a smaller
+    /// successful history record or authorize another effect.
+    fn verify_completion_extent(&self, evidence: &CompletionEvidence) -> Result<(), GateError> {
+        let Some(signals) = &self.signals else {
+            return Ok(());
+        };
+        match evidence {
+            CompletionEvidence::Native(completed) | CompletionEvidence::Collateral(completed) => {
+                signals.verify_extent(
+                    &completed.stop.token,
+                    completed.stop.identity,
+                    &completed.state,
+                )?;
+                if let OriginalEvidence::Syscall(kernel) = &completed.evidence {
+                    signals.verify_event_extent(&kernel.entry, &kernel.entry_state)?;
+                    signals.verify_event_extent(&kernel.exit, &kernel.exit_state)?;
+                    for newborn in &kernel.newborns {
+                        signals.verify_event_extent(&newborn.event, &newborn.before_bridge)?;
+                    }
+                }
+            }
+            CompletionEvidence::Event(event) => {
+                if let Some(state) = &event.state {
+                    signals.verify_event_extent(&event.event, state)?;
+                }
+            }
+            // This is built only from observe_current, which checks the same
+            // certificate before constructing its ObservedStop.
+            CompletionEvidence::Scripted { .. } => {}
+        }
+        Ok(())
     }
 
     /// Complete an actual selected/collateral result, consume precisely its
@@ -776,14 +836,25 @@ impl AdmissionOwner {
                                     "dynamic noncreation completion retained unexpected newborns",
                                 ));
                             }
+                            let signal_setup = self.signals.is_some()
+                                && signals::SignalTransaction::is_setup(input);
+                            if signal_setup {
+                                self.signals.as_mut().unwrap().accept_setup_result(
+                                    before.token.tid,
+                                    input,
+                                    result,
+                                    is_error,
+                                )?;
+                            }
                             if (number == libc::SYS_getpid as u64
                                 && (is_error || result != i64::from(owner.pid)))
                                 || (number == libc::SYS_gettid as u64
                                     && (is_error || result != i64::from(before.token.tid)))
-                                || !matches!(
-                                    number as libc::c_long,
-                                    libc::SYS_getpid | libc::SYS_gettid | libc::SYS_clone
-                                )
+                                || (!signal_setup
+                                    && !matches!(
+                                        number as libc::c_long,
+                                        libc::SYS_getpid | libc::SYS_gettid | libc::SYS_clone
+                                    ))
                             {
                                 return Err(GateError::Refused(
                                     "dynamic native syscall result differs from its finite identity profile",
@@ -1052,6 +1123,7 @@ impl AdmissionOwner {
             OriginalOutcome::Completed(completed) => CompletionEvidence::Collateral(completed),
             OriginalOutcome::Event(event) => CompletionEvidence::Event(event),
         };
+        self.verify_completion_extent(&evidence)?;
         let index = self.completion_history.len();
         self.completion_history.push(CompletionRecord {
             pending: None,

@@ -158,10 +158,14 @@ matrix fixtures and one CALL-return fixture. The expected launcher unit cohort
 was 109 before the kernel journal increment. The journal adds twelve pure tests,
 fifteen native fault/oracle/capacity tests and two native forced-dispatch tests;
 the B2 finite comparator adds six integration tests. Expected launcher unit
-count is 138. Workspace expectations are 1253 outer tests in 76 harnesses (1249
-possible passes and four existing ignores); serial launch expects 415 tests in
-24 harnesses. Recorder regressions increase from 98 to 119. These are source-derived
-expected cohorts, not reported execution results.
+count before the signal increment is 138. The signal increment adds 55 pure
+frame/census/profile/journal/extent/sizing controls, eight native reset controls
+and five native integration fixtures. Expected launcher unit count is 201.
+Workspace expectations are 1321 outer tests in 77 harnesses (1317 possible passes
+and four existing ignores); serial launch expects 483 tests in 25 harnesses.
+The recorder catalog expects 208 controls, including eight additive signal/reset
+cohort checks. These are source-derived expected cohorts, not reported execution
+results.
 
 The serial command exports four distinct evidence collections. The existing
 `native_cases` collection retains its separate 50-case static oracle denominator.
@@ -189,9 +193,11 @@ The schema rejects extra fields, malformed or duplicate keys, wrong contexts and
 unknown identities. No raw addresses, output values or private diagnostics are
 exported.
 
-`native_validation_fixtures` separately retains 23 exact named outcomes: the
+`native_validation_fixtures` separately retains 36 exact named outcomes: the
 seventeen native journal/capacity/dispatch cases under their declared unit-module
-prefixes and six B2 reference integration cases. These are test outcomes, not
+prefixes, six B2 reference integration cases, eight native reset controls and
+five signal integration cases. The reset and signal cohorts have distinct closed
+namespaces. These are test outcomes, not
 instruction samples, event counts or performance measurements. A case requires
 its exact harness and an explicit terminal `ok` within one announced libtest run.
 Missing, duplicate, skipped, failed, misattributed or unlisted cohort names refuse.
@@ -206,6 +212,10 @@ Its pure-model accounting tests remain separate from held-native capacity and
 full-state oracle evidence. The [finite B2 mode comparison](b2-reference.md)
 checks shared trajectories through three process lanes and a handwritten model;
 it supplies no production block backend or native selected-effect measurement.
+The [finite signal comparison](b3-signals.md) requires ordinary and alternate
+stacks, a genuine edited return, independently established nonzero inherited
+exception metadata and a strict corruption control. The separate reset cohort
+requires physical helper cleanup before any application is released.
 
 The seven original named fixtures cover first CPUID entry, interpreter entry,
 native clone return boundaries, scripted default-policy RDPID coverage,
