@@ -41,16 +41,45 @@ struct Case {
     destination: usize,
     flags: u64,
     cpuid_input: Option<(u32, u32)>,
+    bits: u8,
+    covered: bool,
 }
 
 impl Case {
     fn encoding(self) -> Vec<u8> {
-        assert!(self.destination < 8);
+        assert!(self.destination < 16);
+        if matches!(
+            self.class,
+            SiteClass::Rdrand | SiteClass::Rdseed | SiteClass::Rdpid
+        ) {
+            let mut bytes = Vec::new();
+            if self.class == SiteClass::Rdpid {
+                bytes.push(0xf3);
+            } else if self.bits == 16 {
+                bytes.push(0x66);
+            }
+            let rex =
+                0x40 | if self.bits == 64 && self.class != SiteClass::Rdpid {
+                    8
+                } else {
+                    0
+                } | if self.destination >= 8 { 1 } else { 0 };
+            if rex != 0x40 {
+                bytes.push(rex);
+            }
+            bytes.extend_from_slice(&[
+                0x0f,
+                0xc7,
+                (if self.class == SiteClass::Rdrand {
+                    0xf0
+                } else {
+                    0xf8
+                }) | (self.destination & 7) as u8,
+            ]);
+            return bytes;
+        }
         match self.class {
             SiteClass::Cpuid => vec![0x0f, 0xa2],
-            SiteClass::Rdrand => vec![0x0f, 0xc7, 0xf0 + self.destination as u8],
-            SiteClass::Rdseed => vec![0x0f, 0xc7, 0xf8 + self.destination as u8],
-            SiteClass::Rdpid => vec![0xf3, 0x0f, 0xc7, 0xf8 + self.destination as u8],
             SiteClass::Rdtsc => vec![0x0f, 0x31],
             SiteClass::Rdtscp => vec![0x0f, 0x01, 0xf9],
             _ => panic!("not a native CPU fixture"),
@@ -68,11 +97,11 @@ impl Case {
                 edx: u32::try_from(registers.rdx).unwrap(),
             },
             SiteClass::Rdrand => SelectedResult::Rdrand {
-                value: gprs(registers)[self.destination],
+                value: gprs(registers)[self.destination] & self.mask(),
                 carry: registers.eflags & 1 != 0,
             },
             SiteClass::Rdseed => SelectedResult::Rdseed {
-                value: gprs(registers)[self.destination],
+                value: gprs(registers)[self.destination] & self.mask(),
                 carry: registers.eflags & 1 != 0,
             },
             SiteClass::Rdpid => SelectedResult::Rdpid {
@@ -110,12 +139,19 @@ impl Case {
                 }
             }
             SiteClass::Rdrand | SiteClass::Rdseed => {
-                // These fixtures are bare 32-bit encodings: success and failure
-                // both zero-extend. Failure writes zero, not the old destination.
+                // The independently decoded width determines partial write or
+                // zero extension. Failure zeroes only the defined destination.
                 let value = actual_gprs[self.destination];
-                assert!(value <= u64::from(u32::MAX));
+                if self.bits == 16 {
+                    assert_eq!(
+                        value & !self.mask(),
+                        expected_gprs[self.destination] & !self.mask()
+                    );
+                } else if self.bits == 32 {
+                    assert!(value <= u64::from(u32::MAX));
+                }
                 if after.eflags & 1 == 0 {
-                    assert_eq!(value, 0);
+                    assert_eq!(value & self.mask(), 0);
                 }
                 expected_gprs[self.destination] = value;
                 expected.eflags = (expected.eflags & !0x8d5) | (after.eflags & 1);
@@ -157,6 +193,15 @@ impl Case {
             }
         }
         0x1234_5678_9000_0000 + register as u64
+    }
+
+    fn mask(self) -> u64 {
+        match self.bits {
+            16 => u16::MAX as u64,
+            32 => u32::MAX as u64,
+            64 => u64::MAX,
+            _ => panic!("invalid fixture width"),
+        }
     }
 
     fn random_carry(self, registers: &RegisterSnapshot) -> Option<u8> {
@@ -314,14 +359,27 @@ impl Fixture {
         // head; execution is straight line and has no external readers, writers,
         // aliases, threads, signals, code-as-data or private-island entries. We
         // exclusively own the child and never trace/reap it outside this gate.
+        let facts = vec![ImageFacts {
+            start: BASE,
+            bytes: self.image[..2 * PAGE].to_vec(),
+            heads: self.heads.clone(),
+        }];
         unsafe {
+            if self.case.covered {
+                return SelectedPageGate::new_with_coverage(
+                    checkpoint,
+                    facts,
+                    Policy::default(),
+                    SyscallAliases::new(),
+                    provider,
+                    TIMEOUT,
+                    Default::default(),
+                )
+                .unwrap();
+            }
             SelectedPageGate::new(
                 checkpoint,
-                vec![ImageFacts {
-                    start: BASE,
-                    bytes: self.image[..2 * PAGE].to_vec(),
-                    heads: self.heads.clone(),
-                }],
+                facts,
                 // RDPID-only is intentional: default-policy RDSEED suffix
                 // overlap remains a separate mandatory refusal fixture.
                 Policy {
@@ -774,8 +832,8 @@ fn emit_evaluation(case: Case, outcome: EvaluationOutcome) {
     eprintln!(
         concat!(
             "LITEINST_EVALUATION_NATIVE_SELECTED ",
-            "{{\"schema_version\":1,\"class\":\"{}\",\"destination\":{},\"input_flags\":{},",
-            "\"cpuid_leaf\":{},\"cpuid_subleaf\":{},",
+            "{{\"schema_version\":2,\"class\":\"{}\",\"destination\":{},\"input_flags\":{},",
+            "\"cpuid_leaf\":{},\"cpuid_subleaf\":{},\"encoding\":\"{}\",\"coverage_backend\":{},",
             "\"raw_native_completed\":{},\"scripted_completed\":{},",
             "\"native_gate_completed\":{},\"raw_native_fault\":{},",
             "\"scripted_fault\":{},\"native_gate_signal\":{},",
@@ -786,6 +844,11 @@ fn emit_evaluation(case: Case, outcome: EvaluationOutcome) {
         case.flags,
         number_or_null(case.cpuid_input.map(|input| input.0)),
         number_or_null(case.cpuid_input.map(|input| input.1)),
+        case.encoding()
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>(),
+        case.covered,
         completed,
         completed,
         completed,
@@ -979,7 +1042,7 @@ macro_rules! native_cases {
     ($($name:ident: $class:ident, $destination:expr, $flags:expr;)+) => {
         $(#[test]
         fn $name() {
-            exercise(Case { class: SiteClass::$class, destination: $destination, flags: $flags, cpuid_input: None });
+            exercise(Case { class: SiteClass::$class, destination: $destination, flags: $flags, cpuid_input: None, bits: 32, covered: false });
         })+
     };
 }
@@ -1024,6 +1087,8 @@ fn cpuid_basic_vendor_leaf() {
         destination: 0,
         flags: 0xed7,
         cpuid_input: Some((0, 0)),
+        bits: 32,
+        covered: false,
     });
 }
 
@@ -1034,6 +1099,8 @@ fn cpuid_processor_features_leaf() {
         destination: 0,
         flags: 0x202,
         cpuid_input: Some((1, 0)),
+        bits: 32,
+        covered: false,
     });
 }
 
@@ -1044,5 +1111,36 @@ fn cpuid_structured_features_leaf() {
         destination: 0,
         flags: 0x246,
         cpuid_input: Some((7, 0)),
+        bits: 32,
+        covered: false,
     });
+}
+
+macro_rules! covered_native_cases {
+    ($($name:ident: $class:ident, $destination:expr, $bits:expr;)+) => {
+        $(#[test] fn $name() {
+            exercise(Case { class: SiteClass::$class, destination: $destination,
+                flags: 0xed7, cpuid_input: None, bits: $bits, covered: true });
+        })+
+    };
+}
+
+covered_native_cases! {
+    covered_rdrand_ax: Rdrand, 0, 16;
+    covered_rdrand_sp: Rdrand, 4, 16;
+    covered_rdrand_r15w: Rdrand, 15, 16;
+    covered_rdrand_r8d: Rdrand, 8, 32;
+    covered_rdrand_rax: Rdrand, 0, 64;
+    covered_rdrand_rsp: Rdrand, 4, 64;
+    covered_rdrand_r15: Rdrand, 15, 64;
+    covered_rdseed_ax: Rdseed, 0, 16;
+    covered_rdseed_sp: Rdseed, 4, 16;
+    covered_rdseed_r15w: Rdseed, 15, 16;
+    covered_rdseed_r8d: Rdseed, 8, 32;
+    covered_rdseed_rax: Rdseed, 0, 64;
+    covered_rdseed_rsp: Rdseed, 4, 64;
+    covered_rdseed_r15: Rdseed, 15, 64;
+    covered_rdpid_rax: Rdpid, 0, 32;
+    covered_rdpid_rsp: Rdpid, 4, 32;
+    covered_rdpid_r15: Rdpid, 15, 32;
 }

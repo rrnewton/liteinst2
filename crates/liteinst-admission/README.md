@@ -59,8 +59,19 @@ No patch tactic is added, so there is no architectural rewrite-equivalence claim
 B1 additionally needs the first-instruction launch adapter, real OS page revocation,
 all-thread/data-reader/writer rendezvous, saved-PC routing/refusal, explicit
 instruction-stream synchronization and core publication. Later cache oracles must
-fall back to this runtime scan on every miss/stale/corrupt entry; no cache fast path
-is implemented here.
+fall back to this runtime scan on every miss/stale/corrupt entry.
+
+`oracle_chain::OracleChain` adds bounded in-memory reuse of immutable scan reports.
+A hit requires exact snapshot bytes, identity, generation, boundaries, writer
+facts, complete entry facts, target and policy. Refused reports stay refused.
+Disabled, missing, stale or poisoned cache entries use the mandatory RuntimeScan
+terminal. Range invalidation includes adjacent boundary dependencies, and
+serialization prevents an older scan from being inserted after invalidation.
+Metrics separate actual scan work from cached historical report metrics. This
+is an optional facts seam. The standalone launch gate now owns such a chain,
+with runtime-only defaults and bounded same-owner preparation; live execution
+still requires its independent byte, continuation and exclusion checks. This
+cache does not parse offline metadata or authorize sparse overlays.
 # Potential CALL returns
 
 `returns::CallReturnLedger` records verified direct and indirect CALL
@@ -76,3 +87,8 @@ conservative source facts, not a dynamic stack census or publication authority.
 A live gate must authenticate them while execution is excluded and preserve,
 route or refuse affected resumes before granting execution. Signal frames,
 syscall returns and other saved contexts remain separate obligations.
+
+The separate independent-stream census retains overlapping CALL heads for the
+explicit trap-coverage backend. It grants no publication authority; the backend
+must separately prove preservation of every admitted decode and saved return.
+The original strict ledger method continues to refuse overlapping heads.

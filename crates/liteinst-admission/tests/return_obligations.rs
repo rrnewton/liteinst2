@@ -13,6 +13,62 @@ const DIRECT: &[u8] = &[0xe8, 0, 0, 0, 0];
 const INDIRECT_REGISTER: &[u8] = &[0xff, 0xd0];
 const INDIRECT_MEMORY: &[u8] = &[0xff, 0x10];
 
+#[test]
+fn independently_decoded_overlapping_calls_retain_both_returns() {
+    let source = snapshot(vec![0xe8, 0xe8, 0, 0, 0, 0], BASE, 1);
+    let entries = facts(
+        &source,
+        1,
+        Completeness::AllInstructionHeads,
+        [
+            (BASE, EntryProvenance::VerifiedInstruction),
+            (BASE + 1, EntryProvenance::VerifiedInstruction),
+        ],
+    );
+    let mut strict = CallReturnLedger::new();
+    assert_eq!(
+        strict.record_before_admission(&source, source.range(), &entries),
+        Err(ReturnError::OverlappingInstructions(BASE + 1))
+    );
+    assert_eq!(strict.obligations().count(), 0);
+    let mut covered = CallReturnLedger::new();
+    assert_eq!(
+        covered.record_independent_streams_before_admission(&source, source.range(), &entries),
+        Ok(2)
+    );
+    assert_eq!(
+        covered
+            .obligations()
+            .map(|entry| (entry.call_address, entry.return_pc))
+            .collect::<Vec<_>>(),
+        vec![(BASE, BASE + 5), (BASE + 1, BASE + 6)]
+    );
+    assert_eq!(
+        covered.record_independent_streams_before_admission(&source, source.range(), &entries),
+        Ok(0)
+    );
+}
+
+#[test]
+fn independent_stream_census_still_rejects_invalid_later_head_atomically() {
+    let source = snapshot(vec![0xe8, 0xe8, 0, 0, 0, 0], BASE, 1);
+    let entries = facts(
+        &source,
+        1,
+        Completeness::AllInstructionHeads,
+        [
+            (BASE, EntryProvenance::VerifiedInstruction),
+            (BASE + 5, EntryProvenance::VerifiedInstruction),
+        ],
+    );
+    let mut ledger = CallReturnLedger::new();
+    assert_eq!(
+        ledger.record_independent_streams_before_admission(&source, source.range(), &entries),
+        Err(ReturnError::InvalidInstruction(BASE + 5))
+    );
+    assert_eq!(ledger.obligations().count(), 0);
+}
+
 fn page(base: u64) -> AddressRange {
     AddressRange::new(base, base + 4096).unwrap()
 }

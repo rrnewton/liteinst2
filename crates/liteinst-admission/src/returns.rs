@@ -93,6 +93,33 @@ impl CallReturnLedger {
         caller: AddressRange,
         entries: &LegalEntrySet,
     ) -> Result<usize, ReturnError> {
+        self.record_streams(snapshot, caller, entries, false)
+    }
+
+    /// Records every independently decoded CALL, including overlapping streams.
+    ///
+    /// This is a conservative return census, not an overlap-publication proof.
+    /// A caller using it must separately preserve or guard every permitted
+    /// instruction stream before granting execution. Each enumerated head still
+    /// needs verified provenance and a complete original decode. Every CALL's
+    /// fallthrough is retained, including overlapping CALLs and returns outside
+    /// the source mapping. The strict nonoverlapping API remains unchanged.
+    pub fn record_independent_streams_before_admission(
+        &mut self,
+        snapshot: &Snapshot,
+        caller: AddressRange,
+        entries: &LegalEntrySet,
+    ) -> Result<usize, ReturnError> {
+        self.record_streams(snapshot, caller, entries, true)
+    }
+
+    fn record_streams(
+        &mut self,
+        snapshot: &Snapshot,
+        caller: AddressRange,
+        entries: &LegalEntrySet,
+        independently_decoded: bool,
+    ) -> Result<usize, ReturnError> {
         if !snapshot.range().covers(caller) {
             return Err(ReturnError::OutsideSnapshot);
         }
@@ -139,7 +166,7 @@ impl CallReturnLedger {
                 .checked_add(instruction.len() as u64)
                 .filter(|end| *end <= snapshot.range().end())
                 .ok_or(ReturnError::InvalidInstruction(address))?;
-            if previous_end.is_some_and(|prior| prior > address) {
+            if !independently_decoded && previous_end.is_some_and(|prior| prior > address) {
                 return Err(ReturnError::OverlappingInstructions(address));
             }
             previous_end = Some(end);

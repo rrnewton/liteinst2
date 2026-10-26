@@ -1,0 +1,144 @@
+"""Exact named test outcomes for finite native validation cohorts.
+
+These are fixture outcomes, not instruction samples or kernel-event telemetry.
+The independent aggregate harness parser and all whole-run gates still apply.
+Only trusted catalog identities and typed observations enter public receipts.
+"""
+
+import copy
+import re
+
+from parsing import InvalidEvidence, harness_id, require
+
+
+NAME = re.compile(r"[A-Za-z0-9_]+(?:::[A-Za-z0-9_]+)*")
+UNIT = "unit/liteinst_launch/lib"
+REFERENCE = "test/b2_mode_reference"
+SIGNAL_REFERENCE = "test/b3_signal_admission"
+RESET_PREFIX = "linux::remote::dynamic::launch::anchor::reset::tests::"
+SOURCE_CENSUS_PREFIX = "linux::remote::dynamic::owner::tests::source_census::"
+SOURCE_CENSUS_TEST = (SOURCE_CENSUS_PREFIX
+                      + "changed_reserved_census_refuses_before_entry_patch_or_permission_change")
+PREFIXES = (
+    "linux::remote::dynamic::owner::kernel_journal::tests::native::",
+    "linux::remote::dynamic::owner::admission::completion::journal_dispatch_tests::",
+    "linux::remote::dynamic::owner::admission::completion::journal_native_budget_tests::",
+)
+
+
+def catalog(fixtures):
+    require(type(fixtures) is list, "invalid_native_fixture_catalog")
+    identities = {}
+    for row in fixtures:
+        require(type(row) is dict and set(row) == {"cohort", "harness", "test"},
+                "invalid_native_fixture_catalog")
+        require(all(type(value) is str for value in row.values())
+                and NAME.fullmatch(row["test"]), "invalid_native_fixture_catalog")
+        require((row["cohort"] == "kernel_journal" and row["harness"] == UNIT
+                 and row["test"].startswith(PREFIXES))
+                or (row["cohort"] == "b2_reference" and row["harness"] == REFERENCE
+                    and "::" not in row["test"])
+                or (row["cohort"] == "b3_signal" and row["harness"] == SIGNAL_REFERENCE
+                    and "::" not in row["test"])
+                or (row["cohort"] == "b3_reset" and row["harness"] == UNIT
+                    and row["test"].startswith(RESET_PREFIX))
+                or (row["cohort"] == "b3_source_census" and row["harness"] == UNIT
+                    and row["test"] == SOURCE_CENSUS_TEST), "invalid_native_fixture_scope")
+        key = (row["harness"], row["test"])
+        require(key not in identities, "duplicate_native_fixture_catalog")
+        identities[key] = row
+    return identities
+
+
+def fixture_outcomes(output, fixtures, successful_command):
+    """Require every declared fixture's explicit terminal ok in its exact harness.
+
+    An explicit empty catalog supports historical synthetic test cohorts. The
+    real corpus pins every current fixture; no missing-key default is supplied.
+    Within a monitored unit harness, other tests are structurally checked but
+    never exported. Any unlisted test in the native modules is rejected.
+    """
+    expected = catalog(fixtures)
+    require(type(successful_command) is bool, "invalid_native_fixture_command_status")
+    require(type(output) is str, "invalid_native_fixture_output")
+    if not expected:
+        return []
+    watched = {key[0] for key in expected}
+    known_names = {key[1] for key in expected}
+    observed = {}
+    seen_harnesses = set()
+    seen_tests = set()
+    current = None
+    active = None
+    closed = False
+    declared = False
+
+    def partial():
+        return [copy.deepcopy(observed.get(key, row | {
+            "status": "not_observed", "test_result": None,
+            "command_succeeded": successful_command, "qualified_run": False,
+        })) for key, row in expected.items()]
+
+    try:
+        for line in output.splitlines():
+            identity = harness_id(line)
+            if identity:
+                require(active is None, "native_fixture_missing_terminal")
+                current, closed, declared = identity, False, False
+                if current in watched:
+                    require(current not in seen_harnesses, "duplicate_native_fixture_harness")
+                    seen_harnesses.add(current)
+                continue
+            if re.match(r"\s*(Running |Doc-tests )", line):
+                raise InvalidEvidence("unrecognized_harness_header")
+            start = re.fullmatch(r"test (" + NAME.pattern + r") \.\.\. (.*)", line)
+            if current not in watched:
+                require(not start or start[1] not in known_names, "native_fixture_wrong_harness")
+                continue
+            run_start = re.fullmatch(r"running (\d+) tests?", line)
+            if run_start:
+                require(not declared and not closed, "duplicate_native_fixture_start")
+                declared = True
+                continue
+            if start:
+                require(declared, "native_fixture_before_start")
+                require(not closed, "native_fixture_after_summary")
+                require(active is None, "native_fixture_missing_terminal")
+                key = (current, start[1])
+                require(key not in seen_tests, "duplicate_native_fixture_test")
+                require(start[1] not in known_names or key in expected,
+                        "native_fixture_wrong_harness")
+                require(key in expected or (current == UNIT and not start[1].startswith(PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX))),
+                        "native_fixture_cohort_differs")
+                seen_tests.add(key)
+                active = key
+                if key in expected:
+                    observed[key] = expected[key] | {
+                        "status": "incomplete", "test_result": None,
+                        "command_succeeded": successful_command, "qualified_run": False,
+                    }
+                line = start[2]
+            elif line.startswith("test ") and not line.startswith("test result:"):
+                raise InvalidEvidence("invalid_native_fixture_name")
+            if line.startswith("test result:"):
+                require(declared and not closed, "native_fixture_summary_without_start")
+                require(active is None, "native_fixture_missing_terminal")
+                closed = True
+                continue
+            terminal = (line if line in ("ok", "FAILED", "ignored") else
+                        "ignored" if line.startswith("ignored,") else None)
+            if terminal:
+                require(active is not None, "native_fixture_terminal_without_test")
+                if active in expected:
+                    observed[active]["test_result"] = terminal
+                    observed[active]["status"] = "complete" if terminal == "ok" else "failed"
+                active = None
+        require(active is None, "native_fixture_missing_terminal")
+        require(seen_harnesses == watched, "missing_native_fixture_harness")
+        require(set(observed) == set(expected), "native_fixture_cohort_differs")
+        require(all(row["test_result"] == "ok" for row in observed.values()),
+                "native_fixture_not_passed")
+        return partial()
+    except InvalidEvidence as error:
+        error.partial = partial()
+        raise

@@ -146,7 +146,8 @@ marker; the comparison checks every worker's GPRs, flags, full kernel extended
 state and initialized stack bytes against A1 execution. Fixed worker stack
 addresses allow exact RSP comparison without normalization.
 
-Dropping any owner kills and reaps only its child. The caller must not trace or
+Dropping a checkpoint, stopped-process or page-gate owner kills and reaps only
+its child. The caller must not trace or
 reap it independently, install a competing global child reaper, or change
 SIGCHLD disposition to discard children. Launch/control waits are bounded by
 at most 30 seconds. Cleanup waits two seconds per attempt; a failed explicit
@@ -171,3 +172,91 @@ and delivered observation counts. Concurrent metrics additionally record
 selected publication transactions, faults collected before publication, and
 time from the first observed stop through verified collective exclusion.
 Debug shared-host samples are diagnostic only.
+
+`lifecycle::LifecycleRegistry` is bounded, pure bookkeeping for a future native
+controller. It tracks non-reused task/process/mm identities, creation and exec
+intents, newborn stops, vfork, signal and saved-resume obligations, mm generation
+invalidation and poison. Failed transitions preserve the entire registry.
+An exclusion candidate is a consistent registry snapshot, never a core lease
+or native exclusion proof. It does not trace tasks, authenticate kernel events,
+reap children, revoke mappings or deliver application signals; the existing
+runtime's lifecycle restrictions remain in force.
+
+The live gates own a bounded `OracleChain`, disabled by default. Before the first
+application resume, `configure_oracle` chooses storage bounds and
+`prepare_oracle` may inspect at most 64 original pages over that owner's lifetime.
+Preparation changes no code, execute permissions, callback state or CALL census.
+It returns the original immutable reports, including refusals. The concurrent
+constructor `new_with_oracle` performs preparation before its factory resumes and
+transfers the same cache into the registered group. Incarnations are non-reused
+owner identities, so a report from another process cannot manufacture a hit.
+
+Actual strict, overlap-coverage and concurrent factory inspections share the
+chain's mandatory RuntimeScan terminal. A hit still undergoes current CALL-return
+checks, complete page/guard closure, source-byte reauthentication and actual held
+publication. Already admitted page visits are not inspections or cache hits.
+`oracle_metrics` separates preparation from demand work, including fresh decoded
+starts, misses, refused reports and durations; reused report metrics remain
+historical. Cache lookup compares exact bytes/facts, not content hashes.
+
+The cache fixtures compare disabled, cold and prepared execution against the
+same independent state oracle, retain strict refusals, and require an actual
+pre-CALL cache hit to refuse a newly recorded return. They include mixed
+cross-page reuse and cached A1 full-state observations. These are finite
+immutable-owner reuse checks. No persisted artifact, load-bias binding, lazy
+hashing, file-backed sparse overlay, mapping-lifecycle integration or full B4
+completion is established; preparation cost must not be omitted from timing.
+
+`DynamicSession` is a separate, uninstrumented native controller for the next
+lifecycle increment. It uses `PTRACE_SEIZE`, active interruption and a dedicated
+tracer thread with an exclusive wait domain. Its initial event is the actual
+kernel exec event; its next syscall-exit event still describes that kernel stop.
+Neither is relabelled as a completed first-user register image. Session/sequence
+stop tokens prevent stale inspection and release. Original signal information
+is retained in full, and the only delivery disposition forwards the original
+signal. Job-control stops use `PTRACE_LISTEN`; syscall restart and signal return
+remain native kernel operations.
+
+This controller grants no page admission or publication lease. Application
+creation and later exec are refused before execution in this increment, as are
+unsupported syscall personalities. Its native fixtures compare queued signal
+payloads, handler records, alternate-stack use, interrupted/restarted reads and
+continuation output with ordinary untraced runs of the same ELF. These are
+finite native-control checks, not instrumented signal-entry or general lifecycle
+qualification. `Drop` requests cancellation without waiting. `terminate` returns
+a cleanup receipt only after terminal waits and an empty owned wait domain; on
+a client timeout the original tracer keeps cleanup ownership in the background.
+
+
+## Finite original-signal admission
+
+`DynamicAdmissionSession::launch_with_signals` accepts an explicit
+`DynamicSignalProfile` and returns a `DynamicSignalSession`. The unsafe source,
+head and writer-exclusion contract covers one task, one queued real-time signal,
+its original handler/restorer, complete private stacks and any declared edited
+return target. The handler begins with CPUID and the delivery boundary is a
+declared syscall-free loop. Original instructions install the exact action and
+optional alternate stack. Nested delivery, arbitrary frame writers and other
+lifecycle changes remain outside this profile.
+
+The launcher captures inherited exception metadata before its first observation
+trap, using a kernel-reset rseq lineage. At actual delivery, the handler is still
+NX. The owner retains the genuine kernel frame, projects exactly its saved
+trap/error/CR2 words from that original metadata, and verifies every remaining
+byte. Original and prospective saved-PC routes protect the whole live frame
+while handler code executes. Only declared whole-field edits are accepted.
+
+`SignalPending` supplies a same-deadline delivery token; `deliver_signal` returns
+the authenticated handler state and frame. Genuine original `rt_sigreturn`
+produces a separate `SignalReturned` event after complete native ENTRY/EXIT
+checks and NX rearming. Its restored RAX retains register meaning even when it
+resembles an errno. The wrapper exposes no raw resume or publication permit.
+Read-only anchor and signal progress retain partial observations and the first
+failure; physical cleanup is reported separately. A failed constructor can
+retain a running cleanup owner, as indicated by its typed failure record.
+
+The [signal validation protocol](../../evaluation/admission/b3-signals.md)
+compares original and admitted full state and frames for normal-stack,
+alternate-stack, edited-return and nonzero inherited-metadata trajectories.
+These finite fixtures do not establish general application signal transparency
+or the complete B3 lifecycle and real-application milestone.

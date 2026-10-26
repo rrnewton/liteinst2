@@ -6,6 +6,7 @@
 
 pub mod entries;
 pub mod model;
+pub mod oracle_chain;
 pub mod returns;
 pub mod scan;
 

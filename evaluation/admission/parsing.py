@@ -10,7 +10,8 @@ import json
 import re
 
 PREFIX = "LITEINST_EVALUATION_NATIVE_SELECTED "
-KEYS = ("class", "destination", "input_flags", "cpuid_leaf", "cpuid_subleaf")
+KEYS = ("class", "destination", "input_flags", "cpuid_leaf", "cpuid_subleaf",
+        "encoding", "coverage_backend")
 COUNTERS = ("raw_native_completed", "scripted_completed", "native_gate_completed",
             "raw_native_fault", "scripted_fault", "native_gate_signal")
 CARRY = ("raw_native_random_cf", "native_gate_random_cf")
@@ -146,7 +147,11 @@ def parse_harnesses(output, expected, exit_code):
             # observations of the existing fixtures, not successful child counts.
             if count != stack[-1]:
                 known = (current["id"], current["declared_outer_tests"], current["expected_ignored"])
-                require(known in (("unit/liteinst2/lib", 176, 1), ("test/stress", 7, 3))
+                # Main's synchronized publisher adds eight tests to the same
+                # core fixture. Retain the exact historical cohort for replay;
+                # the current corpus still requires the new 184-test cohort.
+                require(known in (("unit/liteinst2/lib", 176, 1),
+                                  ("unit/liteinst2/lib", 184, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,
@@ -193,6 +198,9 @@ def _case_catalog(cases):
         require(isinstance(case["test"], str) and NAME.fullmatch(case["test"]),
                 "invalid_native_corpus")
         require(case["class"] in ("cpuid", "rdrand", "rdseed", "rdpid", "rdtsc", "rdtscp")
+                and isinstance(case["encoding"], str)
+                and re.fullmatch(r"(?:[0-9a-f]{2}){1,15}", case["encoding"])
+                and type(case["coverage_backend"]) is bool
                 and all(type(case[k]) is int and 0 <= case[k] < 2**64
                         for k in ("destination", "input_flags"))
                 and all(case[k] is None or type(case[k]) is int and 0 <= case[k] < 2**32
@@ -219,9 +227,10 @@ def _receipt(raw, expected):
         raise InvalidEvidence("invalid_native_json") from error
     require(isinstance(row, dict) and set(row) == {"schema_version", *KEYS, *COUNTERS, *CARRY},
             "unknown_native_fields")
-    require(type(row["schema_version"]) is int and row["schema_version"] == 1,
+    require(type(row["schema_version"]) is int and row["schema_version"] == 2,
             "unknown_native_schema")
-    require(isinstance(row["class"], str) and all(type(row[k]) is int for k in
+    require(isinstance(row["class"], str) and isinstance(row["encoding"], str)
+            and type(row["coverage_backend"]) is bool and all(type(row[k]) is int for k in
             ("destination", "input_flags")) and all(row[k] is None or type(row[k]) is int
             for k in ("cpuid_leaf", "cpuid_subleaf")), "invalid_native_identity_types")
     key = tuple(row[k] for k in KEYS)
