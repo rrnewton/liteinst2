@@ -4,9 +4,10 @@
 //! kernel stops, preserves signal deliveries and actively interrupts execution.
 //! It is not an admission gate or a quiescence lease. Application creation and
 //! subsequent exec syscalls refuse by default. An explicit bounded lifecycle
-//! option qualifies at most one successful fork and two lifetime task records, without
-//! granting publication authority. Separate composed options permit one native
-//! leader exec; clone/vfork and native failed-exec continuation remain unqualified.
+//! option qualifies one successful fork or one exact 0x10f00 thread clone with
+//! at most two lifetime native task records, without publication authority.
+//! Separate composed options permit one native leader exec. Other clone/vfork
+//! profiles and native failed-exec continuation remain unqualified.
 
 use super::*;
 use std::sync::Arc;
@@ -47,6 +48,11 @@ pub enum DynamicCreationPolicy {
     Refuse,
     /// Native SYS_fork only; clone, clone3, vfork and later exec still refuse.
     Fork,
+    /// One native SYS_clone with flags 0x10f00, from a singleton leader.
+    /// Shares the process/mm; TLS and TID outputs are excluded. Requires an
+    /// authenticated zero per-task shadow-stack/WRSS status and exact inherited
+    /// XSTATE before either task resumes. This is not pthread qualification.
+    ThreadClone,
 }
 
 /// Bounded native lifecycle options, independent of page admission.
@@ -74,6 +80,13 @@ impl DynamicLifecycleOptions {
             max_tasks: 2,
         }
     }
+    /// At most one successful thread clone: two native task records, one process/mm.
+    pub const fn thread_only() -> Self {
+        Self {
+            creation: DynamicCreationPolicy::ThreadClone,
+            max_tasks: 2,
+        }
+    }
     fn validate(self) -> Result<Self, LaunchError> {
         if !(1..=2).contains(&self.max_tasks) {
             return Err(LaunchError::Invalid(
@@ -98,11 +111,14 @@ pub enum DynamicExecPolicy {
 /// Composed native ownership options. No option grants page admission.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct DynamicSessionOptions {
-    /// Creation policy and lifetime physical-process budget. Only this composed
-    /// API interprets `lifecycle.max_tasks` as the creation/physical budget and
-    /// separately reserves one extra task/mm record for `ExecveOnce`: a limit of
-    /// two physical processes can retain three task/mm incarnations. The older
-    /// `launch_with_lifecycle` keeps its original total task-record bound.
+    /// Creation policy and lifetime native-task budget. For the existing Fork
+    /// and Refuse policies each native task is a distinct physical process;
+    /// those physical-process limits retain their original meaning. ThreadClone
+    /// permits at most two native tasks sharing one physical process/mm.
+    /// This composed API separately reserves one extra logical task/mm record
+    /// for ExecveOnce: two native tasks may retain three logical TaskIds.
+    /// Retirement never refunds either bound. `launch_with_lifecycle` still
+    /// has no exec reservation and keeps its total task-record bound.
     pub lifecycle: DynamicLifecycleOptions,
     /// Later image-replacement policy.
     pub exec: DynamicExecPolicy,
@@ -252,7 +268,7 @@ pub enum DynamicEventKind {
     /// LISTEN ended at EVENT_STOP/SIGTRAP: the kernel group stop has ended.
     /// This does not infer the provenance of a pending signal or control request.
     GroupContinued,
-    /// Authenticated parent FORK event and registered stopped child. Neither
+    /// Authenticated parent FORK/CLONE event and registered stopped child. Neither
     /// task runs automatically; the child's Newborn event is queued separately.
     Created {
         /// Stopped child identity; its automatic stop has already authenticated.
@@ -260,10 +276,19 @@ pub enum DynamicEventKind {
     },
     /// Original automatic stop after the child has passed creation syscall-exit
     /// tracing, but before it may return to user code. Resuming it does not
-    /// produce a child fork syscall-exit event. This is not first-user state.
+    /// produce a child creation syscall-exit event. This is not first-user state.
     Newborn {
         /// Creator's retained task identity.
         parent: DynamicTask,
+    },
+    /// ThreadClone profile's real kernel pre-exit event, internally continued.
+    /// There is no stop token and no application continuation. The task remains
+    /// owned as Exiting until its actual terminal wait; a leader can remain in
+    /// this phase while a held worker still needs to run. This is not a terminal
+    /// or physical-reaping receipt, and it does not promise the final status.
+    TaskExiting {
+        /// Status observed at PTRACE_EVENT_EXIT. A later group exit may differ.
+        status: crate::lifecycle::ExitStatus,
     },
     /// Opt-in lifecycle task terminal observed by the tracer. This is NOT a
     /// physical reaping receipt: a stopped real parent may still need wait4.
@@ -298,7 +323,8 @@ pub struct DynamicEvent {
 }
 
 impl DynamicEvent {
-    /// Token for a current stop; terminal events cannot be resumed or inspected.
+    /// Token for a current stop. Pre-exit notifications and terminal events
+    /// have no token and cannot be resumed or inspected through this API.
     pub fn stop_token(&self) -> Option<&DynamicStop> {
         self.stop.as_ref()
     }
@@ -420,7 +446,14 @@ impl DynamicSession {
     /// Fork requires TF clear at native syscall entry and the same PID namespace
     /// (including pid_for_children) as the tracer. It has a lifetime maximum of
     /// two task records; failed attempts do not create or recycle task records.
-    /// No exec, clone, vfork, mapping invalidation or publication is qualified.
+    /// ThreadClone instead permits exactly flags 0x10f00, a nonzero child stack
+    /// with 128 readable/writable bytes below it, and zero TLS/TID arguments.
+    /// It requires TF clear, a singleton leader in the tracer's PID namespace,
+    /// PIDFD_THREAD support, and successful per-task shadow-stack/WRSS status equal to zero.
+    /// Any unavailable status interface refuses; CPU feature inference is unused.
+    /// Exact parent/child XSTATE must agree before either original task resumes;
+    /// unsupported inheritance (including dynamic state) closes the session.
+    /// No other clone, exec, vfork, mapping invalidation or publication is qualified.
     /// Signal delivery retains full siginfo and an Unknown queue obligation;
     /// no queue provenance or signal-entry admission is inferred.
     pub fn launch_with_lifecycle(
@@ -436,9 +469,12 @@ impl DynamicSession {
         )
     }
 
-    /// Composes bounded fork ownership with one native leader exec. Registry
-    /// task/mm limits include the additional exec incarnation; physical process
-    /// lifetime remains bounded by `lifecycle.max_tasks`. Both old entry points
+    /// Composes bounded creation ownership with one native leader exec. Registry
+    /// task/mm limits include the additional exec incarnation. Fork retains its
+    /// physical-process bound; ThreadClone retains one process and two native
+    /// tasks. A leader may exec before clone or after the worker's actual terminal
+    /// and thread-pidfd HUP; live-sibling and nonleader exec remain refused.
+    /// Both old entry points
     /// retain their existing refusal behavior. Exec requires native x86-64,
     /// TF-clear syscall entry, one thread in the process and the tracer's PID
     /// namespace. Failed exec cannot resume through this initial profile.

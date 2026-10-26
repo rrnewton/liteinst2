@@ -14,7 +14,11 @@ pub(super) struct ExecPending {
 }
 
 impl NativeLifecycle {
-    pub(super) fn prepare_native_exec(&mut self, tid: libc::pid_t) -> Result<(), LaunchError> {
+    pub(super) fn prepare_native_exec(
+        &mut self,
+        owner: &Owner,
+        tid: libc::pid_t,
+    ) -> Result<(), LaunchError> {
         if self.exec_successes != 0 {
             return Err(LaunchError::Invalid("native exec success budget exhausted"));
         }
@@ -25,6 +29,29 @@ impl NativeLifecycle {
             return Err(LaunchError::Invalid(
                 "native lifecycle transaction is already pending",
             ));
+        }
+        if self.options.creation == DynamicCreationPolicy::ThreadClone {
+            if tid != owner.pid {
+                return Err(LaunchError::Invalid(
+                    "native nonleader exec is not qualified",
+                ));
+            }
+            // A disappearing /proc entry alone does not retire a registered
+            // worker. Require its consumed terminal and retained task-pin HUP.
+            for (&other, task) in &self.tasks {
+                if other != tid
+                    && (!matches!(task.state, State::Terminal)
+                        || owner.pin_kinds.get(&other) != Some(&PinKind::Thread)
+                        || owner
+                            .handles
+                            .get(&other)
+                            .is_none_or(|pin| !broker::hup(pin)))
+                {
+                    return Err(LaunchError::Invalid(
+                        "native exec requires physically removed workers",
+                    ));
+                }
+            }
         }
         same_pid_namespace(tid)?;
         single_task(tid)?;
@@ -181,7 +208,7 @@ impl NativeLifecycle {
     }
 }
 
-fn native_leader(tid: libc::pid_t) -> Result<(), LaunchError> {
+pub(super) fn native_leader(tid: libc::pid_t) -> Result<(), LaunchError> {
     let status = std::fs::read_to_string(format!("/proc/{tid}/status"))
         .map_err(|error| io_error("read native exec thread group", error))?;
     let tgid = status

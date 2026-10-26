@@ -132,6 +132,17 @@ and first-user phases remain distinct. Failed exec refuses continuation,
 including the independently observed post-point-of-no-return case. The original
 workspace, serial, telemetry, cleanup and recorder gates remain unchanged.
 
+The bounded native thread increment adds 25 outer tests: twelve public native
+cases, five private actual-order/refusal/exit cases, five pure shared-mm cases
+and three pure Exiting-phase cases. Four captured single-test oracle/control
+invocations cover first-user state, shared writes and alternate-stack effects,
+leader-first exit statuses and output-pressure unwind. Each requires one exact
+summary and physical-cleanup witness, without adding outer or parser-nested
+passes. Actual failed-clone retries preserve state and do not invent tasks.
+The explicit Exiting notification retains worker control without promising a
+terminal wait or physical process removal. All prior tests, ignores, native
+telemetry counts, deadlines and zero-adoptee gates remain required.
+
 The new scripted random matrix forces 192 invocations covering both classes,
 all 16 GPR destinations, 16/32/64-bit widths and both carry outcomes. Native
 coverage adds 14 prefixed random cases and three default-policy RDPID cases to
@@ -169,6 +180,9 @@ logical-incarnation budgets, authenticated image replacement and actual syscall
 exit, independent original first-user state, and conservative failed-exec
 refusal. These uninstrumented ownership fixtures also remain separate from the
 selected-instruction telemetry cohort.
+[Bounded native threads](native-thread.md) records the exact clone profile,
+per-task CET observation, full-state acceptance predicate, shared process/mm
+identities, and distinct nonleader removal and delayed leader exit.
 
 ## Claim mapping
 

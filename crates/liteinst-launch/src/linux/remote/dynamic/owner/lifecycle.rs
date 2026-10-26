@@ -1,9 +1,10 @@
-//! Opt-in bounded native fork/exec ownership. This module authenticates kernel events; the
+//! Opt-in bounded native fork/thread/exec ownership. This module authenticates kernel events; the
 //! pure registry only retains their identities and obligations. No code bytes,
 //! executable permissions, publication leases or instrumentation are involved.
 use super::*;
 
 mod exec;
+mod thread;
 use exec::ExecPending;
 
 #[cfg(test)]
@@ -27,9 +28,17 @@ struct ForkReturn {
     ticket: CreationTicket,
     registers: RegisterSnapshot,
     xstate: Vec<u8>,
+    mask: Option<u64>,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum CreationKind {
+    Fork,
+    Thread { stack: u64 },
 }
 
 struct ForkPending {
+    kind: CreationKind,
     parent: TaskId,
     ticket: CreationTicket,
     entry: RegisterSnapshot,
@@ -64,9 +73,11 @@ impl NativeLifecycle {
         options: DynamicLifecycleOptions,
         exec_policy: DynamicExecPolicy,
     ) -> Result<(Self, DynamicEvent), LaunchError> {
-        // At most max_tasks physical records are ever inserted, including
-        // terminals. Exec replaces one slot at most once and reserves one extra
-        // retained task/mm record; it never consumes a process record. Pending
+        // At most max_tasks native TID records are ever inserted, including
+        // terminals. Fork/Refuse retain their separate physical-process budget;
+        // ThreadClone has one process/mm regardless of its two native tasks.
+        // Exec replaces one slot at most once and reserves one extra retained
+        // task/mm record; it never consumes a process record. Pending
         // lifecycle transactions are serialized and no retirement refunds either
         // budget, so this bound covers either fork/exec order before release.
         let incarnation_limit = options
@@ -76,8 +87,16 @@ impl NativeLifecycle {
         let registry = recorded(LifecycleRegistry::new_after_exec_syscall_exit(
             Limits {
                 tasks: incarnation_limit,
-                processes: options.max_tasks,
-                address_spaces: incarnation_limit,
+                processes: if options.creation == DynamicCreationPolicy::ThreadClone {
+                    1
+                } else {
+                    options.max_tasks
+                },
+                address_spaces: if options.creation == DynamicCreationPolicy::ThreadClone {
+                    1 + usize::from(exec_policy == DynamicExecPolicy::ExecveOnce)
+                } else {
+                    incarnation_limit
+                },
                 obligations: 4096,
             },
             pid,
@@ -148,10 +167,12 @@ impl NativeLifecycle {
             }
             Request::Wait => {
                 if self.events.is_empty()
-                    && !self
-                        .tasks
-                        .values()
-                        .any(|task| matches!(task.state, State::Running | State::Listening))
+                    && !self.tasks.values().any(|task| {
+                        matches!(
+                            task.state,
+                            State::Running | State::Listening | State::Exiting
+                        )
+                    })
                 {
                     return Err(LaunchError::Invalid(
                         "dynamic wait requires a released task",
@@ -301,6 +322,7 @@ impl NativeLifecycle {
                             .prepare_creation(identity.task, CreationRequest::Fork),
                     )?;
                     self.pending = Some(ForkPending {
+                        kind: CreationKind::Fork,
                         parent: identity.task,
                         ticket,
                         entry,
@@ -310,10 +332,14 @@ impl NativeLifecycle {
                         parent_event: false,
                         newborn: None,
                     });
+                } else if number == libc::SYS_clone as u64
+                    && self.options.creation == DynamicCreationPolicy::ThreadClone
+                {
+                    self.prepare_native_thread(owner, token.tid)?;
                 } else if number == libc::SYS_execve as u64
                     && self.exec_policy == DynamicExecPolicy::ExecveOnce
                 {
-                    self.prepare_native_exec(token.tid)?;
+                    self.prepare_native_exec(owner, token.tid)?;
                 } else if matches!(
                     number as libc::c_long,
                     libc::SYS_clone
@@ -436,6 +462,10 @@ impl NativeLifecycle {
         let signal = libc::WSTOPSIG(status);
         let event = status >> 16;
         if event == libc::PTRACE_EVENT_EXIT {
+            if self.options.creation == DynamicCreationPolicy::ThreadClone {
+                return self.observe_thread_exiting(owner, tid, signal).map(Some);
+            }
+            // Preserve the established Fork/Refuse notification contract.
             // No original instruction can execute from this kernel pre-exit stop.
             ptrace(libc::PTRACE_CONT, tid, 0, 0)?;
             owner.released(tid);
@@ -447,9 +477,22 @@ impl NativeLifecycle {
             }
             return self.observe_native_exec(owner, tid).map(Some);
         }
-        if event == libc::PTRACE_EVENT_FORK {
+        if event == libc::PTRACE_EVENT_FORK
+            || (event == libc::PTRACE_EVENT_CLONE
+                && self.options.creation == DynamicCreationPolicy::ThreadClone)
+        {
             if signal != libc::SIGTRAP {
                 return Err(LaunchError::Invalid("fork event has wrong stop signal"));
+            }
+            let expected = self.pending.as_ref().map(|pending| match pending.kind {
+                CreationKind::Fork => libc::PTRACE_EVENT_FORK,
+                CreationKind::Thread { .. } => libc::PTRACE_EVENT_CLONE,
+            });
+            if expected != Some(event) {
+                owner.discover_event_child(tid, status);
+                return Err(LaunchError::Invalid(
+                    "creation event differs from entry intent",
+                ));
             }
             return self.parent_created(owner, tid);
         }
@@ -578,6 +621,9 @@ impl NativeLifecycle {
                 {
                     if registers != returned.registers
                         || xstate(tid)? != returned.xstate
+                        || returned
+                            .mask
+                            .is_some_and(|mask| launch::task_mask(tid).ok() != Some(mask))
                         || exit.is_error != 0
                     {
                         return Err(LaunchError::Invalid("native fork return state differs"));
@@ -606,7 +652,11 @@ impl NativeLifecycle {
                     }
                     let mut expected = pending.entry;
                     expected.rax = exit.sval as u64;
-                    if registers != expected || xstate(tid)? != pending.xstate {
+                    if registers != expected
+                        || xstate(tid)? != pending.xstate
+                        || (matches!(pending.kind, CreationKind::Thread { .. })
+                            && launch::task_mask(tid)? != pending.mask)
+                    {
                         return Err(LaunchError::Invalid("failed fork changed unrelated state"));
                     }
                     recorded(self.registry.observe_creation_exit(
@@ -666,11 +716,19 @@ impl NativeLifecycle {
         // The ptrace event and automatic child stop pin this newborn until its
         // tracer consumes the terminal. Establish ownership before fallible reads.
         owner.owned.insert(child);
-        owner.pin_process(child)?;
+        owner.pin_task(child)?;
         if read_registers(tid)? != pending.entry || xstate(tid)? != pending.xstate {
             return Err(LaunchError::Invalid(
                 "fork parent event changed entry state",
             ));
+        }
+        if matches!(pending.kind, CreationKind::Thread { .. }) {
+            thread::shadow_stack_disabled(tid)?;
+            if launch::task_mask(tid)? != pending.mask {
+                return Err(LaunchError::Invalid(
+                    "thread parent event changed signal mask",
+                ));
+            }
         }
         pending.parent_event = true;
         pending.child = Some(child);
@@ -679,7 +737,7 @@ impl NativeLifecycle {
 
     fn newborn(
         &mut self,
-        _owner: &mut Owner,
+        owner: &mut Owner,
         tid: libc::pid_t,
         status: i32,
     ) -> Result<Option<DynamicEvent>, LaunchError> {
@@ -699,6 +757,13 @@ impl NativeLifecycle {
         let registers = read_registers(tid)?;
         let mut expected = pending.entry;
         expected.rax = 0;
+        if let CreationKind::Thread { stack } = pending.kind {
+            expected.rsp = stack;
+            thread::shadow_stack_disabled(tid)?;
+            if owner.pin_kinds.get(&tid) != Some(&PinKind::Thread) {
+                return Err(LaunchError::Invalid("thread newborn lacks a task pidfd"));
+            }
+        }
         if registers != expected
             || xstate(tid)? != pending.xstate
             || launch::task_mask(tid)? != pending.mask
@@ -711,8 +776,21 @@ impl NativeLifecycle {
             .lines()
             .find_map(|line| line.strip_prefix("Tgid:\t"))
             .and_then(|value| value.parse::<i32>().ok());
-        if tgid != Some(tid) {
-            return Err(LaunchError::Invalid("fork newborn is not a process leader"));
+        match pending.kind {
+            CreationKind::Fork => {
+                if tgid != Some(tid) {
+                    return Err(LaunchError::Invalid("fork newborn is not a process leader"));
+                }
+                owner.pin_process(tid)?;
+            }
+            CreationKind::Thread { .. } => {
+                let parent_tid = recorded(self.registry.task(pending.parent))?.tid;
+                if tgid != Some(parent_tid) || tid == parent_tid {
+                    return Err(LaunchError::Invalid(
+                        "thread newborn has a different process",
+                    ));
+                }
+            }
         }
         pending.newborn = Some((tid, registers));
         self.join_created()
@@ -739,9 +817,15 @@ impl NativeLifecycle {
             pending.ticket,
             self.sequence(parent_tid)?,
             CreationEvent {
-                kind: CreationEventKind::Fork,
+                kind: match pending.kind {
+                    CreationKind::Fork => CreationEventKind::Fork,
+                    CreationKind::Thread { .. } => CreationEventKind::Clone,
+                },
                 child_tid: tid,
-                child_tgid: tid,
+                child_tgid: match pending.kind {
+                    CreationKind::Fork => tid,
+                    CreationKind::Thread { .. } => parent_tid,
+                },
                 parent_visible_tid: tid,
                 parent_pc: pending.entry.rip,
             },
@@ -777,6 +861,10 @@ impl NativeLifecycle {
             ticket: pending.ticket,
             registers: parent_return,
             xstate: pending.xstate,
+            mask: match pending.kind {
+                CreationKind::Fork => None,
+                CreationKind::Thread { .. } => Some(pending.mask),
+            },
         });
         let newborn = self.held(
             tid,

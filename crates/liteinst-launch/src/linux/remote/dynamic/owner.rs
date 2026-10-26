@@ -11,7 +11,16 @@ enum State {
     Held(Box<DynamicEvent>),
     Running,
     Listening,
+    Exiting,
     Terminal,
+}
+
+/// Kind of stable kernel identity held by a pidfd. Thread pins are acquired
+/// before consuming unknown WNOWAIT identities, even if they later prove leaders.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PinKind {
+    Process,
+    Thread,
 }
 
 pub(super) struct Owner {
@@ -34,6 +43,7 @@ pub(super) struct Owner {
     owned: BTreeSet<libc::pid_t>,
     stopped: BTreeMap<libc::pid_t, i32>,
     handles: BTreeMap<libc::pid_t, OwnedFd>,
+    pin_kinds: BTreeMap<libc::pid_t, PinKind>,
     reaped: Vec<libc::pid_t>,
     lost_wait: bool,
     missing_pin: bool,
@@ -117,6 +127,7 @@ impl Owner {
             owned: BTreeSet::new(),
             stopped: BTreeMap::new(),
             handles: BTreeMap::new(),
+            pin_kinds: BTreeMap::new(),
             reaped: Vec::new(),
             lost_wait: false,
             missing_pin: false,
@@ -153,6 +164,7 @@ impl Owner {
             self.pid = pid;
             self.owned.insert(pid);
             self.handles.insert(pid, handle);
+            self.pin_kinds.insert(pid, PinKind::Process);
         }
         // Before SEIZE, only the real parent can wait for A. This authentic
         // natural-parent receipt replaces no ptrace status and grants no new
@@ -246,10 +258,45 @@ impl Owner {
         }
         Ok(())
     }
-    pub(super) fn pin_process(&mut self, pid: libc::pid_t) -> Result<(), LaunchError> {
-        if self.handles.contains_key(&pid) {
+    /// WNOWAIT or an owned creation payload pins the numeric incarnation until
+    /// a stable descriptor is acquired. ThreadClone always requests PIDFD_THREAD;
+    /// legacy process profiles retain flags=0 first. No TGID read precedes it.
+    pub(super) fn pin_task(&mut self, tid: libc::pid_t) -> Result<(), LaunchError> {
+        if self.handles.contains_key(&tid) {
             return Ok(());
         }
+        if self
+            .lifecycle_options
+            .is_some_and(|options| options.creation == DynamicCreationPolicy::ThreadClone)
+        {
+            return self.open_pin(tid, PinKind::Thread);
+        }
+        // Preserve the existing process-only profiles' kernel capability
+        // envelope. A successful flags=0 open authenticates a process pin.
+        // Linux returns ENOENT for a nonleader; this does not establish its
+        // kind, but permits an explicit task-pin attempt while WNOWAIT/the
+        // creation payload still preserves exact ownership. Only that second
+        // successful syscall authenticates Thread. No unrelated errno retries.
+        match self.open_pin(tid, PinKind::Process) {
+            Err(LaunchError::System { source, .. })
+                if source.raw_os_error() == Some(libc::ENOENT) =>
+            {
+                self.open_pin(tid, PinKind::Thread)
+            }
+            result => result,
+        }
+    }
+
+    /// Only an authenticated process leader may be promoted to a process pin.
+    /// Acquire the replacement before dropping its existing stable task pin.
+    pub(super) fn pin_process(&mut self, tid: libc::pid_t) -> Result<(), LaunchError> {
+        if self.pin_kinds.get(&tid) == Some(&PinKind::Process) {
+            return Ok(());
+        }
+        self.open_pin(tid, PinKind::Process)
+    }
+
+    fn open_pin(&mut self, tid: libc::pid_t, kind: PinKind) -> Result<(), LaunchError> {
         #[cfg(test)]
         if self.deny_pin_for_test {
             return Err(io_error(
@@ -257,19 +304,23 @@ impl Owner {
                 io::Error::from_raw_os_error(libc::EMFILE),
             ));
         }
-        // SAFETY: pid is an exclusively owned, unreaped process incarnation.
-        let mut descriptor = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) };
-        if descriptor < 0 && io::Error::last_os_error().raw_os_error() == Some(libc::EINVAL) {
-            // Linux PIDFD_THREAD == O_EXCL pins a nonleader task as well. This
-            // is required before consuming a terminal wait, not after reuse.
-            descriptor = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, libc::O_EXCL) };
-        }
+        let flags = if kind == PinKind::Thread {
+            libc::O_EXCL
+        } else {
+            0
+        };
+        // SAFETY: this exact incarnation is owned and unreaped. Linux
+        // PIDFD_THREAD == O_EXCL. This syscall's successful result authenticates
+        // the requested pin kind; errors never establish a task/process kind.
+        let descriptor = unsafe { libc::syscall(libc::SYS_pidfd_open, tid, flags) };
         if descriptor < 0 {
             return Err(system("pidfd_open dynamic process"));
         }
-        // SAFETY: the syscall returned one newly owned descriptor.
+        // SAFETY: the syscall returned one newly owned descriptor. In a
+        // promotion, the prior pin remains owned until this insertion succeeds.
         self.handles
-            .insert(pid, unsafe { OwnedFd::from_raw_fd(descriptor as i32) });
+            .insert(tid, unsafe { OwnedFd::from_raw_fd(descriptor as i32) });
+        self.pin_kinds.insert(tid, kind);
         Ok(())
     }
     fn terminal(&mut self, tid: libc::pid_t, status: i32) {
@@ -316,7 +367,7 @@ impl Owner {
             // WNOWAIT itself grants exact unreaped numeric authority. Register
             // it before pidfd allocation, which may fail (for example EMFILE).
             self.owned.insert(tid);
-            if let Err(error) = self.pin_process(tid) {
+            if let Err(error) = self.pin_task(tid) {
                 if !self.closing {
                     return Err(error);
                 }
@@ -701,7 +752,7 @@ impl Owner {
                 // legitimately gain a second creation incarnation here.
                 if child > 0 && !self.reaped.contains(&child) {
                     self.owned.insert(child);
-                    let _ = self.pin_process(child);
+                    let _ = self.pin_task(child);
                 }
             }
         }

@@ -187,6 +187,12 @@ pub enum TaskState {
     },
     /// The controller has released this task.
     Running,
+    /// Authenticated pre-exit event was continued within the kernel. This is
+    /// neither a held stop nor a terminal wait and grants no release/lease.
+    Exiting {
+        /// Actual pre-exit event payload; final group exit status may differ.
+        event_status: ExitStatus,
+    },
     /// No longer executing; native cleanup obligations remain external.
     Terminal(TerminalReason),
 }
@@ -1203,6 +1209,29 @@ impl LifecycleRegistry {
                 address_space: space,
                 superseded,
             })
+        })
+    }
+
+    /// Records an authenticated native pre-exit event after its kernel-only
+    /// continuation. Caller proves the actual event and successful continuation;
+    /// ordinary stop classification cannot create this phase. The task/TID/mm
+    /// remain live records, so exclusion and invalidation still require a held
+    /// task and refuse this state. Its event status is not a final wait promise.
+    pub fn observe_exit_event(
+        &mut self,
+        task: TaskId,
+        sequence: u64,
+        event_status: ExitStatus,
+    ) -> Result<(), LifecycleError> {
+        self.transaction(|state| {
+            state.running(task, sequence)?;
+            if matches!(event_status, ExitStatus::Signal(signal) if !(1..=64).contains(&signal)) {
+                return Err(LifecycleError::EventMismatch);
+            }
+            let record = state.tasks.get_mut(&task).unwrap();
+            record.sequence = sequence;
+            record.state = TaskState::Exiting { event_status };
+            Ok(())
         })
     }
 

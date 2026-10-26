@@ -1,5 +1,5 @@
 {
-  "baseline_revision": "e9c7b895d533bab18d99366a15fc2f1a734fe92f",
+  "baseline_revision": "79356323c4b38aa344655909392779adecd495cc",
   "harness_test_counts": {
     "serial_launch": {
       "test/checkpoint": {
@@ -30,6 +30,10 @@
         "ignored": 0,
         "tests": 4
       },
+      "test/dynamic_thread": {
+        "ignored": 0,
+        "tests": 12
+      },
       "test/lifecycle": {
         "ignored": 0,
         "tests": 16
@@ -41,6 +45,14 @@
       "test/lifecycle_exec_exit": {
         "ignored": 0,
         "tests": 11
+      },
+      "test/lifecycle_exiting": {
+        "ignored": 0,
+        "tests": 3
+      },
+      "test/lifecycle_thread": {
+        "ignored": 0,
+        "tests": 5
       },
       "test/native_int80": {
         "ignored": 0,
@@ -76,7 +88,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 33
+        "tests": 38
       }
     },
     "workspace_tests": {
@@ -160,6 +172,10 @@
         "ignored": 0,
         "tests": 4
       },
+      "test/dynamic_thread": {
+        "ignored": 0,
+        "tests": 12
+      },
       "test/e2e": {
         "ignored": 0,
         "tests": 2
@@ -207,6 +223,14 @@
       "test/lifecycle_exec_exit": {
         "ignored": 0,
         "tests": 11
+      },
+      "test/lifecycle_exiting": {
+        "ignored": 0,
+        "tests": 3
+      },
+      "test/lifecycle_thread": {
+        "ignored": 0,
+        "tests": 5
       },
       "test/mandatory_prefix_oracle": {
         "ignored": 0,
@@ -354,7 +378,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 33
+        "tests": 38
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,

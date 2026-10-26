@@ -259,15 +259,15 @@ class DeclaredCorpusTests(unittest.TestCase):
 
     def test_fixed_workspace_and_launch_denominators(self):
         expected = self.corpus["harness_test_counts"]
-        self.assertEqual(len(expected["workspace_tests"]), 71)
-        self.assertEqual(len(expected["serial_launch"]), 19)
-        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 1107)
+        self.assertEqual(len(expected["workspace_tests"]), 74)
+        self.assertEqual(len(expected["serial_launch"]), 22)
+        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 1132)
         self.assertEqual(sum(row["ignored"] for row in expected["workspace_tests"].values()), 4)
-        self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 269)
+        self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 294)
         self.assertEqual(sum(row["ignored"] for row in expected["serial_launch"].values()), 0)
         for cohort in expected.values():
             for identity, total in {
-                "unit/liteinst_launch/lib": 33,
+                "unit/liteinst_launch/lib": 38,
                 "test/selected_semantics": 17,
                 "test/native_int80": 6,
                 "test/concurrent_gate": 10,
@@ -277,6 +277,9 @@ class DeclaredCorpusTests(unittest.TestCase):
                 "test/dynamic_signals": 4,
                 "test/dynamic_fork": 7,
                 "test/dynamic_exec": 8,
+                "test/dynamic_thread": 12,
+                "test/lifecycle_thread": 5,
+                "test/lifecycle_exiting": 3,
                 "test/lifecycle_exec_event": 6,
                 "test/lifecycle_exec_exit": 11,
             }.items():
