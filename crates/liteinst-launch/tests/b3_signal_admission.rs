@@ -116,6 +116,56 @@ fn state(session: &mut Session, observed: &DynamicAdmissionState) -> State {
         alternate: memory(ALT, STACK_LEN),
     }
 }
+// The event retains the actual syscall EXIT before one source rebind. Derive
+// the expected current identity without borrowing any field from current state.
+fn expected_rearmed(returned: &DynamicAdmissionState) -> Option<DynamicAdmissionState> {
+    let generation = returned.task.generation.checked_add(1)?;
+    let mut expected = returned.clone();
+    expected.task.generation = generation;
+    Some(expected)
+}
+fn rearm_corruptions(returned: &DynamicAdmissionState) {
+    // These are comparison-relation controls on retained observations after
+    // both native lanes are physically cleaned, not additional native phases.
+    let historical = returned.clone();
+    let expected = expected_rearmed(returned).unwrap();
+    let accepts =
+        |current: &DynamicAdmissionState| expected_rearmed(returned).as_ref() == Some(current);
+    assert!(accepts(&expected));
+    assert!(!accepts(returned), "unchanged generation must be rejected");
+    let mut skipped = expected.clone();
+    skipped.task.generation = skipped.task.generation.checked_add(1).unwrap();
+    assert!(!accepts(&skipped), "skipped generation must be rejected");
+    let mut overflow = historical.clone();
+    overflow.task.generation = u64::MAX;
+    let retained_overflow = overflow.clone();
+    assert_eq!(expected_rearmed(&overflow), None);
+    assert_eq!(overflow, retained_overflow);
+
+    let mut wrong = expected.clone();
+    wrong.registers.rax ^= 1;
+    assert!(!accepts(&wrong));
+    let mut wrong = expected.clone();
+    wrong.registers.rip ^= 1;
+    assert!(!accepts(&wrong));
+    let mut wrong = expected.clone();
+    wrong.registers.eflags ^= 1;
+    assert!(!accepts(&wrong));
+    let mut wrong = expected.clone();
+    wrong.registers.orig_rax ^= 1;
+    assert!(!accepts(&wrong));
+    let mut wrong = expected.clone();
+    wrong.signal_mask ^= 1;
+    assert!(!accepts(&wrong));
+    let mut wrong = expected.clone();
+    assert!(!wrong.xstate.is_empty());
+    wrong.xstate[0] ^= 1;
+    assert!(!accepts(&wrong));
+    let mut wrong = expected.clone();
+    wrong.xstate.push(0);
+    assert!(!accepts(&wrong));
+    assert_eq!(returned, &historical);
+}
 fn completion(session: &mut Session) -> (DynamicAdmissionCompletion, State) {
     let event = session.next_event().unwrap();
     let DynamicAdmissionEvent::Completed(done) = event else {
@@ -227,6 +277,19 @@ fn gated(image: &Image, ready: SyncSender<raw::Ready>) -> GatedTrace {
     };
     let original_task = session.initial_state().task;
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        // The production owner has its own native thread. Observe its actual
+        // original frame instead of inferring its stack flags from this worker
+        // or from a post-exec sigaltstack query. The pristine lane separately
+        // establishes raw flags zero by a successful native setter.
+        let anchor = session.anchor_progress().snapshot();
+        assert!(anchor.complete);
+        assert!(anchor.exec_exit_authenticated);
+        assert!(anchor.frame_complete);
+        assert!(anchor.restored_frame_complete);
+        assert_eq!(anchor.frame, anchor.restored_frame);
+        assert!(word(&anchor.frame, 24) != 0);
+        assert_eq!(dword(&anchor.frame, 32), 0);
+        assert!(word(&anchor.frame, 40) != 0);
         let mut setup = Vec::new();
         for call in &image.setup {
             let (done, observed) = completion(&mut session);
@@ -329,7 +392,10 @@ fn gated(image: &Image, ready: SyncSender<raw::Ready>) -> GatedTrace {
             original_task.address_space
         );
         assert!(returned.returned.task.generation > original_task.generation);
-        let return_state = state(&mut session, &returned.returned);
+        assert_eq!(returned.entry.task, returned.returned.task);
+        let expected_current = expected_rearmed(&returned.returned)
+            .expect("one signal-return rebind must not overflow");
+        let return_state = state(&mut session, &expected_current);
         let frame = Frame::from_state(&return_state, entry.projected_frame.address);
         compare::edited_frame(image, &actual_frame, &frame);
         let landing = if image.trajectory.edited() {
@@ -584,6 +650,7 @@ fn run_pair(trajectory: Trajectory, nonzero: Option<Metadata>, corrupt: bool) {
     compare_pair(&image, &raw, &gated, nonzero);
     if corrupt {
         compare::corruptions(&raw.handler, &raw.frame);
+        rearm_corruptions(&gated.returned.returned);
     }
 }
 

@@ -269,6 +269,10 @@ pub struct DynamicSignalReturn {
     /// Complete state at the genuine syscall ENTRY stop.
     pub entry: DynamicAdmissionState,
     /// Complete restored state observed at the genuine return EXIT stop.
+    /// This historical observation retains its generation before the single
+    /// source rebind that follows the return. When this event is delivered,
+    /// the current held task has generation exactly one greater; its task,
+    /// process, address space and complete native state are unchanged.
     pub returned: DynamicAdmissionState,
     /// Raw native EXIT information accompanying the restored state.
     pub information: DynamicSignalReturnInfo,

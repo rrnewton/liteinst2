@@ -41,6 +41,14 @@ pub(super) struct DeliveryStates<'a> {
     pub(super) interrupted: &'a TaskStateSnapshot,
     pub(super) fetch: &'a TaskStateSnapshot,
 }
+
+/// Facts bound to the original launch frame and genuine exec EXIT. Stack
+/// flags are checked exactly; only the three exception words are projected.
+#[derive(Clone, Copy)]
+pub(super) struct AnchoredFrameState {
+    pub(super) metadata: DynamicExceptionMetadata,
+    pub(super) post_exec_altstack_flags: u32,
+}
 impl FrameStorage {
     pub(super) fn new() -> Result<Self, GateError> {
         let allocate = || -> Result<Vec<u8>, GateError> {
@@ -111,7 +119,7 @@ impl CapturedFrame {
         interrupted: &TaskStateSnapshot,
         fetch: &TaskStateSnapshot,
         signal: &DynamicSignalInfo,
-        metadata: DynamicExceptionMetadata,
+        anchor: AnchoredFrameState,
     ) -> Result<Self, GateError> {
         Self::read_with_storage(
             read,
@@ -119,7 +127,7 @@ impl CapturedFrame {
             profile,
             DeliveryStates { interrupted, fetch },
             signal,
-            metadata,
+            anchor,
             FrameStorage::new()?,
         )
     }
@@ -130,10 +138,17 @@ impl CapturedFrame {
         profile: &DynamicSignalProfile,
         states: DeliveryStates<'_>,
         signal: &DynamicSignalInfo,
-        metadata: DynamicExceptionMetadata,
+        anchor: AnchoredFrameState,
         storage: FrameStorage,
     ) -> Result<Self, GateError> {
         let DeliveryStates { interrupted, fetch } = states;
+        let AnchoredFrameState {
+            metadata,
+            post_exec_altstack_flags,
+        } = anchor;
+        if post_exec_altstack_flags != 0 && post_exec_altstack_flags != libc::SS_DISABLE as u32 {
+            return Err(invalid("signal frame anchor alternate-stack flags differ"));
+        }
         let address = fetch.registers.rsp;
         let header_end = address
             .checked_add(HEADER_BYTES as u64)
@@ -180,7 +195,7 @@ impl CapturedFrame {
             .alternate_stack
             .as_ref()
             .map(|range| (range.start, 0_u32, range.end - range.start))
-            .unwrap_or((0, libc::SS_DISABLE as u32, 0));
+            .unwrap_or((0, post_exec_altstack_flags, 0));
         if word(&header, 24)? != stack_pointer
             || half(&header, 32)? != stack_flags
             || word(&header, 40)? != stack_size

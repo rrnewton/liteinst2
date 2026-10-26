@@ -238,7 +238,11 @@ impl AdmissionOwner {
         let frame_origins = 1 + usize::from(transaction.profile.frame_edits.is_some());
         let reservation = self.reserve_signal_delivery(owner, frame_origins)?;
         let profile = self.signals.as_ref().unwrap().profile.clone();
-        let metadata = self.signals.as_ref().unwrap().metadata;
+        let transaction = self.signals.as_ref().unwrap();
+        let anchor = frame::AnchoredFrameState {
+            metadata: transaction.metadata,
+            post_exec_altstack_flags: transaction.post_exec_altstack_flags,
+        };
         let mut origin_slots = Vec::new();
         origin_slots
             .try_reserve_exact(frame_origins)
@@ -314,7 +318,7 @@ impl AdmissionOwner {
                 fetch: &fetch_state,
             },
             &signal,
-            metadata,
+            anchor,
             frame_storage,
         )?;
         journal.phase(SignalJournalPhase::Projection)?;

@@ -18,6 +18,7 @@ mod setup;
 pub(super) struct SignalTransaction {
     profile: DynamicSignalProfile,
     metadata: DynamicExceptionMetadata,
+    post_exec_altstack_flags: u32,
     action_installed: bool,
     alternate_installed: bool,
     pending: Option<PendingDelivery>,
@@ -66,6 +67,7 @@ impl SignalTransaction {
             validate_stack(&boot.mappings, range)?;
         }
         let metadata = receipt.metadata();
+        let post_exec_altstack_flags = receipt.post_exec_altstack_flags()?;
         let extent = extent::NativeExtent::acquire(owner, boot, until)?;
         Ok(Self {
             profile,
@@ -74,6 +76,7 @@ impl SignalTransaction {
                 error_code: metadata.error_code,
                 cr2: metadata.cr2,
             },
+            post_exec_altstack_flags,
             action_installed: false,
             alternate_installed: false,
             pending: None,

@@ -75,6 +75,7 @@ pub struct PristineSignalOwner {
 }
 impl PristineSignalOwner {
     fn launch(image: &Image) -> Self {
+        let until = Instant::now() + TIMEOUT;
         assert_eq!(mask(), TRACER_MASK);
         let mut action: libc::sigaction = unsafe { std::mem::zeroed() };
         assert_eq!(
@@ -83,9 +84,10 @@ impl PristineSignalOwner {
         );
         assert_ne!(action.sa_sigaction, libc::SIG_IGN);
         assert_eq!(action.sa_flags & libc::SA_NOCLDWAIT, 0);
-        let bootstrap = bootstrap::Resources::new(&image.path, &[], &[], true);
-        let until = Instant::now() + TIMEOUT;
+        let mut bootstrap = bootstrap::Resources::new(&image.path, &[], &[], true);
+        bootstrap.prepare_altstack(until);
         let fork = FILE_FORK.lock().unwrap();
+        assert!(Instant::now() < until, "pristine bootstrap clone deadline");
         let (pid, pin) = bootstrap.spawn();
         let mut owner = Self {
             pid,
@@ -124,6 +126,7 @@ impl PristineSignalOwner {
             owner.wait(until),
             (libc::PTRACE_EVENT_EXEC << 16) | (libc::SIGTRAP << 8) | 0x7f
         );
+        owner.bootstrap.authenticate_altstack_at_exec(until);
         let exec = owner.registers();
         assert_eq!(exec.rip, ENTRY);
         assert_eq!(exec.cs, 0x33);

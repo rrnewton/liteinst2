@@ -203,6 +203,50 @@ impl InitialExceptionMetadata {
     pub(in crate::linux::remote::dynamic) fn tid(&self) -> i32 {
         self.tid
     }
+    /// Exact stored alternate-stack flags from the authenticated original
+    /// frame. Linux exec clears the stack address and size, but preserves this
+    /// field; a later sigaltstack query instead synthesizes SS_DISABLE from
+    /// the zero size and cannot supply this raw frame expectation.
+    pub(in crate::linux::remote::dynamic) fn post_exec_altstack_flags(
+        &self,
+    ) -> Result<u32, LaunchError> {
+        let data = self.archive.data();
+        let invalid = || LaunchError::Invalid("anchor saved alternate-stack evidence differs");
+        if data.session != self.session
+            || !data.complete
+            || !data.exec_exit_authenticated
+            || !data.frame_complete
+            || !data.frame_check_complete
+            || data.frame_length < 48
+            || data.frame_length != data.frame_check_length
+            || data.frame.get(..data.frame_length) != data.frame_check.get(..data.frame_length)
+        {
+            return Err(invalid());
+        }
+        let prepared = data.prepared.as_ref().ok_or_else(invalid)?;
+        let restored = data.restored.as_ref().ok_or_else(invalid)?;
+        if prepared.tid != self.tid as u64
+            || restored.tid != self.tid as u64
+            || prepared.old_stack != restored.old_stack
+            || prepared.old_stack != restored.check_stack
+        {
+            return Err(invalid());
+        }
+        let bytes = data.frame.get(..data.frame_length).ok_or_else(invalid)?;
+        let address = u64::from_ne_bytes(bytes[24..32].try_into().unwrap());
+        let flags = u32::from_ne_bytes(bytes[32..36].try_into().unwrap());
+        let size = u64::from_ne_bytes(bytes[40..48].try_into().unwrap());
+        let original = prepared.old_stack;
+        if address != original.address
+            || u64::from(flags) != original.flags
+            || size != original.size
+            || !((flags == 0 && size != 0)
+                || (flags == libc::SS_DISABLE as u32 && address == 0 && size == 0))
+        {
+            return Err(invalid());
+        }
+        Ok(flags)
+    }
     /// Capture at the owner's initial-exec syscall-stop seam, before that
     /// seam's fallible phase/equality interpretation. No wait status is invented:
     /// this row is an inspection of the already-held original task.

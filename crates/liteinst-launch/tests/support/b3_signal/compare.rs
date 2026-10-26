@@ -99,7 +99,11 @@ pub fn frame_setup(
         assert!((NORMAL..SP).contains(&frame.address));
         assert_eq!(handler.alternate, before.alternate);
         assert_eq!(word(&frame.bytes, FRAME_UC + 16), 0);
-        assert_eq!(dword(&frame.bytes, FRAME_UC + 24), libc::SS_DISABLE as u32);
+        // Both lanes positively establish stored raw flags zero before exec:
+        // the pristine child uses its own checked setter, and the gated lane
+        // independently checks its authentic original anchor frame. Exec
+        // clears only sp/size; a disabled sigaltstack query is not this fact.
+        assert_eq!(dword(&frame.bytes, FRAME_UC + 24), 0);
         assert_eq!(word(&frame.bytes, FRAME_UC + 32), 0);
     }
     let fp = (frame.fpstate - frame.address) as usize;

@@ -37,6 +37,7 @@ struct Fixture {
     signal: DynamicSignalInfo,
     bytes: Vec<u8>,
     address: u64,
+    post_exec_altstack_flags: u32,
 }
 impl Fixture {
     fn new(alternate: bool, edits: bool) -> Self {
@@ -170,6 +171,7 @@ impl Fixture {
             signal,
             bytes,
             address,
+            post_exec_altstack_flags: libc::SS_DISABLE as u32,
         }
     }
     fn read(&self, address: u64, length: usize) -> Result<Vec<u8>, GateError> {
@@ -196,7 +198,10 @@ impl Fixture {
             &self.interrupted,
             &self.fetch,
             &self.signal,
-            original_metadata(),
+            AnchoredFrameState {
+                metadata: original_metadata(),
+                post_exec_altstack_flags: self.post_exec_altstack_flags,
+            },
         )
     }
     fn capture(&self) -> CapturedFrame {
@@ -321,6 +326,63 @@ fn saved_gpr_flags_segments_masks_and_signal_bytes_are_exact() {
                 .is_err(),
             "corrupt fixed frame field at {changed_offset}"
         );
+    }
+    // The anchor supplies one exact pre-exec stored flag, not a two-value
+    // allowance. Exec removes the old range while retaining that flag.
+    for anchored in [0_u32, libc::SS_DISABLE as u32] {
+        let mut fixture = Fixture::new(false, false);
+        fixture.post_exec_altstack_flags = anchored;
+        write32(&mut fixture.bytes, 32, anchored);
+        let captured = fixture.capture();
+        assert_eq!(captured.raw.bytes, fixture.bytes);
+        assert_eq!(captured.projected.bytes, fixture.projection());
+        let wrong = if anchored == 0 {
+            libc::SS_DISABLE as u32
+        } else {
+            0
+        };
+        for observed in [wrong, libc::SS_ONSTACK as u32, 0x8000_0000, u32::MAX] {
+            write32(&mut fixture.bytes, 32, observed);
+            assert!(matches!(
+                fixture.capture_with(|address, length| fixture.read(address, length)),
+                Err(GateError::Refused(
+                    "signal frame saved alternate stack differs"
+                ))
+            ));
+        }
+
+        // A genuine configured application altstack supersedes the disabled
+        // post-exec range; its exact flags remain zero for either anchor.
+        let mut fixture = Fixture::new(true, false);
+        fixture.post_exec_altstack_flags = anchored;
+        let captured = fixture.capture();
+        assert_eq!(captured.raw.bytes, fixture.bytes);
+        assert_eq!(captured.projected.bytes, fixture.projection());
+        for observed in [
+            libc::SS_DISABLE as u32,
+            libc::SS_ONSTACK as u32,
+            0x8000_0000,
+        ] {
+            write32(&mut fixture.bytes, 32, observed);
+            assert!(matches!(
+                fixture.capture_with(|address, length| fixture.read(address, length)),
+                Err(GateError::Refused(
+                    "signal frame saved alternate stack differs"
+                ))
+            ));
+        }
+    }
+    for alternate in [false, true] {
+        for unsupported in [libc::SS_ONSTACK as u32, 0x8000_0000, u32::MAX] {
+            let mut fixture = Fixture::new(alternate, false);
+            fixture.post_exec_altstack_flags = unsupported;
+            assert!(matches!(
+                fixture.capture_with(|address, length| fixture.read(address, length)),
+                Err(GateError::Refused(
+                    "signal frame anchor alternate-stack flags differ"
+                ))
+            ));
+        }
     }
 }
 

@@ -24,6 +24,25 @@ nonzero inherited metadata input before either application starts; both lanes
 authenticate it independently. Neither an assumed zero nor a copied expected
 tuple qualifies.
 
+Saved alternate-stack flags also need original provenance. On the supported
+Linux ABI, exec clears the stack address and size but preserves its stored
+flags; a later `sigaltstack` query synthesizes the disabled flag from the zero
+size. The signal frame instead saves the stored flags. Production therefore
+requires the exact flag from its authenticated pre-exec frame, including the
+unchanged restoration reread. A configured application stack still requires
+its exact declared address, size and zero flags. Stack fields are never part
+of the three-word exception-metadata projection.
+
+The source basis is Linux v7.1.3's
+[`exec.c`](https://github.com/gregkh/linux/blob/v7.1.3/fs/exec.c),
+[`signal.c`](https://github.com/gregkh/linux/blob/v7.1.3/kernel/signal.c),
+[`signal.h`](https://github.com/gregkh/linux/blob/v7.1.3/include/linux/signal.h)
+and [`fork.c`](https://github.com/gregkh/linux/blob/v7.1.3/kernel/fork.c).
+The first two distinguish exec, query and setter behavior;
+`unsafe_save_altstack` writes the raw stored fields. The clone path resets
+alternate-stack metadata for `CLONE_VM` without `CLONE_VFORK`. These source
+facts explain the checks; they do not substitute for native fixture results.
+
 The pristine bootstrap establishes kernel-reset rseq before its first user
 instruction. A later observation of a zero critical-section pointer cannot
 prove that no inherited rseq redirection occurred earlier. Production and
@@ -32,6 +51,23 @@ the other's metadata receipt for its own observation. The separately isolated
 nonzero-history test also requires a bounded typed completion receipt emitted
 after its actual inner assertions and physical cleanups. Child exit zero alone
 cannot qualify that trajectory.
+
+For this native cohort, the pristine worker establishes zero stored stack
+flags by explicitly reinstalling its own enabled stack and checking the query
+result. Its assembly bootstrap independently restores that descriptor after
+the clone reset; both syscall results and the exact readback must authenticate
+at the actual exec stop. The production lane separately requires its original
+anchor frame to show zero flags and a nonempty stack. An unmet precondition
+fails the fixture. The reference never obtains its expected value from the
+production receipt, and the complete application frames must still agree.
+
+The return event retains the actual `rt_sigreturn` EXIT state before the
+single admission-generation advance used to rearm source pages. The fixture
+checks that ENTRY and EXIT have the same task identity, derives the expected
+current identity with checked generation addition by one, and compares every
+field with the current held state. The historical EXIT is unchanged. Missing
+or repeated generation advances and unrelated state changes fail the same
+complete equality check.
 
 The prospective named integration fixtures are:
 
