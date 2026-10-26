@@ -2,10 +2,11 @@
 //!
 //! This module neither executes instructions nor grants permission to execute.
 //! Native decisions require a separately qualified child execution mechanism.
-//! Scripted syscall success covers only the side-effect-free native getpid and
-//! gettid profile below. Alias declarations identify inputs; they do not invent
-//! a kernel return convention. Memory effects, signal delivery, debug traps,
-//! mapping changes and process lifecycle remain execution-owner obligations.
+//! Scripted syscall success covers only the separate side-effect-free x64 and
+//! long-mode i386 INT80 getpid/gettid profiles below. Other alias declarations
+//! identify inputs without inventing return conventions. Memory effects, signal
+//! delivery, debug traps, mapping changes and process lifecycle remain
+//! execution-owner obligations.
 
 use std::collections::{BTreeMap, VecDeque};
 
@@ -587,6 +588,29 @@ impl SelectedInput {
                 after.rcx = self.instruction.next_pc;
                 after.r11 = self.registers.eflags;
             }
+            (
+                Operation::Syscall { abi },
+                SelectedResult::Syscall(SyscallResult::LinuxI386Int80GetId { value }),
+            ) => {
+                if abi != SyscallAbi::LinuxI386Int80 {
+                    return Err(SemanticsError::UnqualifiedSyscallCompletion);
+                }
+                if !matches!(self.registers.rax as u32, 20 | 224) {
+                    return Err(SemanticsError::UnsupportedScriptedSyscall);
+                }
+                if self.registers.eflags & !ORDINARY_SYSCALL_FLAGS != 0
+                    || self.registers.eflags & (IF | 2) != IF | 2
+                {
+                    return Err(SemanticsError::UnqualifiedSyscallFlags);
+                }
+                if value == 0 || value > i32::MAX as u32 {
+                    return Err(SemanticsError::InvalidProcessIdentifier);
+                }
+                // Long-mode Linux INT80 returns to its original CS and next
+                // PC. It does not have SYSCALL's RCX/R11 clobbers. A scripted
+                // replacement performs no kernel entry, so orig_rax stays put.
+                after.rax = u64::from(value);
+            }
             _ => return Err(SemanticsError::ResultClassMismatch),
         }
         Ok(CompletedInstruction {
@@ -645,6 +669,12 @@ impl SelectedInput {
                 value: u32::try_from(after.rax)
                     .map_err(|_| SemanticsError::InvalidProcessIdentifier)?,
             }),
+            Operation::Syscall {
+                abi: SyscallAbi::LinuxI386Int80,
+            } => SelectedResult::Syscall(SyscallResult::LinuxI386Int80GetId {
+                value: u32::try_from(after.rax)
+                    .map_err(|_| SemanticsError::InvalidProcessIdentifier)?,
+            }),
             Operation::Syscall { .. } => return Err(SemanticsError::UnqualifiedSyscallCompletion),
         };
         self.complete(result)?;
@@ -674,6 +704,14 @@ pub enum SyscallResult {
     /// Successful native getpid/gettid return. No memory, descriptor, lifecycle,
     /// mapping, errno, alias or signal-return effects are represented.
     LinuxX64GetId {
+        /// Positive identifier representable by Linux pid_t.
+        value: u32,
+    },
+    /// Long-mode Linux i386 INT80 getpid (20) or gettid (224), with ordinary
+    /// TF/RF-clear user flags. Only RAX and the logical next PC change; this
+    /// replacement retains kernel bookkeeping and performs no memory effects.
+    /// Native execution must independently authenticate its low32 orig_rax.
+    LinuxI386Int80GetId {
         /// Positive identifier representable by Linux pid_t.
         value: u32,
     },

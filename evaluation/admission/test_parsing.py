@@ -23,13 +23,14 @@ def counts(tests, ignored=0):
 
 
 CASE = {"test": "rdrand_eax", "class": "rdrand", "destination": 0,
-        "input_flags": 3799, "cpuid_leaf": None, "cpuid_subleaf": None}
-OTHER = CASE | {"test": "rdrand_ecx", "destination": 1}
+        "input_flags": 3799, "cpuid_leaf": None, "cpuid_subleaf": None,
+        "encoding": "0fc7f0", "coverage_backend": False}
+OTHER = CASE | {"test": "rdrand_ecx", "destination": 1, "encoding": "0fc7f1"}
 
 
 def receipt(case=CASE, fault=False):
     random = case["class"] in ("rdrand", "rdseed") and not fault
-    return {"schema_version": 1, **{k: case[k] for k in parsing.KEYS},
+    return {"schema_version": 2, **{k: case[k] for k in parsing.KEYS},
             **dict(zip(parsing.COUNTERS, (0, 0, 0, 1, 1, 1) if fault else (1, 1, 1, 0, 0, 0))),
             "raw_native_random_cf": 0 if random else None,
             "native_gate_random_cf": 1 if random else None}
@@ -53,19 +54,25 @@ class HarnessParsingTests(unittest.TestCase):
         self.assertEqual(len({row["id"] for row in rows}), 2)
 
     def test_nested_summaries_and_reviewed_unmatched_child_are_not_outer_counts(self):
-        text = "\n".join([header("liteinst2"), "running 176 tests", "running 1 test",
-                           summary(1, filtered=175), "running 1 test", summary(1, filtered=175),
-                           "running 1 test", summary(175, ignored=1)])
-        row = parsing.parse_harnesses(text, {"unit/liteinst2/lib": counts(176, 1)}, 0)[0]
-        self.assertEqual(row["outer"]["passed"], 175)
-        self.assertEqual(row["outer"]["ignored"], 1)
-        self.assertEqual(len(row["nested"]), 2)
-        self.assertEqual(row["nested_starts"], 3)
-        self.assertEqual(row["unmatched_nested_starts"], 1)
+        for declared in (176, 184):
+            with self.subTest(declared=declared):
+                text = "\n".join([header("liteinst2"), f"running {declared} tests", "running 1 test",
+                                   summary(1, filtered=declared - 1), "running 1 test",
+                                   summary(1, filtered=declared - 1), "running 1 test",
+                                   summary(declared - 1, ignored=1)])
+                row = parsing.parse_harnesses(
+                    text, {"unit/liteinst2/lib": counts(declared, 1)}, 0)[0]
+                self.assertEqual(row["outer"]["passed"], declared - 1)
+                self.assertEqual(row["outer"]["ignored"], 1)
+                self.assertEqual(len(row["nested"]), 2)
+                self.assertEqual(row["nested_starts"], 3)
+                self.assertEqual(row["unmatched_nested_starts"], 1)
 
     def test_unmatched_child_exception_does_not_generalize(self):
         for name, child, declared in [("example", 1, 176), ("liteinst2", 2, 176),
-                                      ("liteinst2", 1, 175)]:
+                                      ("liteinst2", 1, 175), ("example", 1, 184),
+                                      ("liteinst2", 2, 184), ("liteinst2", 1, 183),
+                                      ("liteinst2", 1, 185)]:
             text = "\n".join([header(name), f"running {declared} tests", f"running {child} tests",
                                summary(declared - 1, ignored=1)])
             with self.subTest(name=name, child=child, declared=declared), self.assertRaises(
@@ -218,14 +225,16 @@ class NativeParsingTests(unittest.TestCase):
         record = parsing.PREFIX + json.dumps(receipt()) + "\n"
         for text in (native_text() + native_text(),
                      native_text(terminal=record + "ok"),
-                     native_text().replace('"schema_version": 1', '"schema_version": 2, "schema_version": 1')):
+                     native_text().replace('"schema_version": 2', '"schema_version": 1, "schema_version": 2')):
             with self.assertRaises(parsing.InvalidEvidence):
                 parsing.native_receipts(text, [CASE], True)
 
     def test_closed_fields_types_identities_outcomes_and_carry(self):
         for patch in ({"raw_native_completed": True}, {"native_gate_signal": 1},
                       {"raw_native_random_cf": None}, {"native_gate_random_cf": 2},
-                      {"schema_version": 2}, {"destination": 8}, {"host_path": "PRIVATE_SENTINEL"}):
+                      {"schema_version": 1}, {"destination": 8}, {"host_path": "PRIVATE_SENTINEL"},
+                      {"encoding": "480fc7f0"}, {"encoding": []}, {"coverage_backend": 0},
+                      {"coverage_backend": True}):
             with self.subTest(patch=patch), self.assertRaises(parsing.InvalidEvidence) as caught:
                 parsing.native_receipts(native_text(row=receipt() | patch), [CASE], True)
             self.assertNotIn("PRIVATE_SENTINEL", json.dumps(caught.exception.partial))
@@ -250,25 +259,55 @@ class DeclaredCorpusTests(unittest.TestCase):
 
     def test_fixed_workspace_and_launch_denominators(self):
         expected = self.corpus["harness_test_counts"]
-        self.assertEqual(len(expected["workspace_tests"]), 60)
-        self.assertEqual(len(expected["serial_launch"]), 9)
-        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 801)
+        self.assertEqual(len(expected["workspace_tests"]), 77)
+        self.assertEqual(len(expected["serial_launch"]), 25)
+        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 1341)
         self.assertEqual(sum(row["ignored"] for row in expected["workspace_tests"].values()), 4)
-        self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 119)
+        self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 503)
         self.assertEqual(sum(row["ignored"] for row in expected["serial_launch"].values()), 0)
-        self.assertEqual(expected["workspace_tests"]["unit/rapid_profiler/lib"], counts(7))
+        for cohort in expected.values():
+            for identity, total in {
+                "unit/liteinst_launch/lib": 221,
+                "test/b2_mode_reference": 6,
+                "test/b3_signal_admission": 5,
+                "test/dynamic_admission": 15,
+                "test/selected_semantics": 17,
+                "test/native_int80": 6,
+                "test/concurrent_gate": 10,
+                "test/selected_gate": 24,
+                "test/oracle_gate": 3,
+                "test/dynamic_control": 8,
+                "test/dynamic_signals": 4,
+                "test/dynamic_fork": 7,
+                "test/dynamic_exec": 8,
+                "test/dynamic_thread": 12,
+                "test/lifecycle_thread": 5,
+                "test/lifecycle_exiting": 3,
+                "test/lifecycle_exec_event": 6,
+                "test/lifecycle_exec_exit": 11,
+            }.items():
+                self.assertEqual(cohort[identity], counts(total))
+        self.assertEqual(expected["workspace_tests"]["unit/liteinst2/lib"], counts(184, 1))
+        self.assertEqual(expected["workspace_tests"]["unit/rapid_profiler/lib"], counts(24))
         self.assertEqual(expected["workspace_tests"]["unit/rapid_profiler/main"], counts(3))
+        self.assertEqual(expected["workspace_tests"]["doc/rapid_profiler"], counts(2))
+        historical = "\n".join([header("liteinst2"), "running 176 tests", "running 1 test",
+                                 summary(175, ignored=1)])
+        with self.assertRaisesRegex(parsing.InvalidEvidence, "changed_outer_cohort"):
+            parsing.parse_harnesses(historical, {
+                "unit/liteinst2/lib": expected["workspace_tests"]["unit/liteinst2/lib"]}, 0)
 
-    def test_all_33_native_case_records_and_exact_class_counts(self):
+    def test_all_50_native_case_records_and_exact_class_counts(self):
         cases = self.corpus["native_cases"]
-        self.assertEqual(len(cases), 33)
-        expected = {"cpuid": 3, "rdrand": 8, "rdseed": 8, "rdpid": 8, "rdtsc": 3, "rdtscp": 3}
+        self.assertEqual(len(cases), 50)
+        expected = {"cpuid": 3, "rdrand": 15, "rdseed": 15, "rdpid": 11, "rdtsc": 3, "rdtscp": 3}
         self.assertEqual({key: sum(case["class"] == key for case in cases) for key in expected}, expected)
         rows = parsing.native_receipts("".join(native_text(case) for case in cases), cases, True)
-        self.assertEqual(len(rows), 33)
-        self.assertEqual(sum(row["raw_native_completed"] for row in rows), 33)
-        self.assertEqual(sum(row["scripted_completed"] for row in rows), 33)
-        self.assertEqual(sum(row["native_gate_completed"] for row in rows), 33)
+        self.assertEqual(len(rows), 50)
+        self.assertEqual(sum(row["raw_native_completed"] for row in rows), 50)
+        self.assertEqual(sum(row["scripted_completed"] for row in rows), 50)
+        self.assertEqual(sum(row["native_gate_completed"] for row in rows), 50)
+        self.assertEqual(sum(row["coverage_backend"] for row in rows), 17)
         self.assertFalse(any(row["qualified_run"] for row in rows))
 
 

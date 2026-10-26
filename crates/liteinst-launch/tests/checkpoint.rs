@@ -6,6 +6,7 @@ use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::os::unix::process::{CommandExt, ExitStatusExt};
 use std::path::{Path, PathBuf};
+use std::sync::RwLock;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 
@@ -21,6 +22,10 @@ const IMAGE_LEN: usize = 8192;
 const EXEC_BASE: u64 = 0x400000;
 const FIRST_BYTES: [u8; 4] = [0x0f, 0xa2, 0x0f, 0x0b]; // CPUID; UD2.
 static NEXT_FIXTURE: AtomicUsize = AtomicUsize::new(0);
+// No fork may inherit another test's writable fixture descriptor. Shared
+// launch guards retain concurrent launches; exclusive guards cover only the
+// writable-file lifetime, never later ptrace operations or publication leases.
+static FILE_FORK: RwLock<()> = RwLock::new(());
 
 struct Fixtures(PathBuf);
 
@@ -80,6 +85,7 @@ impl Fixtures {
         }
         image[ENTRY_OFFSET..ENTRY_OFFSET + FIRST_BYTES.len()].copy_from_slice(&FIRST_BYTES);
         let path = self.0.join(name);
+        let _writing = FILE_FORK.write().unwrap();
         let mut file = OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -87,6 +93,7 @@ impl Fixtures {
             .open(&path)
             .unwrap();
         file.write_all(&image).unwrap();
+        drop(file);
         path
     }
 }
@@ -110,8 +117,21 @@ fn put64(image: &mut [u8], offset: usize, value: u64) {
 }
 
 fn checkpoint(path: &Path) -> ExecCheckpoint {
-    ExecCheckpoint::launch(&LaunchCommand::new(path), Duration::from_secs(2))
+    launch_checkpoint(&LaunchCommand::new(path), Duration::from_secs(2))
         .unwrap_or_else(|error| panic!("first-instruction checkpoint failed: {error}"))
+}
+
+fn launch_checkpoint(
+    command: &LaunchCommand,
+    timeout: Duration,
+) -> Result<ExecCheckpoint, LaunchError> {
+    let _launch = FILE_FORK.read().unwrap();
+    ExecCheckpoint::launch(command, timeout)
+}
+
+fn write_fixture(path: &Path, bytes: impl AsRef<[u8]>) -> std::io::Result<()> {
+    let _writing = FILE_FORK.write().unwrap();
+    fs::write(path, bytes)
 }
 
 fn assert_reaped(pid: libc::pid_t) {
@@ -208,15 +228,15 @@ fn invalid_commands_and_exec_failures_are_reported() {
     let fixtures = Fixtures::new();
     let missing = LaunchCommand::new(fixtures.0.join("missing"));
     assert!(matches!(
-        ExecCheckpoint::launch(&missing, Duration::from_secs(2)),
+        launch_checkpoint(&missing, Duration::from_secs(2)),
         Err(LaunchError::System { .. })
     ));
     let not_elf = fixtures.0.join("script");
-    fs::write(&not_elf, b"#!/bin/sh\nexit 0\n").unwrap();
-    assert!(ExecCheckpoint::launch(&LaunchCommand::new(not_elf), Duration::from_secs(2)).is_err());
+    write_fixture(&not_elf, b"#!/bin/sh\nexit 0\n").unwrap();
+    assert!(launch_checkpoint(&LaunchCommand::new(not_elf), Duration::from_secs(2)).is_err());
     let path = fixtures.elf("no-execute", false, None);
     fs::set_permissions(&path, fs::Permissions::from_mode(0o600)).unwrap();
-    let error = match ExecCheckpoint::launch(&LaunchCommand::new(path), Duration::from_secs(2)) {
+    let error = match launch_checkpoint(&LaunchCommand::new(path), Duration::from_secs(2)) {
         Err(error) => error,
         Ok(_) => panic!("non-executable ELF unexpectedly launched"),
     };
@@ -231,11 +251,11 @@ fn memory_and_timeout_bounds_refuse_without_resuming() {
     let path = fixtures.elf("bounds", false, None);
     let command = LaunchCommand::new(&path);
     assert!(matches!(
-        ExecCheckpoint::launch(&command, Duration::ZERO),
+        launch_checkpoint(&command, Duration::ZERO),
         Err(LaunchError::Invalid(_))
     ));
     assert!(matches!(
-        ExecCheckpoint::launch(&command, Duration::from_secs(31)),
+        launch_checkpoint(&command, Duration::from_secs(31)),
         Err(LaunchError::Invalid(_))
     ));
     let stopped = checkpoint(&path);
@@ -275,7 +295,7 @@ fn signal(event: ProcessEvent, expected: i32) -> SignalStop {
 fn replace_fixture_code(path: &Path, bytes: &[u8]) {
     let mut image = fs::read(path).unwrap();
     image[ENTRY_OFFSET..ENTRY_OFFSET + bytes.len()].copy_from_slice(bytes);
-    fs::write(path, image).unwrap();
+    write_fixture(path, image).unwrap();
 }
 
 // Reserve a child-specific cleanup worker before launching the independent
@@ -298,7 +318,11 @@ impl NativeChild {
                 let _ = child.wait();
             }
         });
-        let child = command.spawn().unwrap();
+        let child = {
+            let _launch = FILE_FORK.read().unwrap();
+            command.spawn()
+        }
+        .unwrap();
         Self {
             child: Some(child),
             cleanup,

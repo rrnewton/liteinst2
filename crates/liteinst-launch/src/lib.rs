@@ -19,3 +19,13 @@ pub mod publication;
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub mod selected;
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub mod trap_coverage;
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub mod lifecycle;
+
+// Unit fixtures exclude writable executable FDs from concurrent fork inheritance.
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+pub(crate) static TEST_FILE_FORK: std::sync::Mutex<()> = std::sync::Mutex::new(());

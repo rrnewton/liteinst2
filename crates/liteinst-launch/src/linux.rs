@@ -156,7 +156,7 @@ pub struct EntryEvidence {
     pub first_image: FirstImage,
     /// Kernel AT_ENTRY, the main executable's entry.
     pub executable_entry: u64,
-    /// Kernel AT_BASE; zero for a program without an interpreter.
+    /// Kernel AT_BASE; zero without an interpreter or for a fixed ET_EXEC interpreter.
     pub interpreter_base: u64,
     /// Initial RIP, checked against the owning ELF entry.
     pub initial_instruction: u64,
@@ -752,6 +752,7 @@ mod tests {
     #[test]
     fn a_real_child_wait_timeout_keeps_ownership_until_kill_and_reap() {
         let reaper = prepare_reaper().unwrap();
+        let fork_guard = crate::TEST_FILE_FORK.lock().unwrap();
         // SAFETY: the child uses only raw libc calls before exit, with no Rust
         // allocation, unwinding or destructors after fork.
         let pid = unsafe { libc::fork() };
@@ -767,6 +768,7 @@ mod tests {
                 libc::_exit(126);
             }
         }
+        drop(fork_guard);
         let mut child = ChildOwner {
             pid,
             reaped: false,

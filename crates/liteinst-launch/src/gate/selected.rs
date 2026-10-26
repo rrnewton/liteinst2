@@ -1,13 +1,14 @@
 //! Explicit single-task selected-instruction trap/interpreter execution.
 //!
 //! This path reuses page admission and owns every selected trap. It does not
-//! claim A1 publication, does not change the scanner's embedded-site refusals,
-//! and never chooses itself as an implicit fallback from a core refusal.
+//! claim A1 publication. The optional coverage backend preserves original scan
+//! refusals and supplies a separate guard proof; neither backend is an implicit
+//! fallback from a core refusal.
 
 use super::{GateError, GateEvent, GateMetrics, ImageFacts, SingleThreadPageGate, remaining};
 use crate::selected::{
     FaultedInstruction, InstructionProvider, Operation, ProviderDecision, SelectedInput,
-    SemanticsError, SyscallAbi, SyscallAliases, decode,
+    SelectedResult, SemanticsError, SyscallAbi, SyscallAliases, SyscallResult, decode,
 };
 use crate::{ExecCheckpoint, NativeSyscallOutcome, ProcessEvent, RegisterSnapshot, SignalStop};
 use liteinst_admission::scan::{Policy, SiteClass};
@@ -109,7 +110,8 @@ pub struct SelectedMetrics {
 /// stops and a private return bridge, never SINGLESTEP. Scripted completion
 /// changes only the stopped full register file, including a genuine RSP result.
 /// The pure semantics module limits successful syscall emulation to its frozen
-/// side-effect-free getpid/gettid profile. Aliases have no native return support.
+/// side-effect-free getpid/gettid profiles. Declared INT80 uses its separate
+/// i386 execution owner; SYSENTER has no qualified successful return.
 pub struct SelectedPageGate<P: InstructionProvider> {
     inner: SingleThreadPageGate,
     provider: P,
@@ -118,6 +120,19 @@ pub struct SelectedPageGate<P: InstructionProvider> {
 }
 
 impl<P: InstructionProvider> SelectedPageGate<P> {
+    #[cfg(test)]
+    pub(super) fn inject_coverage_failure(&mut self, phase: super::coverage::failure::Phase) {
+        self.inner.coverage_failure = Some(super::coverage::failure::Injection::new(phase));
+    }
+
+    #[cfg(test)]
+    pub(super) fn coverage_failure_evidence(&self) -> &super::coverage::failure::Injection {
+        self.inner
+            .coverage_failure
+            .as_ref()
+            .expect("test configured injection")
+    }
+
     /// Creates the explicit trap/interpreter backend before original execution.
     /// No selected site is deselected when decoding, scanning or execution fails.
     ///
@@ -148,6 +163,67 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
             metrics: SelectedMetrics::default(),
             closed: false,
         })
+    }
+
+    /// Selects explicit trap coverage for overlapping selected instruction starts.
+    ///
+    /// Unlike the strict reference constructor, this backend may discharge
+    /// embedded-candidate obligations using a separately checked guard closure.
+    /// Collateral guards execute original instructions without logical callbacks.
+    /// Unsupported collateral instructions refuse before publication. This is
+    /// an explicitly selected backend, never an implicit fallback from A1.
+    ///
+    /// # Safety
+    /// All certifications of [`Self::new`] apply, including complete original
+    /// instruction heads, immutable private code, no code-as-data and clear TF/RF
+    /// at every guarded instruction entry. Overlapping streams must all appear
+    /// in the supplied head census; they are decoded independently.
+    pub unsafe fn new_with_coverage(
+        checkpoint: ExecCheckpoint,
+        facts: Vec<ImageFacts>,
+        policy: Policy,
+        aliases: SyscallAliases,
+        provider: P,
+        timeout: Duration,
+        budget: crate::trap_coverage::TrapCoverageBudget,
+    ) -> Result<Self, GateError> {
+        // SAFETY: forwards all ownership and original-entry certifications.
+        let mut gate = unsafe { Self::new(checkpoint, facts, policy, aliases, provider, timeout)? };
+        gate.inner.coverage_budget = Some(budget);
+        Ok(gate)
+    }
+
+    /// Configures the same-owner in-memory oracle before any application resume.
+    /// See [`SingleThreadPageGate::configure_oracle`]; RuntimeScan remains mandatory.
+    pub fn configure_oracle(
+        &mut self,
+        limits: liteinst_admission::oracle_chain::CacheLimits,
+    ) -> Result<(), GateError> {
+        self.inner.configure_oracle(limits)
+    }
+
+    /// Bounded preparation with no publication or execution effects. Original
+    /// refused reports remain refused; any coverage proof is performed on demand.
+    pub fn prepare_oracle(
+        &mut self,
+        pages: &[u64],
+    ) -> Result<Vec<liteinst_admission::oracle_chain::Inspection>, GateError> {
+        self.inner.prepare_oracle(pages)
+    }
+
+    /// Preparation and demand work, excluding admitted-page revisits.
+    pub fn oracle_metrics(&self) -> super::GateOracleMetrics {
+        self.inner.oracle_metrics()
+    }
+
+    /// Current bounded retained cache storage, with explicit corruption errors.
+    pub fn oracle_usage(
+        &self,
+    ) -> Result<
+        liteinst_admission::oracle_chain::CacheUsage,
+        liteinst_admission::oracle_chain::CacheCorruption,
+    > {
+        self.inner.oracle_usage()
     }
 
     /// Owned task identity, for diagnostics only.
@@ -299,8 +375,10 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
     }
 
     fn authenticate_trap(&self, input: &SelectedInput) -> Result<(), GateError> {
-        let mut expected = input.instruction().bytes().to_vec();
-        expected[0] = 0xcc;
+        let expected = self.inner.armed_instruction(
+            input.instruction().logical_pc(),
+            input.instruction().bytes(),
+        );
         if self
             .inner
             .read_memory(input.instruction().logical_pc(), expected.len())?
@@ -320,24 +398,63 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
         deadline: Instant,
     ) -> Result<SelectedEvent, GateError> {
         let operation = input.instruction().operation();
-        if matches!(operation, Operation::Syscall { abi } if abi != SyscallAbi::LinuxX64) {
-            return Err(SemanticsError::UnqualifiedSyscallCompletion.into());
+        if let Operation::Syscall { abi } = operation {
+            match abi {
+                SyscallAbi::LinuxX64 => {}
+                SyscallAbi::LinuxI386Int80 => {
+                    // Refuse unsupported requests/flags before restoring any
+                    // original source bytes. The native owner authenticates
+                    // this exact identity again against the kernel result.
+                    input.complete(SelectedResult::Syscall(
+                        SyscallResult::LinuxI386Int80GetId {
+                            value: self.pid() as u32,
+                        },
+                    ))?;
+                }
+                SyscallAbi::DeclaredSysenter(_) => {
+                    return Err(SemanticsError::UnqualifiedSyscallCompletion.into());
+                }
+            }
         }
         self.authenticate_trap(&input)?;
         let pc = input.instruction().logical_pc();
-        let first = input.instruction().bytes()[0];
+        let original = input.instruction().bytes();
+        let armed = self.inner.armed_instruction(pc, original);
         let mut stop = self.inner.process.hold()?;
         if stop.read_registers()? != *input.registers() || stop.read_xstate()? != before_xstate {
             return Err(GateError::Refused("native selected input changed"));
         }
-        stop.write_memory_checked(pc, &[0xcc], &[first])?;
+        #[cfg(test)]
+        super::coverage::failure::capture(
+            &mut self.inner.coverage_failure,
+            super::coverage::failure::Scope::Selected,
+            &stop,
+        )?;
+        stop.write_memory_checked(pc, &armed, original)?;
         stop.sync_core(remaining(deadline)?)?;
-        let (after, xstate) = if matches!(operation, Operation::Syscall { .. }) {
-            match stop.execute_native_syscall(
-                pc,
-                input.instruction().bytes(),
-                remaining(deadline)?,
-            )? {
+        #[cfg(test)]
+        super::coverage::failure::hit(
+            &mut self.inner.coverage_failure,
+            super::coverage::failure::Phase::SelectedRestored,
+            &stop,
+        )?;
+        let (after, xstate) = if let Operation::Syscall { abi } = operation {
+            let outcome = match abi {
+                SyscallAbi::LinuxX64 => stop.execute_native_syscall(
+                    pc,
+                    input.instruction().bytes(),
+                    remaining(deadline)?,
+                ),
+                SyscallAbi::LinuxI386Int80 => stop.execute_linux_int80_getid(
+                    pc,
+                    input.instruction().bytes(),
+                    remaining(deadline)?,
+                ),
+                SyscallAbi::DeclaredSysenter(_) => {
+                    return Err(SemanticsError::UnqualifiedSyscallCompletion.into());
+                }
+            }?;
+            match outcome {
                 NativeSyscallOutcome::Completed(completed) => {
                     (completed.registers, completed.xstate)
                 }
@@ -395,7 +512,13 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
             ));
         }
         let mut stop = self.inner.process.hold()?;
-        stop.write_memory_checked(pc, &[first], &[0xcc])?;
+        #[cfg(test)]
+        super::coverage::failure::hit(
+            &mut self.inner.coverage_failure,
+            super::coverage::failure::Phase::SelectedCompleted,
+            &stop,
+        )?;
+        stop.write_memory_checked(pc, original, &armed)?;
         stop.sync_core(remaining(deadline)?)?;
         if stop.read_registers()? != after || stop.read_xstate()? != xstate {
             return Err(GateError::Refused(
