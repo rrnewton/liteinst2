@@ -34,6 +34,15 @@ The current carrier supports ET_EXEC and common-bias ET_DYN geometry and places
 new pages above all original LOAD pages. It uses separate backing for each
 image; grouped aliases and signed or absolute placement bridges remain open.
 
+The dynamic inventory bounds relocation destinations and loader metadata before
+source edits. Its COPY profile accepts ET_EXEC `DT_RELA` records with a named,
+defined global object, zero addend, checked symbol/version metadata and a unique
+readable, writable, nonexecuting destination. The symbol's `st_size` reserves the
+destination footprint; it does not establish the external provider's copy length
+or successful dynamic linking. Other COPY profiles remain explicit refusals.
+Known GNU x86 ISA requirement bits remain unchanged in their original read-only
+note. CET feature bits and unknown or malformed properties remain unsupported.
+
 `metadata.li2meta` binds original-content identity, compatibility and every
 selected-site outcome. Its chunk checks authenticate exact original ranges;
 a checksum is not a verdict that an instruction is safe to execute.

@@ -1,7 +1,8 @@
 //! Bounded loader-relocation ownership, without dynamic linking or symbol resolution.
 //!
-//! This deliberately rejects unknown dynamic tags, variable-width COPY relocations,
-//! GNU/Android packed relocation extensions, and metadata in executable loads.
+//! This deliberately rejects unknown dynamic tags, GNU/Android packed relocation
+//! extensions, and metadata in executable loads. COPY is limited to checked
+//! ET_EXEC/DT_RELA destination reservations derived from complete symbol metadata.
 //! Complete bounded table/chain extents must remain in nonexecuting file owners.
 //! Owners are then protected as whole original loads. This is ownership proof,
 //! not symbol resolution, version matching, or dynamic-linking qualification.
@@ -106,7 +107,9 @@ pub struct RelocationWrite {
     pub record: usize,
     pub kind: u32,
     pub symbol: u32,
-    /// Exact write width, including the 16-byte TLS descriptor pair.
+    /// Fixed-width kinds have their exact width, including TLS descriptors.
+    /// COPY has the declared destination reservation (st_size), a conservative
+    /// write footprint rather than an observed resolved-provider copy length.
     pub range: VirtualRange,
     /// None means a wholly zero-filled original target, never an absent owner.
     pub file: Option<FileRange>,
@@ -333,6 +336,7 @@ pub fn inspect(input: &Elf64<'_>, limits: Limits) -> Result<Inventory, Error> {
             }
         }
     }
+    let mut copies = Vec::new();
     for table in &descriptors {
         let count =
             usize::try_from(table.length / table.entry_size).map_err(|_| Error::Arithmetic)?;
@@ -356,6 +360,7 @@ pub fn inspect(input: &Elf64<'_>, limits: Limits) -> Result<Inventory, Error> {
         let records = file_bytes(input, range)?;
         if table.table == TableKind::Relr {
             inspect_relr(input, records, &mut out, limits)?;
+            copy_write_budget(out.writes.len(), copies.len(), limits)?;
             continue;
         }
         for (record, bytes) in records.chunks_exact(table.entry_size as usize).enumerate() {
@@ -379,7 +384,23 @@ pub fn inspect(input: &Elf64<'_>, limits: Limits) -> Result<Inventory, Error> {
             if symbol != 0 && !tags.contains_key(&6) {
                 return Err(Error::InvalidTags { tag: 6 });
             }
-            let width = relocation_width(kind)?;
+            let width = if kind == 5 {
+                if input.header().object_type != elf64::ObjectType::Executable
+                    || table.table != TableKind::Rela
+                    || symbol == 0
+                {
+                    return Err(Error::UnsupportedRelocation { kind });
+                }
+                if u64_at(bytes, 16) != 0 {
+                    return Err(Error::InvalidRelocation { kind });
+                }
+                let pending = copies.len().checked_add(1).ok_or(Error::Arithmetic)?;
+                copy_write_budget(out.writes.len(), pending, limits)?;
+                copies.push((record, target, symbol));
+                0 // Deferred until complete symbol/name/version ownership.
+            } else {
+                relocation_width(kind)?
+            };
             out.symbol_references.push(SymbolReference {
                 table: table.table,
                 record,
@@ -387,6 +408,11 @@ pub fn inspect(input: &Elf64<'_>, limits: Limits) -> Result<Inventory, Error> {
                 symbol,
             });
             if width != 0 {
+                copy_write_budget(
+                    out.writes.len().checked_add(1).ok_or(Error::Arithmetic)?,
+                    copies.len(),
+                    limits,
+                )?;
                 push_write(
                     input,
                     &mut out,
@@ -403,7 +429,44 @@ pub fn inspect(input: &Elf64<'_>, limits: Limits) -> Result<Inventory, Error> {
             }
         }
     }
-    complete_metadata::inspect(input, &tags, &mut out, limits)?;
+    let symbols = complete_metadata::inspect(input, &tags, &mut out, limits)?;
+    let has_copy = !copies.is_empty();
+    for (record, target, symbol) in copies {
+        let size = symbols.copy_size(symbol, target)?;
+        let range = VirtualRange::checked(ElfVaddr(target), size)?;
+        let owner = input.virtual_to_storage(range.start(), range.len())?;
+        if !owner.flags.readable() || !owner.flags.writable() || owner.flags.executable() {
+            return Err(Error::InvalidRelocation { kind: 5 });
+        }
+        push_write(
+            input,
+            &mut out,
+            limits,
+            RelocationWrite {
+                table: TableKind::Rela,
+                record,
+                kind: 5,
+                symbol,
+                range,
+                file: None,
+            },
+        )?;
+    }
+    if has_copy {
+        // Restore descriptor/record order after resolving deferred COPY rows.
+        // Stable sort preserves the existing per-record RELR expansion order.
+        out.writes.sort_by_key(|write| {
+            (
+                match write.table {
+                    TableKind::Rela => 0,
+                    TableKind::Rel => 1,
+                    TableKind::Relr => 2,
+                    TableKind::JumpRela | TableKind::JumpRel => 3,
+                },
+                write.record,
+            )
+        });
+    }
     let mut order: Vec<_> = out.writes.iter().enumerate().collect();
     order.sort_by_key(|(_, write)| write.range.start());
     for pair in order.windows(2) {
@@ -419,14 +482,22 @@ pub fn inspect(input: &Elf64<'_>, limits: Limits) -> Result<Inventory, Error> {
     Ok(out)
 }
 
+fn copy_write_budget(fixed: usize, pending: usize, limits: Limits) -> Result<(), Error> {
+    bound(
+        fixed.checked_add(pending).ok_or(Error::Arithmetic)?,
+        limits.relocation_writes,
+        "relocation writes",
+    )
+}
+
 fn relocation_width(kind: u32) -> Result<u64, Error> {
     match kind {
         0 => Ok(0),
         1 | 6 | 7 | 8 | 16 | 17 | 18 | 37 | 38 => Ok(8),
         2 | 10 | 11 => Ok(4),
         36 => Ok(16),
-        // COPY requires authenticated symbol-size/version ownership. Static-only
-        // and unrecognized relocations are not guessed from their numeric value.
+        // COPY is handled separately after complete symbol-size/version ownership.
+        // Static-only and unrecognized kinds are not guessed from their numbers.
         _ => Err(Error::UnsupportedRelocation { kind }),
     }
 }
@@ -584,3 +655,7 @@ fn known_tag(tag: u64) -> bool {
         0x6fff_fef5 | 0x6fff_fef7 | 0x6fff_fff0 |
         0x6fff_fff9..=0x6fff_ffff | 0x7fff_fffd | 0x7fff_ffff)
 }
+
+#[cfg(test)]
+#[path = "dynamic_copy_fixtures.rs"]
+mod copy_fixtures;

@@ -33,6 +33,13 @@ PRODUCERS = {
         '3750339187ffc4a084d075de77d1c653c255abd96e396870ea691b495f0c5453',
         '126b6143c5668e4d390e0b9626824f5007b54d56e47a07bb72b415757b51773c'),
 }
+# The bootstrap patch changes the saved-register/restore pairing in e9elf.cpp.
+# Select exactly one order from the authenticated backend/loader lane; accepting
+# either suffix would hide a mismatched startup ABI.
+RESTORE_SUFFIX = {
+    'stock-algorithm': bytes.fromhex('5f5e5a594159415a415b415c415d415e415f4158ffe0'),
+    'bootstrap-patched-reference': bytes.fromhex('5f5e5a5941584159415a415b415c415d415e415fffe0'),
+}
 ADDRESS = r'(?:\[absolute\] )?-?0x[0-9a-f]+'
 LOADER_ADDRESS = 0x20FEDC000
 
@@ -327,7 +334,8 @@ def loader_mmap(row, previous):
     return out, (length, prot, off)
 
 
-def artifact(original, candidate, loader, intent, outcomes, maps, bypass):
+def artifact(original, candidate, loader, intent, outcomes, maps, bypass, *, lane):
+    assert lane in PRODUCERS and sha(loader) == PRODUCERS[lane][2], 'pinned loader lane'
     old, new = elf(original, 2), elf(candidate, 2)
     assert old['phoff'] == new['phoff'] and len(old['rows']) == len(new['rows'])
     changed = [i for i, pair in enumerate(zip(old['rows'], new['rows'])) if pair[0] != pair[1]]
@@ -352,7 +360,7 @@ def artifact(original, candidate, loader, intent, outcomes, maps, bypass):
     stream += bytes.fromhex('4c89c7b8030000000f05')
     entry = old['entry']
     stream += b'\xb8' + struct.pack('<I', entry) if entry < 1 << 31 else b'\x48\xb8' + struct.pack('<Q', entry)
-    stream += bytes.fromhex('5f5e5a594159415a415b415c415d415e415f4158ffe0')
+    stream += RESTORE_SUFFIX[lane]
     assert candidate[p[2]:] == stream, 'whole pinned loader/mmap/old-entry bytes'
     physical = set()
     refactors = [r for r in maps if r['kind'] == 'refactoring']
@@ -572,7 +580,7 @@ def validate(envelope, blobs):
     if policy['instrumentation'] == 'real-hook':
         assert intent['template_name'] == 'call_CB_' + envelope['hook']['symbol'] + '_' + files['hook_elf']['path']
     outcomes, maps, bypass = debug(blobs['producer_stderr'], sites)
-    ownership = artifact(blobs['original'], blobs['candidate'], blobs['loader'], intent, outcomes, maps, bypass)
+    ownership = artifact(blobs['original'], blobs['candidate'], blobs['loader'], intent, outcomes, maps, bypass, lane=lane)
     stats = statistics(blobs['producer_stdout'], outcomes, ownership, files['original']['path'])
     tsv = wire(sites, policy, outcomes, intent['trap'])
     return tsv, dict(schema=1, scope='STRUCTURAL_CANDIDATE_SITE_INVENTORY_ONLY', lane=lane,
