@@ -731,11 +731,10 @@ fn compare_prefix(trial: &Trial, oracle: &raw::Oracle, fixture: &Fixture) {
                 } else {
                     KernelStateSlot::Newborn
                 };
-                assert!(a.facts.iter().any(|fact| *fact
-                    == (KernelJournalFact::StateCaptured {
-                        record: source_record,
-                        slot: expected_slot
-                    })));
+                assert!(a.facts.contains(&KernelJournalFact::StateCaptured {
+                    record: source_record,
+                    slot: expected_slot
+                }));
                 if tid == trial.setup.parent {
                     assert_eq!(task, trial.setup.token.task);
                 } else {

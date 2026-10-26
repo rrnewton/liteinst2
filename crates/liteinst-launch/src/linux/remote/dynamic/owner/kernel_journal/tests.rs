@@ -421,7 +421,7 @@ fn caught_unwind_survives_taken_local_and_writer_drop_without_fabricating_cleanu
     let reader = writer.reader();
     let result = catch_unwind(AssertUnwindSafe(|| {
         let _scope = writer.panic_scope();
-        let _taken_local = vec![17; 4];
+        let _taken_local = Box::new([17; 4]);
         std::panic::panic_any("journal model panic");
     }));
     assert_eq!(
