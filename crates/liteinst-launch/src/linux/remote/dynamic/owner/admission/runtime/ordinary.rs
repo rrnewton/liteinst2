@@ -98,6 +98,7 @@ fn root_bytes(window: usize) -> Result<usize, GateError> {
             size_of::<SourceObserver<'_, '_>>(),
         )?,
     )?;
+    let temporary = add(temporary, size_of::<maps::FetchGeometry>())?;
     let temporary = add(
         temporary,
         runtime_native::ControlProfile::temporary_bytes()?,
@@ -155,7 +156,8 @@ impl RuntimeOwner {
             &SyscallAliases::default(),
         )
         .map_err(|_| GateError::Refused("runtime ordinary encoding or mode is unqualified"))?;
-        let geometry = maps::FetchGeometry::for_instruction(*window.vma, candidate.range())?;
+        let geometry =
+            maps::FetchGeometry::for_initial_source(window.initial_source(), candidate.range())?;
         geometry.projected_rows(self.sources.runtime_baseline_maps()?)?;
         let shape = InstructionAttemptShape::from_geometry(&geometry)?;
         let window_bytes = window.snapshot.bytes().len();

@@ -62,6 +62,19 @@ pub(in crate::linux::remote::dynamic::owner) struct StateSlot {
     pub(in crate::linux::remote::dynamic::owner) complete: bool,
 }
 impl StateSlot {
+    pub(super) fn empty() -> Self {
+        Self {
+            state: empty_state(),
+            registers_request: None,
+            xstate_request: None,
+            mask_request: None,
+            requested_pointer: 0,
+            returned_pointer: 0,
+            returned_length: 0,
+            complete: false,
+        }
+    }
+
     pub(in crate::linux::remote::dynamic::owner) fn allocated_bytes(&self) -> usize {
         size_of::<Self>() + self.state.xstate.capacity()
     }

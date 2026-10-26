@@ -128,6 +128,17 @@ RUNTIME_LAUNCH_CLEANUP_ROWS = tuple({"cohort": "b3_runtime_launch_cleanup", "har
 RUNTIME_LAUNCH_CLEANUP_IDENTITIES = {row["test"]: row for row in RUNTIME_LAUNCH_CLEANUP_ROWS}
 
 
+# Closed finite initial coalescence cohort; all prior native identities stay exact.
+INITIAL_COALESCENCE_ROOT = 'linux::remote::dynamic::owner::admission::runtime::coalescence_native_tests'
+INITIAL_COALESCENCE_NAMES = ('initial_runtime_coalescence_merges_pair_and_recloses_original_rx_fetch',
+ 'initial_runtime_coalescence_one_short_capacity_keeps_pristine_exec',
+ 'initial_runtime_coalescence_unwind_retains_native_evidence_through_cleanup')
+INITIAL_COALESCENCE_ROWS = tuple({"cohort": "b3_initial_coalescence", "harness": UNIT,
+                                  "test": INITIAL_COALESCENCE_ROOT + "::" + name}
+                                 for name in INITIAL_COALESCENCE_NAMES)
+INITIAL_COALESCENCE_IDENTITIES = {row["test"]: row for row in INITIAL_COALESCENCE_ROWS}
+
+
 def catalog(fixtures):
     require(type(fixtures) is list, "invalid_native_fixture_catalog")
     identities = {}
@@ -136,6 +147,9 @@ def catalog(fixtures):
                 "invalid_native_fixture_catalog")
         require(all(type(value) is str for value in row.values())
                 and NAME.fullmatch(row["test"]), "invalid_native_fixture_catalog")
+        require(not row["test"].startswith(INITIAL_COALESCENCE_ROOT)
+                or row == INITIAL_COALESCENCE_IDENTITIES.get(row["test"]),
+                "invalid_native_fixture_scope")
         require(not row["test"].startswith(RUNTIME_LAUNCH_CLEANUP_ROOT)
                 or row == RUNTIME_LAUNCH_CLEANUP_IDENTITIES.get(row["test"]),
                 "invalid_native_fixture_scope")
@@ -178,7 +192,8 @@ def catalog(fixtures):
                 or row == RUNTIME_IDENTITIES.get(row["test"])
                 or row == WAIT_CUSTODY_ROW
                 or row == RUNTIME_KERNEL_IDENTITIES.get(row["test"])
-                or row == RUNTIME_LAUNCH_CLEANUP_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
+                or row == RUNTIME_LAUNCH_CLEANUP_IDENTITIES.get(row["test"])
+                or row == INITIAL_COALESCENCE_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
         key = (row["harness"], row["test"])
         require(key not in identities, "duplicate_native_fixture_catalog")
         identities[key] = row
@@ -246,7 +261,7 @@ def fixture_outcomes(output, fixtures, successful_command):
                 require(key in expected or (current == UNIT and not start[1].startswith(
                     PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX, EXEC_PRIVATE_PREFIX)
                     + RUNTIME_NATIVE_ROOTS + (WAIT_CUSTODY_ROOT, RUNTIME_KERNEL_ROOT,
-                                              RUNTIME_LAUNCH_CLEANUP_ROOT))),
+                                              RUNTIME_LAUNCH_CLEANUP_ROOT, INITIAL_COALESCENCE_ROOT))),
                         "native_fixture_cohort_differs")
                 seen_tests.add(key)
                 active = key

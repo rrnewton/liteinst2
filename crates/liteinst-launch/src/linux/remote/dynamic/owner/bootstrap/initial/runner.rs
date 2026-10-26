@@ -59,6 +59,18 @@ pub(super) fn call(
     number: libc::c_long,
     arguments: [u64; 6],
 ) -> Result<u64, LaunchError> {
+    call_observed(owner, native, p, site, number, arguments, None)
+}
+
+pub(super) fn call_observed(
+    owner: &mut Owner,
+    native: &mut lifecycle::NativeLifecycle,
+    p: &mut PreparedInitialBootstrap,
+    site: Site<'_>,
+    number: libc::c_long,
+    arguments: [u64; 6],
+    mut observation: Option<&mut coalescence::CoalescenceCallObservation>,
+) -> Result<u64, LaunchError> {
     let stop = native.admission_current(site.root)?;
     ready(owner, native, p, &stop, site.island)?;
     p.states[SAVED].capture(owner, p.until)?;
@@ -100,10 +112,19 @@ pub(super) fn call(
     owner.released(owner.pid);
     let (tid, status) = owner.wait_raw(p.until, "trusted admission trap")?;
     p.progress.retain_wait(WaitCapture::Runner, tid, status);
+    if let Some(observation) = observation.as_deref_mut() {
+        observation.wait = Some((tid, status));
+    }
     raw_held(owner, tid, status, p.until)?;
     p.progress.runner_queries_started = true;
+    if let Some(observation) = observation.as_deref_mut() {
+        observation.queries_started = true;
+    }
     let info_result = p.runner_signal.capture(tid);
     let state_result = p.states[READBACK].capture_tid(tid);
+    if let Some(observation) = observation.as_deref_mut() {
+        observation.retain_queries(p);
+    }
     info_result?;
     state_result?;
     owner.time_left(p.until, "trusted admission trap")?;
@@ -149,6 +170,9 @@ pub(super) fn call(
         AdmissionPhase::Restored,
     )?;
     ready(owner, native, p, &restored, site.island)?;
+    if let Some(observation) = observation {
+        observation.complete = true;
+    }
     Ok(observed.rax)
 }
 
@@ -207,6 +231,18 @@ pub(super) fn protect(
     range: Range<u64>,
     protection: i32,
 ) -> Result<(), LaunchError> {
+    protect_observed(owner, native, p, site, range, protection, None)
+}
+
+pub(super) fn protect_observed(
+    owner: &mut Owner,
+    native: &mut lifecycle::NativeLifecycle,
+    p: &mut PreparedInitialBootstrap,
+    site: Site<'_>,
+    range: Range<u64>,
+    protection: i32,
+    observation: Option<&mut coalescence::CoalescenceCallObservation>,
+) -> Result<(), LaunchError> {
     let island = site
         .island
         .ok_or(LaunchError::Invalid("initial quarantine lacks island"))?;
@@ -237,13 +273,14 @@ pub(super) fn protect(
         None,
     )?;
     syscall_result(
-        call(
+        call_observed(
             owner,
             native,
             p,
             site,
             libc::SYS_mprotect,
             [range.start, length as u64, protection as u64, 0, 0, 0],
+            observation,
         )?,
         "admission mprotect",
     )?;

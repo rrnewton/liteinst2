@@ -67,7 +67,8 @@ impl<'a> RuntimeInstructionBinding<'a> {
             .check_current_origin(origin, before)
             .map_err(census_error)?;
         require_operand_free(&candidate, &island.range)?;
-        let geometry = FetchGeometry::for_instruction(*window.vma, candidate.range())?;
+        let geometry =
+            FetchGeometry::for_initial_source(window.initial_source(), candidate.range())?;
         if geometry.pages().start() < island.range.end
             && island.range.start < geometry.pages().end()
         {

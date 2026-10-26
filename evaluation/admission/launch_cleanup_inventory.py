@@ -10,6 +10,7 @@ import json
 
 import native_fixtures as fixtures
 from parsing import require
+from coalescence_inventory import before_coalescence, before_coalescence_python
 
 PRE_CLEANUP_CORPUS_SHA256 = "148a28bdb2392971e74fd9dd104638c66b50fa6f4940b43d2e074c4d6b4e2f78"
 OLD_NATIVE81_SHA256 = "448237140be9269ec468bba858880e457e070f05efe263b96e4491c85338c52d"
@@ -46,6 +47,10 @@ def digest(value):
 
 
 def before_launch_cleanup(declared):
+    return before_launch_cleanup_baseline(before_coalescence(declared))
+
+
+def before_launch_cleanup_baseline(declared):
     """Authenticate every new and old field before returning the prior corpus."""
     require(type(declared) is dict and type(declared.get("recorder_tests")) is int
             and declared["recorder_tests"] == 299, "launch_cleanup_inventory_differs")
@@ -74,6 +79,10 @@ def before_launch_cleanup(declared):
 
 
 def before_launch_cleanup_python(identities):
+    return before_launch_cleanup_python_baseline(before_coalescence_python(identities))
+
+
+def before_launch_cleanup_python_baseline(identities):
     """Remove only the exact three added source identities, in original order."""
     require(type(identities) is list and len(identities) == 299
             and all(type(value) is str for value in identities)

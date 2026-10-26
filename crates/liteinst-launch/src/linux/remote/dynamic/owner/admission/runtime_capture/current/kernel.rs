@@ -69,6 +69,7 @@ impl CapturedKernelRead<'_> {
         RuntimeKernelSourceRead::temporary_bytes() + size_of::<Self>()
             - size_of::<RuntimeKernelSourceRead<'_>>()
             + size_of::<KernelCatalogCheckpoint<'_>>()
+            + size_of::<WindowView<'_>>()
     }
     pub(in crate::linux::remote::dynamic::owner::admission) fn recheck_window(
         &self,

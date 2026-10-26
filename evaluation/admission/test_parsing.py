@@ -5,6 +5,7 @@ from pathlib import Path
 import unittest
 
 import parsing
+from coalescence_inventory import before_coalescence
 
 
 def header(name="example", source="src/lib.rs", unit=True):
@@ -255,7 +256,7 @@ class NativeParsingTests(unittest.TestCase):
 class DeclaredCorpusTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.corpus = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        cls.corpus = before_coalescence(json.loads(Path(__file__).with_name("corpus.json").read_text()))
 
     def test_fixed_workspace_and_launch_denominators(self):
         expected = self.corpus["harness_test_counts"]

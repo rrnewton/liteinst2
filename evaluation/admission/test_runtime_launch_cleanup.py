@@ -8,10 +8,12 @@ import re
 import unittest
 
 import native_fixtures as fixtures
+from coalescence_inventory import before_coalescence, before_coalescence_python
 from launch_cleanup_inventory import (
     NATIVE_NAMES, NATIVE_ROOT, OLD_NATIVE81_SHA256, OLD_PYTHON296_SHA256,
     PRE_CLEANUP_CORPUS_SHA256, PYTHON_METHODS, ROWS, RUST_METHODS,
-    before_launch_cleanup, before_launch_cleanup_python, digest,
+    before_launch_cleanup_baseline as before_launch_cleanup,
+    before_launch_cleanup_python_baseline as before_launch_cleanup_python, digest,
     validate_launch_cleanup_source,
 )
 from parsing import InvalidEvidence
@@ -43,7 +45,7 @@ def python_identities():
                               for method in cls.body
                               if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef))
                               and method.name.startswith("test_"))
-    return result
+    return before_coalescence_python(result)
 
 
 class RuntimeLaunchCleanupTests(unittest.TestCase):
@@ -76,7 +78,7 @@ class RuntimeLaunchCleanupTests(unittest.TestCase):
         self.assertEqual(fixtures.RUNTIME_LAUNCH_CLEANUP_ROOT, NATIVE_ROOT)
         self.assertEqual(fixtures.RUNTIME_LAUNCH_CLEANUP_NAMES, NATIVE_NAMES)
         self.assertEqual(fixtures.RUNTIME_LAUNCH_CLEANUP_ROWS, ROWS)
-        declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_coalescence(json.loads(Path(__file__).with_name("corpus.json").read_text()))
         original = copy.deepcopy(declared)
         previous = before_launch_cleanup(declared)
         self.assertEqual(declared, original)
@@ -110,7 +112,7 @@ class RuntimeLaunchCleanupTests(unittest.TestCase):
         self.assertEqual([name for name in current_python if name not in old_python], list(PYTHON_METHODS))
 
     def test_launch_cleanup_projection_rejects_source_row_count_and_historical_tampering(self):
-        declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_coalescence(json.loads(Path(__file__).with_name("corpus.json").read_text()))
         for index in (81, 82):
             for change in ("missing", "duplicate", "position", "cohort", "harness", "test", "extra"):
                 changed = copy.deepcopy(declared)
@@ -203,7 +205,7 @@ class RuntimeLaunchCleanupTests(unittest.TestCase):
                 self.assertEqual((rows[index]["status"], rows[index]["test_result"]),
                                  ("failed", "FAILED" if terminal == "FAILED" else "ignored"))
                 self.assertEqual(sum(row["status"] == "complete" for row in rows), 1)
-        declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_coalescence(json.loads(Path(__file__).with_name("corpus.json").read_text()))
         all_rows = declared["native_validation_fixtures"]
         before_launch_cleanup(declared)
         output = named_capture(all_rows)

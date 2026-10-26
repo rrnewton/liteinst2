@@ -9,7 +9,12 @@ use crate::publication::PublicationStop;
 
 mod initial;
 pub(in crate::linux::remote::dynamic::owner) use initial::{
-    InitialBootstrapShape, PreparedInitialBootstrap,
+    CompletedInitialCoalescence, InitialBootstrapShape, PreparedInitialBootstrap,
+    PreparedInitialCoalescence,
+};
+#[cfg(test)]
+pub(in crate::linux::remote::dynamic::owner) use initial::{
+    InitialBootstrapFailureKind, InitialCoalescenceStage,
 };
 
 mod replaced;

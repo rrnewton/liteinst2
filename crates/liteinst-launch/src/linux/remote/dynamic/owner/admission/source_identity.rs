@@ -20,25 +20,32 @@ fn refused(reason: &'static str) -> GateError {
 }
 
 pub(super) mod backing;
+mod coalesced;
 mod geometry;
+pub(super) use coalesced::{
+    InitialOriginalInventory, InitialSourceInventory, InitialSourceValidation, InitialSourceVma,
+    SourceContainer,
+};
 mod initial;
 mod read;
-pub(super) use backing::ExecutableIdentity;
+pub(in crate::linux::remote::dynamic::owner) use backing::ExecutableIdentity;
 pub(super) use geometry::{SourceGeometry, SourceInventory};
 pub(in crate::linux::remote::dynamic::owner) use initial::require_initial_task_identity;
-pub(super) use initial::{
-    InitialReadScratch, RuntimeKernelReadCheckpoint, RuntimeKernelSourceRead,
-    RuntimeReadCheckpoint, RuntimeSourceRead,
+pub(in crate::linux::remote::dynamic::owner) use initial::{
+    InitialCheckpointSourceRead, InitialReadScratch, InitialSourceCheckpoint,
 };
-pub(super) use read::SourceReadProgress;
+pub(super) use initial::{
+    RuntimeKernelReadCheckpoint, RuntimeKernelSourceRead, RuntimeReadCheckpoint, RuntimeSourceRead,
+};
 #[cfg(test)]
-pub(super) use read::{SourceReadFailure, SourceReadOperation, SourceReadRequest};
+pub(in crate::linux::remote::dynamic::owner) use read::{SourceReadFailure, SourceReadRequest};
+pub(in crate::linux::remote::dynamic::owner) use read::{SourceReadOperation, SourceReadProgress};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct FileIdentity {
-    pub(super) major: u32,
-    pub(super) minor: u32,
-    pub(super) inode: u64,
+pub(in crate::linux::remote::dynamic::owner) struct FileIdentity {
+    pub(in crate::linux::remote::dynamic::owner) major: u32,
+    pub(in crate::linux::remote::dynamic::owner) minor: u32,
+    pub(in crate::linux::remote::dynamic::owner) inode: u64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -183,13 +190,13 @@ impl<'a> HeldSourceRead<'a> {
 }
 
 /// This borrow cannot cross Owner's mutable EXEC-to-EXIT bootstrap transition.
-pub(super) struct OriginalSourceRead<'a> {
+pub(in crate::linux::remote::dynamic::owner) struct OriginalSourceRead<'a> {
     context: SourceReadContext<'a>,
     initial: &'a DynamicStop,
     scratch: &'a InitialReadScratch,
 }
 impl<'a> OriginalSourceRead<'a> {
-    pub(super) fn acquire(
+    pub(in crate::linux::remote::dynamic::owner) fn acquire(
         owner: &'a Owner,
         initial: &'a DynamicStop,
         until: Instant,
@@ -257,12 +264,31 @@ impl<'a> OriginalSourceRead<'a> {
         )?;
         Ok(())
     }
-    pub(super) fn read_maps_capture(
+    pub(in crate::linux::remote::dynamic::owner) fn read_maps_capture(
         &self,
         storage: &mut [u8],
         progress: &mut SourceReadProgress,
     ) -> Result<usize, GateError> {
         read::maps_capture(&self.context, storage, progress, || self.reauthenticate())
+    }
+    pub(in crate::linux::remote::dynamic::owner) fn read_memory_capture(
+        &self,
+        address: u64,
+        storage: &mut [u8],
+        progress: &mut SourceReadProgress,
+    ) -> Result<(), GateError> {
+        read::memory_capture(&self.context, address, storage, progress, || {
+            self.reauthenticate()
+        })
+    }
+    pub(in crate::linux::remote::dynamic::owner) fn executable_projection(
+        &self,
+        storage: &mut [u8],
+    ) -> Result<ExecutableIdentity, GateError> {
+        self.reauthenticate()?;
+        let result = backing::observe(&self.context, storage)?;
+        self.reauthenticate()?;
+        Ok(result)
     }
 }
 

@@ -7,15 +7,15 @@ use super::*;
 use std::os::fd::IntoRawFd;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in crate::linux::remote::dynamic::owner::admission) struct DescriptorIdentity {
-    pub(in crate::linux::remote::dynamic::owner::admission) file: FileIdentity,
-    pub(in crate::linux::remote::dynamic::owner::admission) mode: u32,
-    pub(in crate::linux::remote::dynamic::owner::admission) length: u64,
+pub(in crate::linux::remote::dynamic::owner) struct DescriptorIdentity {
+    pub(in crate::linux::remote::dynamic::owner) file: FileIdentity,
+    pub(in crate::linux::remote::dynamic::owner) mode: u32,
+    pub(in crate::linux::remote::dynamic::owner) length: u64,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in crate::linux::remote::dynamic::owner::admission) struct ExecutableIdentity {
-    pub(in crate::linux::remote::dynamic::owner::admission) opened: DescriptorIdentity,
-    pub(in crate::linux::remote::dynamic::owner::admission) vma: FileIdentity,
+pub(in crate::linux::remote::dynamic::owner) struct ExecutableIdentity {
+    pub(in crate::linux::remote::dynamic::owner) opened: DescriptorIdentity,
+    pub(in crate::linux::remote::dynamic::owner) vma: FileIdentity,
 }
 
 // The existing 64 KiB maps scratch is reused, never duplicated. Include one

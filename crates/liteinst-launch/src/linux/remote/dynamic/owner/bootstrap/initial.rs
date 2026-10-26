@@ -4,6 +4,12 @@ use super::super::admission::{MapEntry, ParsedMaps};
 use super::*;
 use std::mem::size_of;
 
+mod coalescence;
+#[cfg(test)]
+pub(in crate::linux::remote::dynamic::owner) use coalescence::InitialCoalescenceStage;
+pub(in crate::linux::remote::dynamic::owner) use coalescence::{
+    CompletedInitialCoalescence, PreparedInitialCoalescence,
+};
 mod io;
 mod runner;
 mod storage;
@@ -239,6 +245,8 @@ impl Owner {
         initial: &DynamicStop,
         original_raw: &[u8],
         prepared: &mut PreparedInitialBootstrap,
+        mut coalescence: Option<&mut PreparedInitialCoalescence>,
+        scratch: &admission::InitialReadScratch,
     ) -> Result<(), LaunchError> {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             begin(self, initial, original_raw, prepared)?;
@@ -247,7 +255,14 @@ impl Owner {
                 "initial bootstrap lacks actual EXIT lifecycle",
             ))?;
             let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                finish(self, &mut native, original_raw, prepared)
+                finish(
+                    self,
+                    &mut native,
+                    original_raw,
+                    prepared,
+                    coalescence.as_deref_mut(),
+                    scratch,
+                )
             }));
             // No fallible hook or allocation occurs before custody is restored.
             self.lifecycle = Some(native);
@@ -260,12 +275,18 @@ impl Owner {
             Ok(Ok(())) => Ok(()),
             Ok(Err(error)) => {
                 prepared.progress.fail(Some(&error));
+                if let Some(coalescence) = coalescence.as_deref_mut() {
+                    coalescence.fail(Some(&error));
+                }
                 self.closing = true;
                 self.cancel.store(true, Ordering::Release);
                 Err(error)
             }
             Err(payload) => {
                 prepared.progress.fail(None);
+                if let Some(coalescence) = coalescence {
+                    coalescence.fail(None);
+                }
                 self.closing = true;
                 self.cancel.store(true, Ordering::Release);
                 std::panic::resume_unwind(payload)
@@ -496,6 +517,8 @@ fn finish(
     native: &mut lifecycle::NativeLifecycle,
     original_raw: &[u8],
     p: &mut PreparedInitialBootstrap,
+    mut coalescence: Option<&mut PreparedInitialCoalescence>,
+    scratch: &admission::InitialReadScratch,
 ) -> Result<(), LaunchError> {
     let tid = owner.pid;
     let exit = p
@@ -775,7 +798,29 @@ fn finish(
         let protection = super_protection(row)? & !libc::PROT_EXEC;
         let effect = BootstrapEffect::Quarantine { start, length };
         before(owner, p, effect)?;
-        runner::protect(owner, native, p, island_site, start..end, protection)?;
+        if let Some(prepared) = coalescence
+            .as_deref_mut()
+            .filter(|prepared| prepared.plan().target_executable_ordinal() == index)
+        {
+            if prepared.plan().rx_range() != (start..end) || protection != libc::PROT_READ {
+                return Err(LaunchError::Invalid(
+                    "initial coalescence quarantine target differs",
+                ));
+            }
+            prepared.before_quarantine(owner, native, p, original_raw, island_site)?;
+            runner::protect_observed(
+                owner,
+                native,
+                p,
+                island_site,
+                start..end,
+                protection,
+                Some(prepared.call_observation()?),
+            )?;
+            prepared.after_quarantine(owner, native, p, original_raw, island_site)?;
+        } else {
+            runner::protect(owner, native, p, island_site, start..end, protection)?;
+        }
         after(p, effect, None)?;
     }
     before(owner, p, BootstrapEffect::QuarantineSyncAfter)?;
@@ -806,8 +851,23 @@ fn finish(
     )?;
     let stop = native.admission_current(root)?;
     runner::ready(owner, native, p, &stop, Some(&island))?;
-    final_inventory(original_raw, p.current_maps.bytes(), &island.range)?;
-    install_descriptors(original_raw, p, &island)?;
+    if let Some(prepared) = coalescence {
+        prepared.finish_capture(
+            owner,
+            native,
+            p,
+            coalescence::FinalCheckpoint {
+                original: original_raw,
+                island: &island,
+                stop: &stop,
+                scratch,
+            },
+        )?;
+        prepared.install_descriptors(p, original_raw, &island)?;
+    } else {
+        final_inventory(original_raw, p.current_maps.bytes(), &island.range)?;
+        install_descriptors(original_raw, p, &island)?;
+    }
     owner.time_left(p.until, "initial bootstrap completed evidence")?;
     if p.states[..4].iter().any(|state| !state.complete) || p.progress.first_failure.is_some() {
         return Err(LaunchError::Invalid(

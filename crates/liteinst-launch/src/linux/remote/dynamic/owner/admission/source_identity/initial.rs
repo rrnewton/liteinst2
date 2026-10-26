@@ -2,6 +2,10 @@
 //! and complete-map reader; this adapter does not change those allocations.
 use super::*;
 use std::cell::RefCell;
+mod checkpoint;
+pub(in crate::linux::remote::dynamic::owner) use checkpoint::{
+    InitialCheckpointSourceRead, InitialSourceCheckpoint,
+};
 mod runtime;
 mod runtime_kernel;
 pub(in crate::linux::remote::dynamic::owner::admission) use runtime::{
@@ -13,12 +17,11 @@ pub(in crate::linux::remote::dynamic::owner::admission) use runtime_kernel::{
 #[cfg(test)]
 mod tests;
 
-pub(in crate::linux::remote::dynamic::owner::admission) struct InitialReadScratch {
+pub(in crate::linux::remote::dynamic::owner) struct InitialReadScratch {
     bytes: RefCell<Box<[u8; MAP_BYTES]>>,
 }
 impl InitialReadScratch {
-    pub(in crate::linux::remote::dynamic::owner::admission) fn allocate() -> Result<Self, GateError>
-    {
+    pub(in crate::linux::remote::dynamic::owner) fn allocate() -> Result<Self, GateError> {
         let layout = std::alloc::Layout::new::<[u8; MAP_BYTES]>();
         // An exact fixed Layout avoids relying on Vec capacity growth. The
         // global allocator's hidden bookkeeping/RSS is not managed payload.
@@ -35,10 +38,10 @@ impl InitialReadScratch {
     }
     /// Includes the inline header; a parent already charging size_of<Self>
     /// subtracts that header when adding this allocation's payload.
-    pub(in crate::linux::remote::dynamic::owner::admission) fn reservation_bytes() -> usize {
+    pub(in crate::linux::remote::dynamic::owner) fn reservation_bytes() -> usize {
         size_of::<Self>() + MAP_BYTES
     }
-    pub(in crate::linux::remote::dynamic::owner::admission) fn allocated_bytes(&self) -> usize {
+    pub(in crate::linux::remote::dynamic::owner) fn allocated_bytes(&self) -> usize {
         Self::reservation_bytes()
     }
 }

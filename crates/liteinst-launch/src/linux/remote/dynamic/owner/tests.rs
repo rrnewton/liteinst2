@@ -1,5 +1,6 @@
 use super::*;
 
+mod coalescence_fixture;
 mod helper_death;
 mod source_census;
 pub(super) mod wait_withdrawal;

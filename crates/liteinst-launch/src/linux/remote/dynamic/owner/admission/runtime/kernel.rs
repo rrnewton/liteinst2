@@ -283,8 +283,8 @@ impl<'a> RuntimeKernelBinding<'a> {
         census
             .check_current_origin(origin, before)
             .map_err(census_error)?;
-        let geometry = FetchGeometry::for_instruction(
-            *window.vma,
+        let geometry = FetchGeometry::for_initial_source(
+            window.initial_source(),
             liteinst_admission::AddressRange::new(pc, next_pc).ok_or(GateError::Refused(
                 "runtime kernel instruction range differs",
             ))?,

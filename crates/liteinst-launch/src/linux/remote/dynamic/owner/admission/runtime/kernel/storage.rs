@@ -175,6 +175,7 @@ pub(super) fn reservation_charge(
     temporary = add(
         temporary,
         size_of::<RuntimeKernelBinding<'_>>()
+            + size_of::<FetchGeometry>()
             + size_of::<BindingRequest<'_>>()
             + size_of::<KernelObserver<'_, '_>>()
             + 2 * size_of::<ControlLineage>()

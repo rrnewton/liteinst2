@@ -13,6 +13,7 @@ from unittest.mock import patch
 import dynamic_admission
 import parsing
 import run
+from coalescence_inventory import before_coalescence
 
 
 FIXTURES = [
@@ -305,6 +306,7 @@ class DynamicRecorderIntegrationTests(unittest.TestCase):
 
     def test_exact_catalog_keeps_seven_fixtures_separate_from_fifty_samples(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_coalescence(declared)
         self.assertEqual(declared["dynamic_admission_fixtures"][:7], FIXTURES)
         self.assertEqual(len(declared["dynamic_admission_fixtures"]), 15)
         self.assertEqual(len(declared["native_cases"]), 50)

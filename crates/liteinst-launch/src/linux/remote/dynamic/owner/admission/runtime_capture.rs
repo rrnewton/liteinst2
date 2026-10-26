@@ -1,12 +1,13 @@
 //! Initial runtime byte custody. Complete VMA identities and bounded dependency
 //! windows remain different objects. No scan, plan, guard or release is created.
 use super::super::Owner;
-use super::super::bootstrap::BootstrapMm;
+use super::super::bootstrap::{BootstrapMm, CompletedInitialCoalescence};
 use super::super::lifecycle::NativeLifecycle;
 use super::super::trusted::AdmissionStop;
 use super::census::BudgetCharge;
 use super::source_identity::{
-    ExecutableIdentity, HeldSourceRead, InitialReadScratch, OriginalSourceRead, SourceInventory,
+    ExecutableIdentity, HeldSourceRead, InitialOriginalInventory, InitialReadScratch,
+    InitialSourceInventory, InitialSourceVma, OriginalSourceRead, SourceInventory,
     SourceReadProgress, SourceVma,
 };
 use crate::gate::GateError;
@@ -22,6 +23,9 @@ use std::mem::size_of;
 use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::time::Instant;
 
+mod coalesced;
+pub(super) use coalesced::InitialWindowSizing;
+use coalesced::OriginalWindowWitness;
 mod current;
 pub(super) use current::{
     CapturedKernelRead, CapturedRuntimeRead, KernelCatalogCheckpoint, RuntimeCatalogCheckpoint,
@@ -68,6 +72,7 @@ impl InitialCaptureProfile {
 pub(super) enum CaptureStage {
     Allocated,
     Original,
+    CoalescencePreflight,
     CurrentBinding,
     ExecutableBefore,
     Quarantine,
@@ -188,6 +193,7 @@ struct WindowStorage {
     id: Option<SourceWindowId>,
     vma: usize,
     geometry: Option<WindowGeometry>,
+    original_witness: Option<OriginalWindowWitness>,
     bytes: Vec<u8>,
     snapshot: Option<Snapshot>,
     // Snapshot intentionally exposes a slice, not allocator capacity. Preserve
@@ -201,9 +207,18 @@ struct WindowStorage {
 pub(super) struct WindowView<'a> {
     pub(super) id: SourceWindowId,
     pub(super) vma: &'a SourceVma,
+    initial_source: Option<&'a InitialSourceVma>,
     pub(super) target: AddressRange,
     pub(super) snapshot: &'a Snapshot,
     pub(super) entries: &'a PartialEntries,
+}
+
+impl WindowView<'_> {
+    pub(super) fn initial_source(&self) -> InitialSourceVma {
+        self.initial_source
+            .copied()
+            .unwrap_or_else(|| InitialSourceVma::strict(*self.vma))
+    }
 }
 
 /// Non-Clone. Root must install this custody before capture_original and keep
@@ -238,6 +253,14 @@ struct InitialSourceStorage {
     last_window_check: Option<usize>,
     xstate: Vec<u8>,
     rows: Vec<SourceVma>,
+    initial_rows: Vec<InitialSourceVma>,
+    preflight_started: bool,
+    preflight_filled: usize,
+    preflight_plan: Option<super::initial_coalescence::InitialMapPlan>,
+    preflight_executable: Option<ExecutableIdentity>,
+    preflight_sizing: Option<InitialWindowSizing>,
+    coalescence_checks: [SourceReadProgress; 2],
+    coalescence_check_count: usize,
     identities: Vec<CodeIdentity>,
     windows: Vec<WindowStorage>,
     planned: usize,
@@ -438,6 +461,7 @@ impl InitialSourceStorage {
                 id: None,
                 vma: 0,
                 geometry: None,
+                original_witness: None,
                 bytes: initialized(profile.max_window_bytes)?,
                 snapshot: None,
                 snapshot_capacity: 0,
@@ -470,6 +494,14 @@ impl InitialSourceStorage {
             last_window_check: None,
             xstate: initialized(MAX_XSTATE)?,
             rows: reserve(profile.max_vmas)?,
+            initial_rows: Vec::new(),
+            preflight_started: false,
+            preflight_filled: 0,
+            preflight_plan: None,
+            preflight_executable: None,
+            preflight_sizing: None,
+            coalescence_checks: std::array::from_fn(|_| SourceReadProgress::default()),
+            coalescence_check_count: 0,
             identities: reserve(profile.max_vmas)?,
             windows,
             planned: 0,
@@ -496,6 +528,10 @@ impl InitialSourceStorage {
             bytes = add(bytes, buffer.capacity())?;
         }
         bytes = add(bytes, mul(self.rows.capacity(), size_of::<SourceVma>())?)?;
+        bytes = add(
+            bytes,
+            mul(self.initial_rows.capacity(), size_of::<InitialSourceVma>())?,
+        )?;
         bytes = add(
             bytes,
             mul(self.identities.capacity(), size_of::<CodeIdentity>())?,
@@ -572,6 +608,7 @@ impl InitialSourceStorage {
         Some(WindowView {
             id: slot.id?,
             vma: self.rows.get(slot.vma)?,
+            initial_source: self.initial_rows.get(slot.vma),
             target: slot.geometry?.target,
             snapshot: slot.snapshot.as_ref()?,
             entries: &slot.entries,
@@ -681,11 +718,26 @@ impl InitialSourceStorage {
         boot: &BootstrapMm,
         authentication: &InitialReadScratch,
     ) -> Result<(), GateError> {
+        // SAFETY: unchanged strict-path source ownership contract.
+        unsafe { self.capture_inner(owner, native, boot, authentication, None) }
+    }
+
+    pub(super) unsafe fn capture_inner(
+        &mut self,
+        owner: &Owner,
+        native: &NativeLifecycle,
+        boot: &BootstrapMm,
+        authentication: &InitialReadScratch,
+        completed: Option<&CompletedInitialCoalescence<'_>>,
+    ) -> Result<(), GateError> {
         let result = (|| {
             if !self.original_complete || self.capture_started || self.failure.is_some() {
                 return Err(refused(
                     "initial runtime capture is not a fresh prepared transaction",
                 ));
+            }
+            if completed.is_none() && self.preflight_started {
+                return Err(refused("initial coalescence cannot enter strict capture"));
             }
             self.capture_started = true;
             self.stage = CaptureStage::CurrentBinding;
@@ -725,17 +777,36 @@ impl InitialSourceStorage {
             self.stage = CaptureStage::Quarantine;
             reader.read_maps_capture(&mut self.quarantine_maps, &mut self.quarantine_read)?;
             self.stage = CaptureStage::Inventory;
-            SourceInventory::validate(
-                observed_maps(&self.original_maps, &self.original_read)?,
-                observed_maps(&self.quarantine_maps, &self.quarantine_read)?,
-                boot,
-                &original.entry,
-                executable.vma,
-                &mut self.rows,
-                self.profile.max_vmas,
-            )?;
-            self.stage = CaptureStage::Geometry;
-            self.plan_windows()?;
+            if let Some(completed) = completed {
+                self.require_coalesced_completion(completed, boot, executable)?;
+                InitialSourceInventory::validate(
+                    observed_maps(&self.original_maps, &self.original_read)?,
+                    observed_maps(&self.quarantine_maps, &self.quarantine_read)?,
+                    &super::source_identity::InitialSourceValidation {
+                        boot,
+                        entry: &original.entry,
+                        executable: executable.vma,
+                        projection: completed.projection(),
+                    },
+                    &mut self.rows,
+                    &mut self.initial_rows,
+                    self.profile.max_vmas,
+                )?;
+                self.stage = CaptureStage::Geometry;
+                self.plan_coalesced_windows(executable)?;
+            } else {
+                SourceInventory::validate(
+                    observed_maps(&self.original_maps, &self.original_read)?,
+                    observed_maps(&self.quarantine_maps, &self.quarantine_read)?,
+                    boot,
+                    &original.entry,
+                    executable.vma,
+                    &mut self.rows,
+                    self.profile.max_vmas,
+                )?;
+                self.stage = CaptureStage::Geometry;
+                self.plan_windows()?;
+            }
             for index in 0..self.planned {
                 self.stage = CaptureStage::Window;
                 self.active_window = Some(index);
@@ -905,12 +976,18 @@ impl InitialSourceStorage {
         Ok(())
     }
     fn check_allocation(&self) -> Result<(), GateError> {
-        let payload_bound = PreparedInitialSources::reservation_charge(self.profile)?
+        let mut payload_bound = PreparedInitialSources::reservation_charge(self.profile)?
             .source_fact_bytes
             - size_of::<PreparedInitialSources>()
             + size_of::<Self>()
             - (InitialReadScratch::reservation_bytes() - size_of::<InitialReadScratch>())
             - super::source_identity::initial_temporary_bytes();
+        if self.initial_rows.capacity() != 0 {
+            payload_bound = add(
+                payload_bound,
+                PreparedInitialSources::coalescence_payload_reservation(self.profile)?,
+            )?;
+        }
         if self.allocated_bytes()? > payload_bound {
             return Err(refused(
                 "initial runtime retained allocation exceeded its reservation",

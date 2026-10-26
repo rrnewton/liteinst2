@@ -18,15 +18,23 @@ use std::collections::VecDeque;
 
 mod census;
 mod exact_storage;
+pub(in crate::linux::remote::dynamic::owner) mod initial_coalescence;
 pub(in crate::linux::remote::dynamic::owner) mod runtime;
 mod runtime_capture;
 mod runtime_instruction;
 pub(in crate::linux::remote::dynamic::owner) mod runtime_kernel_native;
 mod runtime_native;
 mod source_identity;
-pub(in crate::linux::remote::dynamic::owner) use mapping::maps::{MapEntry, ParsedMaps};
+pub(in crate::linux::remote::dynamic::owner) use mapping::maps::{
+    MapEntries, MapEntry, ParsedMaps,
+};
 pub(in crate::linux::remote::dynamic::owner) use runtime::RuntimeOwner;
-pub(in crate::linux::remote::dynamic::owner) use source_identity::require_initial_task_identity;
+#[cfg(test)]
+pub(in crate::linux::remote::dynamic::owner) use source_identity::SourceReadRequest;
+pub(in crate::linux::remote::dynamic::owner) use source_identity::{
+    InitialCheckpointSourceRead, InitialReadScratch, InitialSourceCheckpoint, SourceReadOperation,
+    SourceReadProgress, require_initial_task_identity,
+};
 mod completion;
 mod domain;
 mod drive;

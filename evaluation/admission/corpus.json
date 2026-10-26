@@ -6085,7 +6085,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 573
+        "tests": 612
       }
     },
     "workspace_tests": {
@@ -6427,7 +6427,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 573
+        "tests": 612
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -7364,8 +7364,23 @@
       "cohort": "b3_runtime_launch_cleanup",
       "harness": "unit/liteinst_launch/lib",
       "test": "linux::remote::dynamic::owner::admission::runtime::launch_cleanup_native_tests::runtime_launch_pre_ready_failure_preserves_original_error_and_cleanup"
+    },
+    {
+      "cohort": "b3_initial_coalescence",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::coalescence_native_tests::initial_runtime_coalescence_merges_pair_and_recloses_original_rx_fetch"
+    },
+    {
+      "cohort": "b3_initial_coalescence",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::coalescence_native_tests::initial_runtime_coalescence_one_short_capacity_keeps_pristine_exec"
+    },
+    {
+      "cohort": "b3_initial_coalescence",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::coalescence_native_tests::initial_runtime_coalescence_unwind_retains_native_evidence_through_cleanup"
     }
   ],
-  "recorder_tests": 299,
+  "recorder_tests": 302,
   "schema_version": 1
 }

@@ -1,12 +1,17 @@
 //! Initial runtime admission custody. Source capture supplies Partial entries;
 //! a ready owner has no executable page, installed guard or release permit.
-use super::super::bootstrap::{InitialBootstrapShape, PreparedInitialBootstrap};
+use super::super::bootstrap::{
+    InitialBootstrapShape, PreparedInitialBootstrap, PreparedInitialCoalescence,
+};
 use super::census::{InitialRuntimeReservation, initial_runtime_origin_charge};
+use super::initial_coalescence::InitialMapPlan;
 use super::runtime_capture::{InitialCaptureProfile, PreparedInitialSources};
 use super::*;
 use crate::linux::remote::MAX_XSTATE;
 use std::mem::size_of;
 
+#[cfg(test)]
+mod coalescence_native_tests;
 mod dispatch;
 mod execute;
 pub(super) mod instruction;
@@ -61,6 +66,8 @@ pub(in crate::linux::remote::dynamic::owner) struct RuntimeOwner {
     stage: RuntimeStage,
     startup: InitialRuntimeReservation,
     sources: PreparedInitialSources,
+    capture_profile: InitialCaptureProfile,
+    coalescence: Option<PreparedInitialCoalescence>,
     bootstrap: Option<PreparedInitialBootstrap>,
     native: Option<NativeLifecycle>,
     census: Option<ResumeCensus>,
@@ -141,7 +148,10 @@ impl RuntimeOwner {
             ))?;
         let root_bytes = add(
             add(root_inline, mul(max_pages, size_of::<RuntimePage>())?)?,
-            add(MAX_XSTATE, size_of::<DynamicAdmissionState>())?,
+            add(
+                add(MAX_XSTATE, size_of::<DynamicAdmissionState>())?,
+                PreparedInitialSources::coalescence_temporary_bytes(),
+            )?,
         )?;
         // origin_charge accounts both the full current/initial origin payloads;
         // the prepared origin buffer moves into one of them, without another
@@ -170,6 +180,8 @@ impl RuntimeOwner {
             stage: RuntimeStage::Allocated,
             startup,
             sources,
+            capture_profile: capture,
+            coalescence: None,
             bootstrap: None,
             native: None,
             census: None,
@@ -201,6 +213,33 @@ impl RuntimeOwner {
         owner: &mut Owner,
         initial: &DynamicStop,
     ) -> Result<DynamicAdmissionState, GateError> {
+        // This wrapper adds retained coalescence diagnostics; physical native
+        // cleanup remains Owner's unchanged responsibility on every path.
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            // SAFETY: identical caller contract, checked by the inner adapter.
+            unsafe { self.initialize_inner(owner, initial) }
+        }));
+        match result {
+            Ok(result) => {
+                if let (Some(prepared), Err(error)) = (&mut self.coalescence, &result) {
+                    prepared.fail_gate(error);
+                }
+                result
+            }
+            Err(payload) => {
+                if let Some(prepared) = &mut self.coalescence {
+                    prepared.fail(None);
+                }
+                std::panic::resume_unwind(payload)
+            }
+        }
+    }
+
+    unsafe fn initialize_inner(
+        &mut self,
+        owner: &mut Owner,
+        initial: &DynamicStop,
+    ) -> Result<DynamicAdmissionState, GateError> {
         if self.stage != RuntimeStage::Allocated
             || self.ready_issued
             || owner.admission.is_some()
@@ -218,6 +257,36 @@ impl RuntimeOwner {
         owner.time_left(self.until, "initial runtime capture")?;
         self.stage = RuntimeStage::OriginalCapture;
         self.sources.capture_original(owner, initial)?;
+        if let Some((plan, executable)) = self.sources.coalescence_plan(owner, initial)? {
+            // Pure exact W + two whole-pair captures under the unchanged cap.
+            // No identity is minted and no original execution has been released.
+            self.sources.preflight_coalesced(&plan, executable)?;
+            let (storage, progress) = self.sources.original_maps();
+            let original = initial_maps_prefix(storage, progress)?;
+            let payload = Self::coalescence_reservation(&plan, original, self.capture_profile)?;
+            self.startup
+                .reserve(BudgetCharge {
+                    source_fact_bytes: payload,
+                    ..BudgetCharge::default()
+                })
+                .map_err(census_error)?;
+            self.coalescence = Some(PreparedInitialCoalescence::installed(
+                plan, original, self.until,
+            )?);
+            self.coalescence
+                .as_mut()
+                .ok_or(GateError::Refused("coalescence storage missing"))?
+                .allocate_payloads(original)?;
+            self.sources.allocate_coalescence_payloads()?;
+            let prepared = self
+                .coalescence
+                .as_mut()
+                .ok_or(GateError::Refused("coalescence storage missing"))?;
+            let (plan, bytes, progress) = prepared.original_capture_storage()?;
+            self.sources
+                .capture_coalescence_original(owner, initial, plan, bytes, progress)?;
+            prepared.original_captured()?;
+        }
         let (storage, progress) = self.sources.original_maps();
         if !self.sources.original_complete() {
             return Err(GateError::Refused(
@@ -255,6 +324,8 @@ impl RuntimeOwner {
                 self.bootstrap
                     .as_mut()
                     .ok_or(GateError::Refused("runtime bootstrap storage missing"))?,
+                self.coalescence.as_mut(),
+                self.sources.initial_scratch(),
             )?;
         }
         // Custody moves before any subsequent fallible source/state operation.
@@ -277,13 +348,30 @@ impl RuntimeOwner {
         self.stage = RuntimeStage::RuntimeCapture;
         // SAFETY: immutable source ownership is supplied by this method's caller.
         unsafe {
-            self.sources.capture(owner, native, boot)?;
+            if let Some(prepared) = &self.coalescence {
+                let completed = prepared.completed(boot)?;
+                self.sources
+                    .capture_coalesced(owner, native, boot, &completed)?;
+            } else {
+                self.sources.capture(owner, native, boot)?;
+            }
         }
         self.stage = RuntimeStage::Reauthentication;
         self.sources.reauthenticate(owner, native, boot)?;
         self.stage = RuntimeStage::Catalog;
         self.build_pages()?;
         self.finish_initial_census(owner)
+    }
+
+    fn coalescence_reservation(
+        plan: &InitialMapPlan,
+        original: &[u8],
+        profile: InitialCaptureProfile,
+    ) -> Result<usize, GateError> {
+        add(
+            PreparedInitialCoalescence::reservation_payload(original, plan)?,
+            PreparedInitialSources::coalescence_payload_reservation(profile)?,
+        )
     }
 
     fn build_pages(&mut self) -> Result<(), GateError> {
@@ -411,12 +499,26 @@ impl RuntimeOwner {
             .ok_or(GateError::Refused(
                 "runtime bootstrap embedded header differs",
             ))?;
+        let coalescence_payload = if let Some(prepared) = &self.coalescence {
+            let boot = self
+                .bootstrap
+                .as_ref()
+                .and_then(PreparedInitialBootstrap::completed)
+                .ok_or(GateError::Refused("coalescence bootstrap custody missing"))?;
+            prepared.validate_allocations(Some(&boot.mappings))?;
+            prepared.allocated_bytes()?
+        } else {
+            0
+        };
         let origin_excess = self
             .origin_capacity
             .checked_sub(xstate.len())
             .ok_or(GateError::Refused("runtime origin capacity differs"))?;
         let bytes = add(
-            add(self.sources.allocated_bytes()?, bootstrap_payload)?,
+            add(
+                add(self.sources.allocated_bytes()?, bootstrap_payload)?,
+                coalescence_payload,
+            )?,
             add(
                 add(
                     root_inline,

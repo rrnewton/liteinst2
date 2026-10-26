@@ -70,11 +70,14 @@ control adds one launcher unit without changing this baseline runtime inventory.
 The opt-in original-site kernel addition contributes 64 pure controls and six
 native fixture identities, separately checked against all 138 existing runtime
 identities. The additive runtime launch-failure cleanup API contributes seven pure
-controls and two separate native controls. Expected totals are 573 launcher units,
-1949 workspace tests in the same 89 harnesses (1945 possible passes and four
-unchanged ignores), and 865 serial launch tests in the same 27 harnesses.
-The recorder expects 299 Python controls, including twelve separate compiler-consumer
-record/schema regressions and three launch-cleanup inventory/recorder controls. These are source-derived expectations;
+controls and two separate native controls. The separate finite initial map-coalescence
+addition contributes 36 pure and three native controls, retaining original RX source
+extents separately from actual NX containers. Expected totals are 612 launcher units,
+1988 workspace tests in the same 89 harnesses (1984 possible passes and four
+unchanged ignores), and 904 serial launch tests in the same 27 harnesses.
+The recorder expects 302 Python controls, including twelve separate compiler-consumer
+record/schema regressions, three launch-cleanup controls and three coalescence controls.
+These are source-derived expectations;
 this inventory makes no execution or qualification claim.
 The [compiler-produced C consumer](runtime-kernel-consumer.md) has a separate
 exact-revision driver and receipt.
@@ -104,6 +107,14 @@ The two exact `b3_runtime_launch_cleanup` identities append as rows 82–83. The
 cover returned launch failures and cleanup custody; they confer no source or
 instruction-execution success. Their closed module and strict historical
 projection preserve all 81 prior native rows and all 296 prior Python identities.
+The three exact `b3_initial_coalescence` identities append as rows 84–86. They
+cover an actual finite merge with an original-RX-only fetch and exact whole-table
+reclosure, one-byte-short pre-effect refusal, and retained native evidence through
+unwind/physical cleanup. They are separate from general map merging or source
+authority for a non-executable header page. Their closed inventory validates all
+39 new Rust method names and the entire prior corpus before historical projection,
+preserving all 83 native rows, all 299 Python identities, every old assertion and
+the unchanged six commands, limits, deadlines and outer cleanup requirements.
 The new inventory projection reconstructs the complete pre-kernel corpus before
 any historical control reads it; unknown rows and changed source-method
 identities cannot be hidden by that projection. The two cross-page controls

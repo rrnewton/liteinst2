@@ -1,6 +1,6 @@
 //! Descriptive permission projection for one original instruction's fetch
 //! pages. This module never mints a held-stop or native execution permission.
-use super::super::source_identity::SourceVma;
+use super::super::source_identity::{InitialSourceVma, SourceContainer, SourceVma};
 use super::*;
 use liteinst_admission::AddressRange;
 
@@ -10,6 +10,7 @@ const MAP_ROWS: usize = 512;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::linux::remote::dynamic::owner::admission) struct FetchGeometry {
     source: SourceVma,
+    container: Option<SourceContainer>,
     instruction: AddressRange,
     fetch: AddressRange,
 }
@@ -45,9 +46,39 @@ impl FetchGeometry {
             ))?;
         Ok(Self {
             source,
+            container: None,
             instruction,
             fetch,
         })
+    }
+    /// The source identity and allowed pages remain the original RX VMA.
+    /// Only this distinct initial description can name its authenticated NX
+    /// container. A containing row supplied to the strict constructor still fails.
+    pub(in crate::linux::remote::dynamic::owner::admission) fn for_initial_source(
+        source: InitialSourceVma,
+        instruction: AddressRange,
+    ) -> Result<Self, GateError> {
+        let mut geometry = Self::for_instruction(*source.source(), instruction)?;
+        let container = source.container();
+        let original = source.source();
+        if container.current_index != original.current_index
+            || container.current_span != original.current_span
+            || container.start > original.start
+            || container.end < original.end
+            || container.start % PAGE != 0
+            || container.end % PAGE != 0
+            || container.file != original.file
+            || container
+                .offset
+                .checked_add(original.start - container.start)
+                != Some(original.offset)
+        {
+            return Err(GateError::Refused(
+                "runtime original source/container binding differs",
+            ));
+        }
+        geometry.container = Some(container);
+        Ok(geometry)
     }
     #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn source(&self) -> &SourceVma {
@@ -76,6 +107,17 @@ impl FetchGeometry {
                 .ok_or(GateError::Refused("runtime map row count overflows"))?;
             if index == self.source.current_index {
                 self.require_source(row)?;
+                if let Some(container) = self.container {
+                    let span = (
+                        row.raw_line.as_ptr() as usize - baseline.as_ptr() as usize,
+                        row.raw_line.len(),
+                    );
+                    if span != container.current_span {
+                        return Err(GateError::Refused(
+                            "runtime fetch container raw span differs",
+                        ));
+                    }
+                }
                 matched = true;
                 rows = rows
                     .checked_add(usize::from(self.fetch.start() > row.start))
@@ -91,8 +133,8 @@ impl FetchGeometry {
         Ok(rows)
     }
 
-    /// Match every observed row. Only the original source VMA may split, at
-    /// exactly the fetch-page boundaries. Its identity remains the whole VMA.
+    /// Match every observed row. Only the bound current source container may
+    /// split, at original fetch-page boundaries; source identity stays original.
     pub(in crate::linux::remote::dynamic::owner::admission) fn verify_open(
         &self,
         baseline: &[u8],
@@ -164,6 +206,15 @@ impl FetchGeometry {
     }
 
     fn require_source(&self, row: MapEntry<'_>) -> Result<(), GateError> {
+        if let Some(container) = self.container {
+            return if container.matches(row) {
+                Ok(())
+            } else {
+                Err(GateError::Refused(
+                    "runtime fetch container identity differs",
+                ))
+            };
+        }
         if row.start != self.source.start
             || row.end != self.source.end
             || row.file_offset != self.source.offset

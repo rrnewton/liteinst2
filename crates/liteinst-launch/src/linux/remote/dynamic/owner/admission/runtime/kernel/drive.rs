@@ -63,7 +63,7 @@ impl RuntimeOwner {
             .ok_or_else(|| refused("runtime kernel PC overflows"))?;
         let range = liteinst_admission::AddressRange::new(before.logical_pc, next_pc)
             .ok_or_else(|| refused("runtime kernel instruction range differs"))?;
-        let geometry = FetchGeometry::for_instruction(*window.vma, range)?;
+        let geometry = FetchGeometry::for_initial_source(window.initial_source(), range)?;
         geometry.projected_rows(self.sources.runtime_baseline_maps()?)?;
         let shape = RuntimeKernelShape::new(operation, &geometry)?;
         let source = window.id;

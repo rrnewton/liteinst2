@@ -6,7 +6,7 @@ use super::*;
 mod tests;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in crate::linux::remote::dynamic::owner::admission) enum SourceReadOperation {
+pub(in crate::linux::remote::dynamic::owner) enum SourceReadOperation {
     Authenticate,
     Geometry,
     ProcDirectory,
@@ -18,29 +18,29 @@ pub(in crate::linux::remote::dynamic::owner::admission) enum SourceReadOperation
     PeekMemory,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in crate::linux::remote::dynamic::owner::admission) struct SourceReadRequest {
-    pub(in crate::linux::remote::dynamic::owner::admission) operation: SourceReadOperation,
-    pub(in crate::linux::remote::dynamic::owner::admission) address: u64,
-    pub(in crate::linux::remote::dynamic::owner::admission) count: usize,
-    pub(in crate::linux::remote::dynamic::owner::admission) result: i64,
-    pub(in crate::linux::remote::dynamic::owner::admission) errno: Option<i32>,
+pub(in crate::linux::remote::dynamic::owner) struct SourceReadRequest {
+    pub(in crate::linux::remote::dynamic::owner) operation: SourceReadOperation,
+    pub(in crate::linux::remote::dynamic::owner) address: u64,
+    pub(in crate::linux::remote::dynamic::owner) count: usize,
+    pub(in crate::linux::remote::dynamic::owner) result: i64,
+    pub(in crate::linux::remote::dynamic::owner) errno: Option<i32>,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in crate::linux::remote::dynamic::owner::admission) struct SourceReadFailure {
-    pub(in crate::linux::remote::dynamic::owner::admission) operation: SourceReadOperation,
-    pub(in crate::linux::remote::dynamic::owner::admission) timeout: bool,
-    pub(in crate::linux::remote::dynamic::owner::admission) errno: Option<i32>,
+pub(in crate::linux::remote::dynamic::owner) struct SourceReadFailure {
+    pub(in crate::linux::remote::dynamic::owner) operation: SourceReadOperation,
+    pub(in crate::linux::remote::dynamic::owner) timeout: bool,
+    pub(in crate::linux::remote::dynamic::owner) errno: Option<i32>,
 }
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub(in crate::linux::remote::dynamic::owner::admission) struct SourceReadProgress {
-    pub(in crate::linux::remote::dynamic::owner::admission) started: bool,
-    pub(in crate::linux::remote::dynamic::owner::admission) attempted: bool,
-    pub(in crate::linux::remote::dynamic::owner::admission) requested_bytes: usize,
-    pub(in crate::linux::remote::dynamic::owner::admission) copied_bytes: usize,
-    pub(in crate::linux::remote::dynamic::owner::admission) complete: bool,
-    pub(in crate::linux::remote::dynamic::owner::admission) filesystem_type: Option<i64>,
-    pub(in crate::linux::remote::dynamic::owner::admission) last_request: Option<SourceReadRequest>,
-    pub(in crate::linux::remote::dynamic::owner::admission) failure: Option<SourceReadFailure>,
+pub(in crate::linux::remote::dynamic::owner) struct SourceReadProgress {
+    pub(in crate::linux::remote::dynamic::owner) started: bool,
+    pub(in crate::linux::remote::dynamic::owner) attempted: bool,
+    pub(in crate::linux::remote::dynamic::owner) requested_bytes: usize,
+    pub(in crate::linux::remote::dynamic::owner) copied_bytes: usize,
+    pub(in crate::linux::remote::dynamic::owner) complete: bool,
+    pub(in crate::linux::remote::dynamic::owner) filesystem_type: Option<i64>,
+    pub(in crate::linux::remote::dynamic::owner) last_request: Option<SourceReadRequest>,
+    pub(in crate::linux::remote::dynamic::owner) failure: Option<SourceReadFailure>,
 }
 impl SourceReadProgress {
     fn begin(&mut self, requested: usize) -> Result<(), GateError> {
