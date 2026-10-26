@@ -11,3 +11,7 @@ The historical report's pending portable-reproducer status is preserved verbatim
 Hardware information in the new observation is a separate earlier required-gate host context, not command-specific or continuous attestation. Selected executable/source hashes do not establish a complete tool closure. Parent-record fields are distinguished from admission-only argv/cap evidence, and the helper's per-command ownership result is not a cgroup guarantee. Timing is operational only.
 
 The public materials contain independent source, templates and sanitized data. GPL reference tool implementations, executable artifacts, raw captures, local paths and configuration contents are not copied into this publication. Locally supplied prerequisites retain their exact role/byte/owner requirements. The whole-directory coordinate correction in preparation-observation v2 changes three template literals only; all four outcomes, 33 control cases and receipt identities remain exact.
+
+## Later fresh reproduction
+
+The [fresh v5 cohort](e9-common-fresh.md) separately completed all 13 original phases. Its 191 top-level helpers and 12 nested tools, 40 loader runs and 144 manual body traces are documented with exact source/input/receipt bindings. This later record does not rewrite the earlier pending status on this page or advance the old stopped stages. The loader and manual body scopes remain distinct; full A3 and general loader admission remain unqualified.

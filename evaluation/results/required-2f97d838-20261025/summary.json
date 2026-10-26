@@ -1,0 +1,1098 @@
+{
+  "TLS_inventory": {
+    "documentation_cases": 10,
+    "library_models": 74,
+    "old60_and8_retained": true,
+    "private_repetitions_not_unique_additional_coverage": true,
+    "workspace_docs_show_pass_subjects_not_separate_full_diagnostic_bodies": true
+  },
+  "artifact_provenance": "Text logs and target metadata do not establish complete per-target binary/content identity; no complete artifact closure is inferred.",
+  "cases": [],
+  "claims": {
+    "1_page_admission_cross_modification_free": "unqualified",
+    "2_unprivileged_cpuid_rdtsc_rdrand_rdseed_rdpid_first_instruction": "unqualified",
+    "3_in_place_preemption_clock": "unqualified",
+    "4_systematic_every_tactic": "unqualified_by_this_suite"
+  },
+  "cleanup_scope": "Existing process-group timeout runner; no ECHILD/subreaper/cgroup proof; inherited post-kill wait has no separate deadline.",
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 1.5203395879361778,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-fmt",
+      "receipt_sha256": "e0dde281848a7afabcdb147445d7e34bea11efa016b034127cd8f8cbf7cc262c",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 8.286804778967053,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-clippy",
+      "receipt_sha256": "e0dde281848a7afabcdb147445d7e34bea11efa016b034127cd8f8cbf7cc262c",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "63a8e06d66c7bb0b451e1e2cf4935c0818fbed2177b5601530eae47a5b6e2c50",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 278.0697696520947,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-test",
+      "receipt_sha256": "e0dde281848a7afabcdb147445d7e34bea11efa016b034127cd8f8cbf7cc262c",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "a0553b9663d5377d657fceaa409a296f6e391f48244ce8c5f01179d76ccd9ac7",
+      "wall_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 0.06435391888953745,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-check",
+      "receipt_sha256": "e0dde281848a7afabcdb147445d7e34bea11efa016b034127cd8f8cbf7cc262c",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "a13905646e2aed93ec6ea9ed6ac91490a4e01f91af0215c3965279a910612149",
+      "wall_seconds": 180
+    }
+  ],
+  "configuration_scope": {
+    "complete_configuration_closure": false,
+    "observation_scope": "Selected existence/symlink/hash or READ_DENIED rows; no full-stat/configuration closure claim.",
+    "pre_post_equal": true,
+    "read_denied_never_absent": true,
+    "read_denied_rows": 4,
+    "rows": 33
+  },
+  "coordinate_roles": {
+    "PYTHON": "Whole explicit Python executable file; its selected byte identity is recorded below",
+    "RAW": "Whole fresh output directory of required-gates.py, strictly below REPO/ignored",
+    "REPO": "Whole repository checkout directory at the tested revision",
+    "USER_HOME": "Whole user-home directory used only to display selected tool lookup owners; no username is included"
+  },
+  "environment_private_admission_sha256": "f24d7d4e95333227b55c1332eba5a9b31f9cb2157bf82b8ea4937c2e46bc4211",
+  "environment_scope": "The runner inherits the complete private 166-entry admission environment and sets the six displayed overrides. The public override map is not the full inherited environment. No fresh version query is part of these four commands.",
+  "execution_outer": {
+    "argv": [
+      "${PYTHON}",
+      "-B",
+      "${REPO}/evaluation/required-gates.py",
+      "--repo",
+      "${REPO}",
+      "--output",
+      "${RAW}"
+    ],
+    "cwd": "${REPO}",
+    "elapsed_seconds": 288.20470992592163,
+    "exit": 0,
+    "parent_timeout_seconds": 1000,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "b9a1dc31ea13e430813091de016924c545fbc8c71d97181e21acc31903d6addc"
+  },
+  "group_counts": {
+    "all_log_summaries": 66,
+    "nested": 5,
+    "outer": 61
+  },
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "prelaunch_observation": {
+      "architecture": "x86_64",
+      "cpuinfo_sha256": "f0f4b56b6103b37d8b5be04183bf627664af17d4bbed0ae4073b4bdc11a82133",
+      "family": "26",
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "label": "AMD EPYC Zen 5 dev host",
+      "microcode": "0xb101066",
+      "model": "17",
+      "observed_at_utc": "2026-10-26T02:23:07.372972+00:00",
+      "performance_measurement": false,
+      "record_sha256": "307adc906ff939da904c7bd13631049d4cd5c082496664ecf14616a3fcc0e199",
+      "scope": "Fresh metadata captured before the first required command; not continuous hardware attestation or a performance benchmark.",
+      "stepping": "0",
+      "vendor": "AuthenticAMD"
+    },
+    "scope": "Actual campaign prelaunch hardware metadata; raw CPU text retained privately."
+  },
+  "ignored_tests": [
+    [
+      "rapid::tests::live::benchmark_single_byte_toggle_latency",
+      "release-mode latency benchmark"
+    ],
+    [
+      "live_probe_stress_matrix",
+      "long-running M5 live stress matrix"
+    ],
+    [
+      "patch_latency::patch_activation_latency_benchmark",
+      "opt-in release-mode cross-core LiveJumpPatch latency distribution"
+    ],
+    [
+      "probe_overhead_benchmark",
+      "release-mode M5 overhead benchmark"
+    ]
+  ],
+  "independent_review": {
+    "binding_sha256": "3113c9e4cf838bf7a8d9992ee054366bdbf7b0c8387bb74a47e0bb3c115d1d5c",
+    "checks_sha256": "4389208dadf85e5033ba4c02e606da5ac35bfbca310148056b67d83b6b0adb30",
+    "review_sha256": "db571d3b8b4c96321b46d948b34dfe830b72fb097aa5da14c28d7ad57ed9cb5b"
+  },
+  "nested_guard_groups": [
+    {
+      "failed": 0,
+      "filtered": 189,
+      "ignored": 0,
+      "measured": 0,
+      "parent_header": "     Running unittests src/lib.rs (target/debug/deps/liteinst2-bec6d9d2028eb017)",
+      "passed": 1,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 189,
+      "ignored": 0,
+      "measured": 0,
+      "parent_header": "     Running unittests src/lib.rs (target/debug/deps/liteinst2-bec6d9d2028eb017)",
+      "passed": 1,
+      "seconds": 0.01,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 26,
+      "ignored": 0,
+      "measured": 0,
+      "parent_header": "     Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-4cbd5029484f5edc)",
+      "passed": 1,
+      "seconds": 33.18,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 26,
+      "ignored": 0,
+      "measured": 0,
+      "parent_header": "     Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-4cbd5029484f5edc)",
+      "passed": 1,
+      "seconds": 9.45,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 26,
+      "ignored": 0,
+      "measured": 0,
+      "parent_header": "     Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-4cbd5029484f5edc)",
+      "passed": 1,
+      "seconds": 81.54,
+      "status": "ok"
+    }
+  ],
+  "outer_test_groups": [
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running unittests src/lib.rs (target/debug/deps/liteinst_admission-4f623a7cdb0114a8)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/core_bridge.rs (target/debug/deps/core_bridge-a0b2483657279c56)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/model.rs (target/debug/deps/model-989771f6921469c3)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 15,
+      "seconds": 0.01,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/oracle.rs (target/debug/deps/oracle-97d2971bbfedf167)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 12,
+      "seconds": 0.03,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/return_obligations.rs (target/debug/deps/return_obligations-7379271f44b53805)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 13,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running unittests src/lib.rs (target/debug/deps/liteinst_launch-00ee8d4ff26a6609)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2,
+      "seconds": 0.01,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/checkpoint.rs (target/debug/deps/checkpoint-ca6696bd73d17b1b)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 23,
+      "seconds": 0.16,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/concurrent_control.rs (target/debug/deps/concurrent_control-49cf20d0cdb9e960)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3,
+      "seconds": 0.13,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/concurrent_gate.rs (target/debug/deps/concurrent_gate-0ce26f320078fe04)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7,
+      "seconds": 0.37,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/native_selected.rs (target/debug/deps/native_selected-e045d355c2970b09)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 33,
+      "seconds": 0.52,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/native_syscall.rs (target/debug/deps/native_syscall-cf95f39646a5d8e7)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7,
+      "seconds": 0.18,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/page_gate.rs (target/debug/deps/page_gate-e3122d0313cf1b74)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 17,
+      "seconds": 0.36,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/selected_gate.rs (target/debug/deps/selected_gate-05a3c9ffdf6c8a77)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 13,
+      "seconds": 0.24,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/selected_semantics.rs (target/debug/deps/selected_semantics-23bf0d58c8b308e3)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 14,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running unittests src/lib.rs (target/debug/deps/liteinst2-bec6d9d2028eb017)",
+      "ignored": 1,
+      "measured": 0,
+      "passed": 189,
+      "seconds": 1.51,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running unittests tests/support/arena_fork_fixture.rs (target/debug/deps/liteinst2_arena_fork_fixture-7d3b8d5694efc71b)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/a2_oracle.rs (target/debug/deps/a2_oracle-b2ccff8e3468bfd6)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 40,
+      "seconds": 5.47,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/arena_fork.rs (target/debug/deps/arena_fork-9b9fd12c7c2ea767)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6,
+      "seconds": 0.02,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/boundary_signal_oracle.rs (target/debug/deps/boundary_signal_oracle-cc8fb831ca172b04)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 27,
+      "seconds": 0.91,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/bounded_proc_stat.rs (target/debug/deps/bounded_proc_stat-9a661ffd24b63b4e)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/bundle_contract.rs (target/debug/deps/bundle_contract-80011e29665009e6)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.55,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/call_return_oracle.rs (target/debug/deps/call_return_oracle-a3703526d88fa906)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 27,
+      "seconds": 1.04,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/concurrent_overlap.rs (target/debug/deps/concurrent_overlap-272f522968eb647a)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 11,
+      "seconds": 0.04,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/controlled_coalescing_contract.rs (target/debug/deps/controlled_coalescing_contract-5ba9739cca56237a)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.27,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-4cbd5029484f5edc)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 27,
+      "seconds": 124.2,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/entry_backedge.rs (target/debug/deps/entry_backedge-2c62b4de18df449f)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.01,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/entry_paths_oracle.rs (target/debug/deps/entry_paths_oracle-8587a909dcafd944)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 27,
+      "seconds": 4.42,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/eviction_chain_contract.rs (target/debug/deps/eviction_chain_contract-940668b736ad8adb)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 13,
+      "seconds": 0.01,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/eviction_chain_extensions.rs (target/debug/deps/eviction_chain_extensions-fc728d4dcdeeca6b)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 28,
+      "seconds": 5.64,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/eviction_chain_oracle.rs (target/debug/deps/eviction_chain_oracle-98711939362b780e)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 28,
+      "seconds": 0.96,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/exact_syscall.rs (target/debug/deps/exact_syscall-4d94a065c40aabd9)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7,
+      "seconds": 0.01,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/generalized_pun_contract.rs (target/debug/deps/generalized_pun_contract-f584396ef9a7cf5f)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.29,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/mandatory_prefix_oracle.rs (target/debug/deps/mandatory_prefix_oracle-001c2714a73a397c)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 28,
+      "seconds": 6.04,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/neighbor_eviction_contract.rs (target/debug/deps/neighbor_eviction_contract-7cc1ee5d8a7fb73e)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.9,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/neighbor_eviction_oracle.rs (target/debug/deps/neighbor_eviction_oracle-28aef11fa7f08d9f)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 70,
+      "seconds": 104.59,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/overlap_concurrency.rs (target/debug/deps/overlap_concurrency-372fde1461fcf0a8)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.02,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/parked_context_oracle.rs (target/debug/deps/parked_context_oracle-af9f9e6b796560b5)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 27,
+      "seconds": 1.08,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/pc_relative.rs (target/debug/deps/pc_relative-8950d34733c05856)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.01,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/prefixed_pun_contract.rs (target/debug/deps/prefixed_pun_contract-3fe87d876fedfe37)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.43,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/prefixed_pun_oracle.rs (target/debug/deps/prefixed_pun_oracle-9a9bd0c33eaf7e5e)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 27,
+      "seconds": 1.27,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/quiescent_contract.rs (target/debug/deps/quiescent_contract-00cf6037acccddb9)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.28,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/quiescent_oracle.rs (target/debug/deps/quiescent_oracle-15fa6a4595721a9d)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30,
+      "seconds": 7.21,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/rel32_endpoint_oracle.rs (target/debug/deps/rel32_endpoint_oracle-069aafe2c467a044)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 27,
+      "seconds": 0.14,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/replace_first_cet.rs (target/debug/deps/replace_first_cet-25e9f23647a63e3a)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2,
+      "seconds": 0.01,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/search_eviction_evidence.rs (target/debug/deps/search_eviction_evidence-8b2201bbcfd73f44)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 4,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/search_evidence.rs (target/debug/deps/search_evidence-d1619f3fc78ddbb4)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/sigtrap_origin.rs (target/debug/deps/sigtrap_origin-867209317a8b0131)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2,
+      "seconds": 0.78,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/stress.rs (target/debug/deps/stress-f44bf19006e912ca)",
+      "ignored": 3,
+      "measured": 0,
+      "passed": 4,
+      "seconds": 0.17,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/successor_eviction_contract.rs (target/debug/deps/successor_eviction_contract-b3368f845800a5aa)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 1.2,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/successor_eviction_oracle.rs (target/debug/deps/successor_eviction_oracle-1f62163a7c3a3167)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 31,
+      "seconds": 5.19,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/sync_core_capability.rs (target/debug/deps/sync_core_capability-325ab2ae89c98f4b)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.17,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/tactic_engine.rs (target/debug/deps/tactic_engine-b2e4ead628dbfe4b)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1,
+      "seconds": 0.11,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/trampoline_tail.rs (target/debug/deps/trampoline_tail-71800b32fd63e078)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 12,
+      "seconds": 0.02,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/exception_landing.rs (target/debug/deps/exception_landing-336e7170d95d76ad)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 27,
+      "seconds": 0.25,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running unittests src/lib.rs (target/debug/deps/rapid_profiler-3b7bba2155a86575)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 74,
+      "seconds": 0.01,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running unittests src/main.rs (target/debug/deps/rapid_profiler-bcb3d39648d266a2)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "     Running tests/e2e.rs (target/debug/deps/e2e-869357d29bb545db)",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2,
+      "seconds": 0.09,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "   Doc-tests liteinst_admission",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "   Doc-tests liteinst_launch",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "   Doc-tests liteinst2",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0,
+      "seconds": 0.0,
+      "status": "ok"
+    },
+    {
+      "failed": 0,
+      "filtered": 0,
+      "header": "   Doc-tests rapid_profiler",
+      "ignored": 0,
+      "measured": 0,
+      "passed": 10,
+      "seconds": 0.11,
+      "status": "ok"
+    }
+  ],
+  "outer_totals": {
+    "failed": 0,
+    "filtered": 0,
+    "ignored": 4,
+    "passed": 1000
+  },
+  "raw_command_receipt_sha256": "e0dde281848a7afabcdb147445d7e34bea11efa016b034127cd8f8cbf7cc262c",
+  "report_authorship": "The independent read/hash reviewer prepared these data from root-only execution. No exporter, helper, checker or workload was executed to prepare this proposal.",
+  "reproduction": {
+    "argv": [
+      "${PYTHON}",
+      "-B",
+      "${REPO}/evaluation/required-gates.py",
+      "--repo",
+      "${REPO}",
+      "--output",
+      "${RAW}"
+    ],
+    "cwd": "${REPO}",
+    "parent_timeout_seconds": 1000,
+    "raw_directory": "Fresh canonical directory strictly below REPO/ignored",
+    "script": "evaluation/required-gates.py",
+    "script_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+    "source_rule": "Exact clean checkout of 2f97d8389902a409f568551a59c9a57ada55a0e0; retain reporting data externally if it is from a later child. Capture fresh explicit tool/config/environment observations. The existing public runner executes all four commands with the original 180/360-second wall bounds."
+  },
+  "root_result_scope": "The referenced root terminal is the closed outer runner record; independent counts are reconstructed from the complete test log.",
+  "root_result_sha256": "7772d58be91b4a1061c8d27da57e07462e137a0cc6d88f678271d4be843591f0",
+  "run_id": "required-2f97d838-20261025",
+  "schema_version": 1,
+  "scope": "Exact-revision workspace regression after the seven A3 calibration/material source changes. No fresh private loader/body result, native frontend correctness, integrated loader/state or full A3/A5 qualification is inferred; private repetitions remain separate.",
+  "selected_tool_lookup": {
+    "ar": "/usr/bin/ar",
+    "cargo": "${USER_HOME}/.cargo/bin/cargo",
+    "cargo-clippy": "${USER_HOME}/.cargo/bin/cargo-clippy",
+    "cc": "/usr/bin/cc",
+    "clang": "/usr/bin/clang",
+    "git": "/usr/local/bin/git",
+    "ld": "/usr/bin/ld",
+    "python3.9": "/usr/bin/python3.9",
+    "rustc": "${USER_HOME}/.cargo/bin/rustc",
+    "rustfmt": "${USER_HOME}/.cargo/bin/rustfmt",
+    "rustup": "${USER_HOME}/.cargo/bin/rustup"
+  },
+  "selected_tool_observations": {
+    "${PYTHON}": {
+      "resolved": "${PYTHON}",
+      "sha256": "886c366577a40e52823af32c30ecf67e628e27a2f87bcf1588be69493845ac6b"
+    },
+    "${USER_HOME}/.cargo/bin/cargo": {
+      "resolved": "${USER_HOME}/.cargo/bin/rustup",
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "${USER_HOME}/.cargo/bin/cargo-clippy": {
+      "resolved": "${USER_HOME}/.cargo/bin/rustup",
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "${USER_HOME}/.cargo/bin/rustc": {
+      "resolved": "${USER_HOME}/.cargo/bin/rustup",
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "${USER_HOME}/.cargo/bin/rustfmt": {
+      "resolved": "${USER_HOME}/.cargo/bin/rustup",
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "${USER_HOME}/.cargo/bin/rustup": {
+      "resolved": "${USER_HOME}/.cargo/bin/rustup",
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/cargo": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/cargo",
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/cargo-clippy": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/cargo-clippy",
+      "sha256": "a0a3808dddb32f525601e608740ee7c1c5df86db4a7183ea945449f60d29509d"
+    },
+    "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/cargo-fmt": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/cargo-fmt",
+      "sha256": "07ce638a5be73e97defbf0864f32a64ed40a0b7682b85625e68790f9e68d19e9"
+    },
+    "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/clippy-driver": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/clippy-driver",
+      "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373"
+    },
+    "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/rustc": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/rustc",
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/rustdoc": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/rustdoc",
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    },
+    "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/rustfmt": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/1.97.1-x86_64-unknown-linux-gnu/bin/rustfmt",
+      "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8"
+    },
+    "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo",
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo-clippy": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo-clippy",
+      "sha256": "a0a3808dddb32f525601e608740ee7c1c5df86db4a7183ea945449f60d29509d"
+    },
+    "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo-fmt": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/cargo-fmt",
+      "sha256": "07ce638a5be73e97defbf0864f32a64ed40a0b7682b85625e68790f9e68d19e9"
+    },
+    "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/clippy-driver": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/clippy-driver",
+      "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373"
+    },
+    "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustc": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustc",
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustdoc": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustdoc",
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    },
+    "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustfmt": {
+      "resolved": "${USER_HOME}/.rustup/toolchains/stable-x86_64-unknown-linux-gnu/bin/rustfmt",
+      "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8"
+    },
+    "/usr/bin/ar": {
+      "resolved": "/usr/bin/ar",
+      "sha256": "e4b206f523c501897b356f48f5a770626bf07e63cb88697ebda00a188959276c"
+    },
+    "/usr/bin/cc": {
+      "resolved": "/usr/bin/gcc",
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "/usr/bin/clang": {
+      "resolved": "/usr/bin/clang-22",
+      "sha256": "953ea1ca38bec62e4b2b9c916db4d76d5a48edb91e0cce0d5c4d7efe62e34b97"
+    },
+    "/usr/bin/git": {
+      "resolved": "/usr/bin/git",
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "/usr/bin/ld": {
+      "resolved": "/usr/bin/ld.bfd",
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "/usr/bin/python3.9": {
+      "resolved": "/usr/bin/python3.9",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    "/usr/local/bin/git": {
+      "resolved": "/usr/local/bin/git",
+      "sha256": "b62458e1f5e8080280d0cad5a60d6ea0e8c041ea6a7acc6e2e76b63a589ffa62"
+    }
+  },
+  "source_preservation": {
+    "four_ignored_identities_unchanged": true,
+    "no_added_skips_or_relaxed_assertions": true,
+    "outer_and_nested_group_inventories_unchanged": true,
+    "printed_test_record_multiset_unchanged": true,
+    "prior_tested_revision": "4c754df83b534b83f7a4725f087780e013363e4a",
+    "rust_and_cargo_paths_byte_equal": 206
+  },
+  "sources": {
+    "exact_revision": {
+      "file_count": 779,
+      "kind": "git_commit",
+      "source_tree_serialization": "UTF-8 JSON with sorted keys and compact separators, no trailing newline",
+      "source_tree_sha256": "554a78e4846e315a9a30a5e31f3da5e7b88aaf11f9f0c22ab3fbbf9b0c545f61",
+      "tested_revision": "2f97d8389902a409f568551a59c9a57ada55a0e0",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "status": "pass",
+  "stream_scope": "Each command stdout_sha256 identifies its actual merged stdout/stderr log; stderr_sha256 is null because no separate child stderr capture exists.",
+  "suite": "required-workspace-gates",
+  "tested_revision": "2f97d8389902a409f568551a59c9a57ada55a0e0",
+  "timing_class": "operational diagnostics only; shared host, affinity and cache state not controlled",
+  "tool_selection_limits": {
+    "actual_runner_git_owner_admitted": true,
+    "actual_runner_python_owner_admitted": true,
+    "byte_and_resolved_identity_only": true,
+    "complete_tool_or_process_closure": false,
+    "pre_post_equal": true,
+    "rustup_selector": "stable-x86_64-unknown-linux-gnu",
+    "rustup_toolchain_override_present": false,
+    "selected_rows": 27,
+    "seven_stable_tool_bytes_equal_versioned_1_97_1": true,
+    "stable_and_versioned_owner_rows_admitted": true,
+    "version_queries_in_this_campaign": 0
+  },
+  "tool_version_evidence": {
+    "prior_complete_sha256": "1d5b261c4aa3e127be6019eac2109eec5e919fd1db0866c399ec2139bb349f47",
+    "rows": [
+      {
+        "prior_observed_first_line": "cargo 1.97.1 (c980f4866 2026-06-30)",
+        "prior_receipt_sha256": "27bc30658271d9d37478fed36f05a89e3f5f563e087898693c6471295cbdbe68",
+        "prior_stdout_sha256": "d0c168c9509371d329569450e6bb43e1abb2be4f91c1c04849d863757596a7e2",
+        "role": "cargo",
+        "tool_sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+        "version": "1.97.1"
+      },
+      {
+        "prior_observed_first_line": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+        "prior_receipt_sha256": "4bdfafee580ca35319c274a9e3446af217c38179cec1f2f1dfdf8da664c891f1",
+        "prior_stdout_sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4",
+        "role": "rustc",
+        "tool_sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+        "version": "1.97.1"
+      },
+      {
+        "prior_observed_first_line": "rustdoc 1.97.1 (8bab26f4f 2026-07-14)",
+        "prior_receipt_sha256": "3b9c1e68ee6e451a54aabf7c7a737dc9f5d07acf389179726d32aed5c00adf0a",
+        "prior_stdout_sha256": "1ed8aa68c5b7567ffefd285c103678a8529c3148531398deee38e43b0c00d0e1",
+        "role": "rustdoc",
+        "tool_sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+        "version": "1.97.1"
+      }
+    ],
+    "scope": "Prior bounded version observations for byte-equal Cargo/rustc/rustdoc; not fresh invocations or per-launch process mapping proof."
+  }
+}

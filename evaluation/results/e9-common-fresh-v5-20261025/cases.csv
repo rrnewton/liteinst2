@@ -1,0 +1,357 @@
+ordinal,command_id,case_id,kind,expected,observed
+0,calibrations-calibrate,RX exact file translation,pure_positive,accept,accept
+1,calibrations-calibrate,exact one-site RPC,pure_positive,accept,accept
+2,calibrations-calibrate,exact B1 summary and debug witness,pure_positive,accept,accept
+3,calibrations-calibrate,absolute trampoline coordinates,pure_positive,accept,accept
+4,calibrations-calibrate,exact bounded-helper success receipt,pure_positive,accept,accept
+5,calibrations-calibrate,duplicate JSON key,pure_negative,refuse,refuse
+6,calibrations-calibrate,non-JSON NaN,pure_negative,refuse,refuse
+7,calibrations-calibrate,R metadata is not executable,pure_negative,refuse,refuse
+8,calibrations-calibrate,translation crosses file-backed extent,pure_negative,refuse,refuse
+9,calibrations-calibrate,unsigned virtual extent overflow,pure_negative,refuse,refuse
+10,calibrations-calibrate,ambiguous virtual ownership,pure_negative,refuse,refuse
+11,calibrations-calibrate,truncated program headers,pure_negative,refuse,refuse
+12,calibrations-calibrate,non-power-of-two load alignment,pure_negative,refuse,refuse
+13,calibrations-calibrate,wrong source path,pure_negative,refuse,refuse
+14,calibrations-calibrate,wrong binary mode,pure_negative,refuse,refuse
+15,calibrations-calibrate,extra action instruction,pure_negative,refuse,refuse
+16,calibrations-calibrate,wrong selected length,pure_negative,refuse,refuse
+17,calibrations-calibrate,wrong selected virtual address,pure_negative,refuse,refuse
+18,calibrations-calibrate,wrong selected file offset,pure_negative,refuse,refuse
+19,calibrations-calibrate,boolean instruction length,pure_negative,refuse,refuse
+20,calibrations-calibrate,wrong patch offset,pure_negative,refuse,refuse
+21,calibrations-calibrate,wrong patch trampoline,pure_negative,refuse,refuse
+22,calibrations-calibrate,out-of-order RPC id,pure_negative,refuse,refuse
+23,calibrations-calibrate,extra patch,pure_negative,refuse,refuse
+24,calibrations-calibrate,missing patch,pure_negative,refuse,refuse
+25,calibrations-calibrate,output path escape,pure_negative,refuse,refuse
+26,calibrations-calibrate,wrong mapping unit,pure_negative,refuse,refuse
+27,calibrations-calibrate,unknown method,pure_negative,refuse,refuse
+28,calibrations-calibrate,unknown patch metadata,pure_negative,refuse,refuse
+29,calibrations-calibrate,RPC incomplete final line,pure_negative,refuse,refuse
+30,calibrations-calibrate,RPC duplicate JSON id,pure_negative,refuse,refuse
+31,calibrations-calibrate,partial success,pure_negative,refuse,refuse
+32,calibrations-calibrate,fallback to B2,pure_negative,refuse,refuse
+33,calibrations-calibrate,duplicate statistic,pure_negative,refuse,refuse
+34,calibrations-calibrate,wrong debug PC,pure_negative,refuse,refuse
+35,calibrations-calibrate,wrong debug length,pure_negative,refuse,refuse
+36,calibrations-calibrate,wrong debug tactic,pure_negative,refuse,refuse
+37,calibrations-calibrate,empty trampoline,pure_negative,refuse,refuse
+38,calibrations-calibrate,duplicate debug site,pure_negative,refuse,refuse
+39,calibrations-calibrate,warning is not a success,pure_negative,refuse,refuse
+40,calibrations-calibrate,failed-site diagnostic,pure_negative,refuse,refuse
+41,calibrations-calibrate,missing success marker,pure_negative,refuse,refuse
+42,calibrations-calibrate,failure marker,pure_negative,refuse,refuse
+43,calibrations-calibrate,wrong input size,pure_negative,refuse,refuse
+44,calibrations-calibrate,helper exit=1,pure_negative,refuse,refuse
+45,calibrations-calibrate,helper exit=False,pure_negative,refuse,refuse
+46,calibrations-calibrate,helper wall_timeout=True,pure_negative,refuse,refuse
+47,calibrations-calibrate,helper unexpected_descendants=[123],pure_negative,refuse,refuse
+48,calibrations-calibrate,helper absence_proof=None,pure_negative,refuse,refuse
+49,calibrations-calibrate,helper stdout_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',pure_negative,refuse,refuse
+50,calibrations-calibrate,helper request_sha256='cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc',pure_negative,refuse,refuse
+51,calibrations-calibrate,helper helper_sha256='dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',pure_negative,refuse,refuse
+52,calibrations-calibrate,helper aborted='SIGTERM',pure_negative,refuse,refuse
+53,calibrations-calibrate,helper cleanup_error='deadline',pure_negative,refuse,refuse
+54,calibrations-calibrate,helper inputs_unchanged=False,pure_negative,refuse,refuse
+55,calibrations-calibrate,helper elapsed_seconds=inf,pure_negative,refuse,refuse
+56,calibrations-calibrate,helper elapsed_seconds=-1,pure_negative,refuse,refuse
+57,calibrations-calibrate,helper elapsed_seconds=51,pure_negative,refuse,refuse
+58,calibrations-calibrate,malformed cleanup event,pure_negative,refuse,refuse
+59,calibrations-calibrate,contradictory killed descendant,pure_negative,refuse,refuse
+60,calibrations-supervisor_calibrate,one-mocked-supervisor-scenario,mocked_supervisor_group,"{""actual_process_launches"":0,""actual_signals_sent"":0,""mocked_scenarios"":1,""simulated_signal_deliveries"":6}",pass
+61,calibrations-calibrate_prerequisites,exact fresh six/core native/state inventory,pure_positive,accept,accept
+62,calibrations-calibrate_prerequisites,missing fresh state terminal,pure_negative,refuse,refuse
+63,calibrations-calibrate_prerequisites,wrong completion status,pure_negative,refuse,refuse
+64,calibrations-calibrate_prerequisites,historical original cohort,pure_negative,refuse,refuse
+65,calibrations-calibrate_prerequisites,historical selection,pure_negative,refuse,refuse
+66,calibrations-calibrate_prerequisites,historical emitted cohort,pure_negative,refuse,refuse
+67,calibrations-calibrate_prerequisites,missing B1 output,pure_negative,refuse,refuse
+68,calibrations-calibrate_prerequisites,refusal substituted for positive,pure_negative,refuse,refuse
+69,calibrations-calibrate_prerequisites,missing baseline,pure_negative,refuse,refuse
+70,calibrations-calibrate_prerequisites,missing native execution,pure_negative,refuse,refuse
+71,calibrations-calibrate_prerequisites,missing state trace,pure_negative,refuse,refuse
+72,calibrations-calibrate_prerequisites,missing state point,pure_negative,refuse,refuse
+73,calibrations-calibrate_prerequisites,missing hook witness,pure_negative,refuse,refuse
+74,calibrations-calibrate_prerequisites,missing file page,pure_negative,refuse,refuse
+75,calibrations-calibrate_prerequisites,missing original state phase,pure_negative,refuse,refuse
+76,calibrations-calibrate_prerequisites,missing capture file,pure_negative,refuse,refuse
+77,calibrations-calibrate_prerequisites,missing capture directory,pure_negative,refuse,refuse
+78,calibrations-calibrate_prerequisites,full qualification claimed,pure_negative,refuse,refuse
+79,calibrations-calibrate_prerequisites,backend ABI relabelled resolved,pure_negative,refuse,refuse
+80,calibrations-calibrate_prerequisites,E9 native enabled,pure_negative,refuse,refuse
+81,calibrations-calibrate-common,original-relocation-unstripped-pie,pure_positive,accept,accept
+82,calibrations-calibrate-common,old-structure-only-unstripped-pie,pure_positive,accept,accept
+83,calibrations-calibrate-common,original-relocation-unstripped-exec,pure_positive,accept,accept
+84,calibrations-calibrate-common,old-structure-only-unstripped-exec,pure_positive,accept,accept
+85,calibrations-calibrate-common,original-relocation-unstripped-libcarrierfixture.so,pure_positive,accept,accept
+86,calibrations-calibrate-common,old-structure-only-unstripped-libcarrierfixture.so,pure_positive,accept,accept
+87,calibrations-calibrate-common,original-relocation-stripped-pie,pure_positive,accept,accept
+88,calibrations-calibrate-common,old-structure-only-stripped-pie,pure_positive,accept,accept
+89,calibrations-calibrate-common,original-relocation-stripped-exec,pure_positive,accept,accept
+90,calibrations-calibrate-common,old-structure-only-stripped-exec,pure_positive,accept,accept
+91,calibrations-calibrate-common,original-relocation-stripped-libcarrierfixture.so,pure_positive,accept,accept
+92,calibrations-calibrate-common,old-structure-only-stripped-libcarrierfixture.so,pure_positive,accept,accept
+93,calibrations-calibrate-common,exact-original-indirect-definition,pure_positive,accept,accept
+94,calibrations-calibrate-common,checked-module-bias,pure_positive,accept,accept
+95,calibrations-calibrate-common,complete-original-source,pure_positive,accept,accept
+96,calibrations-calibrate-common,unoccupied-generated-page,pure_positive,accept,accept
+97,calibrations-calibrate-common,exact-same-module-PROT_NONE-gap,pure_positive,accept,accept
+98,calibrations-calibrate-common,relocation-writes-selected-code,pure_negative,refuse,refuse
+99,calibrations-calibrate-common,unknown-relocation-width,pure_negative,refuse,refuse
+100,calibrations-calibrate-common,wrong-referenced-symbol,pure_negative,refuse,refuse
+101,calibrations-calibrate-common,wrong-addend,pure_negative,refuse,refuse
+102,calibrations-calibrate-common,eight-byte-write-crosses-owner,pure_negative,refuse,refuse
+103,calibrations-calibrate-common,explicit-generated-dependency-write,pure_negative,refuse,refuse
+104,calibrations-calibrate-common,changed-indirect-native-body,pure_negative,refuse,refuse
+105,calibrations-calibrate-common,wrong-module-path,pure_negative,refuse,refuse
+106,calibrations-calibrate-common,wrong-mount-device,pure_negative,refuse,refuse
+107,calibrations-calibrate-common,wrong-file-inode,pure_negative,refuse,refuse
+108,calibrations-calibrate-common,readable-reservation,pure_negative,refuse,refuse
+109,calibrations-calibrate-common,writable-reservation,pure_negative,refuse,refuse
+110,calibrations-calibrate-common,wrong-file-offset,pure_negative,refuse,refuse
+111,calibrations-calibrate-common,partial-reservation,pure_negative,refuse,refuse
+112,calibrations-calibrate-common,reservation-outside-module,pure_negative,refuse,refuse
+113,calibrations-calibrate-common,duplicate-reservation-owner,pure_negative,refuse,refuse
+114,calibrations-calibrate-common,reservation-overlaps-real-LOAD,pure_negative,refuse,refuse
+115,calibrations-calibrate-common,wrong-original-source-offset,pure_negative,refuse,refuse
+116,calibrations-calibrate-common,ambiguous-module-bias,pure_negative,refuse,refuse
+117,calibrations-calibrate-sparse,exact-compact,pure_positive,accept,accept
+118,calibrations-calibrate-sparse,exact-sparse-exec,pure_positive,accept,accept
+119,calibrations-calibrate-sparse,sparse-exact-40KiB-budget,pure_positive,accept,accept
+120,calibrations-calibrate-sparse,exact-common-bias-two-roots,pure_positive,accept,accept
+121,calibrations-calibrate-sparse,unknown-kind,pure_negative,refuse,refuse
+122,calibrations-calibrate-sparse,wrong-compact-base,pure_negative,refuse,refuse
+123,calibrations-calibrate-sparse,wrong-compact-end,pure_negative,refuse,refuse
+124,calibrations-calibrate-sparse,wrong-source-page,pure_negative,refuse,refuse
+125,calibrations-calibrate-sparse,wrong-generated-PC,pure_negative,refuse,refuse
+126,calibrations-calibrate-sparse,wrong-backing-offset,pure_negative,refuse,refuse
+127,calibrations-calibrate-sparse,unaligned-source,pure_negative,refuse,refuse
+128,calibrations-calibrate-sparse,zero-root-budget,pure_negative,refuse,refuse
+129,calibrations-calibrate-sparse,one-root-budget-for-EXEC,pure_negative,refuse,refuse
+130,calibrations-calibrate-sparse,root-budget-above-contract,pure_negative,refuse,refuse
+131,calibrations-calibrate-sparse,zero-byte-budget,pure_negative,refuse,refuse
+132,calibrations-calibrate-sparse,one-byte-below-required-storage,pure_negative,refuse,refuse
+133,calibrations-calibrate-sparse,byte-budget-above-contract,pure_negative,refuse,refuse
+134,calibrations-calibrate-sparse,actual-address-underflow,pure_negative,refuse,refuse
+135,calibrations-calibrate-sparse,actual-address-overflow,pure_negative,refuse,refuse
+136,calibrations-calibrate-sparse,noncanonical-actual-address,pure_negative,refuse,refuse
+137,calibrations-calibrate-sparse,overlapping-acquisition-roots,pure_negative,refuse,refuse
+138,calibrations-calibrate-sparse,actual-aggregate-budget,pure_negative,refuse,refuse
+139,calibrations-calibrate-ledgers,cases-exact-ordered-schema,pure_positive,accept,accept
+140,calibrations-calibrate-ledgers,pages-exact-ordered-schema,pure_positive,accept,accept
+141,calibrations-calibrate-ledgers,ownership-exact-ordered-schema,pure_positive,accept,accept
+142,calibrations-calibrate-ledgers,cases-duplicate-leading-header-conflicting-value,pure_negative,refuse,refuse
+143,calibrations-calibrate-ledgers,cases-duplicate-trailing-header,pure_negative,refuse,refuse
+144,calibrations-calibrate-ledgers,cases-reordered-header,pure_negative,refuse,refuse
+145,calibrations-calibrate-ledgers,cases-missing-header,pure_negative,refuse,refuse
+146,calibrations-calibrate-ledgers,cases-extra-header,pure_negative,refuse,refuse
+147,calibrations-calibrate-ledgers,cases-missing-row-cell,pure_negative,refuse,refuse
+148,calibrations-calibrate-ledgers,cases-extra-row-cell,pure_negative,refuse,refuse
+149,calibrations-calibrate-ledgers,pages-duplicate-leading-header-conflicting-value,pure_negative,refuse,refuse
+150,calibrations-calibrate-ledgers,pages-duplicate-trailing-header,pure_negative,refuse,refuse
+151,calibrations-calibrate-ledgers,pages-reordered-header,pure_negative,refuse,refuse
+152,calibrations-calibrate-ledgers,pages-missing-header,pure_negative,refuse,refuse
+153,calibrations-calibrate-ledgers,pages-extra-header,pure_negative,refuse,refuse
+154,calibrations-calibrate-ledgers,pages-missing-row-cell,pure_negative,refuse,refuse
+155,calibrations-calibrate-ledgers,pages-extra-row-cell,pure_negative,refuse,refuse
+156,calibrations-calibrate-ledgers,ownership-duplicate-leading-header-conflicting-value,pure_negative,refuse,refuse
+157,calibrations-calibrate-ledgers,ownership-duplicate-trailing-header,pure_negative,refuse,refuse
+158,calibrations-calibrate-ledgers,ownership-reordered-header,pure_negative,refuse,refuse
+159,calibrations-calibrate-ledgers,ownership-missing-header,pure_negative,refuse,refuse
+160,calibrations-calibrate-ledgers,ownership-extra-header,pure_negative,refuse,refuse
+161,calibrations-calibrate-ledgers,ownership-missing-row-cell,pure_negative,refuse,refuse
+162,calibrations-calibrate-ledgers,ownership-extra-row-cell,pure_negative,refuse,refuse
+163,state-build-identity-calibrations,mapping-identity-2-17,control_group,"{""negative"":17,""positive"":2}",pass
+164,ownership-controls-ownership-controls,sparse-ownership-2-18,control_group,"{""negative"":18,""positive"":2}",pass
+165,receipt-controls-receipt-controls,receipt-grammar-1-23,control_group,"{""negative"":23,""positive"":1}",pass
+166,emit-emit,unstripped-pie,emission_site,"{""B1"":1,""other_tactics"":0,""selected_site"":1}",pass
+167,emit-emit,unstripped-exec,emission_site,"{""B1"":1,""other_tactics"":0,""selected_site"":1}",pass
+168,emit-emit,unstripped-libcarrierfixture.so,emission_site,"{""B1"":1,""other_tactics"":0,""selected_site"":1}",pass
+169,emit-emit,stripped-pie,emission_site,"{""B1"":1,""other_tactics"":0,""selected_site"":1}",pass
+170,emit-emit,stripped-exec,emission_site,"{""B1"":1,""other_tactics"":0,""selected_site"":1}",pass
+171,emit-emit,stripped-libcarrierfixture.so,emission_site,"{""B1"":1,""other_tactics"":0,""selected_site"":1}",pass
+172,native-baseline-unstripped-pie,baseline-unstripped-pie,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":0,""phase"":""baseline""}",pass
+173,native-baseline-unstripped-exec,baseline-unstripped-exec,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":0,""phase"":""baseline""}",pass
+174,native-native-unstripped-both-pie-0,native-unstripped-both-pie-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+175,native-native-unstripped-both-pie-1,native-unstripped-both-pie-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+176,native-native-unstripped-both-pie-2,native-unstripped-both-pie-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+177,native-native-unstripped-both-exec-0,native-unstripped-both-exec-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+178,native-native-unstripped-both-exec-1,native-unstripped-both-exec-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+179,native-native-unstripped-both-exec-2,native-unstripped-both-exec-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+180,native-native-unstripped-main-only-pie-0,native-unstripped-main-only-pie-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+181,native-native-unstripped-main-only-pie-1,native-unstripped-main-only-pie-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+182,native-native-unstripped-main-only-pie-2,native-unstripped-main-only-pie-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+183,native-native-unstripped-main-only-exec-0,native-unstripped-main-only-exec-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+184,native-native-unstripped-main-only-exec-1,native-unstripped-main-only-exec-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+185,native-native-unstripped-main-only-exec-2,native-unstripped-main-only-exec-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+186,native-native-unstripped-library-only-pie-0,native-unstripped-library-only-pie-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+187,native-native-unstripped-library-only-pie-1,native-unstripped-library-only-pie-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+188,native-native-unstripped-library-only-pie-2,native-unstripped-library-only-pie-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+189,native-native-unstripped-library-only-exec-0,native-unstripped-library-only-exec-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+190,native-native-unstripped-library-only-exec-1,native-unstripped-library-only-exec-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+191,native-native-unstripped-library-only-exec-2,native-unstripped-library-only-exec-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+192,native-baseline-stripped-pie,baseline-stripped-pie,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":0,""phase"":""baseline""}",pass
+193,native-baseline-stripped-exec,baseline-stripped-exec,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":0,""phase"":""baseline""}",pass
+194,native-native-stripped-both-pie-0,native-stripped-both-pie-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+195,native-native-stripped-both-pie-1,native-stripped-both-pie-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+196,native-native-stripped-both-pie-2,native-stripped-both-pie-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+197,native-native-stripped-both-exec-0,native-stripped-both-exec-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+198,native-native-stripped-both-exec-1,native-stripped-both-exec-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+199,native-native-stripped-both-exec-2,native-stripped-both-exec-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":2,""phase"":""rewritten""}",pass
+200,native-native-stripped-main-only-pie-0,native-stripped-main-only-pie-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+201,native-native-stripped-main-only-pie-1,native-stripped-main-only-pie-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+202,native-native-stripped-main-only-pie-2,native-stripped-main-only-pie-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+203,native-native-stripped-main-only-exec-0,native-stripped-main-only-exec-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+204,native-native-stripped-main-only-exec-1,native-stripped-main-only-exec-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+205,native-native-stripped-main-only-exec-2,native-stripped-main-only-exec-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+206,native-native-stripped-library-only-pie-0,native-stripped-library-only-pie-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+207,native-native-stripped-library-only-pie-1,native-stripped-library-only-pie-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+208,native-native-stripped-library-only-pie-2,native-stripped-library-only-pie-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+209,native-native-stripped-library-only-exec-0,native-stripped-library-only-exec-0,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+210,native-native-stripped-library-only-exec-1,native-stripped-library-only-exec-1,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+211,native-native-stripped-library-only-exec-2,native-stripped-library-only-exec-2,loader_invocation,"{""application_stdout_sha256"":""0e3a521a3031b578edbbddaa2bdbf37a9514ee4bbbdf293feb78e9d9e3ddcc48"",""bootstrap_modules"":1,""phase"":""rewritten""}",pass
+212,state-native-state-native,unstripped-pie/bias-0/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+213,state-native-state-native,unstripped-pie/bias-0/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+214,state-native-state-native,unstripped-pie/bias-0/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+215,state-native-state-native,unstripped-pie/bias-0/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+216,state-native-state-native,unstripped-pie/bias-0/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+217,state-native-state-native,unstripped-pie/bias-0/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+218,state-native-state-native,unstripped-pie/bias-0/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+219,state-native-state-native,unstripped-pie/bias-0/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+220,state-native-state-native,unstripped-pie/bias-0/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+221,state-native-state-native,unstripped-pie/bias-0/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+222,state-native-state-native,unstripped-pie/bias-0/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+223,state-native-state-native,unstripped-pie/bias-0/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+224,state-native-state-native,unstripped-pie/bias-1/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+225,state-native-state-native,unstripped-pie/bias-1/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+226,state-native-state-native,unstripped-pie/bias-1/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+227,state-native-state-native,unstripped-pie/bias-1/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+228,state-native-state-native,unstripped-pie/bias-1/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+229,state-native-state-native,unstripped-pie/bias-1/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+230,state-native-state-native,unstripped-pie/bias-1/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+231,state-native-state-native,unstripped-pie/bias-1/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+232,state-native-state-native,unstripped-pie/bias-1/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+233,state-native-state-native,unstripped-pie/bias-1/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+234,state-native-state-native,unstripped-pie/bias-1/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+235,state-native-state-native,unstripped-pie/bias-1/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+236,state-native-state-native,unstripped-exec/bias-0/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+237,state-native-state-native,unstripped-exec/bias-0/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+238,state-native-state-native,unstripped-exec/bias-0/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+239,state-native-state-native,unstripped-exec/bias-0/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+240,state-native-state-native,unstripped-exec/bias-0/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+241,state-native-state-native,unstripped-exec/bias-0/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+242,state-native-state-native,unstripped-exec/bias-0/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+243,state-native-state-native,unstripped-exec/bias-0/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+244,state-native-state-native,unstripped-exec/bias-0/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+245,state-native-state-native,unstripped-exec/bias-0/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+246,state-native-state-native,unstripped-exec/bias-0/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+247,state-native-state-native,unstripped-exec/bias-0/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+248,state-native-state-native,unstripped-exec/bias-1/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+249,state-native-state-native,unstripped-exec/bias-1/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+250,state-native-state-native,unstripped-exec/bias-1/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+251,state-native-state-native,unstripped-exec/bias-1/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+252,state-native-state-native,unstripped-exec/bias-1/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+253,state-native-state-native,unstripped-exec/bias-1/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+254,state-native-state-native,unstripped-exec/bias-1/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+255,state-native-state-native,unstripped-exec/bias-1/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+256,state-native-state-native,unstripped-exec/bias-1/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+257,state-native-state-native,unstripped-exec/bias-1/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+258,state-native-state-native,unstripped-exec/bias-1/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+259,state-native-state-native,unstripped-exec/bias-1/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+260,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+261,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+262,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+263,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+264,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+265,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+266,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+267,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+268,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+269,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+270,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+271,state-native-state-native,unstripped-libcarrierfixture.so/bias-0/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+272,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+273,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+274,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+275,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+276,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+277,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+278,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+279,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+280,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+281,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+282,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+283,state-native-state-native,unstripped-libcarrierfixture.so/bias-1/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+284,state-native-state-native,stripped-pie/bias-0/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+285,state-native-state-native,stripped-pie/bias-0/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+286,state-native-state-native,stripped-pie/bias-0/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+287,state-native-state-native,stripped-pie/bias-0/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+288,state-native-state-native,stripped-pie/bias-0/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+289,state-native-state-native,stripped-pie/bias-0/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+290,state-native-state-native,stripped-pie/bias-0/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+291,state-native-state-native,stripped-pie/bias-0/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+292,state-native-state-native,stripped-pie/bias-0/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+293,state-native-state-native,stripped-pie/bias-0/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+294,state-native-state-native,stripped-pie/bias-0/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+295,state-native-state-native,stripped-pie/bias-0/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+296,state-native-state-native,stripped-pie/bias-1/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+297,state-native-state-native,stripped-pie/bias-1/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+298,state-native-state-native,stripped-pie/bias-1/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+299,state-native-state-native,stripped-pie/bias-1/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+300,state-native-state-native,stripped-pie/bias-1/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+301,state-native-state-native,stripped-pie/bias-1/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+302,state-native-state-native,stripped-pie/bias-1/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+303,state-native-state-native,stripped-pie/bias-1/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+304,state-native-state-native,stripped-pie/bias-1/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+305,state-native-state-native,stripped-pie/bias-1/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+306,state-native-state-native,stripped-pie/bias-1/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+307,state-native-state-native,stripped-pie/bias-1/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+308,state-native-state-native,stripped-exec/bias-0/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+309,state-native-state-native,stripped-exec/bias-0/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+310,state-native-state-native,stripped-exec/bias-0/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+311,state-native-state-native,stripped-exec/bias-0/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+312,state-native-state-native,stripped-exec/bias-0/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+313,state-native-state-native,stripped-exec/bias-0/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+314,state-native-state-native,stripped-exec/bias-0/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+315,state-native-state-native,stripped-exec/bias-0/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+316,state-native-state-native,stripped-exec/bias-0/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+317,state-native-state-native,stripped-exec/bias-0/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+318,state-native-state-native,stripped-exec/bias-0/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+319,state-native-state-native,stripped-exec/bias-0/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+320,state-native-state-native,stripped-exec/bias-1/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+321,state-native-state-native,stripped-exec/bias-1/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+322,state-native-state-native,stripped-exec/bias-1/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+323,state-native-state-native,stripped-exec/bias-1/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+324,state-native-state-native,stripped-exec/bias-1/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+325,state-native-state-native,stripped-exec/bias-1/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+326,state-native-state-native,stripped-exec/bias-1/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+327,state-native-state-native,stripped-exec/bias-1/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+328,state-native-state-native,stripped-exec/bias-1/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+329,state-native-state-native,stripped-exec/bias-1/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+330,state-native-state-native,stripped-exec/bias-1/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+331,state-native-state-native,stripped-exec/bias-1/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+332,state-native-state-native,stripped-libcarrierfixture.so/bias-0/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+333,state-native-state-native,stripped-libcarrierfixture.so/bias-0/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+334,state-native-state-native,stripped-libcarrierfixture.so/bias-0/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+335,state-native-state-native,stripped-libcarrierfixture.so/bias-0/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+336,state-native-state-native,stripped-libcarrierfixture.so/bias-0/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+337,state-native-state-native,stripped-libcarrierfixture.so/bias-0/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+338,state-native-state-native,stripped-libcarrierfixture.so/bias-0/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+339,state-native-state-native,stripped-libcarrierfixture.so/bias-0/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+340,state-native-state-native,stripped-libcarrierfixture.so/bias-0/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+341,state-native-state-native,stripped-libcarrierfixture.so/bias-0/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+342,state-native-state-native,stripped-libcarrierfixture.so/bias-0/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+343,state-native-state-native,stripped-libcarrierfixture.so/bias-0/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+344,state-native-state-native,stripped-libcarrierfixture.so/bias-1/original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+345,state-native-state-native,stripped-libcarrierfixture.so/bias-1/original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+346,state-native-state-native,stripped-libcarrierfixture.so/bias-1/original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+347,state-native-state-native,stripped-libcarrierfixture.so/bias-1/original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+348,state-native-state-native,stripped-libcarrierfixture.so/bias-1/rewritten/entry-0-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+349,state-native-state-native,stripped-libcarrierfixture.so/bias-1/rewritten/entry-1-seed-0,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+350,state-native-state-native,stripped-libcarrierfixture.so/bias-1/rewritten/entry-0-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":3}",pass
+351,state-native-state-native,stripped-libcarrierfixture.so/bias-1/rewritten/entry-1-seed-1,body_state_trace,"{""file_pages"":6,""hook_events"":0,""points"":2}",pass
+352,state-native-state-native,stripped-libcarrierfixture.so/bias-1/restored-original/entry-0-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+353,state-native-state-native,stripped-libcarrierfixture.so/bias-1/restored-original/entry-1-seed-0,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass
+354,state-native-state-native,stripped-libcarrierfixture.so/bias-1/restored-original/entry-0-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":3}",pass
+355,state-native-state-native,stripped-libcarrierfixture.so/bias-1/restored-original/entry-1-seed-1,body_state_trace,"{""file_pages"":5,""hook_events"":0,""points"":2}",pass

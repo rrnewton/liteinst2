@@ -206,3 +206,5 @@ The [public frontend model index](frontend-public.md) joins the focused 60-model
 ## TLS ownership evidence
 
 [Private TLS failure and corrected qualification](frontend-tls-private.md) retain separate null-revision snapshots, exact74-model/10-doc inventories and request-only reproduction materials. [Public required gates at4c754df8](results/required-4c754df8-20261025/summary.json) report1000 outer passes/0 failures/4 existing ignores, with five nested guard executions separate. Repeated private/public runs do not add unique coverage; native machine-return-slot integration, the preemption clock and full A5 remain unqualified.
+
+The [fresh A3 reproduction cohort](e9-common-fresh.md) now records completion of all 13 original phases in a separate private epoch. Its 40 loader runs and 144 manual body traces retain distinct scopes; the earlier pending/stopped records above remain historical, and full A3 remains open.

@@ -1,0 +1,54 @@
+{
+  "files": {
+    "README.md": {
+      "bytes": 7449,
+      "sha256": "6fe0b14a223958458fa6941c3cee951add2a7e09b0576fe5bbc216ad203fa324"
+    },
+    "body-cases.csv": {
+      "bytes": 31167,
+      "sha256": "4269508f5c7144464e7011aaa8cbc3d21c0cf7a71a4a8eff87790a455a452edf"
+    },
+    "calibration-results.json": {
+      "bytes": 11876,
+      "sha256": "e28c5f21c4bffe791f970ddc3373f7c95a3b673fd2105f7a8c0491f95d8ac78d"
+    },
+    "cases.csv": {
+      "bytes": 48004,
+      "sha256": "be793319364fb74b68026919566425acda8648a5fb9ca23be6bb7f4edee8c597"
+    },
+    "commands.csv": {
+      "bytes": 336712,
+      "sha256": "6a888bbec16fbd7801c4b185898c39d215f96ee4d8365ed4903372c814ef2c1b"
+    },
+    "emission-cases.csv": {
+      "bytes": 2284,
+      "sha256": "4295112fbd742933de1d5b815f63294280401d80967dea055cfab6b919e59e60"
+    },
+    "historical-requests.json": {
+      "bytes": 418234,
+      "sha256": "163c78f935a75d4b7cacc7ede5fb012702e04a0471ce137e820d00bcd81d3492"
+    },
+    "lineage.json": {
+      "bytes": 6907,
+      "sha256": "4fe9afac297f55367e199cba53108ec0d47979cf85013ad36128e6e26b95adc6"
+    },
+    "loader-cases.csv": {
+      "bytes": 19893,
+      "sha256": "fe767366101cb089a9fe18da98392eecd05727ed3c77a777db226b1c80130b9e"
+    },
+    "selected-inputs.json": {
+      "bytes": 221031,
+      "sha256": "bf9329edfc312c6e057c52957ed7e50e1e2d17bdd1af3822caa8792444568f42"
+    },
+    "source-files.json": {
+      "bytes": 31955,
+      "sha256": "c81baf65c36c064f47e8d26b932729c09d49b1ba84bc6ccd9f6c6860cc710410"
+    },
+    "summary.json": {
+      "bytes": 633472,
+      "sha256": "1e6725ea094dd69a742452b4c2544e994e798d1a1d90f80c03fe26dfb2e8d35c"
+    }
+  },
+  "schema_version": 1,
+  "scope": "Every other file in this result directory; files.json excludes itself."
+}
