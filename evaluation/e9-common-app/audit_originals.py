@@ -56,7 +56,7 @@ SOURCE_PINS = {'evaluation/e9-common-app/BUILD.md': '0fc9c7f1a7cd0ec0dbf4a4be15a
  'tests/support/e9_common_app.rs': 'faec58111347cc1c0d41c0fa47862207ae8938f7b4caddad98b4afc3043699ae',
  'tests/support/e9_common_app_data.rs': '92bca80e47c0d20825a4ec278f0de47a178dd1f11b0062bf01b2bbfa12659bf4',
  'tests/support/elf_exec_driver.rs': 'f898bea1da083535ece4a2daa5fc7f794d94e1c0a99e9cc8f123a3f2476c21f7',
- 'tests/support/elf_exec_oracle.rs': '317296195684913bd7168c71c61efdd5c5d3bdc61172da694126ff03e7c3f3be',
+ 'tests/support/elf_exec_oracle.rs': '1302da90836b31f9346cff5c20a458f4e5b3134b0f529e21f5027f78e4764c6b',
  'tests/support/elf_exec_provider.rs': '9b5562034fc6bbdc32f889ab64df7f414e96ee5d9a99c06e39bf6728f128e730',
  'tools/elf-rewrite/examples/common_sites.rs': '838c795e3a107bee340a0d29c349b1f6f3c05123b3c6e4d14d5a850973ae8831',
  'tools/unwind-oracle/bounded_command.py': 'c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44'}
