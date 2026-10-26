@@ -236,3 +236,8 @@ records 16 ordinary original executions and six required refusals at `ab443af`.
 All eight datasets pass for both stripped and unstripped inputs. The 30-stage
 recipe and independently reviewed CSV/JSON establish original preparation;
 rewritten execution and complete site retention remain open.
+
+The [E9 adapter and comparator controls](e9-sites-controls-e57a72c.md) preserve
+two separate synthetic suites at `e57a72c`, each with three accepted cases and
+24 required refusals. The reviewed replay script and actual CSV/JSON distinguish
+synthetic structural checks from producer and application execution.
