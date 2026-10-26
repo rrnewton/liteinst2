@@ -431,6 +431,7 @@ impl RuntimeOwner {
             Ok(Ok(value)) => {
                 if let Err(error) = account {
                     attempt.fail(Some(&error));
+                    owner.kernel_journal.fail_gate(&error);
                     attempt.sync_journal();
                     owner.closing = true;
                     owner.cancel.store(true, Ordering::Release);
@@ -440,6 +441,9 @@ impl RuntimeOwner {
             }
             Ok(Err(error)) => {
                 attempt.fail(Some(&error));
+                // Preserve the actual failure phase before diagnostic copying
+                // can advance the journal to a partially observed raw slot.
+                owner.kernel_journal.fail_gate(&error);
                 attempt.sync_journal();
                 owner.closing = true;
                 owner.cancel.store(true, Ordering::Release);
@@ -447,6 +451,9 @@ impl RuntimeOwner {
             }
             Err(payload) => {
                 attempt.fail(None);
+                owner
+                    .kernel_journal
+                    .fail_active(KernelFailureKind::CaughtPanic);
                 attempt.sync_journal();
                 owner.closing = true;
                 owner.cancel.store(true, Ordering::Release);
