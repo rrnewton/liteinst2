@@ -70,7 +70,7 @@ pub(super) unsafe fn receive(fd: i32, output: &mut Received) -> i32 {
                     std::ptr::read_unaligned(libc::CMSG_DATA(header).cast::<libc::ucred>());
             } else if (*header).cmsg_level == libc::SOL_SOCKET
                 && (*header).cmsg_type == libc::SCM_RIGHTS
-                && payload.is_multiple_of(std::mem::size_of::<i32>())
+                && payload % std::mem::size_of::<i32>() == 0
             {
                 let count = payload / std::mem::size_of::<i32>();
                 let mut index = 0;
