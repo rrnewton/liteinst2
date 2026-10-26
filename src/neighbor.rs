@@ -6,7 +6,10 @@
 
 use crate::bundle::{BundleBudget, PlannedBundle};
 use crate::contracts::*;
-use crate::eviction::{image_allocation, instruction_member, near_redirect, qualify_victim};
+use crate::emission::{ArtifactMetrics, ArtifactPlan, ArtifactRequest, PlanningRequest};
+use crate::eviction::{
+    image_allocation, instruction_member_core, near_redirect, qualify_victim_core,
+};
 use crate::planner::HookSemantics;
 use crate::quiescent::{self, AllocationPolicy, InstallRequest};
 use crate::scanner::{ScanResult, ScannedInstruction};
@@ -170,10 +173,46 @@ pub fn plan_neighbor_detailed(
     search: NeighborSearch,
     budget: BundleBudget,
 ) -> Result<PlannedNeighbor, NeighborFailure> {
+    plan_neighbor_core(
+        &PlanningRequest::live(request),
+        victim_allocation,
+        search,
+        budget,
+    )
+}
+
+/// Forces T3 with symbolic selected/victim images in one target environment.
+/// The source relay and all pending artifact requirements remain inspectable.
+pub fn plan_neighbor_with_emission(
+    request: &ArtifactRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<ArtifactPlan, NeighborFailure> {
+    plan_neighbor_core(
+        &PlanningRequest::artifact(request),
+        victim_allocation,
+        search,
+        budget,
+    )
+    .map(|plan| {
+        ArtifactPlan::bundle(
+            plan.bundle(),
+            ArtifactMetrics::Neighbor(*plan.geometry(), plan.metrics().clone()),
+        )
+    })
+}
+
+pub(crate) fn plan_neighbor_core(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    search: NeighborSearch,
+    budget: BundleBudget,
+) -> Result<PlannedNeighbor, NeighborFailure> {
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
     let result = (|| {
-        let (source, scan) = quiescent::validated_source(request)
+        let (source, scan) = quiescent::validated_source_core(request)
             .inspect_err(|reason| search_evidence.qualification(SearchScope::default(), reason))?;
         let selected_scope = SearchScope {
             physical_pc: Some(request.logical_pc),
@@ -258,14 +297,15 @@ pub fn plan_neighbor_detailed(
             search.max_pairs,
             None,
         );
-        let occupied = quiescent::occupied_ranges()?;
-        let selected_plan = TrampolinePlan::from_short_instruction(
-            &scan,
-            selected.address(),
-            request.hook,
-            request.semantics == HookSemantics::ReplaceFirst,
-        )
-        .map_err(|error| Refusal::Backend(error.to_string()))?;
+        let occupied = request.emission.occupied()?;
+        let selected_plan = request
+            .emission
+            .short(
+                &scan,
+                selected.address(),
+                request.semantics == HookSemantics::ReplaceFirst,
+            )
+            .map_err(|error| Refusal::Backend(error.to_string()))?;
         let mut pairs_examined = 0;
         let mut last_error = Refusal::NoPatchWindow;
         // A failed joint composition is more informative than a later unavailable
@@ -279,7 +319,7 @@ pub fn plan_neighbor_detailed(
                 ..SearchScope::default()
             };
             let qualification = (|| {
-                let victim_range = qualify_victim(request, &scan, victim, 10)?;
+                let victim_range = qualify_victim_core(request, &scan, victim, 10)?;
                 if victim_range.overlaps(selected_range) {
                     return Err(Refusal::NoPatchWindow);
                 }
@@ -318,6 +358,7 @@ pub fn plan_neighbor_detailed(
                     victim_candidate,
                 );
                 let placed = place_image(
+                    request.emission,
                     &victim_plan,
                     victim_target,
                     victim_allocation,
@@ -367,6 +408,7 @@ pub fn plan_neighbor_detailed(
                         selected_candidate,
                     );
                     let placed = place_image(
+                        request.emission,
                         &selected_plan,
                         selected_target,
                         request.allocation,
@@ -483,7 +525,7 @@ pub fn plan_neighbor_detailed(
 }
 
 fn qualify_selected<'a>(
-    request: &InstallRequest<'_>,
+    request: &PlanningRequest<'_>,
     scan: &'a ScanResult,
 ) -> Result<&'a ScannedInstruction, Refusal> {
     let selected = scan
@@ -535,6 +577,7 @@ fn short_redirect(selected: u64, victim: u64) -> Result<(u64, i8, [u8; 2]), Refu
 }
 
 fn place_image(
+    emission: crate::emission::EmissionContext<'_>,
     plan: &TrampolinePlan,
     target: Option<u64>,
     policy: &AllocationPolicy,
@@ -543,8 +586,8 @@ fn place_image(
     other: Option<AddressRange>,
 ) -> Result<(TrampolineImage, AddressRange), Refusal> {
     let target = target.ok_or(Refusal::AllocationUnavailable)?;
-    let image = plan
-        .emit_at(target)
+    let image = emission
+        .emit(plan, target)
         .map_err(|error| Refusal::Backend(error.to_string()))?;
     let allocation = image_allocation(&image)?;
     if allocation.len() > policy.max_mapped_bytes as u64
@@ -566,7 +609,7 @@ struct PlacedInstruction {
 }
 
 fn compose_pair(
-    request: &InstallRequest<'_>,
+    request: &PlanningRequest<'_>,
     source: AddressRange,
     selected_patch: [u8; 2],
     selected: PlacedInstruction,
@@ -585,11 +628,8 @@ fn compose_pair(
     let mut overlay = request.code.to_vec();
     let mut members = Vec::with_capacity(2);
     for (placed, patch) in source_members {
-        let overlaid = InstallRequest {
-            code: &overlay,
-            ..*request
-        };
-        let member = instruction_member(
+        let overlaid = request.with_code(&overlay);
+        let member = instruction_member_core(
             &overlaid,
             source,
             placed.displaced,
