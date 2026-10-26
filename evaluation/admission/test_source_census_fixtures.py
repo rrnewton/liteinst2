@@ -193,7 +193,12 @@ class SourceCensusFixtureTests(unittest.TestCase):
 
     def test_real_catalog_keeps_exact_old36_and_requires_single_new_native_identity(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
-        rows = declared["native_validation_fixtures"]
+        all_rows = declared["native_validation_fixtures"]
+        self.assertEqual(len(all_rows), 42)
+        rows = all_rows[:37]
+        old37 = json.dumps(rows, sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
+        self.assertEqual(hashlib.sha256(old37).hexdigest(),
+                         "e28eb2ed2457cc644f4f9f303e605df0e32577192596bd9ca12ae2d9003f762a")
         self.assertEqual(len(rows), 37)
         old = json.dumps(rows[:36], sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
         self.assertEqual(hashlib.sha256(old).hexdigest(), OLD36_SHA256)

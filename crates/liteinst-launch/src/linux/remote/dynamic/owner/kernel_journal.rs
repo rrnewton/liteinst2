@@ -8,6 +8,15 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::{Mutex, MutexGuard};
 
+mod mapping;
+pub(in crate::linux::remote::dynamic::owner) use mapping::{
+    MAPPING_CAPTURE_BYTES, MappingCaptureArchive,
+};
+pub use mapping::{
+    MappingCapturePhase, MappingCaptureRecord, MappingCaptureSlot, MappingCaptureSnapshot,
+    MappingCaptureStatus,
+};
+
 #[cfg(test)]
 pub(super) mod tests;
 
@@ -365,6 +374,9 @@ pub struct KernelAttemptSnapshot {
     pub states: Vec<KernelStateRecord>,
     /// First failure retained separately from the fixed fact array.
     pub failure: Option<KernelJournalFailure>,
+    /// Optional complete/partial raw-map diagnostics. They survive admission
+    /// unwind and do not grant a mapping, release or physical-cleanup receipt.
+    pub mapping: Option<MappingCaptureSnapshot>,
 }
 
 /// Read-only archive snapshot; a terminal observation does not imply cleanup.
@@ -461,6 +473,7 @@ struct Attempt {
     raw_count: u8,
     stage: KernelJournalStage,
     failure: Option<KernelJournalFailure>,
+    mapping: Option<MappingCaptureArchive>,
 }
 impl Attempt {
     fn append(&mut self, fact: KernelJournalFact) -> Result<(), LaunchError> {
@@ -513,6 +526,7 @@ impl Attempt {
                 .map(|slot| self.states[slot.index()].snapshot(slot))
                 .collect(),
             failure: self.failure,
+            mapping: self.mapping.as_ref().map(MappingCaptureArchive::snapshot),
         }
     }
 }
@@ -675,6 +689,9 @@ impl KernelJournalWriter {
                 | libc::SYS_clone
                 | libc::SYS_rt_sigaction
                 | libc::SYS_sigaltstack
+                | libc::SYS_mmap
+                | libc::SYS_mprotect
+                | libc::SYS_munmap
         ) || number > i32::MAX as u64
             || number & 0x4000_0000 != 0
             || binding.pending.invocation == 0
@@ -776,6 +793,7 @@ impl KernelJournalWriter {
                 raw_count: 0,
                 stage: KernelJournalStage::Prepared,
                 failure: None,
+                mapping: None,
             },
         })
     }

@@ -24,19 +24,19 @@ mod journal_tests;
 /// Append-only evidence of a single already-used execution identity. Retaining
 /// this record does not authorize another invocation, source edit or release.
 pub(super) struct CompletionRecord {
-    pending: Option<PendingToken>,
-    invocation: ExecutionId,
-    before: ObservedStop,
-    input: Option<SelectedInput>,
-    original: Vec<u8>,
-    evidence: CompletionEvidence,
-    window: Option<routes::OriginalWindow>,
-    rearmed_generation: Option<u64>,
-    copied_events: usize,
-    kernel_attempt: Option<KernelAttemptHandle>,
+    pub(super) pending: Option<PendingToken>,
+    pub(super) invocation: ExecutionId,
+    pub(super) before: ObservedStop,
+    pub(super) input: Option<SelectedInput>,
+    pub(super) original: Vec<u8>,
+    pub(super) evidence: CompletionEvidence,
+    pub(super) window: Option<routes::OriginalWindow>,
+    pub(super) rearmed_generation: Option<u64>,
+    pub(super) copied_events: usize,
+    pub(super) kernel_attempt: Option<KernelAttemptHandle>,
 }
 
-enum CompletionEvidence {
+pub(super) enum CompletionEvidence {
     Scripted {
         completed: Box<CompletedInstruction>,
         after: Box<ObservedStop>,
@@ -128,7 +128,7 @@ impl AdmissionOwner {
         result
     }
 
-    fn close_completion(&mut self, owner: &mut Owner) {
+    pub(super) fn close_completion(&mut self, owner: &mut Owner) {
         self.closed = true;
         owner.closing = true;
         owner.cancel.store(true, Ordering::Release);
@@ -257,6 +257,22 @@ impl AdmissionOwner {
             })
         {
             return self.complete_signal_return(owner, decision, until);
+        }
+        if self.mapping.is_some()
+            && self
+                .pending
+                .as_ref()
+                .is_some_and(|pending| mapping::is_mapping(&pending.input))
+        {
+            match decision {
+                ProviderDecision::Native => return self.complete_mapping(owner, until),
+                ProviderDecision::Complete(_) => {
+                    return Err(GateError::Refused(
+                        "mapping effects require their actual original native syscall",
+                    ));
+                }
+                ProviderDecision::Fault(_) => {}
+            }
         }
         let pending = self.pending.as_ref().expect("authenticated pending");
         if self.signals.is_some()
@@ -452,12 +468,21 @@ impl AdmissionOwner {
             return self.original_event_reply(owner, index);
         }
         self.finish_completed(owner, reservation, index, until)?;
+        self.completed_reply(owner, reservation, index)
+    }
+
+    pub(super) fn completed_reply(
+        &mut self,
+        owner: &mut Owner,
+        reservation: Reservation,
+        index: usize,
+    ) -> Result<AdmissionReply, GateError> {
         let record = &self.completion_history[index];
         let input = record
             .input
             .clone()
             .expect("selected completion retains input");
-        let state = self.state(task)?;
+        let state = self.state(record.before.task.task)?;
         if record.rearmed_generation != Some(state.task.generation) {
             return Err(GateError::Refused(
                 "dynamic completion has no matching rearmed generation",
@@ -492,7 +517,7 @@ impl AdmissionOwner {
         self.census
             .finish_reservation(reservation)
             .map_err(census_error)?;
-        if let Some(handle) = kernel_attempt {
+        if let Some(handle) = record.kernel_attempt {
             owner
                 .kernel_journal
                 .finish_admission(handle, event.after_task)?;
@@ -554,7 +579,7 @@ impl AdmissionOwner {
         }
     }
 
-    fn reserve_completion_events(&mut self) -> Result<(), GateError> {
+    pub(super) fn reserve_completion_events(&mut self) -> Result<(), GateError> {
         // The finite native profile can create one task, producing at most one
         // Created and one Newborn event. Allocate both immutable/public history
         // copies before original execution; their lifetime bytes are charged in
@@ -567,7 +592,7 @@ impl AdmissionOwner {
         })
     }
 
-    fn retain_completion_events(&mut self, index: usize) -> Result<(), GateError> {
+    pub(super) fn retain_completion_events(&mut self, index: usize) -> Result<(), GateError> {
         let events = match &self.completion_history[index].evidence {
             CompletionEvidence::Native(completed) | CompletionEvidence::Collateral(completed) => {
                 &completed.events[..]
@@ -599,7 +624,7 @@ impl AdmissionOwner {
         Ok(())
     }
 
-    fn account_completion(
+    pub(super) fn account_completion(
         &mut self,
         reservation: Reservation,
         index: usize,
@@ -622,6 +647,9 @@ impl AdmissionOwner {
     /// remains local and is not newly archived: it cannot become a smaller
     /// successful history record or authorize another effect.
     fn verify_completion_extent(&self, evidence: &CompletionEvidence) -> Result<(), GateError> {
+        if self.mapping.is_some() {
+            self.verify_mapping_completion_extent(evidence)?;
+        }
         let Some(signals) = &self.signals else {
             return Ok(());
         };
@@ -655,13 +683,13 @@ impl AdmissionOwner {
     /// Complete an actual selected/collateral result, consume precisely its
     /// old register continuation, then rebind and rearm its source page. A next
     /// page stays NX unless the complete source-decode closure requires it.
-    fn finish_completed(
+    pub(super) fn consume_completed(
         &mut self,
         owner: &mut Owner,
         reservation: Reservation,
         index: usize,
         until: Instant,
-    ) -> Result<(), GateError> {
+    ) -> Result<(u64, TaskStateSnapshot), GateError> {
         let record = &self.completion_history[index];
         if let CompletionEvidence::Native(completed) = &record.evidence {
             if let OriginalEvidence::Syscall(kernel) = &completed.evidence {
@@ -851,6 +879,7 @@ impl AdmissionOwner {
                                 || (number == libc::SYS_gettid as u64
                                     && (is_error || result != i64::from(before.token.tid)))
                                 || (!signal_setup
+                                    && !self.validated_mapping_completion(index, kernel)?
                                     && !matches!(
                                         number as libc::c_long,
                                         libc::SYS_getpid | libc::SYS_gettid | libc::SYS_clone
@@ -936,6 +965,19 @@ impl AdmissionOwner {
         // Raw parent EXIT and newborn return-ready observations remain in their
         // immutable rows; refresh records bind them to the genuine neutral stops.
         self.refresh_all_same_pc(owner, reservation, task, until)?;
+        Ok((source_page, expected_state))
+    }
+
+    fn finish_completed(
+        &mut self,
+        owner: &mut Owner,
+        reservation: Reservation,
+        index: usize,
+        until: Instant,
+    ) -> Result<(), GateError> {
+        let (source_page, expected_state) =
+            self.consume_completed(owner, reservation, index, until)?;
+        let task = self.completion_history[index].before.task.task;
         let window = self.completion_history[index].window.take();
         #[cfg(test)]
         if self.completion_history[index].kernel_attempt.is_some() {
@@ -969,7 +1011,7 @@ impl AdmissionOwner {
         Ok(())
     }
 
-    fn original_event_reply(
+    pub(super) fn original_event_reply(
         &mut self,
         owner: &mut Owner,
         index: usize,

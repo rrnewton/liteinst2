@@ -5943,6 +5943,10 @@
         "ignored": 0,
         "tests": 6
       },
+      "test/b3_mapping_admission": {
+        "ignored": 0,
+        "tests": 5
+      },
       "test/b3_signal_admission": {
         "ignored": 0,
         "tests": 5
@@ -6037,7 +6041,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 221
+        "tests": 278
       }
     },
     "workspace_tests": {
@@ -6068,6 +6072,10 @@
       "test/b2_mode_reference": {
         "ignored": 0,
         "tests": 6
+      },
+      "test/b3_mapping_admission": {
+        "ignored": 0,
+        "tests": 5
       },
       "test/b3_signal_admission": {
         "ignored": 0,
@@ -6339,7 +6347,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 221
+        "tests": 278
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,
@@ -7038,8 +7046,33 @@
       "cohort": "b3_source_census",
       "harness": "unit/liteinst_launch/lib",
       "test": "linux::remote::dynamic::owner::tests::source_census::changed_reserved_census_refuses_before_entry_patch_or_permission_change"
+    },
+    {
+      "cohort": "b3_mapping",
+      "harness": "test/b3_mapping_admission",
+      "test": "original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources"
+    },
+    {
+      "cohort": "b3_mapping",
+      "harness": "test/b3_mapping_admission",
+      "test": "stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history"
+    },
+    {
+      "cohort": "b3_mapping",
+      "harness": "test/b3_mapping_admission",
+      "test": "resolver_panic_after_real_rx_keeps_failure_and_original_physical_cleanup"
+    },
+    {
+      "cohort": "b3_mapping",
+      "harness": "test/b3_mapping_admission",
+      "test": "blocked_resolver_expires_original_deadline_before_callback_is_released"
+    },
+    {
+      "cohort": "b3_mapping",
+      "harness": "test/b3_mapping_admission",
+      "test": "full_native_mapping_comparator_rejects_each_state_source_and_map_corruption"
     }
   ],
-  "recorder_tests": 213,
+  "recorder_tests": 219,
   "schema_version": 1
 }

@@ -41,8 +41,8 @@ fn combine(a: BudgetCharge, b: BudgetCharge) -> Result<BudgetCharge, GateError> 
     })
 }
 /// Logical retained XSTATE payload geometry, never native authority. The only
-/// production short-bound caller reads the immutable certificate retained by
-/// SignalTransaction; every observed state is independently checked against it.
+/// production short-bound callers read immutable native certificates retained
+/// by the signal or singleton mapping profile; every observed state is checked.
 /// Raw journals, frame buffers and allocation capacity keep their MAX bounds.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct StatePayload {
@@ -690,7 +690,10 @@ impl AdmissionOwner {
     fn state_payload(&self) -> Result<StatePayload, GateError> {
         match &self.signals {
             Some(signals) => StatePayload::from_retained_extent(signals.xstate_extent()),
-            None => Ok(StatePayload::maximum()),
+            None => match &self.mapping {
+                Some(mapping) => StatePayload::from_retained_extent(mapping.xstate_extent()),
+                None => Ok(StatePayload::maximum()),
+            },
         }
     }
 
@@ -857,6 +860,9 @@ impl AdmissionOwner {
         };
         if let Some(signals) = &self.signals {
             signals.verify_extent(&token, identity, &raw)?;
+        }
+        if let Some(mapping) = &self.mapping {
+            mapping.verify_extent(&token, identity, &raw)?;
         }
         let (logical_pc, phase, signal) = match self.native.admission_current(task) {
             Ok(current) => {
@@ -1094,6 +1100,29 @@ impl AdmissionOwner {
         plans: usize,
         prefix_bytes: usize,
     ) -> Result<Reservation, GateError> {
+        self.reserve_transition_with_charge(
+            owner,
+            successors,
+            rebind,
+            plans,
+            BudgetCharge {
+                source_fact_bytes: prefix_bytes,
+                ..BudgetCharge::default()
+            },
+        )
+    }
+
+    /// Additive typed prefix for mapping-source acquisition. Legacy callers
+    /// still pass precisely the same byte-only prefix through the wrapper.
+    /// All dimensions are reserved together before any irreversible effect.
+    pub(super) fn reserve_transition_with_charge(
+        &mut self,
+        owner: &Owner,
+        successors: usize,
+        rebind: bool,
+        plans: usize,
+        prefix: BudgetCharge,
+    ) -> Result<Reservation, GateError> {
         // Restoration may use a runner before the actual completion. Reserve
         // that prefix separately so a second pre-effect check uses the same
         // complete remaining envelope after the prefix has been debited.
@@ -1111,13 +1140,7 @@ impl AdmissionOwner {
             )?,
             refresh_charge_with_payload(payload, tasks)?,
         )?;
-        let charge = combine(
-            charge,
-            BudgetCharge {
-                source_fact_bytes: prefix_bytes,
-                ..BudgetCharge::default()
-            },
-        )?;
+        let charge = combine(charge, prefix)?;
         let frames = self.census.active_frames().count();
         let charge = combine(
             charge,
@@ -1147,28 +1170,50 @@ impl AdmissionOwner {
         rebind: bool,
         plans: usize,
     ) -> Result<(), GateError> {
+        self.check_completion_budget_with_charge(
+            owner,
+            reservation,
+            successors,
+            rebind,
+            plans,
+            BudgetCharge::default(),
+        )
+    }
+
+    pub(super) fn check_completion_budget_with_charge(
+        &self,
+        owner: &Owner,
+        reservation: Reservation,
+        successors: usize,
+        rebind: bool,
+        plans: usize,
+        prefix: BudgetCharge,
+    ) -> Result<(), GateError> {
         let tasks = self.held_task_bound(owner, successors)?;
         let payload = self.state_payload()?;
         self.census
             .check_reserved(
                 reservation,
                 combine(
-                    effect_charge_with_payload(
-                        payload,
-                        &self.domain,
-                        self.census.active().count(),
-                        tasks,
-                        successors,
-                        rebind,
-                        plans,
-                    )?,
-                    frame_effect_charge_with_payload(
-                        payload,
-                        self.census.active_frames().count(),
-                        tasks,
-                        successors,
-                        rebind,
-                        plans,
+                    prefix,
+                    combine(
+                        effect_charge_with_payload(
+                            payload,
+                            &self.domain,
+                            self.census.active().count(),
+                            tasks,
+                            successors,
+                            rebind,
+                            plans,
+                        )?,
+                        frame_effect_charge_with_payload(
+                            payload,
+                            self.census.active_frames().count(),
+                            tasks,
+                            successors,
+                            rebind,
+                            plans,
+                        )?,
                     )?,
                 )?,
             )
@@ -1671,3 +1716,9 @@ mod tests;
 
 #[cfg(test)]
 mod sizing_tests;
+
+mod mapping_budget;
+pub(super) use mapping_budget::{
+    MappingSourceShape, mapping_reply_storage_bytes, mapping_request_storage_bytes,
+    mapping_staged_storage_bytes,
+};

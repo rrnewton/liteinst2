@@ -12,10 +12,13 @@ use liteinst_admission::returns::CallReturnLedger;
 use liteinst_admission::scan::{Candidate, Policy, Snapshot};
 use std::collections::{BTreeMap, BTreeSet};
 
+mod replacement;
 mod resource;
+pub(super) use replacement::{ReplacementIdentity, StagedReplacement};
 #[cfg(test)]
 mod tests;
-use resource::{ResourceBasis, SourceBinding};
+pub(super) use resource::SourceBinding;
+use resource::{ResourceBasis, SourceCatalog};
 
 pub(super) struct Domain {
     pub(super) images: Vec<Image>,
@@ -32,7 +35,7 @@ pub(super) struct Domain {
     pub(super) plans: Vec<InstalledPlan>,
     pub(super) generations: Vec<RetiredGeneration>,
     pub(super) source_binding: SourceBinding,
-    resource_basis: ResourceBasis,
+    resource_basis: SourceCatalog,
     next_plan: u64,
 }
 
@@ -58,6 +61,7 @@ impl Domain {
     pub(super) fn mapping_catalog_bytes(mappings: &[MemoryMapping]) -> Result<usize, GateError> {
         ResourceBasis::mapping_bytes(mappings)?
             .checked_add(std::mem::size_of::<SourceBinding>())
+            .and_then(|bytes| bytes.checked_add(std::mem::size_of::<SourceCatalog>()))
             .ok_or(GateError::Refused("dynamic resource basis size overflows"))
     }
 
@@ -73,7 +77,7 @@ impl Domain {
         let images = planning::prepare_images(facts, &original_executables, read)?;
         let policy = Policy::default();
         let (resource_basis, source_binding) =
-            ResourceBasis::new(&images, &original_executables, &policy, until)?;
+            SourceCatalog::new(&images, &original_executables, &policy, until)?;
         Ok(Self {
             images,
             original_executables,
@@ -104,11 +108,11 @@ impl Domain {
     }
 
     pub(super) fn resource_scan_decoded_starts(&self) -> usize {
-        self.resource_basis.decoded_starts
+        self.resource_basis.decoded_starts()
     }
 
     pub(super) fn resource_basis_bytes(&self) -> usize {
-        self.resource_basis.retained_bytes
+        self.resource_basis.retained_bytes()
     }
 
     pub(super) fn image(&self, pc: u64) -> Result<&Image, GateError> {
@@ -401,9 +405,14 @@ impl Domain {
         Ok(())
     }
 
-    fn source_for_generation(&self, generation: u64) -> Result<SourceBinding, GateError> {
-        if generation == self.generation {
-            return Ok(self.source_binding);
+    fn source_for_generation(
+        &self,
+        generation: u64,
+        current_generation: u64,
+        current_binding: SourceBinding,
+    ) -> Result<SourceBinding, GateError> {
+        if generation == current_generation {
+            return Ok(current_binding);
         }
         let retired = usize::try_from(generation)
             .ok()
@@ -419,8 +428,18 @@ impl Domain {
     /// census. Neither a mutable live image nor a plan's own bytes can vouch
     /// for that plan. This is an audit, never native release authority.
     fn audit_retained_history(&self) -> Result<(), GateError> {
-        if self.generation != self.entry_version || self.generations.len() as u64 != self.generation
-        {
+        self.audit_retained_history_at(self.generation, self.entry_version, self.source_binding)
+    }
+
+    // The ordinary audit passes its exact current identity. Replacement uses
+    // the prospective next epoch while all old model fields remain unchanged.
+    fn audit_retained_history_at(
+        &self,
+        generation: u64,
+        entry_version: u64,
+        source_binding: SourceBinding,
+    ) -> Result<(), GateError> {
+        if generation != entry_version || self.generations.len() as u64 != generation {
             return Err(GateError::Refused(
                 "dynamic retained epoch chain is discontinuous",
             ));
@@ -482,13 +501,14 @@ impl Domain {
         }
         let mut last = 0;
         for plan in &self.plans {
-            let generation = plan.pending.snapshot().generation.0;
+            let plan_generation = plan.pending.snapshot().generation.0;
             if plan.id <= last
                 || plan.id >= self.next_plan
-                || generation > self.generation
+                || plan_generation > generation
                 || plan.pending.entries().generation() != plan.pending.snapshot().generation
-                || plan.pending.entries().version() != generation
-                || plan.source_binding != self.source_for_generation(generation)?
+                || plan.pending.entries().version() != plan_generation
+                || plan.source_binding
+                    != self.source_for_generation(plan_generation, generation, source_binding)?
             {
                 return Err(GateError::Refused(
                     "dynamic retained plan identity is reused or stale",
@@ -501,8 +521,8 @@ impl Domain {
                 plan.pending.policy(),
             )?;
             for route in &plan.routes {
-                if route.generation != generation
-                    || route.entry_version != generation
+                if route.generation != plan_generation
+                    || route.entry_version != plan_generation
                     || route.plan != plan.id
                     || self
                         .resource_basis

@@ -15,6 +15,14 @@ NAME = re.compile(r"[A-Za-z0-9_]+(?:::[A-Za-z0-9_]+)*")
 UNIT = "unit/liteinst_launch/lib"
 REFERENCE = "test/b2_mode_reference"
 SIGNAL_REFERENCE = "test/b3_signal_admission"
+MAPPING_REFERENCE = "test/b3_mapping_admission"
+MAPPING_TESTS = frozenset((
+    'original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources',
+    'stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history',
+    'resolver_panic_after_real_rx_keeps_failure_and_original_physical_cleanup',
+    'blocked_resolver_expires_original_deadline_before_callback_is_released',
+    'full_native_mapping_comparator_rejects_each_state_source_and_map_corruption',
+))
 RESET_PREFIX = "linux::remote::dynamic::launch::anchor::reset::tests::"
 SOURCE_CENSUS_PREFIX = "linux::remote::dynamic::owner::tests::source_census::"
 SOURCE_CENSUS_TEST = (SOURCE_CENSUS_PREFIX
@@ -34,6 +42,9 @@ def catalog(fixtures):
                 "invalid_native_fixture_catalog")
         require(all(type(value) is str for value in row.values())
                 and NAME.fullmatch(row["test"]), "invalid_native_fixture_catalog")
+        require(row["test"] not in MAPPING_TESTS
+                or (row["cohort"] == "b3_mapping" and row["harness"] == MAPPING_REFERENCE),
+                "invalid_native_fixture_scope")
         require((row["cohort"] == "kernel_journal" and row["harness"] == UNIT
                  and row["test"].startswith(PREFIXES))
                 or (row["cohort"] == "b2_reference" and row["harness"] == REFERENCE
@@ -43,7 +54,9 @@ def catalog(fixtures):
                 or (row["cohort"] == "b3_reset" and row["harness"] == UNIT
                     and row["test"].startswith(RESET_PREFIX))
                 or (row["cohort"] == "b3_source_census" and row["harness"] == UNIT
-                    and row["test"] == SOURCE_CENSUS_TEST), "invalid_native_fixture_scope")
+                    and row["test"] == SOURCE_CENSUS_TEST)
+                or (row["cohort"] == "b3_mapping" and row["harness"] == MAPPING_REFERENCE
+                    and row["test"] in MAPPING_TESTS), "invalid_native_fixture_scope")
         key = (row["harness"], row["test"])
         require(key not in identities, "duplicate_native_fixture_catalog")
         identities[key] = row

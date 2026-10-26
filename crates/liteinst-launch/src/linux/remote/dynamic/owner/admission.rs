@@ -17,6 +17,7 @@ mod census;
 mod completion;
 mod domain;
 mod drive;
+mod mapping;
 mod routes;
 mod signals;
 mod transitions;
@@ -24,6 +25,7 @@ use census::{
     BudgetCharge, ExecutionId, ObservedStop, OriginId, OriginKind, ResumeCensus, StopPhase,
 };
 use domain::Domain;
+pub(in crate::linux::remote::dynamic::owner) use routes::MappingRevocation;
 
 pub(super) struct AdmissionOwner {
     native: NativeLifecycle,
@@ -41,6 +43,7 @@ pub(super) struct AdmissionOwner {
     completion_history: Vec<completion::CompletionRecord>,
     pending: Option<PendingInvocation>,
     signals: Option<signals::SignalTransaction>,
+    mapping: Option<mapping::MappingState>,
     next_execution: u64,
     metrics: DynamicAdmissionMetrics,
     closed: bool,
@@ -128,35 +131,44 @@ impl Owner {
             }
             return result;
         }
-        let (initial, facts, options, signal) = match request {
+        let (initial, facts, options, signal, mapping) = match request {
             AdmissionRequest::Start {
                 initial,
                 facts,
                 options,
-            } => (initial, facts, options, None),
+            } => (initial, facts, options, None, None),
             AdmissionRequest::StartSignals {
                 initial,
                 facts,
                 options,
                 profile,
                 budget,
-            } => (initial, facts, options, Some((profile, budget))),
+            } => (initial, facts, options, Some((profile, budget)), None),
+            AdmissionRequest::StartMappings {
+                initial,
+                facts,
+                options,
+                profile,
+            } => (initial, facts, options, None, Some(profile)),
             _ => return Err(GateError::Refused("dynamic admission is not initialized")),
         };
         let signal_enabled = signal.is_some();
-        let (admission, ready) = AdmissionOwner::start(
-            self, initial, facts, options, signal, until,
-        )
-        .inspect_err(|error| {
-            if let Some(journal) = &self.signal_journal {
-                match error {
-                    GateError::Control(error) => journal.fail_error(error),
-                    _ => journal.fail(super::signal_journal::SignalJournalFailure::InvalidState),
-                }
-            }
-        })?;
+        let mapping_enabled = mapping.is_some();
+        let (admission, ready) =
+            AdmissionOwner::start(self, initial, facts, options, signal, mapping, until)
+                .inspect_err(|error| {
+                    if let Some(journal) = &self.signal_journal {
+                        match error {
+                            GateError::Control(error) => journal.fail_error(error),
+                            _ => journal
+                                .fail(super::signal_journal::SignalJournalFailure::InvalidState),
+                        }
+                    }
+                })?;
         self.admission = Some(admission);
-        Ok(if signal_enabled {
+        Ok(if mapping_enabled {
+            AdmissionReply::ReadyMappings(ready, self.kernel_journal.reader())
+        } else if signal_enabled {
             AdmissionReply::ReadySignals(ready, self.kernel_journal.reader())
         } else {
             AdmissionReply::Ready(ready, self.kernel_journal.reader())
@@ -171,10 +183,35 @@ impl AdmissionOwner {
         facts: Vec<ImageFacts>,
         options: DynamicAdmissionOptions,
         signal: Option<(DynamicSignalProfile, super::super::signal::SignalBudget)>,
+        mapping: Option<DynamicMappingProfile>,
         until: Instant,
     ) -> Result<(Self, DynamicAdmissionState), GateError> {
         options.validate()?;
         crate::gate::domain::validate_image_count(&facts)?;
+        if let Some(profile) = &mapping {
+            profile.validate(&options, &facts)?;
+            if signal.is_some() {
+                return Err(GateError::Refused(
+                    "mapping and signal profiles need separate composition",
+                ));
+            }
+            // Initial address envelopes may not include stack/TLS/island or
+            // any original mapping. Original creation later repeats this check.
+            let maps = read_maps(initial.tid)?;
+            if profile.allowed_ranges.iter().any(|range| {
+                maps.iter()
+                    .any(|map| range.start < map.end && map.start < range.end)
+            }) {
+                return Err(GateError::Refused(
+                    "mapping envelope overlaps initial address space",
+                ));
+            }
+        }
+        let mapping_bytes = mapping
+            .as_ref()
+            .map(mapping::MappingState::initial_bytes)
+            .transpose()?
+            .unwrap_or(0);
         if let Some((profile, budget)) = &signal {
             profile.validate(&options, &facts)?;
             if *budget != super::super::signal::SignalBudget::new(&facts, &options)?
@@ -219,6 +256,7 @@ impl AdmissionOwner {
             .and_then(|value| value.checked_add(MAX_XSTATE.checked_mul(8)?))
             .and_then(|value| value.checked_add(64 * 1024))
             .and_then(|value| value.checked_add(mapping_catalog_bytes))
+            .and_then(|value| value.checked_add(mapping_bytes))
             .and_then(|value| {
                 value.checked_add(signal.as_ref().map_or(0, |(_, budget)| budget.bytes))
             })
@@ -237,6 +275,19 @@ impl AdmissionOwner {
         let signals = signal
             .map(|(profile, _)| signals::SignalTransaction::new(owner, profile, &boot, until))
             .transpose()?;
+        let mapping = mapping
+            .map(|profile| mapping::MappingState::new(owner, profile, &boot, until))
+            .transpose()?;
+        let retained_mapping_bytes = mapping
+            .as_ref()
+            .map(mapping::MappingState::retained_bytes)
+            .transpose()?
+            .unwrap_or(0);
+        if retained_mapping_bytes > mapping_bytes {
+            return Err(GateError::Refused(
+                "mapping startup evidence exceeded its reservation",
+            ));
+        }
         let native = owner.lifecycle.take().ok_or(GateError::Refused(
             "admission bootstrap lost native lifecycle ownership",
         ))?;
@@ -263,6 +314,9 @@ impl AdmissionOwner {
         let raw = TaskStateSnapshot::read(boot.stop.token.tid)?;
         if let Some(signals) = &signals {
             signals.verify_extent(&boot.stop.token, boot.stop.identity, &raw)?;
+        }
+        if let Some(mapping) = &mapping {
+            mapping.verify_extent(&boot.stop.token, boot.stop.identity, &raw)?;
         }
         let state = DynamicAdmissionState {
             task: boot.stop.identity,
@@ -313,6 +367,7 @@ impl AdmissionOwner {
                     })
             })
             .and_then(|value| value.checked_add(domain.resource_basis_bytes()))
+            .and_then(|value| value.checked_add(retained_mapping_bytes))
             .and_then(|value| value.checked_add(boot.evidence.exec_event.xstate.len()))
             .and_then(|value| value.checked_add(boot.evidence.exec_exit.xstate.len()))
             .and_then(|value| value.checked_add(boot.evidence.entry_trap.xstate.len()))
@@ -396,6 +451,7 @@ impl AdmissionOwner {
                 completion_history: Vec::new(),
                 pending: None,
                 signals,
+                mapping,
                 next_execution: 1,
                 metrics,
                 closed: false,
@@ -405,9 +461,14 @@ impl AdmissionOwner {
     }
 
     pub(super) fn provider_expired(&self, now: Instant) -> bool {
-        self.pending
+        self.mapping
             .as_ref()
-            .is_some_and(|pending| now >= pending.until)
+            .and_then(|mapping| mapping.pending_until())
+            .is_some_and(|until| now >= until)
+            || self
+                .pending
+                .as_ref()
+                .is_some_and(|pending| now >= pending.until)
             || self
                 .signals
                 .as_ref()
@@ -425,6 +486,16 @@ impl AdmissionOwner {
         if self.closed || self.provider_expired(Instant::now()) {
             return Err(GateError::Refused(
                 "dynamic admission owner is closed or expired",
+            ));
+        }
+        if self
+            .mapping
+            .as_ref()
+            .is_some_and(|mapping| mapping.has_pending())
+            && !matches!(request, AdmissionRequest::ResolveSources { .. })
+        {
+            return Err(GateError::Refused(
+                "mapping source acquisition remains pending",
             ));
         }
         if self.pending.is_some() && !matches!(request, AdmissionRequest::Complete { .. }) {
@@ -449,10 +520,15 @@ impl AdmissionOwner {
             ));
         }
         match request {
-            AdmissionRequest::Start { .. } | AdmissionRequest::StartSignals { .. } => Err(
-                GateError::Refused("dynamic admission cannot restart an existing domain"),
-            ),
+            AdmissionRequest::Start { .. }
+            | AdmissionRequest::StartSignals { .. }
+            | AdmissionRequest::StartMappings { .. } => Err(GateError::Refused(
+                "dynamic admission cannot restart an existing domain",
+            )),
             AdmissionRequest::Advance => self.advance(owner, until),
+            AdmissionRequest::ResolveSources { token, facts } => {
+                self.resolve_mapping_sources(owner, token, facts, until)
+            }
             AdmissionRequest::DeliverSignal(token) => self.deliver_signal(owner, token, until),
             AdmissionRequest::Complete { token, decision } => {
                 self.complete(owner, token, decision, until)
@@ -507,6 +583,9 @@ impl AdmissionOwner {
         };
         if let Some(signals) = &self.signals {
             signals.verify_extent(&token, identity, &raw)?;
+        }
+        if let Some(mapping) = &self.mapping {
+            mapping.verify_extent(&token, identity, &raw)?;
         }
         Ok(DynamicAdmissionState {
             task: identity,

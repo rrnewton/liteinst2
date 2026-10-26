@@ -85,7 +85,70 @@ pub(in crate::linux::remote::dynamic) unsafe fn execute(
     invocation: OriginalInvocation<'_>,
     until: Instant,
 ) -> Result<OriginalOutcome, LaunchError> {
-    let result = execute_inner(owner, native, island, invocation, until);
+    let result = execute_inner(owner, native, island, invocation, None, until);
+    if let Err(error) = &result {
+        owner
+            .kernel_journal
+            .fail_active(kernel_journal::failure_kind(error));
+        owner.closing = true;
+        owner.cancel.store(true, Ordering::Release);
+    }
+    result
+}
+
+/// A private observer owned by the mapping transaction. Raw mapping and kernel
+/// captures are independently attempted before dispatch. The typed callbacks
+/// then require fully validated native ENTRY/EXIT. No observation grants
+/// execution permission or replaces the original syscall.
+pub(in crate::linux::remote::dynamic::owner) trait MappingObservation {
+    fn raw(&mut self, tid: i32, status: i32) -> Result<(), LaunchError>;
+    fn entry(&mut self, event: &DynamicEvent, state: &TaskStateSnapshot)
+    -> Result<(), LaunchError>;
+    fn exit(&mut self, event: &DynamicEvent, state: &TaskStateSnapshot) -> Result<(), LaunchError>;
+}
+
+/// Execute the one original mapping syscall in a separate sealed window.
+///
+/// # Safety
+/// In addition to the state, instruction and sibling obligations of `execute`,
+/// the caller owns the non-cloneable whole-domain mapping window. It restored
+/// original source and logical permissions, checked this exact syscall's owned
+/// affected range against every retained continuation, and reserved its raw
+/// observations before effects. There is exactly one task in the mm. No
+/// original return is released: the caller must quarantine the result and
+/// commit a freshly authenticated source set before any ordinary release.
+pub(in crate::linux::remote::dynamic::owner) unsafe fn execute_mapping(
+    owner: &mut Owner,
+    native: &mut lifecycle::NativeLifecycle,
+    island: &TrustedIsland,
+    invocation: OriginalInvocation<'_>,
+    observation: &mut dyn MappingObservation,
+    until: Instant,
+) -> Result<OriginalOutcome, LaunchError> {
+    let result = (|| {
+        if !matches!(
+            invocation.input.instruction().operation(),
+            Operation::Syscall {
+                abi: SyscallAbi::LinuxX64
+            }
+        ) || invocation.input.instruction().bytes() != [0x0f, 0x05]
+            || !matches!(
+                invocation.input.registers().rax as libc::c_long,
+                libc::SYS_mmap | libc::SYS_mprotect | libc::SYS_munmap
+            )
+            || native
+                .check_admission_mm(owner, invocation.stop.identity.task)?
+                .candidate
+                .tasks
+                .len()
+                != 1
+        {
+            return Err(LaunchError::Invalid(
+                "mapping window lacks one native64 original syscall",
+            ));
+        }
+        execute_inner(owner, native, island, invocation, Some(observation), until)
+    })();
     if let Err(error) = &result {
         owner
             .kernel_journal
@@ -101,6 +164,7 @@ fn execute_inner(
     native: &mut lifecycle::NativeLifecycle,
     island: &TrustedIsland,
     invocation: OriginalInvocation<'_>,
+    observation: Option<&mut dyn MappingObservation>,
     until: Instant,
 ) -> Result<OriginalOutcome, LaunchError> {
     owner.time_left(until, "native selected invocation")?;
@@ -264,7 +328,14 @@ fn execute_inner(
             )?;
         }
         let outcome = if syscall {
-            run_syscall(owner, native, island, &current, &saved, invocation, until)?
+            run_syscall(
+                owner,
+                native,
+                island,
+                (&current, &saved, invocation),
+                observation,
+                until,
+            )?
         } else {
             run_cpu(owner, native, &current, &saved, until, |after| {
                 input
@@ -578,6 +649,7 @@ fn next_syscall_event(
     owner: &mut Owner,
     native: &mut lifecycle::NativeLifecycle,
     journal: KernelAttemptHandle,
+    observation: &mut Option<&mut dyn MappingObservation>,
     until: Instant,
 ) -> Result<DynamicEvent, LaunchError> {
     loop {
@@ -585,7 +657,15 @@ fn next_syscall_event(
             return Ok(event);
         }
         let (tid, status) = owner.wait_raw(until, "native selected syscall lifecycle")?;
-        owner.capture_kernel_raw(journal, tid, status)?;
+        // Attempt both independent raw captures before propagating either
+        // failure. A failed state read must not erase the actual map receipt;
+        // a failed proc read must not suppress the journal's raw wait/state.
+        let mapping_capture = observation
+            .as_deref_mut()
+            .map_or(Ok(()), |observer| observer.raw(tid, status));
+        let kernel_capture = owner.capture_kernel_raw(journal, tid, status);
+        kernel_capture?;
+        mapping_capture?;
         if let Some(event) = native.observe_admission_other(owner, tid, status)? {
             return Ok(event);
         }
@@ -596,16 +676,16 @@ fn run_syscall(
     owner: &mut Owner,
     native: &mut lifecycle::NativeLifecycle,
     island: &TrustedIsland,
-    current: &AdmissionStop,
-    before: &TaskStateSnapshot,
-    invocation: OriginalInvocation<'_>,
+    original: (&AdmissionStop, &TaskStateSnapshot, OriginalInvocation<'_>),
+    mut observation: Option<&mut dyn MappingObservation>,
     until: Instant,
 ) -> Result<OriginalOutcome, LaunchError> {
+    let (current, before, invocation) = original;
     let input = invocation.input;
     let journal = invocation
         .journal
         .ok_or(LaunchError::Invalid("native syscall journal is absent"))?;
-    let entry = next_syscall_event(owner, native, journal, until)?;
+    let entry = next_syscall_event(owner, native, journal, &mut observation, until)?;
     let tid = entry.tid;
     let next = input.instruction().next_pc();
     let number = before.registers.rax;
@@ -646,6 +726,9 @@ fn run_syscall(
     owner
         .kernel_journal
         .validated_entry(journal, &entry, &entry_state)?;
+    if let Some(observer) = observation.as_deref_mut() {
+        observer.entry(&entry, &entry_state)?;
+    }
     #[cfg(test)]
     owner.journal_fault_at(JournalFaultPoint::AfterValidatedEntry)?;
     let entry_token = entry
@@ -666,7 +749,7 @@ fn run_syscall(
     let mut events = Vec::new();
     let mut newborn_events = Vec::new();
     let exit = loop {
-        let event = next_syscall_event(owner, native, journal, until)?;
+        let event = next_syscall_event(owner, native, journal, &mut observation, until)?;
         match &event.kind {
             DynamicEventKind::Created { .. } if event.tid == tid => {
                 if number != libc::SYS_clone as u64 || !events.is_empty() {
@@ -756,6 +839,9 @@ fn run_syscall(
     owner
         .kernel_journal
         .validated_exit(journal, &exit, &exit_state)?;
+    if let Some(observer) = observation {
+        observer.exit(&exit, &exit_state)?;
+    }
     #[cfg(test)]
     owner.journal_fault_at(JournalFaultPoint::AfterValidatedExit)?;
     // Preserve the actual automatic newborn observation before either return
