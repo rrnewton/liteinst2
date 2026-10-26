@@ -355,7 +355,7 @@ impl Executable {
             let inode = number(fields[4]);
             if inode != 0 {
                 let path =
-                    std::fs::read_link(format!("/proc/{}/map_files/{}", child.pid, fields[0]))
+                    std::fs::read_link(format!("/proc/{}/map_files/{start:x}-{end:x}", child.pid))
                         .unwrap();
                 let path_bytes = path.as_os_str().as_bytes();
                 witnesses
