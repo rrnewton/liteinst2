@@ -24,7 +24,7 @@ fn writable_input(tid: i32, address: u64, length: usize) -> Result<Vec<u8>, Gate
 }
 
 impl SignalTransaction {
-    pub(super) fn is_setup(input: &SelectedInput) -> bool {
+    pub(in super::super) fn is_setup(input: &SelectedInput) -> bool {
         matches!(
             input.instruction().operation(),
             Operation::Syscall {
@@ -36,7 +36,11 @@ impl SignalTransaction {
         )
     }
 
-    pub(super) fn check_setup(&self, tid: i32, input: &SelectedInput) -> Result<(), GateError> {
+    pub(in super::super) fn check_setup(
+        &self,
+        tid: i32,
+        input: &SelectedInput,
+    ) -> Result<(), GateError> {
         let r = input.registers();
         if !Self::is_setup(input) || self.delivered || self.live.is_some() || self.pending.is_some()
         {
@@ -101,7 +105,7 @@ impl SignalTransaction {
         Ok(())
     }
 
-    pub(super) fn accept_setup_result(
+    pub(in super::super) fn accept_setup_result(
         &mut self,
         tid: i32,
         input: &SelectedInput,

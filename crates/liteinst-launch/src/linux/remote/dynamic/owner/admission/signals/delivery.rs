@@ -5,7 +5,7 @@ use super::*;
 use crate::gate::domain::PAGE;
 
 impl AdmissionOwner {
-    pub(super) fn prepare_signal_pending(
+    pub(in super::super) fn prepare_signal_pending(
         &mut self,
         owner: &Owner,
         reservation: Reservation,
@@ -182,7 +182,7 @@ impl AdmissionOwner {
         Ok(())
     }
 
-    pub(super) fn deliver_signal(
+    pub(in super::super) fn deliver_signal(
         &mut self,
         owner: &mut Owner,
         token: SignalDeliveryToken,

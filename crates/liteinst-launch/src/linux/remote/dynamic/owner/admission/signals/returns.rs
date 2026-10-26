@@ -5,7 +5,7 @@ use super::*;
 use crate::selected::{Operation, SyscallAbi};
 
 impl AdmissionOwner {
-    pub(super) fn complete_signal_return(
+    pub(in super::super) fn complete_signal_return(
         &mut self,
         owner: &mut Owner,
         decision: ProviderDecision,

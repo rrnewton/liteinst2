@@ -3,7 +3,7 @@ use super::super::census::Reservation;
 use super::*;
 
 impl AdmissionOwner {
-    pub(super) fn refresh_signal_frames(
+    pub(in super::super) fn refresh_signal_frames(
         &mut self,
         owner: &Owner,
         reservation: Reservation,
