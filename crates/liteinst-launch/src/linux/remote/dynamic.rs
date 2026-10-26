@@ -39,7 +39,11 @@ pub use owner::kernel_journal::{
     KernelProgressReader, KernelProgressSnapshot, KernelReleasePhase, KernelStateRecord,
     KernelStateSlot, KernelStopIdentity, KernelSyscallInfo, KernelWriterStatus,
     MappingCapturePhase, MappingCaptureRecord, MappingCaptureSlot, MappingCaptureSnapshot,
-    MappingCaptureStatus,
+    MappingCaptureStatus, RuntimeKernelAttemptSnapshot, RuntimeKernelFact,
+    RuntimeKernelJournalFailure, RuntimeKernelJournalStage, RuntimeKernelMapsSummary,
+    RuntimeKernelRawRecord, RuntimeKernelReleasePhase, RuntimeKernelReleaseSource,
+    RuntimeKernelRequest, RuntimeKernelStateRecord, RuntimeKernelStateSlot,
+    RuntimeKernelWaitCustody,
 };
 pub use owner::signal_journal::{
     SignalFrameRecord, SignalJournalFact, SignalJournalFailure, SignalJournalPhase, SignalMaskRead,
