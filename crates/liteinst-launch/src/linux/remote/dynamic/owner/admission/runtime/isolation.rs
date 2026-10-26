@@ -317,9 +317,13 @@ impl ChildOwner {
                 || info.si_code != libc::CLD_EXITED
                 || unsafe { info.si_status() } != 0
             {
-                return Err(io::Error::other(
-                    "isolated child did not exit normally with zero",
-                ));
+                return Err(io::Error::other(format!(
+                    "isolated child did not exit normally with zero: signal={}, code={}, status={}, expected_pid={}",
+                    info.si_signo,
+                    info.si_code,
+                    unsafe { info.si_status() },
+                    unsafe { info.si_pid() } == self.child.id() as i32
+                )));
             }
             return Ok(());
         }
