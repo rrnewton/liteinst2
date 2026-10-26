@@ -1,0 +1,23 @@
+{
+  "argv": [
+    "${CC}",
+    "-shared",
+    "-nostdlib",
+    "-Wl,-Bsymbolic,--no-undefined,--build-id=none,-z,relro,-z,now,-z,noexecstack",
+    "${RAW}/subject/subject.o",
+    "-o",
+    "${RAW}/subject/subject.so"
+  ],
+  "cpu_seconds": 60,
+  "cwd": "${WORKSPACE}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "${RAW}/subject-link/tmp"
+  },
+  "file_bytes": 134217728,
+  "stderr": "${RAW}/subject-link/stderr.txt",
+  "stdout": "${RAW}/subject-link/stdout.txt",
+  "wall_seconds": 90
+}

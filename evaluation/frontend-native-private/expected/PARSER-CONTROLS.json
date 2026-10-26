@@ -1,0 +1,114 @@
+{
+  "cases": [
+    {
+      "expected": "accept",
+      "mutation_or_positive": "Unchanged actual admitted DSO: four LOADs, fixed body/invoke/terminal, pointer/bias and RELRO geometry.",
+      "name": "frontend_native::module::tests::parser_accepts_actual_subject_complete_grammar",
+      "subcases": 1
+    },
+    {
+      "expected": "accept",
+      "mutation_or_positive": "Separate mutants retain exactly one NOW indicator: DT_BIND_NOW=0, DT_FLAGS=8, DT_FLAGS_1=1. All other dynamic grammar remains complete.",
+      "name": "frontend_native::module::tests::parser_accepts_each_single_eager_binding_indicator",
+      "subcases": 3
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Change only existing DT_BIND_NOW payload from 0 to 1.",
+      "name": "frontend_native::module::tests::parser_rejects_nonzero_bind_now_payload",
+      "subcases": 1
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Append a second DT_BIND_NOW=0 before NULL padding.",
+      "name": "frontend_native::module::tests::parser_rejects_duplicate_bind_now",
+      "subcases": 1
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Append forbidden DT_NEEDED.",
+      "name": "frontend_native::module::tests::parser_rejects_needed_dependency",
+      "subcases": 1
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Append forbidden DT_INIT.",
+      "name": "frontend_native::module::tests::parser_rejects_init_constructor",
+      "subcases": 1
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Append forbidden DT_FINI.",
+      "name": "frontend_native::module::tests::parser_rejects_fini_destructor",
+      "subcases": 1
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Append forbidden DT_INIT_ARRAY.",
+      "name": "frontend_native::module::tests::parser_rejects_init_array_constructor",
+      "subcases": 1
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Insert DT_FLAGS with forbidden DF_TEXTREL bit4; valid NOW remains elsewhere.",
+      "name": "frontend_native::module::tests::parser_rejects_invalid_flags_bits",
+      "subcases": 1
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Change DT_FLAGS_1 to unsupported bit2; DT_BIND_NOW remains present.",
+      "name": "frontend_native::module::tests::parser_rejects_invalid_flags1_bits",
+      "subcases": 1
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Remove DT_BIND_NOW and clear both NOW flag bits; all other fields remain.",
+      "name": "frontend_native::module::tests::parser_rejects_missing_eager_binding",
+      "subcases": 1
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Append unsupported tag0x4242.",
+      "name": "frontend_native::module::tests::parser_rejects_unknown_dynamic_tag",
+      "subcases": 1
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Remove old DT_BIND_NOW, append a NULL and then valid DT_BIND_NOW=0.",
+      "name": "frontend_native::module::tests::parser_rejects_nonnull_after_terminator",
+      "subcases": 1
+    },
+    {
+      "expected": "Format",
+      "mutation_or_positive": "Append forbidden DT_TEXTREL.",
+      "name": "frontend_native::module::tests::parser_rejects_textrel_tag",
+      "subcases": 1
+    }
+  ],
+  "fixed_units": 14,
+  "future_actual_source_and_DSO_admission_required": true,
+  "inherited_obligations": {
+    "capture_files": 1268,
+    "docs": 10,
+    "models": 74,
+    "native_modes": 4,
+    "oracle_calibrations": 26,
+    "original_setup_refusals": 6,
+    "permission_refusals": 2,
+    "positive_cases": 5
+  },
+  "model_caps": {
+    "cpu_seconds": 20,
+    "file_bytes": 1048576,
+    "wall_seconds": 30
+  },
+  "models_total": 88,
+  "negative_subcases": 12,
+  "no_dlopen_or_native_application_execution": true,
+  "positive_subcases": 4,
+  "schema": 1,
+  "semantic_authority": "Each mutant is passed directly to the same private parse function. There is no unchanged file hash or dlopen admission to fail first; each negative must produce exactly SetupRefusal::Format. All dependent ELF section length/NULL padding values remain consistent.",
+  "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs",
+  "source_sha256": "ff09d894c40bd936c0fd1d60d562223ef984bb8f27a0bf84d3f65e5e77251ca5",
+  "status": "PROSPECTIVE_UNEXECUTED"
+}

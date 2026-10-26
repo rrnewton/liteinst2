@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "${RAW}/artifacts/native-oracle",
+    "generation",
+    "${RAW}/subject/subject.so",
+    "${RAW}/native-generation/captures"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${WORKSPACE}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "${RAW}/native-generation/tmp"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${RAW}/native-generation/stderr.txt",
+  "stdout": "${RAW}/native-generation/stdout.txt",
+  "wall_seconds": 30
+}

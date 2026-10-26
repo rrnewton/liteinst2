@@ -1,0 +1,27 @@
+{
+  "argv": [
+    "${TOOLCHAIN}/bin/rustfmt",
+    "--edition",
+    "2024",
+    "${WORKSPACE}/tools/rapid-profiler/src/lib.rs",
+    "${WORKSPACE}/tools/rapid-profiler/src/frontend_native/mod.rs",
+    "${WORKSPACE}/tools/rapid-profiler/src/frontend_native/pair.rs",
+    "${WORKSPACE}/tools/rapid-profiler/src/frontend_native/module.rs",
+    "${WORKSPACE}/tools/rapid-profiler/native-interval/main.rs",
+    "${WORKSPACE}/tools/rapid-profiler/native-interval/calibrations.rs",
+    "${WORKSPACE}/tests/support/native_interval_oracle.rs",
+    "${WORKSPACE}/tests/support/native_interval.rs"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${WORKSPACE}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "${RAW}/format/tmp"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${RAW}/format/stderr.txt",
+  "stdout": "${RAW}/format/stdout.txt",
+  "wall_seconds": 30
+}

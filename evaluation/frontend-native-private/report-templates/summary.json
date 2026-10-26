@@ -1,0 +1,46 @@
+{
+  "cases": [],
+  "claims": {
+    "1": "unqualified",
+    "2": "unqualified",
+    "3": "unqualified",
+    "4": "no complete systematic-coverage claim"
+  },
+  "commands": [],
+  "elapsed_time_scope": "operational diagnostic, not benchmark",
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "observation_phase": null,
+    "observation_sha256": null
+  },
+  "independent_closed_review_sha256": null,
+  "limitations": [
+    "Selected tool/runtime owners are not a complete loader closure.",
+    "Private snapshots retain null tested revisions.",
+    "Expected counts do not grant actual result credit."
+  ],
+  "raw_capture_manifest_sha256": null,
+  "required": {
+    "documentation": 10,
+    "models": 88,
+    "native_capture_files": 1268,
+    "native_modes": [
+      "straight",
+      "budget",
+      "generation",
+      "refusals"
+    ],
+    "oracle_calibrations": 26,
+    "original_setup_refusals": 6,
+    "permission_controls": 2
+  },
+  "schema_version": 1,
+  "source": {
+    "kind": "source_snapshot",
+    "matching_later_revision": null,
+    "source_id": "frontend-native-private-v6",
+    "source_map_sha256": "77b4bbed7613090e7ca92d9cfc065da7177cf02dc15888fe516ec35e2c5156b7",
+    "tested_revision": null
+  },
+  "status": "TEMPLATE_NO_RESULT_ROWS"
+}

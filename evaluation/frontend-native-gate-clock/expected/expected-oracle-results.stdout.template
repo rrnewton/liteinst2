@@ -1,0 +1,31 @@
+
+running 26 tests
+test oracle::calibration::rejects_application_memory_corruption - should panic ... ok
+test oracle::calibration::rejects_defined_flag_corruption - should panic ... ok
+test oracle::calibration::rejects_fault_address_corruption - should panic ... ok
+test oracle::calibration::rejects_gpr_corruption - should panic ... ok
+test oracle::calibration::rejects_redzone_corruption - should panic ... ok
+test oracle::calibration::rejects_simd_corruption - should panic ... ok
+test oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact ... ok
+test oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags ... ok
+test oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic ... ok
+test oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic ... ok
+test oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic ... ok
+test oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic ... ok
+test oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic ... ok
+test oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity ... ok
+test oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic ... ok
+test oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic ... ok
+test oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic ... ok
+test oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic ... ok
+test oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic ... ok
+test oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic ... ok
+
+test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in ${ELAPSED_SECONDS}s
+

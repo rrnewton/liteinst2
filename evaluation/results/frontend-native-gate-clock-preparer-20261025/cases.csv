@@ -1,0 +1,11 @@
+ordinal,command_id,case_id,kind,expected,observed
+0,01-valid-stage,01-valid-stage,preparation_control,exact_525_file_stage,accepted_preparation
+1,02-valid-request,02-valid-request,preparation_control,exact_library_request_only,accepted_preparation
+2,03-changed-base,03-changed-base,preparation_control,exact_source_refusal,expected_refusal
+3,04-changed-overlay,04-changed-overlay,preparation_control,exact_source_refusal,expected_refusal
+4,05-wrong-helper-byte,05-wrong-helper-byte,preparation_control,exact_source_refusal,expected_refusal
+5,06-occupied-output,06-occupied-output,preparation_control,exact_source_refusal,expected_refusal
+6,07-optimized-python,07-optimized-python,preparation_control,exact_source_refusal,expected_refusal
+7,08-wrong-prepared-digest,08-wrong-prepared-digest,preparation_control,exact_source_refusal,expected_refusal
+8,09-request-parent-symlink,09-request-parent-symlink,preparation_control,exact_source_refusal,expected_refusal
+9,10-stage-source,10-stage-source,distinct_source_staging,exact_525_file_stage,accepted_distinct_source_stage

@@ -1,0 +1,126 @@
+{
+  "docs": {
+    "argv_suffix": [
+      "--doc",
+      "--offline",
+      "--locked",
+      "--",
+      "--test-threads=1",
+      "--show-output"
+    ],
+    "cases": "Exact ten inventory path/subject/fence-line/code-hash/diagnostic tuples, each once in test lines and complete diagnostic/success sections. No missing, duplicate, extra, unrelated diagnostic or substituted source.",
+    "ordered_test_lines": [
+      "test tools/rapid-profiler/src/frontend.rs - frontend::AdmissionHandle (line 284) - compile fail ... ok\n",
+      "test tools/rapid-profiler/src/frontend.rs - frontend::EpochHandle (line 221) - compile fail ... ok\n",
+      "test tools/rapid-profiler/src/frontend.rs - frontend::Report (line 261) - compile fail ... ok\n",
+      "test tools/rapid-profiler/src/frontend.rs - frontend::ThreadModel (line 859) - compile fail ... ok\n",
+      "test tools/rapid-profiler/src/frontend_tls.rs - frontend_tls::ThreadRegistration (line 138) - compile fail ... ok\n",
+      "test tools/rapid-profiler/src/frontend_tls.rs - frontend_tls::ThreadRegistration (line 145) - compile fail ... ok\n",
+      "test tools/rapid-profiler/src/generation.rs - generation::OwnedTicket (line 638) - compile fail ... ok\n",
+      "test tools/rapid-profiler/src/generation.rs - generation::OwnedTicket (line 646) - compile fail ... ok\n",
+      "test tools/rapid-profiler/src/generation.rs - generation::Ticket (line 567) - compile fail ... ok\n",
+      "test tools/rapid-profiler/src/generation.rs - generation::Ticket (line 574) - compile fail ... ok\n"
+    ],
+    "ordinary_library_prebind_required": true,
+    "required_diagnostics": {
+      "E0277": 2,
+      "E0382": 2,
+      "E0599": 2,
+      "E0616": 4
+    },
+    "result": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 10
+    },
+    "source_snippet_binding": "Each intended diagnostic must join the exact documented code and authenticated source owner. Compiler refusal for an unrelated reason does not pass. Preserve complete stdout/stderr and ordinary matching-library prebind."
+  },
+  "fixed_runtime_bounds": {
+    "cpu_seconds": 20,
+    "file_bytes": 1048576,
+    "wall_seconds": 30
+  },
+  "forbidden": [
+    "No substring/count-only acceptance",
+    "No retries, skipped case, filter, ignore or substituted refusal",
+    "No stderr omission, extra panic or backtrace suppression by changing the request",
+    "No cap increase or cold-docs claim",
+    "No source or assertion change to make expected captures match"
+  ],
+  "generated_artifact_hash": null,
+  "list": {
+    "argv_tail": [
+      "--list"
+    ],
+    "benchmarks": 0,
+    "stderr_exact": "",
+    "stdout_file": "expected-list.stdout",
+    "tests": 88,
+    "whole_bytes": true
+  },
+  "models": {
+    "argv_tail": [
+      "--test-threads=1",
+      "--nocapture"
+    ],
+    "environment_preconditions": [
+      "RUST_BACKTRACE and RUST_LIB_BACKTRACE absent",
+      "No RUST_TEST_SHUFFLE, RUST_TEST_SHUFFLE_SEED or test filters",
+      "One unfiltered invocation, test-threads=1, nocapture, no color/format override",
+      "No panic-hook replacement; exact approved source and admitted compiler/runtime profile"
+    ],
+    "full_output_match_required": true,
+    "panic_records": [
+      {
+        "case": "frontend::tests::g10_registry_poison_refuses_before_slot_mutation",
+        "first_panic_hint_required": true,
+        "location": "tools/rapid-profiler/src/frontend/tests.rs:926:9",
+        "message": "required registry poison calibration",
+        "old_record_bytes_unchanged_except_placeholder_name": true,
+        "ordinal": 1,
+        "thread_name": "frontend::tests::g10_registry_poison_refuses_before_slot_mutation"
+      },
+      {
+        "case": "frontend_tls::tests::tls_p3_nested_panic_cancels_exact_frames_then_same_registration_recovers",
+        "first_panic_hint_required": false,
+        "location": "tools/rapid-profiler/src/frontend_tls/tests.rs:506:21",
+        "message": "required TLS ordinary-unwind fixture",
+        "ordinal": 2,
+        "source_catches_and_checks_payload": true,
+        "thread_name": "<unnamed>"
+      }
+    ],
+    "result": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 88
+    },
+    "stderr_template": "expected-models.stderr.template",
+    "stderr_variables": {
+      "G10_OS_THREAD_ID": {
+        "attribution": "Named g10 test thread; observed decimal OS thread identifier, not an invented constant.",
+        "regex": "[1-9][0-9]*"
+      },
+      "TLS_OS_THREAD_ID": {
+        "attribution": "Unnamed spawned P3 worker; observed decimal OS thread identifier. No distinctness or non-reuse claim across completed threads.",
+        "regex": "[1-9][0-9]*"
+      }
+    },
+    "stdout_template": "expected-models.stdout.template",
+    "stdout_variable": {
+      "ELAPSED_SECONDS": {
+        "constraint": "Finite nonnegative seconds rendered with exactly two decimal digits; only this elapsed field may vary.",
+        "regex": "[0-9]+\\.[0-9]{2}"
+      }
+    }
+  },
+  "root_alone_executes": true,
+  "schema_version": 1,
+  "source_inventory": "inventory.json",
+  "source_map_sha256": "c43f5279e221a47a1891c5a23ac699a1f3e296a798855fee937bfa30e33dc646",
+  "status": "PROSPECTIVE_V4_88_MODELS_10_DOCS_NO_EXECUTION"
+}

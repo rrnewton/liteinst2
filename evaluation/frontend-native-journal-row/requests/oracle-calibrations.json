@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "${RAW}/artifacts/oracle-calibrations",
+    "--test-threads=1"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${WORKSPACE}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "${RAW}/oracle-calibrations/tmp"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${RAW}/oracle-calibrations/stderr.txt",
+  "stdout": "${RAW}/oracle-calibrations/stdout.txt",
+  "wall_seconds": 30
+}
