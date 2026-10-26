@@ -82,6 +82,15 @@ struct Arena {
     bytes: u64,
     candidates: u64,
 }
+#[derive(Clone, Copy, Debug)]
+struct Placement {
+    domain: (u64, u64),
+}
+#[derive(Clone, Copy, Debug)]
+struct Permit {
+    range: (u64, u64),
+    preferred: u64,
+}
 #[derive(Clone, Debug)]
 struct Policy {
     original: String,
@@ -92,6 +101,7 @@ struct Policy {
     functions: Vec<Owner>,
     hooks: Vec<Owner>,
     carrier: u64,
+    placement: Option<Placement>,
     arenas: [Arena; 2],
     limits: [u64; 9],
     search: [u64; 5],
@@ -119,7 +129,8 @@ fn policy(bytes: &[u8]) -> Result<Policy> {
         "ASCII LF policy required",
     )?;
     let mut lines = Lines(text.lines());
-    check(lines.row("LI2COMMON", 2)?[1] == "1", "policy version")?;
+    let version = lines.row("LI2COMMON", 2)?[1];
+    check(matches!(version, "1" | "2"), "policy version")?;
     let original = sha(lines.row("original", 2)?[1])?;
     let target = sha(lines.row("target", 2)?[1])?;
     let provenance = sha(lines.row("provenance", 2)?[1])?;
@@ -156,15 +167,44 @@ fn policy(bytes: &[u8]) -> Result<Policy> {
         });
     }
     let carrier = number(lines.row("carrier", 2)?[1])?;
+    let placement = if version == "2" {
+        let r = lines.row("placement", 4)?;
+        check(r[1] == "original-derived-v1", "placement profile")?;
+        let low = number(r[2])?;
+        let bytes = number(r[3])?;
+        let high = end(low, bytes)?;
+        check(
+            low & 4095 == 0 && bytes & 4095 == 0 && high <= 0x0000_8000_0000_0000,
+            "placement domain",
+        )?;
+        Some(Placement {
+            domain: (low, high),
+        })
+    } else {
+        None
+    };
     let mut arenas = Vec::new();
     for kind in ["selected", "victim"] {
-        let r = lines.row("arena", 6)?;
+        let r = lines.row("arena", if placement.is_some() { 4 } else { 6 })?;
         check(r[1] == kind, "arena order")?;
-        let a = Arena {
-            base: number(r[2])?,
-            stride: number(r[3])?,
-            bytes: number(r[4])?,
-            candidates: number(r[5])?,
+        let a = if placement.is_some() {
+            check(
+                number(r[2])? == 65536 && number(r[3])? == 65536,
+                "original-derived-v1 requires unchanged 64KiB/65536 caps",
+            )?;
+            Arena {
+                base: 0,
+                stride: 65536,
+                bytes: 65536,
+                candidates: 65536,
+            }
+        } else {
+            Arena {
+                base: number(r[2])?,
+                stride: number(r[3])?,
+                bytes: number(r[4])?,
+                candidates: number(r[5])?,
+            }
         };
         check(
             a.base & 4095 == 0
@@ -195,6 +235,12 @@ fn policy(bytes: &[u8]) -> Result<Policy> {
             && limits[8] <= 1_u64 << 32,
         "finite aggregate limits",
     )?;
+    if let Some(v) = placement {
+        check(
+            v.domain.1 - v.domain.0 <= limits[8],
+            "placement exceeds virtual span",
+        )?;
+    }
     let r = lines.row("search", 6)?;
     let mut search = [0; 5];
     for (to, from) in search.iter_mut().zip(&r[1..]) {
@@ -220,6 +266,7 @@ fn policy(bytes: &[u8]) -> Result<Policy> {
         functions,
         hooks,
         carrier,
+        placement,
         arenas: [arenas[0], arenas[1]],
         limits,
         search,
@@ -777,6 +824,329 @@ fn allocation_ranges(elf: &Elf64<'_>, p: &Policy, count: usize) -> Result<Vec<[(
     }
     Ok(result)
 }
+// These are the unchanged B1 forbidden-entry opcode bytes, not an emission
+// oracle. The core still qualifies instructions, emits images and checks fit.
+const ENTRY_BYTES: [u8; 14] = [
+    0x06, 0x07, 0x0e, 0x16, 0x17, 0x1e, 0x1f, 0x27, 0x2f, 0x37, 0x3f, 0x60, 0x61, 0xce,
+];
+#[derive(Clone, Copy, Debug)]
+struct TargetPattern {
+    next: u64,
+    fixed: [Option<u8>; 4],
+    entries: [bool; 4],
+}
+impl TargetPattern {
+    fn plain(next: u64) -> Self {
+        Self {
+            next,
+            fixed: [None; 4],
+            entries: [false; 4],
+        }
+    }
+    fn allows(self, digit: usize, byte: u8) -> bool {
+        self.fixed[digit].is_none_or(|b| b == byte)
+            && (!self.entries[digit] || ENTRY_BYTES.contains(&byte))
+    }
+}
+
+// A four-byte digit successor, not a walk over address-space bytes. A tight
+// prefix can recurse once at each digit; a larger digit takes the minimum
+// legal suffix. Thus no loop is proportional to the domain's byte length.
+fn encoded_at_least(pattern: TargetPattern, lower: u32) -> Option<u32> {
+    if (0..4).any(|n| !(0..=255).any(|b| pattern.allows(n, b))) {
+        return None;
+    }
+    fn digit(p: TargetPattern, lower: u32, n: i32, tight: bool, prefix: u32) -> Option<u32> {
+        if n < 0 {
+            return Some(prefix);
+        }
+        let shift = n as u32 * 8;
+        let floor = if tight { (lower >> shift) & 255 } else { 0 };
+        for byte in floor..=255 {
+            if !p.allows(n as usize, byte as u8) {
+                continue;
+            }
+            if let Some(value) = digit(
+                p,
+                lower,
+                n - 1,
+                tight && byte == floor,
+                prefix | (byte << shift),
+            ) {
+                return Some(value);
+            }
+        }
+        None
+    }
+    digit(pattern, lower, 3, true, 0)
+}
+
+fn first_target(pattern: TargetPattern, range: (u64, u64)) -> Option<u64> {
+    if range.0 >= range.1 {
+        return None;
+    }
+    let low = (i128::from(range.0) - i128::from(pattern.next)).max(i128::from(i32::MIN));
+    let high = (i128::from(range.1 - 1) - i128::from(pattern.next)).min(i128::from(i32::MAX));
+    if low > high {
+        return None;
+    }
+    // Signed order: negative encodings first, then nonnegative encodings.
+    for (a, b) in [(low, high.min(-1)), (low.max(0), high)] {
+        if a > b {
+            continue;
+        }
+        let encoded = encoded_at_least(pattern, a as i32 as u32);
+        if let Some(value) = encoded.filter(|&v| v <= b as i32 as u32) {
+            return u64::try_from(i128::from(pattern.next) + i128::from(value as i32)).ok();
+        }
+    }
+    None
+}
+
+fn pun_pattern(f: &Function, s: &Selected, prefixes: usize, p: &Policy) -> Option<TargetPattern> {
+    let pc = s.instruction.ip();
+    let len = s.instruction.len();
+    let displaced_end = pc.checked_add(len as u64)?;
+    let consumed_end = pc.checked_add(5 + prefixes as u64)?;
+    if !(1..=4).contains(&len)
+        || prefixes >= len
+        || len as u64 > p.search[1]
+        || pc < s.block.0
+        || displaced_end > s.block.1
+        || consumed_end > end(f.owner.pc, f.owner.length).ok()?
+        || pc / 64 != (displaced_end - 1) / 64
+    {
+        return None;
+    }
+    let store_len = len.next_power_of_two() as u64;
+    let store_pc = pc.min((pc | 63).checked_sub(store_len - 1)?);
+    if store_pc < f.owner.pc
+        || store_pc.checked_add(store_len)? > end(f.owner.pc, f.owner.length).ok()?
+    {
+        return None;
+    }
+    let offset = usize::try_from(pc - f.owner.pc).ok()?;
+    let free = len - prefixes - 1;
+    let suffix = f.bytes.get(offset + len..offset + 5 + prefixes)?;
+    let mut raw = [0; 4];
+    raw[free..].copy_from_slice(suffix);
+    // Match the core's checked lower-bound conversion BEFORE intersection.
+    let low = u64::try_from(i128::from(consumed_end) + i128::from(i32::from_le_bytes(raw))).ok()?;
+    low.checked_add(1_u64 << (8 * free))?;
+    let mut result = TargetPattern::plain(consumed_end);
+    for (slot, byte) in result.fixed.iter_mut().zip(raw).skip(free) {
+        *slot = Some(byte);
+    }
+    Some(result)
+}
+
+fn original_patterns(f: &Function, s: &Selected, p: &Policy) -> Vec<TargetPattern> {
+    let logical = s.instruction.ip();
+    let mut patterns = Vec::new();
+    if let Some(pattern) = pun_pattern(f, s, 0, p) {
+        patterns.push(pattern);
+    }
+    let mut physical: Vec<_> = f
+        .instructions
+        .iter()
+        .filter(|i| {
+            s.block.0 <= i.ip()
+                && i.ip() < s.block.1
+                && i.ip() <= logical
+                && logical - i.ip() <= p.search[0]
+        })
+        .map(Instruction::ip)
+        .collect();
+    physical.sort_by_key(|&pc| (pc != logical, pc % 64 > 56, logical - pc));
+    // The core spends max_sites on physical heads, even on invalid windows.
+    for pc in physical.into_iter().take(p.search[2] as usize) {
+        let mut window = Vec::new();
+        let mut stop = pc;
+        let mut valid = true;
+        for i in f.instructions.iter().filter(|i| i.ip() >= pc) {
+            if i.ip() >= s.block.1 {
+                break;
+            }
+            stop = i.next_ip();
+            if stop > s.block.1 || stop - pc > p.search[1] {
+                valid = false;
+                break;
+            }
+            window.push(i);
+            if stop - pc >= 5 && stop > logical {
+                break;
+            }
+        }
+        if !valid
+            || stop - pc < 5
+            || stop <= logical
+            || window.iter().any(|i| {
+                matches!(
+                    i.flow_control(),
+                    FlowControl::Call | FlowControl::IndirectCall
+                ) || (i.flow_control() != FlowControl::Next && i.next_ip() != stop)
+            })
+        {
+            continue;
+        }
+        let Some(next) = pc.checked_add(5) else {
+            continue;
+        };
+        let mut pattern = TargetPattern::plain(next);
+        for head in &f.instructions {
+            if pc < head.ip() && head.ip() < next {
+                pattern.entries[(head.ip() - pc - 1) as usize] = true;
+            }
+        }
+        patterns.push(pattern);
+    }
+    for prefixes in 1..s.instruction.len().min(4) {
+        if let Some(pattern) = pun_pattern(f, s, prefixes, p) {
+            patterns.push(pattern);
+        }
+    }
+    patterns
+}
+
+fn free_permit(
+    domain: (u64, u64),
+    occupied: &[(u64, u64)],
+    pattern: TargetPattern,
+    reach: (u64, u64),
+    bytes: u64,
+) -> Option<Permit> {
+    let mut rows = occupied.to_vec();
+    rows.sort_unstable();
+    rows.push((domain.1, domain.1));
+    let mut cursor = domain.0;
+    for (start, stop) in rows {
+        if start > cursor && start - cursor >= bytes {
+            // Any byte in the final eligible page is a legal preferred PC;
+            // the entire page-rounded slot must fit, not only that byte.
+            let hi = start - bytes + 4096;
+            let range = (cursor.max(reach.0), hi.min(reach.1));
+            if let Some(target) = first_target(pattern, range) {
+                let base = target & !4095;
+                return Some(Permit {
+                    range: (base, base + bytes),
+                    preferred: target,
+                });
+            }
+        }
+        cursor = cursor.max(stop);
+    }
+    None
+}
+
+fn neutral_reach(origins: impl Iterator<Item = u64>) -> Result<(u64, u64)> {
+    let mut low = 0_i128;
+    let mut high = 0x0000_8000_0000_0000_i128;
+    for pc in origins {
+        let next = i128::from(pc.checked_add(5).ok_or("neutral origin overflow")?);
+        low = low.max(next + i128::from(i32::MIN));
+        high = high.min(next + i128::from(i32::MAX) + 1);
+    }
+    check(low < high, "empty neutral rel32 intersection")?;
+    Ok((low as u64, high as u64))
+}
+
+fn original_permits(
+    elf: &Elf64<'_>,
+    p: &Policy,
+    functions: &[Function],
+    inv: &Inventory,
+) -> Result<Vec<[Permit; 2]>> {
+    if p.placement.is_none() {
+        return allocation_ranges(elf, p, inv.selected.len()).map(|rows| {
+            rows.into_iter()
+                .map(|pair| {
+                    pair.map(|range| Permit {
+                        range,
+                        preferred: range.0,
+                    })
+                })
+                .collect()
+        });
+    }
+    // Keep every v1 LOAD/carrier check, including its checked arithmetic.
+    allocation_ranges(elf, p, 0)?;
+    check(
+        inv.selected.len() <= SITE_LIMIT && inv.selected.len() as u64 <= p.limits[1],
+        "complete site count exceeds fixed policy",
+    )?;
+    let domain = p.placement.unwrap().domain;
+    let mut occupied = Vec::new();
+    for h in elf
+        .program_headers()
+        .iter()
+        .filter(|h| h.kind == SegmentType::Load && h.memory_size != 0)
+    {
+        occupied.push((
+            h.vaddr.0 & !4095,
+            (end(h.vaddr.0, h.memory_size)? + 4095) & !4095,
+        ));
+    }
+    let carrier_bytes = (p.limits[7] * 56 + 128).div_ceil(4096) * 4096;
+    occupied.push((p.carrier, end(p.carrier, carrier_bytes)?));
+    check(
+        occupied
+            .iter()
+            .all(|&(a, b)| domain.0 <= a && b <= domain.1),
+        "placement domain must contain every original LOAD page and carrier",
+    )?;
+    let empty = Permit {
+        range: (0, 0),
+        preferred: 0,
+    };
+    let mut result = vec![[empty; 2]; inv.selected.len()];
+    let mut neutral = Vec::new();
+    // Reserve constrained selected slots before any neutral reservation.
+    for (n, s) in inv.selected.iter().enumerate() {
+        let patterns = original_patterns(&functions[s.function], s, p);
+        let found = patterns
+            .into_iter()
+            .find_map(|pattern| free_permit(domain, &occupied, pattern, domain, p.arenas[0].bytes));
+        if let Some(permit) = found {
+            occupied.push(permit.range);
+            result[n][0] = permit;
+        } else {
+            neutral.push(n);
+        }
+    }
+    for n in neutral {
+        let pc = inv.selected[n].instruction.ip();
+        let reach = neutral_reach(std::iter::once(pc))?;
+        let permit = free_permit(
+            domain,
+            &occupied,
+            TargetPattern::plain(pc + 5),
+            reach,
+            p.arenas[0].bytes,
+        )
+        .ok_or("no disjoint neutral selected permit")?;
+        occupied.push(permit.range);
+        result[n][0] = permit;
+    }
+    for (n, s) in inv.selected.iter().enumerate() {
+        let f = &functions[s.function];
+        // All original function heads conservatively include every potential
+        // victim origin. This does not solve any T2 overlay or T3 joint route.
+        let reach = neutral_reach(f.instructions.iter().map(Instruction::ip))?;
+        let permit = free_permit(
+            domain,
+            &occupied,
+            TargetPattern::plain(s.instruction.ip() + 5),
+            reach,
+            p.arenas[1].bytes,
+        )
+        .ok_or("no disjoint neutral victim permit")?;
+        occupied.push(permit.range);
+        result[n][1] = permit;
+    }
+    Ok(result)
+}
+
+#[cfg(test)]
 fn selection(
     p: &Policy,
     policy_bytes: &[u8],
@@ -784,6 +1154,26 @@ fn selection(
     functions: &[Function],
     inv: &Inventory,
     ranges: &[[(u64, u64); 2]],
+    journal: bool,
+) -> Result<Vec<u8>> {
+    let permits: Vec<_> = ranges
+        .iter()
+        .map(|pair| {
+            pair.map(|range| Permit {
+                range,
+                preferred: range.0,
+            })
+        })
+        .collect();
+    selection_with_permits(p, policy_bytes, target, functions, inv, &permits, journal)
+}
+fn selection_with_permits(
+    p: &Policy,
+    policy_bytes: &[u8],
+    target: &[u8],
+    functions: &[Function],
+    inv: &Inventory,
+    ranges: &[[Permit; 2]],
     journal: bool,
 ) -> Result<Vec<u8>> {
     let target = std::str::from_utf8(target).map_err(|e| e.to_string())?;
@@ -839,10 +1229,13 @@ fn selection(
         )
         .unwrap();
         for (k, kind) in ["selected", "victim"].iter().enumerate() {
-            let (a, b) = permits[k];
+            let Permit {
+                range: (a, b),
+                preferred,
+            } = permits[k];
             writeln!(
                 out,
-                "allocation {} {kind} {a} {} {} {a}:{}",
+                "allocation {} {kind} {preferred} {} {} {a}:{}",
                 s.id,
                 p.arenas[k].candidates,
                 p.arenas[k].bytes,
@@ -970,10 +1363,10 @@ fn run(args: &[std::ffi::OsString]) -> Result<bool> {
     )?;
     let (functions, padding) = load_functions(&original, &elf, &p)?;
     let mut inv = inventory(&functions, style)?;
-    let ranges = allocation_ranges(&elf, &p, inv.selected.len());
+    let ranges = original_permits(&elf, &p, &functions, &inv);
     let mut chosen = None;
     match ranges {
-        Ok(ranges) if inv.errors.is_empty() => match selection(
+        Ok(ranges) if inv.errors.is_empty() => match selection_with_permits(
             &p,
             &policy_bytes,
             &target,
@@ -1100,6 +1493,555 @@ mod tests {
         bytes[112..120].copy_from_slice(&4096_u64.to_le_bytes());
         bytes
     }
+
+    // Exact original bytes from the retained cbb 87-head inventory. This is a
+    // source-only fixture, not a candidate or an execution result.
+    fn original_corpus() -> Vec<Function> {
+        vec![
+            function(
+                "li2_array_store",
+                0x401840,
+                &[b"\x48\x89\x14\xf7\xc3".as_slice()].concat(),
+            ),
+            function(
+                "li2_sift_down",
+                0x401850,
+                &[
+                    b"\x41\x56\x41\x55\x49\x89\xfd\x41\x54\x49\x89\xf4\x49\xd1\xec\x55".as_slice(),
+                    b"\x48\x89\xf5\x48\x89\xd6\x53\x4c\x39\xe2\x72\x22\xeb\x58\x66\x90".as_slice(),
+                    b"\x4c\x89\xef\xe8\xc8\xff\xff\xff\x4c\x89\xf2\x48\x89\xde\x4c\x89".as_slice(),
+                    b"\xef\xe8\xba\xff\xff\xff\x4c\x39\xe3\x73\x3b\x48\x89\xde\x48\x8d".as_slice(),
+                    b"\x04\x36\x48\x8d\x4e\x01\x48\x8d\x58\x01\x48\x83\xc0\x02\x49\x8b".as_slice(),
+                    b"\x54\xdd\x00\x48\x39\xe8\x73\x14\x48\xc1\xe1\x04\x49\x8b\x4c\x0d".as_slice(),
+                    b"\x00\x48\x39\xd1\x76\x06\x48\x89\xca\x48\x89\xc3\x4d\x8b\x74\xf5".as_slice(),
+                    b"\x00\x49\x39\xd6\x72\xaa\x5b\x5d\x41\x5c\x41\x5d\x41\x5e\xc3".as_slice(),
+                ]
+                .concat(),
+            ),
+            function(
+                "li2_heap_sort",
+                0x4018d0,
+                &[
+                    b"\x48\x83\xfe\x01\x76\x7a\x41\x54\x49\x89\xf4\x55\x49\xd1\xec\x48".as_slice(),
+                    b"\x89\xfd\x53\x48\x89\xf3\x66\x2e\x0f\x1f\x84\x00\x00\x00\x00\x00".as_slice(),
+                    b"\x49\x83\xec\x01\x48\x89\xde\x48\x89\xef\x4c\x89\xe2\xe8\x4e\xff".as_slice(),
+                    b"\xff\xff\x4d\x85\xe4\x75\xe9\x66\x0f\x1f\x84\x00\x00\x00\x00\x00".as_slice(),
+                    b"\x48\x8b\x54\xdd\xf8\x4c\x8b\x65\x00\x31\xf6\x48\x83\xeb\x01\x48".as_slice(),
+                    b"\x89\xef\xe8\x19\xff\xff\xff\x4c\x89\xe2\x48\x89\xde\x48\x89\xef".as_slice(),
+                    b"\xe8\x0b\xff\xff\xff\x31\xd2\x48\x89\xde\x48\x89\xef\xe8\x0e\xff".as_slice(),
+                    b"\xff\xff\x48\x83\xfb\x01\x75\xc8\x5b\x5d\x41\x5c\xc3\x0f\x1f\x00".as_slice(),
+                    b"\xc3".as_slice(),
+                ]
+                .concat(),
+            ),
+        ]
+    }
+
+    fn derived_policy_text() -> String {
+        policy_text()
+            .replace("LI2COMMON 1", "LI2COMMON 2")
+            .replace(
+                "carrier 32768",
+                "carrier 536870912\nplacement original-derived-v1 65536 1073741824",
+            )
+            .replace(
+                "arena selected 65536 8192 4096 64",
+                "arena selected 65536 65536",
+            )
+            .replace(
+                "arena victim 131072 8192 4096 64",
+                "arena victim 65536 65536",
+            )
+            .replace(
+                "limits 1048576 64 128 1048576 256 4194304 3145728 256 16777216",
+                "limits 1048576 64 256 8388608 2048 16777216 12582912 512 1073741824",
+            )
+    }
+
+    #[test]
+    fn explicit_v2_grammar_keeps_exact_caps_and_v1_separate() {
+        let text = derived_policy_text();
+        let p = policy(text.as_bytes()).unwrap();
+        assert_eq!(p.placement.unwrap().domain, (65536, 1073807360));
+        assert!(
+            policy(policy_text().as_bytes())
+                .unwrap()
+                .placement
+                .is_none()
+        );
+        for bad in [
+            text.replace("original-derived-v1", "automatic"),
+            text.replace("65536 1073741824\n", "65537 1073741824\n"),
+            text.replace("65536 1073741824\n", "65536 1073745920\n"),
+            text.replace("arena selected 65536 65536", "arena selected 4096 65536"),
+            text.replace("arena victim 65536 65536", "arena victim 65536 65537"),
+            text.replace(
+                "arena victim 65536 65536",
+                "arena victim 0 65536 65536 65536",
+            ),
+            text.replace("LI2COMMON 2", "LI2COMMON 1"),
+        ] {
+            assert!(policy(bad.as_bytes()).is_err());
+        }
+    }
+
+    #[test]
+    fn signed_digit_successor_retains_negative_edges_and_entry_bytes() {
+        let plain = TargetPattern::plain(0x8000_0000);
+        assert_eq!(first_target(plain, (0, 1)), Some(0));
+        assert_eq!(
+            first_target(plain, (0xffff_ffff, 0x1_0000_0000)),
+            Some(0xffff_ffff)
+        );
+        assert_eq!(first_target(plain, (0x1_0000_0000, 0x1_0000_0001)), None);
+        let full = TargetPattern {
+            entries: [true; 4],
+            ..TargetPattern::plain(0x4000_0000)
+        };
+        assert_eq!(first_target(full, (0, 0x8000_0000)), Some(0x0e06_0606));
+        let mut fixed = TargetPattern::plain(0x1000);
+        fixed.fixed = [Some(0xff); 4];
+        assert_eq!(first_target(fixed, (0, 0x2000)), Some(0xfff));
+        fixed.fixed = [Some(0); 4];
+        assert_eq!(first_target(fixed, (0x1001, 0x2000)), None);
+    }
+
+    #[test]
+    fn digit_minimum_matches_bounded_independent_byte_enumeration() {
+        let next = 0x8000_0000_u64;
+        let starts = [
+            0,
+            127,
+            255,
+            65535,
+            0x7fff_ffc0,
+            0x8000_0000,
+            0x8000_ffc0,
+            0xffff_ff80,
+            0x8606_05c0,
+            0x4e06_05c0,
+            0xcc90_65c0,
+            0x8000_0001,
+        ];
+        let mut patterns: Vec<_> = (0..16)
+            .map(|mask| TargetPattern {
+                entries: std::array::from_fn(|n| mask & (1 << n) != 0),
+                ..TargetPattern::plain(next)
+            })
+            .collect();
+        for fixed in [
+            [None, Some(0x66), Some(0x90), Some(0x4c)],
+            [None, None, None, Some(0x80)],
+            [Some(0xff), Some(0xff), Some(0xff), Some(0xff)],
+            [Some(0), Some(0), Some(0), Some(0)],
+        ] {
+            patterns.push(TargetPattern {
+                fixed,
+                ..TargetPattern::plain(next)
+            });
+        }
+        for pattern in patterns {
+            for low in starts {
+                let high = low + 129;
+                let expected = (low..high).find(|&pc| {
+                    let Ok(displacement) = i32::try_from(i128::from(pc) - i128::from(next)) else {
+                        return false;
+                    };
+                    displacement
+                        .to_le_bytes()
+                        .iter()
+                        .enumerate()
+                        .all(|(n, &byte)| {
+                            pattern.fixed[n].is_none_or(|b| b == byte)
+                                && (!pattern.entries[n]
+                                    || [
+                                        0x06, 0x07, 0x0e, 0x16, 0x17, 0x1e, 0x1f, 0x27, 0x2f, 0x37,
+                                        0x3f, 0x60, 0x61, 0xce,
+                                    ]
+                                    .contains(&byte))
+                        })
+                });
+                assert_eq!(
+                    first_target(pattern, (low, high)),
+                    expected,
+                    "{pattern:?} {low:#x}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn heap_store_uses_complete_ret_entry_and_unaligned_preferred_pc() {
+        let p = policy(derived_policy_text().as_bytes()).unwrap();
+        let functions = original_corpus();
+        let inv = inventory(&functions, "heap-write").unwrap();
+        let bytes = elf_with_load(0x400000, 0x25000);
+        let elf = Elf64::parse(
+            &bytes,
+            ParseLimits {
+                max_program_headers: 1,
+            },
+        )
+        .unwrap();
+        let permits = original_permits(&elf, &p, &functions, &inv).unwrap();
+        assert_eq!(inv.heads, 87);
+        assert_eq!(inv.selected.len(), 1);
+        assert!(pun_pattern(&functions[0], &inv.selected[0], 0, &p).is_none());
+        assert_eq!(permits[0][0].preferred, 0x0640_1845);
+        assert_eq!(permits[0][0].range, (0x0640_1000, 0x0641_1000));
+        let displacement = (permits[0][0].preferred - 0x401845) as u32;
+        assert_eq!(displacement.to_le_bytes(), [0, 0, 0, 6]);
+        assert_eq!(permits[0][1].range, (0x10000, 0x20000));
+        // The old permit has high displacement byte 0x0f throughout; it still
+        // cannot contain a B1 target retaining the RET head at source+4.
+        let mask = TargetPattern {
+            entries: [false, false, false, true],
+            ..TargetPattern::plain(0x401845)
+        };
+        assert_eq!(first_target(mask, (0x1000_0000, 0x1001_0000)), None);
+    }
+
+    #[test]
+    fn upstream_windows_use_original_head_budget_before_qualification() {
+        let f = function(NAMES[1], 0x1000, &[0x48, 0x39, 0xc0, 0x75, 0xfb]);
+        let s = Selected {
+            id: 2,
+            function: 0,
+            instruction: f.instructions[1],
+            block: (0x1000, 0x1005),
+        };
+        let mut p = policy(derived_policy_text().as_bytes()).unwrap();
+        p.search[2] = 1;
+        assert!(original_patterns(&f, &s, &p).is_empty());
+        p.search[2] = 2;
+        let patterns = original_patterns(&f, &s, &p);
+        assert_eq!(patterns.len(), 1);
+        assert_eq!(patterns[0].next, 0x1005);
+        assert_eq!(patterns[0].entries, [false, false, true, false]);
+        p.search[0] = 2;
+        assert!(original_patterns(&f, &s, &p).is_empty());
+        p.search[0] = 64;
+        p.search[1] = 4;
+        assert!(original_patterns(&f, &s, &p).is_empty());
+    }
+
+    #[test]
+    fn complete_jump_cell_keeps_unplaceable_id15_as_neutral_permit() {
+        let policy_bytes = derived_policy_text().into_bytes();
+        let p = policy(&policy_bytes).unwrap();
+        let functions = original_corpus();
+        let inv = inventory(&functions, "jump-site").unwrap();
+        let bytes = elf_with_load(0x400000, 0x25000);
+        let elf = Elf64::parse(
+            &bytes,
+            ParseLimits {
+                max_program_headers: 1,
+            },
+        )
+        .unwrap();
+        let s = inv.selected.iter().find(|s| s.id == 15).unwrap();
+        assert_eq!(
+            (s.instruction.ip(), s.block),
+            (0x40186c, (0x40186c, 0x40186e))
+        );
+        let patterns = original_patterns(&functions[s.function], s, &p);
+        assert_eq!(patterns.len(), 1);
+        assert_eq!(
+            patterns[0].fixed,
+            [None, Some(0x66), Some(0x90), Some(0x4c)]
+        );
+        assert_eq!(
+            first_target(patterns[0], (0, 0x8000_0000)),
+            Some(1288732273)
+        );
+        assert_eq!(first_target(patterns[0], p.placement.unwrap().domain), None);
+        assert!(pun_pattern(&functions[s.function], s, 1, &p).is_none());
+        let permits = original_permits(&elf, &p, &functions, &inv).unwrap();
+        let mut prior = Vec::new();
+        for pair in &permits {
+            for permit in pair {
+                assert_eq!(permit.range.1 - permit.range.0, 65536);
+                assert!(prior.iter().all(|&r| !overlaps(r, permit.range)));
+                prior.push(permit.range);
+            }
+        }
+        for journal in [false, true] {
+            let output = selection_with_permits(
+                &p,
+                &policy_bytes,
+                b"target fxsave64\n",
+                &functions,
+                &inv,
+                &permits,
+                journal,
+            )
+            .unwrap();
+            let selection = liteinst_rewrite::selection::parse(&output).unwrap();
+            assert_eq!(selection.sites.len(), 9);
+            assert_eq!(
+                selection.sites.iter().map(|s| s.id).collect::<Vec<_>>(),
+                [14, 15, 24, 32, 36, 41, 49, 64, 81]
+            );
+            assert_eq!(selection.sites[1].pc, 0x40186c);
+            assert_eq!(selection.sites[1].heads.len(), 45);
+            assert_eq!(selection.sites[1].selected_allocation.max_candidates, 65536);
+        }
+    }
+
+    #[test]
+    fn full_page_slot_ownership_and_exhaustion_are_not_byte_only() {
+        let pattern = TargetPattern::plain(0x1000);
+        assert!(free_permit((0x10000, 0x1f000), &[], pattern, (0, 0x40000), 65536).is_none());
+        let blocked = [(0x10000, 0x11000), (0x30000, 0x40000)];
+        let permit =
+            free_permit((0x10000, 0x40000), &blocked, pattern, (0, 0x40000), 65536).unwrap();
+        assert_eq!(permit.range, (0x11000, 0x21000));
+        let fixed = TargetPattern {
+            fixed: [Some(0xff), Some(0x0f), Some(1), Some(0)],
+            ..pattern
+        };
+        assert_eq!(
+            free_permit((0x10000, 0x21000), &[], fixed, (0, 0x40000), 65536)
+                .unwrap()
+                .preferred,
+            0x11fff
+        );
+        assert!(free_permit((0x10000, 0x20000), &[], fixed, (0, 0x40000), 65536).is_none());
+    }
+
+    #[test]
+    fn derived_domain_must_own_loads_carrier_and_all_permits() {
+        let functions = original_corpus();
+        let inv = inventory(&functions, "heap-write").unwrap();
+        let mut p = policy(derived_policy_text().as_bytes()).unwrap();
+        let bytes = elf_with_load(0x400000, 0x25000);
+        let elf = Elf64::parse(
+            &bytes,
+            ParseLimits {
+                max_program_headers: 1,
+            },
+        )
+        .unwrap();
+        p.placement = Some(Placement {
+            domain: (0x500000, 0x40010000),
+        });
+        assert!(
+            original_permits(&elf, &p, &functions, &inv)
+                .unwrap_err()
+                .contains("every original LOAD")
+        );
+        p.placement = Some(Placement {
+            domain: (0x10000, 0x20000000),
+        });
+        assert!(
+            original_permits(&elf, &p, &functions, &inv)
+                .unwrap_err()
+                .contains("carrier")
+        );
+        p.carrier = 0x425000;
+        p.placement = Some(Placement {
+            domain: (0x400000, 0x42d000),
+        });
+        assert!(
+            original_permits(&elf, &p, &functions, &inv)
+                .unwrap_err()
+                .contains("no disjoint")
+        );
+    }
+
+    fn core_plan(
+        f: &Function,
+        s: &Selected,
+        p: &Policy,
+        pair: [Permit; 2],
+        forced: Option<li2core::engine::Tactic>,
+    ) -> std::result::Result<li2core::emission::ArtifactPlan, li2core::engine::EngineFailure> {
+        use li2core::contracts::*;
+        use li2core::emission::*;
+        use li2core::quiescent::{AllocationPolicy, SearchPolicy, TacticPolicy};
+        let range = |r: (u64, u64)| AddressRange::new(r.0, (r.1 - r.0) as usize).unwrap();
+        let identity = CodeIdentity {
+            source: SourceIdentity(ContentId::of(&f.bytes).0),
+            mapping: 1,
+            generation: 1,
+        };
+        let function = AddressRange::new(f.owner.pc, f.bytes.len()).unwrap();
+        let entries = LegalEntrySet {
+            identity,
+            scope: function,
+            provenance: EntryProvenance::Declared("complete fixture heads".into()),
+            completeness: EntryCompleteness::Complete,
+            resumes: ResumeObligation::NoneExist,
+            entries: f
+                .instructions
+                .iter()
+                .map(|i| LegalEntry {
+                    address: i.ip(),
+                    requires_endbr: false,
+                })
+                .collect(),
+        };
+        let policies: Vec<_> = pair
+            .iter()
+            .map(|permit| AllocationPolicy {
+                ranges: vec![range(permit.range)],
+                preferred_address: Some(permit.preferred),
+                max_candidates: 65536,
+                max_mappings: 1,
+                max_mapped_bytes: 65536,
+            })
+            .collect();
+        let emission = ArtifactEmission::new(
+            TargetProfile::linux_x86_64_legacy_evex(
+                li2core::trampoline::SavedExtendedStateLayout::describe_target_fxsave64(),
+                1,
+            )
+            .unwrap(),
+            SymbolicHook {
+                identity: 2,
+                address: Some(0x401960),
+            },
+            vec![range((0x400000, 0x425000)), range((0x20000000, 0x20008000))],
+        );
+        let request = ArtifactRequest {
+            site: PlanningSite {
+                identity,
+                code: &f.bytes,
+                base_address: f.owner.pc,
+                function,
+                block: range(s.block),
+                logical_pc: s.instruction.ip(),
+                entries: &entries,
+                semantics: li2core::planner::HookSemantics::Observe,
+                allocation: &policies[0],
+                search: SearchPolicy {
+                    tactics: TacticPolicy::PreferGeneralizedPun,
+                    max_upstream_bytes: p.search[0] as usize,
+                    max_displaced_bytes: p.search[1] as usize,
+                    max_sites: p.search[2] as usize,
+                },
+            },
+            emission: &emission,
+        };
+        li2core::engine::plan_with_emission(
+            &request,
+            &policies[1],
+            li2core::engine::EnginePolicy {
+                forced,
+                successor_puns: TacticPolicy::PreferGeneralizedPun,
+                neighbor: li2core::neighbor::NeighborSearch {
+                    forced_victim: None,
+                    max_victims: p.search[3] as usize,
+                    max_pairs: p.search[4] as usize,
+                },
+                bundle: li2core::bundle::BundleBudget {
+                    max_steps: 2,
+                    max_mappings: p.limits[2] as usize,
+                    max_virtual_bytes: p.limits[4] * 4096,
+                    max_backing_bytes: p.limits[4] * 4096,
+                    max_virtual_span: p.limits[8],
+                },
+            },
+        )
+    }
+
+    #[test]
+    fn unchanged_core_accepts_heap_b1_but_retains_old_arena_and_id15_refusals() {
+        use li2core::contracts::{EntryObligation, PlanKind, Refusal};
+        use li2core::emission::ArtifactMetrics;
+        use li2core::engine::Tactic;
+        let p = policy(derived_policy_text().as_bytes()).unwrap();
+        let functions = original_corpus();
+        let bytes = elf_with_load(0x400000, 0x25000);
+        let elf = Elf64::parse(
+            &bytes,
+            ParseLimits {
+                max_program_headers: 1,
+            },
+        )
+        .unwrap();
+        let heap = inventory(&functions, "heap-write").unwrap();
+        let permits = original_permits(&elf, &p, &functions, &heap).unwrap();
+        let plan = core_plan(&functions[0], &heap.selected[0], &p, permits[0], None).unwrap();
+        assert!(matches!(
+            plan.metrics(),
+            ArtifactMetrics::Engine(Tactic::Relocation, _, _)
+        ));
+        assert_eq!(plan.source_steps().len(), 1);
+        let parts = plan.source_steps()[0].parts();
+        assert_eq!(parts.kind, PlanKind::Relocation);
+        assert_eq!(parts.writes[0].address, 0x401840);
+        assert_eq!(parts.writes[0].bytes, [0xe9, 0, 0, 0, 6]);
+        assert_eq!(
+            parts
+                .entries
+                .entries
+                .iter()
+                .map(|e| e.address)
+                .collect::<Vec<_>>(),
+            [0x401840, 0x401844]
+        );
+        let ret_route = parts
+            .obligations
+            .iter()
+            .find_map(|o| match o {
+                EntryObligation::Routed(route) if route.original == 0x401844 => Some(*route),
+                _ => None,
+            })
+            .expect("complete RET entry must be routed");
+        assert!(plan.images().any(|image| {
+            image
+                .entry_routes()
+                .contains(&(ret_route.original, ret_route.generated))
+        }));
+        let mut second = permits[0];
+        second[0] = Permit {
+            range: (0x07401000, 0x07411000),
+            preferred: 0x07401845,
+        };
+        let plan = core_plan(
+            &functions[0],
+            &heap.selected[0],
+            &p,
+            second,
+            Some(Tactic::Relocation),
+        )
+        .unwrap();
+        let ArtifactMetrics::Engine(
+            Tactic::Relocation,
+            li2core::engine::SelectedMetrics::Single(metrics),
+            _,
+        ) = plan.metrics()
+        else {
+            panic!("expected unchanged B1 metric");
+        };
+        assert_eq!(metrics.allocation_attempts, 2);
+        let mut old = permits[0];
+        old[0] = Permit {
+            range: (0x10000000, 0x10010000),
+            preferred: 0x10000000,
+        };
+        assert_eq!(
+            core_plan(
+                &functions[0],
+                &heap.selected[0],
+                &p,
+                old,
+                Some(Tactic::Relocation)
+            )
+            .unwrap_err()
+            .reason,
+            Refusal::AllocationUnavailable
+        );
+        let jumps = inventory(&functions, "jump-site").unwrap();
+        let permits = original_permits(&elf, &p, &functions, &jumps).unwrap();
+        let n = jumps.selected.iter().position(|s| s.id == 15).unwrap();
+        let failed =
+            core_plan(&functions[1], &jumps.selected[n], &p, permits[n], None).unwrap_err();
+        assert_eq!(failed.reason, Refusal::NoPatchWindow);
+        assert_eq!(failed.attempts.len(), 5);
+    }
+
     #[test]
     fn carrier_low_canonical_endpoint_is_admitted_but_crossing_refuses() {
         let bytes = elf_with_load(0x400000, 4096);

@@ -96,6 +96,26 @@ Both use a 65,536-byte stride, 65,536-byte slots and 65,536 candidates. The
 carrier is `0x20000000`. Search values, in the existing policy order, are
 `64 256 64 256 4096`. A refusal never raises a bound or selects fewer sites.
 
+The default `--allocation-profile fixed-v1` retains that policy. A separate
+opt-in `--allocation-profile original-derived-v1` emits `LI2COMMON 2`, using
+the original-byte placement rules in
+[COMMON-SITES.md](../../tools/elf-rewrite/COMMON-SITES.md). Its declared domain
+starts at 65,536 and contains 1,073,741,824 bytes. It must contain all original
+LOAD pages and the carrier. Selected and victim slots remain 65,536 bytes with
+65,536 candidates each. Every aggregate and search limit above is unchanged.
+The chosen profile is recorded before execution, in the policy and provenance;
+it is never changed after a refusal. Use a new output directory and evidence
+epoch for this profile. Earlier fixed-arena results keep their original scope.
+
+The new profile derives permits, not successful plans. For example, the common
+corpus's two-byte-only jump block at `0x40186c` has a B2 target window beyond the
+1 GiB span, no B1 window and a negative T1 target. A neutral permit keeps this
+site in the complete selection so the unchanged core can report its refusal.
+Neither choosing a profile nor completing all inventories establishes that all
+selected sites can be rewritten. The E9 comparison retains the same original
+sites and actions, but its backend does not consume these core arena permits;
+the two lanes must not be described as having identical placement policies.
+
 Every complete output must contain exactly the original ten files and match
 its `COMPLETE` index, exact stdout, copied policy/target and status. Full
 instruction, memory-write, basic-block and padding tables must be identical

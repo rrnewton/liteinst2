@@ -26,6 +26,14 @@ paths, commands, environment, streams, and owners. The caller separately records
 closure and reaping of the enclosing recipe process; there is no invented
 parent receipt or automatic closure inference.
 
+The original fixed-arena inventories remain accepted. The separately declared
+`LI2COMMON 2` profile is also accepted with exactly the `original-derived-v1`
+domain and unchanged caps specified in [BUILD.md](BUILD.md). It requires a new
+build admission and input envelope. All sites, original entry heads and action
+checks remain mandatory; a refusal remains a failed production row. These
+core placement permits are not imposed on the E9 backend, so this comparison
+does not establish identical allocation policy between the two implementations.
+
 ## Input contract
 
 The JSON has exactly `schema`, `preparation`, `build_admission`, `cells`,

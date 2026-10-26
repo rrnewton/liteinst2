@@ -81,6 +81,76 @@ the low canonical user range. The original core decides whether these finite
 permits and simultaneous plans suffice; this adapter does not relocate them
 after a failure or retry a smaller site set.
 
+### Explicit original-derived placement
+
+The preceding `LI2COMMON 1` format and fixed arena behavior are unchanged.
+`LI2COMMON 2` is an explicit new policy. All records except its version and
+allocation records remain identical. Replace the two arena lines after
+`carrier` with exactly:
+
+```text
+placement original-derived-v1 <domain-start> <domain-bytes>
+arena selected 65536 65536
+arena victim 65536 65536
+```
+
+The domain start and size are page-aligned; its checked end must be in the low
+canonical user range. The whole domain must fit `limits.virtual-span` and
+contain every original LOAD page and the complete maximum carrier reservation.
+Each role retains exactly 65,536 bytes and 65,536 candidates. No image, backing,
+site, search or output bound changes. A prospective recipe profile can declare
+start 65,536 and size 1,073,741,824 before running any inventory. This is a new
+placement policy and evidence epoch, not a reinterpretation of an old refusal.
+
+For each complete selected site, in ascending original PC order, derive address
+patterns from immutable original bytes: first its B2 fixed successor bytes,
+then B1 source windows in the core's same-site/upstream order, then original T1
+prefix counts. B1 takes the existing `max-sites` prefix before rejecting windows
+that cannot cover five bytes and the logical instruction in the certified block.
+Displaced-byte/upstream bounds, whole instruction ends and the prohibition on
+interior control transfers remain. CALL windows are excluded. Every original
+head inside the first five bytes constrains the corresponding displacement byte
+to the unchanged 14 illegal-entry opcodes. ISA/emission qualification remains
+the core's responsibility. B2/T1 preserve the core's unsigned lower-window
+conversion; a negative lower bound is not clipped into the declared domain.
+
+A bounded four-digit successor finds the lowest compatible signed-rel32 target
+in each free gap. If `T` is the target, its permit is
+`[floor_page(T), floor_page(T)+65536)` and its preferred PC is `T`, which need
+not be page-aligned. For B1 this preferred PC is reproduced by the unchanged
+generator at a mixed-radix index below `14^m <= 38,416`, where `m` counts the
+constrained bytes. This guarantees an address in the existing schedule, not an
+accepted image. The whole page-rounded slot must fit a gap; checking only the
+target byte would be insufficient.
+
+Constrained selected slots are reserved first. A site with no fitting B2/B1/T1
+address pattern still receives a neutral selected slot within signed-rel32 reach
+of its logical PC. Neutral selected slots are reserved next, then neutral victim
+slots in site order. Each victim preferred PC is reachable from every original
+head in that site's function, conservatively including all possible victim
+origins. All slots are disjoint from one another, original LOAD pages and the
+carrier. No free full slot or an out-of-domain owner refuses the whole policy;
+no site or entry is removed. This deterministic greedy reservation makes no
+claim of globally complete packing.
+
+Neutral means a valid permit only. It does not prove a B1 window, T2's
+overlay-dependent selected pun, T3's relay, image fit or simultaneous plans.
+The unchanged core still considers all five tactics, using the complete
+selection, and retains every refusal. In the retained original kernel,
+ID 15 at `0x40186c` is its entire two-byte block: B1 cannot fit; B2's interval
+`[1288732273,1288732529)` is outside the prospective one-GiB domain; T1's lower
+bound is negative. It remains selected with a neutral permit. Increasing no
+bound and removing no head is necessary to report this limitation honestly.
+No planner is called while preparing permits and no permit changes after a
+planner failure. The focused tests separately call the unchanged pure artifact
+planner; those tests are not native or application qualification.
+
+Outputs still use `LI2TOOL 1` and the same ten-file schema. The policy digest
+binds the explicit placement version; instruction/site/block/memory inventories
+and complete entries retain their existing meaning. E9 consumes the same site
+selection but does not implement these core allocation permits, so equivalent
+site policies do not imply equivalent placement constraints.
+
 ## Complete static policy and its limits
 
 All three exact named ranges are nonempty, disjoint, file-backed RX owners

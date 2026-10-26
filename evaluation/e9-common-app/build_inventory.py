@@ -21,6 +21,7 @@ HELPER_SHA = 'c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44'
 LIMITS = [1048576, 64, 256, 8388608, 2048, 16777216, 12582912, 512, 1073741824]
 SEARCH = [64, 256, 64, 256, 4096]
 ARENAS = [('selected', 0x10000000), ('victim', 0x18000000)]
+DERIVED_DOMAIN = (65536, 1073741824)
 RUNTIME = dict(PATH='/usr/bin:/bin', LC_ALL='C', PYTHONDONTWRITEBYTECODE='1')
 FUNCTIONS = ['li2_array_store', 'li2_sift_down', 'li2_heap_sort']
 SYMBOLS = FUNCTIONS + ['main', 'li2_before_sort', 'li2_after_sort', 'li2_null_hook', 'li2_record_hook', 'li2_run', 'li2_journal']
@@ -210,11 +211,13 @@ def depfile_rules(text):
 
 
 def main():
-    assert not sys.flags.optimize, 'assertions required'
+    if sys.flags.optimize:
+        raise SystemExit('assertions required')
     parser = argparse.ArgumentParser(description=__doc__)
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home', 'inputs'):
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--inputs-sha256', required=True)
+    parser.add_argument('--allocation-profile', choices=('fixed-v1', 'original-derived-v1'), default='fixed-v1')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     assert git(repo, 'rev-parse', '--show-toplevel').decode().strip() == str(repo)
@@ -321,7 +324,10 @@ def main():
     write(raw / 'config-scope.json', dict(invocation_cwd=str(repo), lookup='cwd and ancestors plus explicit CARGO_HOME; no changed compiler cwd', denied_lookup_is_absent=False, consumed_configuration_attested=False, scope='Observed lookup identities only; denied content remains unknown and a later open/read denial fails.'))
     write(raw / 'geometry.json', geometry)
     write(raw / 'stage-inventory.json', stages)
-    write(raw / 'prospective-policy.json', dict(limits=LIMITS, search=SEARCH, arenas=ARENAS, stride=65536, slot_bytes=65536, max_candidates=65536, carrier=0x20000000, cells=cells_order, no_post_refusal_limit_change=True))
+    placement = dict(arenas=ARENAS, stride=65536)
+    if args.allocation_profile == 'original-derived-v1':
+        placement = dict(allocation_profile=args.allocation_profile, domain_start=DERIVED_DOMAIN[0], domain_bytes=DERIVED_DOMAIN[1])
+    write(raw / 'prospective-policy.json', dict(limits=LIMITS, search=SEARCH, **placement, slot_bytes=65536, max_candidates=65536, carrier=0x20000000, cells=cells_order, no_post_refusal_limit_change=True))
     write(raw / 'hardware.json', dict(host_label='AMD EPYC Zen 5 dev host', architecture=platform.machine(), cpu_model=next(r.split(':', 1)[1].strip() for r in Path('/proc/cpuinfo').read_text().splitlines() if r.startswith('model name')), logical_cpus=os.cpu_count(), kernel_release=platform.release(), libc=platform.libc_ver()))
     results, archives, cells, products = [], {}, {}, {}
     completed = False
@@ -474,15 +480,22 @@ def main():
         policies = {}
         for variant in ('unstripped', 'stripped'):
             provenance = raw / 'policies' / (variant + '-provenance.json')
-            write(provenance, dict(schema=1, authority='CALLER_PINNED_ORIGINAL_PREPARATION_AND_COLLECTOR', input_envelope_sha256=sha(input_bytes), prepared_revision=PREPARED, current_build_revision=revision, preparation_summary_sha256=sha(bound(prep['summary'])), collector_binding_sha256=sha(bound(inputs['collector_binding'])), original_sha256=sha(originals[variant]), target_sha256=sha(target), geometry=geometry, prospective_limits=LIMITS, search=SEARCH, carrier=0x20000000, arenas=ARENAS, qualification_complete=False))
-            lines = ['LI2COMMON 1', 'original ' + sha(originals[variant]), 'target ' + sha(target), 'provenance ' + sha(read(provenance)[0]), f"text 0x{text['address']:x} {text['file_offset']} {text['bytes']} {text['sha256']}"]
+            provenance_placement = dict(arenas=ARENAS) if args.allocation_profile == 'fixed-v1' else placement
+            write(provenance, dict(schema=1, authority='CALLER_PINNED_ORIGINAL_PREPARATION_AND_COLLECTOR', input_envelope_sha256=sha(input_bytes), prepared_revision=PREPARED, current_build_revision=revision, preparation_summary_sha256=sha(bound(prep['summary'])), collector_binding_sha256=sha(bound(inputs['collector_binding'])), original_sha256=sha(originals[variant]), target_sha256=sha(target), geometry=geometry, prospective_limits=LIMITS, search=SEARCH, carrier=0x20000000, **provenance_placement, qualification_complete=False))
+            version = 1 if args.allocation_profile == 'fixed-v1' else 2
+            lines = [f'LI2COMMON {version}', 'original ' + sha(originals[variant]), 'target ' + sha(target), 'provenance ' + sha(read(provenance)[0]), f"text 0x{text['address']:x} {text['file_offset']} {text['bytes']} {text['sha256']}"]
             for n in FUNCTIONS:
                 s = symbols[n]
                 lines.append(f"function {n} 0x{s['address']:x} {s['bytes']} {s['sha256']}")
             for ident, n in [(2, 'li2_null_hook'), (3, 'li2_record_hook')]:
                 s = symbols[n]
                 lines.append(f"hook {ident} 0x{s['address']:x} {s['bytes']} {s['sha256']}")
-            lines += ['carrier 0x20000000'] + [f'arena {name} 0x{base:x} 65536 65536 65536' for name, base in ARENAS]
+            lines += ['carrier 0x20000000']
+            if args.allocation_profile == 'fixed-v1':
+                lines += [f'arena {name} 0x{base:x} 65536 65536 65536' for name, base in ARENAS]
+            else:
+                lines += [f'placement original-derived-v1 {DERIVED_DOMAIN[0]} {DERIVED_DOMAIN[1]}']
+                lines += [f'arena {name} 65536 65536' for name, _ in ARENAS]
             lines += ['limits ' + ' '.join(map(str, LIMITS)), 'search ' + ' '.join(map(str, SEARCH)), 'END']
             policy = raw / 'policies' / (variant + '.txt')
             write(policy, ('\n'.join(lines) + '\n').encode())

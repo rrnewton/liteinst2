@@ -254,7 +254,21 @@ def inventory(directory, original, syms, style, hook, bound):
     assert status['original_sha256'] == sha(original) and status['policy_sha256'] == sha(data['policy.txt'])
     assert status['target_sha256'] == sha(data['target.txt']) and status['selection_sha256'] == sha(data['selection.txt'])
     policy = [line.split() for line in data['policy.txt'].decode().splitlines()]
-    assert policy[0] == ['LI2COMMON', '1'] and policy[1] == ['original', sha(original)]
+    if policy[0] == ['LI2COMMON', '2']:
+        # This campaign admits only the explicitly declared second profile.
+        # Its address permits differ; sites, entries, actions and caps do not.
+        assert len(policy) == 17 and policy[10:] == [
+            ['carrier', '0x20000000'],
+            ['placement', 'original-derived-v1', '65536', '1073741824'],
+            ['arena', 'selected', '65536', '65536'],
+            ['arena', 'victim', '65536', '65536'],
+            ['limits', '1048576', '64', '256', '8388608', '2048', '16777216', '12582912', '512', '1073741824'],
+            ['search', '64', '256', '64', '256', '4096'],
+            ['END'],
+        ], 'exact original-derived-v1 campaign profile required'
+    else:
+        assert policy[0] == ['LI2COMMON', '1']
+    assert policy[1] == ['original', sha(original)]
     assert policy[2] == ['target', sha(data['target.txt'])] and policy[3] == ['provenance', status['caller_provenance_sha256']]
     functions = [r for r in policy if r[0] == 'function']
     assert [r[1] for r in functions] == list(FUNCTIONS)
@@ -345,7 +359,8 @@ def core_product(directory, inv, original):
 
 
 def main():
-    assert not sys.flags.optimize, 'assertions required'
+    if sys.flags.optimize:
+        raise SystemExit('assertions required')
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--inputs', type=Path, required=True)
     parser.add_argument('--inputs-sha256', required=True)
