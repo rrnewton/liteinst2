@@ -143,23 +143,23 @@ fn seed_raw(
     raw.pin = KernelPinKind::Process;
     raw.held = true;
     raw.complete = true;
-    let ok = Some(ExecReadOutcome {
+    let ok = ExecReadOutcome {
         result: 0,
         errno: None,
-    });
-    raw.registers_read = ok;
+    };
+    raw.registers_read = Some(ok);
     raw.registers = state.registers;
     raw.xstate_query = Some(ExecXstateQuery {
-        outcome: ok.unwrap(),
+        outcome: ok,
         reported_bytes: state.xstate.len(),
         pointer_unchanged: true,
     });
     raw.initialized_xstate[..state.xstate.len()].copy_from_slice(&state.xstate);
-    raw.mask_read = ok;
+    raw.mask_read = Some(ok);
     raw.signal_mask = state.mask;
-    raw.event_read = ok;
+    raw.event_read = Some(ok);
     raw.event_message = 100;
-    raw.siginfo_read = ok;
+    raw.siginfo_read = Some(ok);
     raw.siginfo[..4].copy_from_slice(&libc::SIGTRAP.to_ne_bytes());
     raw.syscall_read = Some(ExecReadOutcome {
         result: if operation == 1 { 80 } else { 33 },

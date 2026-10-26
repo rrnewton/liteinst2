@@ -124,26 +124,6 @@ pub(in crate::linux::remote::dynamic::owner) struct ExecExitReady {
 }
 
 impl ExecExitReady {
-    pub(in crate::linux::remote::dynamic::owner) fn transition(&self) -> &ExecTransition {
-        &self.transition
-    }
-    pub(in crate::linux::remote::dynamic::owner) fn exec_state(&self) -> &TaskStateSnapshot {
-        &self.exec_state
-    }
-    pub(in crate::linux::remote::dynamic::owner) fn exit_state(&self) -> &TaskStateSnapshot {
-        &self.exit_state
-    }
-    pub(in crate::linux::remote::dynamic::owner) fn retained_bytes(
-        &self,
-    ) -> Result<usize, LaunchError> {
-        self.transition
-            .retained_bytes()?
-            .checked_add(std::mem::size_of::<Self>() - std::mem::size_of::<ExecTransition>())
-            .and_then(|bytes| bytes.checked_add(self.exec_state.xstate.capacity()))
-            .and_then(|bytes| bytes.checked_add(self.exit_state.xstate.capacity()))
-            .ok_or(LaunchError::Invalid("exec EXIT evidence size overflows"))
-    }
-
     pub(in crate::linux::remote::dynamic::owner) fn authenticate(
         &self,
         owner: &Owner,

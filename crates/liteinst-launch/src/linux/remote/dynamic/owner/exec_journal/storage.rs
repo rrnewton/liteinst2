@@ -631,6 +631,7 @@ impl ExecJournalWriter {
         self.with_maps(handle, Some(ordinal), view)
     }
     /// Same evidence-only borrowing contract as with_raw_maps; no snapshot copy.
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner) fn with_quarantined_maps<T>(
         &self,
         handle: ExecAttemptHandle,

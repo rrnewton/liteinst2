@@ -420,7 +420,7 @@ fn exec_source_image_binding_rejects_short_bytes_stale_ids_and_neighbor_changes(
         raw_status: 0,
         open: None,
         filesystem: None,
-        filesystem_type: libc::PROC_SUPER_MAGIC as i64,
+        filesystem_type: libc::PROC_SUPER_MAGIC,
         read_calls: 0,
         last_read: None,
         overflow_byte: 0,

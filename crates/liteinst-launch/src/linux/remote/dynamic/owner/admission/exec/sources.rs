@@ -679,8 +679,8 @@ fn bind_view(
         || view.quarantine.tid != final_stop.tid
         || view.exit.observed_bytes != view.exit_bytes.len()
         || view.quarantine.observed_bytes != view.quarantine_bytes.len()
-        || view.exit.filesystem_type != libc::PROC_SUPER_MAGIC as i64
-        || view.quarantine.filesystem_type != libc::PROC_SUPER_MAGIC as i64
+        || view.exit.filesystem_type != libc::PROC_SUPER_MAGIC
+        || view.quarantine.filesystem_type != libc::PROC_SUPER_MAGIC
     {
         return Err(refused("exec source journal phase or identity differs"));
     }

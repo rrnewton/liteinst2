@@ -66,8 +66,8 @@ impl ExecObservation for ExecObserver<'_> {
         if until != self.until
             || invocation.stop.identity != self.previous
             || invocation.input != self.input
-            || !self.inputs.view().capture_complete
-            || self.inputs.view().recheck_complete
+            || !self.inputs.capture_complete()
+            || self.inputs.recheck_complete()
         {
             return Err(LaunchError::Invalid(
                 "exec input observer preparation differs",
@@ -141,7 +141,7 @@ impl ExecObservation for ExecObserver<'_> {
     ) -> Result<(), LaunchError> {
         self.check_reserved()?;
         if matches!(phase, ExecRelease::Entry | ExecRelease::ExecEvent)
-            && !self.inputs.view().recheck_complete
+            && !self.inputs.recheck_complete()
         {
             return Err(LaunchError::Invalid(
                 "exec ENTRY input reread is incomplete",

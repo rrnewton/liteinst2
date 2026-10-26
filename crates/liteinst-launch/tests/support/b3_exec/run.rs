@@ -1328,7 +1328,7 @@ fn permission_changed(maps: &Maps, row: usize, column: usize) -> Maps {
     let mut rows = maps.rows.clone();
     let target = &mut rows[row];
     let mut bytes = target.permissions.as_bytes().to_vec();
-    let present = [b'r', b'w', b'x', b'p'][column];
+    let present = b"rwxp"[column];
     let absent = if column == 3 { b's' } else { b'-' };
     assert!(bytes[column] == present || bytes[column] == absent);
     bytes[column] = if bytes[column] == present {
@@ -1342,7 +1342,7 @@ fn permission_changed(maps: &Maps, row: usize, column: usize) -> Maps {
     target.line.replace_range(offset..offset + 4, &changed);
     let raw = rows
         .iter()
-        .flat_map(|row| row.line.as_bytes().iter().copied().chain([b'\n']))
+        .flat_map(|row| row.line.as_bytes().iter().copied().chain(*b"\n"))
         .collect();
     Maps::parse(raw)
 }

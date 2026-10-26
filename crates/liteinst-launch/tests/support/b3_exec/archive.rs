@@ -41,7 +41,7 @@ pub fn maps(record: &ExecMapsRecord) -> Maps {
         let out = outcome.unwrap();
         assert_eq!((out.result, out.errno), (0, None));
     }
-    assert_eq!(record.filesystem_type, libc::PROC_SUPER_MAGIC as i64);
+    assert_eq!(record.filesystem_type, libc::PROC_SUPER_MAGIC);
     assert_eq!(record.overflow_byte, 0);
     Maps::parse(record.initialized[..record.observed_bytes].to_vec())
 }

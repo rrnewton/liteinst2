@@ -177,6 +177,7 @@ pub(super) struct ExecInputs {
 
 /// Immutable views borrow the original storage; they neither allocate a copy
 /// nor authorize a release. Complete flags and read prefixes are independent.
+#[cfg(test)]
 pub(super) struct ExecInputView<'a> {
     pub(super) binding: Option<&'a InputBinding>,
     pub(super) task: Option<DynamicTask>,
@@ -243,6 +244,15 @@ impl ExecInputs {
         )
     }
 
+    pub(super) fn capture_complete(&self) -> bool {
+        self.capture_complete
+    }
+
+    pub(super) fn recheck_complete(&self) -> bool {
+        self.recheck_complete
+    }
+
+    #[cfg(test)]
     pub(super) fn view(&self) -> ExecInputView<'_> {
         ExecInputView {
             binding: self.binding.as_ref(),
@@ -506,8 +516,8 @@ impl ExecInputs {
             let start = prefix + record.offset;
             let target = &mut self.initialized_recheck[start..start + record.observed_bytes];
             read(memory, reader, record.address, target, &mut record.recheck)?;
-            if &*target
-                != &self.initialized_strings[record.offset..record.offset + record.observed_bytes]
+            if *target
+                != self.initialized_strings[record.offset..record.offset + record.observed_bytes]
             {
                 return Err(refused(
                     "exec string bytes changed before original ENTRY release",
@@ -525,13 +535,13 @@ impl ExecInputs {
         if self.failure.is_none() {
             if let Err(error) = result {
                 let cause = match error {
-                    GateError::Refused(reason) => InputFailureCause::Refused(*reason),
+                    GateError::Refused(reason) => InputFailureCause::Refused(reason),
                     GateError::Control(LaunchError::Invalid(reason)) => {
-                        InputFailureCause::NativeInvalid(*reason)
+                        InputFailureCause::NativeInvalid(reason)
                     }
                     GateError::Control(LaunchError::System { operation, source }) => {
                         InputFailureCause::NativeSystem {
-                            operation: *operation,
+                            operation,
                             errno: source.raw_os_error(),
                             kind: source.kind(),
                         }
@@ -540,7 +550,7 @@ impl ExecInputs {
                         InputFailureCause::NativeChild(*status)
                     }
                     GateError::Control(LaunchError::Timeout(reason)) => {
-                        InputFailureCause::Timeout(*reason)
+                        InputFailureCause::Timeout(reason)
                     }
                     // This leaf constructs only Refused or Control failures.
                     _ => InputFailureCause::Refused("exec input unexpected internal failure"),
