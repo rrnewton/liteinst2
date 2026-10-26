@@ -7,25 +7,19 @@
 //! typed CPU/syscall dispatch and optional overlap guards; general lifecycle
 //! support is outside this module.
 
-use std::cell::RefCell;
 use std::collections::{BTreeMap, BTreeSet};
-use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::{Duration, Instant};
 
 use iced_x86::{Decoder, DecoderOptions};
-use liteinst_admission::entries::{Completeness, EntryProvenance, LegalEntrySet};
+use liteinst_admission::AddressRange;
 use liteinst_admission::oracle_chain::{
-    CacheCorruption, CacheLimits, CacheUsage, Inspection, InspectionSource, OracleChain, OracleMiss,
+    CacheCorruption, CacheLimits, CacheUsage, Inspection, InspectionSource, OracleMiss,
 };
 use liteinst_admission::returns::CallReturnLedger;
-use liteinst_admission::scan::{
-    AdmissionOracle, Boundary, Candidate, Policy, ScanReport, Snapshot, Verdict, WriteControl,
-};
-use liteinst_admission::{AddressRange, Generation, MappingId};
+use liteinst_admission::scan::{AdmissionOracle, Candidate, Policy, Verdict};
 use liteinst2::contracts as core;
-use liteinst2::quiescent::AllocationPolicy;
 
-use crate::core_remote::{CpuidPlanRequest, CpuidPublisher, MAX_CPUID_BUNDLE, PreparedCpuid};
+use crate::core_remote::CpuidPublisher;
 
 mod concurrent;
 pub use concurrent::*;
@@ -34,18 +28,17 @@ mod selected;
 pub use selected::*;
 
 mod coverage;
+pub(crate) mod domain;
 
-use crate::{
-    ExecCheckpoint, LaunchError, MemoryMapping, ProcessEvent, RegisterSnapshot, SignalStop,
-    StoppedProcess,
+use domain::{
+    AdmissionBundle, GateOracle, Image, PAGE, prepare_admission, qualify_collateral, remaining,
 };
 
-const PAGE: u64 = 4096;
+use crate::{
+    ExecCheckpoint, LaunchError, ProcessEvent, RegisterSnapshot, SignalStop, StoppedProcess,
+};
+
 const SEGV_ACCERR: i32 = 2;
-const MAX_IMAGES: usize = 64;
-const MAX_IMAGE_BYTES: usize = 64 * 1024;
-const MAX_GATED_PAGES: u64 = 16 * 1024;
-static NEXT_IMAGE_ID: AtomicU64 = AtomicU64::new(1);
 
 /// A caller-certified complete instruction-head census for one original VMA.
 /// Addresses and bytes are rechecked against the stopped child before use.
@@ -248,59 +241,6 @@ pub struct GateOracleMetrics {
     pub demand: OraclePhaseMetrics,
 }
 
-// No live API accepts an arbitrary AdmissionOracle or caller-created report.
-// This private adapter can only call the chain's mandatory RuntimeScan terminal.
-struct GateOracle {
-    chain: OracleChain,
-    metrics: RefCell<GateOracleMetrics>,
-}
-
-impl GateOracle {
-    fn new(limits: CacheLimits) -> Result<Self, GateError> {
-        Ok(Self {
-            chain: OracleChain::new(limits)
-                .map_err(|_| GateError::Refused("invalid oracle cache limits"))?,
-            metrics: RefCell::new(GateOracleMetrics::default()),
-        })
-    }
-
-    fn inspect_preparation(
-        &self,
-        image: &Image,
-        target: AddressRange,
-        policy: &Policy,
-    ) -> Inspection {
-        let inspection =
-            self.chain
-                .inspect_with_evidence(&image.snapshot, target, &image.entries, policy);
-        self.metrics.borrow_mut().preparation.record(&inspection);
-        inspection
-    }
-}
-
-impl AdmissionOracle for GateOracle {
-    fn inspect(
-        &self,
-        snapshot: &Snapshot,
-        target: AddressRange,
-        entries: &LegalEntrySet,
-        policy: &Policy,
-    ) -> ScanReport {
-        let inspection = self
-            .chain
-            .inspect_with_evidence(snapshot, target, entries, policy);
-        self.metrics.borrow_mut().demand.record(&inspection);
-        inspection.report
-    }
-}
-
-struct Image {
-    mapping: MemoryMapping,
-    snapshot: Snapshot,
-    entries: LegalEntrySet,
-    core_identity: core::CodeIdentity,
-}
-
 /// Owns one launched task from its exec checkpoint through exit or termination.
 /// Uncertain events poison the loop; dropping the owner kills and reaps it.
 pub struct SingleThreadPageGate {
@@ -348,96 +288,13 @@ impl SingleThreadPageGate {
         timeout: Duration,
     ) -> Result<Self, GateError> {
         let started = Instant::now();
-        if facts.len() > MAX_IMAGES {
-            return Err(GateError::Refused("too many image censuses"));
-        }
+        domain::validate_image_count(&facts)?;
         let mut process = checkpoint.into_stopped_process(timeout)?;
         let mappings = process.gate_initial_images(timeout)?;
-        let page_count = mappings.iter().try_fold(0_u64, |count, mapping| {
-            count.checked_add((mapping.end - mapping.start) / PAGE)
-        });
-        if mappings.len() > MAX_IMAGES || page_count.is_none_or(|count| count > MAX_GATED_PAGES) {
-            return Err(GateError::Refused(
-                "initial executable mapping budget exceeded",
-            ));
-        }
-        let mut pages = BTreeMap::new();
-        for mapping in &mappings {
-            if mapping.start % PAGE != 0
-                || mapping.end % PAGE != 0
-                || mapping.permissions.as_bytes().get(1) == Some(&b'w')
-                || mapping.permissions.as_bytes().get(3) != Some(&b'p')
-            {
-                return Err(GateError::Refused(
-                    "requires page-aligned private non-writable code",
-                ));
-            }
-            for address in (mapping.start..mapping.end).step_by(PAGE as usize) {
-                pages.insert(address, false);
-            }
-        }
-        let census_starts: BTreeSet<_> = facts.iter().map(|fact| fact.start).collect();
-        let mut images = Vec::new();
-        for fact in facts {
-            let mapping = mappings
-                .iter()
-                .find(|m| m.start == fact.start && m.end - m.start == fact.bytes.len() as u64)
-                .ok_or(GateError::Refused(
-                    "census must cover exactly one original executable VMA",
-                ))?
-                .clone();
-            if fact.bytes.len() > MAX_IMAGE_BYTES
-                || images
-                    .iter()
-                    .any(|image: &Image| image.mapping.start == fact.start)
-            {
-                return Err(GateError::Refused("oversized or duplicate census"));
-            }
-            if process.read_memory(fact.start, fact.bytes.len())? != fact.bytes {
-                return Err(GateError::Refused("original image bytes differ"));
-            }
-            // Adjacent admitted VMAs require a cross-mapping proof. A neighbor
-            // with no census stays NX for this owner's whole lifetime: facts
-            // cannot be added later and every first touch there is refused.
-            if mappings.iter().any(|m| {
-                census_starts.contains(&m.start)
-                    && (m.end == mapping.start || m.start == mapping.end)
-            }) {
-                return Err(GateError::Refused(
-                    "adjacent executable VMAs need a joint census",
-                ));
-            }
-            let core_identity = new_core_identity()?;
-            let identity = MappingId(core_identity.mapping);
-            let snapshot = Snapshot::new(
-                identity,
-                Generation(0),
-                fact.start,
-                fact.bytes,
-                Boundary::NonExecutable,
-                Boundary::NonExecutable,
-                WriteControl::Owned,
-            )
-            .ok_or(GateError::Refused("invalid census range"))?;
-            let entries = LegalEntrySet::new(
-                identity,
-                Generation(0),
-                0,
-                snapshot.range(),
-                Completeness::AllInstructionHeads,
-                fact.heads
-                    .into_iter()
-                    .map(|pc| (pc, EntryProvenance::VerifiedInstruction)),
-                [],
-            )
-            .map_err(|_| GateError::Refused("instruction head outside mapping"))?;
-            images.push(Image {
-                mapping,
-                snapshot,
-                entries,
-                core_identity,
-            });
-        }
+        let pages = domain::initial_pages(&mappings)?;
+        let images = domain::prepare_images(facts, &mappings, |address, len| {
+            process.read_memory(address, len)
+        })?;
         let metrics = GateMetrics {
             startup: started.elapsed(),
             untouched_pages: pages.len(),
@@ -522,55 +379,24 @@ impl SingleThreadPageGate {
                 "oracle preparation requires an unstarted owner",
             ));
         }
-        if pages.len() > 64
-            || self.oracle.metrics.borrow().preparation.inspections + pages.len() as u64 > 64
-        {
-            return Err(GateError::Refused(
-                "oracle preparation page budget exceeded",
-            ));
-        }
-        let unique: BTreeSet<_> = pages.iter().copied().collect();
-        if unique.len() != pages.len()
-            || pages.iter().any(|&page| {
-                page % PAGE != 0
-                    || self.pages.get(&page) != Some(&false)
-                    || !self
-                        .images
-                        .iter()
-                        .any(|image| image.snapshot.range().contains(page))
-            })
-        {
-            return Err(GateError::Refused(
-                "oracle preparation requires distinct censused whole pages",
-            ));
-        }
-        let deadline = Instant::now() + self.timeout;
-        let mut inspections = Vec::with_capacity(pages.len());
-        for &page in pages {
-            remaining(deadline)?;
-            let image = self
-                .images
-                .iter()
-                .find(|image| image.snapshot.range().contains(page))
-                .expect("batch validated");
-            inspections.push(self.oracle.inspect_preparation(
-                image,
-                AddressRange::new(page, page + PAGE).unwrap(),
-                &self.policy,
-            ));
-            remaining(deadline)?;
-        }
-        Ok(inspections)
+        domain::prepare_oracle(
+            &self.oracle,
+            &self.images,
+            &self.pages,
+            pages,
+            &self.policy,
+            self.timeout,
+        )
     }
 
     /// Separate actual work before execution and during first-touch admission.
     pub fn oracle_metrics(&self) -> GateOracleMetrics {
-        self.oracle.metrics.borrow().clone()
+        self.oracle.metrics()
     }
 
     /// Current bounded cache storage; poisoning is explicit and uses runtime fallback.
     pub fn oracle_usage(&self) -> Result<CacheUsage, CacheCorruption> {
-        self.oracle.chain.usage()
+        self.oracle.usage()
     }
 
     /// The owned child identifier, for diagnostics only.
@@ -736,45 +562,11 @@ impl SingleThreadPageGate {
     }
 
     fn original_byte(&self, pc: u64) -> Result<u8, GateError> {
-        self.images
-            .iter()
-            .find(|image| image.snapshot.range().contains(pc))
-            .map(|image| image.snapshot.bytes()[(pc - image.mapping.start) as usize])
-            .ok_or(GateError::Refused("no original source byte"))
+        domain::original_byte(&self.images, pc)
     }
 
     fn is_owned_fetch(&self, signal: &SignalStop) -> Result<bool, GateError> {
-        let Some(address) = signal.address else {
-            return Ok(false);
-        };
-        if self.pages.get(&(address & !(PAGE - 1))) != Some(&false) {
-            return Ok(false);
-        }
-        let Some(image) = self
-            .images
-            .iter()
-            .find(|image| image.snapshot.range().contains(signal.instruction_pointer))
-        else {
-            return Err(GateError::Refused("first touch has no complete census"));
-        };
-        if !image
-            .entries
-            .heads()
-            .contains_key(&signal.instruction_pointer)
-        {
-            return Err(GateError::Refused("first touch at an undeclared head"));
-        }
-        let offset = (signal.instruction_pointer - image.mapping.start) as usize;
-        let instruction = Decoder::with_ip(
-            64,
-            &image.snapshot.bytes()[offset..],
-            signal.instruction_pointer,
-            DecoderOptions::NONE,
-        )
-        .decode();
-        Ok(!instruction.is_invalid()
-            && address >= instruction.ip()
-            && address < instruction.next_ip())
+        domain::owned_fetch(&self.images, &self.pages, signal)
     }
 
     fn admit(&mut self, signal: &SignalStop, deadline: Instant) -> Result<(), GateError> {
@@ -815,20 +607,7 @@ impl SingleThreadPageGate {
                 .map_err(|_| GateError::Refused("CALL-return census is unresolved"))?;
             remaining(deadline)?;
         }
-        let mut expected = image.snapshot.bytes().to_vec();
-        for (&pc, _) in self.sites.range(image.snapshot.range().as_range()) {
-            expected[(pc - image.mapping.start) as usize] = 0xcc;
-        }
-        if let Some(publisher) = &self.core {
-            for installed in publisher.installed() {
-                for edit in &installed.plan().parts().writes {
-                    if image.snapshot.range().contains(edit.address) {
-                        let offset = (edit.address - image.mapping.start) as usize;
-                        expected[offset..offset + edit.bytes.len()].copy_from_slice(&edit.bytes);
-                    }
-                }
-            }
-        }
+        let expected = domain::expected_source_bytes(image, &self.sites, self.core.as_ref());
         let mut stop = self.process.hold()?;
         stop.acknowledge_owned_signal(signal)?;
         if stop.read_memory(image.mapping.start, expected.len())? != expected {
@@ -898,190 +677,9 @@ impl SingleThreadPageGate {
     }
 }
 
-struct AdmissionBundle {
-    pages: BTreeSet<u64>,
-    candidates: BTreeMap<u64, Candidate>,
-    prepared: BTreeMap<u64, PreparedCpuid>,
-}
-
-fn prepare_admission(
-    source: (&Image, &GateOracle),
-    page: u64,
-    policy: &Policy,
-    returns: &CallReturnLedger,
-    publisher: Option<&CpuidPublisher>,
-    selected_aliases: Option<&crate::selected::SyscallAliases>,
-    deadline: Instant,
-) -> Result<AdmissionBundle, GateError> {
-    let (image, oracle) = source;
-    // Close over complete pages required by every selected straddler.
-    // Granting X to a halo without scanning its entire page is forbidden.
-    let mut bundle = BTreeSet::from([page]);
-    let mut scanned = BTreeSet::new();
-    let mut candidates = BTreeMap::new();
-    let mut prepared = BTreeMap::new();
-    while let Some(next) = bundle.difference(&scanned).next().copied() {
-        remaining(deadline)?;
-        if !image
-            .snapshot
-            .range()
-            .covers(AddressRange::new(next, next + PAGE).unwrap())
-        {
-            return Err(GateError::Refused(
-                "selected instruction crosses image census",
-            ));
-        }
-        let target = AddressRange::new(next, next + PAGE).unwrap();
-        let report = oracle.inspect(&image.snapshot, target, &image.entries, policy);
-        remaining(deadline)?;
-        if report.verdict() == Verdict::Refused {
-            return Err(GateError::Scan(report.obligations().to_vec()));
-        }
-        // NX history is never an exhaustive proof that no resumes exist.
-        if !report.candidates().is_empty()
-            && returns.obligations_in(report.dependency()).next().is_some()
-        {
-            return Err(GateError::Refused(
-                "potential saved CALL return intersects selected publication",
-            ));
-        }
-        for site in report.candidates() {
-            remaining(deadline)?;
-            if let Some(aliases) = selected_aliases {
-                let start = (site.address - image.mapping.start) as usize;
-                let end = start + usize::from(site.len);
-                let decoded = crate::selected::decode(
-                    site.address,
-                    &image.snapshot.bytes()[start..end],
-                    aliases,
-                )?;
-                if decoded.bytes().len() != usize::from(site.len)
-                    || decoded.operation().class() != site.class
-                {
-                    return Err(GateError::Refused("selected decode differs from scan"));
-                }
-            } else if site.class != liteinst_admission::scan::SiteClass::Cpuid {
-                return Err(GateError::Refused(
-                    "selected class lacks reference single-step qualification",
-                ));
-            }
-            candidates.insert(site.address, *site);
-            bundle.insert(site.address & !(PAGE - 1));
-            bundle.insert((site.address + u64::from(site.len) - 1) & !(PAGE - 1));
-            if let Some(publisher) = publisher {
-                if !publisher
-                    .installed()
-                    .iter()
-                    .any(|installed| installed.plan().parts().logical_pc == site.address)
-                    && !prepared.contains_key(&site.address)
-                {
-                    if prepared.len() == MAX_CPUID_BUNDLE {
-                        return Err(GateError::Refused(
-                            "core publication bundle budget exceeded",
-                        ));
-                    }
-                    let plan = prepare_cpuid(image, *site)?;
-                    remaining(deadline)?;
-                    let consumed = plan.consumed();
-                    bundle.insert(consumed.start() & !(PAGE - 1));
-                    bundle.insert((consumed.end() - 1) & !(PAGE - 1));
-                    prepared.insert(site.address, plan);
-                }
-            }
-        }
-        scanned.insert(next);
-    }
-    Ok(AdmissionBundle {
-        pages: bundle,
-        candidates,
-        prepared,
-    })
-}
-
-fn new_core_identity() -> Result<core::CodeIdentity, GateError> {
-    let nonce = NEXT_IMAGE_ID
-        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
-            value.checked_add(1)
-        })
-        .map_err(|_| GateError::Refused("image identity space exhausted"))?;
-    let mut source = [0; 32];
-    source[..8].copy_from_slice(b"li2image");
-    source[8..16].copy_from_slice(&nonce.to_le_bytes());
-    // This is a non-reused owner key bound to an immutable image and policy,
-    // not a content hash. Publication always authenticates exact bytes too.
-    Ok(core::CodeIdentity {
-        source: core::SourceIdentity(source),
-        mapping: nonce,
-        generation: 0,
-    })
-}
-
-fn prepare_cpuid(image: &Image, site: Candidate) -> Result<PreparedCpuid, GateError> {
-    let offset = (site.address - image.mapping.start) as usize;
-    let mut decoder = Decoder::with_ip(
-        64,
-        &image.snapshot.bytes()[offset..],
-        site.address,
-        DecoderOptions::NONE,
-    );
-    while decoder.ip() < site.address + 5 {
-        if !image.entries.heads().contains_key(&decoder.ip()) {
-            return Err(GateError::Refused(
-                "pun dependency lacks a verified instruction head",
-            ));
-        }
-        let instruction = decoder.decode();
-        if instruction.is_invalid() {
-            return Err(GateError::Refused(
-                "pun dependency is not complete instructions",
-            ));
-        }
-    }
-    let size = (decoder.ip() - site.address) as usize;
-    let entries = core::LegalEntrySet {
-        identity: image.core_identity,
-        scope: core::AddressRange::new(image.mapping.start, image.snapshot.bytes().len())
-            .map_err(GateError::Core)?,
-        provenance: core::EntryProvenance::Declared(
-            "immutable launch instruction-head census".into(),
-        ),
-        completeness: core::EntryCompleteness::AllInstructionHeads,
-        entries: image
-            .entries
-            .heads()
-            .keys()
-            .map(|&address| core::LegalEntry {
-                address,
-                requires_endbr: false,
-            })
-            .collect(),
-        // A conservative superset: the unsafe constructor certifies that any
-        // saved continuation is a declared head. NX history proves nothing.
-        resumes: core::ResumeObligation::Enumerated(
-            image.entries.heads().keys().copied().collect(),
-        ),
-    };
-    let allocation = AllocationPolicy::near(site.address).map_err(GateError::Core)?;
-    PreparedCpuid::prepare(CpuidPlanRequest {
-        identity: image.core_identity,
-        address: site.address,
-        code: &image.snapshot.bytes()[offset..offset + size],
-        entries: &entries,
-        allocation: &allocation,
-    })
-    .map_err(GateError::Core)
-}
-
 fn control_remaining(deadline: Instant) -> Result<Duration, LaunchError> {
     deadline
         .checked_duration_since(Instant::now())
         .filter(|duration| !duration.is_zero())
         .ok_or(LaunchError::Timeout("whole-event deadline"))
-}
-
-fn remaining(deadline: Instant) -> Result<Duration, GateError> {
-    deadline
-        .checked_duration_since(Instant::now())
-        .filter(|duration| !duration.is_zero())
-        .ok_or(GateError::Refused("whole-event deadline exhausted"))
 }

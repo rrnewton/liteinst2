@@ -5,6 +5,8 @@
 //! dynamic resumes and aliases, and qualify every selected and collateral
 //! instruction's execution. Original scanner reports remain unchanged.
 
+pub(crate) mod pending;
+
 use std::collections::{BTreeMap, BTreeSet};
 
 use iced_x86::{Decoder, DecoderOptions};
@@ -230,6 +232,30 @@ impl TrapCoveragePlan {
     }
 }
 
+// Only the explicit crate-private pending path can carry an unresolved resume.
+// This mode never changes a report or resolves a native routing obligation.
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum ResumeMode {
+    Refuse,
+    Pending,
+}
+
+// Common placement geometry is private. It has no public conversion into a
+// completed plan: the legacy build below always uses ResumeMode::Refuse.
+struct Geometry {
+    snapshot: Snapshot,
+    entries: LegalEntrySet,
+    policy: Policy,
+    target: AddressRange,
+    page_size: u64,
+    pages: BTreeSet<u64>,
+    dependencies: Vec<AddressRange>,
+    guards: BTreeMap<u64, TrapGuard>,
+    decoded: BTreeMap<u64, Vec<u8>>,
+    reports: Vec<ScanReport>,
+    resolutions: Vec<ResolvedTrapObligation>,
+}
+
 struct Builder<'a> {
     snapshot: &'a Snapshot,
     entries: &'a LegalEntrySet,
@@ -424,10 +450,27 @@ impl<'a> Builder<'a> {
         Ok(())
     }
 
-    fn build(
+    fn build(self, oracle: &impl AdmissionOracle) -> Result<TrapCoveragePlan, TrapCoverageRefusal> {
+        let geometry = self.geometry(oracle, ResumeMode::Refuse)?;
+        Ok(TrapCoveragePlan {
+            snapshot: geometry.snapshot,
+            entries: geometry.entries,
+            policy: geometry.policy,
+            target: geometry.target,
+            page_size: geometry.page_size,
+            pages: geometry.pages,
+            dependencies: geometry.dependencies,
+            guards: geometry.guards,
+            reports: geometry.reports,
+            resolutions: geometry.resolutions,
+        })
+    }
+
+    fn geometry(
         mut self,
         oracle: &impl AdmissionOracle,
-    ) -> Result<TrapCoveragePlan, TrapCoverageRefusal> {
+        resumes: ResumeMode,
+    ) -> Result<Geometry, TrapCoverageRefusal> {
         let mut stable = false;
         for _ in 0..self.budget.max_rounds {
             let before = (self.pages.len(), self.guards.len());
@@ -451,7 +494,8 @@ impl<'a> Builder<'a> {
                             Obligation::EmbeddedCandidate(_)
                                 | Obligation::UnresolvedCandidate(_)
                                 | Obligation::OverlappingInstructions(_)
-                        )
+                        ) && !(resumes == ResumeMode::Pending
+                            && matches!(obligation, Obligation::SavedResume(_)))
                     })
                     .cloned()
                     .collect();
@@ -524,7 +568,7 @@ impl<'a> Builder<'a> {
             .filter(|pc| dependencies.iter().any(|range| range.contains(*pc)))
             .map(Obligation::SavedResume)
             .collect();
-        if !saved.is_empty() {
+        if !saved.is_empty() && resumes == ResumeMode::Refuse {
             return Err(unresolved(self.target, saved));
         }
         let mut resolutions = Vec::new();
@@ -534,6 +578,9 @@ impl<'a> Builder<'a> {
                     Obligation::EmbeddedCandidate(address)
                     | Obligation::UnresolvedCandidate(address)
                     | Obligation::OverlappingInstructions(address) => *address,
+                    // Retained unchanged in the report and pending inventory;
+                    // never labelled a resolved candidate/overlap obligation.
+                    Obligation::SavedResume(_) if resumes == ResumeMode::Pending => continue,
                     _ => return Err(unresolved(report.target(), vec![obligation.clone()])),
                 };
                 let mut covering = BTreeSet::from([address]);
@@ -564,7 +611,7 @@ impl<'a> Builder<'a> {
                 });
             }
         }
-        Ok(TrapCoveragePlan {
+        Ok(Geometry {
             snapshot: self.snapshot.clone(),
             entries: self.entries.clone(),
             policy: self.policy.clone(),
@@ -573,6 +620,7 @@ impl<'a> Builder<'a> {
             pages: self.pages,
             dependencies,
             guards: self.guards,
+            decoded: self.decoded,
             reports: self.reports,
             resolutions,
         })

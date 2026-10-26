@@ -1,24 +1,13 @@
 //! Explicit trap-coverage publication, separate from the strict/A1 paths.
 
 use super::*;
-use crate::trap_coverage::{TrapCoveragePlan, TrapGuard, TrapGuardRole};
-use iced_x86::Code;
+use crate::trap_coverage::{TrapGuard, TrapGuardRole};
 
 impl SingleThreadPageGate {
     /// Reconstructs the exact expected instruction image, including guards in
     /// the operand/prefix bytes. The immutable original snapshot stays separate.
     pub(super) fn armed_instruction(&self, pc: u64, original: &[u8]) -> Vec<u8> {
-        let mut armed = original.to_vec();
-        let end = pc
-            .checked_add(original.len() as u64)
-            .expect("validated instruction range");
-        for (&address, _) in self.sites.range(pc..end) {
-            armed[(address - pc) as usize] = 0xcc;
-        }
-        for (&address, _) in self.covered_guards.range(pc..end) {
-            armed[(address - pc) as usize] = 0xcc;
-        }
-        armed
+        domain::armed_instruction(pc, original, &self.sites, &self.covered_guards)
     }
 
     pub(super) fn admit_covered(
@@ -42,56 +31,18 @@ impl SingleThreadPageGate {
             .iter()
             .find(|image| image.snapshot.range().contains(page))
             .ok_or(GateError::Refused("missing image facts"))?;
-        let plan = TrapCoveragePlan::build_with_oracle(
-            &image.snapshot,
-            AddressRange::new(page, page + PAGE).unwrap(),
-            &image.entries,
+        let plan = domain::prepare_covered_admission(
+            (image, &self.oracle),
+            page,
             &self.policy,
-            budget,
-            &self.oracle,
-        )
-        .map_err(GateError::Coverage)?;
-        remaining(deadline)?;
-
-        // The placement proof does not qualify an execution mechanism. Validate
-        // every selected decode and every collateral step before the first write.
-        for guard in plan.guards().values() {
-            match guard.role() {
-                TrapGuardRole::Selected(site) => {
-                    let decoded = crate::selected::decode(
-                        guard.address(),
-                        guard.original_bytes(),
-                        self.selected_aliases.as_ref().expect("checked aliases"),
-                    )?;
-                    if decoded.bytes() != guard.original_bytes()
-                        || decoded.operation().class() != site.class
-                    {
-                        return Err(GateError::Refused("covered selected decode differs"));
-                    }
-                }
-                TrapGuardRole::Collateral => qualify_collateral(guard)?,
-            }
-            if self
-                .covered_guards
-                .get(&guard.address())
-                .is_some_and(|old| old != guard)
-            {
-                return Err(GateError::Refused(
-                    "covered guard changed within generation",
-                ));
-            }
-        }
-        // A saved CALL return may target a never-executed page. It must remain a
-        // certified original head; the guard closure preserves every such head.
-        for dependency in plan.dependencies() {
-            if self
-                .returns
-                .obligations_in(*dependency)
-                .any(|entry| !image.entries.heads().contains_key(&entry.return_pc))
-            {
-                return Err(GateError::Refused("saved CALL return lacks a covered head"));
-            }
-        }
+            &self.returns,
+            (
+                self.selected_aliases.as_ref().expect("checked aliases"),
+                &self.covered_guards,
+                budget,
+            ),
+            deadline,
+        )?;
         for &next in plan.pages() {
             self.returns
                 .record_independent_streams_before_admission(
@@ -236,29 +187,6 @@ impl SingleThreadPageGate {
             )),
         }
     }
-}
-
-fn qualify_collateral(guard: &TrapGuard) -> Result<(), GateError> {
-    let instruction = Decoder::with_ip(
-        64,
-        guard.original_bytes(),
-        guard.address(),
-        DecoderOptions::NONE,
-    )
-    .decode();
-    // These instructions cannot branch, modify TF, suppress the debug trap or
-    // enter the kernel. Additional collateral classes need their own native
-    // state/fault evidence before this executor accepts them.
-    if !matches!(
-        instruction.code(),
-        Code::Mov_r16_imm16 | Code::Mov_r32_imm32 | Code::Mov_r64_imm64
-    ) || instruction.len() != guard.original_bytes().len()
-    {
-        return Err(GateError::Refused(
-            "collateral instruction lacks native-step qualification",
-        ));
-    }
-    Ok(())
 }
 
 // No hook, selector, environment variable or public API exists in a production
