@@ -6,13 +6,14 @@ from pathlib import Path
 import unittest
 
 import native_fixtures as fixtures
+from launch_cleanup_inventory import before_launch_cleanup
 from parsing import InvalidEvidence
 import run
 from test_dynamic_admission import corpus, fixture_block, native_block, summary
 from test_native_fixtures import header
 from test_source_census_fixtures import named_capture
 from test_runtime_kernel_inventory import (OLD_NATIVE75_SHA256, KERNEL_NATIVE_ROOT,
-                                           KERNEL_ROWS, before_kernel, digest)
+                                           KERNEL_ROWS, before_kernel_baseline, digest)
 
 ROWS = list(KERNEL_ROWS)
 NAMES = [row["test"] for row in ROWS]
@@ -179,7 +180,8 @@ class RuntimeKernelFixtureTests(unittest.TestCase):
 
     def test_kernel_full_catalog_preserves_all75_and_requires_every_old_and_new_case(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
-        previous = before_kernel(declared)
+        declared = before_launch_cleanup(declared)
+        previous = before_kernel_baseline(declared)
         rows = declared["native_validation_fixtures"]
         self.assertEqual(rows[:75], previous["native_validation_fixtures"])
         self.assertEqual(rows[75:], ROWS)

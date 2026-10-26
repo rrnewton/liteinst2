@@ -42,7 +42,7 @@ def command_specs(relative):
             "-fno-vectorize", "-fno-slp-vectorize", "-fcf-protection=none", "-mno-red-zone",
             "-fintegrated-as", "-c", SOURCE, "-o", object_file], 180, 0),
         ("link_c", ["ld.lld", "-static", "--build-id=none", "--entry=_start", "-z", "noexecstack",
-            "-z", "max-page-size=4096", "-o", executable, object_file], 180, 0),
+            "-z", "separate-code", "-z", "max-page-size=4096", "-o", executable, object_file], 180, 0),
         ("build_example", ["cargo", "build", "--locked", "--offline", "-p", "liteinst-launch",
             "--example", "runtime_kernel_consumer"], 180, 0),
         ("example_protocol", [EXAMPLE, "--protocol-version"], 10, 0),

@@ -1,7 +1,11 @@
 # Freestanding C runtime consumer
 
-This is an unqualified recipe for one compiler-produced static x86-64 executable.
-No consumer result is attached yet. It does not establish libc, loader,
+This revised recipe is unqualified for one compiler-produced static x86-64 executable.
+It requests separate read-only and executable load pages with `-z separate-code`.
+The earlier recipe produced overlapping file-page mappings and was refused; its
+[failed receipt](results/20261026T214847.495009Z-runtime-consumer-a2ed122cad44.json)
+remains unchanged. The revised artifact still requires actual page-geometry,
+reference-execution and admitted-execution evidence before qualification. It does not establish libc, loader,
 interpreter, dynamic linking, memory/stack, signal/thread or general application
 support.
 
@@ -34,7 +38,9 @@ The driver authenticates and replays the six original captures. It observes the
 actual clang and ld.lld executable hashes and versions, compiles the C source
 to an object, directly links a static ELF, and builds the Rust example. Exact
 relative argv, source/object/ELF/example hashes and bounded ELF geometry are
-recorded. The compiler and linker do not become Cargo build dependencies; no
+recorded. Separate-code layout is an input to this finite experiment; it does
+not relax the runtime alias refusal or establish general alias support. The
+compiler and linker do not become Cargo build dependencies; no
 default test silently passes when the generated artifact is absent.
 
 The linked ELF runs once without admission as a reference, with expected actual

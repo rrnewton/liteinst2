@@ -6085,7 +6085,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 564
+        "tests": 573
       }
     },
     "workspace_tests": {
@@ -6427,7 +6427,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 564
+        "tests": 573
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -7354,8 +7354,18 @@
       "cohort": "b3_runtime_kernel",
       "harness": "unit/liteinst_launch/lib",
       "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_stale_reply_keeps_physical_custody"
+    },
+    {
+      "cohort": "b3_runtime_launch_cleanup",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::launch_cleanup_native_tests::runtime_launch_alias_refusal_retains_pending_cleanup_and_physical_custody"
+    },
+    {
+      "cohort": "b3_runtime_launch_cleanup",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::launch_cleanup_native_tests::runtime_launch_pre_ready_failure_preserves_original_error_and_cleanup"
     }
   ],
-  "recorder_tests": 296,
+  "recorder_tests": 299,
   "schema_version": 1
 }

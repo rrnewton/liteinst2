@@ -9,6 +9,7 @@ import re
 import unittest
 
 import native_fixtures as fixtures
+from launch_cleanup_inventory import before_launch_cleanup, before_launch_cleanup_python
 from parsing import InvalidEvidence, require
 from consumer_inventory import (CONSUMER_METHODS, OLD_PYTHON284_SHA256,
                                 before_consumer, before_consumer_python)
@@ -137,6 +138,11 @@ def digest(value):
 
 
 def before_kernel(declared):
+    """Validate the new cleanup addition before the unchanged kernel baseline."""
+    return before_kernel_baseline(before_launch_cleanup(declared))
+
+
+def before_kernel_baseline(declared):
     """Authenticate the complete addition before exposing the exact old corpus.
 
     This is only a historical-test projection, never recorder acceptance or a
@@ -218,6 +224,7 @@ class RuntimeKernelInventoryTests(unittest.TestCase):
                         identity = path.stem + "." + cls.name + "." + method.name
                         (new_python if path.stem in new_modules else old_python).append(identity)
                         current_python.append(identity)
+        current_python = before_launch_cleanup_python(current_python)
         previous_python = before_consumer_python(current_python)
         self.assertEqual(len(previous_python), 284)
         self.assertEqual(digest(previous_python), OLD_PYTHON284_SHA256)
@@ -239,10 +246,11 @@ class RuntimeKernelInventoryTests(unittest.TestCase):
 
     def test_kernel_current_counts_preserve_exact_old_corpus_and_separate_collections(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_launch_cleanup(declared)
         original = copy.deepcopy(declared)
         pre_consumer = before_consumer(declared)
         self.assertEqual(pre_consumer | {"recorder_tests": 296}, declared)
-        previous = before_kernel(declared)
+        previous = before_kernel_baseline(declared)
         self.assertEqual(declared, original)
         self.assertEqual(digest(previous), PRE_KERNEL_CORPUS_SHA256)
         self.assertEqual(declared["native_validation_fixtures"][:75], previous["native_validation_fixtures"])
@@ -269,6 +277,7 @@ class RuntimeKernelInventoryTests(unittest.TestCase):
 
     def test_kernel_projection_refuses_new_or_old_identity_source_and_count_tampering(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_launch_cleanup(declared)
         for changed in (declared | {"recorder_tests": 284},
                         declared | {"recorder_tests": 296.0},
                         declared | {"recorder_tests": True},
@@ -286,7 +295,7 @@ class RuntimeKernelInventoryTests(unittest.TestCase):
                 elif change == "extra": rows[75 + index]["extra"] = "PRIVATE_SENTINEL"
                 else: rows[75 + index][change] = "PRIVATE_SENTINEL"
                 with self.subTest(index=index, change=change), self.assertRaises(InvalidEvidence) as caught:
-                    before_kernel(changed)
+                    before_kernel_baseline(changed)
                 self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
         for change in ("recorder", "unit", "unit_type", "ignored_type", "old_unit", "old_native",
                        "runtime", "static", "dynamic", "matrix", "helper", "baseline"):
@@ -304,7 +313,7 @@ class RuntimeKernelInventoryTests(unittest.TestCase):
             elif change == "helper": changed["backing_cleanup_harnesses"]["serial_launch"][0]["trajectories"].pop()
             else: changed["baseline_revision"] = "0" * 40
             with self.subTest(change=change), self.assertRaises(InvalidEvidence):
-                before_kernel(changed)
+                before_kernel_baseline(changed)
         for path, added in KERNEL_METHODS.items():
             original = list(PREEXISTING_METHODS.get(path, ()) + added)
             for changed in (original[:-1], original + [original[-1]],
