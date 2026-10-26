@@ -16,7 +16,7 @@ pub enum SetupRefusal {
     SymbolOwner,
     /// The selected dynamic relocation or resulting pointer is not exact.
     Relocation,
-    /// The complete five-head/one-exit subject grammar was not certified.
+    /// The selected complete fixed subject grammar or original RET set was not certified.
     EntryExit,
     /// The caller/kernel indicates an unsupported CET profile.
     Cet,
@@ -62,6 +62,102 @@ impl SubjectContract {
     }
 }
 
+#[derive(Clone, Copy)]
+/// Explicit caller facts for the separate authored two-return grammar.
+pub struct BranchSubjectContract {
+    /// Only the two original ordinary RET paths are admitted.
+    pub ordinary_ret_only: bool,
+    /// Caller certifies no active IBT; protection is never disabled here.
+    pub no_active_ibt: bool,
+}
+impl BranchSubjectContract {
+    /// The fixed zero/nonzero, 36-byte subject. No caller-selected exit layout.
+    pub const TWO_RETURNS: Self = Self {
+        ordinary_ret_only: true,
+        no_active_ibt: true,
+    };
+    fn check(self) -> Result<(), SetupRefusal> {
+        if !self.ordinary_ret_only {
+            return Err(SetupRefusal::ExitSemantics);
+        }
+        if !self.no_active_ibt {
+            return Err(SetupRefusal::Cet);
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy)]
+/// Opaque authority minted only after complete branch-file and live-owner checks.
+/// Its loader handle and original fd are retained for the process lifetime.
+pub struct TwoExitCertificate {
+    entry: u64,
+    returns: [u64; 2],
+}
+impl TwoExitCertificate {
+    /// Real entry of this authenticated loaded owner.
+    pub fn entry(&self) -> u64 {
+        self.entry
+    }
+    /// The two source-owned ordinary RET addresses, in fixed source order.
+    pub fn returns(&self) -> [u64; 2] {
+        self.returns
+    }
+}
+
+#[derive(Clone, Copy)]
+enum Grammar {
+    Leaf,
+    Branch,
+}
+impl Grammar {
+    fn names(self) -> [&'static str; 5] {
+        match self {
+            Self::Leaf => [
+                "interval_leaf",
+                "interval_invoke",
+                "interval_terminal",
+                "interval_bias_pointer",
+                "interval_bias",
+            ],
+            Self::Branch => [
+                "branch_leaf",
+                "branch_invoke",
+                "branch_terminal",
+                "branch_bias_pointer",
+                "branch_bias",
+            ],
+        }
+    }
+    fn loader_names(self) -> (&'static CStr, &'static CStr) {
+        match self {
+            Self::Leaf => (c"interval_leaf", c"interval_terminal"),
+            Self::Branch => (c"branch_leaf", c"branch_terminal"),
+        }
+    }
+    fn length(self) -> usize {
+        match self {
+            Self::Leaf => 19,
+            Self::Branch => 36,
+        }
+    }
+    fn exits(self) -> &'static [u64] {
+        match self {
+            Self::Leaf => &[18],
+            Self::Branch => &[27, 35],
+        }
+    }
+    fn suffix(self) -> &'static [u8] {
+        match self {
+            Self::Leaf => &[0x49, 0x03, 0x02, 0x48, 0x89, 0x06, 0xc3],
+            Self::Branch => &[
+                0x49, 0x03, 0x02, 0x48, 0x83, 0xff, 0x00, 0x75, 0x07, 0x48, 0x8d, 0x00, 0x48, 0x89,
+                0x06, 0xc3, 0x48, 0x83, 0xc0, 0x01, 0x48, 0x89, 0x06, 0xc3,
+            ],
+        }
+    }
+}
+
 #[derive(Clone)]
 struct Load {
     offset: u64,
@@ -82,7 +178,7 @@ struct Elf {
     terminal: u64,
     pointer: u64,
     bias_value: u64,
-    code: [u8; 19],
+    code: Vec<u8>,
     relro: Relro,
 }
 fn u16_at(b: &[u8], p: usize) -> Result<u16, SetupRefusal> {
@@ -123,6 +219,14 @@ fn file_range(loads: &[Load], address: u64, len: usize) -> Result<usize, SetupRe
     usize::try_from(rows[0].offset + address - rows[0].address).map_err(|_| SetupRefusal::Format)
 }
 fn parse(bytes: &[u8]) -> Result<Elf, SetupRefusal> {
+    parse_fixed(bytes, Grammar::Leaf)
+}
+fn parse_branch(bytes: &[u8]) -> Result<Elf, SetupRefusal> {
+    parse_fixed(bytes, Grammar::Branch)
+}
+fn parse_fixed(bytes: &[u8], grammar: Grammar) -> Result<Elf, SetupRefusal> {
+    let names = grammar.names();
+    let length = grammar.length();
     if bytes.len() > 1024 * 1024
         || bytes.get(..7) != Some(b"\x7fELF\x02\x01\x01")
         || u16_at(bytes, 16)? != 3
@@ -272,15 +376,15 @@ fn parse(bytes: &[u8]) -> Result<Elf, SetupRefusal> {
         }
         Ok(rows[0].address())
     };
-    let entry = symbol("interval_leaf", 19)?;
-    let invoke = symbol("interval_invoke", 5)?;
-    let terminal = symbol("interval_terminal", 1)?;
-    let pointer = symbol("interval_bias_pointer", 8)?;
-    let bias_value = symbol("interval_bias", 8)?;
+    let entry = symbol(names[0], length as u64)?;
+    let invoke = symbol(names[1], 5)?;
+    let terminal = symbol(names[2], 1)?;
+    let pointer = symbol(names[3], 8)?;
+    let bias_value = symbol(names[4], 8)?;
     if file.symbols().any(|s| {
         s.is_definition()
-            && (entry..entry + 19).contains(&s.address())
-            && s.name() != Ok("interval_leaf")
+            && (entry..entry + length as u64).contains(&s.address())
+            && s.name() != Ok(names[0])
     }) {
         return Err(SetupRefusal::EntryExit);
     }
@@ -291,9 +395,9 @@ fn parse(bytes: &[u8]) -> Result<Elf, SetupRefusal> {
         .collect::<Result<_, _>>()
         .map_err(|_| SetupRefusal::Format)?;
     if functions.len() != 3
-        || !functions.iter().any(|s| s == "interval_leaf")
-        || !functions.iter().any(|s| s == "interval_invoke")
-        || !functions.iter().any(|s| s == "interval_terminal")
+        || !functions.iter().any(|s| s == names[0])
+        || !functions.iter().any(|s| s == names[1])
+        || !functions.iter().any(|s| s == names[2])
     {
         return Err(SetupRefusal::SymbolOwner);
     }
@@ -301,11 +405,14 @@ fn parse(bytes: &[u8]) -> Result<Elf, SetupRefusal> {
         || entry % 16 != 0
         || entry / 4096 != terminal / 4096
         || terminal != invoke + 5
-        || invoke < entry + 19
+        || invoke < entry + length as u64
     {
         return Err(SetupRefusal::SymbolOwner);
     }
-    for pc in [entry, entry + 18, invoke, terminal] {
+    for pc in [entry, invoke, terminal]
+        .into_iter()
+        .chain(grammar.exits().iter().map(|offset| entry + offset))
+    {
         if loads
             .iter()
             .filter(|r| r.flags == 5 && pc >= r.address && pc < r.address + r.file_size)
@@ -315,7 +422,7 @@ fn parse(bytes: &[u8]) -> Result<Elf, SetupRefusal> {
             return Err(SetupRefusal::SymbolOwner);
         }
     }
-    let p = file_range(&loads, entry, 19)?;
+    let p = file_range(&loads, entry, length)?;
     let call = file_range(&loads, invoke, 5)?;
     let call_bytes = bytes.get(call..call + 5).ok_or(SetupRefusal::SourceBytes)?;
     if call_bytes[0] != 0xe8
@@ -329,13 +436,12 @@ fn parse(bytes: &[u8]) -> Result<Elf, SetupRefusal> {
     if bytes[file_range(&loads, terminal, 1)?] != 0xcc {
         return Err(SetupRefusal::SourceBytes);
     }
-    let code: [u8; 19] = bytes
-        .get(p..p + 19)
+    let code = bytes
+        .get(p..p + length)
         .ok_or(SetupRefusal::SourceBytes)?
-        .try_into()
-        .unwrap();
+        .to_vec();
     if code[..8] != [0x48, 0x8d, 0x44, 0x7f, 0x07, 0x4c, 0x8b, 0x15]
-        || code[12..] != [0x49, 0x03, 0x02, 0x48, 0x89, 0x06, 0xc3]
+        || &code[12..] != grammar.suffix()
     {
         return Err(SetupRefusal::SourceBytes);
     }
@@ -411,6 +517,14 @@ impl LoadedLeaf {
         contract: SubjectContract,
     ) -> Result<&'static mut Self, SetupRefusal> {
         contract.check()?;
+        // SAFETY: unchanged caller obligations; only the fixed leaf grammar.
+        unsafe { Self::load_fixed(path, expected, Grammar::Leaf) }
+    }
+    unsafe fn load_fixed(
+        path: &Path,
+        expected: &[u8],
+        grammar: Grammar,
+    ) -> Result<&'static mut Self, SetupRefusal> {
         let mut shstk = 0_u64;
         // SAFETY: Linux read-only ARCH_SHSTK_STATUS, never disables protection.
         let result = unsafe { libc::syscall(libc::SYS_arch_prctl, 0x5005, &mut shstk) };
@@ -430,7 +544,10 @@ impl LoadedLeaf {
         if bytes != expected {
             return Err(SetupRefusal::SourceBytes);
         }
-        let elf = parse(&bytes)?;
+        let elf = match grammar {
+            Grammar::Leaf => parse(&bytes)?,
+            Grammar::Branch => parse_branch(&bytes)?,
+        };
         let metadata = file.metadata().map_err(|_| SetupRefusal::OperatingSystem)?;
         if !metadata.is_file() || metadata.len() != bytes.len() as u64 {
             return Err(SetupRefusal::SourceBytes);
@@ -450,8 +567,9 @@ impl LoadedLeaf {
             }
             Ok(p as usize as u64)
         };
-        let entry = symbol(c"interval_leaf")?;
-        let terminal = symbol(c"interval_terminal")?;
+        let (entry_name, terminal_name) = grammar.loader_names();
+        let entry = symbol(entry_name)?;
+        let terminal = symbol(terminal_name)?;
         let bias = entry
             .checked_sub(elf.entry)
             .ok_or(SetupRefusal::SymbolOwner)?;
@@ -464,7 +582,7 @@ impl LoadedLeaf {
             || info.dli_fbase as usize as u64 != bias
             || info.dli_saddr as usize as u64 != entry
             || info.dli_sname.is_null()
-            || unsafe { CStr::from_ptr(info.dli_sname) } != c"interval_leaf"
+            || unsafe { CStr::from_ptr(info.dli_sname) } != entry_name
         {
             return Err(SetupRefusal::SymbolOwner);
         }
@@ -513,7 +631,7 @@ impl LoadedLeaf {
     }
     /// Original linked instruction bytes, derived before any execution.
     pub fn code(&self) -> &[u8; 19] {
-        &self.elf.code
+        self.elf.code.as_slice().try_into().unwrap()
     }
     /// Original full source page, including all bytes outside the selected body.
     pub fn original_page(&self) -> &[u8] {
@@ -592,7 +710,13 @@ impl LoadedLeaf {
         {
             return Err(SetupRefusal::SourceBytes);
         }
-        verify_mapping(self.entry, 19, self.map_device, self.inode, "r-xp")?;
+        verify_mapping(
+            self.entry,
+            self.elf.code.len() as u64,
+            self.map_device,
+            self.inode,
+            "r-xp",
+        )?;
         verify_mapping(self.pointer(), 8, self.map_device, self.inode, "r--p")?;
         verify_mapping(self.bias_object(), 8, self.map_device, self.inode, "r--p")?;
         if unsafe { (self.pointer() as usize as *const u64).read_unaligned() } != self.bias_object()
@@ -674,6 +798,138 @@ impl LoadedLeaf {
             cursor = next;
         }
         Ok(())
+    }
+}
+
+fn branch_exit_claims(entry: u64, claimed: &[u64]) -> Result<(), SetupRefusal> {
+    if claimed.len() != 2 || claimed[0] == claimed[1] {
+        return Err(SetupRefusal::EntryExit);
+    }
+    let end = entry.checked_add(36).ok_or(SetupRefusal::EntryExit)?;
+    if claimed.iter().any(|pc| !(entry..end).contains(pc)) {
+        return Err(SetupRefusal::SymbolOwner);
+    }
+    if claimed != [entry + 27, entry + 35] {
+        return Err(SetupRefusal::EntryExit);
+    }
+    Ok(())
+}
+
+/// Separate normally loaded fixed two-return leaf. This wrapper never exposes
+/// a caller-controlled parser policy or a constructor for its exit certificate.
+pub struct LoadedBranchLeaf {
+    owner: &'static mut LoadedLeaf,
+    certificate: TwoExitCertificate,
+}
+impl LoadedBranchLeaf {
+    /// Authenticate the complete source-owned grammar and live loader owner.
+    ///
+    /// # Safety
+    /// Same independent expected-file, IBT, quiescence, signal and foreign-call
+    /// exclusions as LoadedLeaf::load, for the separate authored branch DSO.
+    pub unsafe fn load(
+        path: &Path,
+        expected: &[u8],
+        contract: BranchSubjectContract,
+    ) -> Result<&'static mut Self, SetupRefusal> {
+        contract.check()?;
+        // SAFETY: the caller supplies the documented fixed-subject authority.
+        let owner = unsafe { LoadedLeaf::load_fixed(path, expected, Grammar::Branch) }?;
+        // The complete parse and verify(false) have succeeded before minting.
+        let certificate = TwoExitCertificate {
+            entry: owner.entry(),
+            returns: [owner.entry() + 27, owner.entry() + 35],
+        };
+        Ok(Box::leak(Box::new(Self { owner, certificate })))
+    }
+    /// Sealed source/loader authority, not a conversion from caller claims.
+    pub fn certificate(&self) -> TwoExitCertificate {
+        self.certificate
+    }
+    /// Check caller claims only; this seam never mints attachment authority.
+    pub fn admit(
+        &self,
+        entry: u64,
+        pointer_value: u64,
+        claimed_returns: &[u64],
+        contract: BranchSubjectContract,
+    ) -> Result<(), SetupRefusal> {
+        contract.check()?;
+        if entry != self.entry() {
+            return Err(SetupRefusal::SymbolOwner);
+        }
+        if pointer_value != self.bias_object()
+            || unsafe { (self.pointer() as usize as *const u64).read_unaligned() } != pointer_value
+        {
+            return Err(SetupRefusal::Relocation);
+        }
+        branch_exit_claims(self.certificate.entry, claimed_returns)
+    }
+    /// Real entry of the retained loaded owner.
+    pub fn entry(&self) -> u64 {
+        self.owner.entry()
+    }
+    /// Both source-owned ordinary RET addresses.
+    pub fn returns(&self) -> [u64; 2] {
+        self.certificate.returns()
+    }
+    /// Exact source heads, including both direct branch successors.
+    pub fn heads(&self) -> [u64; 11] {
+        [0, 5, 12, 15, 19, 21, 24, 27, 28, 32, 35].map(|offset| self.entry() + offset)
+    }
+    /// Complete half-open blocks; planning cannot cross their interior edges.
+    pub fn blocks(&self) -> [(u64, u64); 3] {
+        [(0, 21), (21, 28), (28, 36)].map(|(start, end)| (self.entry() + start, self.entry() + end))
+    }
+    /// Exact direct CALL producing the original return word.
+    pub fn invoke(&self) -> u64 {
+        self.owner.invoke()
+    }
+    /// Actual normal return destination of the source CALL.
+    pub fn terminal(&self) -> u64 {
+        self.owner.terminal()
+    }
+    /// Original executable page containing this fixed subject.
+    pub fn page(&self) -> u64 {
+        self.owner.page()
+    }
+    /// Complete linked body; every non-displacement byte is fixed by source.
+    pub fn code(&self) -> &[u8; 36] {
+        self.owner.elf.code.as_slice().try_into().unwrap()
+    }
+    /// Full original source page including all non-body bytes.
+    pub fn original_page(&self) -> &[u8] {
+        self.owner.original_page()
+    }
+    /// Loaded pointer owner selected by the exact source displacement.
+    pub fn pointer(&self) -> u64 {
+        self.owner.pointer()
+    }
+    /// Immutable bias selected by the sole RELATIVE relocation.
+    pub fn bias_object(&self) -> u64 {
+        self.owner.bias_object()
+    }
+    /// Authenticated read-only header page for permission controls.
+    pub fn header_page(&self) -> u64 {
+        self.owner.header_page()
+    }
+    /// Complete immutable file-backed non-code extents.
+    pub fn immutable_extents(&self) -> Vec<(u64, usize)> {
+        self.owner.immutable_extents()
+    }
+    /// Original loaded-owner record plus the two certified return addresses.
+    pub fn identity_record(&self) -> String {
+        let original = self.owner.identity_record();
+        format!(
+            "{},\"returns\":[{},{}],\"grammar\":\"branch_two_returns\"}}\n",
+            original.trim_end().strip_suffix('}').unwrap(),
+            self.returns()[0],
+            self.returns()[1],
+        )
+    }
+    /// Recheck the same fd, bytes, relocation, loads and live permissions.
+    pub fn verify(&mut self, patched: bool) -> Result<(), SetupRefusal> {
+        self.owner.verify(patched)
     }
 }
 
@@ -793,3 +1049,7 @@ fn verify_mapping_owner(
 #[cfg(test)]
 #[path = "module_tests.rs"]
 mod tests;
+
+#[cfg(test)]
+#[path = "branch_module_tests.rs"]
+mod branch_tests;

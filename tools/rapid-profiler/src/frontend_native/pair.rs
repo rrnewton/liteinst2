@@ -1,4 +1,5 @@
 //! Bounded native-pair metadata. Every original model body remains unchanged.
+use super::module::TwoExitCertificate;
 use crate::frontend::{EntryError, ModelReturnSlot, Observation, Session, ThreadModel};
 use crate::generation::{Admission, AdmissionRefusal, FunctionId};
 use liteinst2::trampoline::HookContext;
@@ -113,6 +114,72 @@ pub struct Attach {
 }
 
 #[derive(Clone, Copy)]
+/// Attachment for the separate fixed two-return loaded owner. Return addresses
+/// come only from its opaque certificate, never from caller-selected claims.
+pub struct BranchAttach {
+    /// Certificate minted after complete source/loader admission.
+    pub certificate: TwoExitCertificate,
+    /// Existing session installation identity.
+    pub install: u64,
+    /// Existing function identity.
+    pub function: FunctionId,
+    /// Inclusive lower bound of the certified readable stack range.
+    pub stack_start: u64,
+    /// Exclusive upper bound including the complete original return word.
+    pub stack_end: u64,
+    /// Explicit registration key, never retried on collision.
+    pub registration: u64,
+    /// Non-unwinding test gate, called after releasing the TLS borrow.
+    pub after_entry: Option<unsafe extern "C" fn(u64)>,
+}
+
+#[derive(Clone, Copy)]
+enum ExitSet {
+    Single(u64),
+    Two([u64; 2]),
+}
+
+#[derive(Clone, Copy)]
+struct Attached {
+    install: u64,
+    function: FunctionId,
+    entry: u64,
+    exits: ExitSet,
+    stack_start: u64,
+    stack_end: u64,
+    registration: u64,
+    after_entry: Option<unsafe extern "C" fn(u64)>,
+}
+impl From<Attach> for Attached {
+    fn from(setup: Attach) -> Self {
+        Self {
+            install: setup.install,
+            function: setup.function,
+            entry: setup.entry,
+            exits: ExitSet::Single(setup.ret),
+            stack_start: setup.stack_start,
+            stack_end: setup.stack_end,
+            registration: setup.registration,
+            after_entry: setup.after_entry,
+        }
+    }
+}
+impl From<BranchAttach> for Attached {
+    fn from(setup: BranchAttach) -> Self {
+        Self {
+            install: setup.install,
+            function: setup.function,
+            entry: setup.certificate.entry(),
+            exits: ExitSet::Two(setup.certificate.returns()),
+            stack_start: setup.stack_start,
+            stack_end: setup.stack_end,
+            registration: setup.registration,
+            after_entry: setup.after_entry,
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
 struct Pair {
     ordinal: u64,
     rsp: u64,
@@ -137,7 +204,7 @@ pub struct NativeTotals {
 struct State {
     actual_thread: ThreadId,
     tid: u64,
-    setup: Attach,
+    setup: Attached,
     model: ThreadModel,
     pairs: [Option<Pair>; PAIRS],
     depth: usize,
@@ -180,6 +247,35 @@ impl NativeThread {
         {
             return Err(NativeError::InvalidSetup);
         }
+        Self::attach_validated(session, setup.into(), journal)
+    }
+    /// Install state for an authenticated fixed two-return loaded leaf.
+    ///
+    /// # Safety
+    /// The certificate must belong to this session's actual installation. The
+    /// stack, quiescence, signal, recursive-writer and foreign-unwind exclusions
+    /// of attach apply unchanged through either matching original RET.
+    pub unsafe fn attach_branch(
+        session: &Session,
+        setup: BranchAttach,
+        journal: &'static Journal,
+    ) -> Result<Self, NativeError> {
+        if setup.install == 0
+            || setup.registration == 0
+            || setup
+                .stack_start
+                .checked_add(8)
+                .is_none_or(|end| end > setup.stack_end)
+        {
+            return Err(NativeError::InvalidSetup);
+        }
+        Self::attach_validated(session, setup.into(), journal)
+    }
+    fn attach_validated(
+        session: &Session,
+        setup: Attached,
+        journal: &'static Journal,
+    ) -> Result<Self, NativeError> {
         let model = session
             .register_thread(setup.registration)
             .map_err(|_| NativeError::ModelSetup)?;
@@ -331,7 +427,17 @@ fn finish(context: &HookContext) -> Result<(), NativeError> {
             }
             let mut storage = cell.try_borrow_mut().map_err(|_| NativeError::Attachment)?;
             let state = storage.as_mut().ok_or(NativeError::Attachment)?;
-            let return_word = identity(state, context, state.setup.ret)?;
+            let ret = match state.setup.exits {
+                ExitSet::Single(ret) => ret,
+                ExitSet::Two([first, second])
+                    if context.instruction_pointer == first
+                        || context.instruction_pointer == second =>
+                {
+                    context.instruction_pointer
+                }
+                ExitSet::Two(_) => return Err(NativeError::CallbackIdentity),
+            };
+            let return_word = identity(state, context, ret)?;
             let index = state
                 .depth
                 .checked_sub(1)

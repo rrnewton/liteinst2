@@ -72,6 +72,7 @@ fn main() {
     }
 
     native_interval_subject(&manifest_dir, &out_dir);
+    native_branch_subject(&manifest_dir, &out_dir);
 }
 
 // This fixture is mandatory for the unconditionally registered native target.
@@ -166,6 +167,99 @@ fn native_interval_subject(manifest_dir: &Path, out_dir: &Path) {
         "single-line native subject path"
     );
     println!("cargo:rustc-env=NATIVE_INTERVAL_DSO={value}");
+}
+
+// Independent producer for the additive, exact two-return fixture.
+fn native_branch_subject(manifest_dir: &Path, out_dir: &Path) {
+    let source = manifest_dir.join("native-interval/branch-subject.S");
+    println!("cargo:rerun-if-changed={}", source.display());
+    println!("cargo:rerun-if-env-changed=NATIVE_BRANCH_DSO");
+    println!("cargo:rerun-if-env-changed=CC");
+    let record = out_dir.join("native-branch-producer.txt");
+    native_output_file(&record);
+    let subject = if let Some(path) = env::var_os("NATIVE_BRANCH_DSO") {
+        let path = PathBuf::from(path);
+        native_subject_file(&path);
+        println!("cargo:rerun-if-changed={}", path.display());
+        std::fs::write(
+            &record,
+            format!("producer=external-admitted-override\nsubject={path:?}\nsource={source:?}\n"),
+        )
+        .expect("record explicit native subject override");
+        path
+    } else {
+        let directory = out_dir.join("native-branch");
+        std::fs::create_dir_all(&directory).expect("create native subject output directory");
+        assert_eq!(
+            directory.canonicalize().unwrap(),
+            directory,
+            "owned OUT_DIR directory"
+        );
+        let temporary = directory.join("tmp");
+        std::fs::create_dir_all(&temporary).expect("create native subject temporary directory");
+        assert_eq!(
+            temporary.canonicalize().unwrap(),
+            temporary,
+            "owned native temporary directory"
+        );
+        let object = directory.join("subject.o");
+        let depfile = directory.join("subject.d");
+        let subject = directory.join("subject.so");
+        for path in [&object, &depfile, &subject] {
+            native_output_file(path);
+        }
+        let compiler = env::var_os("CC").unwrap_or_else(|| "gcc".into());
+        let assemble = [
+            "-fPIC".into(),
+            "-c".into(),
+            "-Wa,--fatal-warnings".into(),
+            "-MD".into(),
+            "-MF".into(),
+            depfile.as_os_str().to_owned(),
+            source.as_os_str().to_owned(),
+            "-o".into(),
+            object.as_os_str().to_owned(),
+        ];
+        let link = [
+            "-shared".into(),
+            "-nostdlib".into(),
+            "-Wl,-Bsymbolic,--no-undefined,--build-id=none,-z,relro,-z,now,-z,noexecstack".into(),
+            object.as_os_str().to_owned(),
+            "-o".into(),
+            subject.as_os_str().to_owned(),
+        ];
+        let workspace = manifest_dir.parent().unwrap().parent().unwrap();
+        for arguments in [&assemble[..], &link[..]] {
+            let status = Command::new(&compiler)
+                .args(arguments)
+                .current_dir(workspace)
+                .env_clear()
+                .env("LC_ALL", "C")
+                .env("PATH", "/usr/bin:/bin")
+                .env("PYTHONDONTWRITEBYTECODE", "1")
+                .env("TMPDIR", &temporary)
+                .status()
+                .expect("run mandatory native subject compiler");
+            assert!(status.success(), "native subject compiler failed: {status}");
+        }
+        native_subject_file(&subject);
+        assert!(
+            depfile.is_file() && object.is_file(),
+            "native producer outputs required"
+        );
+        std::fs::write(
+            &record,
+            format!("producer=out-dir-fallback\nsubject={subject:?}\nsource={source:?}\ncompiler_lookup={compiler:?}\ncwd={workspace:?}\nassemble_argv={assemble:?}\nlink_argv={link:?}\nLC_ALL=C\nPATH=/usr/bin:/bin\nPYTHONDONTWRITEBYTECODE=1\nTMPDIR={temporary:?}\n"),
+        )
+        .expect("record actual native subject producer");
+        subject
+    };
+    let value = subject.to_str().expect("native subject path is UTF-8");
+    assert!(
+        !value.contains('\n') && !value.contains('\r'),
+        "single-line native subject path"
+    );
+    println!("cargo:rustc-env=NATIVE_BRANCH_DSO={value}");
 }
 
 fn native_output_file(path: &Path) {
