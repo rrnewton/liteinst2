@@ -118,7 +118,7 @@ impl Family {
     }
 }
 fn hex_bytes(text: &str) -> Vec<u8> {
-    assert!(text.len() % 2 == 0 && text.bytes().all(|b| b.is_ascii_hexdigit()));
+    assert!(text.len() & 1 == 0 && text.bytes().all(|b| b.is_ascii_hexdigit()));
     (0..text.len())
         .step_by(2)
         .map(|i| u8::from_str_radix(&text[i..i + 2], 16).unwrap())
@@ -1475,10 +1475,13 @@ fn compare(
             expected_edges.push((SUBJECT, family.selected()));
         }
     }
-    if let Some((pc, address)) = family.victim() {
-        if (family == Family::T2 && head <= 1) || SUBJECT + family.heads()[head] == pc {
+    match family.victim() {
+        Some((pc, address))
+            if (family == Family::T2 && head <= 1) || SUBJECT + family.heads()[head] == pc =>
+        {
             expected_edges.push((pc, address));
         }
+        _ => {}
     }
     assert_eq!(observed_edges, expected_edges);
     assert_eq!(seen_hook, head == 0);
