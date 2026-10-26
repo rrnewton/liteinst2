@@ -10,6 +10,10 @@ use crate::trap_coverage::{TrapGuard, TrapGuardRole};
 use liteinst_admission::returns::CallReturnObligation;
 use std::collections::{BTreeMap, BTreeSet};
 
+mod mapping;
+pub(in crate::linux::remote::dynamic::owner) use mapping::MappingRevocation;
+pub(super) use mapping::{close_mapping_window, open_mapping_window};
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) enum RouteOrigin {
     Census {

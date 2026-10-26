@@ -33,6 +33,8 @@ pub use owner::kernel_journal::{
     KernelFailureKind, KernelJournalFact, KernelJournalFailure, KernelJournalStage, KernelPinKind,
     KernelProgressReader, KernelProgressSnapshot, KernelReleasePhase, KernelStateRecord,
     KernelStateSlot, KernelStopIdentity, KernelSyscallInfo, KernelWriterStatus,
+    MappingCapturePhase, MappingCaptureRecord, MappingCaptureSlot, MappingCaptureSnapshot,
+    MappingCaptureStatus,
 };
 pub use owner::signal_journal::{
     SignalFrameRecord, SignalJournalFact, SignalJournalFailure, SignalJournalPhase, SignalMaskRead,

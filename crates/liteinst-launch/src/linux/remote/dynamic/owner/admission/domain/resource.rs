@@ -2,7 +2,7 @@
 //! This RuntimeScan is not a page-admission report or a cache hit. Demand scans,
 //! original refusals, route proofs and actual payload accounting remain intact.
 //! A catalog binding identifies recorded facts, never native mapping, writer,
-//! stop, publication or release authority. The source set cannot be extended.
+//! stop, publication or release authority. Each leaf source set stays immutable.
 use super::*;
 use liteinst_admission::scan::{AdmissionOracle, RuntimeScan};
 use std::mem::size_of;
@@ -10,6 +10,9 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 #[cfg(test)]
 mod tests;
+
+mod catalog;
+pub(super) use catalog::{SourceCatalog, StagedSourceSet};
 
 static NEXT_SOURCE_BINDING: AtomicU64 = AtomicU64::new(1);
 

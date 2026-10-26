@@ -260,3 +260,19 @@ compares original and admitted full state and frames for normal-stack,
 alternate-stack, edited-return and nonzero inherited-metadata trajectories.
 These finite fixtures do not establish general application signal transparency
 or the complete B3 lifecycle and real-application milestone.
+
+`DynamicAdmissionSession::launch_with_mappings` returns a `DynamicSourceSession`
+for a bounded singleton anonymous mapping lifecycle. An explicit
+`DynamicMappingProfile` names isolated address envelopes and lifetime limits.
+The program performs its original RW/RX mapping syscalls; a
+`DynamicSourceResolver` supplies complete instruction heads for the owner's
+immutable captured bytes while the new executable source remains NX. Each
+accepted replacement receives a fresh source binding, with prior plans and
+source versions retained. This unsafe interface still requires complete caller
+head facts and excludes signals, aliases, thread creation and later exec.
+
+The [mapping validation protocol](../../evaluation/admission/mapping-lifecycle.md)
+uses an independent raw tracer for an original RW→RX→RW→RX→unmap trajectory,
+including two different generated CPUID sites, stale replies, callback failures
+and physical cleanup. It defines finite evidence for the mapping path; general
+application discovery and the full B3/B4 milestones remain separate work.

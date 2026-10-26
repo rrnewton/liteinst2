@@ -698,6 +698,69 @@ impl NativeLifecycle {
             ));
         }
         island.verify(self.admission_held_token(selected)?.tid)?;
+        self.advance_held_admission_generation(owner, island, selected, old)
+    }
+
+    /// Consume an actual original mapping syscall's completed quarantine.
+    /// This is separate from advance_admission_generation: an original SYSCALL
+    /// really occurred after the old whole-domain retirement. The opaque seal
+    /// authenticates that effect, its bridge, and the exact reclosed mm.
+    pub(in crate::linux::remote::dynamic::owner) fn advance_mapping_generation(
+        &mut self,
+        owner: &mut Owner,
+        island: &mut TrustedIsland,
+        selected: TaskId,
+        seal: super::super::admission::MappingRevocation,
+        until: Instant,
+    ) -> Result<(u64, super::super::admission::MappingRevocation), crate::gate::GateError> {
+        let result = (|| {
+            owner.time_left(until, "mapping generation transition")?;
+            if !self.events.is_empty() {
+                return Err(crate::gate::GateError::Refused(
+                    "mapping generation advance has undrained lifecycle events",
+                ));
+            }
+            {
+                let held = super::super::publication::HeldMmStop::acquire(
+                    owner, self, island, selected, until,
+                )?;
+                seal.authenticate_quarantine(&held)?;
+            }
+            // Fresh real identity after read-only quarantine authentication.
+            // No private or original instruction runs before model invalidation.
+            let old = self.check_admission_mm(owner, selected)?;
+            let current = self.admission_current(selected)?;
+            let state = super::super::trusted::TaskStateSnapshot::read(current.token.tid)?;
+            seal.authenticate_advance(&old, &current, &state)?;
+            if island.address_space != old.address_space || island.generation != old.generation {
+                return Err(crate::gate::GateError::Refused(
+                    "mapping generation island identity differs",
+                ));
+            }
+            island.verify(current.token.tid)?;
+            owner.time_left(until, "mapping generation transition")?;
+            let generation =
+                self.advance_held_admission_generation(owner, island, selected, old)?;
+            owner.time_left(until, "mapping generation transition")?;
+            Ok((generation, seal))
+        })();
+        if result.is_err() {
+            owner.closing = true;
+            owner.cancel.store(true, Ordering::Release);
+        }
+        result
+    }
+
+    // Callers separately establish unchanged-source revocation or an actual
+    // mapping effect plus completed quarantine. This common model transition
+    // retains every original check, task update, and error cleanup operation.
+    fn advance_held_admission_generation(
+        &mut self,
+        owner: &mut Owner,
+        island: &mut TrustedIsland,
+        selected: TaskId,
+        old: MmMembership,
+    ) -> Result<u64, LaunchError> {
         let result = (|| {
             // There is deliberately no ptrace/resume operation between these
             // two checked transitions. Hidden island stops therefore cannot

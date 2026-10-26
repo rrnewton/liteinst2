@@ -13,6 +13,11 @@ use liteinst_admission::oracle_chain::CacheLimits;
 
 mod signal_session;
 pub use signal_session::DynamicSignalSession;
+pub(super) mod source;
+mod source_session;
+pub(super) use source::PendingSourceToken;
+pub use source::*;
+pub use source_session::DynamicSourceSession;
 
 /// Explicit trap backend; neither choice is an implicit fallback from A1.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -255,6 +260,16 @@ pub(super) enum AdmissionRequest {
         profile: DynamicSignalProfile,
         budget: signal::SignalBudget,
     },
+    StartMappings {
+        initial: DynamicStop,
+        facts: Vec<ImageFacts>,
+        options: DynamicAdmissionOptions,
+        profile: DynamicMappingProfile,
+    },
+    ResolveSources {
+        token: PendingSourceToken,
+        facts: DynamicSourceFacts,
+    },
     DeliverSignal(SignalDeliveryToken),
     Advance,
     Complete {
@@ -273,6 +288,8 @@ pub(super) enum AdmissionRequest {
 pub(super) enum AdmissionReply {
     Ready(DynamicAdmissionState, KernelProgressReader),
     ReadySignals(DynamicAdmissionState, KernelProgressReader),
+    ReadyMappings(DynamicAdmissionState, KernelProgressReader),
+    AcquireSources(Box<DynamicSourceRequest>),
     SignalEntered(Box<DynamicSignalEntry>),
     Provider(Box<ProviderInput>),
     Event(DynamicAdmissionEvent),

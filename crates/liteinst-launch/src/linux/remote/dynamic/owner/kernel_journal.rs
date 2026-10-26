@@ -8,6 +8,15 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::{Mutex, MutexGuard};
 
+mod mapping;
+pub(in crate::linux::remote::dynamic::owner) use mapping::{
+    MAPPING_CAPTURE_BYTES, MappingCaptureArchive,
+};
+pub use mapping::{
+    MappingCapturePhase, MappingCaptureRecord, MappingCaptureSlot, MappingCaptureSnapshot,
+    MappingCaptureStatus,
+};
+
 #[cfg(test)]
 pub(super) mod tests;
 
@@ -365,6 +374,9 @@ pub struct KernelAttemptSnapshot {
     pub states: Vec<KernelStateRecord>,
     /// First failure retained separately from the fixed fact array.
     pub failure: Option<KernelJournalFailure>,
+    /// Optional complete/partial raw-map diagnostics. They survive admission
+    /// unwind and do not grant a mapping, release or physical-cleanup receipt.
+    pub mapping: Option<MappingCaptureSnapshot>,
 }
 
 /// Read-only archive snapshot; a terminal observation does not imply cleanup.
@@ -461,6 +473,7 @@ struct Attempt {
     raw_count: u8,
     stage: KernelJournalStage,
     failure: Option<KernelJournalFailure>,
+    mapping: Option<MappingCaptureArchive>,
 }
 impl Attempt {
     fn append(&mut self, fact: KernelJournalFact) -> Result<(), LaunchError> {
@@ -513,6 +526,7 @@ impl Attempt {
                 .map(|slot| self.states[slot.index()].snapshot(slot))
                 .collect(),
             failure: self.failure,
+            mapping: self.mapping.as_ref().map(MappingCaptureArchive::snapshot),
         }
     }
 }
@@ -592,6 +606,12 @@ impl Drop for JournalUnwind {
     }
 }
 
+#[derive(Clone, Copy)]
+enum InvocationProfile {
+    Ordinary,
+    Mapping,
+}
+
 impl KernelJournalWriter {
     pub(in crate::linux::remote::dynamic) fn new(session: u64) -> Self {
         Self {
@@ -656,26 +676,46 @@ impl KernelJournalWriter {
         &mut self,
         binding: KernelAttemptBinding,
     ) -> Result<PreparedKernelAttempt, LaunchError> {
+        self.prepare_profile(binding, InvocationProfile::Ordinary)
+    }
+    pub(super) fn prepare_mapping(
+        &mut self,
+        binding: KernelAttemptBinding,
+    ) -> Result<PreparedKernelAttempt, LaunchError> {
+        self.prepare_profile(binding, InvocationProfile::Mapping)
+    }
+    fn prepare_profile(
+        &mut self,
+        binding: KernelAttemptBinding,
+        profile: InvocationProfile,
+    ) -> Result<PreparedKernelAttempt, LaunchError> {
         let number = binding.input.registers().rax;
-        // This finite list bounds journal observations; it grants no execution
-        // permission. The admission caller separately authenticates its native
-        // policy, including exact opt-in signal setup inputs, before preparing
-        // evidence and before any original release.
+        // These disjoint finite lists bound observations, not execution. The
+        // caller authenticates its native policy before preparing evidence and
+        // original release. Mapping opt-in must not widen ordinary preparation.
+        let permitted = match profile {
+            InvocationProfile::Ordinary => matches!(
+                number as libc::c_long,
+                libc::SYS_getpid
+                    | libc::SYS_gettid
+                    | libc::SYS_exit
+                    | libc::SYS_exit_group
+                    | libc::SYS_clone
+                    | libc::SYS_rt_sigaction
+                    | libc::SYS_sigaltstack
+            ),
+            InvocationProfile::Mapping => matches!(
+                number as libc::c_long,
+                libc::SYS_mmap | libc::SYS_mprotect | libc::SYS_munmap
+            ),
+        };
         if !matches!(
             binding.input.instruction().operation(),
             Operation::Syscall {
                 abi: SyscallAbi::LinuxX64
             }
-        ) || !matches!(
-            number as libc::c_long,
-            libc::SYS_getpid
-                | libc::SYS_gettid
-                | libc::SYS_exit
-                | libc::SYS_exit_group
-                | libc::SYS_clone
-                | libc::SYS_rt_sigaction
-                | libc::SYS_sigaltstack
-        ) || number > i32::MAX as u64
+        ) || !permitted
+            || number > i32::MAX as u64
             || number & 0x4000_0000 != 0
             || binding.pending.invocation == 0
             || binding.pending.stop.session == 0
@@ -776,6 +816,7 @@ impl KernelJournalWriter {
                 raw_count: 0,
                 stage: KernelJournalStage::Prepared,
                 failure: None,
+                mapping: None,
             },
         })
     }

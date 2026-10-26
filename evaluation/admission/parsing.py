@@ -44,12 +44,15 @@ def harness_id(line):
     doc = re.fullmatch(r"\s*Doc-tests ([A-Za-z0-9_-]+)", line)
     if doc:
         return "doc/" + doc[1]
-    match = re.fullmatch(r"\s*Running (unittests [^()]+|tests/[^()]+) \(([^()]+)\)", line)
+    match = re.fullmatch(r"\s*Running (unittests [^()]+|tests/[^()]+|native-interval/calibrations\.rs) \(([^()]+)\)", line)
     if not match:
         return None
     binary = re.fullmatch(r"target/debug/deps/([A-Za-z0-9_]+)-[a-f0-9]+", match[2])
     require(binary is not None, "invalid_harness_binary_path")
     label = match[1]
+    if label == "native-interval/calibrations.rs":
+        require(binary[1] == "frontend_native_calibrations", "invalid_harness_source_label")
+        return "test/frontend_native_calibrations"
     if label.startswith("unittests "):
         source = label[len("unittests "):]
         require(re.fullmatch(r"(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_]+\.rs", source),
@@ -147,11 +150,12 @@ def parse_harnesses(output, expected, exit_code):
             # observations of the existing fixtures, not successful child counts.
             if count != stack[-1]:
                 known = (current["id"], current["declared_outer_tests"], current["expected_ignored"])
-                # Main's synchronized publisher adds eight tests to the same
-                # core fixture. Retain the exact historical cohort for replay;
-                # the current corpus still requires the new 184-test cohort.
+                # Retain the exact historical core cohorts for replay. The
+                # merged core adds 24 tests to the same unchanged ptrace-child
+                # fixture; the current corpus requires exactly 208 tests.
                 require(known in (("unit/liteinst2/lib", 176, 1),
-                                  ("unit/liteinst2/lib", 184, 1), ("test/stress", 7, 3))
+                                  ("unit/liteinst2/lib", 184, 1),
+                                  ("unit/liteinst2/lib", 208, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,

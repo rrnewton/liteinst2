@@ -258,16 +258,66 @@ fn live_reaper_before_self_stop_is_recovered_through_procfs() {
 #[test]
 fn original_deadline_expires_with_live_pre_stop_reaper() {
     worker(|| {
-        let mut reset = prepared(0, true);
         let cancel = AtomicBool::new(false);
+        // A genuinely expired whole-launch deadline refuses before cloning;
+        // this is distinct from the live-child continuation exercised below.
+        let mut expired = prepared(0, true);
+        let expired_until = Instant::now();
+        let outcome = expired.launch(expired_until, &cancel);
+        assert!(matches!(
+            outcome,
+            Err(LaunchError::Timeout("initial reset lineage"))
+        ));
+        assert!(!expired.spawned);
+        assert!(!expired.handed_off);
+        assert!(expired.children.iter().all(Option::is_none));
+        assert!(expired.archive.reader().snapshot().reset.is_empty());
+        empty();
+        drop(expired);
+
+        let mut reset = prepared(0, true);
+        // Fixture-I/O lock contention and scheduling the real reset clone are
+        // setup, under worker's unchanged three-second completion guard. The
+        // measured phase starts only after both original children are proved.
+        let setup_until = Instant::now() + TIMEOUT;
+        let s = clone_only(&mut reset);
+        reset.receive().unwrap();
+        while !reset.children[0].as_ref().unwrap().physical() {
+            reset.wait_one(false).unwrap();
+            assert!(Instant::now() < setup_until);
+            std::thread::yield_now();
+        }
+        let s_status = reset.children[0].as_ref().unwrap().terminal.unwrap();
+        assert!(libc::WIFEXITED(s_status));
+        assert_eq!(libc::WEXITSTATUS(s_status), 0);
+        gone(&s);
+        assert!(reset.packet_received);
+        let context = unsafe { &*reset.mapping.context() };
+        assert_eq!(context.send_observed, 1);
+        assert_eq!(context.send_result, 64);
+        let child = reset.children[1].as_ref().unwrap();
+        assert_eq!(child.pid, context.packet.pid);
+        assert!(child.terminal.is_none());
+        assert!(child.stopped.is_none());
+        let r = duplicate(child.pin.as_ref().unwrap());
+        assert!(!broker::hup(&r));
+        let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+        assert_eq!(
+            unsafe { libc::waitid(libc::P_PID, child.pid as u32, &raw mut info, WAIT_FLAGS) },
+            0
+        );
+        assert_eq!(unsafe { info.si_pid() }, 0);
+        assert!(!reset.handed_off);
+
+        // This is the exact production post-clone loop. It receives one
+        // deadline, and never restarts it while the genuine R cannot self-stop.
         let started = Instant::now();
         let until = started + Duration::from_millis(100);
-        let lock = crate::TEST_FILE_FORK.lock().unwrap();
-        let outcome = reset.launch(until, &cancel);
-        drop(lock);
+        let outcome = reset.await_handoff(until, &cancel);
         let elapsed = started.elapsed();
-        let s = duplicate(reset.children[0].as_ref().unwrap().pin.as_ref().unwrap());
-        let r = duplicate(reset.children[1].as_ref().unwrap().pin.as_ref().unwrap());
+        let still_live = reset.children[1].as_ref().unwrap().terminal.is_none()
+            && reset.children[1].as_ref().unwrap().stopped.is_none()
+            && !broker::hup(&r);
         let cleanup = Instant::now();
         reset.cleanup().unwrap();
         assert!(cleanup.elapsed() < TIMEOUT);
@@ -276,10 +326,26 @@ fn original_deadline_expires_with_live_pre_stop_reaper() {
             Err(LaunchError::Timeout("initial reset lineage"))
         ));
         assert!(elapsed >= Duration::from_millis(100) && elapsed < TIMEOUT);
+        assert!(still_live);
         assert!(!reset.handed_off);
         gone(&s);
         gone(&r);
         empty();
+        let prefix = reset.archive.reader().snapshot();
+        assert_eq!(
+            prefix
+                .reset
+                .iter()
+                .filter(|row| row.phase == AnchorResetPhase::CloneAttempt)
+                .count(),
+            1
+        );
+        assert!(
+            !prefix
+                .reset
+                .iter()
+                .any(|row| row.phase == AnchorResetPhase::BrokerTransferReady)
+        );
     });
 }
 

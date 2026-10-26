@@ -715,3 +715,263 @@ fn uncensused_pages_and_embedded_candidates_do_not_invent_declared_heads() {
     );
     embedded.audit_history().unwrap();
 }
+
+// Replacement controls below are pure source-history models. In particular,
+// preserving a CALL record while removing its target is NOT native permission
+// to do so: the root mapping witness must refuse that affected live obligation.
+fn model_revoke_for_replacement(domain: &mut Domain) {
+    domain.generations.push(RetiredGeneration {
+        generation: domain.generation,
+        entry_version: domain.entry_version,
+        source_binding: domain.source_binding,
+        executable_pages: domain.executable_pages(),
+        guards: std::mem::take(&mut domain.guards),
+        sites: std::mem::take(&mut domain.sites),
+    });
+    domain
+        .pages
+        .values_mut()
+        .for_each(|executable| *executable = false);
+}
+
+fn replacement_source(domain: &Domain) -> (Vec<Image>, Vec<MemoryMapping>) {
+    let generation = domain.generation.checked_add(1).unwrap();
+    let mut core_identity = planning::new_core_identity().unwrap();
+    core_identity.generation = generation;
+    let mut bytes = literal_bytes();
+    bytes[32..34].copy_from_slice(&[0x0f, 0x31]);
+    let mapping = MemoryMapping {
+        start: BASE,
+        end: BASE + PAGE,
+        permissions: "r-xp".into(),
+        file_offset: 0,
+        pathname: None,
+    };
+    let snapshot = Snapshot::new(
+        liteinst_admission::MappingId(core_identity.mapping),
+        Generation(generation),
+        BASE,
+        bytes,
+        liteinst_admission::scan::Boundary::NonExecutable,
+        liteinst_admission::scan::Boundary::NonExecutable,
+        liteinst_admission::scan::WriteControl::Owned,
+    )
+    .unwrap();
+    let entries = LegalEntrySet::new(
+        snapshot.mapping,
+        snapshot.generation,
+        domain.entry_version.checked_add(1).unwrap(),
+        snapshot.range(),
+        liteinst_admission::entries::Completeness::AllInstructionHeads,
+        [CALL, RETURN, SELECTED, SPARE]
+            .into_iter()
+            .map(|pc| (pc, EntryProvenance::VerifiedInstruction)),
+        [],
+    )
+    .unwrap();
+    (
+        vec![Image {
+            mapping: mapping.clone(),
+            snapshot,
+            entries,
+            core_identity,
+        }],
+        vec![mapping],
+    )
+}
+
+#[test]
+fn replacement_model_retains_old_plan_guards_routes_and_calls_after_remove_and_reuse() {
+    let mut domain = fixture(false);
+    model_install(&mut domain);
+    let old_binding = domain.source_binding;
+    let old_mapping = domain.images[0].snapshot.mapping;
+    let calls = domain.returns.obligations().cloned().collect::<Vec<_>>();
+    assert_eq!(calls.len(), 1);
+    domain.reserve_replacement_catalog_slot().unwrap();
+    let removed = domain
+        .stage_replacement(Vec::new(), Vec::new(), until())
+        .unwrap();
+    let removed_binding = removed.identity().new_binding;
+    let retained_before = domain.resource_basis_bytes();
+    let removal_bytes = removed.catalog_bytes();
+    model_revoke_for_replacement(&mut domain);
+    domain.commit_replacement_model(removed).unwrap();
+    assert!(domain.images.is_empty());
+    assert!(domain.pages.is_empty());
+    assert_eq!(domain.generation, 1);
+    assert_eq!(domain.source_binding, removed_binding);
+    assert_eq!(
+        domain.resource_basis_bytes(),
+        retained_before + removal_bytes
+    );
+    assert_eq!(
+        domain.returns.obligations().cloned().collect::<Vec<_>>(),
+        calls
+    );
+    assert_eq!(
+        domain
+            .resource_basis
+            .original_decode(old_binding, SELECTED)
+            .unwrap(),
+        [0x0f, 0xa2]
+    );
+    assert!(
+        !domain
+            .resource_basis
+            .contains_page(removed_binding, BASE)
+            .unwrap()
+    );
+    domain.audit_history().unwrap();
+
+    let (images, maps) = replacement_source(&domain);
+    assert_ne!(images[0].snapshot.mapping, old_mapping);
+    domain.reserve_replacement_catalog_slot().unwrap();
+    let reused = domain.stage_replacement(images, maps, until()).unwrap();
+    let reused_binding = reused.identity().new_binding;
+    assert_ne!(reused_binding, old_binding);
+    let reuse_bytes = reused.catalog_bytes();
+    model_revoke_for_replacement(&mut domain);
+    domain.commit_replacement_model(reused).unwrap();
+    assert_eq!(domain.generation, 2);
+    assert_eq!(domain.entry_version, 2);
+    assert_eq!(domain.source_binding, reused_binding);
+    assert_eq!(domain.pages, BTreeMap::from([(BASE, false)]));
+    assert_eq!(domain.original_decode(SELECTED).unwrap(), [0x0f, 0x31]);
+    assert_eq!(
+        domain
+            .resource_basis
+            .original_decode(old_binding, SELECTED)
+            .unwrap(),
+        [0x0f, 0xa2]
+    );
+    assert_eq!(
+        domain.resource_basis_bytes(),
+        retained_before + removal_bytes + reuse_bytes
+    );
+    assert_eq!(domain.plans.len(), 1);
+    assert_eq!(domain.plans[0].source_binding, old_binding);
+    assert_eq!(domain.plans[0].routes[0].original, [0x90]);
+    assert_eq!(
+        domain.generations[0].guards[&SELECTED].original_bytes(),
+        [0x0f, 0xa2]
+    );
+    assert_eq!(domain.generations[1].source_binding, removed_binding);
+    assert_eq!(
+        domain.returns.obligations().cloned().collect::<Vec<_>>(),
+        calls
+    );
+    domain.audit_history().unwrap();
+}
+
+#[test]
+fn replacement_model_requires_exact_revoked_prefix_and_rejects_stale_candidate() {
+    let mut domain = fixture(false);
+    model_install(&mut domain);
+    domain.reserve_replacement_catalog_slot().unwrap();
+    let premature = domain
+        .stage_replacement(Vec::new(), Vec::new(), until())
+        .unwrap();
+    let binding = domain.source_binding;
+    let retained = domain.resource_basis_bytes();
+    assert_refused(
+        domain.commit_replacement_model(premature),
+        "dynamic replacement does not follow exact revocation",
+    );
+    assert_eq!(domain.source_binding, binding);
+    assert_eq!(domain.resource_basis_bytes(), retained);
+    assert!(domain.pages[&BASE]);
+    assert_eq!(domain.guards[&SELECTED].original_bytes(), [0x0f, 0xa2]);
+    domain.audit_history().unwrap();
+    let stale = domain
+        .stage_replacement(Vec::new(), Vec::new(), until())
+        .unwrap();
+    let chosen = domain
+        .stage_replacement(Vec::new(), Vec::new(), until())
+        .unwrap();
+    model_revoke_for_replacement(&mut domain);
+    domain.commit_replacement_model(chosen).unwrap();
+    let current = domain.source_binding;
+    let retained = domain.resource_basis_bytes();
+    assert_refused(
+        domain.commit_replacement_model(stale),
+        "dynamic replacement does not follow exact revocation",
+    );
+    assert_eq!(domain.source_binding, current);
+    assert_eq!(domain.resource_basis_bytes(), retained);
+    assert_eq!(domain.generation, 1);
+    assert_eq!(domain.generations.len(), 1);
+    assert_eq!(domain.plans.len(), 1);
+    domain.audit_history().unwrap();
+}
+
+#[test]
+fn replaced_live_source_does_not_authenticate_altered_historical_plan_or_binding() {
+    for wrong_binding in [false, true] {
+        let mut domain = fixture(false);
+        model_install(&mut domain);
+        let changed = alternate_pending(&domain, FactChange::NoncandidateByte);
+        let (images, maps) = replacement_source(&domain);
+        domain.reserve_replacement_catalog_slot().unwrap();
+        let staged = domain.stage_replacement(images, maps, until()).unwrap();
+        model_revoke_for_replacement(&mut domain);
+        domain.commit_replacement_model(staged).unwrap();
+        domain.audit_history().unwrap();
+        if wrong_binding {
+            domain.plans[0].source_binding = domain.source_binding;
+            assert_refused(
+                domain.audit_history(),
+                "dynamic retired guard lost its source identity",
+            );
+        } else {
+            domain.plans[0].pending = changed;
+            assert_refused(
+                domain.audit_history(),
+                "dynamic resource basis original source differs",
+            );
+        }
+        assert_eq!(domain.images[0].snapshot.bytes()[32..34], [0x0f, 0x31]);
+        assert_eq!(domain.returns.obligations().count(), 1);
+    }
+}
+
+#[test]
+fn replacement_keeps_live_source_and_epoch_checks_separate_from_retained_history() {
+    for row in 0..4 {
+        let mut domain = fixture(false);
+        model_install(&mut domain);
+        let (images, maps) = replacement_source(&domain);
+        domain.reserve_replacement_catalog_slot().unwrap();
+        let staged = domain.stage_replacement(images, maps, until()).unwrap();
+        model_revoke_for_replacement(&mut domain);
+        domain.commit_replacement_model(staged).unwrap();
+        let expected = match row {
+            0 => {
+                let image = &mut domain.images[0];
+                let mut bytes = image.snapshot.bytes().to_vec();
+                bytes[96] ^= 1;
+                image.snapshot = with_bytes(&image.snapshot, bytes);
+                "dynamic resource basis original source differs"
+            }
+            1 => {
+                domain.original_executables[0].file_offset = PAGE;
+                "dynamic resource basis mapping inventory differs"
+            }
+            2 => {
+                domain.pages.remove(&BASE);
+                "dynamic retained page inventory differs"
+            }
+            _ => {
+                domain.images[0].core_identity.generation += 1;
+                "dynamic resource basis original source differs"
+            }
+        };
+        domain.audit_retained_history().unwrap();
+        assert_refused(domain.audit_history(), expected);
+        assert_eq!(
+            domain.generations[0].guards[&SELECTED].original_bytes(),
+            [0x0f, 0xa2]
+        );
+        assert_eq!(domain.returns.obligations().count(), 1);
+    }
+}

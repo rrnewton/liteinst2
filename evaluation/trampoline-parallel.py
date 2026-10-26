@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Four fixed default-parallel test invocations; all records remain under ignored/."""
+"""Seven fixed default-parallel test invocations; all records remain under ignored/."""
 import argparse
 import datetime
 import hashlib
@@ -19,7 +19,8 @@ import time
 SCRIPT = 'evaluation/trampoline-parallel.py'
 CHILD = 'LITEINST2_STAGED_DROP_CHILD'
 WALL_SECONDS = 360
-NAMES = ['library-1', 'library-2', 'library-3', 'workspace']
+NAMES = ['library-1', 'library-2', 'library-3',
+         'prefixed-pun-1', 'prefixed-pun-2', 'prefixed-pun-3', 'workspace']
 
 
 def digest(data):
@@ -201,7 +202,9 @@ def main():
     assert 'RUST_TEST_THREADS' not in env and CHILD not in env
     cargo = str(toolchain / 'bin/cargo')
     commands = [dict(name=name, argv=[cargo, 'test', '--offline', '--locked'] +
-                    (['-p', 'liteinst2', '--lib'] if name != 'workspace' else ['--workspace']),
+                    (['--workspace'] if name == 'workspace' else
+                     ['-p', 'liteinst2', '--test', 'prefixed_pun_oracle']
+                     if name.startswith('prefixed-pun-') else ['-p', 'liteinst2', '--lib']),
                     cwd=str(repo), env=dict(env, TMPDIR=str(output / (name + '-tmp'))),
                     wall_seconds=WALL_SECONDS, status='UNRUN') for name in NAMES]
     write(output / 'plan.json', dict(schema=1, commands=commands,
@@ -257,7 +260,7 @@ def main():
                    config_content_attestation_complete=before is not None and all(
                        row['state'] != 'READ_DENIED' for row in before['cargo_configurations'].values()),
                    commands=rows, errors=errors, enclosing_parent_closed=None,
-                   scope='Four unfiltered default-parallel invocations; selected source/tool observations only.',
+                   scope='Seven unfiltered default-parallel invocations; selected source/tool observations only.',
                    limits=['Raw terminal observations are not aggregated: nested test processes may interleave.',
                            'Durations are operational diagnostics, not performance measurements.',
                            'No full Cargo configuration, dependency-artifact, or runtime-loader closure is claimed.',

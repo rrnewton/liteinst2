@@ -318,6 +318,17 @@ impl ResetLaunch {
             return Err(LaunchError::Invalid("invalid reset lineage start"));
         }
         self.start_clone()?;
+        self.await_handoff(until, cancel)
+    }
+
+    // Continue the same launch transaction with its original absolute deadline.
+    // Separating this phase also lets the native control establish real held
+    // ownership before deliberately expiring the unchanged handoff deadline.
+    fn await_handoff(
+        &mut self,
+        until: Instant,
+        cancel: &AtomicBool,
+    ) -> Result<broker::Broker, LaunchError> {
         loop {
             Self::time(until, cancel)?;
             self.receive()?;
