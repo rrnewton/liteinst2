@@ -59,6 +59,12 @@ origins, consumed history, original reports and potential CALL returns remain
 retained under nonrefundable lifetime bounds; a task disappearing cannot erase
 a CALL obligation. Cache hits do not replace these native checks.
 
+Resource sizing scans every supplied source image once at startup. Its candidate
+count remains bound to exact original bytes, policy and declared heads; future
+page reports still charge repeated candidates and all retained facts. This work
+is reported separately as `resource_scan_decoded_starts`, outside demand/cache
+metrics. The implementation makes no incremental-startup or performance claim.
+
 The provider runs on the caller's thread. Advance, callback and completion share
 one deadline established before the exchange; returning from a callback does
 not renew it. The tracer independently watches a pending callback deadline and

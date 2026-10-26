@@ -12,6 +12,9 @@ use liteinst_admission::returns::CallReturnLedger;
 use liteinst_admission::scan::{Candidate, Policy, Snapshot};
 use std::collections::{BTreeMap, BTreeSet};
 
+mod resource;
+use resource::ResourceBasis;
+
 pub(super) struct Domain {
     pub(super) images: Vec<Image>,
     pub(super) original_executables: Vec<MemoryMapping>,
@@ -26,6 +29,7 @@ pub(super) struct Domain {
     pub(super) entry_version: u64,
     pub(super) plans: Vec<InstalledPlan>,
     pub(super) generations: Vec<RetiredGeneration>,
+    resource_basis: ResourceBasis,
     next_plan: u64,
 }
 
@@ -50,11 +54,14 @@ impl Domain {
         facts: Vec<crate::gate::ImageFacts>,
         original_executables: Vec<MemoryMapping>,
         options: &DynamicAdmissionOptions,
+        until: Instant,
         read: impl FnMut(u64, usize) -> Result<Vec<u8>, LaunchError>,
     ) -> Result<Self, GateError> {
         planning::validate_image_count(&facts)?;
         let pages = planning::initial_pages(&original_executables)?;
         let images = planning::prepare_images(facts, &original_executables, read)?;
+        let policy = Policy::default();
+        let resource_basis = ResourceBasis::new(&images, &policy, until)?;
         Ok(Self {
             images,
             original_executables,
@@ -63,14 +70,27 @@ impl Domain {
             guards: BTreeMap::new(),
             oracle: GateOracle::new(options.cache)?,
             returns: CallReturnLedger::new(),
-            policy: Policy::default(),
+            policy,
             backend: options.backend,
             generation: 0,
             entry_version: 0,
             plans: Vec::new(),
             generations: Vec::new(),
+            resource_basis,
             next_plan: 1,
         })
+    }
+
+    pub(super) fn source_candidate_bound(&self) -> Result<usize, GateError> {
+        self.resource_basis.candidates(&self.images, &self.policy)
+    }
+
+    pub(super) fn resource_scan_decoded_starts(&self) -> usize {
+        self.resource_basis.decoded_starts
+    }
+
+    pub(super) fn resource_basis_bytes(&self) -> usize {
+        self.resource_basis.retained_bytes
     }
 
     pub(super) fn image(&self, pc: u64) -> Result<&Image, GateError> {

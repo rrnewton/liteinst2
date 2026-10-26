@@ -190,6 +190,9 @@ pub struct DynamicAdmissionMetrics {
     pub selected: SelectedMetrics,
     /// Original report preparation and demand work.
     pub oracle: GateOracleMetrics,
+    /// Once-per-domain full-source scan work for retention bounds, separate
+    /// from demand scans, cache preparation and cache hits in `oracle`.
+    pub resource_scan_decoded_starts: usize,
     /// Retained independently identified origins, including consumed history.
     pub retained_origins: usize,
     /// Retained origin-refresh, consumption, and epoch records.

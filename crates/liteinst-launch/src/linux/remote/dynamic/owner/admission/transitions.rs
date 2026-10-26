@@ -188,6 +188,122 @@ impl PlanShape {
     }
 }
 
+fn image_facts_bound(
+    domain: &super::domain::Domain,
+    active_origins: usize,
+    extra_origins: usize,
+) -> Result<(usize, usize, usize), GateError> {
+    let mut bytes = 0;
+    let mut heads = 0;
+    let mut resumes = add(active_origins, extra_origins)?;
+    for image in &domain.images {
+        bytes = add(bytes, image.snapshot.bytes().len())?;
+        let (h, r) = entry_facts(&image.entries)?;
+        heads = add(heads, h)?;
+        resumes = add(resumes, r)?;
+    }
+    Ok((bytes, heads, resumes))
+}
+
+fn plan_upper_bound(
+    domain: &super::domain::Domain,
+    active_origins: usize,
+    extra_origins: usize,
+) -> Result<BudgetCharge, GateError> {
+    let (bytes, heads, resumes) = image_facts_bound(domain, active_origins, extra_origins)?;
+    let budget = match domain.backend {
+        DynamicAdmissionBackend::StrictTrap => TrapCoverageBudget::default(),
+        DynamicAdmissionBackend::CoverageTrap(budget) => budget,
+    };
+    // One original report per distinct scanned page, never a flat fixture
+    // constant. Strict planning can scan the entire supplied image domain.
+    let reports = domain.pages.len();
+    let source_candidates = domain.source_candidate_bound()?;
+    // Coverage adds only selected starts or declared containing heads.
+    // Count each page's retained candidates separately: a cross-page
+    // instruction can occur in both reports through the leading halo.
+    let guards = add(source_candidates, heads)?.min(budget.max_guards);
+    let decoded = add(heads, guards)?;
+    let candidates = mul(reports, source_candidates)?;
+    let obligations = add(candidates, mul(reports, total([heads, resumes, 6])?)?)?;
+    let resume_requirements = mul(resumes, add(reports, 1)?)?;
+    let old_calls = domain.returns.obligations().count();
+    let calls = add(old_calls, mul(2, heads)?)?;
+    PlanShape {
+        facts: facts_bytes(bytes, heads, resumes)?,
+        reports,
+        report_facts: mul(reports, facts_bytes(bytes, heads, resumes)?)?,
+        candidates,
+        obligations,
+        resolutions: obligations,
+        resolution_guards: mul(obligations, INSTRUCTION_BYTES)?,
+        pages: reports,
+        dependencies: add(reports, decoded)?,
+        guards,
+        installed_guards: domain.guards.len(),
+        decoded,
+        resumes: resume_requirements,
+        resume_kinds: mul(resume_requirements, 4)?,
+        calls,
+        callers: reports,
+        source_records: reports,
+        source_bytes: mul(reports, bytes)?,
+        source_heads: mul(reports, heads)?,
+        source_resumes: mul(reports, resumes)?,
+        routes: add(add(active_origins, extra_origins)?, calls)?,
+    }
+    .charge()
+}
+
+fn actual_plan_charge(
+    plan: &PendingAdmission,
+    active_origins: usize,
+) -> Result<BudgetCharge, GateError> {
+    let (heads, resumes) = entry_facts(plan.entries())?;
+    let source = plan.planned_source_footprint();
+    let mut shape = PlanShape {
+        facts: facts_bytes(plan.snapshot().bytes().len(), heads, resumes)?,
+        reports: plan.reports().len(),
+        pages: plan.pages().len(),
+        dependencies: plan.dependencies().len(),
+        guards: plan.guards().len(),
+        installed_guards: plan.installed_guards().len(),
+        decoded: plan.decoded_heads().len(),
+        resumes: plan.resume_requirements().len(),
+        calls: add(plan.call_requirements().len(), plan.planned_calls().len())?,
+        callers: plan.planned_callers().len(),
+        source_records: source.records,
+        source_bytes: source.snapshot_bytes,
+        source_heads: source.head_facts,
+        source_resumes: source.resume_facts,
+        routes: total([
+            active_origins,
+            plan.call_requirements().len(),
+            plan.planned_calls().len(),
+        ])?,
+        ..PlanShape::default()
+    };
+    for report in plan.reports() {
+        let (heads, resumes) = entry_facts(report.entries())?;
+        shape.report_facts = add(
+            shape.report_facts,
+            facts_bytes(report.snapshot().bytes().len(), heads, resumes)?,
+        )?;
+        shape.candidates = add(shape.candidates, report.candidates().len())?;
+        shape.obligations = add(shape.obligations, report.obligations().len())?;
+    }
+    for resume in plan.resume_requirements() {
+        shape.resume_kinds = add(shape.resume_kinds, resume.kinds().len())?;
+    }
+    if let Some(coverage) = plan.coverage() {
+        shape.resolutions = coverage.resolutions().len();
+        for resolution in coverage.resolutions() {
+            shape.resolution_guards = add(shape.resolution_guards, resolution.guards.len())?;
+        }
+    }
+    shape.charge()
+}
+
 impl AdmissionOwner {
     /// Re-read a current held incarnation. A raw instrumentation fault remains
     /// raw here; logical RIP does not silently change the register snapshot.
@@ -370,109 +486,9 @@ impl AdmissionOwner {
         })
     }
 
-    fn image_facts_bound(&self, extra_origins: usize) -> Result<(usize, usize, usize), GateError> {
-        let mut bytes = 0;
-        let mut heads = 0;
-        let mut resumes = add(self.census.active().count(), extra_origins)?;
-        for image in &self.domain.images {
-            bytes = add(bytes, image.snapshot.bytes().len())?;
-            let (h, r) = entry_facts(&image.entries)?;
-            heads = add(heads, h)?;
-            resumes = add(resumes, r)?;
-        }
-        Ok((bytes, heads, resumes))
-    }
-
-    fn plan_upper_bound(&self, extra_origins: usize) -> Result<BudgetCharge, GateError> {
-        let (bytes, heads, resumes) = self.image_facts_bound(extra_origins)?;
-        let budget = match self.domain.backend {
-            DynamicAdmissionBackend::StrictTrap => TrapCoverageBudget::default(),
-            DynamicAdmissionBackend::CoverageTrap(budget) => budget,
-        };
-        // One original report per distinct scanned page, never a flat fixture
-        // constant. Strict planning can scan the entire supplied image domain.
-        let reports = self.domain.pages.len();
-        let guards = bytes.min(budget.max_guards);
-        let decoded = add(heads, guards)?;
-        let candidates = mul(reports, bytes.min(PAGE as usize + 14))?;
-        let obligations = add(candidates, mul(reports, total([heads, resumes, 6])?)?)?;
-        let resume_requirements = mul(resumes, add(reports, 1)?)?;
-        let old_calls = self.domain.returns.obligations().count();
-        let calls = add(old_calls, mul(2, heads)?)?;
-        PlanShape {
-            facts: facts_bytes(bytes, heads, resumes)?,
-            reports,
-            report_facts: mul(reports, facts_bytes(bytes, heads, resumes)?)?,
-            candidates,
-            obligations,
-            resolutions: obligations,
-            resolution_guards: mul(obligations, INSTRUCTION_BYTES)?,
-            pages: reports,
-            dependencies: add(reports, decoded)?,
-            guards,
-            installed_guards: self.domain.guards.len(),
-            decoded,
-            resumes: resume_requirements,
-            resume_kinds: mul(resume_requirements, 4)?,
-            calls,
-            callers: reports,
-            source_records: reports,
-            source_bytes: mul(reports, bytes)?,
-            source_heads: mul(reports, heads)?,
-            source_resumes: mul(reports, resumes)?,
-            routes: add(add(self.census.active().count(), extra_origins)?, calls)?,
-        }
-        .charge()
-    }
-
-    fn actual_plan_charge(&self, plan: &PendingAdmission) -> Result<BudgetCharge, GateError> {
-        let (heads, resumes) = entry_facts(plan.entries())?;
-        let source = plan.planned_source_footprint();
-        let mut shape = PlanShape {
-            facts: facts_bytes(plan.snapshot().bytes().len(), heads, resumes)?,
-            reports: plan.reports().len(),
-            pages: plan.pages().len(),
-            dependencies: plan.dependencies().len(),
-            guards: plan.guards().len(),
-            installed_guards: plan.installed_guards().len(),
-            decoded: plan.decoded_heads().len(),
-            resumes: plan.resume_requirements().len(),
-            calls: add(plan.call_requirements().len(), plan.planned_calls().len())?,
-            callers: plan.planned_callers().len(),
-            source_records: source.records,
-            source_bytes: source.snapshot_bytes,
-            source_heads: source.head_facts,
-            source_resumes: source.resume_facts,
-            routes: total([
-                self.census.active().count(),
-                plan.call_requirements().len(),
-                plan.planned_calls().len(),
-            ])?,
-            ..PlanShape::default()
-        };
-        for report in plan.reports() {
-            let (heads, resumes) = entry_facts(report.entries())?;
-            shape.report_facts = add(
-                shape.report_facts,
-                facts_bytes(report.snapshot().bytes().len(), heads, resumes)?,
-            )?;
-            shape.candidates = add(shape.candidates, report.candidates().len())?;
-            shape.obligations = add(shape.obligations, report.obligations().len())?;
-        }
-        for resume in plan.resume_requirements() {
-            shape.resume_kinds = add(shape.resume_kinds, resume.kinds().len())?;
-        }
-        if let Some(coverage) = plan.coverage() {
-            shape.resolutions = coverage.resolutions().len();
-            for resolution in coverage.resolutions() {
-                shape.resolution_guards = add(shape.resolution_guards, resolution.guards.len())?;
-            }
-        }
-        shape.charge()
-    }
-
     fn rebind_charge(&self, extra_origins: usize) -> Result<BudgetCharge, GateError> {
-        let (bytes, heads, resumes) = self.image_facts_bound(extra_origins)?;
+        let (bytes, heads, resumes) =
+            image_facts_bound(&self.domain, self.census.active().count(), extra_origins)?;
         let mapping_strings = self.domain.images.iter().try_fold(0, |sum, image| {
             add(
                 sum,
@@ -543,7 +559,10 @@ impl AdmissionOwner {
             charge = combine(charge, self.rebind_charge(successors)?)?;
         }
         for _ in 0..plans {
-            charge = combine(charge, self.plan_upper_bound(successors)?)?;
+            charge = combine(
+                charge,
+                plan_upper_bound(&self.domain, self.census.active().count(), successors)?,
+            )?;
             // Two-task settlement may happen before publish_page's planner,
             // even for a plan-only transaction. Together with the separate
             // two-task prefix, reserve all four prepublication refresh slots
@@ -616,7 +635,7 @@ impl AdmissionOwner {
         plan: &PendingAdmission,
     ) -> Result<(), GateError> {
         self.domain.validate_plan(plan)?;
-        let charge = self.actual_plan_charge(plan)?;
+        let charge = actual_plan_charge(plan, self.census.active().count())?;
         self.census
             .check_reserved(reservation, combine(charge, refresh_charge(MAX_TASKS)?)?)
             .map_err(census_error)?;
@@ -1042,3 +1061,6 @@ impl AdmissionOwner {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests;

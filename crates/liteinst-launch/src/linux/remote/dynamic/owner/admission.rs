@@ -157,8 +157,10 @@ impl AdmissionOwner {
         let initial_bytes = facts
             .iter()
             .try_fold(0_usize, |sum, fact| {
-                sum.checked_add(fact.bytes.len())
-                    .and_then(|value| value.checked_add(fact.heads.len().checked_mul(256)?))
+                // Original domain facts plus the exact immutable resource
+                // basis, both retained before any plan can be reserved.
+                sum.checked_add(fact.bytes.len().checked_mul(2)?)
+                    .and_then(|value| value.checked_add(fact.heads.len().checked_mul(512)?))
             })
             .and_then(|value| value.checked_add(MAX_XSTATE.checked_mul(8)?))
             .and_then(|value| value.checked_add(64 * 1024))
@@ -181,6 +183,7 @@ impl AdmissionOwner {
             facts,
             boot.original_executables,
             &options,
+            until,
             |address, len| read_memory(boot.stop.token.tid, address, len),
         )?;
         for &page in domain.pages.keys() {
@@ -245,6 +248,7 @@ impl AdmissionOwner {
                         value.checked_add(image.entries.heads().len().checked_mul(256)?)
                     })
             })
+            .and_then(|value| value.checked_add(domain.resource_basis_bytes()))
             .and_then(|value| value.checked_add(boot.evidence.exec_event.xstate.len()))
             .and_then(|value| value.checked_add(boot.evidence.exec_exit.xstate.len()))
             .and_then(|value| value.checked_add(boot.evidence.entry_trap.xstate.len()))
@@ -287,6 +291,7 @@ impl AdmissionOwner {
         let mut metrics = DynamicAdmissionMetrics::default();
         metrics.pages.startup = started.elapsed();
         metrics.pages.untouched_pages = domain.pages.len();
+        metrics.resource_scan_decoded_starts = domain.resource_scan_decoded_starts();
         let root = boot.stop.identity.task;
         Ok((
             Self {

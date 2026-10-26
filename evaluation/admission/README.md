@@ -151,11 +151,12 @@ error while withholding the real owner's reply. Both deadlines begin before
 enqueueing. Native expiry, expired dispatch and response expiry retain distinct
 error labels; the fixture accepts only native expiry. See `native-thread.md`.
 
-The dynamic admission increment adds 54 outer tests: 14 pending-plan puzzles,
-17 resume-census bookkeeping tests, 16 client/owner protocol tests and seven
-native integration fixtures. The expected launcher unit cohort is 99. Workspace
-expectations are 1200 outer tests in 75 harnesses (1196 possible passes and four
-existing ignores); serial launch expects 362 tests in 23 harnesses. Recorder
+The dynamic admission increment adds 58 outer tests: 14 pending-plan puzzles,
+17 resume-census bookkeeping tests, 16 client/owner protocol tests, four resource
+bound regressions and seven native integration fixtures. The expected launcher
+unit cohort is 103. Workspace expectations are 1204 outer tests in 75 harnesses
+(1200 possible passes and four existing ignores); serial launch expects 366
+tests in 23 harnesses. Recorder
 regressions increase from 53 to 71. These are source-derived expected cohorts,
 not reported execution results. The separately drafted six-test dynamic matrix
 is not included in this catalog.
