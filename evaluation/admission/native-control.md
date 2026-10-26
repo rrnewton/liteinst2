@@ -34,16 +34,32 @@ are available under
 | --- | --- | --- |
 | signal.c | c8e3ea51d8cbbd5467477cefcd4c524dddae896925163ce44e043c9453b75a8d | do_notify_parent, ptrace_stop, do_jobctl_trap |
 | ptrace.c | 6f158c7b443a7a20c36c36abbe68e012fc3dc8017d73771834648541101e85c8 | ptrace_request: PTRACE_INTERRUPT and PTRACE_LISTEN |
-| exit.c | e4c0770ac99a41e6ea6cc71310b99b32daba05c67357aea42c5e1813f42cc61d | exit_notify, eligible_child |
+| exit.c | e4c0770ac99a41e6ea6cc71310b99b32daba05c67357aea42c5e1813f42cc61d | exit_notify, eligible_child, wait_task_zombie, find_new_reaper |
 | fork.c | 384aabaa48c2f4bb2d619c6d561be98e62cd9527024c3eccd5853dfc1f3a76ae | copy_signal, copy_process |
+
+The additional file `fs/pidfs.c` at the same repository and tag has SHA-256
+`b762e20997be6188b8ed64edd9ef0bea91fd71d1cd081a8227e96be8f59465b9`.
+Its `pidfd_poll` distinguishes an exited task from a detached task.
 
 The bootstrap uses raw clone with CLONE_PIDFD, no shared VM and exit signal
 zero. The pidfd is obtained atomically. A fresh signal structure is zeroed and
 CLONE_AUTOREAP is absent. Before SEIZE, exit signal zero avoids the
 SIGCHLD-specific automatic-reap rule; `__WALL` includes this clone child. After
 SEIZE, both automatic-reap branches require the task to be untraced. The
-original tracer remains the exclusive waiter through terminal status and an
-empty wait domain. External tracing or reaping violates that ownership.
+original tracer remains the exclusive consumer of ptrace statuses. External
+tracing or reaping violates that ownership.
+
+That terminal status is insufficient to prove physical reaping of a traced
+non-child process leader. `wait_task_zombie` uses `EXIT_TRACE`, unlinks the
+ptracer and restores `EXIT_ZOMBIE` for the real parent unless it automatically
+reaps. `find_new_reaper` follows real-parent ancestry when that parent exits.
+Consequently, tracer-domain `ECHILD` and pidfd `POLLIN` can both hold while the
+zombie remains. In the reviewed kernel, pidfd `POLLHUP` additionally requires
+`pid_task(pid, PIDTYPE_PID)` to be null. A complete cleanup claim needs the real
+parent's drain and physical task disappearance, beyond a ptrace terminal wait.
+The failed validation at revision `59660630a936bca5271e8776ee2cc950af3139c6`
+retains two outer-supervisor adoptees despite all test assertions passing; its
+receipt is failed evidence, not a qualified cleanup result.
 
 An interrupt can be satisfied by a real syscall or signal stop. The kernel
 clears pending STOP at each new ptrace stop, but a request issued after an
@@ -65,6 +81,9 @@ for name in signal ptrace exit fork; do
         --output "target/review-linux/$name.c" \
         "https://raw.githubusercontent.com/gregkh/linux/v7.1.3/kernel/$name.c"
 done
+curl --fail --silent --show-error --location --max-time 30 \
+    --output target/review-linux/pidfs.c \
+    https://raw.githubusercontent.com/gregkh/linux/v7.1.3/fs/pidfs.c
 sha256sum target/review-linux/signal.c target/review-linux/ptrace.c \
-    target/review-linux/exit.c target/review-linux/fork.c
+    target/review-linux/exit.c target/review-linux/fork.c target/review-linux/pidfs.c
 ```

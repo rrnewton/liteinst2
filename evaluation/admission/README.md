@@ -39,6 +39,14 @@ chosen discovery strategy is recorded per command.
 Failure, output exhaustion or timeout does not become a pass. These are serial
 validation commands, not a benchmark or a contained seed sweep.
 
+The separate `diagnose_cleanup.py` reproduces the two private fork-cleanup
+fixtures individually with the same command supervisor, source authentication,
+environment and output bounds. Run it with `--expect-revision` and an exact
+40-hex commit. Its receipts identify the filtered case and complete filtered
+denominator, and an otherwise successful test with leftover descendants still
+fails. This diagnostic attributes failures; it does not replace any command in
+the full qualification protocol or establish a complete claim.
+
 ## Public result format
 
 Each invocation creates an append-only run identity under `results/`. Its JSON
