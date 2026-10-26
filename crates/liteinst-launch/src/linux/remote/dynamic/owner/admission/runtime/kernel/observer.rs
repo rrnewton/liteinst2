@@ -1,6 +1,7 @@
 //! Compose source, reservation and diagnostic obligations at real boundaries.
 use super::*;
 use crate::linux::remote::dynamic::owner::bootstrap::Request;
+use crate::linux::remote::dynamic::owner::kernel_journal::RuntimeKernelReleaseSource;
 
 pub(super) struct KernelObserver<'a, 'binding> {
     pub(super) sources: &'a PreparedInitialSources,
@@ -92,8 +93,17 @@ impl RuntimeKernelObservation for KernelObserver<'_, '_> {
                 self.sink
                     .release_attempt(identity, RuntimeKernelReleasePhase::Entry, stop)
             }
-            (RuntimeKernelEffect::PreExitRelease, RuntimeKernelEffectContext::PreExit(_)) => {
-                self.sink.pre_exit_release(identity)
+            (RuntimeKernelEffect::PreExitRelease, RuntimeKernelEffectContext::PreExit(current)) => {
+                // Bind the actual callback header to the retained pre-exit
+                // record before recording or attempting its kernel-only CONT.
+                self.sink.pre_exit_release(
+                    identity,
+                    RuntimeKernelReleaseSource::PreExit {
+                        ordinal: current.raw.ordinal,
+                        tid: current.raw.tid,
+                        status: current.raw.status,
+                    },
+                )
             }
             (
                 RuntimeKernelEffect::OriginalRelease

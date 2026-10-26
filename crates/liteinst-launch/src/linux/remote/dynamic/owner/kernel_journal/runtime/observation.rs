@@ -506,6 +506,7 @@ impl RuntimeJournalSink {
     pub(in crate::linux::remote::dynamic::owner) fn pre_exit_release(
         &mut self,
         identity: &RuntimeKernelIdentity,
+        source: RuntimeKernelReleaseSource,
     ) -> Result<(), LaunchError> {
         self.with(identity, |attempt| {
             if attempt.failure.is_some()
@@ -526,11 +527,14 @@ impl RuntimeJournalSink {
                 return Err(invalid("runtime journal pre-exit release lacks event"));
             }
             let raw = attempt.raw(4)?;
-            let source = RuntimeKernelReleaseSource::PreExit {
+            let expected = RuntimeKernelReleaseSource::PreExit {
                 ordinal: 4,
                 tid: raw.tid,
                 status: raw.status,
             };
+            if source != expected {
+                return Err(invalid("runtime journal pre-exit release source differs"));
+            }
             attempt.append(RuntimeKernelFact::ReleaseAttempt {
                 phase: RuntimeKernelReleasePhase::PreExit,
                 source,

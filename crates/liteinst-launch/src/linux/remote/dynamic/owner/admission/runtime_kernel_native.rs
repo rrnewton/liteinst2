@@ -332,23 +332,13 @@ impl RuntimeKernelShape {
         add(runner::temporary_bytes()?, io::temporary_bytes()?)
     }
 }
+#[derive(Default)]
 struct RawWait {
     wait: Option<(i32, i32)>,
     custody: Option<RuntimeWaitCustody>,
     queries_started: bool,
     fixed: FixedReads,
     failure: Option<RuntimeKernelFailure>,
-}
-impl Default for RawWait {
-    fn default() -> Self {
-        Self {
-            wait: None,
-            custody: None,
-            queries_started: false,
-            fixed: FixedReads::default(),
-            failure: None,
-        }
-    }
 }
 struct Readback {
     kind: RuntimeKernelReadback,
