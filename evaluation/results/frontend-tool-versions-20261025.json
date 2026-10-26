@@ -1,0 +1,512 @@
+{
+  "claims": {
+    "1_page_admission_cross_modification_free": "unqualified_by_tool_version_observations",
+    "2_unprivileged_first_instruction": "unqualified_by_tool_version_observations",
+    "3_in_place_preemption_clock": "unqualified_by_tool_version_observations",
+    "4_systematic_every_tactic": "unqualified_by_tool_version_observations"
+  },
+  "commands": [
+    {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.14445486501790583,
+      "exit": 0,
+      "helper_exit": 0,
+      "helper_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "helper_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "id": "1.97.1-cargo",
+      "inputs_unchanged": true,
+      "kind": "tool_version_observation",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW_VERSIONS}/1.97.1-cargo/request.json",
+          "--receipt",
+          "${RAW_VERSIONS}/1.97.1-cargo/receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55
+      },
+      "outer_record_sha256": "d24cc5921f8f35e2ce485d7a99baf6fd2a02a77e84bdfc70429ff145f21f8a6c",
+      "receipt_sha256": "27bc30658271d9d37478fed36f05a89e3f5f563e087898693c6471295cbdbe68",
+      "request": {
+        "argv": [
+          "${CURRENT_TOOLCHAIN}/bin/cargo",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${CURRENT_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.97.1-cargo/stderr",
+        "stdout": "${RAW_VERSIONS}/1.97.1-cargo/stdout",
+        "wall_seconds": 30
+      },
+      "request_sha256": "76c69082fbf4afb8bba0cf2736098f6a4d2bbe2b145dfec68403246d18b41c9f",
+      "source_repository_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "status": "pass",
+      "stderr": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "cargo 1.97.1 (c980f4866 2026-06-30)\nrelease: 1.97.1\ncommit-hash: c980f4866141969fab6254a680546a277789d6f0\ncommit-date: 2026-06-30\nhost: x86_64-unknown-linux-gnu\nlibgit2: 1.9.2 (sys:0.20.4 vendored)\nlibcurl: 8.20.0-DEV (sys:0.4.88+curl-8.20.0 vendored ssl:OpenSSL/3.6.2)\nssl: OpenSSL 3.6.2 7 Apr 2026\nos: CentOS 9.0.0 [64-bit]\n",
+      "stdout_sha256": "d0c168c9509371d329569450e6bb43e1abb2be4f91c1c04849d863757596a7e2",
+      "tested_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "tested_revision_scope": "Exact helper source only; selected Rust tool executable is independently identified by its whole-file SHA-256, not built from this repository revision.",
+      "tool": {
+        "bytes": 42839824,
+        "identity_scope": "Actual admission whole executable bytes/stat/resolved owner; later independent readback matched. No complete dynamic dependency closure is asserted.",
+        "path_coordinate": "${CURRENT_TOOLCHAIN}/bin/cargo",
+        "resolved_coordinate": "${CURRENT_TOOLCHAIN}/bin/cargo",
+        "role": "cargo",
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+        "version": "1.97.1"
+      },
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.1453374910634011,
+      "exit": 0,
+      "helper_exit": 0,
+      "helper_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "helper_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "id": "1.97.1-rustc",
+      "inputs_unchanged": true,
+      "kind": "tool_version_observation",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW_VERSIONS}/1.97.1-rustc/request.json",
+          "--receipt",
+          "${RAW_VERSIONS}/1.97.1-rustc/receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55
+      },
+      "outer_record_sha256": "e1b5c64ed30365fc58c177f393d049ab3e07d291b283b4101297e2ec27847f9e",
+      "receipt_sha256": "4bdfafee580ca35319c274a9e3446af217c38179cec1f2f1dfdf8da664c891f1",
+      "request": {
+        "argv": [
+          "${CURRENT_TOOLCHAIN}/bin/rustc",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${CURRENT_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.97.1-rustc/stderr",
+        "stdout": "${RAW_VERSIONS}/1.97.1-rustc/stdout",
+        "wall_seconds": 30
+      },
+      "request_sha256": "1e11a84f3881ad6086cf1c1eadad342eb120683e0ffcfa3ebf2a4abdcd8e5422",
+      "source_repository_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "status": "pass",
+      "stderr": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+      "stdout_sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4",
+      "tested_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "tested_revision_scope": "Exact helper source only; selected Rust tool executable is independently identified by its whole-file SHA-256, not built from this repository revision.",
+      "tool": {
+        "bytes": 645000,
+        "identity_scope": "Actual admission whole executable bytes/stat/resolved owner; later independent readback matched. No complete dynamic dependency closure is asserted.",
+        "path_coordinate": "${CURRENT_TOOLCHAIN}/bin/rustc",
+        "resolved_coordinate": "${CURRENT_TOOLCHAIN}/bin/rustc",
+        "role": "rustc",
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+        "version": "1.97.1"
+      },
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.14823066699318588,
+      "exit": 0,
+      "helper_exit": 0,
+      "helper_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "helper_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "id": "1.97.1-rustdoc",
+      "inputs_unchanged": true,
+      "kind": "tool_version_observation",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW_VERSIONS}/1.97.1-rustdoc/request.json",
+          "--receipt",
+          "${RAW_VERSIONS}/1.97.1-rustdoc/receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55
+      },
+      "outer_record_sha256": "e93eae09fd98ebfe133034037e39cf20ed97e44edb8ab2ae134367c5f899228a",
+      "receipt_sha256": "3b9c1e68ee6e451a54aabf7c7a737dc9f5d07acf389179726d32aed5c00adf0a",
+      "request": {
+        "argv": [
+          "${CURRENT_TOOLCHAIN}/bin/rustdoc",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${CURRENT_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.97.1-rustdoc/stderr",
+        "stdout": "${RAW_VERSIONS}/1.97.1-rustdoc/stdout",
+        "wall_seconds": 30
+      },
+      "request_sha256": "68aa2d68d05a296ea70a8eb27a39f8664fdb3b77b7e922d08f36265bc8df5db0",
+      "source_repository_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "status": "pass",
+      "stderr": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "rustdoc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustdoc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+      "stdout_sha256": "1ed8aa68c5b7567ffefd285c103678a8529c3148531398deee38e43b0c00d0e1",
+      "tested_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "tested_revision_scope": "Exact helper source only; selected Rust tool executable is independently identified by its whole-file SHA-256, not built from this repository revision.",
+      "tool": {
+        "bytes": 13680928,
+        "identity_scope": "Actual admission whole executable bytes/stat/resolved owner; later independent readback matched. No complete dynamic dependency closure is asserted.",
+        "path_coordinate": "${CURRENT_TOOLCHAIN}/bin/rustdoc",
+        "resolved_coordinate": "${CURRENT_TOOLCHAIN}/bin/rustdoc",
+        "role": "rustdoc",
+        "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+        "version": "1.97.1"
+      },
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.14409694797359407,
+      "exit": 0,
+      "helper_exit": 0,
+      "helper_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "helper_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "id": "1.85.0-cargo",
+      "inputs_unchanged": true,
+      "kind": "tool_version_observation",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW_VERSIONS}/1.85.0-cargo/request.json",
+          "--receipt",
+          "${RAW_VERSIONS}/1.85.0-cargo/receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55
+      },
+      "outer_record_sha256": "fbba5fc5452a89d16e9c3f0b25041c02186332c22dc5bd4492d94e33b9a9ba1f",
+      "receipt_sha256": "6ef8a43486b66d3ad6f637bd7f65621507d72b9bb440fada7fa65411eeb75dc1",
+      "request": {
+        "argv": [
+          "${MSRV_TOOLCHAIN}/bin/cargo",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${MSRV_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.85.0-cargo/stderr",
+        "stdout": "${RAW_VERSIONS}/1.85.0-cargo/stdout",
+        "wall_seconds": 30
+      },
+      "request_sha256": "8535d9468c097ab8a22949898ec126198502da06cf39941f71cbd345d67ca892",
+      "source_repository_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "status": "pass",
+      "stderr": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "cargo 1.85.0 (d73d2caf9 2024-12-31)\nrelease: 1.85.0\ncommit-hash: d73d2caf9e41a39daf2a8d6ce60ec80bf354d2a7\ncommit-date: 2024-12-31\nhost: x86_64-unknown-linux-gnu\nlibgit2: 1.8.1 (sys:0.19.0 vendored)\nlibcurl: 8.9.0-DEV (sys:0.4.74+curl-8.9.0 vendored ssl:OpenSSL/1.1.1w)\nssl: OpenSSL 1.1.1w  11 Sep 2023\nos: CentOS 9.0.0 [64-bit]\n",
+      "stdout_sha256": "83cf4a2ef693f33c0c34aca8e2579e4178f707b0da4e7c723848e27ba298f006",
+      "tested_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "tested_revision_scope": "Exact helper source only; selected Rust tool executable is independently identified by its whole-file SHA-256, not built from this repository revision.",
+      "tool": {
+        "bytes": 35355128,
+        "identity_scope": "Actual admission whole executable bytes/stat/resolved owner; later independent readback matched. No complete dynamic dependency closure is asserted.",
+        "path_coordinate": "${MSRV_TOOLCHAIN}/bin/cargo",
+        "resolved_coordinate": "${MSRV_TOOLCHAIN}/bin/cargo",
+        "role": "cargo",
+        "sha256": "1815642e0eaa0cf4ea86c3ba4299c21c4f2d68ae4a427881ea1f33070b2aae9b",
+        "version": "1.85.0"
+      },
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.1687093039508909,
+      "exit": 0,
+      "helper_exit": 0,
+      "helper_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "helper_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "id": "1.85.0-rustc",
+      "inputs_unchanged": true,
+      "kind": "tool_version_observation",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW_VERSIONS}/1.85.0-rustc/request.json",
+          "--receipt",
+          "${RAW_VERSIONS}/1.85.0-rustc/receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55
+      },
+      "outer_record_sha256": "bf6ee8ba3990ee448fd0981b53681fffb2afe203ff3b49aec36c0e6dc33d585c",
+      "receipt_sha256": "96de7a1fafd4bf4955db02977393eaa362ff42609d754f6adfc985add9f34a85",
+      "request": {
+        "argv": [
+          "${MSRV_TOOLCHAIN}/bin/rustc",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${MSRV_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.85.0-rustc/stderr",
+        "stdout": "${RAW_VERSIONS}/1.85.0-rustc/stdout",
+        "wall_seconds": 30
+      },
+      "request_sha256": "1efcb62b3d93798017898cb98f84af4412935350c4c7ed6ad647c1bcee0cd84b",
+      "source_repository_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "status": "pass",
+      "stderr": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "rustc 1.85.0 (4d91de4e4 2025-02-17)\nbinary: rustc\ncommit-hash: 4d91de4e48198da2e33413efdcd9cd2cc0c46688\ncommit-date: 2025-02-17\nhost: x86_64-unknown-linux-gnu\nrelease: 1.85.0\nLLVM version: 19.1.7\n",
+      "stdout_sha256": "be9e105cd61ce407c0e06d80a25240f93cc48de72942117e1886f09aa08f9a2a",
+      "tested_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "tested_revision_scope": "Exact helper source only; selected Rust tool executable is independently identified by its whole-file SHA-256, not built from this repository revision.",
+      "tool": {
+        "bytes": 643784,
+        "identity_scope": "Actual admission whole executable bytes/stat/resolved owner; later independent readback matched. No complete dynamic dependency closure is asserted.",
+        "path_coordinate": "${MSRV_TOOLCHAIN}/bin/rustc",
+        "resolved_coordinate": "${MSRV_TOOLCHAIN}/bin/rustc",
+        "role": "rustc",
+        "sha256": "07d5a76ba859dc045883efd538d96c7b86cf10166f4e834afbb5981012b461c3",
+        "version": "1.85.0"
+      },
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.14847425278276205,
+      "exit": 0,
+      "helper_exit": 0,
+      "helper_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "helper_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "id": "1.85.0-rustdoc",
+      "inputs_unchanged": true,
+      "kind": "tool_version_observation",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW_VERSIONS}/1.85.0-rustdoc/request.json",
+          "--receipt",
+          "${RAW_VERSIONS}/1.85.0-rustdoc/receipt.json"
+        ],
+        "exit": 0,
+        "parent_timeout_seconds": 55
+      },
+      "outer_record_sha256": "242a4f588186236416261e8094a6a2d22c59288d622dac3e8dea8886d53c76b8",
+      "receipt_sha256": "ffcc773e5b877096dcfe32ad85033e7947f00d1086c53a21d7e37563c431a2a9",
+      "request": {
+        "argv": [
+          "${MSRV_TOOLCHAIN}/bin/rustdoc",
+          "--version",
+          "--verbose"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${MSRV_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW_VERSIONS}/1.85.0-rustdoc/stderr",
+        "stdout": "${RAW_VERSIONS}/1.85.0-rustdoc/stdout",
+        "wall_seconds": 30
+      },
+      "request_sha256": "46caa0343ce9affe342f7aad4d7b4d4046de47094e4cc6a72462e505910fe18d",
+      "source_repository_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "status": "pass",
+      "stderr": "",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout": "rustdoc 1.85.0 (4d91de4e4 2025-02-17)\nbinary: rustdoc\ncommit-hash: 4d91de4e48198da2e33413efdcd9cd2cc0c46688\ncommit-date: 2025-02-17\nhost: x86_64-unknown-linux-gnu\nrelease: 1.85.0\nLLVM version: 19.1.7\n",
+      "stdout_sha256": "0a7dac044f2d2a3ca047ba5c1b646ac6d2092aedfb8d0e606fc10d836d545e58",
+      "tested_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "tested_revision_scope": "Exact helper source only; selected Rust tool executable is independently identified by its whole-file SHA-256, not built from this repository revision.",
+      "tool": {
+        "bytes": 12747536,
+        "identity_scope": "Actual admission whole executable bytes/stat/resolved owner; later independent readback matched. No complete dynamic dependency closure is asserted.",
+        "path_coordinate": "${MSRV_TOOLCHAIN}/bin/rustdoc",
+        "resolved_coordinate": "${MSRV_TOOLCHAIN}/bin/rustdoc",
+        "role": "rustdoc",
+        "sha256": "1cd0edbcce02fd5c2a9db63541cb086f4f89f85911cf705317a12241ef15653f",
+        "version": "1.85.0"
+      },
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    }
+  ],
+  "hardware": {
+    "basis": "Owner-specified development-host label. The six version-query captures contain no separate hardware observation.",
+    "continuous_attestation": false,
+    "label": "AMD EPYC Zen 5 dev host",
+    "observation_phase": "not established for these commands"
+  },
+  "helper": {
+    "git_blob_bytes_match_actual_admission": true,
+    "repository_path": "tools/unwind-oracle/bounded_command.py",
+    "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "source_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041"
+  },
+  "raw_evidence": {
+    "admission_sha256": "40c3feae1aad1baea06a582b126829942091dcfd05fb15baf2b35ce1b4af7847",
+    "complete_sha256": "1d5b261c4aa3e127be6019eac2109eec5e919fd1db0866c399ec2139bb349f47",
+    "independent_version_review_sha256": "069ad2c1149f7cf2d0986f9c0ddb28ea727f70b2aa5d4b099f029990421c8a53",
+    "retained_capture_files": 44
+  },
+  "report_authorship": "The independent six-observation reviewer prepared this sanitized data and reproduction descriptor. Root executed the actual queries. Publication/source-proposal review is separate; no new workload was run for this report.",
+  "reproduction": {
+    "readme": "evaluation/reproductions/frontend-tool-versions-20261025/README.md",
+    "request_templates": "evaluation/reproductions/frontend-tool-versions-20261025/requests.json",
+    "request_templates_sha256": "62c98412574821d31638d34c71db2194da93632af448a3e4f3338ee7dafaa8b0",
+    "scope": "New source/data-only reproduction description; it was not executed by the report author."
+  },
+  "run_id": "frontend-tool-versions-20261025",
+  "schema_version": 1,
+  "scope": [
+    "All six commands are version queries only: Cargo, rustc and rustdoc for actual Rust 1.97.1 and 1.85.0.",
+    "The six observed tool binary identities and captured version stdout are separate from the repository helper revision. No tool is claimed to have been built from d6.",
+    "The future A5 source revision, compiler artifacts, per-launch selected-tool/configuration admission and all model/documentation/workspace gates remain separate obligations.",
+    "Elapsed seconds are operational diagnostics on a shared host, not performance benchmarks.",
+    "Raw request/receipt/helper logs and machine identity paths remain ignored; this report retains sanitized exact command coordinates and version text only.",
+    "No inference of complete tool dependency closure or continuous host attestation is made."
+  ],
+  "source_repository_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+  "status": "pass",
+  "tested_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+  "tested_revision_scope": "Only the committed bounded helper source used for external tool --version --verbose observations. This is not a compiler build, frontend qualification, or execution of a later publication commit.",
+  "tools": [
+    {
+      "identity_scope": "Actual version-observation admission plus later independent whole-byte/stat/resolved readback. No unrecorded per-phase capture or complete runtime closure is inferred.",
+      "role": "helper_python",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "version": null
+    },
+    {
+      "identity_scope": "Actual version-observation admission plus later independent whole-byte/stat/resolved readback. No unrecorded per-phase capture or complete runtime closure is inferred.",
+      "role": "timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+      "version": null
+    },
+    {
+      "identity_scope": "Actual version-observation admission plus later independent whole-byte/stat/resolved readback. No unrecorded per-phase capture or complete runtime closure is inferred.",
+      "role": "helper_source",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "version": null
+    }
+  ],
+  "totals": {
+    "compile_fail_examples": 0,
+    "compiler_build_commands": 0,
+    "fail": 0,
+    "future_a5_qualification_credit": 0,
+    "ignored": 0,
+    "model_tests": 0,
+    "native_commands": 0,
+    "pass": 6,
+    "tool_version_observations": 6
+  }
+}

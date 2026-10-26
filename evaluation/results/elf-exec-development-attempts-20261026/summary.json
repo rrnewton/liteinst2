@@ -1,0 +1,846 @@
+{
+  "attempts": [
+    {
+      "detail": "Python select module shadowed by local utility; zero validation commands.",
+      "evidence_sha256": "820072d7ccec968b8c5c73c5b7062b96082f515ae9493971789127c9ee263bf5",
+      "exit": 1,
+      "helpers": 0,
+      "id": "bootstrap-3b5aa720",
+      "kind": "executed-bootstrap",
+      "native_state_comparisons": 0,
+      "status": "FAILED_BEFORE_MAIN",
+      "tested_revision": "3b5aa720e0179236ee7619655a85e9b8540cf0a4"
+    },
+    {
+      "detail": "fmt passed; Clippy exit 101 manual_range_patterns; test/check and later stages unrun.",
+      "evidence_sha256": "fb56bba435b3d642a39a4b2738efc5c8022037a42f48a339d7833d120ece687e",
+      "exit": 1,
+      "helpers": 0,
+      "id": "clippy-0c3754b",
+      "kind": "executed-campaign",
+      "native_state_comparisons": 0,
+      "status": "FAILED_CLIPPY",
+      "tested_revision": "0c3754bb47be4ec255f42b7d7952aa3a66b5427e"
+    },
+    {
+      "detail": "Four required gates and four candidate prepare/verify pairs passed. First original mapping guard failed device 0:42 versus 0:48 before seed.",
+      "evidence_sha256": "48a96ab496b84eceb215b846c809c4a6e57c327b5c92f67a81c20f50dda33c9c",
+      "exit": 1,
+      "helpers": 20,
+      "id": "provider-4a30cb0",
+      "kind": "executed-campaign",
+      "native_state_comparisons": 0,
+      "status": "FAILED_NATIVE_PROVIDER_DEVICE",
+      "tested_revision": "4a30cb071e5ff479cabf132b9f82bbe93eb79975"
+    },
+    {
+      "detail": "One PROT_READ observation, no executable mapping/application instruction; map_files stat EPERM is not authentication.",
+      "evidence_sha256": "fa543976ecdfc1f1d117123f28812cce4ba7564cc662832e0221a55e3cec27e2",
+      "exit": 0,
+      "helpers": 1,
+      "id": "readonly-provider-probe",
+      "kind": "read-only-diagnostic",
+      "native_state_comparisons": 0,
+      "status": "OBSERVATION_COMPLETED",
+      "tested_revision": null
+    },
+    {
+      "detail": "Normalized Path equality did not enforce literal link promise; v2 uses OS bytes plus three added negative spellings.",
+      "evidence_sha256": "871c65ec8749b1db84ae903532fe8a2497339ac1e0aebfaf442d4a08cbc96adc",
+      "exit": null,
+      "helpers": 0,
+      "id": "provider-source-v1",
+      "kind": "source-proposal",
+      "native_state_comparisons": 0,
+      "status": "HELD_P1",
+      "tested_revision": null
+    },
+    {
+      "detail": "Ancestor config metadata EPERM; empty raw directory, no helper/capture/parity credit.",
+      "evidence_sha256": "b6991e50daa3eaf5e7c57893b7effc2e14371774a9178451459329b3624c2a63",
+      "exit": 1,
+      "helpers": 0,
+      "id": "parity-bootstrap-4a30cb0",
+      "kind": "executed-bootstrap",
+      "native_state_comparisons": 0,
+      "status": "FAILED_BEFORE_HELPER",
+      "tested_revision": "4a30cb071e5ff479cabf132b9f82bbe93eb79975"
+    },
+    {
+      "detail": "Proposed root cwd violates unchanged helper restriction; unexecuted and not inherited by v2.",
+      "evidence_sha256": "96a3e0a085fb3551bcb111f21e1f0b2a254ccdd0a75958492e99188a1ab6f3bf",
+      "exit": null,
+      "helpers": 0,
+      "id": "parity-cwd-proposal-v1",
+      "kind": "source-proposal",
+      "native_state_comparisons": 0,
+      "status": "HELD_CONFIG_CWD_1",
+      "tested_revision": null
+    },
+    {
+      "detail": "Explicit initial denied config observation preserves commands/cwd/env/comparators; hidden contents and Cargo consumption unattested. Commit 13dd59f has its own failed campaign.",
+      "evidence_sha256": "8ce616b50cfc5294532a4681761c842b96e068d7f4684654d98a2f5d97b4b0c7",
+      "exit": null,
+      "helpers": 0,
+      "id": "parity-denial-proposal-v2",
+      "kind": "source-proposal",
+      "native_state_comparisons": 0,
+      "status": "SOURCE_DELTA_APPROVED",
+      "tested_revision": null
+    },
+    {
+      "detail": "Four required gates passed; first map_files readlink ENOENT before seed. Printed maps range is padded; proc lookup needs parsed unpadded address formatting.",
+      "evidence_sha256": "2af1a2e3f748bf4efc9cceef20c8ee1fddb6a31f05fa2cef299e2e855ca7f90a",
+      "exit": 1,
+      "helpers": 20,
+      "id": "map-link-65ae22c",
+      "kind": "executed-campaign",
+      "native_state_comparisons": 0,
+      "status": "FAILED_NATIVE_MAP_FILES_LOOKUP",
+      "tested_revision": "65ae22cf8b0b452475ed4eb082f8748318a4b045"
+    },
+    {
+      "detail": "Six helpers exited 0; fresh old-unit output validation failed because depfile sources are relative to its exact package owner. Sixteen later stages unrun; no capture/comparator credit.",
+      "evidence_sha256": "90fe1261d9606fedecc64f93c3e355d62edde6c56ca014880d256281537b2492",
+      "exit": 1,
+      "helpers": 6,
+      "id": "parity-depfile-13dd59f",
+      "kind": "executed-campaign",
+      "native_state_comparisons": 0,
+      "status": "FAILED_DEPFILE_OUTPUT_VALIDATION",
+      "tested_revision": "13dd59f6dfa7154f0372c621084c62de50eac7bd"
+    },
+    {
+      "detail": "Existing interpreter VMA only. Canonical unpadded procfs link resolves; leading-zero spelling yields ENOENT. No child, mmap, fixture execution, captured Git revision, environment or hardware.",
+      "evidence_sha256": "2ef44e01b12148204e5cf0fb5dac3d980e299bb474cf3918b55115b273102d69",
+      "exit": 0,
+      "helpers": 0,
+      "id": "self-map-files-spelling-probe",
+      "kind": "read-only-self-observation",
+      "native_state_comparisons": 0,
+      "status": "OBSERVATION_COMPLETED",
+      "tested_revision": null
+    },
+    {
+      "detail": "16 source-owner controls passed: 3 accepted and 13 expected refusals; no compiler/native/static-parity credit. Future hash-pinned controls are a separate run.",
+      "evidence_sha256": "408918c03a04f2a5f0d062dcf53d52deeaad0b97609376b61a61b1163b2f338a",
+      "exit": 0,
+      "helpers": 1,
+      "id": "depfile-controls-e881114",
+      "kind": "executed-pure-controls",
+      "native_state_comparisons": 0,
+      "status": "PASS_PURE_CONTROLS",
+      "tested_revision": "e88111451a92bda2d16a60bcf9dc3cc93ae4f5f6"
+    },
+    {
+      "detail": "Four required gates passed. One original completed 15 steps; two pre-hook before/after-CALL state assertions corroborated. First rewritten trace panicked slicing 2496 allocated bytes from 2440-byte raw NT_XSTATE; no restored rewritten point or completion.",
+      "evidence_sha256": "08d86cf90e97e8ff00f3e8e4f0a8c53300735ae92d26e10d56486b466a5f9cdc",
+      "exit": 1,
+      "helpers": 20,
+      "id": "xstate-extent-e881114",
+      "kind": "executed-campaign",
+      "native_state_comparisons": 2,
+      "status": "FAILED_NATIVE_HOOK_IMAGE_EXTENT",
+      "tested_revision": "e88111451a92bda2d16a60bcf9dc3cc93ae4f5f6"
+    },
+    {
+      "detail": "Ten helpers exited zero including old static captures/library; collector expected hashed deps rlib but Cargo reported exact top-level alias plus hashed rmeta. Twelve later stages unrun; no cross-revision parity.",
+      "evidence_sha256": "3e9419b903c3a38918bf4869929b9ea954d603cc9d3748ce2d36faaa3539a2c0",
+      "exit": 1,
+      "helpers": 10,
+      "id": "parity-alias-e881114",
+      "kind": "executed-campaign",
+      "native_state_comparisons": 0,
+      "status": "FAILED_LIBRARY_OWNER_OUTPUT_VALIDATION",
+      "tested_revision": "e88111451a92bda2d16a60bcf9dc3cc93ae4f5f6"
+    },
+    {
+      "detail": "Helper and bounded outer exited0 with all14 controls and exact frozen stdout; collector exited1 opening misspelled expected-library-controls.stdout. Source-after and tools-after remain absent; later fresh repetition is separate.",
+      "evidence_sha256": "54f9384254c03aad198a1c8e9c7a5f6301e328950dd3be4f4c00e02e2bd7a0a3",
+      "exit": 1,
+      "helpers": 1,
+      "id": "alias-control-collector-fc83079",
+      "kind": "executed-pure-controls-collector-failure",
+      "native_state_comparisons": 0,
+      "status": "HELPER_PASS_COLLECTOR_FAILED_POSTCHECK_INCOMPLETE",
+      "tested_revision": "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36"
+    }
+  ],
+  "campaigns": {
+    "elf-exec-0c3754b-v1": {
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ],
+        "logical_cpus": 316
+      },
+      "hardware_sha256": "5398b85e62db96ac1e588c3213d07ad15ddfdd4302be7831115ca44c2d2c1d33",
+      "recorded_stages": 1,
+      "results_sha256": "fb56bba435b3d642a39a4b2738efc5c8022037a42f48a339d7833d120ece687e",
+      "source_before_after_exact": true,
+      "source_before_after_sha256": "219c499b1d094485696fa72e55d57ceabf35a61fe954cccccdf9cfb69d70538b",
+      "source_files": 1123,
+      "successful_stages": 0,
+      "tested_revision": "0c3754bb47be4ec255f42b7d7952aa3a66b5427e",
+      "tools_record_sha256": "0a4813ac0f5fe5bc7171b8325e1749b4168ecb4e29e03153c366e0f235fa0159",
+      "unrun_stages": [
+        "comparison",
+        "native-compile",
+        "codec-compile",
+        "target",
+        "assemble",
+        "link",
+        "strip",
+        "select-unstripped-null",
+        "prepare-unstripped-null",
+        "verify-unstripped-null",
+        "select-unstripped-journal",
+        "prepare-unstripped-journal",
+        "verify-unstripped-journal",
+        "select-stripped-null",
+        "prepare-stripped-null",
+        "verify-stripped-null",
+        "select-stripped-journal",
+        "prepare-stripped-journal",
+        "verify-stripped-journal",
+        "native",
+        "ordinary-original-unstripped",
+        "ordinary-original-stripped",
+        "ordinary-candidate-0",
+        "ordinary-candidate-1",
+        "ordinary-candidate-2",
+        "ordinary-candidate-3"
+      ]
+    },
+    "elf-exec-4a30cb0-v1": {
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ],
+        "logical_cpus": 316
+      },
+      "hardware_sha256": "5398b85e62db96ac1e588c3213d07ad15ddfdd4302be7831115ca44c2d2c1d33",
+      "recorded_stages": 21,
+      "results_sha256": "48a96ab496b84eceb215b846c809c4a6e57c327b5c92f67a81c20f50dda33c9c",
+      "source_before_after_exact": true,
+      "source_before_after_sha256": "e7e783f67285caaf139f41a0b1f5fd3dbb848ea42f073bde9d2fe2c0d1bfdbbb",
+      "source_files": 1123,
+      "successful_stages": 20,
+      "tested_revision": "4a30cb071e5ff479cabf132b9f82bbe93eb79975",
+      "tools_record_sha256": "0a4813ac0f5fe5bc7171b8325e1749b4168ecb4e29e03153c366e0f235fa0159",
+      "unrun_stages": [
+        "ordinary-original-unstripped",
+        "ordinary-original-stripped",
+        "ordinary-candidate-0",
+        "ordinary-candidate-1",
+        "ordinary-candidate-2",
+        "ordinary-candidate-3"
+      ]
+    },
+    "elf-exec-65ae22c-v1": {
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ],
+        "logical_cpus": 316
+      },
+      "hardware_sha256": "5398b85e62db96ac1e588c3213d07ad15ddfdd4302be7831115ca44c2d2c1d33",
+      "recorded_stages": 21,
+      "results_sha256": "2af1a2e3f748bf4efc9cceef20c8ee1fddb6a31f05fa2cef299e2e855ca7f90a",
+      "source_before_after_exact": true,
+      "source_before_after_sha256": "595c1a29b17044e2f447a0d9d46e8141ff3869607328defb9fbe112d4b6a4b4e",
+      "source_files": 1125,
+      "successful_stages": 20,
+      "tested_revision": "65ae22cf8b0b452475ed4eb082f8748318a4b045",
+      "tools_record_sha256": "0a4813ac0f5fe5bc7171b8325e1749b4168ecb4e29e03153c366e0f235fa0159",
+      "unrun_stages": [
+        "ordinary-original-unstripped",
+        "ordinary-original-stripped",
+        "ordinary-candidate-0",
+        "ordinary-candidate-1",
+        "ordinary-candidate-2",
+        "ordinary-candidate-3"
+      ]
+    },
+    "elf-exec-e881114-v1": {
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ],
+        "logical_cpus": 316
+      },
+      "hardware_sha256": "5398b85e62db96ac1e588c3213d07ad15ddfdd4302be7831115ca44c2d2c1d33",
+      "recorded_stages": 21,
+      "results_sha256": "08d86cf90e97e8ff00f3e8e4f0a8c53300735ae92d26e10d56486b466a5f9cdc",
+      "review_binding_sha256": "6ec109a3ccbc6bc251ca5a34e27a067c24566c6c9dd6f300cfad2940577c9337",
+      "source_before_after_exact": true,
+      "source_before_after_sha256": "8295cdc4e8bf20b0ce8ec972f836660a817c8e2ae3105bb8094e4b979da27c85",
+      "source_files": 1126,
+      "successful_stages": 20,
+      "tested_revision": "e88111451a92bda2d16a60bcf9dc3cc93ae4f5f6",
+      "unrun_stages": [
+        "ordinary-original-unstripped",
+        "ordinary-original-stripped",
+        "ordinary-candidate-0",
+        "ordinary-candidate-1",
+        "ordinary-candidate-2",
+        "ordinary-candidate-3"
+      ]
+    }
+  },
+  "command_accounting": "64 fixture campaign records include four dispatchers plus 60 helpers; 14 required gate rows are nested. One read-only helper, 16 static-parity helpers, one direct self-observation and one pure-control helper are separate. Overlapping durations are not independent tests or performance samples; successful helper exits do not imply collector/campaign completion. One additional initial fc83079 alias-control helper also exited zero, but its collector failed the postcheck; this is a separate incomplete attempt, not an additional completed control campaign.",
+  "command_rows": 98,
+  "coordinate_roles": {
+    "CARGO_HOME": "Absolute canonical CARGO_HOME coordinate; retain its exact source/tool/owner role and expand once.",
+    "PROBE_RAW": "Absolute canonical PROBE_RAW coordinate; retain its exact source/tool/owner role and expand once.",
+    "PROBE_SCRIPT": "Whole exact probe source file from this evidence package; historical script was uncommitted.",
+    "RAW_CLIPPY": "Absolute canonical RAW_CLIPPY coordinate; retain its exact source/tool/owner role and expand once.",
+    "RAW_E881_DEPFILE_CONTROLS": "Absolute canonical RAW_E881_DEPFILE_CONTROLS owner recorded for the exact e881114 attempt; expand once and use a fresh owner for reproduction.",
+    "RAW_E881_NATIVE": "Absolute canonical RAW_E881_NATIVE owner recorded for the exact e881114 attempt; expand once and use a fresh owner for reproduction.",
+    "RAW_E881_PARITY": "Absolute canonical RAW_E881_PARITY owner recorded for the exact e881114 attempt; expand once and use a fresh owner for reproduction.",
+    "RAW_FC_ALIAS_INITIAL": "Absolute canonical owner of the initial fc83079 alias-control invocation; its helper succeeded but collector failed, and its absent after records must not be backfilled.",
+    "RAW_MAP_LINK": "Absolute canonical RAW_MAP_LINK coordinate; retain its exact source/tool/owner role and expand once.",
+    "RAW_PARITY": "Absolute canonical RAW_PARITY coordinate; retain its exact source/tool/owner role and expand once.",
+    "RAW_PROVIDER": "Absolute canonical RAW_PROVIDER coordinate; retain its exact source/tool/owner role and expand once.",
+    "REPO": "Absolute canonical REPO coordinate; retain its exact source/tool/owner role and expand once.",
+    "SPELLING_SCRIPT": "Repository-relative whole-file coordinate from the recorded argv. Reproduction copies the exact published spelling probe into a fresh ignored directory before invocation; its sibling result.json stays private.",
+    "TOOLCHAIN": "Absolute canonical TOOLCHAIN coordinate; retain its exact source/tool/owner role and expand once.",
+    "USER_HOME": "Absolute canonical USER_HOME coordinate; retain its exact source/tool/owner role and expand once."
+  },
+  "depfile_failure": {
+    "all37_sources_bound_to_prepared_hashes": true,
+    "archive_manifest_sha256": "4a42460ca65a2caf61628ab568655960cbbfb445de49aca55affe3b71e324c14",
+    "closed_helpers": 6,
+    "depfile_bytes": 2612,
+    "depfile_sha256": "12a08466cb2e4221dcaeace9a43a4430f50ae885380fe70a5c6f1e7a8aa0303a",
+    "later_unrun_stages": 16,
+    "relative_source_tokens": 37,
+    "source_fix_execution_credit": false,
+    "source_fix_proposal_sha256": "c669adac6455dccad12242e1e834d88a912401d0b02dd65bd717f90583d2b192",
+    "source_fix_v1_held_review_sha256": "f34bfa352e5eae1f364152c5a8384875c035df30c20f219c914aa136464b7f8e",
+    "source_fix_v1_status": "HELD_SOURCE_SCOPE: package leave-and-return ownership gap and missing standalone -O refusal; no execution.",
+    "source_fix_v2_proposal_sha256": "9ab04a846acf05b850f2740fd4bd921f67fed3fc3d771d563e94733600c31938",
+    "source_fix_v2_scope": "Prospective component containment and optimized-Python refusal; original 22 workload stages unchanged. No control or workload result is claimed here."
+  },
+  "e881_alias_failure": {
+    "all_observed_owner_stats_stable": true,
+    "archive_manifest_sha256": "50faa5f6ed9960eb7f66ea1be9f132e2a44eb295dd285c9cf433fcb356f5142e",
+    "archive_review_scope": "Data author verified exact archived owners and ten strict helper records; this is separate from the independent source review and grants no completed parity.",
+    "closed_helpers": 10,
+    "collector_status": "FAILED_OR_STOPPED_NO_RETRY",
+    "derived_depfile_sha256": "abbbe328db6c06c5e70968ed35b81084990582b494ada2faccc324704f4199ef",
+    "derived_library_sha256": "3c09687bfc4f9f051546e41b66725e5fdf2b0119529b7920676592787c0e1c65",
+    "derived_rlib_role": "Exact dependency owner derived solely from Cargo-reported rmeta; independently archived.",
+    "failure_sha256": "3e9419b903c3a38918bf4869929b9ea954d603cc9d3748ce2d36faaa3539a2c0",
+    "hardware": {
+      "architecture": "x86_64",
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "libc": [
+        "glibc",
+        "2.34"
+      ],
+      "logical_cpus": 316
+    },
+    "hardware_sha256": "535e18c2ea0ae4953bd09562a9094e6f2f67459f1619ff69390c1ad60a91ae24",
+    "later_unrun_stages": 12,
+    "library_bytes": 30065938,
+    "literal28_link_or_capture_completed": false,
+    "new_side_or_cross_revision_comparisons_completed": false,
+    "next_unlaunched_stage": "old-link-28",
+    "old_capture58": {
+      "fixtures": 58,
+      "images": 56,
+      "pointer_operands": 138,
+      "refusals": 10,
+      "successes": 48
+    },
+    "old_capture_current": {
+      "chain_grouped_cases": 4,
+      "frame_images": 17,
+      "independent_refusals": 2
+    },
+    "reported_alias_depfile_sha256": "55228285d40c74dffd84628398675a0546c53506888914ddd80cf5e6af6ae0fd",
+    "reported_library_sha256": "3c09687bfc4f9f051546e41b66725e5fdf2b0119529b7920676592787c0e1c65",
+    "reported_rlib_role": "Cargo-reported top-level alias; the source correction retains it as the chosen actual link input.",
+    "source_fix_execution_credit": false,
+    "source_fix_proposal_sha256": "378a1e7dba6bc65f90a07561dc3aac53f0437ba6940837b2bd615f4c0e3026b4",
+    "source_fix_review_sha256": "485b4d99965a66f5a9fabc60c1b67da8c7d56f4c5133438a7ec2184b257447b4",
+    "source_members": 29,
+    "tested_revision": "e88111451a92bda2d16a60bcf9dc3cc93ae4f5f6",
+    "whole_bytes_equal": true
+  },
+  "e881_depfile_controls": {
+    "accepted": 3,
+    "actual_record_review_sha256": "139495faf41d44cc595e1a297517be69b729bcf923fdb34e3e19fe880736f847",
+    "caps": {
+      "cpu_seconds": 20,
+      "file_bytes": 16777216,
+      "outer_seconds": 40,
+      "parent_seconds": 55,
+      "wall_seconds": 30
+    },
+    "clean_ECHILD": true,
+    "controls": [
+      {
+        "name": "relative_sources_and_parent_README",
+        "outcome": "ACCEPT"
+      },
+      {
+        "name": "absolute_sources",
+        "outcome": "ACCEPT"
+      },
+      {
+        "name": "escaped_space_and_backslash_owner",
+        "outcome": "ACCEPT"
+      },
+      {
+        "name": "wrong_depfile_target",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "wrong_product_target",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "package_escape",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "package_leave_and_return",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "missing_lib",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "missing_capture_module",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "missing_current_module",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "unknown_source",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "mutated_source_hash",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "mismatched_product_dependencies",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "missing_phony_owner",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "duplicate_source_alias",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "extra_product",
+        "outcome": "REFUSE"
+      }
+    ],
+    "full_tool_or_source_tree_closure_claim": false,
+    "hardware_observation": null,
+    "helper_elapsed_seconds": 0.2550204270519316,
+    "independent_source_review": "e83629fda1e90ac38ab265491052a0a1c01dad304e63575136a62e92dff97dce",
+    "native_credit": false,
+    "parent_elapsed_seconds": 0.31530323904007673,
+    "receipt_sha256": "408918c03a04f2a5f0d062dcf53d52deeaad0b97609376b61a61b1163b2f338a",
+    "refused": 13,
+    "revision": "e88111451a92bda2d16a60bcf9dc3cc93ae4f5f6",
+    "source_after_sha256": "96d252b66a297b748d0072d0a0b439c2dacd6c89afef14e90346a515566270dd",
+    "source_before_after_byte_equal": true,
+    "source_scope": "Three recorded source files only; reviewer authored these controls, independent source review is separately bound.",
+    "static_parity_credit": false,
+    "stdout_bytes": 527,
+    "three_source_map_sha256": "96d252b66a297b748d0072d0a0b439c2dacd6c89afef14e90346a515566270dd",
+    "whole_stdout_sha256": "30f087e07e205bb7b4b0405b1a6ace8ba77d3c194157a539b89d8d2ff5c4079d"
+  },
+  "e881_parent_observation": {
+    "scope": "Root observation of closed exec tool return for each failed campaign; not a helper or independently generated process receipt.",
+    "sha256": "5c3d6c91729028355851af2d937d3a7607564ea2f309566e2cd97f670c56460b"
+  },
+  "fc83079_initial_alias_control_failure": {
+    "accepted": 3,
+    "bounded_outer_elapsed_seconds": 0.42275922605767846,
+    "bounded_outer_exit": 0,
+    "caps": {
+      "cpu_seconds": 20,
+      "file_bytes": 16777216,
+      "outer_seconds": 40,
+      "parent_seconds": 55,
+      "wall_seconds": 30
+    },
+    "collector_exit": 1,
+    "collector_failure_sha256": "54f9384254c03aad198a1c8e9c7a5f6301e328950dd3be4f4c00e02e2bd7a0a3",
+    "controls": [
+      {
+        "name": "reported_alias_exact_metadata_owner",
+        "outcome": "ACCEPT"
+      },
+      {
+        "name": "reported_dependency_exact_metadata_owner",
+        "outcome": "ACCEPT"
+      },
+      {
+        "name": "complete_alias_source_rule",
+        "outcome": "ACCEPT"
+      },
+      {
+        "name": "wrong_core_target",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "foreign_metadata_directory",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "malformed_metadata_hash",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "duplicate_metadata",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "missing_metadata",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "mismatched_library_hash",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "extra_reported_product",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "wrong_alias_rule_target",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "missing_alias_source",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "extra_alias_source",
+        "outcome": "REFUSE"
+      },
+      {
+        "name": "wrong_alias_source_owner",
+        "outcome": "REFUSE"
+      }
+    ],
+    "corrected_launcher_sha256": "5d227094bccaf4327478563f53de3cf0e1d3705eada51185c23361f90f633999",
+    "hardware": {
+      "architecture": "x86_64",
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "libc": [
+        "glibc",
+        "2.34"
+      ],
+      "logical_cpus": 316
+    },
+    "hardware_sha256": "5398b85e62db96ac1e588c3213d07ad15ddfdd4302be7831115ca44c2d2c1d33",
+    "helper_elapsed_seconds": 0.35296412999741733,
+    "helper_exit": 0,
+    "independent_source_review_sha256": "485b4d99965a66f5a9fabc60c1b67da8c7d56f4c5133438a7ec2184b257447b4",
+    "later_repetition_credit_in_this_attempt": false,
+    "literal_launcher_correction": "Two-line replacement selects only the library invocation, the existing expected-alias-controls.stdout bytes and a fresh v2 output owner. Remaining launcher source is identical; no case, expectation or bound changed.",
+    "native_credit": false,
+    "original_launcher_sha256": "3f021b3cf9ca146c04789f5d9831304196bafb7e721d495f04952bdbd18aa061",
+    "outer_sha256": "cc154b74643c36e53a59eb8b9758bc16f995dd8f6a70fcf646b5058e66d8ceb9",
+    "receipt_sha256": "9492f6ea48447d9ed11fc86e8b42f9877b32c7054a7b9d362c510806cb246453",
+    "refused": 11,
+    "request_sha256": "8d38c1065154fedead7b3eaecda0b16e08f3a6c475ea9188d52403f963d74387",
+    "review_binding_sha256": "2628dd209103a503bd20e70fec66cad8f04737726331f420039d1c650b69b366",
+    "review_scope": "Reviewer authored control/parser sources; actual record review is distinct from independent source review. Retrospective exact stdout matching does not complete the failed collector or backfill missing after records.",
+    "source_after_sha256": null,
+    "source_before_after_equality": null,
+    "source_before_files": {
+      "evaluation/emitter-parity-library-controls.py": "0c18802b5cceb2d3921bec1ee1bcec23f02a88583d21cbf0508f48cf39ca2295",
+      "evaluation/emitter-parity-run.py": "b4cd6602e2d72ceedcfaa24dfb2d6a8069d80e44c43cb003cfadf522a364bedb",
+      "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    },
+    "source_before_sha256": "51c6967f7cc5a6435ed7d635ef9018712727f69ff4700ef7af7bf9876374f773",
+    "static_parity_credit": false,
+    "status": "CLOSED_HELPER_PASS_COLLECTOR_FAILED_POSTCHECK_INCOMPLETE",
+    "stdout_bytes": 508,
+    "stdout_sha256": "3118fa9eb04fa954baad458f56d78b046838c4ca17c2bfb36ef77f977a27ebfb",
+    "strict_clean_ECHILD": true,
+    "tested_revision": "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36",
+    "tools_after_sha256": null,
+    "tools_before_after_equality": null,
+    "tools_before_sha256": "ae61a14efca23a63262b0428f5763b63b15961f8ce12b245b16c7dd1b6fda45c"
+  },
+  "full_target_or_tool_closure_claim": false,
+  "hardware_label": "AMD EPYC Zen 5 dev host",
+  "hardware_scope": "Fresh model/kernel records in three fixture attempts and the probe. Import-only/parity preflight events inherit the shared-host label without a separate measurement. The self-only spelling probe captured no hardware; its host label is inherited only and cannot establish a separate hardware measurement. Fresh model/kernel records also exist for e881 native and static-parity attempts. The e881 pure controls inherit only the shared-host label, without a new hardware measurement.",
+  "hash_semantics": {
+    "contracts": "Whole decoded argv/cwd/env/request/outer objects round-trip through private inverse coordinates. JSON key order is not preserved; hashes bind original private bytes.",
+    "durations": "Outer, helper and gate elapsed seconds are separate recorded fields, not additive cost measurements.",
+    "environment": "Required gate argv/timeouts are direct records; gate env is derived from recorded dispatcher env plus exact required-gates.py overrides, not captured proc environ.",
+    "stream_hashes": "Whole captured original streams; required gates use combined log hashes. No raw logs or process paths are published."
+  },
+  "independent_review_binding_sha256": {
+    "bootstrap_rename": "4ece77b76c7bf5b4b53b031d8cab663f4650d8d05a4128a99de9d3d74f13203f",
+    "config_v1_hold": "96a3e0a085fb3551bcb111f21e1f0b2a254ccdd0a75958492e99188a1ab6f3bf",
+    "config_v2_source": "8ce616b50cfc5294532a4681761c842b96e068d7f4684654d98a2f5d97b4b0c7",
+    "partial4a": "0348fa906dc4de882912db5bbb335d3b514f0812375472a1414139e7ca909002",
+    "partial65": "fc4149b338dddf35ce3b962426b3319f662b3ecf3f9d6b55ef9031864dd43e68",
+    "partial_e881": "6ec109a3ccbc6bc251ca5a34e27a067c24566c6c9dd6f300cfad2940577c9337",
+    "provider_v1_hold": "871c65ec8749b1db84ae903532fe8a2497339ac1e0aebfaf442d4a08cbc96adc",
+    "provider_v2_source": "4aa2125ab88650b91a375ce4c3217d59abe8a137458d977f90b0cc036ded5903"
+  },
+  "map_files_spelling_probe": {
+    "canonical_unpadded_link_resolves_to_interpreter": true,
+    "children": 0,
+    "existing_interpreter": "/usr/bin/python3.9",
+    "exit_code": 0,
+    "fixture_execution": false,
+    "hardware_observation": null,
+    "helper_receipt": null,
+    "inherited_environment": null,
+    "invocation_note_postdates_observation": true,
+    "leading_zero_spelling_errno": 2,
+    "maps_row_unchanged": true,
+    "native_qualification": false,
+    "new_mappings": 0,
+    "observation_time_ns": 1793001463125803087,
+    "post_observation_invocation_note_sha256": "cce2875abb45bc40beae1eb03938d6536e555d621a53d9195543036031c17b7c",
+    "project_revision_at_probe": null,
+    "result_sha256": "2ef44e01b12148204e5cf0fb5dac3d980e299bb474cf3918b55115b273102d69",
+    "script_sha256": "bc2bff2be2ce448b810af20450fc2ec459b5da113d39f639ec702beae2dc07d1",
+    "script_tested_revision": null,
+    "source_proposal_manifest_sha256": "65644ab5c78e83d5fafab0ecdbc07073db165d924af639cb6558799afcbd9586",
+    "timing_scope": "Tool-reported operational diagnostic, not independent helper elapsed measurement or benchmark.",
+    "tool_reported_wall_time_seconds": 4.2043e-05,
+    "vma_bytes": 4096
+  },
+  "milestone_status": {
+    "A2": "open",
+    "A3": "open",
+    "A4": "open",
+    "A5": "open"
+  },
+  "native_qualified": false,
+  "partial_native_captures": {
+    "4a30cb0": {
+      "completed_traces": 0,
+      "files": {
+        "candidate-0": "ad640008cd9399256a88d0de6aee04bed103dd2bfde2bf65344639603a4f2194",
+        "candidate-1": "b29199c9bb6eb3fd438146876c074932092b92c69cabbb1a5d85ed4263a5e622",
+        "candidate-2": "32e09fe8bd8d86e32b4b6de7c2cbf2dfe3a7787e7fdc51462a8eb2271166dd7b",
+        "candidate-3": "f142b29faf82b98ed94a01d3936b3c75ea43e06e248bda0498a8d657c273ff67",
+        "original-stripped": "b923e0e4452a200ce60349f60a093acb050dd8d27d4d0b3138b0d99a762fe162",
+        "original-unstripped": "ded05ab739c76704347f4ee9f0e6e3e757b97d5b079b2c7594cb731f2347df89",
+        "runtime-target.tsv": "c63ad29cc3c0fa1a7b28423069afcc764c135f6701bcf6e2f487420c148ac918"
+      },
+      "native_child_exit": 101,
+      "native_outer_exit": 1,
+      "ordinary_runs": 0,
+      "regular_file_count": 7,
+      "seeds": 0,
+      "state_comparisons": 0
+    },
+    "65ae22c": {
+      "completed_traces": 0,
+      "files": {
+        "candidate-0": "08149177a885a3a45970e6523d7707af5195c453617bbdf5e28fe8c719f0bf24",
+        "candidate-0.provider": "bd305ac73063c35cbf8c89b1d75a195c5d7bf0075619ae8b7e42add9889f3366",
+        "candidate-1": "458745269aa1069d73731e3c81e76eaebd19243d3b903edd7466efe4dec8a53d",
+        "candidate-1.provider": "9249d721392589ad24620f659e01d6ce25cfe09145ab5bded286b31cb7bcf3e7",
+        "candidate-2": "32e09fe8bd8d86e32b4b6de7c2cbf2dfe3a7787e7fdc51462a8eb2271166dd7b",
+        "candidate-2.provider": "bc5fd604dc1946b0d3ddbe3b51a9538fe9d7d90f581a7e14a44359cc77710867",
+        "candidate-3": "f142b29faf82b98ed94a01d3936b3c75ea43e06e248bda0498a8d657c273ff67",
+        "candidate-3.provider": "ab3c494e7d6f04316ccf82a5110d8d3b32cc3b65878e0cef3cca36697f626ab7",
+        "original-stripped": "b923e0e4452a200ce60349f60a093acb050dd8d27d4d0b3138b0d99a762fe162",
+        "original-stripped.provider": "e93ed0d66c48ae18dfc3d0502fa75f5cbc3b517946908e1d1a711d5e70871aa6",
+        "original-unstripped": "8c46c90f4f2437f03c83d5319647053d647c0405cb60227da47798ea70d6c85f",
+        "original-unstripped.provider": "dea396608e7f3d5c539fcf183840322f6ebffc2c137503f1c93e6d5f421c8ca2",
+        "runtime-target.tsv": "c63ad29cc3c0fa1a7b28423069afcc764c135f6701bcf6e2f487420c148ac918",
+        "strip-0-head-0-seed-0-original/exec.map-files": "389011731e9e124b5b6e9c67276789289d61f9195022e0f575482649fb2af52f",
+        "strip-0-head-0-seed-0-original/exec.maps": "f3a6b409dd649cdabf0a975efa9e5b8082c1d6530308fa65348b5e07b7756e47"
+      },
+      "native_child_exit": 101,
+      "native_outer_exit": 1,
+      "ordinary_runs": 0,
+      "regular_file_count": 15,
+      "seeds": 0,
+      "state_comparisons": 0
+    },
+    "e881114": {
+      "allocation_bytes": 2496,
+      "before_after_CALL_full_state_pairs_checked": 2,
+      "canonical_snapshot_bytes": 2287,
+      "capture_files": 98,
+      "capture_inventory_sha256": "f35350813d158f79e4e7fea6359986454a420853d305fe6ed12965ffcab2eb9d",
+      "complete_original_files": 50,
+      "hook_CALL_source_assertion_reached": true,
+      "hook_context_save_area_captures_absent": true,
+      "journal_rows": 0,
+      "map_files_rows": {
+        "strip-0-head-0-seed-0-hook-0/exec": 6,
+        "strip-0-head-0-seed-0-original/exec": 4,
+        "strip-0-head-0-seed-0-original/terminal": 4
+      },
+      "native_child_exit": 101,
+      "native_outer_exit": 1,
+      "native_qualification": false,
+      "ordinary_runs": 0,
+      "original_completions": 1,
+      "original_steps": 15,
+      "original_subject_CALL_RET_witness": 1,
+      "partial_rewritten_files": 35,
+      "raw_NT_XSTATE_length_from_panic": 2440,
+      "review_binding_sha256": "6ec109a3ccbc6bc251ca5a34e27a067c24566c6c9dd6f300cfad2940577c9337",
+      "rewritten_completions": 0,
+      "rewritten_restored_boundaries": 0,
+      "rewritten_subject_CALL_only": 1,
+      "root_files": 13,
+      "saved_snapshot_groups": 7,
+      "state_scope": "Existing driver authority; saved states corroborate two pre-hook before/after-CALL full-state assertions with only unchanged TF/RF mask. No restored rewritten boundary, hook RET or whole campaign comparison credited.",
+      "target_image_bytes": 2440
+    }
+  },
+  "performance_claim": false,
+  "provider_probe": {
+    "application_instructions_executed": false,
+    "bytes": 83496,
+    "descriptor_and_mapping_closed": true,
+    "executable_mapping": false,
+    "fd_device": [
+      0,
+      48
+    ],
+    "fd_mount_id": 23207,
+    "input_sha256": "ded05ab739c76704347f4ee9f0e6e3e757b97d5b079b2c7594cb731f2347df89",
+    "kernel_internal_cause_claim": false,
+    "map_files_readlink_exact": true,
+    "map_files_stat_errno": 1,
+    "mountinfo_filesystem": "btrfs",
+    "mountinfo_provider_device": [
+      0,
+      42
+    ],
+    "observed_checkout": "4a30cb071e5ff479cabf132b9f82bbe93eb79975",
+    "receipt_sha256": "fa543976ecdfc1f1d117123f28812cce4ba7564cc662832e0221a55e3cec27e2",
+    "script_sha256": "24ca24f0a20b8a4b27b4e00409dc5e37610d427ab483a76e9b83432b0f26f9ed",
+    "stdout_sha256": "0bfa7df51a811882f94fd91f88ee3c9054240255d81f5fa47824b3da11dd4c95",
+    "tested_revision": null,
+    "vma_device": [
+      0,
+      42
+    ],
+    "whole_bytes_and_fd_stat_stable": true
+  },
+  "public_data_review_binding_sha256": null,
+  "qualification_complete": false,
+  "report_authorship": "core_read authored native oracle/provider source and original parity runner; data transcription uses the separately bound independent source/run reviews. Public-data review is separate.",
+  "required_gate_source_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+  "schema": 1,
+  "scope": "Only the named closed attempts and source proposals. Later campaigns are separate; no old failure becomes a pass.",
+  "source_fixes": [
+    {
+      "change": "Byte-exact select.py rename and two invocation/doc coordinates.",
+      "commit": "0c3754bb47be4ec255f42b7d7952aa3a66b5427e",
+      "earlier_failure_preserved": true
+    },
+    {
+      "change": "Only `4 | 5 | 6` becomes `4..=6`; accepted flags and assertions unchanged.",
+      "commit": "4a30cb071e5ff479cabf132b9f82bbe93eb79975",
+      "earlier_failure_preserved": true,
+      "whole_source_reversal": true
+    },
+    {
+      "change": "Held-FD mountinfo provider identity plus exact raw map_files link; old file/page/state checks and bounds retained. Six provider and 48 phase-link records added, fixed inventory 1176\u21921230.",
+      "commit": "65ae22cf8b0b452475ed4eb082f8748318a4b045",
+      "earlier_failure_preserved": true,
+      "later_result": "First map_files path lookup failed; not a native pass.",
+      "source_review_sha256": "4aa2125ab88650b91a375ce4c3217d59abe8a137458d977f90b0cc036ded5903"
+    },
+    {
+      "change": "Initial config lookup denial explicitly unknown; 22 commands and their cwd/env/caps/comparators unchanged.",
+      "commit": "13dd59f6dfa7154f0372c621084c62de50eac7bd",
+      "earlier_failure_preserved": true,
+      "later_result": "Six helpers closed, depfile output validation failed; not a parity pass.",
+      "source_review_sha256": "8ce616b50cfc5294532a4681761c842b96e068d7f4684654d98a2f5d97b4b0c7"
+    },
+    {
+      "change": "Format parsed mapping bounds as unpadded hexadecimal for the procfs map_files key; preserve raw maps text and all provider/state checks.",
+      "commit": "1c367a2d01c0688322b0738b94c0263cba69e3e3",
+      "earlier_failure_preserved": true,
+      "execution_result_included": false
+    }
+  ],
+  "status": "CLOSED_HISTORICAL_FAILURES_AND_SOURCE_HOLDS",
+  "workspace_accounting": {
+    "4a30cb0": {
+      "additional_starts_without_summary": 2,
+      "full_doctest_diagnostic_bodies_attested": false,
+      "groups": 69,
+      "nested_completed_one_test_passes": 5,
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 4,
+        "measured": 0,
+        "passed": 1167
+      },
+      "review_binding_sha256": "0348fa906dc4de882912db5bbb335d3b514f0812375472a1414139e7ca909002"
+    },
+    "65ae22c": {
+      "additional_starts_without_summary": 2,
+      "full_doctest_diagnostic_bodies_attested": false,
+      "groups": 70,
+      "nested_completed_one_test_passes": 5,
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 4,
+        "measured": 0,
+        "passed": 1175
+      },
+      "review_binding_sha256": "fc4149b338dddf35ce3b962426b3319f662b3ecf3f9d6b55ef9031864dd43e68"
+    },
+    "e881114": {
+      "additional_starts_without_summary": 2,
+      "full_doctest_diagnostic_bodies_attested": false,
+      "groups": 70,
+      "nested_completed_one_test_passes": 5,
+      "outer": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 4,
+        "measured": 0,
+        "passed": 1175
+      },
+      "review_binding_sha256": "6ec109a3ccbc6bc251ca5a34e27a067c24566c6c9dd6f300cfad2940577c9337"
+    }
+  }
+}

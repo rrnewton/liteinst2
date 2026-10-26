@@ -1,0 +1,41 @@
+{
+  "argv": [
+    "${MSRV_TOOLCHAIN}/bin/cargo",
+    "check",
+    "--manifest-path",
+    "${REPO}/Cargo.toml",
+    "-p",
+    "rapid-profiler",
+    "--all-targets",
+    "--all-features",
+    "--offline",
+    "--locked",
+    "--message-format=json"
+  ],
+  "cpu_seconds": 60,
+  "cwd": "${REPO}",
+  "env": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_HOME": "${CARGO_HOME}",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+    "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+    "CARGO_TARGET_DIR": "${REPO}/target",
+    "HOME": "${USER_HOME}",
+    "LC_ALL": "C",
+    "PATH": "${MSRV_TOOLCHAIN}/bin:/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RUSTC": "${MSRV_TOOLCHAIN}/bin/rustc",
+    "RUSTC_WORKSPACE_WRAPPER": "",
+    "RUSTC_WRAPPER": "",
+    "RUSTDOCFLAGS": "-Dwarnings",
+    "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+    "RUST_TEST_THREADS": "1",
+    "TMPDIR": "${RAW}/msrv/tmp"
+  },
+  "file_bytes": 134217728,
+  "stderr": "${RAW}/msrv/stderr.txt",
+  "stdout": "${RAW}/msrv/stdout.txt",
+  "wall_seconds": 90
+}

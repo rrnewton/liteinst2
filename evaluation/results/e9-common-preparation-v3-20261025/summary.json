@@ -1,0 +1,513 @@
+{
+  "cases": [
+    {
+      "case_id": "exact-local-prerequisite",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "accept",
+      "kind": "pure_preparation_control",
+      "observed": "accept",
+      "ordinal": 0
+    },
+    {
+      "case_id": "owned-package-path",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "accept",
+      "kind": "pure_preparation_control",
+      "observed": "accept",
+      "ordinal": 1
+    },
+    {
+      "case_id": "fixed-request-geometry",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "accept",
+      "kind": "pure_preparation_control",
+      "observed": "accept",
+      "ordinal": 2
+    },
+    {
+      "case_id": "exact-success-receipt",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "accept",
+      "kind": "pure_preparation_control",
+      "observed": "accept",
+      "ordinal": 3
+    },
+    {
+      "case_id": "boolean-limit",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 4
+    },
+    {
+      "case_id": "negative-limit",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 5
+    },
+    {
+      "case_id": "unknown-template-marker",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 6
+    },
+    {
+      "case_id": "package-path-escape",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 7
+    },
+    {
+      "case_id": "missing-resource",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 8
+    },
+    {
+      "case_id": "extra-resource",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 9
+    },
+    {
+      "case_id": "wrong-resource-hash",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 10
+    },
+    {
+      "case_id": "wrong-resource-size",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 11
+    },
+    {
+      "case_id": "collapsed-resource-owners",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 12
+    },
+    {
+      "case_id": "configuration-member-drift",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 13
+    },
+    {
+      "case_id": "present-preload",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 14
+    },
+    {
+      "case_id": "wrong-interpreter-path",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 15
+    },
+    {
+      "case_id": "boolean-exit",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 16
+    },
+    {
+      "case_id": "boolean-elapsed",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 17
+    },
+    {
+      "case_id": "failed-command",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 18
+    },
+    {
+      "case_id": "duplicate-json-key",
+      "command_id": "a3-preparation-preparation-controls",
+      "expected": "refuse",
+      "kind": "pure_preparation_control",
+      "observed": "refuse",
+      "ordinal": 19
+    },
+    {
+      "case_id": "exact-operational-owners",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "accept",
+      "kind": "pure_operational_owner_control",
+      "observed": "accept",
+      "ordinal": 20
+    },
+    {
+      "case_id": "movable-mandatory-nonconsumed-evidence",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "accept",
+      "kind": "pure_operational_owner_control",
+      "observed": "accept",
+      "ordinal": 21
+    },
+    {
+      "case_id": "fixed-lookup-and-symlink-target",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "accept",
+      "kind": "pure_operational_owner_control",
+      "observed": "accept",
+      "ordinal": 22
+    },
+    {
+      "case_id": "same-bytes-wrong-config-owner",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "refuse",
+      "kind": "pure_operational_owner_control",
+      "observed": "refuse",
+      "ordinal": 23
+    },
+    {
+      "case_id": "same-bytes-wrong-python-owner",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "refuse",
+      "kind": "pure_operational_owner_control",
+      "observed": "refuse",
+      "ordinal": 24
+    },
+    {
+      "case_id": "same-members-wrong-config-directory",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "refuse",
+      "kind": "pure_operational_owner_control",
+      "observed": "refuse",
+      "ordinal": 25
+    },
+    {
+      "case_id": "same-bytes-retargeted-config-symlink",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "refuse",
+      "kind": "pure_operational_owner_control",
+      "observed": "refuse",
+      "ordinal": 26
+    },
+    {
+      "case_id": "missing-operational-owner",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "refuse",
+      "kind": "pure_operational_owner_control",
+      "observed": "refuse",
+      "ordinal": 27
+    },
+    {
+      "case_id": "extra-operational-owner",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "refuse",
+      "kind": "pure_operational_owner_control",
+      "observed": "refuse",
+      "ordinal": 28
+    },
+    {
+      "case_id": "missing-runtime-classification",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "refuse",
+      "kind": "pure_operational_owner_control",
+      "observed": "refuse",
+      "ordinal": 29
+    },
+    {
+      "case_id": "overlapping-runtime-classification",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "refuse",
+      "kind": "pure_operational_owner_control",
+      "observed": "refuse",
+      "ordinal": 30
+    },
+    {
+      "case_id": "unproven-resolved-owner",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "refuse",
+      "kind": "pure_operational_owner_control",
+      "observed": "refuse",
+      "ordinal": 31
+    },
+    {
+      "case_id": "evidence-classification-claims-consumption",
+      "command_id": "a3-preparation-operational-controls",
+      "expected": "refuse",
+      "kind": "pure_operational_owner_control",
+      "observed": "refuse",
+      "ordinal": 32
+    }
+  ],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "heading": "systematic everytactic",
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "cleanup_scope": "Existing per-command helper ECHILD/zero-descendant proof; no cgroup claim. Outer argv/cap and parent-environment evidence are distinguished in request-templates.json.",
+  "commands": [
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${PREPARER_DIR}/prepare.py",
+        "bootstrap",
+        "--materials-sha256",
+        "3383b47fb091957ffc927d243a7c7cf9e7e40f0100301f095a297ec0d17b71c9",
+        "--variant",
+        "sparse-v4",
+        "--bindings",
+        "${SOURCE_DIR}/local-bindings.example.json",
+        "--bindings-sha256",
+        "9e8612b234c1dc3eec09a31b42ec7bdecd75a59240e635c6860c7889964f403a",
+        "--output",
+        "${CONTROL_CAPTURE}",
+        "--stage-output",
+        "${STAGE_DIR}"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 1.5064934650436044,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "a3-preparation-bootstrap-generator",
+      "receipt_sha256": "64299b41e6a9c5a6c7046940a2b2309687da8446b7006948061a78800d2dc5d7",
+      "source_id": "preparation_snapshot",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3ed913f5a897b53f83e76bdede86a9ec5e2e4e8668b3191a4bcc79c4d1004f33",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${PREPARER_DIR}/calibrate_prepare.py",
+        "3383b47fb091957ffc927d243a7c7cf9e7e40f0100301f095a297ec0d17b71c9"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.2078363010659814,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROL_CAPTURE}"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "a3-preparation-preparation-controls",
+      "receipt_sha256": "9b49fafe21393aa0bf812346ec341469d91fe208112f431d99f05c09e41cfebb",
+      "source_id": "preparation_snapshot",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "d4dd1734e0d592f3cf8e5c58c1dff2b62fccdb50ef16bd6545b73071a9233188",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${PREPARER_DIR}/calibrate_operational.py",
+        "3383b47fb091957ffc927d243a7c7cf9e7e40f0100301f095a297ec0d17b71c9"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.20259834988974035,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROL_CAPTURE}"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "a3-preparation-operational-controls",
+      "receipt_sha256": "0f2499f05d677bcb28d721614e962364731757185b632bc74b5ff0f06970cfac",
+      "source_id": "preparation_snapshot",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "7814c8a03a89c49b7ecdec59fc3ccb740de3fffbe3eb7dba10fd6596a92e486b",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${PREPARER_DIR}/prepare.py",
+        "stage",
+        "--materials-sha256",
+        "3383b47fb091957ffc927d243a7c7cf9e7e40f0100301f095a297ec0d17b71c9",
+        "--variant",
+        "sparse-v4",
+        "--bindings",
+        "${SOURCE_DIR}/local-bindings.example.json",
+        "--bindings-sha256",
+        "9e8612b234c1dc3eec09a31b42ec7bdecd75a59240e635c6860c7889964f403a",
+        "--output",
+        "${STAGE_DIR}",
+        "--controls-request",
+        "${CONTROL_CAPTURE}/preparation-controls.request.json",
+        "--controls-receipt",
+        "${CONTROL_CAPTURE}/preparation-controls.receipt.json",
+        "--owner-controls-request",
+        "${CONTROL_CAPTURE}/operational-controls.request.json",
+        "--owner-controls-receipt",
+        "${CONTROL_CAPTURE}/operational-controls.receipt.json"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 1.5642503998242319,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "a3-preparation-stage",
+      "receipt_sha256": "de9cc30c52a62bb1b2d2061c1404762409545701d32d89c788ac8945b39c426d",
+      "source_id": "preparation_snapshot",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "37a64941c457af2fbe56ed0769c6fcadb9b4672727e48dd79878ad12733e2872",
+      "wall_seconds": 30
+    }
+  ],
+  "complete_A3": false,
+  "counts": {
+    "actual_E9_or_compiler_calls": 0,
+    "actual_body_traces": 0,
+    "actual_native_calls": 0,
+    "actual_preparation_commands": 4,
+    "pure_control_cases": 33,
+    "pure_operational_acceptances": 3,
+    "pure_operational_refusals": 10,
+    "pure_preparation_acceptances": 4,
+    "pure_preparation_refusals": 16
+  },
+  "elapsed_seconds_sum_operational": 3.481178515823558,
+  "hardware": {
+    "applies_as": "host context only, not command-specific or continuous attestation",
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "cpuinfo_sha256": "d02d8d4b370b6709fab8e81900b7efe7b96061018a3f164d8c997dc39b6487e2",
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "Separate required-gate pre-launch context on the same host, earlier than these four A3 commands; not collected for this preparation sequence.",
+    "observation_sha256": "d59368a47362190584888e54bc2a29c5cbe0f116bbf2d392f0610bf9940d7eeb",
+    "observed_at_utc": "2026-10-25T21:11:39.583665+00:00",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "historical_publication_state": "Immutable historical v2 still retains its pending portable-reproducer status; this separate record closes preparation only.",
+  "historical_report": "../e9-common-sparse-20261025/summary.json",
+  "independent_review_binding_sha256": "9b0a4ec1b2e8e01292b845f1e0745c14081b4447d3153d178e5492179fbb1177",
+  "independent_review_sha256": "b5bb8f4a8cac0bbd5241389eff4bd79f41926872e95aea137b19ef00f90c55bf",
+  "literal_request_templates": "request-templates.json",
+  "observations": "observations.json",
+  "operational_repository_revision": "9098a3d74309fd445fd6f56a6048c1ce517bb81f",
+  "operational_revision_is_not_tested_source_revision": true,
+  "prior_failures_scope": "Old geometry/compiler failures and held unexecuted v1/v2 source proposals retain their original outcomes; no failure is reclassified.",
+  "private_capture_manifest_sha256": "131b79517f5092b9d953564ebe4e65b16256b69fb9b1533cc6d4153cc174f3f7",
+  "qualification_status": "preparation_only_full_pipeline_unrun",
+  "reproduction": "../../../tools/e9-common-reproduce/README.md",
+  "review_role_note": "Reviewer authored earlier common/body/sparse source; independent of this root preparation execution/new preparer, not independent semantic approval of those old sources.",
+  "run_id": "e9-common-preparation-v3-20261025",
+  "schema_version": 1,
+  "sources": {
+    "preparation_snapshot": {
+      "base_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+      "base_revision_scope": "Original private proposal recorded authoring checkout only; not a tested revision or current source relabel.",
+      "clean_tracked": null,
+      "file_count": 164,
+      "git_tree": null,
+      "kind": "source_snapshot",
+      "source_manifest_sha256": "91fbd905a1c4c914b81a4d4084753eb709cfbce1a1d86e4560dfa51e06a7bcec",
+      "source_tree_encoding": "sorted-key compact UTF-8 JSON relative-path SHA map without newline",
+      "source_tree_sha256": "cf27d792d7878a0cc9c6346ace6a820ee96946c2563e9b39151ae4747c198bab",
+      "tested_revision": null,
+      "tracked_diff_sha256": null
+    }
+  },
+  "status": "pass",
+  "suite": "e9-common-portable-preparation",
+  "tested_revision": null,
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tools": [
+    {
+      "bytes": 7710,
+      "identity_scope": "explicit selected file included in before/after502-input epochs; not full tool closure",
+      "role": "helper",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "version": null,
+      "version_evidence": "not captured for these preparation invocations"
+    },
+    {
+      "bytes": 15448,
+      "identity_scope": "explicit selected file included in before/after502-input epochs; not full tool closure",
+      "role": "python",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "version": null,
+      "version_evidence": "not captured for these preparation invocations"
+    },
+    {
+      "bytes": 36848,
+      "identity_scope": "explicit selected file included in before/after502-input epochs; not full tool closure",
+      "role": "timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+      "version": null,
+      "version_evidence": "not captured for these preparation invocations"
+    }
+  ]
+}

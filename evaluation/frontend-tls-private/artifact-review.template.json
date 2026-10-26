@@ -1,0 +1,17 @@
+{
+  "status": "APPROVED_TLS_COMPILER_ARTIFACTS",
+  "tested_revision": null,
+  "prepared_sha256": null,
+  "library_receipt_sha256": null,
+  "library_stdout_sha256": null,
+  "compile_receipt_sha256": null,
+  "compile_stdout_sha256": null,
+  "model_binary": {"path": "${RAW}/artifacts/model-tests", "sha256": null},
+  "ordinary_library": {
+    "alias": {"path": "${REPO}/target/debug/librapid_profiler.rlib", "sha256": null, "archive": null},
+    "hashed_rlib": {"path": null, "sha256": null, "archive": null},
+    "hashed_rmeta": {"path": null, "sha256": null, "archive": null}
+  },
+  "archive_files": {},
+  "dependency_review": {"path": null, "sha256": null}
+}

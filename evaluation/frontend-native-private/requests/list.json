@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "${RAW}/artifacts/model-tests",
+    "--list"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${WORKSPACE}",
+  "env": {
+    "HOME": "${USER_HOME}",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RUST_TEST_THREADS": "1",
+    "TMPDIR": "${RAW}/list/tmp"
+  },
+  "file_bytes": 1048576,
+  "stderr": "${RAW}/list/stderr.txt",
+  "stdout": "${RAW}/list/stdout.txt",
+  "wall_seconds": 30
+}

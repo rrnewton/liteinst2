@@ -1,0 +1,62 @@
+{
+  "existing-output": {
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/README.md": "fe2fb7ee917d7689820cd93769968cb9edae3e66a7a14704bce3c78ea06c2a6e",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/calibrate.py": "a7187cb187f618e840e9685a00c166d880f67c30b9f867a7c99f717343af664c",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/cases.json": "6308ed81ba035d1fb6586dc89f43cd5a506e9e08bc885189988795f8a298e95c",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/expected.json": "14a039db5fdc3fb47795dd7f0a2ca1c15a1a6dabbc5881d63d9105b8c97cc9e5",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/historical-tools.json": "f8a5ba6429724c2075eb62999599fa17af7079c95037b835e287e608c14f9cc5",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/materials.json": "c1f3ee5baf5cafb0083d41d701c62a1f01107ca4cf90a65e4429e80ce2938e59",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/prepare-controls.py": "6785b7466f8fdc58a3d592b15b37a7a499fe98a7529bc3b760b526b409d30086",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/reproduce-v3.patch": "db865464d3a247fafef5005f3900854f5dd7d80b5c51e9ae254f9116a210f529",
+    "tools/unwind-oracle/adapter.py": "fd83e351ba6c13f18554f7103aeddf7547175cbfba273a7d89cf5df3e28e7d30",
+    "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+  },
+  "outside-ignored": {
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/README.md": "fe2fb7ee917d7689820cd93769968cb9edae3e66a7a14704bce3c78ea06c2a6e",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/calibrate.py": "a7187cb187f618e840e9685a00c166d880f67c30b9f867a7c99f717343af664c",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/cases.json": "6308ed81ba035d1fb6586dc89f43cd5a506e9e08bc885189988795f8a298e95c",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/expected.json": "14a039db5fdc3fb47795dd7f0a2ca1c15a1a6dabbc5881d63d9105b8c97cc9e5",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/historical-tools.json": "f8a5ba6429724c2075eb62999599fa17af7079c95037b835e287e608c14f9cc5",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/materials.json": "c1f3ee5baf5cafb0083d41d701c62a1f01107ca4cf90a65e4429e80ce2938e59",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/prepare-controls.py": "6785b7466f8fdc58a3d592b15b37a7a499fe98a7529bc3b760b526b409d30086",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/reproduce-v3.patch": "db865464d3a247fafef5005f3900854f5dd7d80b5c51e9ae254f9116a210f529",
+    "tools/unwind-oracle/adapter.py": "fd83e351ba6c13f18554f7103aeddf7547175cbfba273a7d89cf5df3e28e7d30",
+    "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+  },
+  "positive": {
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/README.md": "fe2fb7ee917d7689820cd93769968cb9edae3e66a7a14704bce3c78ea06c2a6e",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/calibrate.py": "a7187cb187f618e840e9685a00c166d880f67c30b9f867a7c99f717343af664c",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/cases.json": "6308ed81ba035d1fb6586dc89f43cd5a506e9e08bc885189988795f8a298e95c",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/expected.json": "14a039db5fdc3fb47795dd7f0a2ca1c15a1a6dabbc5881d63d9105b8c97cc9e5",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/historical-tools.json": "f8a5ba6429724c2075eb62999599fa17af7079c95037b835e287e608c14f9cc5",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/materials.json": "c1f3ee5baf5cafb0083d41d701c62a1f01107ca4cf90a65e4429e80ce2938e59",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/prepare-controls.py": "6785b7466f8fdc58a3d592b15b37a7a499fe98a7529bc3b760b526b409d30086",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/reproduce-v3.patch": "db865464d3a247fafef5005f3900854f5dd7d80b5c51e9ae254f9116a210f529",
+    "tools/unwind-oracle/adapter.py": "fd83e351ba6c13f18554f7103aeddf7547175cbfba273a7d89cf5df3e28e7d30",
+    "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+  },
+  "wrong-source": {
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/README.md": "fe2fb7ee917d7689820cd93769968cb9edae3e66a7a14704bce3c78ea06c2a6e",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/calibrate.py": "a7187cb187f618e840e9685a00c166d880f67c30b9f867a7c99f717343af664c",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/cases.json": "6308ed81ba035d1fb6586dc89f43cd5a506e9e08bc885189988795f8a298e95c",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/expected.json": "14a039db5fdc3fb47795dd7f0a2ca1c15a1a6dabbc5881d63d9105b8c97cc9e5",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/historical-tools.json": "f8a5ba6429724c2075eb62999599fa17af7079c95037b835e287e608c14f9cc5",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/materials.json": "c1f3ee5baf5cafb0083d41d701c62a1f01107ca4cf90a65e4429e80ce2938e59",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/prepare-controls.py": "6785b7466f8fdc58a3d592b15b37a7a499fe98a7529bc3b760b526b409d30086",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/reproduce-v3.patch": "db865464d3a247fafef5005f3900854f5dd7d80b5c51e9ae254f9116a210f529",
+    "tools/unwind-oracle/adapter.py": "23a01ffabb5962f50b38de43ee070b030c9e287394259857d116b031eea1e487",
+    "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+  },
+  "wrong-tool": {
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/README.md": "fe2fb7ee917d7689820cd93769968cb9edae3e66a7a14704bce3c78ea06c2a6e",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/calibrate.py": "a7187cb187f618e840e9685a00c166d880f67c30b9f867a7c99f717343af664c",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/cases.json": "6308ed81ba035d1fb6586dc89f43cd5a506e9e08bc885189988795f8a298e95c",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/expected.json": "14a039db5fdc3fb47795dd7f0a2ca1c15a1a6dabbc5881d63d9105b8c97cc9e5",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/historical-tools.json": "f8a5ba6429724c2075eb62999599fa17af7079c95037b835e287e608c14f9cc5",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/materials.json": "c1f3ee5baf5cafb0083d41d701c62a1f01107ca4cf90a65e4429e80ce2938e59",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/prepare-controls.py": "6785b7466f8fdc58a3d592b15b37a7a499fe98a7529bc3b760b526b409d30086",
+    "evaluation/reproductions/unwind-consumer-env-dependency-v4/reproduce-v3.patch": "db865464d3a247fafef5005f3900854f5dd7d80b5c51e9ae254f9116a210f529",
+    "tools/unwind-oracle/adapter.py": "fd83e351ba6c13f18554f7103aeddf7547175cbfba273a7d89cf5df3e28e7d30",
+    "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+  }
+}

@@ -7,6 +7,7 @@
 
 use crate::bundle::{BundleBudget, PlannedBundle};
 use crate::contracts::{ExpectedBytes, Refusal};
+use crate::emission::{ArtifactMetrics, ArtifactPlan, ArtifactRequest, PlanningRequest};
 use crate::eviction::{self, EvictionAttempt, EvictionMetrics};
 use crate::neighbor::{self, NeighborAttempt, NeighborGeometry, NeighborMetrics, NeighborSearch};
 use crate::quiescent::{
@@ -145,6 +146,38 @@ pub fn plan(
     victim_allocation: &AllocationPolicy,
     policy: EnginePolicy,
 ) -> Result<EnginePlan, EngineFailure> {
+    plan_core(&PlanningRequest::live(request), victim_allocation, policy)
+}
+
+/// Shared five-tactic engine with explicit symbolic target emission.
+/// No live callback conversion or post-hoc image rewriting is performed.
+pub fn plan_with_emission(
+    request: &ArtifactRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    plan_core(
+        &PlanningRequest::artifact(request),
+        victim_allocation,
+        policy,
+    )
+    .map(|plan| {
+        ArtifactPlan::bundle(
+            plan.bundle(),
+            ArtifactMetrics::Engine(
+                plan.tactic(),
+                plan.metrics().clone(),
+                plan.attempts().to_vec(),
+            ),
+        )
+    })
+}
+
+fn plan_core(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<EnginePlan, EngineFailure> {
     const ORDER: [Tactic; 5] = [
         Tactic::GeneralizedPun,
         Tactic::Relocation,
@@ -163,19 +196,16 @@ pub fn plan(
     for &tactic in tactics {
         let (result, candidates, search) = match tactic {
             Tactic::GeneralizedPun | Tactic::Relocation | Tactic::PrefixedPun => {
-                let request = InstallRequest {
-                    search: quiescent::SearchPolicy {
-                        tactics: match tactic {
-                            Tactic::GeneralizedPun => TacticPolicy::GeneralizedPunOnly,
-                            Tactic::Relocation => TacticPolicy::RelocationOnly,
-                            Tactic::PrefixedPun => TacticPolicy::PrefixPunOnly,
-                            _ => unreachable!(),
-                        },
-                        ..request.search
+                let request = request.with_search(quiescent::SearchPolicy {
+                    tactics: match tactic {
+                        Tactic::GeneralizedPun => TacticPolicy::GeneralizedPunOnly,
+                        Tactic::Relocation => TacticPolicy::RelocationOnly,
+                        Tactic::PrefixedPun => TacticPolicy::PrefixPunOnly,
+                        _ => unreachable!(),
                     },
-                    ..*request
-                };
-                match quiescent::plan_install_detailed(&request) {
+                    ..request.search
+                });
+                match quiescent::plan_install_core(&request) {
                     Ok(member) => {
                         let metrics = member.metrics().clone();
                         let search = metrics.search.clone();
@@ -202,15 +232,11 @@ pub fn plan(
                 }
             }
             Tactic::SuccessorEviction => {
-                let request = InstallRequest {
-                    search: quiescent::SearchPolicy {
-                        tactics: policy.successor_puns,
-                        ..request.search
-                    },
-                    ..*request
-                };
-                match eviction::plan_successor_detailed(&request, victim_allocation, policy.bundle)
-                {
+                let request = request.with_search(quiescent::SearchPolicy {
+                    tactics: policy.successor_puns,
+                    ..request.search
+                });
+                match eviction::plan_successor_core(&request, victim_allocation, policy.bundle) {
                     Ok(plan) => (
                         Ok((
                             plan.bundle().clone(),
@@ -226,7 +252,7 @@ pub fn plan(
                     ),
                 }
             }
-            Tactic::NeighborEviction => match neighbor::plan_neighbor_detailed(
+            Tactic::NeighborEviction => match neighbor::plan_neighbor_core(
                 request,
                 victim_allocation,
                 policy.neighbor,

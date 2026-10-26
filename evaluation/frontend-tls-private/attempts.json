@@ -1,0 +1,28 @@
+{
+  "base_revision": "9098a3d74309fd445fd6f56a6048c1ce517bb81f",
+  "correction_changed_paths": [
+    "tools/rapid-profiler/src/lib.rs"
+  ],
+  "format": "Predecessor format was separate; no v2 format execution.",
+  "promotion_scope": "Later source publication only; it is not either private tested revision and its workspace gates are separate.",
+  "public_promotion_revision": "4c754df83b534b83f7a4725f087780e013363e4a",
+  "source_maps": {
+    "v1": {
+      "path": "sources/v1/source-files.json",
+      "sha256": "04e996e64382c8ec446af13b857219e1df86570ac7c3d793486da4b967fb0ea3"
+    },
+    "v2": {
+      "path": "sources/v2/source-files.json",
+      "sha256": "d4ec557cd3ed0b6714429f15841cc33569383ced7cf6af6775e1f32a712f186b"
+    }
+  },
+  "source_overlay_paths": [
+    "tools/rapid-profiler/src/lib.rs",
+    "tools/rapid-profiler/src/frontend.rs",
+    "tools/rapid-profiler/src/frontend_tls.rs",
+    "tools/rapid-profiler/src/frontend_tls/tests.rs"
+  ],
+  "tested_revision": null,
+  "v1": "Failed Clippy after five executed phases; docs/MSRV not run.",
+  "v2": "All seven phases passed anew at the corrected private snapshot."
+}

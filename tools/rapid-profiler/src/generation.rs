@@ -5,8 +5,8 @@
 #![deny(warnings)]
 #![forbid(unsafe_code)]
 
-use std::sync::OnceLock;
 use std::sync::atomic::{AtomicBool, AtomicU64, AtomicUsize, Ordering};
+use std::sync::{Arc, OnceLock};
 
 const CLOSED: usize = 1 << (usize::BITS - 1);
 const COUNT_MASK: usize = CLOSED - 1;
@@ -295,6 +295,36 @@ impl Epoch {
         function: FunctionId,
         entry_value: u64,
     ) -> Result<Ticket<'_>, AdmissionRefusal> {
+        let (function_index, slot) = self.reserve(function, entry_value)?;
+        Ok(Ticket {
+            epoch: self,
+            function_index,
+            slot,
+            active: true,
+        })
+    }
+
+    /// Reserve an invocation and retain its epoch without borrowing its caller.
+    /// This capability retains only Epoch; frontend storage permits are separate.
+    pub fn enter_owned(
+        self: &Arc<Self>,
+        function: FunctionId,
+        entry_value: u64,
+    ) -> Result<OwnedTicket, AdmissionRefusal> {
+        let (function_index, slot) = self.reserve(function, entry_value)?;
+        Ok(OwnedTicket {
+            epoch: Arc::clone(self),
+            function_index,
+            slot,
+            active: true,
+        })
+    }
+
+    fn reserve(
+        &self,
+        function: FunctionId,
+        entry_value: u64,
+    ) -> Result<(usize, usize), AdmissionRefusal> {
         let index = self
             .functions
             .iter()
@@ -351,12 +381,7 @@ impl Epoch {
             entry_value,
         };
         assert!(self.slots[slot].admission.set(admission).is_ok());
-        Ok(Ticket {
-            epoch: self,
-            function_index: index,
-            slot,
-            active: true,
-        })
+        Ok((index, slot))
     }
 
     /// Close admission without cancelling any existing ticket. Returned count
@@ -433,6 +458,70 @@ impl Epoch {
         } else {
             None
         }
+    }
+
+    fn complete_ticket(
+        &self,
+        function_index: usize,
+        slot: usize,
+        active: &mut bool,
+        value: u64,
+        before_close: impl FnOnce(),
+    ) -> Completion {
+        let epoch = self;
+        let row = &epoch.functions[function_index];
+        let rank = row
+            .retained
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+                if count < epoch.config.retained_per_function {
+                    Some(count + 1)
+                } else {
+                    None
+                }
+            });
+        let disposition = match rank {
+            Ok(rank) => Disposition::Retained { rank },
+            Err(_) => Disposition::DroppedAfterBudget,
+        };
+        let mut deactivate = None;
+        let mut other_reservations_after_close = None;
+        if rank.is_ok_and(|rank| rank + 1 == epoch.config.retained_per_function) {
+            before_close();
+            row.closed.store(true, Ordering::Release);
+            let count = epoch.state.load(Ordering::Acquire) & COUNT_MASK;
+            assert!(count >= 1 && count <= epoch.config.max_inflight);
+            other_reservations_after_close = Some(count - 1);
+            deactivate = Some(DeactivationRequest {
+                generation: epoch.id,
+                function: row.id,
+            });
+        }
+        let admission = *epoch.slots[slot].admission.get().expect("published ticket");
+        assert!(
+            epoch.slots[slot]
+                .terminal
+                .set(Terminal::Completed { value, disposition })
+                .is_ok()
+        );
+        *active = false;
+        epoch.release();
+        Completion {
+            admission,
+            disposition,
+            deactivate,
+            other_reservations_after_close,
+        }
+    }
+
+    fn cancel_ticket(&self, slot: usize, active: &mut bool, reason: CancelReason) {
+        assert!(
+            self.slots[slot]
+                .terminal
+                .set(Terminal::Cancelled(reason))
+                .is_ok()
+        );
+        *active = false;
+        self.release();
     }
 
     fn release(&self) {
@@ -515,49 +604,13 @@ impl Ticket<'_> {
     // Private no-op in ordinary builds; tests use the identical path to pause
     // the Kth reservation before closure. It is not a public callback surface.
     fn complete_before_close(mut self, value: u64, before_close: impl FnOnce()) -> Completion {
-        let epoch = self.epoch;
-        let row = &epoch.functions[self.function_index];
-        let rank = row
-            .retained
-            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
-                if count < epoch.config.retained_per_function {
-                    Some(count + 1)
-                } else {
-                    None
-                }
-            });
-        let disposition = match rank {
-            Ok(rank) => Disposition::Retained { rank },
-            Err(_) => Disposition::DroppedAfterBudget,
-        };
-        let mut deactivate = None;
-        let mut other_reservations_after_close = None;
-        if rank.is_ok_and(|rank| rank + 1 == epoch.config.retained_per_function) {
-            before_close();
-            row.closed.store(true, Ordering::Release);
-            let count = epoch.state.load(Ordering::Acquire) & COUNT_MASK;
-            assert!(count >= 1 && count <= epoch.config.max_inflight);
-            other_reservations_after_close = Some(count - 1);
-            deactivate = Some(DeactivationRequest {
-                generation: epoch.id,
-                function: row.id,
-            });
-        }
-        let admission = self.admission();
-        assert!(
-            epoch.slots[self.slot]
-                .terminal
-                .set(Terminal::Completed { value, disposition })
-                .is_ok()
-        );
-        self.active = false;
-        epoch.release();
-        Completion {
-            admission,
-            disposition,
-            deactivate,
-            other_reservations_after_close,
-        }
+        self.epoch.complete_ticket(
+            self.function_index,
+            self.slot,
+            &mut self.active,
+            value,
+            before_close,
+        )
     }
 
     /// Publish explicit cancellation and consume the ticket without consuming K.
@@ -566,14 +619,8 @@ impl Ticket<'_> {
     }
 
     fn cancel_inner(&mut self, reason: CancelReason) {
-        assert!(
-            self.epoch.slots[self.slot]
-                .terminal
-                .set(Terminal::Cancelled(reason))
-                .is_ok()
-        );
-        self.active = false;
-        self.epoch.release();
+        self.epoch
+            .cancel_ticket(self.slot, &mut self.active, reason);
     }
 }
 
@@ -584,6 +631,80 @@ impl Drop for Ticket<'_> {
         }
     }
 }
+
+/// Non-Clone admission capability retaining only its original Epoch.
+/// Forgetting it retains Epoch and its reservation, not a separate frontend permit.
+///
+/// ```compile_fail,E0599
+/// use std::sync::Arc;
+/// use rapid_profiler::generation::{Config, Epoch, FunctionId};
+/// let e = Arc::new(Epoch::new(&[FunctionId(1)], Config { retained_per_function: 1, max_inflight: 1, max_invocations: 1 }).unwrap());
+/// let t = e.enter_owned(FunctionId(1), 0).unwrap();
+/// let duplicate = t.clone();
+/// ```
+///
+/// ```compile_fail,E0382
+/// use std::sync::Arc;
+/// use rapid_profiler::generation::{Config, Epoch, FunctionId};
+/// let e = Arc::new(Epoch::new(&[FunctionId(1)], Config { retained_per_function: 1, max_inflight: 1, max_invocations: 1 }).unwrap());
+/// let t = e.enter_owned(FunctionId(1), 0).unwrap();
+/// t.complete(1);
+/// t.complete(2);
+/// ```
+pub struct OwnedTicket {
+    epoch: Arc<Epoch>,
+    function_index: usize,
+    slot: usize,
+    active: bool,
+}
+
+impl OwnedTicket {
+    /// Return this ticket's immutable admitting identity.
+    pub fn admission(&self) -> Admission {
+        *self.epoch.slots[self.slot]
+            .admission
+            .get()
+            .expect("published ticket")
+    }
+
+    /// Publish completion to the original owner and consume the capability.
+    pub fn complete(self, value: u64) -> Completion {
+        self.complete_before_close(value, || {})
+    }
+
+    // Same private pause seam as the borrowed ticket; ordinary callers pass no-op.
+    pub(crate) fn complete_before_close(
+        mut self,
+        value: u64,
+        before_close: impl FnOnce(),
+    ) -> Completion {
+        self.epoch.complete_ticket(
+            self.function_index,
+            self.slot,
+            &mut self.active,
+            value,
+            before_close,
+        )
+    }
+
+    /// Cancel explicitly without consuming the per-function retention budget.
+    pub fn cancel(mut self) {
+        self.epoch
+            .cancel_ticket(self.slot, &mut self.active, CancelReason::Explicit);
+    }
+}
+
+impl Drop for OwnedTicket {
+    fn drop(&mut self) {
+        if self.active {
+            self.epoch
+                .cancel_ticket(self.slot, &mut self.active, CancelReason::DroppedTicket);
+        }
+    }
+}
+
+#[cfg(test)]
+mod owned_tests;
 
 #[cfg(test)]
 mod tests;

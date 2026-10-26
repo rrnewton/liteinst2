@@ -1,0 +1,9 @@
+{"jsonrpc":"2.0","method":"binary","params":{"filename":"@@INPUT_FILENAME_JSON@@","mode":"dso"},"id":0}
+{"jsonrpc":"2.0","method":"trampoline","params":{"name":"passthru","template":["$instruction","$continue"]},"id":1}
+{"jsonrpc":"2.0","method":"instruction","params":{"address":4097,"length":5,"offset":4097},"id":2}
+{"jsonrpc":"2.0","method":"instruction","params":{"address":4102,"length":1,"offset":4102},"id":3}
+{"jsonrpc":"2.0","method":"instruction","params":{"address":4103,"length":7,"offset":4103},"id":4}
+{"jsonrpc":"2.0","method":"instruction","params":{"address":4110,"length":2,"offset":4110},"id":5}
+{"jsonrpc":"2.0","method":"instruction","params":{"address":4112,"length":1,"offset":4112},"id":6}
+{"jsonrpc":"2.0","method":"patch","params":{"trampoline":"passthru","offset":4097},"id":7}
+{"jsonrpc":"2.0","method":"emit","params":{"filename":"a.out","format":"binary","mapping_size":4096},"id":8}

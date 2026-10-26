@@ -1,0 +1,42 @@
+{
+  "argv": [
+    "${TOOLCHAIN}/bin/cargo",
+    "build",
+    "--manifest-path",
+    "${WORKSPACE}/Cargo.toml",
+    "-p",
+    "rapid-profiler",
+    "--lib",
+    "--offline",
+    "--locked",
+    "--message-format=json"
+  ],
+  "cpu_seconds": 60,
+  "cwd": "${WORKSPACE}",
+  "env": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_HOME": "${CARGO_HOME}",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+    "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+    "CARGO_TARGET_DIR": "${REPO}/target",
+    "HOME": "${USER_HOME}",
+    "LC_ALL": "C",
+    "NATIVE_INTERVAL_DSO": "${RAW}/subject/subject.so",
+    "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RUSTC": "${TOOLCHAIN}/bin/rustc",
+    "RUSTC_WORKSPACE_WRAPPER": "",
+    "RUSTC_WRAPPER": "",
+    "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+    "RUSTDOCFLAGS": "-Dwarnings",
+    "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+    "RUST_TEST_THREADS": "1",
+    "TMPDIR": "${RAW}/library/tmp"
+  },
+  "file_bytes": 134217728,
+  "stderr": "${RAW}/library/stderr.txt",
+  "stdout": "${RAW}/library/stdout.txt",
+  "wall_seconds": 90
+}

@@ -1,0 +1,28 @@
+oracle::calibration::rejects_application_memory_corruption: test
+oracle::calibration::rejects_defined_flag_corruption: test
+oracle::calibration::rejects_fault_address_corruption: test
+oracle::calibration::rejects_gpr_corruption: test
+oracle::calibration::rejects_redzone_corruption: test
+oracle::calibration::rejects_simd_corruption: test
+oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact: test
+oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags: test
+oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip: test
+oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip: test
+oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip: test
+oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc: test
+oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc: test
+oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity: test
+oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write: test
+oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status: test
+oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation: test
+oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication: test
+oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity: test
+oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record: test
+oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status: test
+oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization: test
+oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field: test
+oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity: test
+oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process: test
+oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction: test
+
+26 tests, 0 benchmarks

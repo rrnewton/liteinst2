@@ -1,0 +1,51 @@
+SavedExtendedStateLayout {
+    allocation_len: 2496,
+    image_len: 2440,
+    mask: 743,
+    format: SavedExtendedStateFormat(
+        2,
+    ),
+    component_count: 5,
+    components: [
+        SavedExtendedStateComponent {
+            xfeature: 4,
+            offset: 576,
+            size: 256,
+        },
+        SavedExtendedStateComponent {
+            xfeature: 32,
+            offset: 832,
+            size: 64,
+        },
+        SavedExtendedStateComponent {
+            xfeature: 64,
+            offset: 896,
+            size: 512,
+        },
+        SavedExtendedStateComponent {
+            xfeature: 128,
+            offset: 1408,
+            size: 1024,
+        },
+        SavedExtendedStateComponent {
+            xfeature: 512,
+            offset: 2432,
+            size: 8,
+        },
+        SavedExtendedStateComponent {
+            xfeature: 0,
+            offset: 0,
+            size: 0,
+        },
+        SavedExtendedStateComponent {
+            xfeature: 0,
+            offset: 0,
+            size: 0,
+        },
+        SavedExtendedStateComponent {
+            xfeature: 0,
+            offset: 0,
+            size: 0,
+        },
+    ],
+}

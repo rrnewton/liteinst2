@@ -1,0 +1,5 @@
+attempt,tested_revision,outcome,parent_exit,observed_stages,passed_stages,failed_stages,unrun_stages,failure_stage,native_original_traces,native_rewritten_traces,driver_full_state_comparisons,verified_candidate_artifacts,adjacent_refusal_cases,ordinary_processes,capture_files
+elf-exec-2e39169-v1,2e39169b5b54982c6f49f06772c7331660dfc277,FAILED,1,1,0,1,26,required/clippy,0,0,0,0,0,0,0
+elf-exec-fe75ab9-v1,fe75ab9dfb9b639938f256b86545ed888ede498b,FAILED,1,1,0,1,26,required/clippy,0,0,0,0,0,0,0
+elf-exec-377a649-v1,377a649dd8d4aedcdd5bdd7831b61d26bfbd47ba,PASS_FIXED_B1_CAMPAIGN,0,27,27,0,0,,8,16,72,4,0,6,1230
+elf-exec-tactics-377a649-v1,377a649dd8d4aedcdd5bdd7831b61d26bfbd47ba,FAILED,1,18,17,1,75,native-B2,0,0,0,4,4,0,7

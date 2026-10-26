@@ -1,0 +1,1043 @@
+{
+  "actual": {
+    "accepted_preparations": 2,
+    "clean_stage_regular_files": 525,
+    "control_helpers": 9,
+    "expected_refusals": 7,
+    "fixture_restored": false,
+    "generated_workloads": 0,
+    "original_collector_exit": 1,
+    "reruns": 0,
+    "separate_source_stage_helpers": 1,
+    "source_files": 523,
+    "unchanged_collector_pass": false
+  },
+  "authorship": "Core authored implementation/material and some preparer control data; baseline reviewed root-generated actual controls and stage separately. This proposal derives public data only and grants no independent approval of author-owned implementation.",
+  "cases": [
+    {
+      "case_id": "01-valid-stage",
+      "command_id": "01-valid-stage",
+      "expected": "exact_525_file_stage",
+      "kind": "preparation_control",
+      "observed": "accepted_preparation",
+      "ordinal": 0
+    },
+    {
+      "case_id": "02-valid-request",
+      "command_id": "02-valid-request",
+      "expected": "exact_library_request_only",
+      "kind": "preparation_control",
+      "observed": "accepted_preparation",
+      "ordinal": 1
+    },
+    {
+      "case_id": "03-changed-base",
+      "command_id": "03-changed-base",
+      "expected": "exact_source_refusal",
+      "kind": "preparation_control",
+      "observed": "expected_refusal",
+      "ordinal": 2
+    },
+    {
+      "case_id": "04-changed-overlay",
+      "command_id": "04-changed-overlay",
+      "expected": "exact_source_refusal",
+      "kind": "preparation_control",
+      "observed": "expected_refusal",
+      "ordinal": 3
+    },
+    {
+      "case_id": "05-wrong-helper-byte",
+      "command_id": "05-wrong-helper-byte",
+      "expected": "exact_source_refusal",
+      "kind": "preparation_control",
+      "observed": "expected_refusal",
+      "ordinal": 4
+    },
+    {
+      "case_id": "06-occupied-output",
+      "command_id": "06-occupied-output",
+      "expected": "exact_source_refusal",
+      "kind": "preparation_control",
+      "observed": "expected_refusal",
+      "ordinal": 5
+    },
+    {
+      "case_id": "07-optimized-python",
+      "command_id": "07-optimized-python",
+      "expected": "exact_source_refusal",
+      "kind": "preparation_control",
+      "observed": "expected_refusal",
+      "ordinal": 6
+    },
+    {
+      "case_id": "08-wrong-prepared-digest",
+      "command_id": "08-wrong-prepared-digest",
+      "expected": "exact_source_refusal",
+      "kind": "preparation_control",
+      "observed": "expected_refusal",
+      "ordinal": 7
+    },
+    {
+      "case_id": "09-request-parent-symlink",
+      "command_id": "09-request-parent-symlink",
+      "expected": "exact_source_refusal",
+      "kind": "preparation_control",
+      "observed": "expected_refusal",
+      "ordinal": 8
+    },
+    {
+      "case_id": "10-stage-source",
+      "command_id": "10-stage-source",
+      "expected": "exact_525_file_stage",
+      "kind": "distinct_source_staging",
+      "observed": "accepted_distinct_source_stage",
+      "ordinal": 9
+    }
+  ],
+  "claims": {
+    "claims_1_2_3": false,
+    "compiler_execution_credit": 0,
+    "full_A5": false,
+    "native_execution_credit": 0,
+    "software_clock": false
+  },
+  "collector": {
+    "adjudication_scope": "Accept the exact original helper behaviors and no-generated-output predicates; preserve the contradictory whole-tree basename criterion and collector exit one.",
+    "exit": 1,
+    "failed_assertion": "not any(p.name in ['compile.json','compile.invocation.json'] for p in F.rglob('*'))",
+    "finding": "GC-PREP-COLLECTOR-1",
+    "fixture_restore": false,
+    "frozen_plan_or_assertion_edited": false,
+    "later_observation_scope": "Separate post-collector root observation and independent later output review, not an original immediate output-after capture or a backfill.",
+    "later_observation_sha256": "ddce6aafd76bfdf2f65b76cfae3c505848a8a3db57b7ca7646bdb57988aaa38b",
+    "original_missing_records": [
+      "09 output-after.json",
+      "09 result.json",
+      "top-level collector result.json"
+    ],
+    "original_wording": "Reject before compile directory creation or request write. All 523 sources, prepared/coordinates and retained two library request files exact; external sentinel directory and symlink owner unchanged; no compile request/invocation anywhere.",
+    "required_historical_source": {
+      "path": "evaluation/reproductions/generation-public-v3-partial/requests/compile.json",
+      "present_before_negative_control": true,
+      "sha256": "126d322a14f9a563ebb73a5af4b97072d967da69518497fce330a3449c37a838",
+      "whole_identity_unchanged_from_first_stage_through09": true
+    },
+    "rerun": false,
+    "root_adjudication_sha256": "ce3af28cba3e4349a245573941d52e7f0f0c1f01f3da45640ee8b9ab08025f1f",
+    "source_output_distinction": "The historical compile.json is required copied source. Control09 generated no compile directory/request/invocation; all complete output owners remained unchanged.",
+    "supplemental_acceptance_does_not_edit_original_criterion": true,
+    "supplemental_review_sha256": "4e79c35beb7f79e47414a90e68b8a303cbd70eb132fd025a9cb815e2e51e8180",
+    "unchanged_collector_success": false
+  },
+  "commands": [
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${MATERIAL}/prepare.py",
+        "--materials-sha256",
+        "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+        "stage",
+        "--repo",
+        "${REPO}",
+        "--base-root",
+        "${BASE_SOURCE}",
+        "--raw",
+        "${CONTROL_ROOT}/outputs/01-valid-stage",
+        "--toolchain",
+        "${RUST_TOOLCHAIN}",
+        "--msrv-toolchain",
+        "${MSRV_TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--cc",
+        "${CC}"
+      ],
+      "cleanup": "ECHILD; no timeout, unexpected descendants, cleanup events/error or abort",
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "elapsed_seconds": 0.4287281599827111,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROL_ROOT}/commands/01-valid-stage/tmp"
+      },
+      "exit": 0,
+      "expected_exit": 0,
+      "expected_refusal": false,
+      "file_bytes": 16777216,
+      "id": "01-valid-stage",
+      "receipt_sha256": "2b294d88b02d375f272546922e27064e9b5bfc57992e352c9bf12530c907ffc5",
+      "request_sha256": "afe68aee32021eac400c17cd82447916b6616d1dd1af3a52874e159f26697108",
+      "source_id": "frontend-native-gate-clock-v1",
+      "status": "accepted_preparation",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "9af23b1051d851abee4a1f0f6374bf98f99ca4681ebfd3f64fde36838313d854",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${MATERIAL}/prepare.py",
+        "--materials-sha256",
+        "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+        "request",
+        "--raw",
+        "${CONTROL_ROOT}/outputs/01-valid-stage",
+        "--prepared-sha256",
+        "a804b70581453ee494e39d029018ee60b892a7a9bcb76b97e61211aab421adfd",
+        "--phase",
+        "library"
+      ],
+      "cleanup": "ECHILD; no timeout, unexpected descendants, cleanup events/error or abort",
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "elapsed_seconds": 0.3289704311173409,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROL_ROOT}/commands/02-valid-request/tmp"
+      },
+      "exit": 0,
+      "expected_exit": 0,
+      "expected_refusal": false,
+      "file_bytes": 16777216,
+      "id": "02-valid-request",
+      "receipt_sha256": "f070396b21da96035dc3ca4ce4cab13e91d431ea82ce80e6704688ef42bdfa7b",
+      "request_sha256": "6c333e18b38b5843f552be24a28e87dfd3a4f87d3ecd39237e90f44208eff4f6",
+      "source_id": "frontend-native-gate-clock-v1",
+      "status": "accepted_preparation",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "938cd68388cd2f255a437ee7b70ddaa40f17dfa793a7ade60fa56db2e9e15eb0",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${MATERIAL}/prepare.py",
+        "--materials-sha256",
+        "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+        "stage",
+        "--repo",
+        "${REPO}",
+        "--base-root",
+        "${CONTROL_PLAN}/fixtures/changed-base",
+        "--raw",
+        "${CONTROL_ROOT}/outputs/03-changed-base",
+        "--toolchain",
+        "${RUST_TOOLCHAIN}",
+        "--msrv-toolchain",
+        "${MSRV_TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--cc",
+        "${CC}"
+      ],
+      "cleanup": "ECHILD; no timeout, unexpected descendants, cleanup events/error or abort",
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "elapsed_seconds": 0.18070300901308656,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROL_ROOT}/commands/03-changed-base/tmp"
+      },
+      "exit": 1,
+      "expected_exit": 1,
+      "expected_refusal": true,
+      "file_bytes": 16777216,
+      "id": "03-changed-base",
+      "receipt_sha256": "8cd8ff7f0da92840cb65b2fe31aafa672af8cc0c61d8a22d354a9fcc74932398",
+      "request_sha256": "b2a51e70bcd4d55557be637244a07d5b1539c123298d890cc6cef78dc20c86e8",
+      "source_id": "frontend-native-gate-clock-v1",
+      "status": "expected_refusal",
+      "stderr_sha256": "e018c7d77b1beb1f19afe47e3401bba014fe68852956c433e0fedd6f168a30fa",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${CONTROL_PLAN}/fixtures/changed-overlay-material/prepare.py",
+        "--materials-sha256",
+        "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+        "stage",
+        "--repo",
+        "${REPO}",
+        "--base-root",
+        "${BASE_SOURCE}",
+        "--raw",
+        "${CONTROL_ROOT}/outputs/04-changed-overlay",
+        "--toolchain",
+        "${RUST_TOOLCHAIN}",
+        "--msrv-toolchain",
+        "${MSRV_TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--cc",
+        "${CC}"
+      ],
+      "cleanup": "ECHILD; no timeout, unexpected descendants, cleanup events/error or abort",
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "elapsed_seconds": 0.1828133948147297,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROL_ROOT}/commands/04-changed-overlay/tmp"
+      },
+      "exit": 1,
+      "expected_exit": 1,
+      "expected_refusal": true,
+      "file_bytes": 16777216,
+      "id": "04-changed-overlay",
+      "receipt_sha256": "af477e02c09af873c3e38ddec4f97330285a91d059f5818ab74637b6c2b92bea",
+      "request_sha256": "f053d9e7cdf8c3fe1d5d64b60a7c74622c4680511f3409ac64717f8939d34e92",
+      "source_id": "frontend-native-gate-clock-v1",
+      "status": "expected_refusal",
+      "stderr_sha256": "5e84993a7c8d43b11d9e100b3702cae9cbd38e6cb797b00e42f3734a18578ca7",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${MATERIAL}/prepare.py",
+        "--materials-sha256",
+        "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+        "stage",
+        "--repo",
+        "${CONTROL_PLAN}/fixtures/wrong-helper-repo",
+        "--base-root",
+        "${BASE_SOURCE}",
+        "--raw",
+        "${CONTROL_PLAN}/fixtures/wrong-helper-repo/ignored/05-wrong-helper-byte",
+        "--toolchain",
+        "${RUST_TOOLCHAIN}",
+        "--msrv-toolchain",
+        "${MSRV_TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--cc",
+        "${CC}"
+      ],
+      "cleanup": "ECHILD; no timeout, unexpected descendants, cleanup events/error or abort",
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "elapsed_seconds": 0.19968864507973194,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROL_ROOT}/commands/05-wrong-helper-byte/tmp"
+      },
+      "exit": 1,
+      "expected_exit": 1,
+      "expected_refusal": true,
+      "file_bytes": 16777216,
+      "id": "05-wrong-helper-byte",
+      "receipt_sha256": "15bd60a871a8d963197071421556922904471d69d8a1645a22d71a81997af96e",
+      "request_sha256": "16d089589a9ff4085b367c9bf9befbdda9b54a67fde13b5807fcc976082b11d0",
+      "source_id": "frontend-native-gate-clock-v1",
+      "status": "expected_refusal",
+      "stderr_sha256": "4a5d24c934a5cb7ca16eb95c428f659696c3d0c6bd41144d392aa70da9a28ef6",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${MATERIAL}/prepare.py",
+        "--materials-sha256",
+        "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+        "stage",
+        "--repo",
+        "${REPO}",
+        "--base-root",
+        "${BASE_SOURCE}",
+        "--raw",
+        "${CONTROL_ROOT}/outputs/06-occupied-output",
+        "--toolchain",
+        "${RUST_TOOLCHAIN}",
+        "--msrv-toolchain",
+        "${MSRV_TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--cc",
+        "${CC}"
+      ],
+      "cleanup": "ECHILD; no timeout, unexpected descendants, cleanup events/error or abort",
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "elapsed_seconds": 0.1815626488532871,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROL_ROOT}/commands/06-occupied-output/tmp"
+      },
+      "exit": 1,
+      "expected_exit": 1,
+      "expected_refusal": true,
+      "file_bytes": 16777216,
+      "id": "06-occupied-output",
+      "receipt_sha256": "4c1d636285d6d60da8d14e92159e7d57da8b3acc3e9c065cd50da22222b6e5be",
+      "request_sha256": "e32cf9f800d40fa37e9ec34bc120cf0a012c43dca9b2d6dec324f5590993d61d",
+      "source_id": "frontend-native-gate-clock-v1",
+      "status": "expected_refusal",
+      "stderr_sha256": "1ede31c1f60084184432093be25f8712ebcf8b310c15ac6f5e7ad0ceac6b702a",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "-O",
+        "${MATERIAL}/prepare.py",
+        "--materials-sha256",
+        "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+        "stage",
+        "--repo",
+        "${REPO}",
+        "--base-root",
+        "${BASE_SOURCE}",
+        "--raw",
+        "${CONTROL_ROOT}/outputs/07-optimized-python",
+        "--toolchain",
+        "${RUST_TOOLCHAIN}",
+        "--msrv-toolchain",
+        "${MSRV_TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--cc",
+        "${CC}"
+      ],
+      "cleanup": "ECHILD; no timeout, unexpected descendants, cleanup events/error or abort",
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "elapsed_seconds": 0.1800680758897215,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROL_ROOT}/commands/07-optimized-python/tmp"
+      },
+      "exit": 1,
+      "expected_exit": 1,
+      "expected_refusal": true,
+      "file_bytes": 16777216,
+      "id": "07-optimized-python",
+      "receipt_sha256": "66bdbb27f1a083e950bb662a39a36ffa53c4d834cbc17616778c81594a5b0870",
+      "request_sha256": "f9a2ebff1c8de080d88b76b6091ed5f99b72737d16ecf2707cdddfa73afc8abe",
+      "source_id": "frontend-native-gate-clock-v1",
+      "status": "expected_refusal",
+      "stderr_sha256": "c047c6127739071ceecd098ae3c645e2259e05f3284afab98ebc8ac4185d16a3",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${MATERIAL}/prepare.py",
+        "--materials-sha256",
+        "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+        "request",
+        "--raw",
+        "${CONTROL_ROOT}/outputs/01-valid-stage",
+        "--prepared-sha256",
+        "0000000000000000000000000000000000000000000000000000000000000000",
+        "--phase",
+        "library"
+      ],
+      "cleanup": "ECHILD; no timeout, unexpected descendants, cleanup events/error or abort",
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "elapsed_seconds": 0.1792787341400981,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROL_ROOT}/commands/08-wrong-prepared-digest/tmp"
+      },
+      "exit": 1,
+      "expected_exit": 1,
+      "expected_refusal": true,
+      "file_bytes": 16777216,
+      "id": "08-wrong-prepared-digest",
+      "receipt_sha256": "2bb785d94ad57723edcfc035f370757904475894ee37839d9e866b179b57b3aa",
+      "request_sha256": "8f156acdcf4e42926babd44bf4e061c6c5b14c4478aeaa7ee84bcb3d54c761d6",
+      "source_id": "frontend-native-gate-clock-v1",
+      "status": "expected_refusal",
+      "stderr_sha256": "b4aa582e32d5a41a7799ce5b4d8dc83c38c729a4fdd16223e053f1444d0d69c4",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${MATERIAL}/prepare.py",
+        "--materials-sha256",
+        "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+        "request",
+        "--raw",
+        "${CONTROL_ROOT}/outputs/01-valid-stage",
+        "--prepared-sha256",
+        "a804b70581453ee494e39d029018ee60b892a7a9bcb76b97e61211aab421adfd",
+        "--phase",
+        "compile"
+      ],
+      "cleanup": "ECHILD; no timeout, unexpected descendants, cleanup events/error or abort",
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "elapsed_seconds": 0.28001253795810044,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROL_ROOT}/commands/09-request-parent-symlink/tmp"
+      },
+      "exit": 1,
+      "expected_exit": 1,
+      "expected_refusal": true,
+      "file_bytes": 16777216,
+      "id": "09-request-parent-symlink",
+      "receipt_sha256": "6cd063ed3559f7df81dd552c052ab87ebeeeb02e94ea470d385aaf024cd89863",
+      "request_sha256": "b1b50343380f1f155794e0a21f7061cc2609261bbeadb91af02c699e255c9cc6",
+      "source_id": "frontend-native-gate-clock-v1",
+      "status": "expected_refusal",
+      "stderr_sha256": "2ded25cb00ab9266a1d93607b598429de13eaba5eb5bcce3ddece8db72c4674e",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${MATERIAL}/prepare.py",
+        "--materials-sha256",
+        "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+        "stage",
+        "--repo",
+        "${REPO}",
+        "--base-root",
+        "${BASE_SOURCE}",
+        "--raw",
+        "${STAGING_ROOT}/outputs/stage-v1",
+        "--toolchain",
+        "${RUST_TOOLCHAIN}",
+        "--msrv-toolchain",
+        "${MSRV_TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--cc",
+        "${CC}"
+      ],
+      "cleanup": "ECHILD; no timeout, unexpected descendants, cleanup events/error or abort",
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "elapsed_seconds": 0.44028240093030035,
+      "environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${STAGING_ROOT}/commands/stage/tmp"
+      },
+      "exit": 0,
+      "expected_exit": 0,
+      "expected_refusal": false,
+      "file_bytes": 16777216,
+      "id": "10-stage-source",
+      "receipt_sha256": "bd1dc240c9127d43add175daa95e779ba432dd13974d0a9f18da79a6bd962fcf",
+      "request_sha256": "5ba5a24b488e7a08f809cf0751ef9d614fcbe4a0b5a5678d2dcc6245aef0497d",
+      "source_id": "frontend-native-gate-clock-v1",
+      "status": "accepted_distinct_source_stage",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "56a3a1331d89639b1d69ce9a82833e57ee98fdc42cd8d9f7c735f078a79f2903",
+      "wall_seconds": 30
+    }
+  ],
+  "control_products": {
+    "after_valid_request_files": 527,
+    "control09_exact_guard_line": 163,
+    "control09_full_output_before_later_observation_equal": true,
+    "first_possible_request_write_line": 175,
+    "first_stage_coordinates_sha256": "bb433bafb6a29157fd6b79d92eb2f52df6a014b4a567ad36f7a57e8a5e39a45d",
+    "first_stage_files": 525,
+    "first_stage_prepared_sha256": "a804b70581453ee494e39d029018ee60b892a7a9bcb76b97e61211aab421adfd",
+    "generated_library_invocation_sha256": "e5a51349b98c9d31be00fc7ed39dd9aa230e6e1c960cceeb1a723ea456779897",
+    "generated_library_request_executed": false,
+    "generated_library_request_sha256": "9cd0ca1b464e9c94926b514c47b7081f3959c5228f3b01203c518d0532a1b53e",
+    "requests_retained_with_original_bytes_and_owner_identity": true,
+    "symlink_fixture_preserved": true
+  },
+  "coordinate_roles": {
+    "${BASE_SOURCE}": "Whole source directory supplying the exact 510 selected base files.",
+    "${CARGO_HOME}": "Whole Cargo home coordinate recorded for later generated requests.",
+    "${CC}": "Whole C compiler-driver path recorded for later generated requests; no compiler executes in this report.",
+    "${CONTROL_PLAN}": "Whole control fixture/data directory for the frozen nine-case plan; it is distinct from material and output roots.",
+    "${CONTROL_ROOT}": "Whole root containing the nine actual control requests, captures, outputs and retained adversarial fixture.",
+    "${MATERIAL}": "Whole directory of the unchanged 57-file gate-clock material v3, including prepare.py.",
+    "${MSRV_TOOLCHAIN}": "Whole admitted Rust 1.85.0 toolchain directory; stage records this coordinate but does not run Rust.",
+    "${PYTHON}": "Whole selected Python 3.9 executable path.",
+    "${REPO}": "Whole source checkout root containing the unchanged bounded helper; output roots remain below its ignored directory.",
+    "${RUST_TOOLCHAIN}": "Whole admitted Rust 1.97.1 toolchain directory; stage records this coordinate but does not run Rust.",
+    "${STAGING_ROOT}": "Whole distinct clean source-stage root, separate from the altered control fixture.",
+    "${TIMEOUT}": "Whole selected timeout executable path.",
+    "${USER_HOME}": "Whole user-home coordinate recorded for later generated requests.",
+    "RAW": "In the original quoted fixture instructions, RAW means ${CONTROL_ROOT}/outputs/01-valid-stage; it is not an extra substitution token or sibling-prefix rule."
+  },
+  "coordinate_scope": "All tokens denote complete ordinary paths/directories. Literal whole-token inverse substitutions recover each complete saved request and outer text; there are no sibling-prefix semantics. Historical coordinates do not claim fresh admission.",
+  "distinct_stage": {
+    "empty_generated_directories": [
+      "requests",
+      "artifacts",
+      "subject"
+    ],
+    "independent_review_sha256": "3b09798882fc79d09300dc70ffd33a85bfafcf9f78beeb03e413c8975e07c9f4",
+    "prepared_sha256": "5181d4f1a1b3e5c4a911691067789e2e4dff3a46476ea475cf05abe511a50692",
+    "receipt_sha256": "bd1dc240c9127d43add175daa95e779ba432dd13974d0a9f18da79a6bd962fcf",
+    "regular_files": 525,
+    "result_sha256": "91089c4e99691c16677d4aaef950eb1cb3938de7d97bf4a2f345af7d14a437f2",
+    "source_copy_only": true,
+    "source_files": 523,
+    "status": "CLOSED_DISTINCT_STAGE_SOURCE_COPY_ONLY"
+  },
+  "elapsed_time_scope": "Per-command monotonic wall durations are operational observations, not performance comparisons or retired-instruction measurements.",
+  "fixture_setup": {
+    "changed_base": {
+      "fixture_sha256": "6abe9bed3d2a7c57481502cfa88d7597fa93c9f9bbc5d3ffa44ce13b9f0bc429",
+      "only_mutation": "First byte xor 1; first sorted source predicate must reject before later file lookup.",
+      "original_sha256": "0be8b7ee6215c637b3e260e9f11916377d9312bdae410191c25aaac198525e64",
+      "source": ".github/workflows/ci.yml"
+    },
+    "changed_overlay": {
+      "material_sha256": "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+      "only_mutation": "Append one LF to overlay/tools/rapid-profiler/src/lib.rs; leave material.json and all other members exact."
+    },
+    "occupied_output": {
+      "path": "${CONTROL_ROOT}/outputs/06-occupied-output",
+      "sentinel_bytes_utf8": "occupied-output\n",
+      "sentinel_name": "sentinel"
+    },
+    "status": "DATA_ONLY_ROOT_PREPARATION_REQUIRED",
+    "symlink_parent": {
+      "after": "02-valid-request and 08-wrong-prepared-digest actual results independently checked",
+      "retain_original_directory_as": "${CONTROL_ROOT}/retained-library-requests",
+      "rules": [
+        "This is an explicitly recorded test-fixture mutation, not an epoch refresh.",
+        "Move only the owned requests directory containing the two exact generated library files; preserve bytes/inodes and bind their retained paths.",
+        "Create a symlink at RAW/requests to the controlled external-request-sentinel directory, itself still inside REPO/ignored. Do not write outside the slot.",
+        "No compiler/source/material mutation; freeze full before map and symlink target/owner before invoking the negative request.",
+        "After refusal preserve the fixture and all captures; no retry or automatic restoration."
+      ],
+      "sentinel_bytes_utf8": "outside-raw-owned-test-sentinel\n",
+      "sentinel_name": "sentinel",
+      "source": "${CONTROL_ROOT}/outputs/01-valid-stage/requests",
+      "symlink_target": "${CONTROL_ROOT}/external-request-sentinel"
+    },
+    "wrong_helper": {
+      "only_mutation": "Append one LF to bounded helper source; it is input data and must never execute.",
+      "path": "${CONTROL_PLAN}/fixtures/wrong-helper-repo/tools/unwind-oracle/bounded_command.py",
+      "sha256": "98542038e81d05b40cdf99976a248f30c5384d9e7ce5c056a92ef1ee82da48df"
+    }
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "historical_observation_before_this_gate_clock_campaign",
+    "observation_sha256": "c71b2cca58fc94cf1bccf9bcc1d640f091b31f2b0e47b13c7cb068a33056b456",
+    "observed_at_utc": "2026-10-26T01:56:32.821688+00:00",
+    "original_observation_phase": "after_v6_msrv_before_ordinary_fallback_and_native_modes",
+    "scope": "Inherited historical v6 hardware observation, not a new preparer hardware probe or continuous attestation.",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "historical_requests": [
+    {
+      "actual_outer_scope": "Whole saved object. Controls omit stdin/stream fields from that saved object; planned DEVNULL and helper stream destinations are separately bound, not retroactively inserted.",
+      "id": "01-valid-stage",
+      "outer_sha256": "ab3e2c52b1bb9e47dafdfb6f2c880aec18087d9a2eb724dafae5ce94432af53a",
+      "outer_text": "{\n  \"argv\": [\n    \"${TIMEOUT}\",\n    \"--signal=TERM\",\n    \"--kill-after=10s\",\n    \"40s\",\n    \"${PYTHON}\",\n    \"-B\",\n    \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n    \"--request\",\n    \"${CONTROL_ROOT}/requests/01-valid-stage.json\",\n    \"--receipt\",\n    \"${CONTROL_ROOT}/commands/01-valid-stage/receipt.json\"\n  ],\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\"\n  },\n  \"parent_timeout_seconds\": 55,\n  \"returncode\": 0\n}\n",
+      "request_sha256": "afe68aee32021eac400c17cd82447916b6616d1dd1af3a52874e159f26697108",
+      "request_text": "{\n  \"argv\": [\n    \"${PYTHON}\",\n    \"-B\",\n    \"${MATERIAL}/prepare.py\",\n    \"--materials-sha256\",\n    \"03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754\",\n    \"stage\",\n    \"--repo\",\n    \"${REPO}\",\n    \"--base-root\",\n    \"${BASE_SOURCE}\",\n    \"--raw\",\n    \"${CONTROL_ROOT}/outputs/01-valid-stage\",\n    \"--toolchain\",\n    \"${RUST_TOOLCHAIN}\",\n    \"--msrv-toolchain\",\n    \"${MSRV_TOOLCHAIN}\",\n    \"--user-home\",\n    \"${USER_HOME}\",\n    \"--cargo-home\",\n    \"${CARGO_HOME}\",\n    \"--cc\",\n    \"${CC}\"\n  ],\n  \"cpu_seconds\": 20,\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\",\n    \"TMPDIR\": \"${CONTROL_ROOT}/commands/01-valid-stage/tmp\"\n  },\n  \"file_bytes\": 16777216,\n  \"stderr\": \"${CONTROL_ROOT}/commands/01-valid-stage/stderr.txt\",\n  \"stdout\": \"${CONTROL_ROOT}/commands/01-valid-stage/stdout.txt\",\n  \"wall_seconds\": 30\n}\n",
+      "whole_literal_inverse_verified": true
+    },
+    {
+      "actual_outer_scope": "Whole saved object. Controls omit stdin/stream fields from that saved object; planned DEVNULL and helper stream destinations are separately bound, not retroactively inserted.",
+      "id": "02-valid-request",
+      "outer_sha256": "e8d5d29fef4127f20029f8c411c760f6298e03014055b6f1fd69de7560d8b5b7",
+      "outer_text": "{\n  \"argv\": [\n    \"${TIMEOUT}\",\n    \"--signal=TERM\",\n    \"--kill-after=10s\",\n    \"40s\",\n    \"${PYTHON}\",\n    \"-B\",\n    \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n    \"--request\",\n    \"${CONTROL_ROOT}/requests/02-valid-request.json\",\n    \"--receipt\",\n    \"${CONTROL_ROOT}/commands/02-valid-request/receipt.json\"\n  ],\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\"\n  },\n  \"parent_timeout_seconds\": 55,\n  \"returncode\": 0\n}\n",
+      "request_sha256": "6c333e18b38b5843f552be24a28e87dfd3a4f87d3ecd39237e90f44208eff4f6",
+      "request_text": "{\n  \"argv\": [\n    \"${PYTHON}\",\n    \"-B\",\n    \"${MATERIAL}/prepare.py\",\n    \"--materials-sha256\",\n    \"03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754\",\n    \"request\",\n    \"--raw\",\n    \"${CONTROL_ROOT}/outputs/01-valid-stage\",\n    \"--prepared-sha256\",\n    \"a804b70581453ee494e39d029018ee60b892a7a9bcb76b97e61211aab421adfd\",\n    \"--phase\",\n    \"library\"\n  ],\n  \"cpu_seconds\": 20,\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\",\n    \"TMPDIR\": \"${CONTROL_ROOT}/commands/02-valid-request/tmp\"\n  },\n  \"file_bytes\": 16777216,\n  \"stderr\": \"${CONTROL_ROOT}/commands/02-valid-request/stderr.txt\",\n  \"stdout\": \"${CONTROL_ROOT}/commands/02-valid-request/stdout.txt\",\n  \"wall_seconds\": 30\n}\n",
+      "whole_literal_inverse_verified": true
+    },
+    {
+      "actual_outer_scope": "Whole saved object. Controls omit stdin/stream fields from that saved object; planned DEVNULL and helper stream destinations are separately bound, not retroactively inserted.",
+      "id": "03-changed-base",
+      "outer_sha256": "bf3ccade16a02e1b373a94d734f62981cea2e7b260c680bf13af16874aea59c7",
+      "outer_text": "{\n  \"argv\": [\n    \"${TIMEOUT}\",\n    \"--signal=TERM\",\n    \"--kill-after=10s\",\n    \"40s\",\n    \"${PYTHON}\",\n    \"-B\",\n    \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n    \"--request\",\n    \"${CONTROL_ROOT}/requests/03-changed-base.json\",\n    \"--receipt\",\n    \"${CONTROL_ROOT}/commands/03-changed-base/receipt.json\"\n  ],\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\"\n  },\n  \"parent_timeout_seconds\": 55,\n  \"returncode\": 1\n}\n",
+      "request_sha256": "b2a51e70bcd4d55557be637244a07d5b1539c123298d890cc6cef78dc20c86e8",
+      "request_text": "{\n  \"argv\": [\n    \"${PYTHON}\",\n    \"-B\",\n    \"${MATERIAL}/prepare.py\",\n    \"--materials-sha256\",\n    \"03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754\",\n    \"stage\",\n    \"--repo\",\n    \"${REPO}\",\n    \"--base-root\",\n    \"${CONTROL_PLAN}/fixtures/changed-base\",\n    \"--raw\",\n    \"${CONTROL_ROOT}/outputs/03-changed-base\",\n    \"--toolchain\",\n    \"${RUST_TOOLCHAIN}\",\n    \"--msrv-toolchain\",\n    \"${MSRV_TOOLCHAIN}\",\n    \"--user-home\",\n    \"${USER_HOME}\",\n    \"--cargo-home\",\n    \"${CARGO_HOME}\",\n    \"--cc\",\n    \"${CC}\"\n  ],\n  \"cpu_seconds\": 20,\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\",\n    \"TMPDIR\": \"${CONTROL_ROOT}/commands/03-changed-base/tmp\"\n  },\n  \"file_bytes\": 16777216,\n  \"stderr\": \"${CONTROL_ROOT}/commands/03-changed-base/stderr.txt\",\n  \"stdout\": \"${CONTROL_ROOT}/commands/03-changed-base/stdout.txt\",\n  \"wall_seconds\": 30\n}\n",
+      "whole_literal_inverse_verified": true
+    },
+    {
+      "actual_outer_scope": "Whole saved object. Controls omit stdin/stream fields from that saved object; planned DEVNULL and helper stream destinations are separately bound, not retroactively inserted.",
+      "id": "04-changed-overlay",
+      "outer_sha256": "aac463c5a913024d6b51aabb5299d97d99586158fba40c2b390fefbc2dbbf1dc",
+      "outer_text": "{\n  \"argv\": [\n    \"${TIMEOUT}\",\n    \"--signal=TERM\",\n    \"--kill-after=10s\",\n    \"40s\",\n    \"${PYTHON}\",\n    \"-B\",\n    \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n    \"--request\",\n    \"${CONTROL_ROOT}/requests/04-changed-overlay.json\",\n    \"--receipt\",\n    \"${CONTROL_ROOT}/commands/04-changed-overlay/receipt.json\"\n  ],\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\"\n  },\n  \"parent_timeout_seconds\": 55,\n  \"returncode\": 1\n}\n",
+      "request_sha256": "f053d9e7cdf8c3fe1d5d64b60a7c74622c4680511f3409ac64717f8939d34e92",
+      "request_text": "{\n  \"argv\": [\n    \"${PYTHON}\",\n    \"-B\",\n    \"${CONTROL_PLAN}/fixtures/changed-overlay-material/prepare.py\",\n    \"--materials-sha256\",\n    \"03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754\",\n    \"stage\",\n    \"--repo\",\n    \"${REPO}\",\n    \"--base-root\",\n    \"${BASE_SOURCE}\",\n    \"--raw\",\n    \"${CONTROL_ROOT}/outputs/04-changed-overlay\",\n    \"--toolchain\",\n    \"${RUST_TOOLCHAIN}\",\n    \"--msrv-toolchain\",\n    \"${MSRV_TOOLCHAIN}\",\n    \"--user-home\",\n    \"${USER_HOME}\",\n    \"--cargo-home\",\n    \"${CARGO_HOME}\",\n    \"--cc\",\n    \"${CC}\"\n  ],\n  \"cpu_seconds\": 20,\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\",\n    \"TMPDIR\": \"${CONTROL_ROOT}/commands/04-changed-overlay/tmp\"\n  },\n  \"file_bytes\": 16777216,\n  \"stderr\": \"${CONTROL_ROOT}/commands/04-changed-overlay/stderr.txt\",\n  \"stdout\": \"${CONTROL_ROOT}/commands/04-changed-overlay/stdout.txt\",\n  \"wall_seconds\": 30\n}\n",
+      "whole_literal_inverse_verified": true
+    },
+    {
+      "actual_outer_scope": "Whole saved object. Controls omit stdin/stream fields from that saved object; planned DEVNULL and helper stream destinations are separately bound, not retroactively inserted.",
+      "id": "05-wrong-helper-byte",
+      "outer_sha256": "3420487e5fe15230b95e51adb0b056a4b718f6f75d94462cdaffb751a58433fb",
+      "outer_text": "{\n  \"argv\": [\n    \"${TIMEOUT}\",\n    \"--signal=TERM\",\n    \"--kill-after=10s\",\n    \"40s\",\n    \"${PYTHON}\",\n    \"-B\",\n    \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n    \"--request\",\n    \"${CONTROL_ROOT}/requests/05-wrong-helper-byte.json\",\n    \"--receipt\",\n    \"${CONTROL_ROOT}/commands/05-wrong-helper-byte/receipt.json\"\n  ],\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\"\n  },\n  \"parent_timeout_seconds\": 55,\n  \"returncode\": 1\n}\n",
+      "request_sha256": "16d089589a9ff4085b367c9bf9befbdda9b54a67fde13b5807fcc976082b11d0",
+      "request_text": "{\n  \"argv\": [\n    \"${PYTHON}\",\n    \"-B\",\n    \"${MATERIAL}/prepare.py\",\n    \"--materials-sha256\",\n    \"03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754\",\n    \"stage\",\n    \"--repo\",\n    \"${CONTROL_PLAN}/fixtures/wrong-helper-repo\",\n    \"--base-root\",\n    \"${BASE_SOURCE}\",\n    \"--raw\",\n    \"${CONTROL_PLAN}/fixtures/wrong-helper-repo/ignored/05-wrong-helper-byte\",\n    \"--toolchain\",\n    \"${RUST_TOOLCHAIN}\",\n    \"--msrv-toolchain\",\n    \"${MSRV_TOOLCHAIN}\",\n    \"--user-home\",\n    \"${USER_HOME}\",\n    \"--cargo-home\",\n    \"${CARGO_HOME}\",\n    \"--cc\",\n    \"${CC}\"\n  ],\n  \"cpu_seconds\": 20,\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\",\n    \"TMPDIR\": \"${CONTROL_ROOT}/commands/05-wrong-helper-byte/tmp\"\n  },\n  \"file_bytes\": 16777216,\n  \"stderr\": \"${CONTROL_ROOT}/commands/05-wrong-helper-byte/stderr.txt\",\n  \"stdout\": \"${CONTROL_ROOT}/commands/05-wrong-helper-byte/stdout.txt\",\n  \"wall_seconds\": 30\n}\n",
+      "whole_literal_inverse_verified": true
+    },
+    {
+      "actual_outer_scope": "Whole saved object. Controls omit stdin/stream fields from that saved object; planned DEVNULL and helper stream destinations are separately bound, not retroactively inserted.",
+      "id": "06-occupied-output",
+      "outer_sha256": "ffbdbe5dd17c70dd2140ccb8c243236525568fe0c81a340350143f963adfc7c0",
+      "outer_text": "{\n  \"argv\": [\n    \"${TIMEOUT}\",\n    \"--signal=TERM\",\n    \"--kill-after=10s\",\n    \"40s\",\n    \"${PYTHON}\",\n    \"-B\",\n    \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n    \"--request\",\n    \"${CONTROL_ROOT}/requests/06-occupied-output.json\",\n    \"--receipt\",\n    \"${CONTROL_ROOT}/commands/06-occupied-output/receipt.json\"\n  ],\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\"\n  },\n  \"parent_timeout_seconds\": 55,\n  \"returncode\": 1\n}\n",
+      "request_sha256": "e32cf9f800d40fa37e9ec34bc120cf0a012c43dca9b2d6dec324f5590993d61d",
+      "request_text": "{\n  \"argv\": [\n    \"${PYTHON}\",\n    \"-B\",\n    \"${MATERIAL}/prepare.py\",\n    \"--materials-sha256\",\n    \"03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754\",\n    \"stage\",\n    \"--repo\",\n    \"${REPO}\",\n    \"--base-root\",\n    \"${BASE_SOURCE}\",\n    \"--raw\",\n    \"${CONTROL_ROOT}/outputs/06-occupied-output\",\n    \"--toolchain\",\n    \"${RUST_TOOLCHAIN}\",\n    \"--msrv-toolchain\",\n    \"${MSRV_TOOLCHAIN}\",\n    \"--user-home\",\n    \"${USER_HOME}\",\n    \"--cargo-home\",\n    \"${CARGO_HOME}\",\n    \"--cc\",\n    \"${CC}\"\n  ],\n  \"cpu_seconds\": 20,\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\",\n    \"TMPDIR\": \"${CONTROL_ROOT}/commands/06-occupied-output/tmp\"\n  },\n  \"file_bytes\": 16777216,\n  \"stderr\": \"${CONTROL_ROOT}/commands/06-occupied-output/stderr.txt\",\n  \"stdout\": \"${CONTROL_ROOT}/commands/06-occupied-output/stdout.txt\",\n  \"wall_seconds\": 30\n}\n",
+      "whole_literal_inverse_verified": true
+    },
+    {
+      "actual_outer_scope": "Whole saved object. Controls omit stdin/stream fields from that saved object; planned DEVNULL and helper stream destinations are separately bound, not retroactively inserted.",
+      "id": "07-optimized-python",
+      "outer_sha256": "1957bc53328e5ba41e41da0f9a2e66be030a6eff6fc2c6425c069d31243b5a76",
+      "outer_text": "{\n  \"argv\": [\n    \"${TIMEOUT}\",\n    \"--signal=TERM\",\n    \"--kill-after=10s\",\n    \"40s\",\n    \"${PYTHON}\",\n    \"-B\",\n    \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n    \"--request\",\n    \"${CONTROL_ROOT}/requests/07-optimized-python.json\",\n    \"--receipt\",\n    \"${CONTROL_ROOT}/commands/07-optimized-python/receipt.json\"\n  ],\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\"\n  },\n  \"parent_timeout_seconds\": 55,\n  \"returncode\": 1\n}\n",
+      "request_sha256": "f9a2ebff1c8de080d88b76b6091ed5f99b72737d16ecf2707cdddfa73afc8abe",
+      "request_text": "{\n  \"argv\": [\n    \"${PYTHON}\",\n    \"-B\",\n    \"-O\",\n    \"${MATERIAL}/prepare.py\",\n    \"--materials-sha256\",\n    \"03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754\",\n    \"stage\",\n    \"--repo\",\n    \"${REPO}\",\n    \"--base-root\",\n    \"${BASE_SOURCE}\",\n    \"--raw\",\n    \"${CONTROL_ROOT}/outputs/07-optimized-python\",\n    \"--toolchain\",\n    \"${RUST_TOOLCHAIN}\",\n    \"--msrv-toolchain\",\n    \"${MSRV_TOOLCHAIN}\",\n    \"--user-home\",\n    \"${USER_HOME}\",\n    \"--cargo-home\",\n    \"${CARGO_HOME}\",\n    \"--cc\",\n    \"${CC}\"\n  ],\n  \"cpu_seconds\": 20,\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\",\n    \"TMPDIR\": \"${CONTROL_ROOT}/commands/07-optimized-python/tmp\"\n  },\n  \"file_bytes\": 16777216,\n  \"stderr\": \"${CONTROL_ROOT}/commands/07-optimized-python/stderr.txt\",\n  \"stdout\": \"${CONTROL_ROOT}/commands/07-optimized-python/stdout.txt\",\n  \"wall_seconds\": 30\n}\n",
+      "whole_literal_inverse_verified": true
+    },
+    {
+      "actual_outer_scope": "Whole saved object. Controls omit stdin/stream fields from that saved object; planned DEVNULL and helper stream destinations are separately bound, not retroactively inserted.",
+      "id": "08-wrong-prepared-digest",
+      "outer_sha256": "9925b26ad6547f28f31798ed471f4e4b6f74e1d5f5d4943e80b649cb0b6e20e6",
+      "outer_text": "{\n  \"argv\": [\n    \"${TIMEOUT}\",\n    \"--signal=TERM\",\n    \"--kill-after=10s\",\n    \"40s\",\n    \"${PYTHON}\",\n    \"-B\",\n    \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n    \"--request\",\n    \"${CONTROL_ROOT}/requests/08-wrong-prepared-digest.json\",\n    \"--receipt\",\n    \"${CONTROL_ROOT}/commands/08-wrong-prepared-digest/receipt.json\"\n  ],\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\"\n  },\n  \"parent_timeout_seconds\": 55,\n  \"returncode\": 1\n}\n",
+      "request_sha256": "8f156acdcf4e42926babd44bf4e061c6c5b14c4478aeaa7ee84bcb3d54c761d6",
+      "request_text": "{\n  \"argv\": [\n    \"${PYTHON}\",\n    \"-B\",\n    \"${MATERIAL}/prepare.py\",\n    \"--materials-sha256\",\n    \"03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754\",\n    \"request\",\n    \"--raw\",\n    \"${CONTROL_ROOT}/outputs/01-valid-stage\",\n    \"--prepared-sha256\",\n    \"0000000000000000000000000000000000000000000000000000000000000000\",\n    \"--phase\",\n    \"library\"\n  ],\n  \"cpu_seconds\": 20,\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\",\n    \"TMPDIR\": \"${CONTROL_ROOT}/commands/08-wrong-prepared-digest/tmp\"\n  },\n  \"file_bytes\": 16777216,\n  \"stderr\": \"${CONTROL_ROOT}/commands/08-wrong-prepared-digest/stderr.txt\",\n  \"stdout\": \"${CONTROL_ROOT}/commands/08-wrong-prepared-digest/stdout.txt\",\n  \"wall_seconds\": 30\n}\n",
+      "whole_literal_inverse_verified": true
+    },
+    {
+      "actual_outer_scope": "Whole saved object. Controls omit stdin/stream fields from that saved object; planned DEVNULL and helper stream destinations are separately bound, not retroactively inserted.",
+      "id": "09-request-parent-symlink",
+      "outer_sha256": "00cd7ed458953f4cf52bcd1314da17f64a38963f2e2658ff2f66ef4033315808",
+      "outer_text": "{\n  \"argv\": [\n    \"${TIMEOUT}\",\n    \"--signal=TERM\",\n    \"--kill-after=10s\",\n    \"40s\",\n    \"${PYTHON}\",\n    \"-B\",\n    \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n    \"--request\",\n    \"${CONTROL_ROOT}/requests/09-request-parent-symlink.json\",\n    \"--receipt\",\n    \"${CONTROL_ROOT}/commands/09-request-parent-symlink/receipt.json\"\n  ],\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\"\n  },\n  \"parent_timeout_seconds\": 55,\n  \"returncode\": 1\n}\n",
+      "request_sha256": "b1b50343380f1f155794e0a21f7061cc2609261bbeadb91af02c699e255c9cc6",
+      "request_text": "{\n  \"argv\": [\n    \"${PYTHON}\",\n    \"-B\",\n    \"${MATERIAL}/prepare.py\",\n    \"--materials-sha256\",\n    \"03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754\",\n    \"request\",\n    \"--raw\",\n    \"${CONTROL_ROOT}/outputs/01-valid-stage\",\n    \"--prepared-sha256\",\n    \"a804b70581453ee494e39d029018ee60b892a7a9bcb76b97e61211aab421adfd\",\n    \"--phase\",\n    \"compile\"\n  ],\n  \"cpu_seconds\": 20,\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\",\n    \"TMPDIR\": \"${CONTROL_ROOT}/commands/09-request-parent-symlink/tmp\"\n  },\n  \"file_bytes\": 16777216,\n  \"stderr\": \"${CONTROL_ROOT}/commands/09-request-parent-symlink/stderr.txt\",\n  \"stdout\": \"${CONTROL_ROOT}/commands/09-request-parent-symlink/stdout.txt\",\n  \"wall_seconds\": 30\n}\n",
+      "whole_literal_inverse_verified": true
+    },
+    {
+      "actual_outer_scope": "Whole saved stage binding plus returncode; binding retains original DEVNULL and helper stream destinations.",
+      "id": "10-stage-source",
+      "outer_sha256": "1a5e697164d336c3d9f66a83a43d616cbab9c105d79c751e94f3c324bb75d374",
+      "outer_text": "{\n  \"binding\": {\n    \"actual_request\": \"${STAGING_ROOT}/requests/stage.json\",\n    \"id\": \"10-stage-source\",\n    \"only_later_substitution\": null,\n    \"outer_argv\": [\n      \"${TIMEOUT}\",\n      \"--signal=TERM\",\n      \"--kill-after=10s\",\n      \"40s\",\n      \"${PYTHON}\",\n      \"-B\",\n      \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n      \"--request\",\n      \"${STAGING_ROOT}/requests/stage.json\",\n      \"--receipt\",\n      \"${STAGING_ROOT}/commands/stage/receipt.json\"\n    ],\n    \"outer_cwd\": \"${REPO}\",\n    \"outer_env\": {\n      \"LC_ALL\": \"C\",\n      \"PATH\": \"/usr/bin:/bin\",\n      \"PYTHONDONTWRITEBYTECODE\": \"1\"\n    },\n    \"parent_timeout_seconds\": 55,\n    \"prerequisite\": \"All original nine control results independently accepted and fresh distinct output owner admitted; no generated compiler/runtime request executed.\",\n    \"request_template\": \"${CONTROL_PLAN}/requests/10-stage-source.template.json\",\n    \"request_template_sha256\": \"5ba5a24b488e7a08f809cf0751ef9d614fcbe4a0b5a5678d2dcc6245aef0497d\",\n    \"stderr\": \"${STAGING_ROOT}/commands/stage/helper.stderr\",\n    \"stdin\": \"DEVNULL\",\n    \"stdout\": \"${STAGING_ROOT}/commands/stage/helper.stdout\"\n  },\n  \"returncode\": 0\n}\n",
+      "request_sha256": "5ba5a24b488e7a08f809cf0751ef9d614fcbe4a0b5a5678d2dcc6245aef0497d",
+      "request_text": "{\n  \"argv\": [\n    \"${PYTHON}\",\n    \"-B\",\n    \"${MATERIAL}/prepare.py\",\n    \"--materials-sha256\",\n    \"03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754\",\n    \"stage\",\n    \"--repo\",\n    \"${REPO}\",\n    \"--base-root\",\n    \"${BASE_SOURCE}\",\n    \"--raw\",\n    \"${STAGING_ROOT}/outputs/stage-v1\",\n    \"--toolchain\",\n    \"${RUST_TOOLCHAIN}\",\n    \"--msrv-toolchain\",\n    \"${MSRV_TOOLCHAIN}\",\n    \"--user-home\",\n    \"${USER_HOME}\",\n    \"--cargo-home\",\n    \"${CARGO_HOME}\",\n    \"--cc\",\n    \"${CC}\"\n  ],\n  \"cpu_seconds\": 20,\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\",\n    \"TMPDIR\": \"${STAGING_ROOT}/commands/stage/tmp\"\n  },\n  \"file_bytes\": 16777216,\n  \"stderr\": \"${STAGING_ROOT}/commands/stage/stderr.txt\",\n  \"stdout\": \"${STAGING_ROOT}/commands/stage/stdout.txt\",\n  \"wall_seconds\": 30\n}\n",
+      "whole_literal_inverse_verified": true
+    }
+  ],
+  "independent_reviews": {
+    "controls": "4e79c35beb7f79e47414a90e68b8a303cbd70eb132fd025a9cb815e2e51e8180",
+    "material": "bbf8220ebca2ca9ab60fb6585cbcfc51af7bb6c8ce28f738c058f113b817dc97",
+    "original_plan": "02b1fa592ca26451fa7527eb4c584f142870d08417eae72cb5bbaf7e5fc3826b",
+    "stage": "3b09798882fc79d09300dc70ffd33a85bfafcf9f78beeb03e413c8975e07c9f4"
+  },
+  "input_scope": {
+    "configuration_rows": 24,
+    "explicit_cache_epoch_sha256": "45793263969bc71cdaaf91b17f4775da4776c626dacf0cb3fe2446877c2a234b",
+    "immutable_hashes": 16450,
+    "selected_identities": 1355,
+    "snapshot_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+    "source_and_tool_closure_limit": "Enumerated selected observations, not a complete host/tool closure or continuous attestation.",
+    "source_rows": 523
+  },
+  "limitations": [
+    "The original collector remains exit one; supplemental acceptance is not an unchanged collector pass.",
+    "The seventh negative control preserves its exact exit-one refusal; absent original postcheck/result records remain absent.",
+    "The clean stage is source copying only and grants no generated-request execution or source-revision qualification.",
+    "Earlier native, diagnostic and formatting failures remain in their separate records. Broader actual validation is reported separately.",
+    "Helper bounds and clean ECHILD evidence apply to the supervised process tree, not cgroup-wide resource accounting."
+  ],
+  "qualification_complete": false,
+  "raw_capture_manifest_sha256": "3f3bccd5e03630e9492e12b09565eb7d167ada553b54a407ee8f1caffdd1b669",
+  "report_scope": "Ten actual helper invocations: nine finite preparation controls and one separately admitted clean source stage. No generated compiler/model/native workload.",
+  "reproduction": {
+    "base_revision_is_not_tested_revision": true,
+    "fixture_data_scope": "The original frozen fixture/setup descriptions below are historical preparation data. Reconstruct the exact fixtures and fresh owners; preserve a failed literal collector outcome rather than silently changing its global basename assertion. No saved controller implementation is exported or newly authorized.",
+    "fresh_output_only": true,
+    "matching_base_revision": "a7e6a43625234fff16624c35a911b6e2e7916e7f",
+    "material_sha256": "03302856a3042705b5b318a4df27302af4dd8b5e08c53a278ae4b88aa1742754",
+    "prepare_sha256": "ec946bf733f1fb6380835971be97f09d6bc6d60d289063f5aa46b2eacf5fcc01",
+    "proposal_manifest_sha256": "428fddbe2fa2d44fcf3cb9651908696b044aac6cd8e16a4d5fdb9557c2d13971",
+    "public_recipe_map_sha256": "9f641c75aeb0bac5746c96d8873e29296126df449b6cdc5007459f6f8f0ed635",
+    "recipe": "../../frontend-native-gate-clock/README.md",
+    "scope": "Unchanged 57-file material v3 and original bounded-helper requests. The controls exercise source copying/rendering only, with exact fixtures below. No new runner or generated workload execution. Fresh source/tool/output admission remains necessary.",
+    "source_map_sha256": "d31873bdca925b5ff8b35da72eac25d9e3531f43afe521defe87f3cad252a595",
+    "source_reconstruction": "510 exact selected base files plus 13 overlays recover the 523-file private source map. The historical evaluation README overlay belongs only in the private workcopy."
+  },
+  "required": {
+    "accepted_preparations": 2,
+    "clean_stage_regular_files": 525,
+    "control_helpers": 9,
+    "expected_refusals": 7,
+    "separate_source_stage_helpers": 1,
+    "source_files": 523
+  },
+  "root_setup": {
+    "create_before_controls": [
+      "requests",
+      "outputs",
+      "commands/01-valid-stage/tmp",
+      "commands/02-valid-request/tmp",
+      "commands/03-changed-base/tmp",
+      "commands/04-changed-overlay/tmp",
+      "commands/05-wrong-helper-byte/tmp",
+      "commands/06-occupied-output/tmp",
+      "commands/07-optimized-python/tmp",
+      "commands/08-wrong-prepared-digest/tmp",
+      "commands/09-request-parent-symlink/tmp"
+    ],
+    "distinct_stage_setup": {
+      "directories": [
+        "requests",
+        "commands/stage/tmp",
+        "outputs"
+      ],
+      "expected_stage_files": 525,
+      "raw_must_remain_absent": "${STAGING_ROOT}/outputs/stage-v1",
+      "root": "${STAGING_ROOT}"
+    },
+    "do_not_create_negative_output_roots": true,
+    "do_not_preopen_helper_outputs_or_receipts": true,
+    "no_retry_no_generated_workloads": true,
+    "occupied_sentinel": {
+      "path": "${CONTROL_ROOT}/outputs/06-occupied-output",
+      "sentinel_bytes_utf8": "occupied-output\n",
+      "sentinel_name": "sentinel"
+    },
+    "preserve_all_partial_outputs_and_stop_on_any_unexpected_result": true,
+    "root_must_initially_be_absent": "${CONTROL_ROOT}",
+    "root_owned_request_copies": {
+      "concrete_before_first_launch": [
+        "01-valid-stage",
+        "03-changed-base",
+        "04-changed-overlay",
+        "05-wrong-helper-byte",
+        "06-occupied-output",
+        "07-optimized-python",
+        "08-wrong-prepared-digest"
+      ],
+      "only_after_actual_positive_stage": [
+        "02-valid-request",
+        "09-request-parent-symlink"
+      ],
+      "required_actual_authority": "Exact actual stage receipt/output/tree including computed prepared hash; only then replace the single unresolved digest in02/09."
+    },
+    "stage_root_must_initially_be_absent": "${STAGING_ROOT}",
+    "status": "ROOT_DATA_ONLY_SETUP_REQUIRED_BEFORE_ADMISSION",
+    "symlink_transition": {
+      "after": "02-valid-request and 08-wrong-prepared-digest actual results independently checked",
+      "retain_original_directory_as": "${CONTROL_ROOT}/retained-library-requests",
+      "rules": [
+        "This is an explicitly recorded test-fixture mutation, not an epoch refresh.",
+        "Move only the owned requests directory containing the two exact generated library files; preserve bytes/inodes and bind their retained paths.",
+        "Create a symlink at RAW/requests to the controlled external-request-sentinel directory, itself still inside REPO/ignored. Do not write outside the slot.",
+        "No compiler/source/material mutation; freeze full before map and symlink target/owner before invoking the negative request.",
+        "After refusal preserve the fixture and all captures; no retry or automatic restoration."
+      ],
+      "sentinel_bytes_utf8": "outside-raw-owned-test-sentinel\n",
+      "sentinel_name": "sentinel",
+      "source": "${CONTROL_ROOT}/outputs/01-valid-stage/requests",
+      "symlink_target": "${CONTROL_ROOT}/external-request-sentinel"
+    }
+  },
+  "run_id": "frontend-native-gate-clock-preparer-20261025",
+  "saved_phase_snapshots": [
+    {
+      "command_id": "01-valid-stage",
+      "complete_input_equality": true,
+      "current_target_observation_claim": false,
+      "inputs_after_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "inputs_before_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "saved_target_equality": true,
+      "target_after_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717",
+      "target_before_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717"
+    },
+    {
+      "command_id": "02-valid-request",
+      "complete_input_equality": true,
+      "current_target_observation_claim": false,
+      "inputs_after_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "inputs_before_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "saved_target_equality": true,
+      "target_after_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717",
+      "target_before_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717"
+    },
+    {
+      "command_id": "03-changed-base",
+      "complete_input_equality": true,
+      "current_target_observation_claim": false,
+      "inputs_after_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "inputs_before_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "saved_target_equality": true,
+      "target_after_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717",
+      "target_before_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717"
+    },
+    {
+      "command_id": "04-changed-overlay",
+      "complete_input_equality": true,
+      "current_target_observation_claim": false,
+      "inputs_after_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "inputs_before_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "saved_target_equality": true,
+      "target_after_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717",
+      "target_before_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717"
+    },
+    {
+      "command_id": "05-wrong-helper-byte",
+      "complete_input_equality": true,
+      "current_target_observation_claim": false,
+      "inputs_after_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "inputs_before_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "saved_target_equality": true,
+      "target_after_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717",
+      "target_before_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717"
+    },
+    {
+      "command_id": "06-occupied-output",
+      "complete_input_equality": true,
+      "current_target_observation_claim": false,
+      "inputs_after_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "inputs_before_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "saved_target_equality": true,
+      "target_after_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717",
+      "target_before_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717"
+    },
+    {
+      "command_id": "07-optimized-python",
+      "complete_input_equality": true,
+      "current_target_observation_claim": false,
+      "inputs_after_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "inputs_before_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "saved_target_equality": true,
+      "target_after_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717",
+      "target_before_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717"
+    },
+    {
+      "command_id": "08-wrong-prepared-digest",
+      "complete_input_equality": true,
+      "current_target_observation_claim": false,
+      "inputs_after_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "inputs_before_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "saved_target_equality": true,
+      "target_after_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717",
+      "target_before_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717"
+    },
+    {
+      "command_id": "09-request-parent-symlink",
+      "complete_input_equality": true,
+      "current_target_observation_claim": false,
+      "inputs_after_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "inputs_before_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "saved_target_equality": true,
+      "target_after_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717",
+      "target_before_sha256": "82584f8ae4fb03e3cf3fdeb08f521f6e38c9bacba2e2bf577c55b79cedd17717"
+    },
+    {
+      "command_id": "10-stage-source",
+      "complete_input_equality": true,
+      "current_target_observation_claim": false,
+      "inputs_after_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "inputs_before_sha256": "96692e45a96fb81812bbfe78f4d1bd5e10428f262f666063d6ed77d67b61ceec",
+      "saved_target_equality": true,
+      "target_after_sha256": "3c1b58a7b6d01e4c65f1985864570d8dcd9aa740ebfa6a2648ddbb5fe3616f75",
+      "target_before_sha256": "3c1b58a7b6d01e4c65f1985864570d8dcd9aa740ebfa6a2648ddbb5fe3616f75"
+    }
+  ],
+  "schema_version": 1,
+  "scope_complete": true,
+  "scope_complete_meaning": "The ten reported helper records and separate adjudication/stage evidence are closed. The original collector still failed; no unchanged collector pass or broader qualification follows.",
+  "source": {
+    "kind": "source_snapshot",
+    "matching_later_revision": null,
+    "source_files": 523,
+    "source_id": "frontend-native-gate-clock-v1",
+    "source_manifest_sha256": "aee716df583ff3b77362a7246822262186ca88cbe15c894d7fb6eac83f156258",
+    "source_map_sha256": "d31873bdca925b5ff8b35da72eac25d9e3531f43afe521defe87f3cad252a595",
+    "tested_revision": null
+  },
+  "status": "EXPECTED_HELPER_BEHAVIORS_ACCEPTED_WITH_PRESERVED_COLLECTOR_FAILURE; DISTINCT_STAGE_CLOSED",
+  "suite": "gate-clock request-only preparer controls and distinct staging",
+  "tested_revision": null,
+  "tools": [
+    {
+      "path": "${PYTHON}",
+      "resolved": "${PYTHON}",
+      "role": "python3.9",
+      "scope": "Saved selected byte/resolution identity; no new version query or complete tool closure claimed.",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "version": null
+    },
+    {
+      "path": "${TIMEOUT}",
+      "resolved": "${TIMEOUT}",
+      "role": "timeout",
+      "scope": "Saved selected byte/resolution identity; no new version query or complete tool closure claimed.",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+      "version": null
+    },
+    {
+      "path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "resolved": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "role": "bounded_command.py",
+      "scope": "Saved selected byte/resolution identity; no new version query or complete tool closure claimed.",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "version": null
+    },
+    {
+      "path": "${MATERIAL}/prepare.py",
+      "role": "prepare.py",
+      "scope": "Unchanged authenticated request-only preparer; deliberately modified helper fixture is data and never executes.",
+      "sha256": "ec946bf733f1fb6380835971be97f09d6bc6d60d289063f5aa46b2eacf5fcc01"
+    }
+  ]
+}

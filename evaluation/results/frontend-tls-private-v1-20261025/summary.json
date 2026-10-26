@@ -1,0 +1,651 @@
+{
+  "artifact_evidence": {
+    "initial_archive_count": 1665,
+    "initial_archive_sha256": "ce781893d1f58125cac7527f019a3401b2713d2ea0d491e0d77d6c4a38176ef4",
+    "initial_binding_sha256": "9eabf7debe6711e3ccccf7c03ff3c3b5dbdc347ec57c9e12205258c87ad5d303",
+    "later_archive_count": 126,
+    "later_archive_sha256": "4d737faacb79f588f995b92393a214d2c10147be73eb1a987df4e0d6acdc6b26",
+    "model_test_bytes": 24866520,
+    "model_test_sha256": "c55c8e2bb67a7e3efb7c10088e86e67639fda3e88309f83924e69af49febc194"
+  },
+  "claims": {
+    "1_page_admission_cross_modification_free": "unqualified",
+    "2_unprivileged_cpuid_rdtsc_rdrand_rdseed_rdpid_first_instruction": "unqualified",
+    "3_in_place_preemption_clock": "unqualified",
+    "4_systematic_every_tactic": "unqualified_by_this_suite"
+  },
+  "command_bindings": [
+    {
+      "admission_sha256": "4653705b14ce4038291c41df5d7824789f8cc89a9066a6b172f9096c01e52638",
+      "after_sha256": "8f9843a9db77f22cf9fa33d9fb7fcc1dd5647accf9d6e486201a074b32377cbf",
+      "before_sha256": "8f9843a9db77f22cf9fa33d9fb7fcc1dd5647accf9d6e486201a074b32377cbf",
+      "id": "library",
+      "outer": {
+        "cwd": "${WORKSPACE}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/library/tmp"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${FIRST_REQUESTS}/library.json",
+        "--receipt",
+        "${RAW}/library/receipt.json"
+      ],
+      "outer_record_sha256": "f9de1bb65fb2b7a46d45cc5c0254bc1f09ea783fc623a19fd7f71415a9e55b1f",
+      "outer_result": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${FIRST_REQUESTS}/library.json",
+          "--receipt",
+          "${RAW}/library/receipt.json"
+        ],
+        "cwd": "${WORKSPACE}",
+        "elapsed_seconds": 3.420606697211042,
+        "environment": {
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/library/tmp"
+        },
+        "exit": 0,
+        "parent_timeout_seconds": 115,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "receipt_sha256": "10ffc59eae7d9f8a7e30a516b335c718b806edbbc53015924236d1b47517ae6e",
+      "request": {
+        "argv": [
+          "${TOOLCHAIN}/bin/cargo",
+          "build",
+          "--manifest-path",
+          "${WORKSPACE}/Cargo.toml",
+          "-p",
+          "rapid-profiler",
+          "--lib",
+          "--offline",
+          "--locked",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${WORKSPACE}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUSTDOCFLAGS": "-Dwarnings",
+          "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${RAW}/library/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${RAW}/library/stderr.txt",
+        "stdout": "${RAW}/library/stdout.txt",
+        "wall_seconds": 90
+      },
+      "request_sha256": "8ace3d60e0d873d0913fc9ee9bfbda22e4645a56def9e30e10cc7696fd805f58",
+      "result_sha256": "52a16d42a17340d6aa2b17369fdfcbded439f1aa88e63e012943148d86480082"
+    },
+    {
+      "admission_sha256": "f80ff7f5ad5e166b47335cb5ff8706bc77445719ab12a91bc21e0249c8860a0d",
+      "after_sha256": "8f9843a9db77f22cf9fa33d9fb7fcc1dd5647accf9d6e486201a074b32377cbf",
+      "before_sha256": "8f9843a9db77f22cf9fa33d9fb7fcc1dd5647accf9d6e486201a074b32377cbf",
+      "id": "compile",
+      "outer": {
+        "cwd": "${WORKSPACE}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/compile/tmp"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${FIRST_REQUESTS}/compile.json",
+        "--receipt",
+        "${RAW}/compile/receipt.json"
+      ],
+      "outer_record_sha256": "8ae2fabeeadc573f0cd26cbb9e3316ec0748230f2ae8340f28b1c32b5ba97fb8",
+      "outer_result": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${FIRST_REQUESTS}/compile.json",
+          "--receipt",
+          "${RAW}/compile/receipt.json"
+        ],
+        "cwd": "${WORKSPACE}",
+        "elapsed_seconds": 2.519309093011543,
+        "environment": {
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/compile/tmp"
+        },
+        "exit": 0,
+        "parent_timeout_seconds": 115,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "receipt_sha256": "6a2eed8fc6be58639fb22fdb9cc301a50f9039360ead0aeabb967caf53e97cae",
+      "request": {
+        "argv": [
+          "${TOOLCHAIN}/bin/cargo",
+          "test",
+          "--manifest-path",
+          "${WORKSPACE}/Cargo.toml",
+          "-p",
+          "rapid-profiler",
+          "--lib",
+          "--no-run",
+          "--offline",
+          "--locked",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${WORKSPACE}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUSTDOCFLAGS": "-Dwarnings",
+          "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${RAW}/compile/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${RAW}/compile/stderr.txt",
+        "stdout": "${RAW}/compile/stdout.txt",
+        "wall_seconds": 90
+      },
+      "request_sha256": "c9d1d707c24b4c8325e99db60730df6670ae5feb17f9e768e55e7e2be0da62e1",
+      "result_sha256": "0522e473525568773e4b053b6dfbe7e24d6b73204a0ac9b200aee89660c2e766"
+    },
+    {
+      "admission_sha256": "2d9dec7d12777eacd4477733ccc1b60327fb288d709a09333465f5a8a5cc459e",
+      "after_sha256": "3d9b3ab23791ebd2ef548e40df2be1b145036528a545a88ec28387ff8e718e20",
+      "before_sha256": "3d9b3ab23791ebd2ef548e40df2be1b145036528a545a88ec28387ff8e718e20",
+      "id": "list",
+      "outer": {
+        "cwd": "${WORKSPACE}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/list/tmp"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${REMAINING_REQUESTS}/list.json",
+        "--receipt",
+        "${RAW}/list/receipt.json"
+      ],
+      "outer_record_sha256": "835268dece1a6b43dd9eddc0093136907cb0bb9fdb4e9b693edccc6ce1c5d06c",
+      "outer_result": {
+        "elapsed_seconds": 0.21442753402516246,
+        "exit": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "receipt_sha256": "d24b6780ae1ac50032b3a5195f8babf2433fd579ee4138a17cd1c3e6827d29ef",
+      "request": {
+        "argv": [
+          "${RAW}/artifacts/model-tests",
+          "--list"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${WORKSPACE}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${RAW}/list/tmp"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW}/list/stderr.txt",
+        "stdout": "${RAW}/list/stdout.txt",
+        "wall_seconds": 30
+      },
+      "request_sha256": "b173c03db4d84c1d2a32039d7469e9544e943e393af4ac05dfb11ed4bf088d52",
+      "result_sha256": "90953e0b67f60cfaca605c63e96241d722134cb537f71c58e74ec23d9d86af7d"
+    },
+    {
+      "admission_sha256": "1dfc2e1c46b8088a77aa9a49acaf5e4d7c441ddf43a69226ad6b7a4fe5551a5e",
+      "after_sha256": "3d9b3ab23791ebd2ef548e40df2be1b145036528a545a88ec28387ff8e718e20",
+      "before_sha256": "3d9b3ab23791ebd2ef548e40df2be1b145036528a545a88ec28387ff8e718e20",
+      "id": "models",
+      "outer": {
+        "cwd": "${WORKSPACE}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/models/tmp"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${REMAINING_REQUESTS}/models.json",
+        "--receipt",
+        "${RAW}/models/receipt.json"
+      ],
+      "outer_record_sha256": "3a01a815ec818310fbd03fb4682409fd32671eb382ac5b2865bd1ec168825f64",
+      "outer_result": {
+        "elapsed_seconds": 0.21429599402472377,
+        "exit": 0,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "receipt_sha256": "a89aba58274455b6dbaed435fd5daeefec6eacff5fa80b9163190d1ae8ffc279",
+      "request": {
+        "argv": [
+          "${RAW}/artifacts/model-tests",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${WORKSPACE}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${RAW}/models/tmp"
+        },
+        "file_bytes": 1048576,
+        "stderr": "${RAW}/models/stderr.txt",
+        "stdout": "${RAW}/models/stdout.txt",
+        "wall_seconds": 30
+      },
+      "request_sha256": "b91819f37b555f43a4646cd406655a9c54d59af53c754f5136c1a2ccc7ad0bed",
+      "result_sha256": "f096b5bad2fbc4e699a90cbf85e6f8b3cfd26ef34a2f04d2411acb6a9183c283"
+    },
+    {
+      "admission_sha256": "e7e9a04a6f8fde8de3f72c152cc5ae12563ee75bc91e0363d0cf7910fa79feac",
+      "after_sha256": "3d9b3ab23791ebd2ef548e40df2be1b145036528a545a88ec28387ff8e718e20",
+      "before_sha256": "3d9b3ab23791ebd2ef548e40df2be1b145036528a545a88ec28387ff8e718e20",
+      "id": "clippy",
+      "outer": {
+        "cwd": "${WORKSPACE}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/clippy/tmp"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "outer_argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${REMAINING_REQUESTS}/clippy.json",
+        "--receipt",
+        "${RAW}/clippy/receipt.json"
+      ],
+      "outer_record_sha256": "d0d16e88a6110e104ada9afcd2086eb5a75b23e7e27f69c4579a0af21270fd6f",
+      "outer_result": {
+        "elapsed_seconds": 2.468241348862648,
+        "exit": 1,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "652235f86c98722a73ae8f6ec6d573b1f0b159f60d0028ca61f52deda2587db0"
+      },
+      "receipt_sha256": "4e907cff13c554c91e25c13101efa262d454895b4a00644168c39bdcb0cee6da",
+      "request": {
+        "argv": [
+          "${TOOLCHAIN}/bin/cargo",
+          "clippy",
+          "--manifest-path",
+          "${WORKSPACE}/Cargo.toml",
+          "-p",
+          "rapid-profiler",
+          "--all-targets",
+          "--all-features",
+          "--offline",
+          "--locked",
+          "--message-format=json",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${WORKSPACE}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUSTDOCFLAGS": "-Dwarnings",
+          "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${RAW}/clippy/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${RAW}/clippy/stderr.txt",
+        "stdout": "${RAW}/clippy/stdout.txt",
+        "wall_seconds": 90
+      },
+      "request_sha256": "fff9f7e9aace54e6ca94e9b881dad2c1d99da9276fbe51b34a176396a851e03e",
+      "result_sha256": "7ff77896db8f69f5d0f5080a9657bc650e5da0be65e468e4ce111bf8b1c4f798"
+    }
+  ],
+  "correction": null,
+  "counts": {
+    "distinct_doc_inventory": 10,
+    "distinct_model_inventory": 74,
+    "docs_not_run": 10,
+    "docs_passed": 0,
+    "main_commands_executed": 5,
+    "main_commands_failed": 1,
+    "main_commands_passed": 4,
+    "models_failed": 0,
+    "models_filtered": 0,
+    "models_ignored": 0,
+    "models_passed": 74
+  },
+  "executed_commands": [
+    "library",
+    "compile",
+    "list",
+    "models",
+    "clippy"
+  ],
+  "expected_panics": [
+    {
+      "case": "frontend::tests::g10_registry_poison_refuses_before_slot_mutation",
+      "location": "tools/rapid-profiler/src/frontend/tests.rs:926:9",
+      "message": "required registry poison calibration",
+      "observed": "caught and required subsequent assertions passed"
+    },
+    {
+      "case": "frontend_tls::tests::tls_p3_nested_panic_cancels_exact_frames_then_same_registration_recovers",
+      "location": "tools/rapid-profiler/src/frontend_tls/tests.rs:506:21",
+      "message": "required TLS ordinary-unwind fixture",
+      "observed": "caught and required subsequent assertions passed"
+    }
+  ],
+  "failure": {
+    "diagnostic": "clippy::duplicated_attributes",
+    "diagnostic_records": 2,
+    "docs_and_msrv": "not_run",
+    "exit": 101,
+    "inner_duplicate": "tools/rapid-profiler/src/frontend_tls.rs:19",
+    "outer_first_definition": "tools/rapid-profiler/src/lib.rs:23",
+    "phase": "clippy"
+  },
+  "format_receipt_sha256": "fdb8cda10b25d08ef057567895953cd8be1fa50d7b2da03bb44e428f7d769f34",
+  "format_result_sha256": "d60785a51e19f95650f3254287e159b93efa6db1abe808554e8e9ec08e6f752a",
+  "format_scope": "V1 predecessor formatter passed separately; v2 removes one standalone duplicate outer attribute under source review. No v2 formatter execution claimed.",
+  "hardware": {
+    "cpuinfo_sha256": "920b78994d6064444f22bc35717aaacc3fcdbc10b53cdb637dffbf4145a4c00e",
+    "label": "AMD EPYC Zen 5 dev host",
+    "observation_phase": "Source-only prequalification observation; not per-launch hardware attestation.",
+    "observation_record_sha256": "770ac3aad63ce6bde0d9354bb38dcaf05350bba6eaa42a79e8890c0a7f073c01",
+    "observation_scope": "Source-only prequalification observation; not a controlled performance benchmark or future per-launch receipt.",
+    "observed_at_utc": "2026-10-25T21:47:24.628545+00:00"
+  },
+  "identity_scope": {
+    "PATH_lookups": 6,
+    "config_permission_denials_are_not_absence": true,
+    "configuration_observations": 24,
+    "initial_archives_rechecked_for_remaining_phases": 1665,
+    "no_epoch_refresh": true,
+    "per_launch_file_identities": 1718,
+    "registry_files": 995,
+    "selected_scope_not_complete_runtime_or_child_clang_closure": true,
+    "selected_tool_files": 209,
+    "six_prior_version_roles_unchanged": true,
+    "source_files": 514
+  },
+  "inventory": {
+    "inventory_sha256": "de9430e5163d6333beeddf220bb35af8a8a2e43f84fab57af9bf53aeed70d0a3",
+    "model_and_doc_results_are_distinct_units": true,
+    "new_E0277_docs": 2,
+    "new_invariant_cases": 2,
+    "new_models": 14,
+    "new_positive_tls_cohorts": 4,
+    "new_typed_refusal_cases": 8,
+    "old_docs": 8,
+    "old_models": 60
+  },
+  "later_public_record_does_not_change_private_tested_revision": true,
+  "later_public_required_record": "evaluation/results/required-4c754df8-20261025/summary.json",
+  "planned_commands": [
+    "library",
+    "compile",
+    "list",
+    "models",
+    "clippy",
+    "docs",
+    "msrv"
+  ],
+  "predecessor_failure_preserved": false,
+  "private_closed_review": {
+    "binding_sha256": "3768b11de94051d88124f2bdd3812596e82b20eaebf9999e02a3eb76945e00b9",
+    "checks_sha256": "04c116f097d44421f123b005eb3b197dbc7cd52ec7f62fb5ac0abe1ff1269fbe",
+    "review_sha256": "f678b7ba4325ada68b612c7e82963aeaac503b0d5a03bd595a7e000c0445c439"
+  },
+  "report_authorship": "The request/artifact packaging author prepared this sanitized report from root executions and separately frozen read/hash reviews. TLS implementation and capture-contract authorship/reviews are separately retained. This new reporting/preparation script has not run.",
+  "reproduction": "evaluation/frontend-tls-private/README.md",
+  "run_id": "frontend-tls-private-v1-20261025",
+  "schema_version": 1,
+  "scope_limitations": [
+    "Safe Rust TLS registration/owned tickets with synthetic slots and ordinary Rust thread/panic teardown only.",
+    "No machine-return-slot rewriting, native entry/exit, ABI/CET, signal/exception/longjmp, preemption clock, module reclamation or full A5 qualification.",
+    "The inherited seven interval/PMU tests retain their existing conditions and do not prove PMU availability.",
+    "The v1 and v2 repetitions are not summed as unique coverage; later public source/gates are separate.",
+    "Cargo metadata and archived C fixture bytes do not establish complete per-child Clang/linker provenance."
+  ],
+  "source_id": "private_formatted_snapshot",
+  "sources": {
+    "private_formatted_snapshot": {
+      "base_revision": "9098a3d74309fd445fd6f56a6048c1ce517bb81f",
+      "file_count": 514,
+      "kind": "source_snapshot",
+      "source_manifest_sha256": "7e23c7666333ffc1af385b1525fe039b85f55ab1424bc8231d66a5d59698ac97",
+      "source_scope": "Private workspace copied from base9098 with four exact TLS overlay files; no execution at a later public revision.",
+      "source_tree_sha256": "61cd821519d105c6ac72ca6e551b4320715d8ccb3650bec5a76fc4f059014910",
+      "tested_revision": null
+    }
+  },
+  "status": "fail",
+  "suite": "private-safe-rust-tls-bridge",
+  "tested_revision": null,
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tool_version_record": "evaluation/results/frontend-tool-versions-20261025.json",
+  "tool_version_scope": "Exact prior six query identities joined; no new version commands during TLS qualification. Other role versions unobserved.",
+  "tools": {
+    "cargo": {
+      "path": "${TOOLCHAIN}/bin/cargo",
+      "resolved": "${TOOLCHAIN}/bin/cargo",
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cargo_clippy": {
+      "path": "${TOOLCHAIN}/bin/cargo-clippy",
+      "resolved": "${TOOLCHAIN}/bin/cargo-clippy",
+      "sha256": "a0a3808dddb32f525601e608740ee7c1c5df86db4a7183ea945449f60d29509d"
+    },
+    "cargo_fmt": {
+      "path": "${TOOLCHAIN}/bin/cargo-fmt",
+      "resolved": "${TOOLCHAIN}/bin/cargo-fmt",
+      "sha256": "07ce638a5be73e97defbf0864f32a64ed40a0b7682b85625e68790f9e68d19e9"
+    },
+    "cc": {
+      "path": "/usr/bin/cc",
+      "resolved": "/usr/bin/gcc",
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc_resolved": {
+      "path": "/usr/bin/gcc",
+      "resolved": "/usr/bin/gcc",
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "clang": {
+      "path": "/usr/bin/clang",
+      "resolved": "/usr/bin/clang-22",
+      "sha256": "953ea1ca38bec62e4b2b9c916db4d76d5a48edb91e0cce0d5c4d7efe62e34b97"
+    },
+    "clang_resolved": {
+      "path": "/usr/bin/clang-22",
+      "resolved": "/usr/bin/clang-22",
+      "sha256": "953ea1ca38bec62e4b2b9c916db4d76d5a48edb91e0cce0d5c4d7efe62e34b97"
+    },
+    "clippy_driver": {
+      "path": "${TOOLCHAIN}/bin/clippy-driver",
+      "resolved": "${TOOLCHAIN}/bin/clippy-driver",
+      "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373"
+    },
+    "helper_python": {
+      "path": "/usr/bin/python3.9",
+      "resolved": "/usr/bin/python3.9",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    "helper_source": {
+      "path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "resolved": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    },
+    "ld": {
+      "path": "/usr/bin/ld",
+      "resolved": "/usr/bin/ld.bfd",
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "ld_resolved": {
+      "path": "/usr/bin/ld.bfd",
+      "resolved": "/usr/bin/ld.bfd",
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "msrv_cargo": {
+      "path": "${MSRV_TOOLCHAIN}/bin/cargo",
+      "resolved": "${MSRV_TOOLCHAIN}/bin/cargo",
+      "sha256": "1815642e0eaa0cf4ea86c3ba4299c21c4f2d68ae4a427881ea1f33070b2aae9b"
+    },
+    "msrv_rustc": {
+      "path": "${MSRV_TOOLCHAIN}/bin/rustc",
+      "resolved": "${MSRV_TOOLCHAIN}/bin/rustc",
+      "sha256": "07d5a76ba859dc045883efd538d96c7b86cf10166f4e834afbb5981012b461c3"
+    },
+    "msrv_rustdoc": {
+      "path": "${MSRV_TOOLCHAIN}/bin/rustdoc",
+      "resolved": "${MSRV_TOOLCHAIN}/bin/rustdoc",
+      "sha256": "1cd0edbcce02fd5c2a9db63541cb086f4f89f85911cf705317a12241ef15653f"
+    },
+    "rustc": {
+      "path": "${TOOLCHAIN}/bin/rustc",
+      "resolved": "${TOOLCHAIN}/bin/rustc",
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustdoc": {
+      "path": "${TOOLCHAIN}/bin/rustdoc",
+      "resolved": "${TOOLCHAIN}/bin/rustdoc",
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    },
+    "rustfmt": {
+      "path": "${TOOLCHAIN}/bin/rustfmt",
+      "resolved": "${TOOLCHAIN}/bin/rustfmt",
+      "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8"
+    },
+    "timeout": {
+      "path": "/usr/bin/timeout",
+      "resolved": "/usr/bin/timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+    }
+  },
+  "unrun_commands": [
+    "docs",
+    "msrv"
+  ]
+}

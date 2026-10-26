@@ -1,0 +1,804 @@
+{
+  "actual": {
+    "CALL_witnesses": 36,
+    "budget_refused_pairs": 4,
+    "capture_files": 1268,
+    "children": 15,
+    "completed_pairs": 8,
+    "expected_negative_command_exits": 0,
+    "failed_commands": 0,
+    "full_state_comparisons": 192,
+    "helper_commands": 5,
+    "journal_events": 24,
+    "native_modes_failed": [],
+    "native_modes_passed": [
+      "straight",
+      "budget",
+      "generation",
+      "refusals"
+    ],
+    "native_modes_unrun": [],
+    "original_body_RET_checks": 12,
+    "passed_commands": 5,
+    "permission_refusals": 2,
+    "positive_cohorts": 5,
+    "setup_refusals": 6
+  },
+  "artifact": {
+    "archive_count_clarification_sha256": "1ccc444128e886741368bd7a57afeed48fac145fb38951f9e2f06aa0696d0e07",
+    "artifact_review_sha256": "568b631974449b807c9757130a43987f3d652775dcb15908db977aac0ad7cac3",
+    "native_bytes": 23892856,
+    "native_sha256": "dd21e7f888e2b46d8a708ee76473e06f85d7014edffbae79f4b8b02080e3e8d3",
+    "retained_subject_sha256": "4d1996b63d9854260e6c4f822d8ee6d7bf09dd4ad61878e8ac721c3bfb6d2ff2",
+    "runtime_copy_binding_sha256": "c405ccfeb216310e1efdf66950fc8013d0d8081eb0eef421fa31efb9c09979e7",
+    "runtime_copy_independent_inode": true,
+    "runtime_copy_mode": "0755",
+    "selected_archive_index_sha256": "6d7610d6a94ac95cf089e3bfd8dffcec8482874b218452163b9a37e91adb1fe4",
+    "subject_build_credit": "Retained previously built subject bytes and producer lineage; this five-command packet includes no new subject assembly or link.",
+    "subject_bytes": 13712,
+    "subject_producer": "external-admitted-override"
+  },
+  "authorship": {
+    "compiler_artifact_review_authored_by_report_author": true,
+    "independence_note": "This data transformation does not independently re-approve its author's compiler-artifact review. Root executed the commands; the separate native reviewer supplies full capture approval.",
+    "independent_native_capture_review_author": "separate reviewer",
+    "independent_native_capture_review_sha256": "0b1361259e330941be07ecf745e2ae1551a9786c51a13470e8dff9357b4cca41",
+    "report_author_role": "compiler-artifact reviewer"
+  },
+  "case_accounting": {
+    "mode_rows": 4,
+    "nested_permission_refusal_rows": 2,
+    "nested_setup_refusal_rows": 6,
+    "note": "The eight refusal controls are nested within the refusals mode. These rows are not twelve independent commands; capture files, snapshots, comparisons and child traces have separate units.",
+    "total_typed_rows": 12
+  },
+  "cases": [
+    {
+      "case_id": "straight",
+      "command_id": "native-straight",
+      "expected": "complete_fixed_mode",
+      "kind": "native_mode",
+      "observed": "pass",
+      "ordinal": 0
+    },
+    {
+      "case_id": "budget",
+      "command_id": "native-budget",
+      "expected": "complete_fixed_mode",
+      "kind": "native_mode",
+      "observed": "pass",
+      "ordinal": 1
+    },
+    {
+      "case_id": "generation",
+      "command_id": "native-generation",
+      "expected": "complete_fixed_mode",
+      "kind": "native_mode",
+      "observed": "pass",
+      "ordinal": 2
+    },
+    {
+      "case_id": "refusals",
+      "command_id": "native-refusals",
+      "expected": "complete_fixed_mode",
+      "kind": "native_mode",
+      "observed": "pass",
+      "ordinal": 3
+    },
+    {
+      "case_id": "source-byte-mismatch",
+      "command_id": "native-refusals",
+      "expected": "exact_before_write_refusal",
+      "kind": "nested_setup_refusal",
+      "observed": "pass",
+      "ordinal": 4
+    },
+    {
+      "case_id": "foreign-selected-symbol",
+      "command_id": "native-refusals",
+      "expected": "exact_before_write_refusal",
+      "kind": "nested_setup_refusal",
+      "observed": "pass",
+      "ordinal": 5
+    },
+    {
+      "case_id": "wrong-relocated-pointer",
+      "command_id": "native-refusals",
+      "expected": "exact_before_write_refusal",
+      "kind": "nested_setup_refusal",
+      "observed": "pass",
+      "ordinal": 6
+    },
+    {
+      "case_id": "incomplete-entry-exit-set",
+      "command_id": "native-refusals",
+      "expected": "exact_before_write_refusal",
+      "kind": "nested_setup_refusal",
+      "observed": "pass",
+      "ordinal": 7
+    },
+    {
+      "case_id": "unsupported-cet-policy",
+      "command_id": "native-refusals",
+      "expected": "exact_before_write_refusal",
+      "kind": "nested_setup_refusal",
+      "observed": "pass",
+      "ordinal": 8
+    },
+    {
+      "case_id": "unsupported-exit-semantics",
+      "command_id": "native-refusals",
+      "expected": "exact_before_write_refusal",
+      "kind": "nested_setup_refusal",
+      "observed": "pass",
+      "ordinal": 9
+    },
+    {
+      "case_id": "header-load-writable",
+      "command_id": "native-refusals",
+      "expected": "exact_before_write_refusal_and_header_restored",
+      "kind": "nested_permission_refusal",
+      "observed": "pass",
+      "ordinal": 10
+    },
+    {
+      "case_id": "header-load-executable",
+      "command_id": "native-refusals",
+      "expected": "exact_before_write_refusal_and_header_restored",
+      "kind": "nested_permission_refusal",
+      "observed": "pass",
+      "ordinal": 11
+    }
+  ],
+  "children": [
+    {
+      "cohort_index": 0,
+      "exit": 0,
+      "mode": "straight",
+      "phase": "installed",
+      "record_sha256": "1f3d4eabe292525ad4e69b68ae715d8e52acad89209a52b49a4a934dd02d9c9c",
+      "step_bound": 20000,
+      "steps": 17866,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 0,
+      "exit": 0,
+      "mode": "straight",
+      "phase": "original",
+      "record_sha256": "7e3d51234e8d7296782547f3321ffbe49e331d366ff0856aca7b89bc338db69b",
+      "step_bound": 20000,
+      "steps": 12,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 0,
+      "exit": 0,
+      "mode": "straight",
+      "phase": "retired",
+      "record_sha256": "4bacc1f942f9d43e819c09610a9059a0f7dcb5c204a74a99f5baf563cdcb1fb0",
+      "step_bound": 20000,
+      "steps": 12,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 0,
+      "exit": 0,
+      "mode": "budget",
+      "phase": "installed",
+      "record_sha256": "c14122fe2a2c8a4bd43708fe6222a284ac2806e15bbe12b1cf8a6402af799a7c",
+      "step_bound": 20000,
+      "steps": 19273,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 0,
+      "exit": 0,
+      "mode": "budget",
+      "phase": "original",
+      "record_sha256": "cff5b12ca1dba88008ef553cb7f0dbc1e4b2503f0de40aada11daccde0e3e41e",
+      "step_bound": 20000,
+      "steps": 18,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 0,
+      "exit": 0,
+      "mode": "budget",
+      "phase": "retired",
+      "record_sha256": "132624c2f6bee40c00957f8a6875a619b08d89f98eadc93d2b13f7d1862bde55",
+      "step_bound": 20000,
+      "steps": 18,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 1,
+      "exit": 0,
+      "mode": "budget",
+      "phase": "installed",
+      "record_sha256": "5c326e2fb7c71324909da00a011d77be9327e56df789695f790084e08cc06e92",
+      "step_bound": 20000,
+      "steps": 19273,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 1,
+      "exit": 0,
+      "mode": "budget",
+      "phase": "original",
+      "record_sha256": "d93dace58751ee29a4ad26dbc011af5e9ccc7cb91f56a5160b80a55bf63fcf81",
+      "step_bound": 20000,
+      "steps": 18,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 1,
+      "exit": 0,
+      "mode": "budget",
+      "phase": "retired",
+      "record_sha256": "c54263fc73e5d26ab47d0e962036fcd94ca2df1d131f958f7e54b93e14649474",
+      "step_bound": 20000,
+      "steps": 18,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 0,
+      "exit": 0,
+      "mode": "generation",
+      "phase": "installed",
+      "record_sha256": "bf85297abe0ec5f5b060eb105bce4774e34fb2b61470bfe2c390a355579b5bda",
+      "step_bound": 20000,
+      "steps": 18188,
+      "tasks_at_initial_stop": 2,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 0,
+      "exit": 0,
+      "mode": "generation",
+      "phase": "original",
+      "record_sha256": "b2d9e2e238db37605982da559f36a53e36fba0a382179d33085ae01df0b8b9a6",
+      "step_bound": 20000,
+      "steps": 12,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 0,
+      "exit": 0,
+      "mode": "generation",
+      "phase": "retired",
+      "record_sha256": "ed4b4643a5ce7b69befafa218da5b6b77a1fdc5a59a883b593e6d7a475d3846b",
+      "step_bound": 20000,
+      "steps": 12,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 1,
+      "exit": 0,
+      "mode": "generation",
+      "phase": "installed",
+      "record_sha256": "9f9f1d6be92ca730040bb7f1ed903f514b26bdddcf5994f68c06b5d741bcaf78",
+      "step_bound": 20000,
+      "steps": 18188,
+      "tasks_at_initial_stop": 2,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 1,
+      "exit": 0,
+      "mode": "generation",
+      "phase": "original",
+      "record_sha256": "7cb84ba5c157d28920afd1d7272f56998ea3fde62231a01939f489f0fa5bc663",
+      "step_bound": 20000,
+      "steps": 12,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    },
+    {
+      "cohort_index": 1,
+      "exit": 0,
+      "mode": "generation",
+      "phase": "retired",
+      "record_sha256": "4a0036a29c0c3a29a292a702615a460c520d08ec2d52e14d85860f01af0a6d9a",
+      "step_bound": 20000,
+      "steps": 12,
+      "tasks_at_initial_stop": 1,
+      "trace_wall_bound_seconds": 15
+    }
+  ],
+  "claims": {
+    "1": "unqualified",
+    "2": "unqualified",
+    "3": "unqualified",
+    "4": "bounded partial evidence only; no complete systematic-coverage claim"
+  },
+  "cohorts": [
+    {
+      "arguments": [
+        0,
+        1
+      ],
+      "calls_per_phase": 2,
+      "cohort_index": 0,
+      "mode": "straight",
+      "phases": [
+        "original",
+        "installed",
+        "retired"
+      ],
+      "state_seeds": [
+        1311768467139281696,
+        18364758542526924135
+      ],
+      "truth_sha256": "a840d0cb0ed1ebe5066bcb0f4f89250c34f71c135473679b2c8acca34d84539e"
+    },
+    {
+      "arguments": [
+        0,
+        1,
+        2
+      ],
+      "calls_per_phase": 3,
+      "cohort_index": 0,
+      "mode": "budget",
+      "phases": [
+        "original",
+        "installed",
+        "retired"
+      ],
+      "state_seeds": [
+        1311768467139281696,
+        18364758542526924135
+      ],
+      "truth_sha256": "e4848d411adff3bda5f47ccc67ad493f9e10cd3d8646a9bfb30623f29d08eb09"
+    },
+    {
+      "arguments": [
+        1,
+        2,
+        3
+      ],
+      "calls_per_phase": 3,
+      "cohort_index": 1,
+      "mode": "budget",
+      "phases": [
+        "original",
+        "installed",
+        "retired"
+      ],
+      "state_seeds": [
+        1311768467139281696,
+        18364758542526924135
+      ],
+      "truth_sha256": "f5996b48819a5a73e65479765dcc39bb9f6f3ebe9e19256b4a2f4d61bb1d45c2"
+    },
+    {
+      "arguments": [
+        0,
+        0
+      ],
+      "calls_per_phase": 2,
+      "cohort_index": 0,
+      "mode": "generation",
+      "phases": [
+        "original",
+        "installed",
+        "retired"
+      ],
+      "state_seeds": [
+        1311768467139281696,
+        18364758542526924135
+      ],
+      "truth_sha256": "8a58d3bb6b6996a3e52830a98110e321a243f7acb1b77c06bdb933e70a4f8f28"
+    },
+    {
+      "arguments": [
+        1,
+        1
+      ],
+      "calls_per_phase": 2,
+      "cohort_index": 1,
+      "mode": "generation",
+      "phases": [
+        "original",
+        "installed",
+        "retired"
+      ],
+      "state_seeds": [
+        1311768467139281696,
+        18364758542526924135
+      ],
+      "truth_sha256": "96ad0146b0f135ef822cb5d29e95fc887432e51c42b467edde6ecdbda5ec5935"
+    }
+  ],
+  "command_denominator": 5,
+  "commands": [
+    {
+      "absence_proof": "ECHILD",
+      "after_sha256": "122396d19858610e92efd890161fa8a3ddd803a80f0edddd6076bbf079fab641",
+      "before_sha256": "122396d19858610e92efd890161fa8a3ddd803a80f0edddd6076bbf079fab641",
+      "cleanup_events": 0,
+      "command_id": "native-compile",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 2.7076020520180464,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "inputs_unchanged": true,
+      "ordinal": 0,
+      "outer_kill_after_seconds": 10,
+      "outer_sha256": "f01733726a394aa49384b6a7721594109d6d517f7c624068b501cb3246ae61d6",
+      "outer_timeout_seconds": 100,
+      "parent_elapsed_seconds": 2.772207307862118,
+      "parent_timeout_seconds": 115,
+      "receipt_sha256": "25d0203f3ce22bccdefdb421d93a75f0949e0b2f12513104dd515f4fee0e3cef",
+      "request_sha256": "daad2193c5df8019d9fe2b2e4d88c2e66704f5978ceb2a3eb1df8e1371f4a96e",
+      "status": "pass",
+      "stderr_sha256": "96cd0075213451df24f4f145729682436a8617564c364a5c3fb254453398cdd5",
+      "stdout_sha256": "a1a68ea78799940ca2ee5f6aaf4114f80f6b57a63bd89cb683de0b8ecb0db668",
+      "tested_revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+      "unexpected_descendants": 0,
+      "wall_seconds": 90,
+      "wall_timeout": false
+    },
+    {
+      "absence_proof": "ECHILD",
+      "after_sha256": "f92e182c9b8b4fd0450859a300fd9b9ce8fe19944c38d9a6036d2d8b2f10e0c1",
+      "before_sha256": "f92e182c9b8b4fd0450859a300fd9b9ce8fe19944c38d9a6036d2d8b2f10e0c1",
+      "cleanup_events": 0,
+      "command_id": "native-straight",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 3.1522887309547514,
+      "exit": 0,
+      "file_bytes": 16777216,
+      "inputs_unchanged": true,
+      "ordinal": 1,
+      "outer_kill_after_seconds": 10,
+      "outer_sha256": "de8a363269621ed801b591b56f88e516fe585fff06db7e7343262af613f541f1",
+      "outer_timeout_seconds": 40,
+      "parent_elapsed_seconds": 3.223246193025261,
+      "parent_timeout_seconds": 55,
+      "receipt_sha256": "14072e28ac1177bea9924df190c02afdd1c9eb357a2982bf54dadd659dc6d2d2",
+      "request_sha256": "2fc283c2d7b5ec5225c4d172c8bd538600337b5cf430a162f974534b08bf245b",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "2f98728814b24d3ad9c985df4850610f98647a75981e475eb036835f46a5929b",
+      "tested_revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+      "unexpected_descendants": 0,
+      "wall_seconds": 30,
+      "wall_timeout": false
+    },
+    {
+      "absence_proof": "ECHILD",
+      "after_sha256": "f92e182c9b8b4fd0450859a300fd9b9ce8fe19944c38d9a6036d2d8b2f10e0c1",
+      "before_sha256": "f92e182c9b8b4fd0450859a300fd9b9ce8fe19944c38d9a6036d2d8b2f10e0c1",
+      "cleanup_events": 0,
+      "command_id": "native-budget",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 6.601769010070711,
+      "exit": 0,
+      "file_bytes": 16777216,
+      "inputs_unchanged": true,
+      "ordinal": 2,
+      "outer_kill_after_seconds": 10,
+      "outer_sha256": "4628c21d63e691abdc2afd10c8eeb49171533b68592a1147430953ca4f0ff3d0",
+      "outer_timeout_seconds": 40,
+      "parent_elapsed_seconds": 6.683283093152568,
+      "parent_timeout_seconds": 55,
+      "receipt_sha256": "6b15c1b06d13feb7640b1bacb02be172fbd7384eb462ae2219a4a3cd4e1d3fdf",
+      "request_sha256": "995663371158d3f2bf9768489a54be29f76fdb215c9508bbc2473d23b04badda",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "0ee05496b83bdcf3ff5fc8351cd765a4f1bdc3442b72fdc186b9c456e55b126e",
+      "tested_revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+      "unexpected_descendants": 0,
+      "wall_seconds": 30,
+      "wall_timeout": false
+    },
+    {
+      "absence_proof": "ECHILD",
+      "after_sha256": "f92e182c9b8b4fd0450859a300fd9b9ce8fe19944c38d9a6036d2d8b2f10e0c1",
+      "before_sha256": "f92e182c9b8b4fd0450859a300fd9b9ce8fe19944c38d9a6036d2d8b2f10e0c1",
+      "cleanup_events": 0,
+      "command_id": "native-generation",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 6.193738192785531,
+      "exit": 0,
+      "file_bytes": 16777216,
+      "inputs_unchanged": true,
+      "ordinal": 3,
+      "outer_kill_after_seconds": 10,
+      "outer_sha256": "b648a9874f3ad287ba0842be46b44e2837101f3ebe9034583624995627ee9d6c",
+      "outer_timeout_seconds": 40,
+      "parent_elapsed_seconds": 6.283430378884077,
+      "parent_timeout_seconds": 55,
+      "receipt_sha256": "aca6e02597c5e00862359530b0fafd3c8d1ac8fc338f4ce1723438c68b5d3d05",
+      "request_sha256": "5bc8ff99e01604ea894282b2a78fbb337063c323f3b8db2840cf1d8357aa8537",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "646b205d3ddf3c4636ae2028ca260ec046ef95767f22112c4f599aeb65b02011",
+      "tested_revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+      "unexpected_descendants": 0,
+      "wall_seconds": 30,
+      "wall_timeout": false
+    },
+    {
+      "absence_proof": "ECHILD",
+      "after_sha256": "f92e182c9b8b4fd0450859a300fd9b9ce8fe19944c38d9a6036d2d8b2f10e0c1",
+      "before_sha256": "f92e182c9b8b4fd0450859a300fd9b9ce8fe19944c38d9a6036d2d8b2f10e0c1",
+      "cleanup_events": 0,
+      "command_id": "native-refusals",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.1852076759096235,
+      "exit": 0,
+      "file_bytes": 16777216,
+      "inputs_unchanged": true,
+      "ordinal": 4,
+      "outer_kill_after_seconds": 10,
+      "outer_sha256": "722f09896b2b98b61394ac35b1d6570cffd46d7752338c6392e9c4292dd16a7c",
+      "outer_timeout_seconds": 40,
+      "parent_elapsed_seconds": 0.2673372710123658,
+      "parent_timeout_seconds": 55,
+      "receipt_sha256": "bd7dd3df06ab943b1daeb99001919f7253ed0ee62b36583ba5a8664b0c49fdc3",
+      "request_sha256": "943a7c348c8c3ba788a728db2275075ec79e0c4a9ddff47c9881f6417fc71d9c",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "bd75a5cab7b841d58c99f7d0662851f4aa8398f523b66d23c32fac799c21a845",
+      "tested_revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+      "unexpected_descendants": 0,
+      "wall_seconds": 30,
+      "wall_timeout": false
+    }
+  ],
+  "compiler": {
+    "artifact_copy_note": "Cargo freshness describes build reuse. Independent archival byte-copy reuse is a different property; its exact provenance is bound by the archive index and count clarification.",
+    "artifact_records": 18,
+    "build_finished_records": 1,
+    "build_script_records": 4,
+    "cargo_records": 23,
+    "compiler_diagnostics": 0,
+    "features": [],
+    "fresh_false_compiled_records": 3,
+    "fresh_true_reused_records": 15,
+    "full_workspace_sources": 1008,
+    "incremental": false,
+    "jobs": 4,
+    "locked": true,
+    "offline": true,
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "registry_owners": 995,
+    "rustflags": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+    "saved_target_added": 0,
+    "saved_target_changed": 31,
+    "saved_target_removed": 0,
+    "saved_target_rows": 4536,
+    "selected_target_paths": 157,
+    "toolchain_label": "1.97.1-x86_64-unknown-linux-gnu"
+  },
+  "compiler_commands": 1,
+  "fixed_native_contract": {
+    "additive_permission_refusals": 2,
+    "capture_contract_sha256": "cb5a096b8d751ed252f29c1b1424afc9fd644b243f6271c8e43301ce8e56712c",
+    "counter_or_deadline_reset_per_invocation": false,
+    "expected_tree_sha256": "12e9ad3ea0c100347e8c4678d7cd8f35fbc5a101c71b2df833ae378145fd7ed5",
+    "inventory_sha256": "85131bac11063d5fb32b80357f870d1af4c8715959040c1b04666f988162fdfe",
+    "original_setup_refusals": 6,
+    "step_meaning": "Observed ptrace stops, not a retired-instruction or performance measurement.",
+    "whole_persistent_child_steps": 20000,
+    "whole_persistent_child_wall_seconds": 15
+  },
+  "full_a5_qualified": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpuinfo_sha256": "270a6fd93d5f02d06dda4453048fcbaad5145a6c88b5142c61ea5cea33f39843",
+    "family": "26",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "microcode": "0xb101066",
+    "model": "17",
+    "observation_record_sha256": "529e37548d1fc9720d3a2f74b7ed209fc34f82fc5dbd296cc9288518e4c6f960",
+    "observed_at_utc": "2026-10-26T05:31:30.317126+00:00",
+    "phase_relative_scope": "Recorded after the native compilation and before all four native executions; no compiler-time or continuous hardware attestation.",
+    "scope": "Fresh observation before focused native runs; operational durations, not performance measurements.",
+    "stepping": "0",
+    "vendor": "AuthenticAMD"
+  },
+  "input_epochs": {
+    "compile": {
+      "admitted_inputs_sha256": "122396d19858610e92efd890161fa8a3ddd803a80f0edddd6076bbf079fab641",
+      "configurations": 24,
+      "immutable_hashes": 17561,
+      "selected_owners": 1241,
+      "workspace_sources": 1008
+    },
+    "full_before_after_maps_preserved": true,
+    "runtime": {
+      "admission_sha256": "3d8c1b14cb419010559af14b1904a647740886d5f1d0c1263fcaf9f97e7b22b8",
+      "admitted_at_utc": "2026-10-26T05:36:07.317589+00:00",
+      "admitted_inputs_sha256": "f92e182c9b8b4fd0450859a300fd9b9ce8fe19944c38d9a6036d2d8b2f10e0c1",
+      "configurations": 24,
+      "immutable_hashes": 17565,
+      "saved_full_target_before_after_equal_for_each_native_command": true,
+      "saved_target_rows_per_phase": 4536,
+      "selected_owners": 1242,
+      "workspace_sources": 1008
+    },
+    "runtime_added_executable_sha256": "dd21e7f888e2b46d8a708ee76473e06f85d7014edffbae79f4b8b02080e3e8d3",
+    "scope_note": "Selected source, tool, registry, configuration and loader closure; no complete host or continuous-attestation claim.",
+    "sole_old_selected_owner_change": {
+      "cause": "unknown",
+      "compile_stat": [
+        33,
+        126334203,
+        33188,
+        29499,
+        1792990774293790753,
+        1792990774293790753
+      ],
+      "content_sha256": "e84f89705a0c808ca0c840a74c521ee96a2ddd86936465b256b794ea9bc6b4ad",
+      "policy": "Explicit prospective runtime admission after fresh full observation; no historical record refresh or same-bytes waiver.",
+      "role": "loader_cache",
+      "runtime_stat": [
+        33,
+        126360898,
+        33188,
+        29499,
+        1792992698579526532,
+        1792992698579526532
+      ],
+      "stat_fields": [
+        "device",
+        "inode",
+        "mode",
+        "size",
+        "mtime_ns",
+        "ctime_ns"
+      ]
+    }
+  },
+  "native_commands": 4,
+  "native_review": {
+    "binding_sha256": "0b1361259e330941be07ecf745e2ae1551a9786c51a13470e8dff9357b4cca41",
+    "capture_comparisons_sha256": "ef2ba5887f7479aaa7bc37253cb32c2f83cea2a03e7c7f5f6422248c18eaef7d",
+    "capture_manifests": {
+      "budget": {
+        "file_count": 620,
+        "sha256": "f835454d4c8eab1be2b922e0f862ffa5f9707b192c306ab0405e409f2a48a3a7"
+      },
+      "generation": {
+        "file_count": 422,
+        "sha256": "39dce20b0df50c0803c87d0bf90131597eedb521add576548aefd040e573ead6"
+      },
+      "refusals": {
+        "file_count": 13,
+        "sha256": "3d0fa699afc3ec561d657f4c01cf6ed92d495bca2f84776d9513e7ca0029d796"
+      },
+      "straight": {
+        "file_count": 213,
+        "sha256": "9895aa691b72b525734e5fc737d6b15f0a9ebc6fca8e8ec98dd021769790d3e7"
+      }
+    },
+    "checks_sha256": "0974f5fd6f86af9640e5e11796f68a20e9dc1644cfdaa6300314fca894ce8ec6",
+    "comparison_scope": "All non-RIP/non-RFLAGS register fields; only declared physical/logical RIP correspondence and original TF/RF mask; complete canonical XSAVE, 4096 application bytes and 4232 stack/red-zone bytes; independent original arithmetic/data/CALL/RET checks.",
+    "full_capture_inventory": true,
+    "historical_outcome_transfer": false,
+    "independently_reconstructed_body_RET_checks": 12,
+    "loader_permission_scope": "Exact four PT_LOAD extents, affine owner/offset, RELRO and generated-image mappings; whole source/header bytes and exact restoration. Six setup error variants and intermediate immutable-load reads are source assertions; raw maps/bytes and control names are serialized.",
+    "per_mode": {
+      "budget": {
+        "CALL_witnesses": 18,
+        "capture_files": 620,
+        "children": 6,
+        "full_state_comparisons": 96,
+        "journal_events": 12
+      },
+      "generation": {
+        "CALL_witnesses": 12,
+        "capture_files": 422,
+        "children": 6,
+        "full_state_comparisons": 64,
+        "journal_events": 8
+      },
+      "refusals": {
+        "CALL_witnesses": 0,
+        "capture_files": 13,
+        "children": 0,
+        "full_state_comparisons": 0,
+        "journal_events": 0
+      },
+      "straight": {
+        "CALL_witnesses": 6,
+        "capture_files": 213,
+        "children": 3,
+        "full_state_comparisons": 32,
+        "journal_events": 4
+      }
+    },
+    "receipt_input_checks_sha256": "d79408090d2ec21feee5fe8f3cf1c4fc23e65416c853400e6fadaee73b77de67",
+    "review_sha256": "7f2d1e7bf8691dc7bf0db059a1ae71d8b9629483de816028a29ee857504e1672",
+    "snapshot_count": 288,
+    "source_assertion_evidence_sha256": "531fdb601f279d60a36a918e82f7100098701b590fd391a0edf014136d9be52d",
+    "source_assertion_scope": "Pre-RET old-owner reservation retention, unavailable early report, publication, bounded controller completion/join, exact zero-based terminal values, native payload ordinals, final drained reports, intermediate journal prefixes and retention after retirement are authenticated executed source assertions. Their internal objects are not separately serialized captures."
+  },
+  "qualification_complete": false,
+  "raw_records": {
+    "compiler_saved_record_subcheck_sha256": "663af16746124409ac0f0fbf21a6da67324b3c662e14dbd5975ca7b4b02fc778",
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "historical_pending_fields_note": "Root command results were frozen before full artifact/capture reviews. Their pending flags remain unchanged; later explicit review bindings supply closure.",
+    "root_native_command_results_sha256": "74aefd939baa41f9fe0470b6753f2a208d188360de320ee97579f773b07f0c89",
+    "whole_request_reversal_sha256": "c53fa4cf15b84c39fefcc815f5986b7dae719fe100877a5ac349a5a32f329676"
+  },
+  "record_id": "frontend-native-74aaf19a-20261025",
+  "related_records": {
+    "current_required_success": "../../frontend-native-required-74aaf19a-success.md",
+    "failed_parent_required": "../../frontend-native-required-7e464a42-failure.md"
+  },
+  "reproduction": {
+    "recipe": "../../frontend-native-exact-revision/README.md",
+    "request_coordinate_policy": "This result packet contains no machine coordinates; exact coordinate templates are supplied by the separate replay material. Raw request hashes identify the original records.",
+    "scope": "Five exact request families and original bounded helper; fresh source/tool/owner and artifact admission is required. No old result is replay credit."
+  },
+  "schema_version": 1,
+  "scope": "One strict native compiler command and four original native modes at this exact public revision. Required workspace gates and earlier attempts have separate denominators.",
+  "scope_complete": true,
+  "selected_tool_and_runtime_bytes": {
+    "bounded_helper_python": {
+      "bytes": 15448,
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "elf_interpreter": {
+      "bytes": 939216,
+      "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+    },
+    "outer_timeout": {
+      "bytes": 36848,
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+    },
+    "runtime_libc": {
+      "bytes": 2553784,
+      "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523"
+    },
+    "runtime_libgcc": {
+      "bytes": 116408,
+      "sha256": "3d144b557008c93e4e67567d5dc98cb81cf55187a698d1b4872ce84ba8a26bed"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustdoc": {
+      "bytes": 13680928,
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    },
+    "scope": "Selected byte identities from the admitted records; this packet performs no fresh tool version query and does not enumerate the entire system."
+  },
+  "software_clock_qualified": false,
+  "source_commit_binding_sha256": "8e30ebee7c947753dd440b90efb155e77321886540dfea86a4a0c8c64db4b60d",
+  "source_files": 1008,
+  "source_files_sha256": "468985591f2a5e628949d7f9161c846ee15ca19de1e398de359cdd6037e12e51",
+  "source_git_record_sha256": "c4c48742ac2c486c8159f896a28be5c1ac42d79e9b2a1fe351c94319af715a47",
+  "source_kind": "exact_clean_git_commit",
+  "status": "passed_at_recorded_scope",
+  "tested_revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+  "timing_scope": "Helper/parent elapsed durations are operational diagnostics, not performance results."
+}

@@ -1,0 +1,21 @@
+{
+  "argv": [
+    "${TOOLCHAIN}/bin/rustfmt",
+    "--edition",
+    "2024",
+    "${WORKSPACE}/tools/rapid-profiler/build.rs",
+    "${WORKSPACE}/tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${WORKSPACE}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "${RAW}/supplemental-format/tmp"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${RAW}/supplemental-format/stderr.txt",
+  "stdout": "${RAW}/supplemental-format/stdout.txt",
+  "wall_seconds": 30
+}

@@ -1,0 +1,325 @@
+{
+  "groups": [
+    {
+      "command_id": "calibrations-calibrate",
+      "id": "calibrate",
+      "receipt_sha256": "abfa2be23f9faa2dd8952bbb52f15057ff047688f1e4e696078488baf9f13a38",
+      "result": {
+        "e9_invocations": 0,
+        "native_invocations": 0,
+        "negative": 55,
+        "positive": 5,
+        "refusals": [
+          "duplicate JSON key",
+          "non-JSON NaN",
+          "R metadata is not executable",
+          "translation crosses file-backed extent",
+          "unsigned virtual extent overflow",
+          "ambiguous virtual ownership",
+          "truncated program headers",
+          "non-power-of-two load alignment",
+          "wrong source path",
+          "wrong binary mode",
+          "extra action instruction",
+          "wrong selected length",
+          "wrong selected virtual address",
+          "wrong selected file offset",
+          "boolean instruction length",
+          "wrong patch offset",
+          "wrong patch trampoline",
+          "out-of-order RPC id",
+          "extra patch",
+          "missing patch",
+          "output path escape",
+          "wrong mapping unit",
+          "unknown method",
+          "unknown patch metadata",
+          "RPC incomplete final line",
+          "RPC duplicate JSON id",
+          "partial success",
+          "fallback to B2",
+          "duplicate statistic",
+          "wrong debug PC",
+          "wrong debug length",
+          "wrong debug tactic",
+          "empty trampoline",
+          "duplicate debug site",
+          "warning is not a success",
+          "failed-site diagnostic",
+          "missing success marker",
+          "failure marker",
+          "wrong input size",
+          "helper exit=1",
+          "helper exit=False",
+          "helper wall_timeout=True",
+          "helper unexpected_descendants=[123]",
+          "helper absence_proof=None",
+          "helper stdout_sha256='bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'",
+          "helper request_sha256='cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc'",
+          "helper helper_sha256='dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'",
+          "helper aborted='SIGTERM'",
+          "helper cleanup_error='deadline'",
+          "helper inputs_unchanged=False",
+          "helper elapsed_seconds=inf",
+          "helper elapsed_seconds=-1",
+          "helper elapsed_seconds=51",
+          "malformed cleanup event",
+          "contradictory killed descendant"
+        ],
+        "successes": [
+          "RX exact file translation",
+          "exact one-site RPC",
+          "exact B1 summary and debug witness",
+          "absolute trampoline coordinates",
+          "exact bounded-helper success receipt"
+        ],
+        "synthetic_parser_scope_only": true
+      },
+      "stdout_sha256": "ef7b3f35bc9fcee534a6038c61b0f73cfeb5f0ddd39d8fbd40677dc9321628e5"
+    },
+    {
+      "command_id": "calibrations-supervisor_calibrate",
+      "id": "supervisor_calibrate",
+      "receipt_sha256": "b7ceb22d6836779267fd5d157ab343df303159baf7c7a1626d4c271695512103",
+      "result": {
+        "actual_process_launches": 0,
+        "actual_signals_sent": 0,
+        "helper_wait_seconds": [
+          55,
+          10,
+          5
+        ],
+        "mocked_scenarios": 1,
+        "simulated_signal_deliveries": 6
+      },
+      "stdout_sha256": "e4085ea36ae3e46417e207ec949cdd9e72c891b778e61be72caf6b785a024ac5"
+    },
+    {
+      "command_id": "calibrations-calibrate_prerequisites",
+      "id": "calibrate_prerequisites",
+      "receipt_sha256": "9bc88f8716a0db2c0647104cf319c344af9c925b3c824f9403a824aabd94632c",
+      "result": {
+        "acceptances": 1,
+        "accepted": [
+          "exact fresh six/core native/state inventory"
+        ],
+        "actual_process_launches": 0,
+        "actual_state_traces": 0,
+        "refusals": 19,
+        "refused": [
+          "missing fresh state terminal",
+          "wrong completion status",
+          "historical original cohort",
+          "historical selection",
+          "historical emitted cohort",
+          "missing B1 output",
+          "refusal substituted for positive",
+          "missing baseline",
+          "missing native execution",
+          "missing state trace",
+          "missing state point",
+          "missing hook witness",
+          "missing file page",
+          "missing original state phase",
+          "missing capture file",
+          "missing capture directory",
+          "full qualification claimed",
+          "backend ABI relabelled resolved",
+          "E9 native enabled"
+        ]
+      },
+      "stdout_sha256": "d625839ffc91e649cfb6411c80f17681e1d04be25e00b288eec9c3f78e203264"
+    },
+    {
+      "command_id": "calibrations-calibrate-common",
+      "id": "calibrate-common",
+      "receipt_sha256": "af9f9ce33cb84543df83a9d752d4e84359943ab7a06e068eff37f157bb31e803",
+      "result": {
+        "acceptances": 17,
+        "accepted": [
+          "original-relocation-unstripped-pie",
+          "old-structure-only-unstripped-pie",
+          "original-relocation-unstripped-exec",
+          "old-structure-only-unstripped-exec",
+          "original-relocation-unstripped-libcarrierfixture.so",
+          "old-structure-only-unstripped-libcarrierfixture.so",
+          "original-relocation-stripped-pie",
+          "old-structure-only-stripped-pie",
+          "original-relocation-stripped-exec",
+          "old-structure-only-stripped-exec",
+          "original-relocation-stripped-libcarrierfixture.so",
+          "old-structure-only-stripped-libcarrierfixture.so",
+          "exact-original-indirect-definition",
+          "checked-module-bias",
+          "complete-original-source",
+          "unoccupied-generated-page",
+          "exact-same-module-PROT_NONE-gap"
+        ],
+        "application_executions": 0,
+        "mappings": 0,
+        "old_artifacts_are_structural_controls_only": true,
+        "refusals": 19,
+        "refused": [
+          "relocation-writes-selected-code",
+          "unknown-relocation-width",
+          "wrong-referenced-symbol",
+          "wrong-addend",
+          "eight-byte-write-crosses-owner",
+          "explicit-generated-dependency-write",
+          "changed-indirect-native-body",
+          "wrong-module-path",
+          "wrong-mount-device",
+          "wrong-file-inode",
+          "readable-reservation",
+          "writable-reservation",
+          "wrong-file-offset",
+          "partial-reservation",
+          "reservation-outside-module",
+          "duplicate-reservation-owner",
+          "reservation-overlaps-real-LOAD",
+          "wrong-original-source-offset",
+          "ambiguous-module-bias"
+        ]
+      },
+      "stdout_sha256": "6828faa71043c1a9e10182ed856a4caa4d1ac5dee7c05835926a5fd26a61b86e"
+    },
+    {
+      "command_id": "calibrations-calibrate-sparse",
+      "id": "calibrate-sparse",
+      "receipt_sha256": "01d5ece2735d3b25b410d9a089c59538b16107439e1354534e1f453d3792f57a",
+      "result": {
+        "acceptances": 4,
+        "accepted": [
+          "exact-compact",
+          "exact-sparse-exec",
+          "sparse-exact-40KiB-budget",
+          "exact-common-bias-two-roots"
+        ],
+        "application_executions": 0,
+        "mappings": 0,
+        "refusals": 18,
+        "refused": [
+          "unknown-kind",
+          "wrong-compact-base",
+          "wrong-compact-end",
+          "wrong-source-page",
+          "wrong-generated-PC",
+          "wrong-backing-offset",
+          "unaligned-source",
+          "zero-root-budget",
+          "one-root-budget-for-EXEC",
+          "root-budget-above-contract",
+          "zero-byte-budget",
+          "one-byte-below-required-storage",
+          "byte-budget-above-contract",
+          "actual-address-underflow",
+          "actual-address-overflow",
+          "noncanonical-actual-address",
+          "overlapping-acquisition-roots",
+          "actual-aggregate-budget"
+        ]
+      },
+      "stdout_sha256": "3d80e390520baca5080a7234235344d1addeda7702f6b667dbfcf90f13e398a0"
+    },
+    {
+      "command_id": "calibrations-calibrate-ledgers",
+      "id": "calibrate-ledgers",
+      "receipt_sha256": "0705ec64b255f40828167e5860a256c9f09201da8eaafc1a3969c89d68455ee9",
+      "result": {
+        "acceptances": 3,
+        "accepted": [
+          "cases-exact-ordered-schema",
+          "pages-exact-ordered-schema",
+          "ownership-exact-ordered-schema"
+        ],
+        "application_executions": 0,
+        "mappings": 0,
+        "refusals": 21,
+        "refused": [
+          "cases-duplicate-leading-header-conflicting-value",
+          "cases-duplicate-trailing-header",
+          "cases-reordered-header",
+          "cases-missing-header",
+          "cases-extra-header",
+          "cases-missing-row-cell",
+          "cases-extra-row-cell",
+          "pages-duplicate-leading-header-conflicting-value",
+          "pages-duplicate-trailing-header",
+          "pages-reordered-header",
+          "pages-missing-header",
+          "pages-extra-header",
+          "pages-missing-row-cell",
+          "pages-extra-row-cell",
+          "ownership-duplicate-leading-header-conflicting-value",
+          "ownership-duplicate-trailing-header",
+          "ownership-reordered-header",
+          "ownership-missing-header",
+          "ownership-extra-header",
+          "ownership-missing-row-cell",
+          "ownership-extra-row-cell"
+        ]
+      },
+      "stdout_sha256": "34b8a83234a96544e41097d9dfa4f086998025c3829e1aaca7e187b2f6052bbf"
+    },
+    {
+      "command_id": "state-build-identity-calibrations",
+      "id": "mapping-identity-2-17",
+      "receipt_sha256": "cd8c1c6c0ff0e69d5aaa8cf4058eeb4bcbc1ef53f7b2a37c925b52e6f51dd6a0",
+      "result": {
+        "names": [
+          "wrong_mount_id",
+          "wrong_mount_device",
+          "wrong_fd_inode",
+          "wrong_stat_device",
+          "wrong_stat_inode",
+          "wrong_file_size",
+          "wrong_digest",
+          "wrong_fd_path",
+          "wrong_mountpoint",
+          "missing_mount",
+          "duplicate_mount",
+          "malformed_mount",
+          "duplicate_fd_mount_id",
+          "missing_fd_mount_id",
+          "malformed_fd_field",
+          "wrong_vma_device",
+          "wrong_vma_inode"
+        ],
+        "negative": 17,
+        "positive": 2,
+        "trace_inventory_changed": false
+      },
+      "scope": "Whole fixed group; no invented individual output records.",
+      "stdout_sha256": "04dafcd5ad57a90b41c95d001832f0c75334387140d40adaa0716449a3df6671"
+    },
+    {
+      "command_id": "ownership-controls-ownership-controls",
+      "id": "sparse-ownership-2-18",
+      "receipt_sha256": "a6795f171dda4aa3eb2e5bb9e2d14cc35edb7a27151bd4b910e4147b450797cc",
+      "result": {
+        "complete_summary": "SPARSE_OWNERSHIP_CONTROLS_PASS positives=2 negatives=18",
+        "counts": {
+          "negative": 18,
+          "positive": 2
+        }
+      },
+      "scope": "Whole fixed group; no invented individual output records.",
+      "stdout_sha256": "216151c06e21f8fec7ebeb4f26a0cb1bdbc420ce7e64bc01ccf98c5b5aebd38a"
+    },
+    {
+      "command_id": "receipt-controls-receipt-controls",
+      "id": "receipt-grammar-1-23",
+      "receipt_sha256": "21d5330fc09f1f0a8eb09ef9364b6876df20a1d7506400b465848d4c41b3ec06",
+      "result": {
+        "complete_summary": "STATE_AUDIT_RECEIPT_CONTROLS_PASS positives=1 negatives=23",
+        "counts": {
+          "negative": 23,
+          "positive": 1
+        }
+      },
+      "scope": "Whole fixed group; no invented individual output records.",
+      "stdout_sha256": "9b0b2771271fb6e1c981de60dfac895e440ac1d4b39220a785b764f2a62464b6"
+    }
+  ],
+  "scope": "All six original parser/control groups plus original identity/ownership/receipt groups. Individual pure names are retained; three state groups remain whole-group observations. No mixed-unit pass aggregate."
+}

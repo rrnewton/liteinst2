@@ -1,0 +1,4 @@
+inventory,fixtures,images,capture_files_per_side,callbacks,dispatchers,controls,authenticated_operands,planning_refusals,frame_metadata_successes,frame_metadata_refusals,independent_refusals
+historical,28,28,114,33,0,0,33,0,,,0
+extended,58,56,400,30,54,54,138,10,,,0
+current,21,34,219,17,3,3,23,0,12,5,2

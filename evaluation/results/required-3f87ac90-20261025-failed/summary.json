@@ -1,0 +1,616 @@
+{
+  "cases": [],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "heading": "systematic everytactic",
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "claims_scope": "All four complete paper claims remain unqualified. No software-clock, native frontend or new unwind/tactic qualification.",
+  "cleanup_scope": "Legacy required runner process-group cleanup, not ECHILD/subreaper proof. The failed child launcher did not complete its exact leader-reap obligation.",
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 1.318775068037212,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-fmt",
+      "receipt_sha256": "bcf41c20bc4fa19ca01a6e37e85b658de51703d2faa23354ef58aade563a3071",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 10.700380350928754,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-clippy",
+      "receipt_sha256": "bcf41c20bc4fa19ca01a6e37e85b658de51703d2faa23354ef58aade563a3071",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "a335ad3b4bdbfce0831856b0002c86c394ce55432f444022b67aaf93df7d9f10",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 179.0768109189812,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 101,
+      "file_bytes": null,
+      "id": "required-test",
+      "receipt_sha256": "bcf41c20bc4fa19ca01a6e37e85b658de51703d2faa23354ef58aade563a3071",
+      "source_id": "exact_revision",
+      "status": "fail",
+      "stderr_sha256": null,
+      "stdout_sha256": "859b0902ca4a8c40aa9a818218c3075e86df7432bbfd079aa8ddb4bdb4af3ae8",
+      "wall_seconds": 360
+    }
+  ],
+  "complete_A2": false,
+  "complete_A3": false,
+  "complete_A4": false,
+  "complete_A5": false,
+  "failure": {
+    "assertion": "owned child cleanup failed",
+    "child_completion_and_inner_comparisons_do_not_override_failure": true,
+    "child_peek": {
+      "kind": "CLD_EXITED",
+      "status": 0
+    },
+    "command": "required-test",
+    "direct_reap_recorded": false,
+    "failed_syscall_identified": false,
+    "group": "tests/eviction_chain_extensions.rs",
+    "leader_reaped_last": false,
+    "outer_test": "native_chain_anchor_readable_and_fault",
+    "peer_reaps": 0,
+    "recorded_error": "No such process (os error 3)",
+    "retry_performed": false,
+    "seen_peers": 0,
+    "source": "tests/support/eviction_chain_extension_isolation.rs:338",
+    "source_hypothesis": "An enumerated process may disappear between opening and reading its stat file; the captured untagged error does not prove that syscall or PID."
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "cpuinfo_sha256": "e66516e0aea36155c3082041a5cf3a5eb4375096f4aecc894b278b71781dafdb",
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "recorded CPU/kernel context before the required runner launch; not continuous attestation",
+    "observation_sha256": "a3e7f698fe5e9818ff0afa16e9a2f4fb93674c4bd19f54503fea91ae6110ba22",
+    "observed_at_utc": "2026-10-25T21:02:03.462395+00:00",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "independent_receipt_binding_sha256": "43a97bfc0f3d7dba237e2ec203180149762fc9fd99c305d0db82e7d055e9e0d6",
+  "independent_receipt_review_sha256": "a42e8b6fe44221c27d01bdf362ec48c2145b8720ef29e657d904eada3651cdcf",
+  "outer_runner": {
+    "exit": 1,
+    "parent_timeout_seconds": 1000,
+    "record_sha256": "e00508f57f8a284e98540654d91faad0996da0610723977217d05850752bf422",
+    "stderr_sha256": "e63c68d4e3864e6dea1e4256b71ded7118aa10a924bd9cabedae61065042a65a",
+    "stdout_sha256": "ea6a0e1a087a7b1c87b078e2403eea7b43bd3a369f438820178bc2db183e4da2"
+  },
+  "preemption_clock_claim": false,
+  "private_capture_manifest_sha256": "d5a5809db6fb0a42cb09459d38cd9f0d84128827439a4bce44c2680070aa4323",
+  "reporting_method": "Static data-only reconstruction from closed records; no exporter was executed. The unchanged required-only exporter rejects this three-record failed attempt because it requires four successful records.",
+  "reproduction": {
+    "argv": [
+      "${PYTHON}",
+      "-B",
+      "${REPO}/evaluation/required-gates.py",
+      "--repo",
+      "${REPO}",
+      "--output",
+      "${RAW_PARENT}/required-3f87ac90-v1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${RUST_TOOLCHAIN}/bin/rustdoc"
+    },
+    "parent_timeout_seconds": 1000,
+    "runtime_tool_versions_inferred": false
+  },
+  "reproduction_binding_note": "Each placeholder is a distinct literal coordinate binding. RAW_PARENT is the output parent role; use a fresh corresponding ignored directory for a new run. The complete recorded 12-key outer environment is retained. No automatic retry is proposed.",
+  "reproduction_script": "evaluation/required-gates.py",
+  "reproduction_script_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+  "review_authorship_note": "Reviewer authored the original frontend model and some inherited fixtures; this is exact-source and closed-receipt verification, not independent product-semantic approval. Independent source/private qualification reviews remain separate.",
+  "run_id": "required-3f87ac90-20261025-failed",
+  "schema_version": 1,
+  "scope": "Closed failed required-workspace attempt at the public frontend-model promotion. This is not public A5 model/doc qualification and does not change historical private results.",
+  "sources": {
+    "exact_revision": {
+      "base_revision": "530283fdbc8a49bd76bd48860553d8e28136108d",
+      "clean_tracked": true,
+      "file_count": 510,
+      "git_tree": "990d82380a5a9048c18a0903b6e75e2f41309e4a",
+      "kind": "git_commit",
+      "source_tree_encoding": "UTF-8 sorted compact JSON, no trailing newline",
+      "source_tree_sha256": "1a75aff15cabb17cc96e03e1b4ea75119e68d7ed2c48e1012b82652dac082e90",
+      "tested_revision": "3f87ac9008238ff7d8f12fa28b15a73cb7b4ada5",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "status": "fail",
+  "suite": "required-workspace-gates",
+  "tested_revision": "3f87ac9008238ff7d8f12fa28b15a73cb7b4ada5",
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tool_selection_note": "The unchanged required runner invokes cargo through PATH and did not record per-command executable hashes or version text. Recorded selection paths do not establish historical executable identity.",
+  "tools": [],
+  "unrun_commands": [
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "id": "required-check",
+      "reason": "The required runner stopped after test exited 101.",
+      "receipt_sha256": null,
+      "wall_seconds": 180
+    }
+  ],
+  "workspace": {
+    "expected_full_977_not_actual": true,
+    "expected_profiler_doc_inventory": 8,
+    "expected_profiler_model_inventory": 60,
+    "failed": 1,
+    "failed_group_actual_counts": {
+      "failed": 1,
+      "passed": 27
+    },
+    "failed_group_prior_counts": {
+      "failed": 0,
+      "passed": 28
+    },
+    "first_27_group_counts_exact_prior": true,
+    "group_inventory_sha256": "30663ae3127d7f21301581e908dfd4fbff04b91d7676498b26b7fdb80a577a8a",
+    "ignored_observed": 1,
+    "nested_guard_groups": [
+      {
+        "filtered_each": 189,
+        "owner": "root library",
+        "passes": 2
+      },
+      {
+        "filtered_each": 26,
+        "owner": "controlled oracle",
+        "passes": 3
+      }
+    ],
+    "nested_guard_passes_not_added": 5,
+    "observed_groups": [
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 1
+        },
+        "status": "pass",
+        "target": "Running unittests src/lib.rs (target/debug/deps/liteinst_admission)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 3
+        },
+        "status": "pass",
+        "target": "Running tests/core_bridge.rs (target/debug/deps/core_bridge)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 15
+        },
+        "status": "pass",
+        "target": "Running tests/model.rs (target/debug/deps/model)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 12
+        },
+        "status": "pass",
+        "target": "Running tests/oracle.rs (target/debug/deps/oracle)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 13
+        },
+        "status": "pass",
+        "target": "Running tests/return_obligations.rs (target/debug/deps/return_obligations)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 2
+        },
+        "status": "pass",
+        "target": "Running unittests src/lib.rs (target/debug/deps/liteinst_launch)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 23
+        },
+        "status": "pass",
+        "target": "Running tests/checkpoint.rs (target/debug/deps/checkpoint)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 3
+        },
+        "status": "pass",
+        "target": "Running tests/concurrent_control.rs (target/debug/deps/concurrent_control)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 7
+        },
+        "status": "pass",
+        "target": "Running tests/concurrent_gate.rs (target/debug/deps/concurrent_gate)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 33
+        },
+        "status": "pass",
+        "target": "Running tests/native_selected.rs (target/debug/deps/native_selected)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 7
+        },
+        "status": "pass",
+        "target": "Running tests/native_syscall.rs (target/debug/deps/native_syscall)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 17
+        },
+        "status": "pass",
+        "target": "Running tests/page_gate.rs (target/debug/deps/page_gate)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 13
+        },
+        "status": "pass",
+        "target": "Running tests/selected_gate.rs (target/debug/deps/selected_gate)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 14
+        },
+        "status": "pass",
+        "target": "Running tests/selected_semantics.rs (target/debug/deps/selected_semantics)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 1,
+          "measured": 0,
+          "passed": 189
+        },
+        "status": "pass",
+        "target": "Running unittests src/lib.rs (target/debug/deps/liteinst2)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 0
+        },
+        "status": "pass",
+        "target": "Running unittests tests/support/arena_fork_fixture.rs (target/debug/deps/liteinst2_arena_fork_fixture)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 40
+        },
+        "status": "pass",
+        "target": "Running tests/a2_oracle.rs (target/debug/deps/a2_oracle)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 6
+        },
+        "status": "pass",
+        "target": "Running tests/arena_fork.rs (target/debug/deps/arena_fork)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 27
+        },
+        "status": "pass",
+        "target": "Running tests/boundary_signal_oracle.rs (target/debug/deps/boundary_signal_oracle)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 1
+        },
+        "status": "pass",
+        "target": "Running tests/bundle_contract.rs (target/debug/deps/bundle_contract)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 27
+        },
+        "status": "pass",
+        "target": "Running tests/call_return_oracle.rs (target/debug/deps/call_return_oracle)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 11
+        },
+        "status": "pass",
+        "target": "Running tests/concurrent_overlap.rs (target/debug/deps/concurrent_overlap)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 1
+        },
+        "status": "pass",
+        "target": "Running tests/controlled_coalescing_contract.rs (target/debug/deps/controlled_coalescing_contract)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 27
+        },
+        "status": "pass",
+        "target": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 1
+        },
+        "status": "pass",
+        "target": "Running tests/entry_backedge.rs (target/debug/deps/entry_backedge)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 27
+        },
+        "status": "pass",
+        "target": "Running tests/entry_paths_oracle.rs (target/debug/deps/entry_paths_oracle)"
+      },
+      {
+        "counts": {
+          "failed": 0,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 13
+        },
+        "status": "pass",
+        "target": "Running tests/eviction_chain_contract.rs (target/debug/deps/eviction_chain_contract)"
+      },
+      {
+        "counts": {
+          "failed": 1,
+          "filtered": 0,
+          "ignored": 0,
+          "measured": 0,
+          "passed": 27
+        },
+        "status": "fail",
+        "target": "Running tests/eviction_chain_extensions.rs (target/debug/deps/eviction_chain_extensions)"
+      }
+    ],
+    "observed_ignore": "rapid::tests::live::benchmark_single_byte_toggle_latency",
+    "outer_groups_observed": 28,
+    "passed": 560,
+    "preexisting_ignores": [
+      "live_probe_stress_matrix",
+      "patch_latency::patch_activation_latency_benchmark",
+      "probe_overhead_benchmark",
+      "rapid::tests::live::benchmark_single_byte_toggle_latency"
+    ],
+    "prior_d6_outer_groups": 60,
+    "prior_d6_passes": 935,
+    "prior_groups_not_reached": 32,
+    "public_profiler_docs_observed": 0,
+    "public_profiler_models_observed": 0,
+    "remaining_preexisting_ignores_not_reached": 3,
+    "unrun_prior_groups": [
+      "Running tests/eviction_chain_oracle.rs (target/debug/deps/eviction_chain_oracle)",
+      "Running tests/exact_syscall.rs (target/debug/deps/exact_syscall)",
+      "Running tests/generalized_pun_contract.rs (target/debug/deps/generalized_pun_contract)",
+      "Running tests/mandatory_prefix_oracle.rs (target/debug/deps/mandatory_prefix_oracle)",
+      "Running tests/neighbor_eviction_contract.rs (target/debug/deps/neighbor_eviction_contract)",
+      "Running tests/neighbor_eviction_oracle.rs (target/debug/deps/neighbor_eviction_oracle)",
+      "Running tests/overlap_concurrency.rs (target/debug/deps/overlap_concurrency)",
+      "Running tests/parked_context_oracle.rs (target/debug/deps/parked_context_oracle)",
+      "Running tests/pc_relative.rs (target/debug/deps/pc_relative)",
+      "Running tests/prefixed_pun_contract.rs (target/debug/deps/prefixed_pun_contract)",
+      "Running tests/prefixed_pun_oracle.rs (target/debug/deps/prefixed_pun_oracle)",
+      "Running tests/quiescent_contract.rs (target/debug/deps/quiescent_contract)",
+      "Running tests/quiescent_oracle.rs (target/debug/deps/quiescent_oracle)",
+      "Running tests/rel32_endpoint_oracle.rs (target/debug/deps/rel32_endpoint_oracle)",
+      "Running tests/replace_first_cet.rs (target/debug/deps/replace_first_cet)",
+      "Running tests/search_eviction_evidence.rs (target/debug/deps/search_eviction_evidence)",
+      "Running tests/search_evidence.rs (target/debug/deps/search_evidence)",
+      "Running tests/sigtrap_origin.rs (target/debug/deps/sigtrap_origin)",
+      "Running tests/stress.rs (target/debug/deps/stress)",
+      "Running tests/successor_eviction_contract.rs (target/debug/deps/successor_eviction_contract)",
+      "Running tests/successor_eviction_oracle.rs (target/debug/deps/successor_eviction_oracle)",
+      "Running tests/sync_core_capability.rs (target/debug/deps/sync_core_capability)",
+      "Running tests/tactic_engine.rs (target/debug/deps/tactic_engine)",
+      "Running tests/trampoline_tail.rs (target/debug/deps/trampoline_tail)",
+      "Running tests/exception_landing.rs (target/debug/deps/exception_landing)",
+      "Running unittests src/lib.rs (target/debug/deps/rapid_profiler)",
+      "Running unittests src/main.rs (target/debug/deps/rapid_profiler)",
+      "Running tests/e2e.rs (target/debug/deps/e2e)",
+      "Doc-tests liteinst_admission",
+      "Doc-tests liteinst_launch",
+      "Doc-tests liteinst2",
+      "Doc-tests rapid_profiler"
+    ]
+  }
+}

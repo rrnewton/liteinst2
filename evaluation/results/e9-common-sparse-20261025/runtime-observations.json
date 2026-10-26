@@ -1,0 +1,22 @@
+{
+  "automatic_epoch_refresh": false,
+  "complete_runtime_dependency_closure_claimed": false,
+  "configuration_and_file_identities_frozen": true,
+  "epoch_sha256": "4db823b7e2840ebc563af1479a361f571cebe983c9741af3f128a61e0afc461e",
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "family": 26,
+    "hardware_record_sha256": "96e792089998093ba46b2cafe49addc8b8c93a00bd4b6d7f8f2f2bc8619a425d",
+    "kernel_release_record_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "before v3 preparation/calibrations",
+    "observed_at_utc": "2026-10-25T19:30:18.484662+00:00",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "selected_file_count": 156,
+  "v1_hardware_phase": "not_established_by_this_report",
+  "v4_hardware": "inherited same-host observation; no new continuous hardware attestation"
+}

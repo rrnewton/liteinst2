@@ -288,6 +288,13 @@ impl PlannedBundle {
         lease: &mut QuiescenceLease<'_>,
         mut finalize: impl FnMut() -> Result<(), Refusal>,
     ) -> Result<(InstalledBundle, BundleReceipt), PublicationFailure> {
+        if self
+            .images
+            .iter()
+            .any(|image| image.artifact_metadata().is_some())
+        {
+            return Err(before(Refusal::InvalidPlan));
+        }
         self.plan.check(lease, false).map_err(before)?;
         quiescent::qualify_host().map_err(before)?;
         check_aliases(aliases).map_err(before)?;
@@ -346,6 +353,13 @@ impl PlannedBundle {
             // SAFETY: all emitted images are initialized and the complete lease is held.
             Some(unsafe { crate::entry_router::stage(&routes) }.map_err(before)?)
         };
+        if self
+            .images
+            .iter()
+            .any(|image| image.artifact_metadata().is_some())
+        {
+            return Err(before(Refusal::InvalidPlan));
+        }
         self.plan.check(lease, false).map_err(before)?;
         check_snapshots(aliases, &self.plan.originals).map_err(before)?;
         if routing.is_some() {

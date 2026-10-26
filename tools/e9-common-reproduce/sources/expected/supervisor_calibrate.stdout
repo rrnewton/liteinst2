@@ -1,0 +1,11 @@
+{
+  "mocked_scenarios": 1,
+  "simulated_signal_deliveries": 6,
+  "helper_wait_seconds": [
+    55,
+    10,
+    5
+  ],
+  "actual_process_launches": 0,
+  "actual_signals_sent": 0
+}

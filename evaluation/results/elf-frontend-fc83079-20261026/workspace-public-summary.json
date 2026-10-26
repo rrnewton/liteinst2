@@ -1,0 +1,86 @@
+{
+  "gate_results": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "name": "fmt",
+      "seconds": 1.6174261288251728,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "name": "clippy",
+      "seconds": 4.221930912928656,
+      "sha256": "d04e155d7acdcf522003a94ff9c3c515ee0c3eeb212212559c6035043d1033d8",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit": 0,
+      "name": "test",
+      "seconds": 278.94340770994313,
+      "sha256": "81f793c584155aa2010dec2c63f36b826a1bb860780044b1ece0b20d3c5cc416",
+      "timeout_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "exit": 0,
+      "name": "check",
+      "seconds": 2.6693522790446877,
+      "sha256": "3e6dfc99d1a0e0f3b602352a30181932b312b59d09cb2c9fdeb0cfaa560c626d",
+      "timeout_seconds": 180
+    }
+  ],
+  "nested_completed_one_test_groups": 5,
+  "nested_started": 7,
+  "outer_case_identities": 1179,
+  "outer_case_status_equality_to_prior_e881": true,
+  "outer_groups": 70,
+  "outer_totals": {
+    "failed": 0,
+    "filtered": 0,
+    "ignored": 4,
+    "measured": 0,
+    "passed": 1175
+  },
+  "required_commands_sha256": "af988d1b6960dda22f94515351cd9947f95e10b2824f9670cc00ba7fd1c9eb6a",
+  "schema": 1,
+  "scope": "Required workspace logs only. Outer counts exclude nested summaries; two starts receive no terminal credit. Doc subjects/results do not provide full diagnostic bodies. Operational durations, not benchmarks.",
+  "source_files": 1127,
+  "source_map_sha256": "8f8cd72de73f8c84c6c3655bd79831b5234469c695017db86475b993076b0701",
+  "source_thread_limit": 4,
+  "test_log_sha256": "81f793c584155aa2010dec2c63f36b826a1bb860780044b1ece0b20d3c5cc416",
+  "tested_revision": "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36",
+  "unchanged_ignored_cases": {
+    "Running tests/stress.rs (target/debug/deps/stress) :: live_probe_stress_matrix": "ignored, long-running M5 live stress matrix",
+    "Running tests/stress.rs (target/debug/deps/stress) :: patch_latency::patch_activation_latency_benchmark": "ignored, opt-in release-mode cross-core LiveJumpPatch latency distribution",
+    "Running tests/stress.rs (target/debug/deps/stress) :: probe_overhead_benchmark": "ignored, release-mode M5 overhead benchmark",
+    "Running unittests src/lib.rs (target/debug/deps/liteinst2) :: rapid::tests::live::benchmark_single_byte_toggle_latency": "ignored, release-mode latency benchmark"
+  },
+  "uncredited_guard_starts": 2
+}

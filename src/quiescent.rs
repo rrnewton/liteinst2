@@ -9,6 +9,7 @@ use std::io::Read;
 use iced_x86::{FlowControl, Mnemonic};
 
 use crate::contracts::*;
+use crate::emission::{ArtifactPlan, ArtifactRequest, PlanningRequest};
 use crate::planner::HookSemantics;
 use crate::scanner::{InstructionScanner, ScanResult};
 use crate::search::{RefusalClass, SearchDomain, SearchEvidence, SearchScope};
@@ -212,13 +213,27 @@ pub fn plan_install(request: &InstallRequest<'_>) -> Result<PlannedInstall, Refu
 pub fn plan_install_detailed(
     request: &InstallRequest<'_>,
 ) -> Result<PlannedInstall, PlanningFailure> {
+    plan_install_core(&PlanningRequest::live(request))
+}
+
+/// Plans B1/B2/T1 with an explicit symbolic target. The returned artifact
+/// retains unresolved CPU/loader/provenance/ABI requirements and cannot publish.
+pub fn plan_install_with_emission(
+    request: &ArtifactRequest<'_>,
+) -> Result<ArtifactPlan, PlanningFailure> {
+    plan_install_core(&PlanningRequest::artifact(request)).map(ArtifactPlan::single)
+}
+
+pub(crate) fn plan_install_core(
+    request: &PlanningRequest<'_>,
+) -> Result<PlannedInstall, PlanningFailure> {
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
     let result = (|| {
-        let (source, scan) = validated_source(request).inspect_err(|reason| {
+        let (source, scan) = validated_source_core(request).inspect_err(|reason| {
             search_evidence.qualification(SearchScope::default(), reason);
         })?;
-        let occupied = occupied_ranges()?;
+        let occupied = request.emission.occupied()?;
         if request.search.max_sites == 0 {
             let id =
                 search_evidence.begin(SearchDomain::PhysicalSites, SearchScope::default(), 0, None);
@@ -402,6 +417,13 @@ pub fn plan_coalesced_detailed(
     request: &InstallRequest<'_>,
     actions: &[crate::controls::ControlledAction],
 ) -> Result<PlannedInstall, PlanningFailure> {
+    plan_coalesced_core(&PlanningRequest::live(request), actions)
+}
+
+fn plan_coalesced_core(
+    request: &PlanningRequest<'_>,
+    actions: &[crate::controls::ControlledAction],
+) -> Result<PlannedInstall, PlanningFailure> {
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
     let result = (|| {
@@ -420,7 +442,7 @@ pub fn plan_coalesced_detailed(
         {
             return Err(Refusal::InvalidPlan);
         }
-        let (source, scan) = validated_source(request)
+        let (source, scan) = validated_source_core(request)
             .inspect_err(|reason| search_evidence.qualification(SearchScope::default(), reason))?;
         for action in actions {
             if !request.block.contains(action.logical_pc) {
@@ -436,7 +458,7 @@ pub fn plan_coalesced_detailed(
             search_evidence.known_limit_hit(id, 1);
             return Err(Refusal::NoPatchWindow);
         }
-        let occupied = occupied_ranges()?;
+        let occupied = request.emission.occupied()?;
         let mut candidates: Vec<_> = scan
             .instructions()
             .iter()
@@ -512,6 +534,12 @@ pub fn plan_coalesced_detailed(
 pub(crate) fn validated_source(
     request: &InstallRequest<'_>,
 ) -> Result<(AddressRange, ScanResult), Refusal> {
+    validated_source_core(&PlanningRequest::live(request))
+}
+
+pub(crate) fn validated_source_core(
+    request: &PlanningRequest<'_>,
+) -> Result<(AddressRange, ScanResult), Refusal> {
     let source = AddressRange::new(request.base_address, request.code.len())?;
     if request.entries.identity != request.identity {
         return Err(Refusal::StaleGeneration);
@@ -528,7 +556,7 @@ pub(crate) fn validated_source(
     {
         return Err(Refusal::InvalidRange);
     }
-    qualify_host()?;
+    request.emission.qualify()?;
     let scan = InstructionScanner::default()
         .scan(request.code, request.base_address)
         .map_err(|e| Refusal::Backend(e.to_string()))?;
@@ -558,7 +586,7 @@ pub(crate) fn validated_source(
 }
 
 pub(crate) fn plan_pun(
-    request: &InstallRequest<'_>,
+    request: &PlanningRequest<'_>,
     scan: &ScanResult,
     source: AddressRange,
     occupied: &[AddressRange],
@@ -566,7 +594,7 @@ pub(crate) fn plan_pun(
     search_evidence: &mut SearchEvidence,
     parent_scope: SearchScope,
 ) -> Result<PlannedInstall, Refusal> {
-    plan_pun_with_context(
+    plan_pun_with_context_core(
         request,
         scan,
         source,
@@ -592,6 +620,26 @@ pub(crate) struct PunContext {
 
 pub(crate) fn plan_pun_with_context(
     request: &InstallRequest<'_>,
+    scan: &ScanResult,
+    source: AddressRange,
+    occupied: &[AddressRange],
+    prefixes: usize,
+    search_evidence: &mut SearchEvidence,
+    context: PunContext,
+) -> Result<PlannedInstall, Refusal> {
+    plan_pun_with_context_core(
+        &PlanningRequest::live(request),
+        scan,
+        source,
+        occupied,
+        prefixes,
+        search_evidence,
+        context,
+    )
+}
+
+fn plan_pun_with_context_core(
+    request: &PlanningRequest<'_>,
     scan: &ScanResult,
     source: AddressRange,
     occupied: &[AddressRange],
@@ -680,10 +728,9 @@ pub(crate) fn plan_pun_with_context(
     let trampoline = if context.callback_free {
         TrampolinePlan::from_instruction(scan, physical)
     } else {
-        TrampolinePlan::from_short_instruction(
+        request.emission.short(
             scan,
             physical,
-            request.hook,
             request.semantics == HookSemantics::ReplaceFirst,
         )
     }
@@ -711,7 +758,7 @@ pub(crate) fn plan_pun_with_context(
     );
     for (attempt, target) in candidates.addresses.into_iter().enumerate() {
         search_evidence.visit(image_search);
-        let image = match trampoline.emit_at(target) {
+        let image = match request.emission.emit(&trampoline, target) {
             Ok(image) => image,
             Err(error) => {
                 last_error = Refusal::Backend(error.to_string());
@@ -885,7 +932,7 @@ pub(crate) fn pun_candidates(window: AddressRange, policy: &AllocationPolicy) ->
 }
 
 fn plan_at(
-    request: &InstallRequest<'_>,
+    request: &PlanningRequest<'_>,
     scan: &ScanResult,
     source: AddressRange,
     physical: u64,
@@ -904,7 +951,7 @@ fn plan_at(
 }
 
 fn plan_at_with_controls(
-    request: &InstallRequest<'_>,
+    request: &PlanningRequest<'_>,
     scan: &ScanResult,
     source: AddressRange,
     physical: u64,
@@ -996,12 +1043,11 @@ fn plan_at_with_controls(
     }
     let trampoline = match controls {
         Some(actions) => TrampolinePlan::from_controlled_actions(scan, physical, end, actions),
-        None => TrampolinePlan::from_window(
+        None => request.emission.window(
             scan,
             physical,
             request.logical_pc,
             end,
-            request.hook,
             request.semantics == HookSemantics::ReplaceFirst,
         ),
     }
@@ -1038,7 +1084,7 @@ fn plan_at_with_controls(
         if !seen.insert(target) {
             continue;
         }
-        let image = match trampoline.emit_at(target) {
+        let image = match request.emission.emit(&trampoline, target) {
             Ok(image) => image,
             Err(e) => {
                 last_error = Refusal::Backend(e.to_string());
@@ -1661,6 +1707,9 @@ impl PlannedInstall {
         lease: &mut QuiescenceLease<'_>,
         mut finalize: impl FnMut() -> Result<(), Refusal>,
     ) -> Result<(InstalledOnce, PublicationReceipt), PublicationFailure> {
+        if self.image.artifact_metadata().is_some() {
+            return Err(before(Refusal::InvalidPlan));
+        }
         lease.check(&self.plan).map_err(before)?;
         if writable_base.is_null() {
             return Err(before(Refusal::InvalidRange));
@@ -1752,6 +1801,145 @@ impl PlannedInstall {
         // installed and instruction-stream visibility completed while held.
         let receipt = unsafe { PublicationReceipt::completed(self.plan.clone()) };
         Ok((installed, receipt))
+    }
+}
+
+impl PlannedInstall {
+    /// Publishes an independently prepared normal-backtrace qualification.
+    ///
+    /// Existing publication without unwind metadata is unchanged. This method
+    /// retains code/CFI/source/consumer owners before registering FDEs, verifies
+    /// exact lookup, and only then publishes routes and source bytes.
+    ///
+    /// # Safety
+    /// All requirements of [`Self::publish_with`] apply. The separately
+    /// certified source, hook and consumer contracts must remain valid. No
+    /// concurrent consumer registration, fork, module unload or metadata write
+    /// may occur during preparation/commit. Registration is process-lifetime;
+    /// retirement or error must not deregister or reclaim the retained records.
+    pub unsafe fn publish_with_unwind(
+        &self,
+        unwind: &crate::generated_unwind::PreparedUnwind,
+        writable_base: *mut u8,
+        lease: &mut QuiescenceLease<'_>,
+        mut finalize: impl FnMut() -> Result<(), Refusal>,
+    ) -> Result<
+        (
+            InstalledOnce,
+            PublicationReceipt,
+            crate::generated_unwind::RegisteredUnwind,
+        ),
+        crate::generated_unwind::PublicationError,
+    > {
+        use crate::generated_unwind::PublicationError;
+        let before = |reason| PublicationError::Publication(before(reason));
+        if self.image.artifact_metadata().is_some() {
+            return Err(before(Refusal::InvalidPlan));
+        }
+        unwind
+            .check(&self.plan, &self.image)
+            .map_err(PublicationError::Preparation)?;
+        lease.check(&self.plan).map_err(before)?;
+        if writable_base.is_null() {
+            return Err(before(Refusal::InvalidRange));
+        }
+        qualify_host().map_err(before)?;
+        let current_state = crate::trampoline::SavedExtendedStateLayout::detect()
+            .map_err(|error| before(Refusal::Backend(error.to_string())))?;
+        if current_state != self.image.layout().saved_extended_state {
+            return Err(before(Refusal::UnsupportedSemantics(
+                "extended-state layout changed since planning".into(),
+            )));
+        }
+        prepare_sync_core().map_err(before)?;
+        let source = &self.plan.parts().reads[0];
+        if matches!(
+            self.plan.parts().kind,
+            PlanKind::GeneralizedPun(_) | PlanKind::PrefixedPun(_)
+        ) && writable_base as usize % 64 != source.address as usize % 64
+        {
+            return Err(before(Refusal::InvalidRange));
+        }
+        check_bytes(writable_base, &source.bytes).map_err(before)?;
+        let reservation = crate::trap::reserve(
+            self.plan.parts().physical_pc as usize,
+            source.address as usize,
+            source.address as usize + source.bytes.len(),
+            0,
+        )
+        .map_err(|_| before(Refusal::OwnershipConflict))?;
+        let staged = ExecutableTrampoline::allocate_image_at(&self.image, self.image.address())
+            .map_err(|e| before(Refusal::Backend(e.to_string())))?;
+        if staged.trampoline().address() != self.image.address() {
+            return Err(before(Refusal::InvalidPlan));
+        }
+        let routes: Vec<_> = self
+            .plan
+            .parts()
+            .obligations
+            .iter()
+            .filter_map(|obligation| {
+                if let EntryObligation::Routed(route) = obligation {
+                    Some(*route)
+                } else {
+                    None
+                }
+            })
+            .collect();
+        let mut routing = if routes.is_empty() {
+            None
+        } else {
+            crate::entry_router::prepare().map_err(before)?;
+            // SAFETY: staged code is initialized, dependency lease is held, and
+            // routes are derived from the trusted emitter's exact entry map.
+            Some(unsafe { crate::entry_router::stage(&routes) }.map_err(before)?)
+        };
+        let staged_unwind = unwind.stage().map_err(PublicationError::Preparation)?;
+        // All allocation/signal setup precedes the final identity/byte check.
+        unwind
+            .check(&self.plan, &self.image)
+            .map_err(PublicationError::Preparation)?;
+        lease.check(&self.plan).map_err(before)?;
+        check_bytes(writable_base, &source.bytes).map_err(before)?;
+        if routing.is_some() {
+            crate::entry_router::verify().map_err(before)?;
+        }
+        let trampoline = staged.commit();
+        // Code is already process-lifetime retained. CFI/source/consumer owners
+        // become irrevocably retained BEFORE the real void registration call.
+        // A failed lookup cannot reclaim them or publish any source redirect.
+        let registered = staged_unwind
+            .commit()
+            .map_err(PublicationError::RetainedBeforeWrite)?;
+        trampoline.publish_program_counter_mappings();
+        if let Some(registration) = routing.as_mut() {
+            registration.commit();
+        }
+        let installed = InstalledOnce {
+            plan: self.plan.clone(),
+            writable_base,
+            reservation: Some(reservation),
+            routing,
+            trampoline,
+            retired: false,
+        };
+        lease.poison();
+        // SAFETY: every changed and preserved store byte is authenticated and
+        // held; the alias and signal contracts exclude concurrent accesses.
+        unsafe { write_source(&self.plan, writable_base, false) };
+        // Dropping the installed handle on error deliberately retains reachable
+        // code, routing and byte ownership. The caller must keep the gate held.
+        if let Err(reason) = finalize().and_then(|()| sync_core()) {
+            return Err(PublicationError::Publication(PublicationFailure {
+                reason,
+                stage: FailureStage::KeepGated,
+            }));
+        }
+        lease.publication_completed();
+        // SAFETY: every plan obligation, byte write, allocation and route is now
+        // installed and instruction-stream visibility completed while held.
+        let receipt = unsafe { PublicationReceipt::completed(self.plan.clone()) };
+        Ok((installed, receipt, registered))
     }
 }
 

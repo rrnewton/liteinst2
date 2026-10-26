@@ -1,0 +1,147 @@
+{
+  "coordinate_role_scope": "Directory roles have the meanings in the campaign README. AUDIT_SCRIPT and COLLECTOR_SCRIPT name the exact published source bytes at their original private locations; AUDIT_PYTHON_RESOLVED names the saved interpreter owner. No parent or helper receipt is invented.",
+  "host_label": "AMD EPYC Zen 5 dev host",
+  "records": [
+    {
+      "name": "saved-record-audit",
+      "raw_invocation_sha256": "5a6aa3fbdeffe27a6a2d68e0b772893204fdf04461703842559a95fa6d74b10e",
+      "raw_result_sha256": "fa4bdde454ffdeab203bba44288eb88ccecd8c690e7fc83460e2822f41a0474a",
+      "records": {
+        "invocation": {
+          "argv": [
+            "${ALIAS_CONTROL_PYTHON_PATH}",
+            "-B",
+            "${AUDIT_SCRIPT}",
+            "--raw",
+            "${NATIVE_RAW}"
+          ],
+          "audit_helper_receipt": null,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "expected_output": "${NATIVE_RAW}/runtime-audit-oracle-v3/audit.json",
+          "hardware": {
+            "architecture": "x86_64",
+            "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+            "host_label": "AMD EPYC Zen 5 dev host",
+            "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+            "libc": "glibc 2.34",
+            "logical_cpus": 316,
+            "scope": "Separate pre-audit observation, not a native campaign hardware attestation"
+          },
+          "native_hardware_record_sha256": "5398b85e62db96ac1e588c3213d07ad15ddfdd4302be7831115ca44c2d2c1d33",
+          "native_parent_authority": "Root reported exec session62217 exit0 and reaped before authorizing this audit. No helper or parent receipt invented.",
+          "observed_checkout_revision": "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36",
+          "python": {
+            "path": "${ALIAS_CONTROL_PYTHON_PATH}",
+            "resolved": "${ALIAS_CONTROL_PYTHON_RESOLVED}",
+            "sha256": "4599a96bc22ac6a201ff99d0c3239707bc08eef34046fb5d18312ea1c8fb2154"
+          },
+          "raw_source_sha256": "8f8cd72de73f8c84c6c3655bd79831b5234469c695017db86475b993076b0701",
+          "recorded_before_invocation_utc": "2026-10-26T08:32:26.205071+00:00",
+          "schema": 1,
+          "scope": "Root-authorized read-only audit of closed saved native records; no build/test/native reexecution.",
+          "script_sha256": "7ad6e2e0f643eed7f4a743c1cf58673527bc7fb3725ccb3981152dfdcd1d11aa",
+          "shell_wrapper_argv": [
+            "/usr/bin/env",
+            "-i",
+            "LC_ALL=C",
+            "PATH=/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE=1",
+            "${ALIAS_CONTROL_PYTHON_PATH}",
+            "-B",
+            "${AUDIT_SCRIPT}",
+            "--raw",
+            "${NATIVE_RAW}"
+          ],
+          "source_revision": "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36",
+          "stderr": "${NATIVE_RAW}/audit-execution-oracle-v1/stderr",
+          "stdout": "${NATIVE_RAW}/audit-execution-oracle-v1/stdout"
+        },
+        "result": {
+          "audit_sha256": "048e73d6e3e16c17ccddfa551e710079f5907309210899101947bcccdac1fcd9",
+          "command_exit": 0,
+          "completed_observation_utc": "2026-10-26T08:32:41.783489+00:00",
+          "helper_receipt": null,
+          "invocation_sha256": "5a6aa3fbdeffe27a6a2d68e0b772893204fdf04461703842559a95fa6d74b10e",
+          "native_reexecution": false,
+          "schema": 1,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "f96795a9e9a608274594eaf2238e6429eb673284c6db14ad4bf43acac4c27abe",
+          "tool_chunk_id": "406217",
+          "tool_elapsed_scope": "exec_command operational duration, not bounded-helper elapsed or benchmark",
+          "tool_wall_seconds": 0.443075055
+        }
+      },
+      "source_identity_scope": "Executed prepublication script snapshot identified by its SHA-256; recorded checkout revision is separate",
+      "tested_script_revision": null
+    },
+    {
+      "name": "public-summary-collection",
+      "raw_invocation_sha256": "291ce3e5d3c449b849e05b744440819d8ac5410e142e5c8769a805139921efa0",
+      "raw_result_sha256": "c9f081f56934ff81b99072614c63e9a3fda829855557bf524ed24ad2eb9ad183",
+      "records": {
+        "invocation": {
+          "argv": [
+            "${ALIAS_CONTROL_PYTHON_PATH}",
+            "-B",
+            "${COLLECTOR_SCRIPT}",
+            "--repo",
+            "${REPO}",
+            "--native",
+            "${NATIVE_RAW}",
+            "--native-audit",
+            "${NATIVE_RAW}/runtime-audit-oracle-v3/audit.json",
+            "--native-audit-sha256",
+            "048e73d6e3e16c17ccddfa551e710079f5907309210899101947bcccdac1fcd9",
+            "--parity",
+            "${PARITY_RAW}",
+            "--depfile-controls",
+            "${CONTROLS_RAW}",
+            "--alias-controls",
+            "${ALIAS_CONTROLS_RAW}",
+            "--output",
+            "${REPO}/ignored/a3/elf-frontend-success-fc83079-v1",
+            "--parents-closed-and-reaped"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "hardware": {
+            "architecture": "x86_64",
+            "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+            "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+            "libc": [
+              "glibc",
+              "2.34"
+            ],
+            "logical_cpus": 316
+          },
+          "parent_observation_sha256": "481d13f9d2eaa10953cfcf02d395fe9065f860d98e48a6172d6dc62273a2fe59",
+          "python_sha256": "4599a96bc22ac6a201ff99d0c3239707bc08eef34046fb5d18312ea1c8fb2154",
+          "revision": "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36",
+          "source_sha256": "856a13e3475c0a6caf85fe187f6fb019a97f87c23858ce5666ccc31400549ae3",
+          "timeout_seconds": 120
+        },
+        "result": {
+          "exit": 0,
+          "invocation_sha256": "291ce3e5d3c449b849e05b744440819d8ac5410e142e5c8769a805139921efa0",
+          "seconds": 3.523918332066387,
+          "source_after_sha256": "856a13e3475c0a6caf85fe187f6fb019a97f87c23858ce5666ccc31400549ae3",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "source_identity_scope": "Executed prepublication script snapshot identified by its SHA-256; recorded checkout revision is separate",
+      "tested_script_revision": null
+    }
+  ],
+  "schema": 1,
+  "scope": "Read-only saved-record/reporting operations; zero native reexecutions, builds or benchmark measurements"
+}

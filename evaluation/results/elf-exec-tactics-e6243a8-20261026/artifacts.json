@@ -1,0 +1,722 @@
+[
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "B2-unstripped-null",
+    "candidate_bytes": 94773,
+    "candidate_sha256": "beedafa7fe73962e33ebd3d8eb05154f0a79ffd4e4d55e98d39d343bda3d98ba",
+    "changed_source_bytes": 3,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0a00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "e90080",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "0f1f00"
+      }
+    ],
+    "family": "B2",
+    "generated_image_bytes": 304,
+    "generated_image_count": 1,
+    "growth_bytes": 6565,
+    "images": [
+      {
+        "bytes": 304,
+        "index": 0,
+        "sha256": "87b3efa9797936fe6809be0138d3c3ea7d8404b4b67c6fd79e30632cffe67b73"
+      }
+    ],
+    "original_bytes": 88208,
+    "original_sha256": "922ff6001afff2ddbd60b4aab8ae9742989171572af79fb629b29832fc958a68",
+    "source_edit_span_bytes": 3
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "B2-unstripped-journal",
+    "candidate_bytes": 94773,
+    "candidate_sha256": "dd26c1685fa27e80f236d2823148b2b9a49b508531b4a5336c55a939887ebb9b",
+    "changed_source_bytes": 3,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0a00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "e90080",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "0f1f00"
+      }
+    ],
+    "family": "B2",
+    "generated_image_bytes": 304,
+    "generated_image_count": 1,
+    "growth_bytes": 6565,
+    "images": [
+      {
+        "bytes": 304,
+        "index": 0,
+        "sha256": "e678343ed814f6d5bbc36e8a6c77de4502a7097bc94d4165cfc500244f466ab1"
+      }
+    ],
+    "original_bytes": 88208,
+    "original_sha256": "922ff6001afff2ddbd60b4aab8ae9742989171572af79fb629b29832fc958a68",
+    "source_edit_span_bytes": 3
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "B2-stripped-null",
+    "candidate_bytes": 94773,
+    "candidate_sha256": "28d418aae7a206eb63347edf268fac299df96e84b754230d23428046f53c5ada",
+    "changed_source_bytes": 3,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0a00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "e90080",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "0f1f00"
+      }
+    ],
+    "family": "B2",
+    "generated_image_bytes": 304,
+    "generated_image_count": 1,
+    "growth_bytes": 8181,
+    "images": [
+      {
+        "bytes": 304,
+        "index": 0,
+        "sha256": "87b3efa9797936fe6809be0138d3c3ea7d8404b4b67c6fd79e30632cffe67b73"
+      }
+    ],
+    "original_bytes": 86592,
+    "original_sha256": "5acbd1a9bac269d8faf0851b6c9631253f9635d9ba268d6946f8554af858cff3",
+    "source_edit_span_bytes": 3
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "B2-stripped-journal",
+    "candidate_bytes": 94773,
+    "candidate_sha256": "2fe5a0c9298313eb0e4e35bf1856cc6987c40601912810ae87371851ccc62d00",
+    "changed_source_bytes": 3,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0a00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "e90080",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "0f1f00"
+      }
+    ],
+    "family": "B2",
+    "generated_image_bytes": 304,
+    "generated_image_count": 1,
+    "growth_bytes": 8181,
+    "images": [
+      {
+        "bytes": 304,
+        "index": 0,
+        "sha256": "e678343ed814f6d5bbc36e8a6c77de4502a7097bc94d4165cfc500244f466ab1"
+      }
+    ],
+    "original_bytes": 86592,
+    "original_sha256": "5acbd1a9bac269d8faf0851b6c9631253f9635d9ba268d6946f8554af858cff3",
+    "source_edit_span_bytes": 3
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T1-unstripped-null",
+    "candidate_bytes": 97517,
+    "candidate_sha256": "2e72108d11b539c08a80f5796eedd62f3c940b9d18d3bc603475fb9511209072",
+    "changed_source_bytes": 2,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0a00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "2ee9",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "89c0"
+      }
+    ],
+    "family": "T1",
+    "generated_image_bytes": 303,
+    "generated_image_count": 1,
+    "growth_bytes": 9309,
+    "images": [
+      {
+        "bytes": 303,
+        "index": 0,
+        "sha256": "f3082655a811e20f1071d939db8f57fb5770a1af296c2b06ffb8d65acfb21373"
+      }
+    ],
+    "original_bytes": 88208,
+    "original_sha256": "95c7b078ff3d83aafdf41911924a29ff2b4786c340d5f15dee2e43c2853c2494",
+    "source_edit_span_bytes": 2
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T1-unstripped-journal",
+    "candidate_bytes": 97517,
+    "candidate_sha256": "325e2c3d251e84dd27bdb27b235fe7a63248ff24771123de92b535ca387116f9",
+    "changed_source_bytes": 2,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0a00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "2ee9",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "89c0"
+      }
+    ],
+    "family": "T1",
+    "generated_image_bytes": 303,
+    "generated_image_count": 1,
+    "growth_bytes": 9309,
+    "images": [
+      {
+        "bytes": 303,
+        "index": 0,
+        "sha256": "05765764ee9dce042fb1c22e812cef56abd691259cc52d4fb39d75c2c408a263"
+      }
+    ],
+    "original_bytes": 88208,
+    "original_sha256": "95c7b078ff3d83aafdf41911924a29ff2b4786c340d5f15dee2e43c2853c2494",
+    "source_edit_span_bytes": 2
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T1-stripped-null",
+    "candidate_bytes": 97517,
+    "candidate_sha256": "8cdefcc6610eb40df3a35b268e178bb176abfab549429698c7afcb2aa9ab4506",
+    "changed_source_bytes": 2,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0a00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "2ee9",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "89c0"
+      }
+    ],
+    "family": "T1",
+    "generated_image_bytes": 303,
+    "generated_image_count": 1,
+    "growth_bytes": 10925,
+    "images": [
+      {
+        "bytes": 303,
+        "index": 0,
+        "sha256": "f3082655a811e20f1071d939db8f57fb5770a1af296c2b06ffb8d65acfb21373"
+      }
+    ],
+    "original_bytes": 86592,
+    "original_sha256": "9245933efb8c7fb31c45126575889a3c486399b0625f83d33c9617d4dcfdc22c",
+    "source_edit_span_bytes": 2
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T1-stripped-journal",
+    "candidate_bytes": 97517,
+    "candidate_sha256": "26e6f3700c7fc4bf75d62ffce1d2e127d6c9644393ff1029fed01145b56b9c8a",
+    "changed_source_bytes": 2,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0a00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "2ee9",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "89c0"
+      }
+    ],
+    "family": "T1",
+    "generated_image_bytes": 303,
+    "generated_image_count": 1,
+    "growth_bytes": 10925,
+    "images": [
+      {
+        "bytes": 303,
+        "index": 0,
+        "sha256": "05765764ee9dce042fb1c22e812cef56abd691259cc52d4fb39d75c2c408a263"
+      }
+    ],
+    "original_bytes": 86592,
+    "original_sha256": "9245933efb8c7fb31c45126575889a3c486399b0625f83d33c9617d4dcfdc22c",
+    "source_edit_span_bytes": 2
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T2-unstripped-null",
+    "candidate_bytes": 98869,
+    "candidate_sha256": "ce2d91fd49fdb8be231d0376c89dfbc6ba5fd9b39023a0f32e7bcf227c44273e",
+    "changed_source_bytes": 7,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0b00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "e90080e9563412",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "0f1f000f1f8400"
+      }
+    ],
+    "family": "T2",
+    "generated_image_bytes": 317,
+    "generated_image_count": 2,
+    "growth_bytes": 10445,
+    "images": [
+      {
+        "bytes": 13,
+        "index": 0,
+        "sha256": "a1987e20f336d4e2ff2dca324f9eefbf41218f8c6f6b95a84442e173d9cae199"
+      },
+      {
+        "bytes": 304,
+        "index": 1,
+        "sha256": "dde2f74caced291cb1a81790bef55a502801ce5043957460b77ba4845ec54eb7"
+      }
+    ],
+    "original_bytes": 88424,
+    "original_sha256": "5f6cf8bcc1b7303f28326457bbc4a61ec708c88f2846a0c9e471d68d274ef1ec",
+    "source_edit_span_bytes": 7
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T2-unstripped-journal",
+    "candidate_bytes": 98869,
+    "candidate_sha256": "9707a7232dbad9e2a9aaf40167066def9f942cff3bb8683e46ef0c551f2ebd66",
+    "changed_source_bytes": 7,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0b00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "e90080e9563412",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "0f1f000f1f8400"
+      }
+    ],
+    "family": "T2",
+    "generated_image_bytes": 317,
+    "generated_image_count": 2,
+    "growth_bytes": 10445,
+    "images": [
+      {
+        "bytes": 13,
+        "index": 0,
+        "sha256": "a1987e20f336d4e2ff2dca324f9eefbf41218f8c6f6b95a84442e173d9cae199"
+      },
+      {
+        "bytes": 304,
+        "index": 1,
+        "sha256": "88e2929c7a733162aa135d9231165586fbf479912ab604d6932f90806be97bed"
+      }
+    ],
+    "original_bytes": 88424,
+    "original_sha256": "5f6cf8bcc1b7303f28326457bbc4a61ec708c88f2846a0c9e471d68d274ef1ec",
+    "source_edit_span_bytes": 7
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T2-stripped-null",
+    "candidate_bytes": 98869,
+    "candidate_sha256": "a94aaa5793e94129faf6d13efa1a509ce2617b122c65de6f3fef4e5103008b62",
+    "changed_source_bytes": 7,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0b00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "e90080e9563412",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "0f1f000f1f8400"
+      }
+    ],
+    "family": "T2",
+    "generated_image_bytes": 317,
+    "generated_image_count": 2,
+    "growth_bytes": 12277,
+    "images": [
+      {
+        "bytes": 13,
+        "index": 0,
+        "sha256": "a1987e20f336d4e2ff2dca324f9eefbf41218f8c6f6b95a84442e173d9cae199"
+      },
+      {
+        "bytes": 304,
+        "index": 1,
+        "sha256": "dde2f74caced291cb1a81790bef55a502801ce5043957460b77ba4845ec54eb7"
+      }
+    ],
+    "original_bytes": 86592,
+    "original_sha256": "a4d1adbe6225da58346ef46dee6d0d4a421e1e04c3e341bf0649badbfa479bf3",
+    "source_edit_span_bytes": 7
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T2-stripped-journal",
+    "candidate_bytes": 98869,
+    "candidate_sha256": "b8fd36c21b26955642aae1b660ba9ece45d24256a70971b7b9d1f4cbed6c49e4",
+    "changed_source_bytes": 7,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0b00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "e90080e9563412",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "0f1f000f1f8400"
+      }
+    ],
+    "family": "T2",
+    "generated_image_bytes": 317,
+    "generated_image_count": 2,
+    "growth_bytes": 12277,
+    "images": [
+      {
+        "bytes": 13,
+        "index": 0,
+        "sha256": "a1987e20f336d4e2ff2dca324f9eefbf41218f8c6f6b95a84442e173d9cae199"
+      },
+      {
+        "bytes": 304,
+        "index": 1,
+        "sha256": "88e2929c7a733162aa135d9231165586fbf479912ab604d6932f90806be97bed"
+      }
+    ],
+    "original_bytes": 86592,
+    "original_sha256": "a4d1adbe6225da58346ef46dee6d0d4a421e1e04c3e341bf0649badbfa479bf3",
+    "source_edit_span_bytes": 7
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T3-unstripped-null",
+    "candidate_bytes": 98867,
+    "candidate_sha256": "fd4931e5f5e40e765ab0fbf3b8a68ab81de65a4ffa880d52befb818538e5c580",
+    "changed_source_bytes": 12,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0b00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "eb43",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "7501"
+      },
+      {
+        "emitted_hex": "e9bbffff05e9b6ffff03",
+        "file_offset": 82240,
+        "kind": "DeclaredSource",
+        "original_hex": "48b82a00000000000000"
+      }
+    ],
+    "family": "T3",
+    "generated_image_bytes": 322,
+    "generated_image_count": 2,
+    "growth_bytes": 10515,
+    "images": [
+      {
+        "bytes": 15,
+        "index": 0,
+        "sha256": "eb06b8e243bda6faf5cecec8be8d20a045e82a763410414f38b43a9688dfd847"
+      },
+      {
+        "bytes": 307,
+        "index": 1,
+        "sha256": "88c4124c8b1612a7d11899026429837a070017d282852d24e2a0541130f58c6b"
+      }
+    ],
+    "original_bytes": 88352,
+    "original_sha256": "1d70e2e9f8f780c442abffd1c18f299760aadfa8a6a769413e938290c8953a1f",
+    "source_edit_span_bytes": 12
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T3-unstripped-journal",
+    "candidate_bytes": 98867,
+    "candidate_sha256": "fa0318f7dd7b1677288278b6578634bda686a301bd74798ae2a6d5bab2170d6c",
+    "changed_source_bytes": 12,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0b00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "eb43",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "7501"
+      },
+      {
+        "emitted_hex": "e9bbffff05e9b6ffff03",
+        "file_offset": 82240,
+        "kind": "DeclaredSource",
+        "original_hex": "48b82a00000000000000"
+      }
+    ],
+    "family": "T3",
+    "generated_image_bytes": 322,
+    "generated_image_count": 2,
+    "growth_bytes": 10515,
+    "images": [
+      {
+        "bytes": 15,
+        "index": 0,
+        "sha256": "eb06b8e243bda6faf5cecec8be8d20a045e82a763410414f38b43a9688dfd847"
+      },
+      {
+        "bytes": 307,
+        "index": 1,
+        "sha256": "5b74ed935d982cd7257fd02d04828db5e70c5a4c25e13cba3d08afa6309d2c5a"
+      }
+    ],
+    "original_bytes": 88352,
+    "original_sha256": "1d70e2e9f8f780c442abffd1c18f299760aadfa8a6a769413e938290c8953a1f",
+    "source_edit_span_bytes": 12
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T3-stripped-null",
+    "candidate_bytes": 98867,
+    "candidate_sha256": "3ed2ea11795b3e9e8fdb3557f00c14a7e18f6840226c89a14d5bb0aafa69b60b",
+    "changed_source_bytes": 12,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0b00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "eb43",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "7501"
+      },
+      {
+        "emitted_hex": "e9bbffff05e9b6ffff03",
+        "file_offset": 82240,
+        "kind": "DeclaredSource",
+        "original_hex": "48b82a00000000000000"
+      }
+    ],
+    "family": "T3",
+    "generated_image_bytes": 322,
+    "generated_image_count": 2,
+    "growth_bytes": 12275,
+    "images": [
+      {
+        "bytes": 15,
+        "index": 0,
+        "sha256": "eb06b8e243bda6faf5cecec8be8d20a045e82a763410414f38b43a9688dfd847"
+      },
+      {
+        "bytes": 307,
+        "index": 1,
+        "sha256": "88c4124c8b1612a7d11899026429837a070017d282852d24e2a0541130f58c6b"
+      }
+    ],
+    "original_bytes": 86592,
+    "original_sha256": "24fbbae87e8e1851fe3344e6b8cd3bee5be226cfd2ae77400821a1285febd0c0",
+    "source_edit_span_bytes": 12
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "T3-stripped-journal",
+    "candidate_bytes": 98867,
+    "candidate_sha256": "086aa6328e5d6cb81b52314c11b41d3d2b808f08de4163683b8d3aaff505685e",
+    "changed_source_bytes": 12,
+    "edits": [
+      {
+        "emitted_hex": "0060010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0b00",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0800"
+      },
+      {
+        "emitted_hex": "eb43",
+        "file_offset": 82176,
+        "kind": "DeclaredSource",
+        "original_hex": "7501"
+      },
+      {
+        "emitted_hex": "e9bbffff05e9b6ffff03",
+        "file_offset": 82240,
+        "kind": "DeclaredSource",
+        "original_hex": "48b82a00000000000000"
+      }
+    ],
+    "family": "T3",
+    "generated_image_bytes": 322,
+    "generated_image_count": 2,
+    "growth_bytes": 12275,
+    "images": [
+      {
+        "bytes": 15,
+        "index": 0,
+        "sha256": "eb06b8e243bda6faf5cecec8be8d20a045e82a763410414f38b43a9688dfd847"
+      },
+      {
+        "bytes": 307,
+        "index": 1,
+        "sha256": "5b74ed935d982cd7257fd02d04828db5e70c5a4c25e13cba3d08afa6309d2c5a"
+      }
+    ],
+    "original_bytes": 86592,
+    "original_sha256": "24fbbae87e8e1851fe3344e6b8cd3bee5be226cfd2ae77400821a1285febd0c0",
+    "source_edit_span_bytes": 12
+  }
+]

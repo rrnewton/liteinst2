@@ -1,0 +1,135 @@
+{
+  "historical_source_attempts": [
+    {
+      "emission_or_native_credit": 0,
+      "failed_command_id": "v1-calibrate-common",
+      "passed_command_ids": [
+        "v1-prepare",
+        "v1-calibrate",
+        "v1-supervisor_calibrate",
+        "v1-calibrate_prerequisites"
+      ],
+      "reason": "EXEC generated page lies below the original contiguous module; original contiguous 1 MiB contract fails. No internal common-group partial acceptance credited.",
+      "source_id": "legacy-v1",
+      "status": "failed_required_calibration"
+    },
+    {
+      "actual_commands": 0,
+      "reason": "Duplicate ledger-header acceptance identified in source review; all held sources remain preserved.",
+      "source_id": "held-v2",
+      "status": "held_unexecuted"
+    },
+    {
+      "failed_command_id": "v3-state-compile",
+      "reason": "The FileHookWitness re-export was unused under deny(warnings); compilation exited 1 before v3 state execution.",
+      "source_id": "sparse-v3",
+      "status": "emission_and_loader_pass_state_compile_failed"
+    },
+    {
+      "carried_prerequisites": [
+        "v3-state-compiler-version",
+        "v3-state-identity-calibrations"
+      ],
+      "delta_sha256": "073ce7cae3ab2f230a9dadc15a14204f968c19e1a8f0907236c267459750e26b",
+      "literal_correction": "hook: None, -> hook: None::<oracle::FileHookWitness>,",
+      "new_compiler_commands": 1,
+      "no_prerequisite_rerun_credit": true,
+      "source_id": "body-v4",
+      "status": "separate_body_oracle_pass"
+    }
+  ],
+  "historical_source_lineage_sha256": "cfd11643715861b0b19a4487cf38448f2918a506e54780ad1c54535745086a8f",
+  "later_attempts": [
+    {
+      "id": "original-global-stage",
+      "note": "Cache metadata changed after the successful 40 historical loader runs. The original global stage did not advance to audit-native; its prior results remain historical.",
+      "record_sha256": "1ee1541e3e395dbf1628ef936a1baea7f631b43a7eaeeee441ceb8f92b160413",
+      "status": "pre_helper_admission_stop",
+      "tested_revision": null,
+      "top_level_helpers_in_stated_scope": 0
+    },
+    {
+      "id": "closed-record-audit",
+      "note": "A separate audit of closed historical records under an explicitly new audit runtime. Zero new loader calls or body traces; it did not complete the old global stage.",
+      "record_sha256": "6c95954dcce32cefc3701b32cbc18df106abc262d49a25dd1d85cdfe945b1148",
+      "status": "pass_closed_records_only",
+      "tested_revision": null,
+      "top_level_helpers_in_stated_scope": 3
+    },
+    {
+      "id": "portable-closed-audit-final",
+      "note": "The shared provenance document changed after request generation. Preparation and controls remained completed under their own epochs; the final audit stayed unrun. No identity was refreshed in place.",
+      "record_sha256": "0d77a3465f571dcc9c8c2bb73bcf87a3653b7b17367094123c737746171e2b5b",
+      "status": "pre_helper_admission_stop",
+      "tested_revision": null,
+      "top_level_helpers_in_stated_scope": 0
+    },
+    {
+      "id": "fresh-bootstrap-first-admission",
+      "note": "A byte-identical loader-cache replacement changed inode and mtime before bootstrap. No helper or output was created.",
+      "record_sha256": "8f77d58bbb72771073a3f4c0e2d8aea6aa446a53046bc2c5c60138843cde523a",
+      "status": "pre_helper_admission_stop",
+      "tested_revision": null,
+      "top_level_helpers_in_stated_scope": 0
+    },
+    {
+      "id": "fresh-v1-preparation",
+      "note": "Successful fresh preparation remains successful. Its later prerequisite calibration was held before execution for an unbounded temporary-directory owner.",
+      "record_sha256": "7564d399e7928cf70562699fb747937308394623cb70a9ee749e737e764247e6",
+      "status": "pass_preparation_only",
+      "tested_revision": null,
+      "top_level_helpers_in_stated_scope": 3
+    },
+    {
+      "id": "fresh-v1-scratch-hold",
+      "note": "The existing TemporaryDirectory lacked dir. The forward correction adds only dir=Path(__file__).resolve().parent, retaining all 1/19 cases, assertions, output and caps.",
+      "record_sha256": "6e963bfc244d0f9c79fe59e8890aa6aab91687a6a32c0c8ac7a5057d9b6a671a",
+      "status": "source_hold_before_calibration",
+      "tested_revision": null,
+      "top_level_helpers_in_stated_scope": 0
+    },
+    {
+      "id": "reproduction-v4",
+      "note": "SOURCE-MEMBER-1: two retained variant source directories still held the old bytes while their contracts named corrected bytes. V5 applies the identical one-keyword correction to all three source owners.",
+      "record_sha256": "353b6482106edf8f3b7dd7a9908d57ba3ccf6b3c13e6c3eeaf60dd49b574aaa7",
+      "status": "source_held_unexecuted",
+      "tested_revision": null,
+      "top_level_helpers_in_stated_scope": 0
+    },
+    {
+      "id": "fresh-v2-material-controls-and-stage",
+      "note": "Original 4/16 and 3/10 material controls plus stage passed. Their two actual material-bound control receipts are reused by the fresh v3 stage; they are not new helper or case credit in the v3 191-helper count.",
+      "record_sha256": "3de26e0660e87cdff84cabb5c65caff03df496fc46b213c65778b877b438c38a",
+      "status": "pass_preparation_only",
+      "tested_revision": null,
+      "top_level_helpers_in_stated_scope": 3
+    },
+    {
+      "all_13_pipeline_phases_unrun": true,
+      "id": "fresh-v2-next-admission",
+      "note": "One loader-cache metadata row changed after the successful v2 material controls and stage. Those successes remain historical; the old stage did not advance, no helper ran, and no identity was refreshed in place.",
+      "record_sha256": "c64fe8cb939974dd1904b35e470a53f439f44b420910ca9356575ef331d91b65",
+      "status": "read_only_pre_helper_admission_stop",
+      "tested_revision": null,
+      "top_level_helpers_in_stated_scope": 0
+    },
+    {
+      "id": "fresh-v3-complete",
+      "note": "The new source/input epoch completed all original 13 phases. The twelve nested emitter tools are recorded separately. Loader 40 and manual body 144 are distinct; qualification_complete remains false.",
+      "record_sha256": "30a505440dad9ee902ad6a37f1fb33c77c4539b364dc82a644a777a09258e82d",
+      "status": "pass_original_pipeline_scoped",
+      "tested_revision": null,
+      "top_level_helpers_in_stated_scope": 191
+    }
+  ],
+  "no_cross_epoch_credit": true,
+  "provenance_role": {
+    "bytes": 137796,
+    "git_blob": "ff38ab089633b05acf23163d575b3791bdc93d3f",
+    "owner_class": "explicit_movable_artifact",
+    "role": "r03823d4d8fd98511368d7c27",
+    "scope": "The exact old document bytes were recovered to a fresh private owner using the original movable-provenance contract. The changed shared file and the old stopped audit were not edited or relabelled. No new content or identity was fabricated.",
+    "sha256": "b6f9e69660bc9e35b272ed6f995897c6d539d6beb16ecc45c07ac4c8b04492f4"
+  },
+  "schema_version": 1
+}

@@ -1,0 +1,5 @@
+family,declared_heads,seeds,strip_variants,hook_variants,original_traces,rewritten_traces,full_state_comparisons,subject_call_ret_witnesses,hook_call_return_witnesses,recording_journal_rows,refusal_cases,ordinary_processes,capture_files,minimum_trace_steps,maximum_trace_steps,artifact_qualification_complete
+B2,3,2,2,2,12,24,120,36,8,4,4,6,1967,23,104,False
+T1,3,2,2,2,12,24,120,36,8,4,4,6,1967,23,104,False
+T2,6,2,2,2,24,48,248,72,8,4,5,6,3983,23,107,False
+T3,5,2,2,2,20,40,188,60,8,4,5,6,3215,23,105,False

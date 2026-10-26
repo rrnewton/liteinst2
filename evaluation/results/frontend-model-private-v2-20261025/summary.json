@@ -1,0 +1,942 @@
+{
+  "blocker": {
+    "correction": "V3 changes map to inspect and retains the same assertion; no lint allowance.",
+    "description": "Warnings-denied Clippy rejected using map only to assert and return the same record; both library and test targets report the lint. Docs and MSRV were not run.",
+    "exit": 101,
+    "id": "clippy::manual_inspect"
+  },
+  "case_denominator": {
+    "docs": 8,
+    "docs_not_run": 8,
+    "docs_passed": 0,
+    "models": 53,
+    "models_failed": 0,
+    "models_filtered": 0,
+    "models_ignored": 0,
+    "models_not_run": 0,
+    "models_passed": 53
+  },
+  "cases": [
+    {
+      "case_id": "frontend::tests::g01_per_function_k_two_and_global_storage",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 0
+    },
+    {
+      "case_id": "frontend::tests::g02_old_frame_keeps_removed_owner_and_payload",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 1
+    },
+    {
+      "case_id": "frontend::tests::g03_nested_old_new_frames_keep_two_children",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 2
+    },
+    {
+      "case_id": "frontend::tests::g04_stale_disable_cannot_mutate_new_generation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 3
+    },
+    {
+      "case_id": "frontend::tests::g05_acquired_owner_after_close_refuses",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 4
+    },
+    {
+      "case_id": "frontend::tests::g05_install_and_foreign_handle_refuse_without_slot_change",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 5
+    },
+    {
+      "case_id": "frontend::tests::g05_reserved_before_close_completes_to_old",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 6
+    },
+    {
+      "case_id": "frontend::tests::g06_kth_gap_keeps_seven_terminals_and_one_other",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 7
+    },
+    {
+      "case_id": "frontend::tests::g07_payload_before_release_pause_blocks_drain",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 8
+    },
+    {
+      "case_id": "frontend::tests::g07_sixteen_payloads_visible_after_drain_before_join",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 9
+    },
+    {
+      "case_id": "frontend::tests::g08_explicit_cancel_and_drop_publish_distinct_payloads_first",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 10
+    },
+    {
+      "case_id": "frontend::tests::g08_forgotten_complete_frame_retains_reservation_and_permit",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 11
+    },
+    {
+      "case_id": "frontend::tests::g08_standalone_owned_ticket_has_no_frontend_permit_claim",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 12
+    },
+    {
+      "case_id": "frontend::tests::g09_a_storage_exhaustion_preserves_records_and_slot",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 13
+    },
+    {
+      "case_id": "frontend::tests::g09_constructor_bounds_and_failed_stage_release_permit",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 14
+    },
+    {
+      "case_id": "frontend::tests::g09_d_frame_limit_preserves_owned_frame_and_slot",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 15
+    },
+    {
+      "case_id": "frontend::tests::g09_e_handles_reports_final_owner_and_forgotten_owners",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 16
+    },
+    {
+      "case_id": "frontend::tests::g09_m_reservation_exhaustion_preserves_records_and_slot",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 17
+    },
+    {
+      "case_id": "frontend::tests::g09_t_registration_limit_and_duplicate_are_exact",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 18
+    },
+    {
+      "case_id": "frontend::tests::g10_nonwrapping_sequences_refuse_and_remain_terminal",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 19
+    },
+    {
+      "case_id": "frontend::tests::g10_reentry_and_duplicate_slot_preserve_existing_frames",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 20
+    },
+    {
+      "case_id": "frontend::tests::g10_registry_contention_refuses_before_slot_mutation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 21
+    },
+    {
+      "case_id": "frontend::tests::g10_registry_poison_refuses_before_slot_mutation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 22
+    },
+    {
+      "case_id": "frontend::tests::g10_unregistered_thread_and_empty_binding_are_explicit",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 23
+    },
+    {
+      "case_id": "frontend::tests::g11_mandatory_action_remains_after_all_profiling_functions_close",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 24
+    },
+    {
+      "case_id": "frontend::tests::g11_shared_group_keeps_b_then_disables_after_b_closes",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 25
+    },
+    {
+      "case_id": "frontend::tests::g12_after_mutation_failures_retain_owner_and_refuse_retry",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 26
+    },
+    {
+      "case_id": "frontend::tests::g12_before_mutation_failures_keep_binding_and_group_state",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 27
+    },
+    {
+      "case_id": "frontend::tests::g12_bounded_scan_recovers_closed_actions_without_notification_queue",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 28
+    },
+    {
+      "case_id": "frontend::tests::g12_history_exhaustion_refuses_before_any_controller_mutation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 29
+    },
+    {
+      "case_id": "frontend::tests::g12_republishing_current_original_or_clone_refuses_all_failure_modes",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_model",
+      "observed": "success",
+      "ordinal": 30
+    },
+    {
+      "case_id": "frontend::tests::reference_ledger_rejects_eight_identity_payload_action_mutations",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "frontend_reference_calibration",
+      "observed": "success",
+      "ordinal": 31
+    },
+    {
+      "case_id": "generation::owned_tests::owned_and_borrowed_records_have_exact_terminal_parity",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "owned_ticket_model",
+      "observed": "success",
+      "ordinal": 32
+    },
+    {
+      "case_id": "generation::owned_tests::owned_cancel_and_drop_keep_exact_old_epoch_after_new_creation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "owned_ticket_model",
+      "observed": "success",
+      "ordinal": 33
+    },
+    {
+      "case_id": "generation::owned_tests::owned_refusals_preserve_slots_and_original_identity",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "owned_ticket_model",
+      "observed": "success",
+      "ordinal": 34
+    },
+    {
+      "case_id": "generation::owned_tests::owned_ticket_retains_original_epoch_until_its_terminal",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "owned_ticket_model",
+      "observed": "success",
+      "ordinal": 35
+    },
+    {
+      "case_id": "generation::tests::checked_generation_exhaustion_never_wraps_or_reuses",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 36
+    },
+    {
+      "case_id": "generation::tests::close_after_admission_waits_for_terminal_record",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 37
+    },
+    {
+      "case_id": "generation::tests::close_before_admission_refuses_without_record",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 38
+    },
+    {
+      "case_id": "generation::tests::close_gap_allows_five_post_k_completions_but_only_one_other_reservation",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 39
+    },
+    {
+      "case_id": "generation::tests::exact_constructor_refusals_and_largest_budget_do_not_wrap",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 40
+    },
+    {
+      "case_id": "generation::tests::explicit_and_drop_cancellation_are_distinct_and_do_not_consume_k",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 41
+    },
+    {
+      "case_id": "generation::tests::final_acquire_observes_all_sixteen_exact_terminal_values",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 42
+    },
+    {
+      "case_id": "generation::tests::independent_ledger_rejects_six_wrong_populations_or_identities",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 43
+    },
+    {
+      "case_id": "generation::tests::independent_two_generation_two_function_event_ledger",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 44
+    },
+    {
+      "case_id": "generation::tests::inflight_refusal_does_not_consume_a_slot",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 45
+    },
+    {
+      "case_id": "generation::tests::nested_invocations_keep_identity_and_completion_selection_order",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 46
+    },
+    {
+      "case_id": "generation::tests::old_ticket_completion_does_not_close_or_write_new_epoch",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 47
+    },
+    {
+      "case_id": "generation::tests::partial_records_keep_unfinished_in_two_epochs_separate",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 48
+    },
+    {
+      "case_id": "generation::tests::retained_budget_is_per_function_for_one_ten_and_thousand",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 49
+    },
+    {
+      "case_id": "generation::tests::simultaneous_completions_have_exactly_one_final_retention_and_request",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 50
+    },
+    {
+      "case_id": "generation::tests::total_storage_exhaustion_closes_epoch_without_losing_records",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 51
+    },
+    {
+      "case_id": "generation::tests::unknown_function_refusal_and_closed_function_do_not_hide_other_function",
+      "command_id": "models",
+      "expected": "success",
+      "kind": "inherited_generation_model",
+      "observed": "success",
+      "ordinal": 52
+    },
+    {
+      "case_id": "frontend::AdmissionHandle.owner",
+      "command_id": "docs",
+      "expected": "E0616",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 53
+    },
+    {
+      "case_id": "frontend::EpochHandle.owner",
+      "command_id": "docs",
+      "expected": "E0616",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 54
+    },
+    {
+      "case_id": "frontend::Report.owner",
+      "command_id": "docs",
+      "expected": "E0616",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 55
+    },
+    {
+      "case_id": "frontend::ThreadModel.frames",
+      "command_id": "docs",
+      "expected": "E0616",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 56
+    },
+    {
+      "case_id": "generation::OwnedTicket.no_clone",
+      "command_id": "docs",
+      "expected": "E0599",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 57
+    },
+    {
+      "case_id": "generation::OwnedTicket.no_double_finish",
+      "command_id": "docs",
+      "expected": "E0382",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 58
+    },
+    {
+      "case_id": "generation::Ticket.no_clone",
+      "command_id": "docs",
+      "expected": "E0599",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 59
+    },
+    {
+      "case_id": "generation::Ticket.no_double_finish",
+      "command_id": "docs",
+      "expected": "E0382",
+      "kind": "compile_fail",
+      "observed": "not_run",
+      "ordinal": 60
+    }
+  ],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "heading": "systematic everytactic",
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "command_denominator": {
+    "executed": 6,
+    "failed": 1,
+    "not_run": 2,
+    "passed": 5,
+    "required": 8
+  },
+  "commands": [
+    {
+      "argv": [
+        "${TOOLCHAIN}/bin/rustfmt",
+        "--edition",
+        "2024",
+        "${SNAPSHOT}/src/lib.rs"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.20035779988393188,
+      "environment": {
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "file_bytes": 16777216,
+      "id": "format",
+      "receipt_sha256": "1b09437d30a125e95cc355d883a8fd01ddf280620d945151a7257e1096a0402f",
+      "source_id": "preformat_snapshot",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "build",
+        "--manifest-path",
+        "${SNAPSHOT}/Cargo.toml",
+        "--offline",
+        "--locked",
+        "--lib",
+        "--message-format=json"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 0.4995523819234222,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUSTDOCFLAGS": "-Dwarnings",
+        "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${RAW}/tmp"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "library",
+      "receipt_sha256": "da04874234a750fc8b0bf2c67622ee3ce0c3c3449c8079cb70662d668ab0a165",
+      "source_id": "formatted_snapshot",
+      "status": "pass",
+      "stderr_sha256": "19c1386d3ffb553846e80a1e3a2f0b643bb7b11c65c5d26d7462f58a4fcae367",
+      "stdout_sha256": "9a99e0499f4664cc5d47358ca6c309d6ae026994c5547e374c069caab3f4225c",
+      "wall_seconds": 90
+    },
+    {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "test",
+        "--manifest-path",
+        "${SNAPSHOT}/Cargo.toml",
+        "--offline",
+        "--locked",
+        "--lib",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 1.6997282770462334,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUSTDOCFLAGS": "-Dwarnings",
+        "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${RAW}/tmp"
+      },
+      "exit": 0,
+      "file_bytes": 134217728,
+      "id": "compile",
+      "receipt_sha256": "b0562f53f760dc0f4478a4faaf80e9330ef6aa0621cb5246e616a43f14dde1f0",
+      "source_id": "formatted_snapshot",
+      "status": "pass",
+      "stderr_sha256": "08c09ed2a0d56e9d31690548e9635835d4f859ea68801deb6da29e06685d9f50",
+      "stdout_sha256": "8fb4dce8de37c3ef57f5395fe8d64f9017c3b8f05add3633d2a5f649376be990",
+      "wall_seconds": 90
+    },
+    {
+      "argv": [
+        "${MODEL_BINARY}",
+        "--list"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.13308060402050614,
+      "environment": {
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUST_TEST_THREADS": "1"
+      },
+      "exit": 0,
+      "file_bytes": 1048576,
+      "id": "list",
+      "receipt_sha256": "d83dea4e456012d2805a4d6d714e73d1107db3ba996df195bc6d800a5ad34b5a",
+      "source_id": "formatted_snapshot",
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "d4689242a8d8206939fea1ab69ce7958f08b09c675b605d34b5a16c42708d4b0",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${MODEL_BINARY}",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 20,
+      "elapsed_seconds": 0.14661187282763422,
+      "environment": {
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUST_TEST_THREADS": "1"
+      },
+      "exit": 0,
+      "file_bytes": 1048576,
+      "id": "models",
+      "receipt_sha256": "72979244566c5e0979176d39e63a3878ce72583a0893afad52da62e1dbca1731",
+      "source_id": "formatted_snapshot",
+      "status": "pass",
+      "stderr_sha256": "99a1a700fbc6d71610ce1cfb8f74ae631d12495a6e9ab8647a2b749b59a076cf",
+      "stdout_sha256": "31bcde85e5e1d4b127df61f32991a726f0eb393a5c54198fc2de5fe91d5e8a71",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "clippy",
+        "--manifest-path",
+        "${SNAPSHOT}/Cargo.toml",
+        "--offline",
+        "--locked",
+        "--all-targets",
+        "--all-features",
+        "--message-format=json",
+        "--",
+        "-Dwarnings"
+      ],
+      "cleanup": "ECHILD_zero_descendants",
+      "cpu_seconds": 60,
+      "elapsed_seconds": 0.6968860169872642,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+        "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUSTDOCFLAGS": "-Dwarnings",
+        "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${RAW}/tmp"
+      },
+      "exit": 101,
+      "file_bytes": 134217728,
+      "id": "clippy",
+      "receipt_sha256": "a1a85a4cbdf2a4ea7826674bf843a2b79a502e996eb09be849b36844fcc62e7b",
+      "source_id": "formatted_snapshot",
+      "status": "fail",
+      "stderr_sha256": "6501632126ae31992714d1aa60faf69d07af5fdad31fe05f9251234613f859d2",
+      "stdout_sha256": "e407f7fa7608edc6d92478941491cece03b6e1989d01fd67b13f5407e0f23ec6",
+      "wall_seconds": 90
+    }
+  ],
+  "complete_A5": false,
+  "frontend_activated": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "family": 26,
+    "kernel_release": null,
+    "kernel_scope": "No campaign-specific kernel observation in this hardware record.",
+    "label": "AMD EPYC Zen 5 dev host",
+    "microcode": "0xb101066",
+    "model": 17,
+    "observation_phase": "before_formatter_or_compiler",
+    "observation_record_sha256": "faa317fa98d7effda77791b622a3270e4e0694e9ca11294c93e41315648f8813",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "historical_review_events": [
+    {
+      "id": "tool-map-rustdoc-supplement",
+      "new_observation_sha256": "3cd2f79b7cfb65f85bec649e1ee3245e926d5817d57806a10a9fe5f78f9df645",
+      "prior_observation_sha256": "5330d6b1b17799b9911b4939c74f0697526dafe62c74a7a27c18804f0514364a",
+      "rows_after": 207,
+      "rows_before": 206,
+      "status": "additive_observation_before_formatter_or_compiler"
+    },
+    {
+      "compiler_admission_sha256": "4eea9b8e9e95856fe7c9e7b3c31766f6d65e97a84792cd3a754a9fb84b290f54",
+      "id": "configuration-leaf-coordinate-correction",
+      "new_leaf_rows": 4,
+      "new_observation_sha256": "50cca8b201c3aa2209bf889aa0cea3b3de7a175ca083cf27dd281dbe5d5ae16c",
+      "prior_observation_sha256": "86c26000faf199a74b9abd6ec31b86cbf8507f8fb325066dbe58980645a3d9ed",
+      "status": "actual_coordinates_observed_after_direct_formatter_before_any_compiler",
+      "unchanged_ancestor_rows": 20
+    }
+  ],
+  "identity_provenance_limits": [
+    "Selected tool/runtime bytes and configuration observations are not a complete runtime closure.",
+    "The initial 206-file observation was explicitly supplemented to 207 files including rustdoc before formatting/compiler execution; all ten declared roles are recorded, without claiming they all executed.",
+    "The initial configuration map had four stale qualification-v1 leaf coordinates. Direct rustfmt ran before a separate v2 map observed the actual four leaf coordinates; no Cargo/compiler invocation used the incomplete map. Twenty shared ancestor observations were retained.",
+    "Compiler admission explicitly binds the corrected 207-tool and 24-configuration maps. Root-result records attest later matching selected identities; no independent historical per-phase stat snapshots are invented.",
+    "Two inaccessible Cargo configuration coordinates are exact stat EPERM observations, not absence or authenticated hidden contents.",
+    "Toolchain labels are pinned installed coordinates; this attempt has no fresh version-banner invocation."
+  ],
+  "planned_commands": [
+    "format",
+    "library",
+    "compile",
+    "list",
+    "models",
+    "clippy",
+    "docs",
+    "msrv"
+  ],
+  "preemption_clock_claim": false,
+  "private_capture_manifest_sha256": "13863e9673069295e0b7b36d1aae65528350a2420b69f074133e04ea88d6a6c2",
+  "reproduction_directory": "evaluation/frontend-model-private",
+  "run_id": "frontend-model-private-v2-20261025",
+  "schema_version": 1,
+  "scope_note": "Pure metadata, reservation/terminal ownership and bounded reference-ledger models; no active frontend/TLS/return-slot/native clock qualification.",
+  "source_format_note": "Five Rust files formatted before compilation; original 53 models/eight doc examples retained by separate source review.",
+  "sources": {
+    "formatted_snapshot": {
+      "base_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+      "file_count": 8,
+      "kind": "source_snapshot",
+      "scope": "Standalone private crate; no active frontend, TLS, return-slot or native code publication.",
+      "source_manifest_sha256": "b88eba6c8e119ab1d7a9a418857037e6c3d77bb0f2869b8c6ecba50dcbfd0251",
+      "source_tree_sha256": "79d31e44726a44c893998e4066321efd79303f3757fab8a1a539b95dd026bc0c",
+      "tested_revision": null
+    },
+    "preformat_snapshot": {
+      "base_revision": "ed67f7528184bf9ba33c05946ed8b07bef1bf41d",
+      "file_count": 8,
+      "kind": "source_snapshot",
+      "scope": "Standalone private crate; no active frontend, TLS, return-slot or native code publication.",
+      "source_manifest_sha256": "b88eba6c8e119ab1d7a9a418857037e6c3d77bb0f2869b8c6ecba50dcbfd0251",
+      "source_tree_sha256": "3aeca6d7a4719059885f4b8a306cdf4765eb9ad6b105909295888e2eb800f9ac",
+      "tested_revision": null
+    }
+  },
+  "status": "fail",
+  "suite": "owned-ticket-and-frontend-private-reference-model",
+  "tested_revision": null,
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tools": [
+    {
+      "observation_scope": "All ten declared roles are present in the selected map; this does not claim each tool was invoked. Docs/MSRV were not run.",
+      "observation_sha256": "3cd2f79b7cfb65f85bec649e1ee3245e926d5817d57806a10a9fe5f78f9df645",
+      "path": "${TOOLCHAIN}/bin/cargo",
+      "resolved_path": "${TOOLCHAIN}/bin/cargo",
+      "role": "cargo",
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "version": "Rust 1.97.1 installed toolchain label",
+      "version_basis": "Pinned installed coordinate and bytes; no new version invocation."
+    },
+    {
+      "observation_scope": "All ten declared roles are present in the selected map; this does not claim each tool was invoked. Docs/MSRV were not run.",
+      "observation_sha256": "3cd2f79b7cfb65f85bec649e1ee3245e926d5817d57806a10a9fe5f78f9df645",
+      "path": "${TOOLCHAIN}/bin/cargo-clippy",
+      "resolved_path": "${TOOLCHAIN}/bin/cargo-clippy",
+      "role": "cargo_clippy",
+      "sha256": "a0a3808dddb32f525601e608740ee7c1c5df86db4a7183ea945449f60d29509d",
+      "version": "Rust 1.97.1 installed toolchain label",
+      "version_basis": "Pinned installed coordinate and bytes; no new version invocation."
+    },
+    {
+      "observation_scope": "All ten declared roles are present in the selected map; this does not claim each tool was invoked. Docs/MSRV were not run.",
+      "observation_sha256": "3cd2f79b7cfb65f85bec649e1ee3245e926d5817d57806a10a9fe5f78f9df645",
+      "path": "${TOOLCHAIN}/bin/clippy-driver",
+      "resolved_path": "${TOOLCHAIN}/bin/clippy-driver",
+      "role": "clippy_driver",
+      "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373",
+      "version": "Rust 1.97.1 installed toolchain label",
+      "version_basis": "Pinned installed coordinate and bytes; no new version invocation."
+    },
+    {
+      "observation_scope": "All ten declared roles are present in the selected map; this does not claim each tool was invoked. Docs/MSRV were not run.",
+      "observation_sha256": "3cd2f79b7cfb65f85bec649e1ee3245e926d5817d57806a10a9fe5f78f9df645",
+      "path": "/usr/bin/python3.9",
+      "resolved_path": "/usr/bin/python3.9",
+      "role": "helper_python",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "version": "Version banner not captured",
+      "version_basis": "Pinned installed coordinate and bytes; no new version invocation."
+    },
+    {
+      "observation_scope": "All ten declared roles are present in the selected map; this does not claim each tool was invoked. Docs/MSRV were not run.",
+      "observation_sha256": "3cd2f79b7cfb65f85bec649e1ee3245e926d5817d57806a10a9fe5f78f9df645",
+      "path": "${MSRV_TOOLCHAIN}/bin/cargo",
+      "resolved_path": "${MSRV_TOOLCHAIN}/bin/cargo",
+      "role": "msrv_cargo",
+      "sha256": "1815642e0eaa0cf4ea86c3ba4299c21c4f2d68ae4a427881ea1f33070b2aae9b",
+      "version": "Rust 1.85.0 installed toolchain label",
+      "version_basis": "Pinned installed coordinate and bytes; no new version invocation."
+    },
+    {
+      "observation_scope": "All ten declared roles are present in the selected map; this does not claim each tool was invoked. Docs/MSRV were not run.",
+      "observation_sha256": "3cd2f79b7cfb65f85bec649e1ee3245e926d5817d57806a10a9fe5f78f9df645",
+      "path": "${MSRV_TOOLCHAIN}/bin/rustc",
+      "resolved_path": "${MSRV_TOOLCHAIN}/bin/rustc",
+      "role": "msrv_rustc",
+      "sha256": "07d5a76ba859dc045883efd538d96c7b86cf10166f4e834afbb5981012b461c3",
+      "version": "Rust 1.85.0 installed toolchain label",
+      "version_basis": "Pinned installed coordinate and bytes; no new version invocation."
+    },
+    {
+      "observation_scope": "All ten declared roles are present in the selected map; this does not claim each tool was invoked. Docs/MSRV were not run.",
+      "observation_sha256": "3cd2f79b7cfb65f85bec649e1ee3245e926d5817d57806a10a9fe5f78f9df645",
+      "path": "${TOOLCHAIN}/bin/rustc",
+      "resolved_path": "${TOOLCHAIN}/bin/rustc",
+      "role": "rustc",
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "version": "Rust 1.97.1 installed toolchain label",
+      "version_basis": "Pinned installed coordinate and bytes; no new version invocation."
+    },
+    {
+      "observation_scope": "All ten declared roles are present in the selected map; this does not claim each tool was invoked. Docs/MSRV were not run.",
+      "observation_sha256": "3cd2f79b7cfb65f85bec649e1ee3245e926d5817d57806a10a9fe5f78f9df645",
+      "path": "${TOOLCHAIN}/bin/rustdoc",
+      "resolved_path": "${TOOLCHAIN}/bin/rustdoc",
+      "role": "rustdoc",
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+      "version": "Rust 1.97.1 installed toolchain label",
+      "version_basis": "Pinned installed coordinate and bytes; no new version invocation."
+    },
+    {
+      "observation_scope": "All ten declared roles are present in the selected map; this does not claim each tool was invoked. Docs/MSRV were not run.",
+      "observation_sha256": "3cd2f79b7cfb65f85bec649e1ee3245e926d5817d57806a10a9fe5f78f9df645",
+      "path": "${TOOLCHAIN}/bin/rustfmt",
+      "resolved_path": "${TOOLCHAIN}/bin/rustfmt",
+      "role": "rustfmt",
+      "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8",
+      "version": "Rust 1.97.1 installed toolchain label",
+      "version_basis": "Pinned installed coordinate and bytes; no new version invocation."
+    },
+    {
+      "observation_scope": "All ten declared roles are present in the selected map; this does not claim each tool was invoked. Docs/MSRV were not run.",
+      "observation_sha256": "3cd2f79b7cfb65f85bec649e1ee3245e926d5817d57806a10a9fe5f78f9df645",
+      "path": "/usr/bin/timeout",
+      "resolved_path": "/usr/bin/timeout",
+      "role": "timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+      "version": "Version banner not captured",
+      "version_basis": "Pinned installed coordinate and bytes; no new version invocation."
+    }
+  ]
+}

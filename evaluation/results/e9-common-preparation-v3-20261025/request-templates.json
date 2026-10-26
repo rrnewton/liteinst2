@@ -1,0 +1,256 @@
+{
+  "role_constraints": [
+    "PREPARER_DIR is inside REPO and immutable; all materials and binding digests remain mandatory.",
+    "RAW_PREPARATION is a fresh strict descendant of REPO/ignored. CONTROL_CAPTURE and STAGE_DIR are distinct subdirectories as recorded.",
+    "Only the two pure control child requests add TMPDIR=CONTROL_CAPTURE. Bootstrap and stage do not.",
+    "Each token is an ordinary whole executable or directory coordinate. No token has a special string-prefix interpretation.",
+    "A future reproduction requires fresh output/receipt admission. These templates cannot relabel the closed historical result or silently refresh operational input identities."
+  ],
+  "roles": {
+    "CONTROL_CAPTURE": "Canonical RAW_PREPARATION/bootstrap directory; the sole admitted temporary parent for both pure control commands.",
+    "HELPER": "Exact admitted unchanged bounded_command.py source, owned by REPO; no replacement supervisor.",
+    "PREPARER_DIR": "Complete immutable materials directory containing prepare.py/materials.json and all bound source/template files, inside REPO.",
+    "PYTHON": "Exact admitted Python executable file; executable hash is recorded, version text was not captured for this sequence.",
+    "RAW_PREPARATION": "One fresh preparation capture/stage parent strictly inside REPO/ignored.",
+    "REPO": "Canonical repository root owned by the existing helper.",
+    "SOURCE_DIR": "Immutable private preparer snapshot envelope owning the admitted local bindings and bootstrap request.",
+    "STAGE_DIR": "Fresh RAW_PREPARATION/stage output directory, distinct from CONTROL_CAPTURE.",
+    "TIMEOUT": "Exact admitted existing timeout executable file."
+  },
+  "rows": [
+    {
+      "actual_parent_exit": 0,
+      "actual_request_sha256": "43f30af03a2317daeb7a9cfe2ffbbe1db91c2c82981051f0d1cbe2f3c543d3df",
+      "admission_sha256": "c6df556c3f95e83c59c9febfddd22a599f4612f8b33bdb2867a889f04702d1ce",
+      "command_id": "a3-preparation-bootstrap-generator",
+      "helper_argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${PYTHON}",
+        "-B",
+        "${HELPER}",
+        "--request",
+        "${SOURCE_DIR}/root-plan/bootstrap.request.json",
+        "--receipt",
+        "${RAW_PREPARATION}/bootstrap-generator.receipt.json"
+      ],
+      "helper_argv_evidence": "actual parent record plus admission",
+      "helper_parent_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "helper_parent_environment_evidence": "captured in actual parent record",
+      "outer_kill_after_seconds": 10,
+      "outer_timeout_seconds": 40,
+      "output_is_preparation_only": true,
+      "parent_record_sha256": "3480598226907090b2d7b067a4c494c7bbd3ca1f4deda9dc9ce9e16a50ea384b",
+      "parent_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "parent_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "parent_timeout_evidence": "actual parent record plus admission",
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${PREPARER_DIR}/prepare.py",
+          "bootstrap",
+          "--materials-sha256",
+          "3383b47fb091957ffc927d243a7c7cf9e7e40f0100301f095a297ec0d17b71c9",
+          "--variant",
+          "sparse-v4",
+          "--bindings",
+          "${SOURCE_DIR}/local-bindings.example.json",
+          "--bindings-sha256",
+          "9e8612b234c1dc3eec09a31b42ec7bdecd75a59240e635c6860c7889964f403a",
+          "--output",
+          "${CONTROL_CAPTURE}",
+          "--stage-output",
+          "${STAGE_DIR}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW_PREPARATION}/bootstrap-generator.stderr",
+        "stdout": "${RAW_PREPARATION}/bootstrap-generator.stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "actual_parent_exit": 0,
+      "actual_request_sha256": "1798f469dd868b64c8be5cb5086bd0a8cf9c708dbe1f4963d448d21bb3c9d1b4",
+      "admission_sha256": "1b7d21c4ec1751aef97a4ffc475d51f9cd9a3aae54cd1317d0b56df882f4cc8f",
+      "command_id": "a3-preparation-preparation-controls",
+      "helper_argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${PYTHON}",
+        "-B",
+        "${HELPER}",
+        "--request",
+        "${CONTROL_CAPTURE}/preparation-controls.request.json",
+        "--receipt",
+        "${CONTROL_CAPTURE}/preparation-controls.receipt.json"
+      ],
+      "helper_argv_evidence": "actual parent record plus admission",
+      "helper_parent_environment": null,
+      "helper_parent_environment_evidence": "not serialized; child request environment is complete",
+      "outer_kill_after_seconds": 10,
+      "outer_timeout_seconds": 40,
+      "output_is_preparation_only": true,
+      "parent_record_sha256": "3fd5daeff0f1cde86b46f23c48766529bf3234969ebf60a3e19cc08a600dde4d",
+      "parent_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "parent_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "parent_timeout_evidence": "actual parent record plus admission",
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${PREPARER_DIR}/calibrate_prepare.py",
+          "3383b47fb091957ffc927d243a7c7cf9e7e40f0100301f095a297ec0d17b71c9"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${PREPARER_DIR}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${CONTROL_CAPTURE}"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${CONTROL_CAPTURE}/preparation-controls.stderr",
+        "stdout": "${CONTROL_CAPTURE}/preparation-controls.stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "actual_parent_exit": 0,
+      "actual_request_sha256": "b1031665c29278f3bf79b6f18a4b27048c5a7ff8a89b2e8824ac3a895b27072f",
+      "admission_sha256": "b20013f58cd41f022215633629df0b6918725cc91b86567236764e9f08266869",
+      "command_id": "a3-preparation-operational-controls",
+      "helper_argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${PYTHON}",
+        "-B",
+        "${HELPER}",
+        "--request",
+        "${CONTROL_CAPTURE}/operational-controls.request.json",
+        "--receipt",
+        "${CONTROL_CAPTURE}/operational-controls.receipt.json"
+      ],
+      "helper_argv_evidence": "actual parent record plus admission",
+      "helper_parent_environment": null,
+      "helper_parent_environment_evidence": "not serialized; child request environment is complete",
+      "outer_kill_after_seconds": 10,
+      "outer_timeout_seconds": 40,
+      "output_is_preparation_only": true,
+      "parent_record_sha256": "bf321a4de2904b70a0f84165f973e04bb16757a0117eaa2005e6ca680d4b8c66",
+      "parent_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "parent_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "parent_timeout_evidence": "actual parent record plus admission",
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${PREPARER_DIR}/calibrate_operational.py",
+          "3383b47fb091957ffc927d243a7c7cf9e7e40f0100301f095a297ec0d17b71c9"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${PREPARER_DIR}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${CONTROL_CAPTURE}"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${CONTROL_CAPTURE}/operational-controls.stderr",
+        "stdout": "${CONTROL_CAPTURE}/operational-controls.stdout",
+        "wall_seconds": 30
+      }
+    },
+    {
+      "actual_parent_exit": 0,
+      "actual_request_sha256": "d422cdfc50d32a7a140992b2bdb35f296e40da5ea79fa05a67154e140304e5d3",
+      "admission_sha256": "4d7a3333f538c9bddbaeae26db661a09b33332ccb27046d52de0cc0501c777bf",
+      "command_id": "a3-preparation-stage",
+      "helper_argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${PYTHON}",
+        "-B",
+        "${HELPER}",
+        "--request",
+        "${CONTROL_CAPTURE}/stage.request.json",
+        "--receipt",
+        "${CONTROL_CAPTURE}/stage.receipt.json"
+      ],
+      "helper_argv_evidence": "admission and bootstrap-generated plan; not serialized in actual parent record",
+      "helper_parent_environment": null,
+      "helper_parent_environment_evidence": "not serialized; child request environment is complete",
+      "outer_kill_after_seconds": 10,
+      "outer_timeout_seconds": 40,
+      "output_is_preparation_only": true,
+      "parent_record_sha256": "0dc099019af35abdda4a73e10a255cd6af7d5e8962ce7cbc9fd40c073174712c",
+      "parent_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "parent_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "parent_timeout_evidence": "admission and generated plan; not serialized in actual parent record",
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${PYTHON}",
+          "-B",
+          "${PREPARER_DIR}/prepare.py",
+          "stage",
+          "--materials-sha256",
+          "3383b47fb091957ffc927d243a7c7cf9e7e40f0100301f095a297ec0d17b71c9",
+          "--variant",
+          "sparse-v4",
+          "--bindings",
+          "${SOURCE_DIR}/local-bindings.example.json",
+          "--bindings-sha256",
+          "9e8612b234c1dc3eec09a31b42ec7bdecd75a59240e635c6860c7889964f403a",
+          "--output",
+          "${STAGE_DIR}",
+          "--controls-request",
+          "${CONTROL_CAPTURE}/preparation-controls.request.json",
+          "--controls-receipt",
+          "${CONTROL_CAPTURE}/preparation-controls.receipt.json",
+          "--owner-controls-request",
+          "${CONTROL_CAPTURE}/operational-controls.request.json",
+          "--owner-controls-receipt",
+          "${CONTROL_CAPTURE}/operational-controls.receipt.json"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${PREPARER_DIR}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${CONTROL_CAPTURE}/stage.stderr",
+        "stdout": "${CONTROL_CAPTURE}/stage.stdout",
+        "wall_seconds": 30
+      }
+    }
+  ],
+  "schema_version": 1,
+  "scope": "Literal coordinate templates for the four actual preparation requests, not authorization to change any fixed operational owner or byte identity."
+}

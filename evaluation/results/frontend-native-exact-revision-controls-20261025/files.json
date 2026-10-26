@@ -1,0 +1,9 @@
+{
+  "files": {
+    "evaluation/frontend-native-exact-revision-controls.md": "c9950a425d873bfd8861de4db7ad573e9e7e3e93e8ee276b33edc1242ec62248",
+    "evaluation/results/frontend-native-exact-revision-controls-20261025/cases.csv": "6d0620a5a4ca4c84415b9c586d3bcd1452600ba0a492ce86748d6849b31689c6",
+    "evaluation/results/frontend-native-exact-revision-controls-20261025/commands.csv": "cd6b3fdfcac7a7ab925c7e81bbcb54d3452ac3ab8dd928baa6a76d95ae81c070",
+    "evaluation/results/frontend-native-exact-revision-controls-20261025/summary.json": "5c2e0b92c2621274e39edcc81aa3c9a29180897e1547aa1b425928e5b58799af"
+  },
+  "schema": 1
+}

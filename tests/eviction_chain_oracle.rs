@@ -467,3 +467,16 @@ pub fn run_native_eviction_chain_postwrite_failure_keeps_every_image() {
 pub fn isolated_main() {
     isolation::main_thread_driver();
 }
+
+#[path = "support/eviction_chain_grouping_oracle.rs"]
+mod grouping_oracle;
+
+#[test]
+fn native_grouped_eviction_chain_all_original_entries() {
+    isolation::run_parent("native_grouped_eviction_chain_all_original_entries");
+}
+
+/// Run the additive grouped fixture on the existing isolated main thread.
+pub fn run_native_grouped_eviction_chain_all_original_entries(capture: &std::path::Path) {
+    grouping_oracle::run(capture);
+}

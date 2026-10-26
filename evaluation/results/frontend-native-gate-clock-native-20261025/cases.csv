@@ -1,0 +1,13 @@
+ordinal,command_id,case_id,kind,expected,observed
+0,native-straight,straight,native_mode,complete_fixed_mode,pass
+1,native-budget,budget,native_mode,complete_fixed_mode,pass
+2,native-generation,generation,native_mode,complete_fixed_mode,pass
+3,native-refusals,refusals,native_mode,complete_fixed_mode,pass
+4,native-refusals,source-byte-mismatch,setup_refusal_control,exact_before_write_refusal,pass
+5,native-refusals,foreign-selected-symbol,setup_refusal_control,exact_before_write_refusal,pass
+6,native-refusals,wrong-relocated-pointer,setup_refusal_control,exact_before_write_refusal,pass
+7,native-refusals,incomplete-entry-exit-set,setup_refusal_control,exact_before_write_refusal,pass
+8,native-refusals,unsupported-cet-policy,setup_refusal_control,exact_before_write_refusal,pass
+9,native-refusals,unsupported-exit-semantics,setup_refusal_control,exact_before_write_refusal,pass
+10,native-refusals,header-load-writable,permission_refusal_control,exact_before_write_refusal_and_header_restored,pass
+11,native-refusals,header-load-executable,permission_refusal_control,exact_before_write_refusal_and_header_restored,pass

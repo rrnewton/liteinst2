@@ -6,6 +6,7 @@
 
 use crate::bundle::{BundleBudget, PlannedBundle};
 use crate::contracts::*;
+use crate::emission::{ArtifactMetrics, ArtifactPlan, ArtifactRequest, PlanningRequest};
 use crate::quiescent::{
     self, AllocationPolicy, InstallRequest, PatchTactic, PlanMetrics, PlannedInstall, TacticPolicy,
 };
@@ -119,10 +120,38 @@ pub fn plan_successor_detailed(
     victim_allocation: &AllocationPolicy,
     budget: BundleBudget,
 ) -> Result<PlannedEviction, EvictionFailure> {
+    plan_successor_core(&PlanningRequest::live(request), victim_allocation, budget)
+}
+
+/// Forces T2 using one symbolic target context for victim and selected images.
+/// Structural success leaves artifact readiness requirements unresolved.
+pub fn plan_successor_with_emission(
+    request: &ArtifactRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    budget: BundleBudget,
+) -> Result<ArtifactPlan, EvictionFailure> {
+    plan_successor_core(
+        &PlanningRequest::artifact(request),
+        victim_allocation,
+        budget,
+    )
+    .map(|plan| {
+        ArtifactPlan::bundle(
+            plan.bundle(),
+            ArtifactMetrics::Successor(plan.metrics().clone()),
+        )
+    })
+}
+
+pub(crate) fn plan_successor_core(
+    request: &PlanningRequest<'_>,
+    victim_allocation: &AllocationPolicy,
+    budget: BundleBudget,
+) -> Result<PlannedEviction, EvictionFailure> {
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
     let result = (|| {
-        let (source, scan) = quiescent::validated_source(request)
+        let (source, scan) = quiescent::validated_source_core(request)
             .inspect_err(|reason| search_evidence.qualification(SearchScope::default(), reason))?;
         if request.search.max_sites == 0 {
             return Err(Refusal::NoPatchWindow);
@@ -153,7 +182,7 @@ pub fn plan_successor_detailed(
             physical_pc: Some(victim_pc),
             ..SearchScope::default()
         };
-        let displaced = qualify_victim(request, &scan, victim, 5)
+        let displaced = qualify_victim_core(request, &scan, victim, 5)
             .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
         if budget.max_steps < 2
             || budget.max_mappings < 2
@@ -169,7 +198,7 @@ pub fn plan_successor_detailed(
             );
             return Err(Refusal::AllocationUnavailable);
         }
-        let occupied = quiescent::occupied_ranges()?;
+        let occupied = request.emission.occupied()?;
         let trampoline = TrampolinePlan::from_instruction(&scan, victim_pc)
             .map_err(|error| Refusal::Backend(error.to_string()))?;
         let mut seen = std::collections::BTreeSet::new();
@@ -196,7 +225,7 @@ pub fn plan_successor_detailed(
             if !seen.insert(target) {
                 continue;
             }
-            let image = match trampoline.emit_at(target) {
+            let image = match request.emission.emit(&trampoline, target) {
                 Ok(image) => image,
                 Err(error) => {
                     last_error = Refusal::Backend(error.to_string());
@@ -228,7 +257,7 @@ pub fn plan_successor_detailed(
                 continue;
             }
             let patch = near_redirect(victim_pc, target)?;
-            let evicted = instruction_member(
+            let evicted = instruction_member_core(
                 request, source, displaced, image, allocation, patch, candidate,
             )?;
             let mut overlay = request.code.to_vec();
@@ -239,10 +268,7 @@ pub fn plan_successor_detailed(
             // Instruction identity is still the authenticated ORIGINAL decode.
             // The selected instruction is unchanged; only consumed successor
             // displacement bytes are read from this validated preceding overlay.
-            let overlaid = InstallRequest {
-                code: &overlay,
-                ..*request
-            };
+            let overlaid = request.with_code(&overlay);
             let mut held_allocations = occupied.clone();
             held_allocations.push(allocation);
             let prefixes: Vec<_> = match request.search.tactics {
@@ -339,6 +365,15 @@ pub(crate) fn qualify_victim(
     victim: &ScannedInstruction,
     minimum: usize,
 ) -> Result<AddressRange, Refusal> {
+    qualify_victim_core(&PlanningRequest::live(request), scan, victim, minimum)
+}
+
+pub(crate) fn qualify_victim_core(
+    request: &PlanningRequest<'_>,
+    scan: &ScanResult,
+    victim: &ScannedInstruction,
+    minimum: usize,
+) -> Result<AddressRange, Refusal> {
     let displaced = AddressRange::new(victim.address(), victim.len())?;
     if victim.len() < minimum
         || !request.function.covers(displaced)
@@ -397,6 +432,26 @@ pub(crate) fn near_redirect(source: u64, target: u64) -> Result<Vec<u8>, Refusal
 
 pub(crate) fn instruction_member(
     request: &InstallRequest<'_>,
+    source: AddressRange,
+    displaced: AddressRange,
+    image: TrampolineImage,
+    allocation: AddressRange,
+    patch: Vec<u8>,
+    candidate: usize,
+) -> Result<PlannedInstall, Refusal> {
+    instruction_member_core(
+        &PlanningRequest::live(request),
+        source,
+        displaced,
+        image,
+        allocation,
+        patch,
+        candidate,
+    )
+}
+
+pub(crate) fn instruction_member_core(
+    request: &PlanningRequest<'_>,
     source: AddressRange,
     displaced: AddressRange,
     image: TrampolineImage,

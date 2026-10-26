@@ -1,0 +1,22 @@
+{
+  "files": {
+    "cases.csv": {
+      "bytes": 15079,
+      "sha256": "d3f6370c591f1ed559b2c5364d20628a80d6ea9bac4588475b9892df0082616f"
+    },
+    "commands.csv": {
+      "bytes": 30776,
+      "sha256": "c292537d9e08cef87a5ef9ebdbd7b703fcda0f00eaac8ec6ab3a5ed21c367fce"
+    },
+    "source-files.json": {
+      "bytes": 75468,
+      "sha256": "81c38ae0b18c83cab1ba20c3df9aee84f3b06ed30af5ff202e306d35f0a02b4a"
+    },
+    "summary.json": {
+      "bytes": 272643,
+      "sha256": "c6bf8c85e44702bc1e3be3a08fa41bb8777edddbe3737b30ac686d79364339a8"
+    }
+  },
+  "schema_version": 1,
+  "scope": "Every other file in this result directory; excludes this index itself."
+}

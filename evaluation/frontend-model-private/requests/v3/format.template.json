@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "${TOOLCHAIN}/bin/rustfmt",
+    "--edition",
+    "2024",
+    "${SNAPSHOT}/src/lib.rs"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${SNAPSHOT}",
+  "env": {
+    "HOME": "${USER_HOME}",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${RAW}/format.stderr",
+  "stdout": "${RAW}/format.stdout",
+  "wall_seconds": 30
+}

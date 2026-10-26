@@ -1,0 +1,5239 @@
+[
+  {
+    "command": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/required-gates.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${NATIVE_RAW}/required/gates"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${NATIVE_RAW}/required/tmp"
+      },
+      "name": "required",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/required-gates.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${NATIVE_RAW}/required/gates"
+      ],
+      "outer_env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${NATIVE_RAW}/required/tmp"
+      },
+      "parent_timeout_seconds": 1000,
+      "start_utc": "2026-10-26T08:24:21.450914+00:00"
+    },
+    "exit": 0,
+    "name": "required",
+    "operational_parent_seconds": 287.66340159485117,
+    "receipt": null,
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "72815928e527e3a801b2517b80a232d22bde7e72f2b45f6a004e26863111ab62"
+  },
+  {
+    "command": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/elf-rewrite/tests/compare_sites.py"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/comparison/tmp"
+      },
+      "name": "comparison",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/comparison/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/comparison/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/elf-rewrite/tests/compare_sites.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/comparison/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/comparison/stderr.txt",
+        "stdout": "${NATIVE_RAW}/comparison/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:09.115651+00:00"
+    },
+    "exit": 0,
+    "name": "comparison",
+    "operational_parent_seconds": 0.2150377060752362,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.14152307505719364,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "eee235431d63137f529e97b2690c6bc7138c4ff986a8eb4e719b2659b11e1f87",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "ab8290a53d4ab25e2cd7f787881f16cf61eb01cf80ae86bd21af86f7e58a4e85",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/elf-rewrite/tests/compare_sites.py"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/comparison/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/comparison/stderr.txt",
+      "stdout": "${NATIVE_RAW}/comparison/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "eee235431d63137f529e97b2690c6bc7138c4ff986a8eb4e719b2659b11e1f87",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "ab8290a53d4ab25e2cd7f787881f16cf61eb01cf80ae86bd21af86f7e58a4e85"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/cargo",
+        "build",
+        "-p",
+        "liteinst2",
+        "-p",
+        "liteinst-rewrite",
+        "--bin",
+        "elf-exec-oracle",
+        "--bin",
+        "liteinst-rewrite",
+        "--offline",
+        "--locked",
+        "--message-format=json"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${NATIVE_RAW}/native-compile/tmp"
+      },
+      "name": "native-compile",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/native-compile/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/native-compile/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 115,
+      "request": {
+        "argv": [
+          "${NATIVE_TOOLCHAIN}/bin/cargo",
+          "build",
+          "-p",
+          "liteinst2",
+          "-p",
+          "liteinst-rewrite",
+          "--bin",
+          "elf-exec-oracle",
+          "--bin",
+          "liteinst-rewrite",
+          "--offline",
+          "--locked",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${NATIVE_USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${NATIVE_RAW}/native-compile/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${NATIVE_RAW}/native-compile/stderr.txt",
+        "stdout": "${NATIVE_RAW}/native-compile/stdout.txt",
+        "wall_seconds": 90
+      },
+      "start_utc": "2026-10-26T08:29:09.332025+00:00"
+    },
+    "exit": 0,
+    "name": "native-compile",
+    "operational_parent_seconds": 0.2650814400985837,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.17657199408859015,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "36f520371df9ecc55da64af949a11d12696822293164b53f94569d43e453a3ae",
+      "stderr_sha256": "02db5a66fa0c60ca8618bd08aac556eac4f3ec863e8630a0d353dba6a0f6e126",
+      "stdout_sha256": "6e1c60bcd646fad6bd424278452c6824977d2df99d40ead512411ea3231d739a",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/cargo",
+        "build",
+        "-p",
+        "liteinst2",
+        "-p",
+        "liteinst-rewrite",
+        "--bin",
+        "elf-exec-oracle",
+        "--bin",
+        "liteinst-rewrite",
+        "--offline",
+        "--locked",
+        "--message-format=json"
+      ],
+      "cpu_seconds": 60,
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${NATIVE_RAW}/native-compile/tmp"
+      },
+      "file_bytes": 134217728,
+      "stderr": "${NATIVE_RAW}/native-compile/stderr.txt",
+      "stdout": "${NATIVE_RAW}/native-compile/stdout.txt",
+      "wall_seconds": 90
+    },
+    "request_sha256": "36f520371df9ecc55da64af949a11d12696822293164b53f94569d43e453a3ae",
+    "scope": "native",
+    "stderr_sha256": "02db5a66fa0c60ca8618bd08aac556eac4f3ec863e8630a0d353dba6a0f6e126",
+    "stdout_sha256": "6e1c60bcd646fad6bd424278452c6824977d2df99d40ead512411ea3231d739a"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/cargo",
+        "build",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "verify_elf_exec",
+        "--offline",
+        "--locked",
+        "--message-format=json"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${NATIVE_RAW}/codec-compile/tmp"
+      },
+      "name": "codec-compile",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/codec-compile/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/codec-compile/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 115,
+      "request": {
+        "argv": [
+          "${NATIVE_TOOLCHAIN}/bin/cargo",
+          "build",
+          "-p",
+          "liteinst-rewrite",
+          "--example",
+          "verify_elf_exec",
+          "--offline",
+          "--locked",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${NATIVE_USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${NATIVE_RAW}/codec-compile/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${NATIVE_RAW}/codec-compile/stderr.txt",
+        "stdout": "${NATIVE_RAW}/codec-compile/stdout.txt",
+        "wall_seconds": 90
+      },
+      "start_utc": "2026-10-26T08:29:09.598429+00:00"
+    },
+    "exit": 0,
+    "name": "codec-compile",
+    "operational_parent_seconds": 0.26521392981521785,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.17813357594422996,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "f08ccca59db88c48b6e3b298b83b36e74226b95039908f4c9f58d5a5be3c0972",
+      "stderr_sha256": "02db5a66fa0c60ca8618bd08aac556eac4f3ec863e8630a0d353dba6a0f6e126",
+      "stdout_sha256": "81144dae39d3fad9c2a9186001c4f11f02b3dd8133f049401a5cd7d4d5d48903",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/cargo",
+        "build",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "verify_elf_exec",
+        "--offline",
+        "--locked",
+        "--message-format=json"
+      ],
+      "cpu_seconds": 60,
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${NATIVE_RAW}/codec-compile/tmp"
+      },
+      "file_bytes": 134217728,
+      "stderr": "${NATIVE_RAW}/codec-compile/stderr.txt",
+      "stdout": "${NATIVE_RAW}/codec-compile/stdout.txt",
+      "wall_seconds": 90
+    },
+    "request_sha256": "f08ccca59db88c48b6e3b298b83b36e74226b95039908f4c9f58d5a5be3c0972",
+    "scope": "native",
+    "stderr_sha256": "02db5a66fa0c60ca8618bd08aac556eac4f3ec863e8630a0d353dba6a0f6e126",
+    "stdout_sha256": "81144dae39d3fad9c2a9186001c4f11f02b3dd8133f049401a5cd7d4d5d48903"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/elf-exec-oracle",
+        "target"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/target/tmp"
+      },
+      "name": "target",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/target/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/target/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/artifacts/elf-exec-oracle",
+          "target"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/target/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/target/stderr.txt",
+        "stdout": "${NATIVE_RAW}/target/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:09.965084+00:00"
+    },
+    "exit": 0,
+    "name": "target",
+    "operational_parent_seconds": 0.16592060099355876,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11539867985993624,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "654224e182d41a66e232f6e4c8cf32e868349f0b592f9212c60e7003711f7a6e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "6ac466f4721cc43cbecd450cd3f37cb75cfc8d372e22f1295ae6d2ba2182788c",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/elf-exec-oracle",
+        "target"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/target/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/target/stderr.txt",
+      "stdout": "${NATIVE_RAW}/target/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "654224e182d41a66e232f6e4c8cf32e868349f0b592f9212c60e7003711f7a6e",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "6ac466f4721cc43cbecd450cd3f37cb75cfc8d372e22f1295ae6d2ba2182788c"
+  },
+  {
+    "command": {
+      "argv": [
+        "/usr/bin/gcc",
+        "-c",
+        "-nostdlib",
+        "-fno-pie",
+        "-Wa,--fatal-warnings",
+        "${REPO}/tests/fixtures/elf-exec/subject.S",
+        "-o",
+        "${NATIVE_RAW}/subjects/subject.o"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/assemble/tmp"
+      },
+      "name": "assemble",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/assemble/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/assemble/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "/usr/bin/gcc",
+          "-c",
+          "-nostdlib",
+          "-fno-pie",
+          "-Wa,--fatal-warnings",
+          "${REPO}/tests/fixtures/elf-exec/subject.S",
+          "-o",
+          "${NATIVE_RAW}/subjects/subject.o"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/assemble/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/assemble/stderr.txt",
+        "stdout": "${NATIVE_RAW}/assemble/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:10.132394+00:00"
+    },
+    "exit": 0,
+    "name": "assemble",
+    "operational_parent_seconds": 0.2158347920048982,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.12747813411988318,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "1d5b3b1a9ac6ff5574b8017f3529b765f75a89e5ae233f5762ef0118a72c9810",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "/usr/bin/gcc",
+        "-c",
+        "-nostdlib",
+        "-fno-pie",
+        "-Wa,--fatal-warnings",
+        "${REPO}/tests/fixtures/elf-exec/subject.S",
+        "-o",
+        "${NATIVE_RAW}/subjects/subject.o"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/assemble/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/assemble/stderr.txt",
+      "stdout": "${NATIVE_RAW}/assemble/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "1d5b3b1a9ac6ff5574b8017f3529b765f75a89e5ae233f5762ef0118a72c9810",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "command": {
+      "argv": [
+        "/usr/bin/ld",
+        "-m",
+        "elf_x86_64",
+        "-nostdlib",
+        "--build-id=none",
+        "-z",
+        "noexecstack",
+        "-T",
+        "${REPO}/tests/fixtures/elf-exec/subject.ld",
+        "${NATIVE_RAW}/subjects/subject.o",
+        "-o",
+        "${NATIVE_RAW}/subjects/original-unstripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/link/tmp"
+      },
+      "name": "link",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/link/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/link/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "/usr/bin/ld",
+          "-m",
+          "elf_x86_64",
+          "-nostdlib",
+          "--build-id=none",
+          "-z",
+          "noexecstack",
+          "-T",
+          "${REPO}/tests/fixtures/elf-exec/subject.ld",
+          "${NATIVE_RAW}/subjects/subject.o",
+          "-o",
+          "${NATIVE_RAW}/subjects/original-unstripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/link/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/link/stderr.txt",
+        "stdout": "${NATIVE_RAW}/link/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:10.349870+00:00"
+    },
+    "exit": 0,
+    "name": "link",
+    "operational_parent_seconds": 0.16656542802229524,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11883404105901718,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "be47894d8f8ee558d89ccaf892429948d7434b5ba835300319c365748734327d",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "/usr/bin/ld",
+        "-m",
+        "elf_x86_64",
+        "-nostdlib",
+        "--build-id=none",
+        "-z",
+        "noexecstack",
+        "-T",
+        "${REPO}/tests/fixtures/elf-exec/subject.ld",
+        "${NATIVE_RAW}/subjects/subject.o",
+        "-o",
+        "${NATIVE_RAW}/subjects/original-unstripped"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/link/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/link/stderr.txt",
+      "stdout": "${NATIVE_RAW}/link/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "be47894d8f8ee558d89ccaf892429948d7434b5ba835300319c365748734327d",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "command": {
+      "argv": [
+        "/usr/bin/strip",
+        "--strip-all",
+        "-o",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/subjects/original-unstripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/strip/tmp"
+      },
+      "name": "strip",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/strip/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/strip/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "/usr/bin/strip",
+          "--strip-all",
+          "-o",
+          "${NATIVE_RAW}/subjects/original-stripped",
+          "${NATIVE_RAW}/subjects/original-unstripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/strip/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/strip/stderr.txt",
+        "stdout": "${NATIVE_RAW}/strip/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:10.517864+00:00"
+    },
+    "exit": 0,
+    "name": "strip",
+    "operational_parent_seconds": 0.16562113305553794,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11456754291430116,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "4a11c4c4f22da889b6e8c631d4fc549abbcbb85ce81e6b5f90d633634fb7a571",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "/usr/bin/strip",
+        "--strip-all",
+        "-o",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/subjects/original-unstripped"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/strip/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/strip/stderr.txt",
+      "stdout": "${NATIVE_RAW}/strip/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "4a11c4c4f22da889b6e8c631d4fc549abbcbb85ce81e6b5f90d633634fb7a571",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "command": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/elf-exec/render_selection.py",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/target/stdout.txt",
+        "null",
+        "${NATIVE_RAW}/subjects/unstripped-null.selection"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/select-unstripped-null/tmp"
+      },
+      "name": "select-unstripped-null",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/select-unstripped-null/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/select-unstripped-null/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/evaluation/elf-exec/render_selection.py",
+          "${NATIVE_RAW}/subjects/original-unstripped",
+          "${NATIVE_RAW}/target/stdout.txt",
+          "null",
+          "${NATIVE_RAW}/subjects/unstripped-null.selection"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/select-unstripped-null/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/select-unstripped-null/stderr.txt",
+        "stdout": "${NATIVE_RAW}/select-unstripped-null/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:10.684985+00:00"
+    },
+    "exit": 0,
+    "name": "select-unstripped-null",
+    "operational_parent_seconds": 0.2658708549570292,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.1765956690069288,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "3883c3ebb07d17d95ebacb38f081b3133813266b800b8760a8e86e4077c61eb2",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "af1b22f9aac7a01d11a36347cd51ad6acdb238afda0947840609a27e03c69649",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/elf-exec/render_selection.py",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/target/stdout.txt",
+        "null",
+        "${NATIVE_RAW}/subjects/unstripped-null.selection"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/select-unstripped-null/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/select-unstripped-null/stderr.txt",
+      "stdout": "${NATIVE_RAW}/select-unstripped-null/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "3883c3ebb07d17d95ebacb38f081b3133813266b800b8760a8e86e4077c61eb2",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "af1b22f9aac7a01d11a36347cd51ad6acdb238afda0947840609a27e03c69649"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+        "prepare",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/subjects/unstripped-null.selection",
+        "${NATIVE_RAW}/unstripped-null-candidate"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/prepare-unstripped-null/tmp"
+      },
+      "name": "prepare-unstripped-null",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/prepare-unstripped-null/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/prepare-unstripped-null/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+          "prepare",
+          "${NATIVE_RAW}/subjects/original-unstripped",
+          "${NATIVE_RAW}/subjects/unstripped-null.selection",
+          "${NATIVE_RAW}/unstripped-null-candidate"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/prepare-unstripped-null/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/prepare-unstripped-null/stderr.txt",
+        "stdout": "${NATIVE_RAW}/prepare-unstripped-null/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:10.952197+00:00"
+    },
+    "exit": 0,
+    "name": "prepare-unstripped-null",
+    "operational_parent_seconds": 0.2156786781270057,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.14459865703247488,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "16175618c54a37a60c6b25f96ba189c241f1dad0915672c82f6b7f62da0cf07c",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "8275277954263675993fe1191ba2a713480f0b75f4523d2b4c497d87009fbe7a",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+        "prepare",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/subjects/unstripped-null.selection",
+        "${NATIVE_RAW}/unstripped-null-candidate"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/prepare-unstripped-null/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/prepare-unstripped-null/stderr.txt",
+      "stdout": "${NATIVE_RAW}/prepare-unstripped-null/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "16175618c54a37a60c6b25f96ba189c241f1dad0915672c82f6b7f62da0cf07c",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "8275277954263675993fe1191ba2a713480f0b75f4523d2b4c497d87009fbe7a"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/verify_elf_exec",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/subjects/unstripped-null.selection",
+        "${NATIVE_RAW}/unstripped-null-candidate"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/verify-unstripped-null/tmp"
+      },
+      "name": "verify-unstripped-null",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/verify-unstripped-null/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/verify-unstripped-null/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/artifacts/verify_elf_exec",
+          "${NATIVE_RAW}/subjects/original-unstripped",
+          "${NATIVE_RAW}/subjects/unstripped-null.selection",
+          "${NATIVE_RAW}/unstripped-null-candidate"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/verify-unstripped-null/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/verify-unstripped-null/stderr.txt",
+        "stdout": "${NATIVE_RAW}/verify-unstripped-null/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:11.171219+00:00"
+    },
+    "exit": 0,
+    "name": "verify-unstripped-null",
+    "operational_parent_seconds": 0.2158030141144991,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.1277353900950402,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "782954f30ce77d295a52cdcbddaf19982e1e190aa733a532fa065ff2feced432",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "12b1e2707f7509bcf68c8b9173b51616e6d9723a09414ff7d4dc75f982186fc4",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/verify_elf_exec",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/subjects/unstripped-null.selection",
+        "${NATIVE_RAW}/unstripped-null-candidate"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/verify-unstripped-null/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/verify-unstripped-null/stderr.txt",
+      "stdout": "${NATIVE_RAW}/verify-unstripped-null/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "782954f30ce77d295a52cdcbddaf19982e1e190aa733a532fa065ff2feced432",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "12b1e2707f7509bcf68c8b9173b51616e6d9723a09414ff7d4dc75f982186fc4"
+  },
+  {
+    "command": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/elf-exec/render_selection.py",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/target/stdout.txt",
+        "journal",
+        "${NATIVE_RAW}/subjects/unstripped-journal.selection"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/select-unstripped-journal/tmp"
+      },
+      "name": "select-unstripped-journal",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/select-unstripped-journal/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/select-unstripped-journal/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/evaluation/elf-exec/render_selection.py",
+          "${NATIVE_RAW}/subjects/original-unstripped",
+          "${NATIVE_RAW}/target/stdout.txt",
+          "journal",
+          "${NATIVE_RAW}/subjects/unstripped-journal.selection"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/select-unstripped-journal/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/select-unstripped-journal/stderr.txt",
+        "stdout": "${NATIVE_RAW}/select-unstripped-journal/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:11.388448+00:00"
+    },
+    "exit": 0,
+    "name": "select-unstripped-journal",
+    "operational_parent_seconds": 0.26591119612567127,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.18042776710353792,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "96d1c4e234c6106c82f97365f21d1667bb9b6788b9f2f43335de8830b8b4a493",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "aaa9e6845d4ad2ce9eeee1606ba5630e80a689bb431db149c78754753200ad28",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/elf-exec/render_selection.py",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/target/stdout.txt",
+        "journal",
+        "${NATIVE_RAW}/subjects/unstripped-journal.selection"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/select-unstripped-journal/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/select-unstripped-journal/stderr.txt",
+      "stdout": "${NATIVE_RAW}/select-unstripped-journal/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "96d1c4e234c6106c82f97365f21d1667bb9b6788b9f2f43335de8830b8b4a493",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "aaa9e6845d4ad2ce9eeee1606ba5630e80a689bb431db149c78754753200ad28"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+        "prepare",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/subjects/unstripped-journal.selection",
+        "${NATIVE_RAW}/unstripped-journal-candidate"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/prepare-unstripped-journal/tmp"
+      },
+      "name": "prepare-unstripped-journal",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/prepare-unstripped-journal/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/prepare-unstripped-journal/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+          "prepare",
+          "${NATIVE_RAW}/subjects/original-unstripped",
+          "${NATIVE_RAW}/subjects/unstripped-journal.selection",
+          "${NATIVE_RAW}/unstripped-journal-candidate"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/prepare-unstripped-journal/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/prepare-unstripped-journal/stderr.txt",
+        "stdout": "${NATIVE_RAW}/prepare-unstripped-journal/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:11.656034+00:00"
+    },
+    "exit": 0,
+    "name": "prepare-unstripped-journal",
+    "operational_parent_seconds": 0.2161012210417539,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.14177125808782876,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "f4582683fbcd53cf829361934efff90fd1049dbe9f80ab7b53f10784be78688b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "8275277954263675993fe1191ba2a713480f0b75f4523d2b4c497d87009fbe7a",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+        "prepare",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/subjects/unstripped-journal.selection",
+        "${NATIVE_RAW}/unstripped-journal-candidate"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/prepare-unstripped-journal/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/prepare-unstripped-journal/stderr.txt",
+      "stdout": "${NATIVE_RAW}/prepare-unstripped-journal/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "f4582683fbcd53cf829361934efff90fd1049dbe9f80ab7b53f10784be78688b",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "8275277954263675993fe1191ba2a713480f0b75f4523d2b4c497d87009fbe7a"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/verify_elf_exec",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/subjects/unstripped-journal.selection",
+        "${NATIVE_RAW}/unstripped-journal-candidate"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/verify-unstripped-journal/tmp"
+      },
+      "name": "verify-unstripped-journal",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/verify-unstripped-journal/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/verify-unstripped-journal/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/artifacts/verify_elf_exec",
+          "${NATIVE_RAW}/subjects/original-unstripped",
+          "${NATIVE_RAW}/subjects/unstripped-journal.selection",
+          "${NATIVE_RAW}/unstripped-journal-candidate"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/verify-unstripped-journal/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/verify-unstripped-journal/stderr.txt",
+        "stdout": "${NATIVE_RAW}/verify-unstripped-journal/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:11.875118+00:00"
+    },
+    "exit": 0,
+    "name": "verify-unstripped-journal",
+    "operational_parent_seconds": 0.21578187309205532,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.12798458291217685,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "a40fd5da4b134aab1e66effb340bb562232da6ce23b04c609d7b78fc688e0d75",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "12b1e2707f7509bcf68c8b9173b51616e6d9723a09414ff7d4dc75f982186fc4",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/verify_elf_exec",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/subjects/unstripped-journal.selection",
+        "${NATIVE_RAW}/unstripped-journal-candidate"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/verify-unstripped-journal/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/verify-unstripped-journal/stderr.txt",
+      "stdout": "${NATIVE_RAW}/verify-unstripped-journal/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "a40fd5da4b134aab1e66effb340bb562232da6ce23b04c609d7b78fc688e0d75",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "12b1e2707f7509bcf68c8b9173b51616e6d9723a09414ff7d4dc75f982186fc4"
+  },
+  {
+    "command": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/elf-exec/render_selection.py",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/target/stdout.txt",
+        "null",
+        "${NATIVE_RAW}/subjects/stripped-null.selection"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/select-stripped-null/tmp"
+      },
+      "name": "select-stripped-null",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/select-stripped-null/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/select-stripped-null/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/evaluation/elf-exec/render_selection.py",
+          "${NATIVE_RAW}/subjects/original-stripped",
+          "${NATIVE_RAW}/target/stdout.txt",
+          "null",
+          "${NATIVE_RAW}/subjects/stripped-null.selection"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/select-stripped-null/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/select-stripped-null/stderr.txt",
+        "stdout": "${NATIVE_RAW}/select-stripped-null/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:12.092270+00:00"
+    },
+    "exit": 0,
+    "name": "select-stripped-null",
+    "operational_parent_seconds": 0.26589632290415466,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.1762372930534184,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "7137773ffd511cd574fc8521667e78d8dba459e85ae0aa81a357bf224310a1cc",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "af1b22f9aac7a01d11a36347cd51ad6acdb238afda0947840609a27e03c69649",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/elf-exec/render_selection.py",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/target/stdout.txt",
+        "null",
+        "${NATIVE_RAW}/subjects/stripped-null.selection"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/select-stripped-null/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/select-stripped-null/stderr.txt",
+      "stdout": "${NATIVE_RAW}/select-stripped-null/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "7137773ffd511cd574fc8521667e78d8dba459e85ae0aa81a357bf224310a1cc",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "af1b22f9aac7a01d11a36347cd51ad6acdb238afda0947840609a27e03c69649"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+        "prepare",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/subjects/stripped-null.selection",
+        "${NATIVE_RAW}/stripped-null-candidate"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/prepare-stripped-null/tmp"
+      },
+      "name": "prepare-stripped-null",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/prepare-stripped-null/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/prepare-stripped-null/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+          "prepare",
+          "${NATIVE_RAW}/subjects/original-stripped",
+          "${NATIVE_RAW}/subjects/stripped-null.selection",
+          "${NATIVE_RAW}/stripped-null-candidate"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/prepare-stripped-null/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/prepare-stripped-null/stderr.txt",
+        "stdout": "${NATIVE_RAW}/prepare-stripped-null/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:12.359478+00:00"
+    },
+    "exit": 0,
+    "name": "prepare-stripped-null",
+    "operational_parent_seconds": 0.21572165191173553,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.14598837099038064,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "98948b045b2d1ab60f138a931e20d79823819027e4e68ddf50800df4771a3371",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "8275277954263675993fe1191ba2a713480f0b75f4523d2b4c497d87009fbe7a",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+        "prepare",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/subjects/stripped-null.selection",
+        "${NATIVE_RAW}/stripped-null-candidate"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/prepare-stripped-null/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/prepare-stripped-null/stderr.txt",
+      "stdout": "${NATIVE_RAW}/prepare-stripped-null/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "98948b045b2d1ab60f138a931e20d79823819027e4e68ddf50800df4771a3371",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "8275277954263675993fe1191ba2a713480f0b75f4523d2b4c497d87009fbe7a"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/verify_elf_exec",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/subjects/stripped-null.selection",
+        "${NATIVE_RAW}/stripped-null-candidate"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/verify-stripped-null/tmp"
+      },
+      "name": "verify-stripped-null",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/verify-stripped-null/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/verify-stripped-null/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/artifacts/verify_elf_exec",
+          "${NATIVE_RAW}/subjects/original-stripped",
+          "${NATIVE_RAW}/subjects/stripped-null.selection",
+          "${NATIVE_RAW}/stripped-null-candidate"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/verify-stripped-null/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/verify-stripped-null/stderr.txt",
+        "stdout": "${NATIVE_RAW}/verify-stripped-null/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:12.578390+00:00"
+    },
+    "exit": 0,
+    "name": "verify-stripped-null",
+    "operational_parent_seconds": 0.2159013021737337,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.13242945913225412,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "e57e31dec88d0ae147db13d35f71db4e7d9965881281352aa7f3b29ffe79c431",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "12b1e2707f7509bcf68c8b9173b51616e6d9723a09414ff7d4dc75f982186fc4",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/verify_elf_exec",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/subjects/stripped-null.selection",
+        "${NATIVE_RAW}/stripped-null-candidate"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/verify-stripped-null/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/verify-stripped-null/stderr.txt",
+      "stdout": "${NATIVE_RAW}/verify-stripped-null/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "e57e31dec88d0ae147db13d35f71db4e7d9965881281352aa7f3b29ffe79c431",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "12b1e2707f7509bcf68c8b9173b51616e6d9723a09414ff7d4dc75f982186fc4"
+  },
+  {
+    "command": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/elf-exec/render_selection.py",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/target/stdout.txt",
+        "journal",
+        "${NATIVE_RAW}/subjects/stripped-journal.selection"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/select-stripped-journal/tmp"
+      },
+      "name": "select-stripped-journal",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/select-stripped-journal/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/select-stripped-journal/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/evaluation/elf-exec/render_selection.py",
+          "${NATIVE_RAW}/subjects/original-stripped",
+          "${NATIVE_RAW}/target/stdout.txt",
+          "journal",
+          "${NATIVE_RAW}/subjects/stripped-journal.selection"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/select-stripped-journal/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/select-stripped-journal/stderr.txt",
+        "stdout": "${NATIVE_RAW}/select-stripped-journal/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:12.795759+00:00"
+    },
+    "exit": 0,
+    "name": "select-stripped-journal",
+    "operational_parent_seconds": 0.2659028328489512,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.17857276392169297,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "ee36b13fff038025658418c6daa11fcfacee7e79f03fb56ac2e03f47205bfdc3",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "aaa9e6845d4ad2ce9eeee1606ba5630e80a689bb431db149c78754753200ad28",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/elf-exec/render_selection.py",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/target/stdout.txt",
+        "journal",
+        "${NATIVE_RAW}/subjects/stripped-journal.selection"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/select-stripped-journal/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/select-stripped-journal/stderr.txt",
+      "stdout": "${NATIVE_RAW}/select-stripped-journal/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "ee36b13fff038025658418c6daa11fcfacee7e79f03fb56ac2e03f47205bfdc3",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "aaa9e6845d4ad2ce9eeee1606ba5630e80a689bb431db149c78754753200ad28"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+        "prepare",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/subjects/stripped-journal.selection",
+        "${NATIVE_RAW}/stripped-journal-candidate"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/prepare-stripped-journal/tmp"
+      },
+      "name": "prepare-stripped-journal",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/prepare-stripped-journal/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/prepare-stripped-journal/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+          "prepare",
+          "${NATIVE_RAW}/subjects/original-stripped",
+          "${NATIVE_RAW}/subjects/stripped-journal.selection",
+          "${NATIVE_RAW}/stripped-journal-candidate"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/prepare-stripped-journal/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/prepare-stripped-journal/stderr.txt",
+        "stdout": "${NATIVE_RAW}/prepare-stripped-journal/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:13.063262+00:00"
+    },
+    "exit": 0,
+    "name": "prepare-stripped-journal",
+    "operational_parent_seconds": 0.2158390989061445,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.14796023909002542,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "0b487b493a99edbe3e0a4138375e0791605990c5e2c41192e44d032ac3b50a2c",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "8275277954263675993fe1191ba2a713480f0b75f4523d2b4c497d87009fbe7a",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/liteinst-rewrite",
+        "prepare",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/subjects/stripped-journal.selection",
+        "${NATIVE_RAW}/stripped-journal-candidate"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/prepare-stripped-journal/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/prepare-stripped-journal/stderr.txt",
+      "stdout": "${NATIVE_RAW}/prepare-stripped-journal/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "0b487b493a99edbe3e0a4138375e0791605990c5e2c41192e44d032ac3b50a2c",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "8275277954263675993fe1191ba2a713480f0b75f4523d2b4c497d87009fbe7a"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/verify_elf_exec",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/subjects/stripped-journal.selection",
+        "${NATIVE_RAW}/stripped-journal-candidate"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/verify-stripped-journal/tmp"
+      },
+      "name": "verify-stripped-journal",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/verify-stripped-journal/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/verify-stripped-journal/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/artifacts/verify_elf_exec",
+          "${NATIVE_RAW}/subjects/original-stripped",
+          "${NATIVE_RAW}/subjects/stripped-journal.selection",
+          "${NATIVE_RAW}/stripped-journal-candidate"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/verify-stripped-journal/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/verify-stripped-journal/stderr.txt",
+        "stdout": "${NATIVE_RAW}/verify-stripped-journal/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:13.282108+00:00"
+    },
+    "exit": 0,
+    "name": "verify-stripped-journal",
+    "operational_parent_seconds": 0.21589618385769427,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.12909860396757722,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "2960e3d19d419b3cc1eeeeacab680fddc818198b89a635b2b522a0dfd72fef0f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "12b1e2707f7509bcf68c8b9173b51616e6d9723a09414ff7d4dc75f982186fc4",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/verify_elf_exec",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/subjects/stripped-journal.selection",
+        "${NATIVE_RAW}/stripped-journal-candidate"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/verify-stripped-journal/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/verify-stripped-journal/stderr.txt",
+      "stdout": "${NATIVE_RAW}/verify-stripped-journal/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "2960e3d19d419b3cc1eeeeacab680fddc818198b89a635b2b522a0dfd72fef0f",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "12b1e2707f7509bcf68c8b9173b51616e6d9723a09414ff7d4dc75f982186fc4"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/elf-exec-oracle",
+        "run",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/unstripped-null-candidate",
+        "${NATIVE_RAW}/unstripped-journal-candidate",
+        "${NATIVE_RAW}/stripped-null-candidate",
+        "${NATIVE_RAW}/stripped-journal-candidate",
+        "${NATIVE_RAW}/captures"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/native/tmp"
+      },
+      "name": "native",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/native/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/native/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/artifacts/elf-exec-oracle",
+          "run",
+          "${NATIVE_RAW}/subjects/original-unstripped",
+          "${NATIVE_RAW}/subjects/original-stripped",
+          "${NATIVE_RAW}/unstripped-null-candidate",
+          "${NATIVE_RAW}/unstripped-journal-candidate",
+          "${NATIVE_RAW}/stripped-null-candidate",
+          "${NATIVE_RAW}/stripped-journal-candidate",
+          "${NATIVE_RAW}/captures"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/native/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/native/stderr.txt",
+        "stdout": "${NATIVE_RAW}/native/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:13.499525+00:00"
+    },
+    "exit": 0,
+    "name": "native",
+    "operational_parent_seconds": 0.9670042810030282,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.8788251299411058,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "acf635ff9aaa8bb96e7d5fef4c4547f4b57d14cee9b1b35c833fa288696a2825",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "555b568e504e46fbb6e62b2787309225be823310f81ecaf0ed6b2fd1e75bf531",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/artifacts/elf-exec-oracle",
+        "run",
+        "${NATIVE_RAW}/subjects/original-unstripped",
+        "${NATIVE_RAW}/subjects/original-stripped",
+        "${NATIVE_RAW}/unstripped-null-candidate",
+        "${NATIVE_RAW}/unstripped-journal-candidate",
+        "${NATIVE_RAW}/stripped-null-candidate",
+        "${NATIVE_RAW}/stripped-journal-candidate",
+        "${NATIVE_RAW}/captures"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/native/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/native/stderr.txt",
+      "stdout": "${NATIVE_RAW}/native/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "acf635ff9aaa8bb96e7d5fef4c4547f4b57d14cee9b1b35c833fa288696a2825",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "555b568e504e46fbb6e62b2787309225be823310f81ecaf0ed6b2fd1e75bf531"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/captures/original-unstripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-original-unstripped/tmp"
+      },
+      "name": "ordinary-original-unstripped",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/ordinary-original-unstripped/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/ordinary-original-unstripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/captures/original-unstripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/ordinary-original-unstripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/ordinary-original-unstripped/stderr.txt",
+        "stdout": "${NATIVE_RAW}/ordinary-original-unstripped/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:14.468088+00:00"
+    },
+    "exit": 0,
+    "name": "ordinary-original-unstripped",
+    "operational_parent_seconds": 0.1656542019918561,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11430462915450335,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "b17c1ccc18990d516433f405debea63042ed13cb12c549a5bd8e09d89288e4ee",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/captures/original-unstripped"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-original-unstripped/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/ordinary-original-unstripped/stderr.txt",
+      "stdout": "${NATIVE_RAW}/ordinary-original-unstripped/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "b17c1ccc18990d516433f405debea63042ed13cb12c549a5bd8e09d89288e4ee",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/captures/original-stripped"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-original-stripped/tmp"
+      },
+      "name": "ordinary-original-stripped",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/ordinary-original-stripped/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/ordinary-original-stripped/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/captures/original-stripped"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/ordinary-original-stripped/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/ordinary-original-stripped/stderr.txt",
+        "stdout": "${NATIVE_RAW}/ordinary-original-stripped/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:14.635320+00:00"
+    },
+    "exit": 0,
+    "name": "ordinary-original-stripped",
+    "operational_parent_seconds": 0.16566247399896383,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11220916686579585,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "0a743e0c03b6467401a5dfb3574ad00a9424ce595421e3dcbdd1682298a0a891",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/captures/original-stripped"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-original-stripped/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/ordinary-original-stripped/stderr.txt",
+      "stdout": "${NATIVE_RAW}/ordinary-original-stripped/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "0a743e0c03b6467401a5dfb3574ad00a9424ce595421e3dcbdd1682298a0a891",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/captures/candidate-0"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-0/tmp"
+      },
+      "name": "ordinary-candidate-0",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/ordinary-candidate-0/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/ordinary-candidate-0/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/captures/candidate-0"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-0/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/ordinary-candidate-0/stderr.txt",
+        "stdout": "${NATIVE_RAW}/ordinary-candidate-0/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:14.802609+00:00"
+    },
+    "exit": 0,
+    "name": "ordinary-candidate-0",
+    "operational_parent_seconds": 0.16590171307325363,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11350474902428687,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "918a9fff9db684ed00b76d987a974a8c2ca199ce15c4841bd94e18b182e7b3c0",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/captures/candidate-0"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-0/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/ordinary-candidate-0/stderr.txt",
+      "stdout": "${NATIVE_RAW}/ordinary-candidate-0/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "918a9fff9db684ed00b76d987a974a8c2ca199ce15c4841bd94e18b182e7b3c0",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/captures/candidate-1"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-1/tmp"
+      },
+      "name": "ordinary-candidate-1",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/ordinary-candidate-1/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/ordinary-candidate-1/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/captures/candidate-1"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-1/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/ordinary-candidate-1/stderr.txt",
+        "stdout": "${NATIVE_RAW}/ordinary-candidate-1/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:14.970087+00:00"
+    },
+    "exit": 0,
+    "name": "ordinary-candidate-1",
+    "operational_parent_seconds": 0.1657820539548993,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11673436313867569,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "27f28fc6e72a4292e4e641bb4261f6916b954593f30f7e195c5888315ad9e4a7",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/captures/candidate-1"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-1/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/ordinary-candidate-1/stderr.txt",
+      "stdout": "${NATIVE_RAW}/ordinary-candidate-1/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "27f28fc6e72a4292e4e641bb4261f6916b954593f30f7e195c5888315ad9e4a7",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/captures/candidate-2"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-2/tmp"
+      },
+      "name": "ordinary-candidate-2",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/ordinary-candidate-2/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/ordinary-candidate-2/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/captures/candidate-2"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-2/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/ordinary-candidate-2/stderr.txt",
+        "stdout": "${NATIVE_RAW}/ordinary-candidate-2/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:15.137625+00:00"
+    },
+    "exit": 0,
+    "name": "ordinary-candidate-2",
+    "operational_parent_seconds": 0.16572818183340132,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.1145199618767947,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "081063e207f8ee48df74c946e631478d34fecc9e754eb9ab45c359fc90f96db0",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/captures/candidate-2"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-2/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/ordinary-candidate-2/stderr.txt",
+      "stdout": "${NATIVE_RAW}/ordinary-candidate-2/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "081063e207f8ee48df74c946e631478d34fecc9e754eb9ab45c359fc90f96db0",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef"
+  },
+  {
+    "command": {
+      "argv": [
+        "${NATIVE_RAW}/captures/candidate-3"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-3/tmp"
+      },
+      "name": "ordinary-candidate-3",
+      "outer_argv": [
+        "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${NATIVE_RAW}/ordinary-candidate-3/request.json",
+        "--receipt",
+        "${NATIVE_RAW}/ordinary-candidate-3/receipt.json"
+      ],
+      "outer_env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request": {
+        "argv": [
+          "${NATIVE_RAW}/captures/candidate-3"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-3/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${NATIVE_RAW}/ordinary-candidate-3/stderr.txt",
+        "stdout": "${NATIVE_RAW}/ordinary-candidate-3/stdout.txt",
+        "wall_seconds": 30
+      },
+      "start_utc": "2026-10-26T08:29:15.305083+00:00"
+    },
+    "exit": 0,
+    "name": "ordinary-candidate-3",
+    "operational_parent_seconds": 0.16567664593458176,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11167439492419362,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "465591e5af0c84c618d696d15a00ceabf541c71200e9fe3166b67a90f141029c",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_RAW}/captures/candidate-3"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${NATIVE_RAW}/ordinary-candidate-3/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${NATIVE_RAW}/ordinary-candidate-3/stderr.txt",
+      "stdout": "${NATIVE_RAW}/ordinary-candidate-3/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "465591e5af0c84c618d696d15a00ceabf541c71200e9fe3166b67a90f141029c",
+    "scope": "native",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "3553abf72a1fad5000f7a2866c16ecac6c9a3658a01d6e7cae69606c03a7f6ef"
+  },
+  {
+    "command": {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${NATIVE_RAW}/required/gates"
+      },
+      "parent_timeout_seconds": 180
+    },
+    "exit": 0,
+    "merged_output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "name": "fmt",
+    "operational_parent_seconds": 1.6174261288251728,
+    "receipt": null,
+    "scope": "native-required-nested"
+  },
+  {
+    "command": {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${NATIVE_RAW}/required/gates"
+      },
+      "parent_timeout_seconds": 180
+    },
+    "exit": 0,
+    "merged_output_sha256": "d04e155d7acdcf522003a94ff9c3c515ee0c3eeb212212559c6035043d1033d8",
+    "name": "clippy",
+    "operational_parent_seconds": 4.221930912928656,
+    "receipt": null,
+    "scope": "native-required-nested"
+  },
+  {
+    "command": {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${NATIVE_RAW}/required/gates"
+      },
+      "parent_timeout_seconds": 360
+    },
+    "exit": 0,
+    "merged_output_sha256": "81f793c584155aa2010dec2c63f36b826a1bb860780044b1ece0b20d3c5cc416",
+    "name": "test",
+    "operational_parent_seconds": 278.94340770994313,
+    "receipt": null,
+    "scope": "native-required-nested"
+  },
+  {
+    "command": {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${NATIVE_RAW}/required/gates"
+      },
+      "parent_timeout_seconds": 180
+    },
+    "exit": 0,
+    "merged_output_sha256": "3e6dfc99d1a0e0f3b602352a30181932b312b59d09cb2c9fdeb0cfaa560c626d",
+    "name": "check",
+    "operational_parent_seconds": 2.6693522790446877,
+    "receipt": null,
+    "scope": "native-required-nested"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/version-rustc/request.json",
+          "--receipt",
+          "${PARITY_RAW}/version-rustc/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${NATIVE_TOOLCHAIN}/bin/rustc",
+          "-vV"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/version-rustc/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/version-rustc/stderr",
+        "stdout": "${PARITY_RAW}/version-rustc/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "version-rustc",
+    "operational_parent_seconds": 0.2141753591131419,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.13152846391312778,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "f330f87b276aada656a49a8e7a0c099f5c7a302514e8fc403539b2ac23a3375f",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "-vV"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/version-rustc/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/version-rustc/stderr",
+      "stdout": "${PARITY_RAW}/version-rustc/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "f330f87b276aada656a49a8e7a0c099f5c7a302514e8fc403539b2ac23a3375f",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/version-cargo/request.json",
+          "--receipt",
+          "${PARITY_RAW}/version-cargo/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${NATIVE_TOOLCHAIN}/bin/cargo",
+          "-V"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/version-cargo/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/version-cargo/stderr",
+        "stdout": "${PARITY_RAW}/version-cargo/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "version-cargo",
+    "operational_parent_seconds": 0.21470491401851177,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.12472797394730151,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "fe25961ee28e7f99283111e78acc04c00cdad6adc097f29289aef975c35fd475",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/cargo",
+        "-V"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/version-cargo/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/version-cargo/stderr",
+      "stdout": "${PARITY_RAW}/version-cargo/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "fe25961ee28e7f99283111e78acc04c00cdad6adc097f29289aef975c35fd475",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/version-python/request.json",
+          "--receipt",
+          "${PARITY_RAW}/version-python/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_PYTHON_PATH}",
+          "--version"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/version-python/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/version-python/stderr",
+        "stdout": "${PARITY_RAW}/version-python/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "version-python",
+    "operational_parent_seconds": 0.3143207258544862,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.22507468494586647,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "d04d2fb62f565f1f5f0396826d1288a55af0c46187a34f4be81db8de0beacbc8",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "5eb6687f88cac9c862afa5695cc3b4a5d024ae22b0cbd39840169c06ca1aa5f6",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_PYTHON_PATH}",
+        "--version"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/version-python/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/version-python/stderr",
+      "stdout": "${PARITY_RAW}/version-python/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "d04d2fb62f565f1f5f0396826d1288a55af0c46187a34f4be81db8de0beacbc8",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/version-helper-python/request.json",
+          "--receipt",
+          "${PARITY_RAW}/version-helper-python/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "--version"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/version-helper-python/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/version-helper-python/stderr",
+        "stdout": "${PARITY_RAW}/version-helper-python/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "version-helper-python",
+    "operational_parent_seconds": 0.1640382600016892,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11462379992008209,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "004aab18921901dd93e115555b64df876773f0ba94d7bd5c1f69effbde51523d",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "46013688dc6816ee6935343b6974f8bd34c0ada4fe43554f5c0a772d7e8f0b1e",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "--version"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/version-helper-python/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/version-helper-python/stderr",
+      "stdout": "${PARITY_RAW}/version-helper-python/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "004aab18921901dd93e115555b64df876773f0ba94d7bd5c1f69effbde51523d",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/prepare/request.json",
+          "--receipt",
+          "${PARITY_RAW}/prepare/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_PYTHON_PATH}",
+          "-B",
+          "${REPO}/evaluation/emitter-parity/prepare.py",
+          "--repo",
+          "${REPO}",
+          "--candidate",
+          "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36",
+          "--output",
+          "${PARITY_RAW}/prepared"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/prepare/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/prepare/stderr",
+        "stdout": "${PARITY_RAW}/prepare/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "prepare",
+    "operational_parent_seconds": 0.7650398151017725,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.6796963450033218,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "036f992f7a97fb27f3789c8b8ad23a67ae4cefe89a5559eedebb23b5472d7339",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "f3c7d8ff5d6cfd5933c43dde9fb609050236c379a4cf9b1965cb3188ccd13b2a",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/emitter-parity/prepare.py",
+        "--repo",
+        "${REPO}",
+        "--candidate",
+        "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36",
+        "--output",
+        "${PARITY_RAW}/prepared"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/prepare/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/prepare/stderr",
+      "stdout": "${PARITY_RAW}/prepare/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "036f992f7a97fb27f3789c8b8ad23a67ae4cefe89a5559eedebb23b5472d7339",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/old-unit-compile/request.json",
+          "--receipt",
+          "${PARITY_RAW}/old-unit-compile/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "request": {
+        "argv": [
+          "${NATIVE_TOOLCHAIN}/bin/cargo",
+          "test",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "${PARITY_RAW}/prepared/old/Cargo.toml",
+          "--lib",
+          "--no-run",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${NATIVE_USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${PARITY_RAW}/old-unit-compile/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${PARITY_RAW}/old-unit-compile/stderr",
+        "stdout": "${PARITY_RAW}/old-unit-compile/stdout",
+        "wall_seconds": 90
+      }
+    },
+    "exit": 0,
+    "name": "old-unit-compile",
+    "operational_parent_seconds": 3.970834656851366,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 3.8848882510792464,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "1fdc28ebf4e98e492e40221f85117a59c337245b5c7e08063303699b298992ec",
+      "stderr_sha256": "62ae4cfd0075b7751838f0dcc9fa5debfcb1e0aa2f3a5b988ae2decd4737604e",
+      "stdout_sha256": "2126e6faa8a386c6d4bdcc3060e86b4f1833be85061e11ab13bd869ebc8d47cc",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "${PARITY_RAW}/prepared/old/Cargo.toml",
+        "--lib",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "cpu_seconds": 60,
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${PARITY_RAW}/old-unit-compile/tmp"
+      },
+      "file_bytes": 134217728,
+      "stderr": "${PARITY_RAW}/old-unit-compile/stderr",
+      "stdout": "${PARITY_RAW}/old-unit-compile/stdout",
+      "wall_seconds": 90
+    },
+    "request_sha256": "1fdc28ebf4e98e492e40221f85117a59c337245b5c7e08063303699b298992ec",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/old-list/request.json",
+          "--receipt",
+          "${PARITY_RAW}/old-list/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${PARITY_RAW}/artifacts/old-unit-compile/debug/deps/liteinst2_parity_old_474094a7355c-d3d985e4f1f97d32",
+          "--list"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/old-list/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/old-list/stderr",
+        "stdout": "${PARITY_RAW}/old-list/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "old-list",
+    "operational_parent_seconds": 0.16404023300856352,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.12032035598531365,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "786e784f0023e3fda5a94e008214abaf3a2ce9daf5e9c9116519a77882fe66f2",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "04fea3030168a6e8d4771eb9c6e94058aac76dd932f1753df8cfdcf0c3816168",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${PARITY_RAW}/artifacts/old-unit-compile/debug/deps/liteinst2_parity_old_474094a7355c-d3d985e4f1f97d32",
+        "--list"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/old-list/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/old-list/stderr",
+      "stdout": "${PARITY_RAW}/old-list/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "786e784f0023e3fda5a94e008214abaf3a2ce9daf5e9c9116519a77882fe66f2",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/old-capture-58/request.json",
+          "--receipt",
+          "${PARITY_RAW}/old-capture-58/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${PARITY_RAW}/artifacts/old-unit-compile/debug/deps/liteinst2_parity_old_474094a7355c-d3d985e4f1f97d32",
+          "emitter_parity::capture_extended_live_parity",
+          "--exact",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "LITEINST_EXTENDED_PARITY_OUTPUT": "${PARITY_RAW}/old-58",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/old-capture-58/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/old-capture-58/stderr",
+        "stdout": "${PARITY_RAW}/old-capture-58/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "old-capture-58",
+    "operational_parent_seconds": 0.26435847696848214,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.1781377480365336,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "49281f3f2c2dac64e22e96c77d05a6a6023cfcbfdca6cfdd534d09e7f40bcb5b",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "d3208be7f33a90f03960a070028303f1053c61809b8a42c68fd8f445474fb6b7",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${PARITY_RAW}/artifacts/old-unit-compile/debug/deps/liteinst2_parity_old_474094a7355c-d3d985e4f1f97d32",
+        "emitter_parity::capture_extended_live_parity",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "LITEINST_EXTENDED_PARITY_OUTPUT": "${PARITY_RAW}/old-58",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/old-capture-58/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/old-capture-58/stderr",
+      "stdout": "${PARITY_RAW}/old-capture-58/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "49281f3f2c2dac64e22e96c77d05a6a6023cfcbfdca6cfdd534d09e7f40bcb5b",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/old-capture-current/request.json",
+          "--receipt",
+          "${PARITY_RAW}/old-capture-current/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${PARITY_RAW}/artifacts/old-unit-compile/debug/deps/liteinst2_parity_old_474094a7355c-d3d985e4f1f97d32",
+          "emitter_parity::current_features::capture_current_features",
+          "--exact",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "LITEINST_CURRENT_PARITY_OUTPUT": "${PARITY_RAW}/old-current",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/old-capture-current/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/old-capture-current/stderr",
+        "stdout": "${PARITY_RAW}/old-capture-current/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "old-capture-current",
+    "operational_parent_seconds": 0.26417259708978236,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.1786362170241773,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "d72bf5510d15c558a858da28a4782419e9f7e2769aa3070d9227f0050c23349a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "96e3f2a37159aa0fe84ef7ed1c2488aa888f9b03a7e1e3a74ccc6cd55fa77657",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${PARITY_RAW}/artifacts/old-unit-compile/debug/deps/liteinst2_parity_old_474094a7355c-d3d985e4f1f97d32",
+        "emitter_parity::current_features::capture_current_features",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "LITEINST_CURRENT_PARITY_OUTPUT": "${PARITY_RAW}/old-current",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/old-capture-current/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/old-capture-current/stderr",
+      "stdout": "${PARITY_RAW}/old-capture-current/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "d72bf5510d15c558a858da28a4782419e9f7e2769aa3070d9227f0050c23349a",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/old-library/request.json",
+          "--receipt",
+          "${PARITY_RAW}/old-library/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "request": {
+        "argv": [
+          "${NATIVE_TOOLCHAIN}/bin/cargo",
+          "build",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "${PARITY_RAW}/prepared/old/Cargo.toml",
+          "--lib",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${NATIVE_USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${PARITY_RAW}/old-library/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${PARITY_RAW}/old-library/stderr",
+        "stdout": "${PARITY_RAW}/old-library/stdout",
+        "wall_seconds": 90
+      }
+    },
+    "exit": 0,
+    "name": "old-library",
+    "operational_parent_seconds": 2.2679869800340384,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 2.199338210048154,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "95d8082aeaaf791748c78e56d3088fb00cbda69cf1d0c5d94232c4293a757227",
+      "stderr_sha256": "dceb7e39a6f4b3a63728f635bedfe827f1a23c9c91eda69fcb40135fa9dd7064",
+      "stdout_sha256": "273f377703fe08d0e7872a7edac1c669d19b2607154b30704355a3bd20f65be0",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "${PARITY_RAW}/prepared/old/Cargo.toml",
+        "--lib",
+        "--message-format=json"
+      ],
+      "cpu_seconds": 60,
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${PARITY_RAW}/old-library/tmp"
+      },
+      "file_bytes": 134217728,
+      "stderr": "${PARITY_RAW}/old-library/stderr",
+      "stdout": "${PARITY_RAW}/old-library/stdout",
+      "wall_seconds": 90
+    },
+    "request_sha256": "95d8082aeaaf791748c78e56d3088fb00cbda69cf1d0c5d94232c4293a757227",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/old-link-28/request.json",
+          "--receipt",
+          "${PARITY_RAW}/old-link-28/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "request": {
+        "argv": [
+          "${NATIVE_TOOLCHAIN}/bin/rustc",
+          "--edition=2024",
+          "-Dwarnings",
+          "-Ccodegen-units=1",
+          "${REPO}/evaluation/emitter-parity/capture-28.rs",
+          "--extern",
+          "liteinst2=${PARITY_RAW}/artifacts/old-library/debug/libliteinst2_parity_old_474094a7355c.rlib",
+          "--extern",
+          "iced_x86=${PARITY_RAW}/artifacts/old-library/debug/deps/libiced_x86-dedf5566ddeb6cb0.rlib",
+          "-L",
+          "dependency=${REPO}/target/debug/deps",
+          "-o",
+          "${PARITY_RAW}/old-28-program"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${NATIVE_USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${PARITY_RAW}/old-link-28/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${PARITY_RAW}/old-link-28/stderr",
+        "stdout": "${PARITY_RAW}/old-link-28/stdout",
+        "wall_seconds": 90
+      }
+    },
+    "exit": 0,
+    "name": "old-link-28",
+    "operational_parent_seconds": 0.4646903059910983,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.3779132829513401,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "19fa371e5cda826db88f8ecf9ed04f174dae50c25de277efd950abbb92297ad5",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "--edition=2024",
+        "-Dwarnings",
+        "-Ccodegen-units=1",
+        "${REPO}/evaluation/emitter-parity/capture-28.rs",
+        "--extern",
+        "liteinst2=${PARITY_RAW}/artifacts/old-library/debug/libliteinst2_parity_old_474094a7355c.rlib",
+        "--extern",
+        "iced_x86=${PARITY_RAW}/artifacts/old-library/debug/deps/libiced_x86-dedf5566ddeb6cb0.rlib",
+        "-L",
+        "dependency=${REPO}/target/debug/deps",
+        "-o",
+        "${PARITY_RAW}/old-28-program"
+      ],
+      "cpu_seconds": 60,
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${PARITY_RAW}/old-link-28/tmp"
+      },
+      "file_bytes": 134217728,
+      "stderr": "${PARITY_RAW}/old-link-28/stderr",
+      "stdout": "${PARITY_RAW}/old-link-28/stdout",
+      "wall_seconds": 90
+    },
+    "request_sha256": "19fa371e5cda826db88f8ecf9ed04f174dae50c25de277efd950abbb92297ad5",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/old-capture-28/request.json",
+          "--receipt",
+          "${PARITY_RAW}/old-capture-28/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${PARITY_RAW}/artifacts/old-28-program",
+          "${PARITY_RAW}/old-28"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/old-capture-28/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/old-capture-28/stderr",
+        "stdout": "${PARITY_RAW}/old-capture-28/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "old-capture-28",
+    "operational_parent_seconds": 0.21510200505144894,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.13087951485067606,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "b9e7c2d3e6d936c727550d9c78563082b33b31e79b9508ed882e8e9d87af26b9",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "2757c8b43c9f7d36e201db68d817b09d92048aafd6f52e95584f3039ba8b9c51",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${PARITY_RAW}/artifacts/old-28-program",
+        "${PARITY_RAW}/old-28"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/old-capture-28/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/old-capture-28/stderr",
+      "stdout": "${PARITY_RAW}/old-capture-28/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "b9e7c2d3e6d936c727550d9c78563082b33b31e79b9508ed882e8e9d87af26b9",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/new-unit-compile/request.json",
+          "--receipt",
+          "${PARITY_RAW}/new-unit-compile/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "request": {
+        "argv": [
+          "${NATIVE_TOOLCHAIN}/bin/cargo",
+          "test",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "${PARITY_RAW}/prepared/new/Cargo.toml",
+          "--lib",
+          "--no-run",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${NATIVE_USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${PARITY_RAW}/new-unit-compile/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${PARITY_RAW}/new-unit-compile/stderr",
+        "stdout": "${PARITY_RAW}/new-unit-compile/stdout",
+        "wall_seconds": 90
+      }
+    },
+    "exit": 0,
+    "name": "new-unit-compile",
+    "operational_parent_seconds": 4.421785928076133,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 4.3398576569743454,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "75ec85438c3adf155a8c47e78a10f19237efff77bb35bc4ac92f23ba437c3f13",
+      "stderr_sha256": "da5c24b04c4f71d5f430c512d0ab9899317adf799e7c517b65773ae327641112",
+      "stdout_sha256": "1773576aa751f541fa996298f0243be0dedcfb4e0a7ff39884d3d12a25992732",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/cargo",
+        "test",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "${PARITY_RAW}/prepared/new/Cargo.toml",
+        "--lib",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "cpu_seconds": 60,
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${PARITY_RAW}/new-unit-compile/tmp"
+      },
+      "file_bytes": 134217728,
+      "stderr": "${PARITY_RAW}/new-unit-compile/stderr",
+      "stdout": "${PARITY_RAW}/new-unit-compile/stdout",
+      "wall_seconds": 90
+    },
+    "request_sha256": "75ec85438c3adf155a8c47e78a10f19237efff77bb35bc4ac92f23ba437c3f13",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/new-list/request.json",
+          "--receipt",
+          "${PARITY_RAW}/new-list/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${PARITY_RAW}/artifacts/new-unit-compile/debug/deps/liteinst2_parity_new_fc830799595a-0b4f3714f40a7ef5",
+          "--list"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/new-list/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/new-list/stderr",
+        "stdout": "${PARITY_RAW}/new-list/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "new-list",
+    "operational_parent_seconds": 0.16405386687256396,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.11798148090019822,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "0c89c147b6d09a066d6eb9014277051f2776100599aa1a8bc1860e1890a6dff0",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "9e14ead6a163fd28427a911c205a90a0e85988f07881b14a8384f7847bddba06",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${PARITY_RAW}/artifacts/new-unit-compile/debug/deps/liteinst2_parity_new_fc830799595a-0b4f3714f40a7ef5",
+        "--list"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/new-list/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/new-list/stderr",
+      "stdout": "${PARITY_RAW}/new-list/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "0c89c147b6d09a066d6eb9014277051f2776100599aa1a8bc1860e1890a6dff0",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/new-capture-58/request.json",
+          "--receipt",
+          "${PARITY_RAW}/new-capture-58/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${PARITY_RAW}/artifacts/new-unit-compile/debug/deps/liteinst2_parity_new_fc830799595a-0b4f3714f40a7ef5",
+          "emitter_parity::capture_extended_live_parity",
+          "--exact",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "LITEINST_EXTENDED_PARITY_OUTPUT": "${PARITY_RAW}/new-58",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/new-capture-58/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/new-capture-58/stderr",
+        "stdout": "${PARITY_RAW}/new-capture-58/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "new-capture-58",
+    "operational_parent_seconds": 0.26435503200627863,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.18873612396419048,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "e8c21832d5f147a6e1c6c2241072292e11b957edd4a574e23155e90eebf3ac6e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "6c536e3c574642879c1e0ce929b8ed4659694267bcd93d0dd89709b03787a07d",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${PARITY_RAW}/artifacts/new-unit-compile/debug/deps/liteinst2_parity_new_fc830799595a-0b4f3714f40a7ef5",
+        "emitter_parity::capture_extended_live_parity",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "LITEINST_EXTENDED_PARITY_OUTPUT": "${PARITY_RAW}/new-58",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/new-capture-58/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/new-capture-58/stderr",
+      "stdout": "${PARITY_RAW}/new-capture-58/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "e8c21832d5f147a6e1c6c2241072292e11b957edd4a574e23155e90eebf3ac6e",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/new-capture-current/request.json",
+          "--receipt",
+          "${PARITY_RAW}/new-capture-current/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${PARITY_RAW}/artifacts/new-unit-compile/debug/deps/liteinst2_parity_new_fc830799595a-0b4f3714f40a7ef5",
+          "emitter_parity::current_features::capture_current_features",
+          "--exact",
+          "--nocapture",
+          "--test-threads=1"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "LITEINST_CURRENT_PARITY_OUTPUT": "${PARITY_RAW}/new-current",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/new-capture-current/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/new-capture-current/stderr",
+        "stdout": "${PARITY_RAW}/new-capture-current/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "new-capture-current",
+    "operational_parent_seconds": 0.2646691140253097,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.1776069737970829,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "be9fb631c3e7ce908e01cbb1fda2002d7607e8a5466927b88eb5c904f0a0b80e",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "6c8598feaa2eff2da90af8a8aea2e78e247cb09e1ce780550c13b48c0eb5eb18",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${PARITY_RAW}/artifacts/new-unit-compile/debug/deps/liteinst2_parity_new_fc830799595a-0b4f3714f40a7ef5",
+        "emitter_parity::current_features::capture_current_features",
+        "--exact",
+        "--nocapture",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "LITEINST_CURRENT_PARITY_OUTPUT": "${PARITY_RAW}/new-current",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/new-capture-current/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/new-capture-current/stderr",
+      "stdout": "${PARITY_RAW}/new-capture-current/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "be9fb631c3e7ce908e01cbb1fda2002d7607e8a5466927b88eb5c904f0a0b80e",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/new-library/request.json",
+          "--receipt",
+          "${PARITY_RAW}/new-library/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "request": {
+        "argv": [
+          "${NATIVE_TOOLCHAIN}/bin/cargo",
+          "build",
+          "--offline",
+          "--locked",
+          "--manifest-path",
+          "${PARITY_RAW}/prepared/new/Cargo.toml",
+          "--lib",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${NATIVE_USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${PARITY_RAW}/new-library/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${PARITY_RAW}/new-library/stderr",
+        "stdout": "${PARITY_RAW}/new-library/stdout",
+        "wall_seconds": 90
+      }
+    },
+    "exit": 0,
+    "name": "new-library",
+    "operational_parent_seconds": 2.367826382862404,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 2.2830208470113575,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "bdcbc49fa672522527ae07dd8551ad622e939c112fe7ab5577946bafd59acf44",
+      "stderr_sha256": "675218ea4558fe810c02b0ba26d1856cdc1c89eade7d3c2ee85edaa0f06d02a8",
+      "stdout_sha256": "ddd5bc36b54e874638423dc8e54c320d1a35fbea36aa3b147bcb8ec0e81f82f3",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/cargo",
+        "build",
+        "--offline",
+        "--locked",
+        "--manifest-path",
+        "${PARITY_RAW}/prepared/new/Cargo.toml",
+        "--lib",
+        "--message-format=json"
+      ],
+      "cpu_seconds": 60,
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${PARITY_RAW}/new-library/tmp"
+      },
+      "file_bytes": 134217728,
+      "stderr": "${PARITY_RAW}/new-library/stderr",
+      "stdout": "${PARITY_RAW}/new-library/stdout",
+      "wall_seconds": 90
+    },
+    "request_sha256": "bdcbc49fa672522527ae07dd8551ad622e939c112fe7ab5577946bafd59acf44",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/new-link-28/request.json",
+          "--receipt",
+          "${PARITY_RAW}/new-link-28/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "request": {
+        "argv": [
+          "${NATIVE_TOOLCHAIN}/bin/rustc",
+          "--edition=2024",
+          "-Dwarnings",
+          "-Ccodegen-units=1",
+          "${REPO}/evaluation/emitter-parity/capture-28.rs",
+          "--extern",
+          "liteinst2=${PARITY_RAW}/artifacts/new-library/debug/libliteinst2_parity_new_fc830799595a.rlib",
+          "--extern",
+          "iced_x86=${PARITY_RAW}/artifacts/new-library/debug/deps/libiced_x86-dedf5566ddeb6cb0.rlib",
+          "-L",
+          "dependency=${REPO}/target/debug/deps",
+          "-o",
+          "${PARITY_RAW}/new-28-program"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${NATIVE_USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${PARITY_RAW}/new-link-28/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${PARITY_RAW}/new-link-28/stderr",
+        "stdout": "${PARITY_RAW}/new-link-28/stdout",
+        "wall_seconds": 90
+      }
+    },
+    "exit": 0,
+    "name": "new-link-28",
+    "operational_parent_seconds": 0.4648130270652473,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.38049827702343464,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "1d6ac715f139cfdbb2bce1023a140161dffc8e3bf36b9007d4d27a74b9d0ab24",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "--edition=2024",
+        "-Dwarnings",
+        "-Ccodegen-units=1",
+        "${REPO}/evaluation/emitter-parity/capture-28.rs",
+        "--extern",
+        "liteinst2=${PARITY_RAW}/artifacts/new-library/debug/libliteinst2_parity_new_fc830799595a.rlib",
+        "--extern",
+        "iced_x86=${PARITY_RAW}/artifacts/new-library/debug/deps/libiced_x86-dedf5566ddeb6cb0.rlib",
+        "-L",
+        "dependency=${REPO}/target/debug/deps",
+        "-o",
+        "${PARITY_RAW}/new-28-program"
+      ],
+      "cpu_seconds": 60,
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${NATIVE_CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${NATIVE_USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${NATIVE_TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${NATIVE_TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "1",
+        "TMPDIR": "${PARITY_RAW}/new-link-28/tmp"
+      },
+      "file_bytes": 134217728,
+      "stderr": "${PARITY_RAW}/new-link-28/stderr",
+      "stdout": "${PARITY_RAW}/new-link-28/stdout",
+      "wall_seconds": 90
+    },
+    "request_sha256": "1d6ac715f139cfdbb2bce1023a140161dffc8e3bf36b9007d4d27a74b9d0ab24",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/new-capture-28/request.json",
+          "--receipt",
+          "${PARITY_RAW}/new-capture-28/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${PARITY_RAW}/artifacts/new-28-program",
+          "${PARITY_RAW}/new-28"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/new-capture-28/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/new-capture-28/stderr",
+        "stdout": "${PARITY_RAW}/new-capture-28/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "new-capture-28",
+    "operational_parent_seconds": 0.2141835589427501,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.13297132193110883,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "7ed5c753479794858cc43072e8ac3ea0a35ca6a6627eb5b1fe637d81627a9482",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "2757c8b43c9f7d36e201db68d817b09d92048aafd6f52e95584f3039ba8b9c51",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${PARITY_RAW}/artifacts/new-28-program",
+        "${PARITY_RAW}/new-28"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/new-capture-28/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/new-capture-28/stderr",
+      "stdout": "${PARITY_RAW}/new-capture-28/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "7ed5c753479794858cc43072e8ac3ea0a35ca6a6627eb5b1fe637d81627a9482",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/compare-28/request.json",
+          "--receipt",
+          "${PARITY_RAW}/compare-28/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_PYTHON_PATH}",
+          "-B",
+          "${REPO}/evaluation/emitter-parity/compare-28.py",
+          "${PARITY_RAW}/old-28",
+          "${PARITY_RAW}/new-28",
+          "--manifest",
+          "${PARITY_RAW}/prepared/manifest.json",
+          "--old-capture-manifest",
+          "${PARITY_RAW}/old-28-manifest.json"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/compare-28/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/compare-28/stderr",
+        "stdout": "${PARITY_RAW}/compare-28/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "compare-28",
+    "operational_parent_seconds": 0.36435054894536734,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.27452673809602857,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "79c585d9c912890a897a8be79774ee65ad5d99f62d56589f500cc50c72547af9",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "f1cfd57af8e12478a3967c7ec8783006a35c67f9616945424e02d67f9e21bc42",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/emitter-parity/compare-28.py",
+        "${PARITY_RAW}/old-28",
+        "${PARITY_RAW}/new-28",
+        "--manifest",
+        "${PARITY_RAW}/prepared/manifest.json",
+        "--old-capture-manifest",
+        "${PARITY_RAW}/old-28-manifest.json"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/compare-28/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/compare-28/stderr",
+      "stdout": "${PARITY_RAW}/compare-28/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "79c585d9c912890a897a8be79774ee65ad5d99f62d56589f500cc50c72547af9",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/compare-58/request.json",
+          "--receipt",
+          "${PARITY_RAW}/compare-58/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_PYTHON_PATH}",
+          "-B",
+          "${REPO}/evaluation/emitter-parity/compare.py",
+          "${PARITY_RAW}/old-58",
+          "${PARITY_RAW}/new-58",
+          "--manifest",
+          "${PARITY_RAW}/prepared/manifest.json"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/compare-58/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/compare-58/stderr",
+        "stdout": "${PARITY_RAW}/compare-58/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "compare-58",
+    "operational_parent_seconds": 0.6151579450815916,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.5386958809103817,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "0c6761f0d0839ed7cceaa2338bbf0d1f5836241bca8ed89bdc9cbae7eb8c27b9",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "0fa3b8082bf33da9409e65d5d429db0096cc63b1d97eb64d2d8d797625a37574",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/emitter-parity/compare.py",
+        "${PARITY_RAW}/old-58",
+        "${PARITY_RAW}/new-58",
+        "--manifest",
+        "${PARITY_RAW}/prepared/manifest.json"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/compare-58/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/compare-58/stderr",
+      "stdout": "${PARITY_RAW}/compare-58/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "0c6761f0d0839ed7cceaa2338bbf0d1f5836241bca8ed89bdc9cbae7eb8c27b9",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${PARITY_RAW}/compare-current/request.json",
+          "--receipt",
+          "${PARITY_RAW}/compare-current/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_PYTHON_PATH}",
+          "-B",
+          "${REPO}/evaluation/emitter-parity/compare-current.py",
+          "${PARITY_RAW}/old-current",
+          "${PARITY_RAW}/new-current",
+          "--manifest",
+          "${PARITY_RAW}/prepared/manifest.json"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${PARITY_RAW}/compare-current/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${PARITY_RAW}/compare-current/stderr",
+        "stdout": "${PARITY_RAW}/compare-current/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "compare-current",
+    "operational_parent_seconds": 0.41450493806041777,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.3310163668356836,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "ecf8b31aa64602f6857ef4e8d5f524655d889b5113e184659144190a1e39b7c3",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e70348417e686d278f8364cca1882b96f7830a10f3822f0d4e769a9677300548",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/emitter-parity/compare-current.py",
+        "${PARITY_RAW}/old-current",
+        "${PARITY_RAW}/new-current",
+        "--manifest",
+        "${PARITY_RAW}/prepared/manifest.json"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${PARITY_RAW}/compare-current/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${PARITY_RAW}/compare-current/stderr",
+      "stdout": "${PARITY_RAW}/compare-current/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "ecf8b31aa64602f6857ef4e8d5f524655d889b5113e184659144190a1e39b7c3",
+    "scope": "parity"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${CONTROLS_RAW}/request.json",
+          "--receipt",
+          "${CONTROLS_RAW}/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_PYTHON_PATH}",
+          "-B",
+          "${REPO}/evaluation/emitter-parity-depfile-controls.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${CONTROLS_RAW}/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${CONTROLS_RAW}/stderr",
+        "stdout": "${CONTROLS_RAW}/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "depfile-owner-controls",
+    "operational_parent_seconds": 0.31485943612642586,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.25570015888661146,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "ce8c048e4bbe3d89f525461cbc4bfee5de15dab1df0a63b1ed60199a30826840",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "30f087e07e205bb7b4b0405b1a6ace8ba77d3c194157a539b89d8d2ff5c4079d",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/emitter-parity-depfile-controls.py"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${CONTROLS_RAW}/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${CONTROLS_RAW}/stderr",
+      "stdout": "${CONTROLS_RAW}/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "ce8c048e4bbe3d89f525461cbc4bfee5de15dab1df0a63b1ed60199a30826840",
+    "scope": "depfile-controls"
+  },
+  {
+    "command": {
+      "outer": {
+        "argv": [
+          "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${ALIAS_CONTROLS_RAW}/request.json",
+          "--receipt",
+          "${ALIAS_CONTROLS_RAW}/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "request": {
+        "argv": [
+          "${DEPFILE_CONTROL_PYTHON_PATH}",
+          "-B",
+          "${REPO}/evaluation/emitter-parity-library-controls.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${ALIAS_CONTROLS_RAW}/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${ALIAS_CONTROLS_RAW}/stderr",
+        "stdout": "${ALIAS_CONTROLS_RAW}/stdout",
+        "wall_seconds": 30
+      }
+    },
+    "exit": 0,
+    "name": "library-alias-owner-controls",
+    "operational_parent_seconds": 0.3150548997800797,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.25063879508525133,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "0a56e954c77d463d31ee8fbb926e00b3e756b304695f28ff6becda8701484609",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3118fa9eb04fa954baad458f56d78b046838c4ca17c2bfb36ef77f977a27ebfb",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "${DEPFILE_CONTROL_PYTHON_PATH}",
+        "-B",
+        "${REPO}/evaluation/emitter-parity-library-controls.py"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${ALIAS_CONTROLS_RAW}/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${ALIAS_CONTROLS_RAW}/stderr",
+      "stdout": "${ALIAS_CONTROLS_RAW}/stdout",
+      "wall_seconds": 30
+    },
+    "request_sha256": "0a56e954c77d463d31ee8fbb926e00b3e756b304695f28ff6becda8701484609",
+    "scope": "library-alias-controls"
+  }
+]

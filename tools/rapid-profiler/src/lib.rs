@@ -15,6 +15,16 @@ use liteinst2::rapid::{RapidProbe, RapidTogglePlan};
 use liteinst2::scanner::InstructionScanner;
 use object::{Object, ObjectSection, ObjectSymbol};
 
+/// Bounded frontend lifecycle model, with no native entry/exit or code publication.
+#[forbid(unsafe_code)]
+pub mod frontend;
+
+/// Ordinary Rust TLS intervals retaining the original bounded frontend owner.
+pub mod frontend_tls;
+
+/// Opt-in fixed-leaf native intervals; process-lifetime owners and no unwind escape.
+pub mod frontend_native;
+
 /// Generation-owned bookkeeping, independent of the active profiler frontend.
 pub mod generation;
 

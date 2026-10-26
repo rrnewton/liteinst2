@@ -1,0 +1,65 @@
+{
+  "closed_output_checks": [
+    "Request bytes hash exactly matches receipt",
+    "Helper source hash exact",
+    "stdout and stderr full files match receipt hashes",
+    "Exact stdout helper success JSON byte string including LF",
+    "Helper stderr empty and outer exit integer zero",
+    "Outer argv pins timeout/helper/Python/request/receipt identities and requested bounds",
+    "No timeout/abort/cleanup/descendant discrepancy accepted"
+  ],
+  "exact_receipt_keys": [
+    "aborted",
+    "absence_proof",
+    "cleanup_error",
+    "cleanup_events",
+    "elapsed_seconds",
+    "exit",
+    "helper_sha256",
+    "inputs_unchanged",
+    "request_sha256",
+    "stderr_sha256",
+    "stdout_sha256",
+    "unexpected_descendants",
+    "wall_timeout"
+  ],
+  "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+  "helper_stdout_exact": "{\"exit\": 0, \"wall_timeout\": false, \"absence_proof\": \"ECHILD\", \"descendants\": 0, \"success\": true}\n",
+  "limits_scope": "Existing per-process helper limits and owned-descendant cleanup; not cgroup containment, whole-host isolation or cleanup after uncatchable supervisor SIGKILL.",
+  "outer_protocol": {
+    "command_argv": [
+      "${TIMEOUT}",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "${REQUEST_WALL_PLUS_10}s",
+      "${PYTHON}",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${REQUEST}",
+      "--receipt",
+      "${RECEIPT}"
+    ],
+    "compiler_parent_timeout_seconds": 115,
+    "compiler_timeout_seconds": 100,
+    "other_parent_timeout_seconds": 55,
+    "other_timeout_seconds": 40,
+    "parent_timeout_seconds": "request wall_seconds + 25"
+  },
+  "required_values": {
+    "aborted": null,
+    "absence_proof": "ECHILD",
+    "cleanup_error": null,
+    "cleanup_events": [],
+    "exit": 0,
+    "inputs_unchanged": true,
+    "unexpected_descendants": [],
+    "wall_timeout": false
+  },
+  "types": {
+    "booleans": "exact JSON booleans",
+    "elapsed_seconds": "finite nonnegative int/float, excluding bool",
+    "exit": "exact integer; reject bool/float",
+    "hashes": "lowercase 64-hex and exact whole-file SHA-256 equality"
+  }
+}

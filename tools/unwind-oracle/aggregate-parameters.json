@@ -1,0 +1,59 @@
+{
+  "status": "PARAMETER_TEMPLATES_ONLY_NO_ACTUAL_REQUESTS_OR_RESULTS",
+  "usage": "Select exactly one parameter object, replace every placeholder and independently review its actual hash before aggregate.py prepare. Each prepared request needs a separate reviewed binding before launch.",
+  "parameters": [
+    {
+      "phase": "freeze",
+      "python": "${ACTUAL_REVIEWED_PYTHON}",
+      "home": "${ACTUAL_HOME}",
+      "raw": "${NEW_RAW_DIRECTORY}",
+      "toolchain": "${TOOLCHAIN_JSON}",
+      "toolchain_sha256": "${ACTUAL_TOOLCHAIN_JSON_SHA}",
+      "admission": "${BUILD_ADMISSION}",
+      "admission_sha256": "${ACTUAL_BUILD_ADMISSION_SHA}"
+    },
+    {
+      "phase": "build",
+      "python": "${ACTUAL_REVIEWED_PYTHON}",
+      "home": "${ACTUAL_HOME}",
+      "raw": "${NEW_RAW_DIRECTORY}",
+      "freeze_sha256": "${ACTUAL_FREEZE_SHA}"
+    },
+    {
+      "phase": "runtime_generation",
+      "python": "${ACTUAL_REVIEWED_PYTHON}",
+      "home": "${ACTUAL_HOME}",
+      "raw": "${NEW_RAW_DIRECTORY}",
+      "freeze_sha256": "${ACTUAL_FREEZE_SHA}",
+      "review": "${BUILD_REVIEW}",
+      "review_sha256": "${ACTUAL_BUILD_REVIEW_SHA}",
+      "admission": "${RUNTIME_ADMISSION}",
+      "admission_sha256": "${ACTUAL_RUNTIME_ADMISSION_SHA}"
+    },
+    {
+      "phase": "qualification",
+      "python": "${ACTUAL_REVIEWED_PYTHON}",
+      "home": "${ACTUAL_HOME}",
+      "raw": "${NEW_RAW_DIRECTORY}",
+      "manifest_sha256": "${ACTUAL_RUNTIME_MANIFEST_SHA}",
+      "source_index_sha256": "${ACTUAL_RUNTIME_SOURCE_INDEX_SHA}"
+    },
+    {
+      "phase": "closed_export",
+      "python": "${ACTUAL_REVIEWED_PYTHON}",
+      "home": "${ACTUAL_HOME}",
+      "raw": "${NEW_RAW_DIRECTORY}",
+      "manifest_sha256": "${ACTUAL_RUNTIME_MANIFEST_SHA}",
+      "terminal": "${ACTUAL_CLOSED_TERMINAL}",
+      "terminal_sha256": "${ACTUAL_CLOSED_TERMINAL_SHA}",
+      "aggregate_binding": "${CLOSED_QUALIFICATION_OUTER_BINDING}",
+      "aggregate_binding_sha256": "${ACTUAL_QUALIFICATION_OUTER_BINDING_SHA}",
+      "schema": "${SCHEMA_FILE}",
+      "schema_sha256": "${ACTUAL_SCHEMA_SHA}",
+      "metadata": "${EXPORT_METADATA}",
+      "metadata_sha256": "${ACTUAL_EXPORT_METADATA_SHA}",
+      "export_output": "${NEW_PRIVATE_EXPORT}",
+      "run_id": "${RUN_ID}"
+    }
+  ]
+}

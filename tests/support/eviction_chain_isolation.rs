@@ -1,7 +1,8 @@
 //! Test-only main-thread execution; unchanged owned-group cleanup from T2.
-const COHORTS: [&str; 2] = [
+const COHORTS: [&str; 3] = [
     "native_eviction_chains_all_original_entries",
     "native_eviction_chain_postwrite_failure_keeps_every_image",
+    "native_grouped_eviction_chain_all_original_entries",
 ];
 const CPU_SECONDS: libc::rlim_t = 20;
 const WALL_SECONDS: u64 = 30;
@@ -30,6 +31,9 @@ pub fn main_thread_driver() {
         }
         "native_eviction_chain_postwrite_failure_keeps_every_image" => {
             super::run_native_eviction_chain_postwrite_failure_keeps_every_image()
+        }
+        "native_grouped_eviction_chain_all_original_entries" => {
+            super::run_native_grouped_eviction_chain_all_original_entries(&capture)
         }
         _ => unreachable!(),
     }
@@ -64,10 +68,14 @@ fn record_single_main_thread(capture: &std::path::Path, phase: &str) {
 }
 
 #[cfg(test)]
+#[path = "bounded_proc_stat.rs"]
+mod bounded_proc_stat;
+
+#[cfg(test)]
 mod launcher {
+    use super::bounded_proc_stat::read_bounded_stat;
     use super::{COHORTS, CPU_SECONDS, WALL_SECONDS};
     use std::collections::BTreeSet;
-    use std::io::Read;
     use std::os::unix::process::CommandExt;
     use std::process::{Child, Command, Stdio};
     use std::time::{Duration, Instant};
@@ -127,18 +135,18 @@ mod launcher {
                 continue;
             }
             let pid: i32 = name.parse().map_err(|_| "invalid numeric process ID")?;
-            let mut file = match std::fs::File::open(entry.path().join("stat")) {
+            let file = match std::fs::File::open(entry.path().join("stat")) {
                 Ok(file) => file,
                 Err(error) if matches!(error.raw_os_error(), Some(libc::ENOENT | libc::ESRCH)) => {
                     continue;
                 }
                 Err(error) => return Err(error.to_string()),
             };
-            let mut bytes = Vec::new();
-            file.by_ref()
-                .take(4097)
-                .read_to_end(&mut bytes)
-                .map_err(|e| e.to_string())?;
+            let Some(bytes) = read_bounded_stat(file)
+                .map_err(|error| format!("read /proc/{pid}/stat: {error}"))?
+            else {
+                continue;
+            };
             if bytes.len() > 4096 || Instant::now() >= deadline {
                 return Err("bounded process stat read exhausted".into());
             }

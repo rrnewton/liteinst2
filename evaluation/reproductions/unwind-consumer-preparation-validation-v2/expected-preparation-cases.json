@@ -1,0 +1,72 @@
+{
+  "cases": [
+    {
+      "expected": "request and binding only; exact 4/32 request inventory, limits, sources/tools and all generated paths remain beneath this minimal repo/ignored",
+      "expected_exit": 0,
+      "mutation": null,
+      "name": "positive",
+      "origin": "original",
+      "output": "repo/ignored/prepared"
+    },
+    {
+      "expected": "exact adapter SHA admission fails; output is absent",
+      "expected_exit": 1,
+      "mutation": {
+        "append_utf8": "\n",
+        "file": "repo/tools/unwind-oracle/adapter.py"
+      },
+      "name": "wrong-source",
+      "origin": "original",
+      "output": "repo/ignored/prepared"
+    },
+    {
+      "expected": "exact Python SHA admission fails; output is absent",
+      "expected_exit": 1,
+      "mutation": {
+        "argument": "--python-sha256",
+        "value": "0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "name": "wrong-tool",
+      "origin": "original",
+      "output": "repo/ignored/prepared"
+    },
+    {
+      "expected": "existing-output assertion fails; existing directory remains empty",
+      "expected_exit": 1,
+      "mutation": {
+        "create_empty_directory": "repo/ignored/prepared"
+      },
+      "name": "existing-output",
+      "origin": "original",
+      "output": "repo/ignored/prepared"
+    },
+    {
+      "expected": "new output containment assertion fails; no output/request/binding is created",
+      "expected_exit": 1,
+      "mutation": null,
+      "name": "outside-ignored",
+      "origin": "additive",
+      "output": "prepared"
+    }
+  ],
+  "fixed_bounds": {
+    "cpu_seconds": 20,
+    "file_bytes": 16777216,
+    "finite_parent_wait_seconds": 55,
+    "kill_after_seconds": 10,
+    "outer_timeout_seconds": 40,
+    "wall_seconds": 30
+  },
+  "parent_setup": "Root creates each case directory, exact minimal repo/evaluation and repo/tools payload, and repo/ignored. No fixture/helper/calibrator execution occurs in setup. All old mutations remain exact.",
+  "postcondition": "Only after all five bounded preparation checks pass and exact positive binding is independently admitted may root invoke the unchanged helper for the unchanged 4/32 controls once.",
+  "required_counts": {
+    "additive_refuse": 1,
+    "original_accept": 1,
+    "original_refuse": 3,
+    "total_accept": 1,
+    "total_refuse": 4
+  },
+  "schema_version": 1,
+  "scope": "Prospective request-preparation controls only; not native or additional 4/32 pure corpus credit.",
+  "source_materials": "Exact current material_sha256 plus pinned adapter/helper; each case has an independent minimal repo and new capture paths."
+}

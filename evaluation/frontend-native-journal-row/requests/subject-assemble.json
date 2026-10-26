@@ -1,0 +1,26 @@
+{
+  "argv": [
+    "${CC}",
+    "-fPIC",
+    "-c",
+    "-Wa,--fatal-warnings",
+    "-MD",
+    "-MF",
+    "${RAW}/subject/subject.d",
+    "${WORKSPACE}/tools/rapid-profiler/native-interval/subject.S",
+    "-o",
+    "${RAW}/subject/subject.o"
+  ],
+  "cpu_seconds": 60,
+  "cwd": "${WORKSPACE}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "${RAW}/subject-assemble/tmp"
+  },
+  "file_bytes": 134217728,
+  "stderr": "${RAW}/subject-assemble/stderr.txt",
+  "stdout": "${RAW}/subject-assemble/stdout.txt",
+  "wall_seconds": 90
+}

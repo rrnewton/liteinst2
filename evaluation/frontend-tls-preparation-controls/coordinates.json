@@ -1,0 +1,58 @@
+{
+  "coordinates": {
+    "ACTUAL_POSITIVE_V2_PREPARED_SHA256": {
+      "required": "Never substitute the historical digest into a new run; do not emit or execute request 8 until this digest is known.",
+      "role": "Actual whole-file digest from control 2, bound only after its successful closed receipt/output review."
+    },
+    "BASE": {
+      "required": "The 510 non-overlay source paths must match the published complete maps. Extra archived base paths are not copied or credited.",
+      "role": "Canonical separate source archive of base commit 9098a3d74309fd445fd6f56a6048c1ce517bb81f.",
+      "suggested": "${REPO}/ignored/frontend-tls-preparation-controls/base-9098"
+    },
+    "CARGO_HOME": {
+      "role": "Explicit Cargo cache/configuration owner with exact published 995 selected registry/archive/marker bytes."
+    },
+    "CONTROL_RAW": {
+      "required": "Canonical owner, distinct from CONTROL_SOURCE and MATERIAL.",
+      "role": "Separate fresh capture/output directory.",
+      "suggested": "${REPO}/ignored/frontend-tls-preparation-controls/raw"
+    },
+    "CONTROL_SOURCE": {
+      "required": "Canonical owner; exact request templates and declared fixtures only.",
+      "role": "Fresh control request/fixture directory.",
+      "suggested": "${REPO}/ignored/frontend-tls-preparation-controls/source"
+    },
+    "MATERIAL": {
+      "required": "prepare.py SHA 361c3b5d92c2005193cef7dcb3b4334f4ca1e9e1da2a183474a63bc7d264211d; material.json SHA d7e8a8569701e97b60d3744b4f87cbacfaeb24bb3ba05a600aa3eea3db5513bc.",
+      "role": "Whole frozen public reproduction-material directory.",
+      "suggested": "${REPO}/evaluation/frontend-tls-private"
+    },
+    "MSRV_TOOLCHAIN": {
+      "required": "Same pinned selected-file admission; control 5 deliberately substitutes its declared wrong-file fixture.",
+      "role": "Whole Rust 1.85.0 installation root."
+    },
+    "PYTHON": {
+      "required_path": "/usr/bin/python3.9",
+      "role": "Exact preparer/helper interpreter.",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    "REPO": {
+      "required": "All output and scratch owners are strictly below this checkout/ignored.",
+      "role": "Canonical public checkout containing the unchanged helper and reproduction material."
+    },
+    "TIMEOUT": {
+      "required_path": "/usr/bin/timeout",
+      "role": "Exact outer timeout owner.",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+    },
+    "TOOLCHAIN": {
+      "required": "Pinned selected file and resolved-owner bytes in MATERIAL/expected/selected-tool-bytes.json.",
+      "role": "Whole Rust 1.97.1 installation root."
+    },
+    "USER_HOME": {
+      "role": "Explicit original/current-user configuration owner for generated requests; not an inherited environment variable."
+    }
+  },
+  "schema_version": 1,
+  "substitution": "Ordinary literal replacement of complete named coordinate tokens; no implicit prefix/separator surgery or inherited environment. Resolve all directory coordinates to concrete canonical absolute paths first."
+}

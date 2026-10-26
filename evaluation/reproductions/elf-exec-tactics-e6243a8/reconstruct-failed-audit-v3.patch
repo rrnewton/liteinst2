@@ -1,0 +1,23 @@
+--- audit.py
++++ audit-v3.py
+@@ -565,7 +565,6 @@
+     assert js(b1/"source.json") == js(b1/"source-after.json") == source
+     assert str(driver) in prerequisite and str(b1/"artifacts/liteinst-rewrite") in prerequisite
+     assert str(b1/"target/stdout.txt") in prerequisite
+-    assert str(b1/"captures/runtime-target.tsv") in prerequisite
+     wanted = [("codec-compile", [cargo,"build","-p","liteinst-rewrite","--example","verify_elf_tactics",
+         "--example","check_elf_tactic_refusals","--offline","--locked","--message-format=json"], None)]
+     for tactic, f in fixture.items():
+@@ -782,11 +781,7 @@
+     assert set(source) == {"revision","files"} and source["files"] == git_source(source["revision"])
+     assert all(source["files"][name] == digest for name,digest in pins.items())
+     receipts,b1 = commands(raw,fixture,source)
+-    target = read(b1/"captures/runtime-target.tsv")
+-    _, _, mask, components = target_layout(b1/"captures/runtime-target.tsv")
+-    compact = ("target xsave64 " + str(mask)
+-        + "".join(f" {1 << bit}:{offset}:{size}" for bit, offset, size in components) + "\n").encode()
+-    assert read(b1/"target/stdout.txt") == compact
++    target = read(b1/"target/stdout.txt")
+     families = {name:family_audit(raw,name,f,target) for name,f in fixture.items()}
+     assert js(raw/"summary.json") == {name:dict(original_traces=f["original_traces"],rewritten_traces=f["rewritten_traces"],
+         comparisons=f["full_state_comparisons"],capture_files=f["captures_count"],ordinary_processes=6,qualification_complete=False)

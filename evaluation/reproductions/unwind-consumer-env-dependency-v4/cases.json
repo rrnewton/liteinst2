@@ -1,0 +1,367 @@
+{
+  "cases": [
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n",
+      "expected": "accept",
+      "fixture": "consumer-main",
+      "name": "main_no_environment_records"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "accept",
+      "fixture": "consumer-launcher",
+      "name": "launcher_exact_absent_record"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n",
+      "expected": "accept",
+      "fixture": "consumer-calibrations",
+      "name": "calibrations_no_environment_records"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "NOTE": "CARGO_BIN_EXE_unwind-consumer-oracle-driver",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "accept",
+      "fixture": "consumer-launcher",
+      "name": "launcher_unrelated_environment_value"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_missing_record"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_duplicate_record"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:OTHER\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_other_name"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver_suffix\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_other_name_suffix"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:cargo_bin_exe_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_wrong_case"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver=\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_empty_record_value"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver=/bin/false\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_nonempty_record_value"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver \n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_trailing_space"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n # env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_leading_space"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n# env-dep:OTHER\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_extra_name_after"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:OTHER\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_extra_name_before"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\u0000\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_nul_record"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-main",
+      "name": "main_forbidden_record"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-calibrations",
+      "name": "calibrations_forbidden_record"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:OTHER\n",
+      "expected": "refuse",
+      "fixture": "consumer-main",
+      "name": "main_other_record"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:OTHER\n",
+      "expected": "refuse",
+      "fixture": "consumer-calibrations",
+      "name": "calibrations_other_record"
+    },
+    {
+      "compile_environment": {
+        "CARGO_BIN_EXE_unwind-consumer-oracle-driver": "",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_present_empty_environment"
+    },
+    {
+      "compile_environment": {
+        "CARGO_BIN_EXE_unwind-consumer-oracle-driver": "/bin/false",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "launcher_present_nonempty_environment"
+    },
+    {
+      "compile_environment": {
+        "CARGO_BIN_EXE_unwind-consumer-oracle-driver": "",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n",
+      "expected": "refuse",
+      "fixture": "consumer-main",
+      "name": "main_present_empty_environment"
+    },
+    {
+      "compile_environment": {
+        "CARGO_BIN_EXE_unwind-consumer-oracle-driver": "/bin/false",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n",
+      "expected": "refuse",
+      "fixture": "consumer-calibrations",
+      "name": "calibrations_present_nonempty_environment"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n",
+      "expected": "refuse",
+      "fixture": "consumer-other",
+      "name": "unknown_fixture"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n",
+      "expected": "refuse",
+      "fixture": null,
+      "name": "null_fixture"
+    },
+    {
+      "compile_environment": [],
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "environment_list"
+    },
+    {
+      "compile_environment": null,
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "environment_null"
+    },
+    {
+      "compile_environment": {
+        "COUNT": 1,
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "environment_nonstring_value"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "NOTE": null,
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "environment_null_value"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver$\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "parser_dollar"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\\\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "parser_backslash"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\r\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "parser_carriage_return"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\nfixture: source.rs\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "parser_duplicate_target"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs source.rs\nfixture.d: source.rs\nsource.rs:\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "parser_duplicate_prerequisite"
+    },
+    {
+      "compile_environment": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "depfile": "fixture: source.rs\nfixture.d: source.rs\nsource.rs:\n# not-environment\n# env-dep:CARGO_BIN_EXE_unwind-consumer-oracle-driver\n",
+      "expected": "refuse",
+      "fixture": "consumer-launcher",
+      "name": "parser_unrecognized_comment"
+    }
+  ],
+  "schema": 1,
+  "scope": "Pure parser and fixed fixture environment contract only; no process/compiler/native work"
+}

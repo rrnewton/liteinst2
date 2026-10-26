@@ -1,0 +1,9 @@
+ordinal,command_id,case_id,kind,expected,observed,status,direct_exit,required_output_state
+1,01-positive-v1,01-positive-v1,preparation_control,accepted_preparation,accepted_preparation,matched_expected_outcome,0,"Exactly 514 source files, prepared.json and two requests; no generated request executed."
+2,02-positive-v2,02-positive-v2,preparation_control,accepted_preparation,accepted_preparation,matched_expected_outcome,0,"Exactly 514 source files, prepared.json and two requests; no generated request executed."
+3,03-changed-base,03-changed-base,preparation_control,refusal,refusal,matched_expected_outcome,1,No output root; failure before raw.mkdir.
+4,04-changed-overlay,04-changed-overlay,preparation_control,refusal,refusal,matched_expected_outcome,1,No output root; material inventory rejects the sole changed overlay before coordinates/source copies.
+5,05-wrong-tool-byte,05-wrong-tool-byte,preparation_control,refusal,refusal,matched_expected_outcome,1,Exactly514 v2 source files under workspace; requests directory empty; no prepared.json or phase directories. Preserve this partial output.
+6,06-occupied-output,06-occupied-output,preparation_control,refusal,refusal,matched_expected_outcome,1,"Exactly original sentinel only, byte/inode unchanged. No workspace or requests."
+7,07-optimized-python,07-optimized-python,preparation_control,refusal,refusal,matched_expected_outcome,1,No output root; top-level refusal before material or copying.
+8,08-remaining-without-review,08-remaining-without-review,preparation_control,refusal,refusal,matched_expected_outcome,1,"Positive-v2 full517-file output and all directories unchanged; no remaining.json, compiler receipts/binaries or later phase requests. No absent-file error accepted."

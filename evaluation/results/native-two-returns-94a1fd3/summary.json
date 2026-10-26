@@ -1,0 +1,1132 @@
+{
+  "authorship": "core_read authored the two-exit module/pair core and this reporting transform; root executed the campaign. Independent actual reviews are bound separately. No new execution was performed to produce this packet.",
+  "claim": "Partial claim 4 only; full A2, A3, A4 and A5 remain open.",
+  "commands": [
+    {
+      "combined_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "elapsed_seconds": 1.2166368491016328,
+      "environment_evidence": "Derived from captured required-dispatcher env and the exact required-gates.py overrides; not a proc-environ observation.",
+      "exit": 0,
+      "kind": "required workspace gate",
+      "name": "fmt",
+      "profile": {
+        "argv": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "cpu_seconds": null,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${RAW}/required/gates"
+        },
+        "file_bytes": null,
+        "wall_seconds": 180
+      },
+      "profile_sha256": "29de7d21e78bac69eec36f025e6ef0d2cfd48074d77c3dff0ab3b05af879e1df",
+      "receipt_sha256": null,
+      "record_sha256": "5ddb28d80416e3ab8d9f2a9556f79470e3bdaa5d21d217fa47d76528056072f4",
+      "start_utc": "2026-10-26T06:18:51.027924+00:00"
+    },
+    {
+      "combined_log_sha256": "6198de9d546bd94c2bc56e0257d39dc4fa2e8ff2b77f2f1809a19126c59937f3",
+      "elapsed_seconds": 7.779399911174551,
+      "environment_evidence": "Derived from captured required-dispatcher env and the exact required-gates.py overrides; not a proc-environ observation.",
+      "exit": 0,
+      "kind": "required workspace gate",
+      "name": "clippy",
+      "profile": {
+        "argv": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "cpu_seconds": null,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${RAW}/required/gates"
+        },
+        "file_bytes": null,
+        "wall_seconds": 180
+      },
+      "profile_sha256": "9a2c84f86fa16433f8ed0943d9cc60872ea1dce1fdd0a892d8bd8f2bacaf5841",
+      "receipt_sha256": null,
+      "record_sha256": "986033ebcf6a1a4078b85bc3183cb5cdca5b349f8fa463e8f218be4a47320647",
+      "start_utc": "2026-10-26T06:18:52.245926+00:00"
+    },
+    {
+      "combined_log_sha256": "ef3bff21d8e0ea867775ab77dbc984436f882d62fe66d80df9f869a564f7111a",
+      "elapsed_seconds": 302.1699521620758,
+      "environment_evidence": "Derived from captured required-dispatcher env and the exact required-gates.py overrides; not a proc-environ observation.",
+      "exit": 0,
+      "kind": "required workspace gate",
+      "name": "test",
+      "profile": {
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace"
+        ],
+        "cpu_seconds": null,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${RAW}/required/gates"
+        },
+        "file_bytes": null,
+        "wall_seconds": 360
+      },
+      "profile_sha256": "d095621b07d6bef94e33200c77e3549bc1d9d6f8cba0fe5f69cf58f29a995aa3",
+      "receipt_sha256": null,
+      "record_sha256": "82c0105196bc2e6cdbd4dc8de10d0c67c1c53391f289f675a5ebd2ed28132691",
+      "start_utc": "2026-10-26T06:19:00.027386+00:00"
+    },
+    {
+      "combined_log_sha256": "ba404322e984ff77ce722f26e7b5359ade4fff6de6ec19dc4dc80eaa1a3bcf6f",
+      "elapsed_seconds": 5.176214303821325,
+      "environment_evidence": "Derived from captured required-dispatcher env and the exact required-gates.py overrides; not a proc-environ observation.",
+      "exit": 0,
+      "kind": "required workspace gate",
+      "name": "check",
+      "profile": {
+        "argv": [
+          "cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "cpu_seconds": null,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${RAW}/required/gates"
+        },
+        "file_bytes": null,
+        "wall_seconds": 180
+      },
+      "profile_sha256": "cf4e7eb3990ec02fe58f07147ac27d5a67868c7bbf707122faf8d14606f317db",
+      "receipt_sha256": null,
+      "record_sha256": "32936ec8cd508c79bd0e6caddade7e113e5baabfe2e2da392947344789c3d550",
+      "start_utc": "2026-10-26T06:24:02.199545+00:00"
+    },
+    {
+      "capture_files": null,
+      "elapsed_seconds": 3.1518226410262287,
+      "environment_evidence": "Directly recorded complete request environment.",
+      "exit": 0,
+      "kind": "native compiler",
+      "name": "native-compile",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW}/native-compile/request.json",
+          "--receipt",
+          "${RAW}/native-compile/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "parent_elapsed_seconds": 3.2240970281418413,
+      "profile_sha256": "3fbd74889309bbc209167925d5ee63a7aa9ed00576bdf3ab85415cc95812d251",
+      "raw_result_sha256": "bd44cfe822d9a0577a90985aafffc2ee14d0184e390585fef887b326a88e4c86",
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 3.1518226410262287,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "5d72a390ff92c69cd600debeaf985a3134a5dd9e57b451ca71762315c59a1529",
+        "stderr_sha256": "27d3caea0b535f9472c0aa391311dbf736afd8d6c76b373bfb908faddbba568a",
+        "stdout_sha256": "50799325fca89dac02a18714ca29cce807b15af698970ec98b6d216d0e7075e3",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "receipt_sha256": "3ca92287bb514fc9470ffb161f0b7bd332f0bb87dc24c3f8be64cca9675ae1f0",
+      "request": {
+        "argv": [
+          "${TOOLCHAIN}/bin/cargo",
+          "build",
+          "--manifest-path",
+          "${REPO}/Cargo.toml",
+          "-p",
+          "rapid-profiler",
+          "--bin",
+          "frontend-native-oracle",
+          "--offline",
+          "--locked",
+          "--message-format=json"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_CODEGEN_UNITS": "1",
+          "CARGO_PROFILE_TEST_CODEGEN_UNITS": "1",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUSTDOCFLAGS": "-Dwarnings",
+          "RUSTFLAGS": "-Dwarnings -Funsafe-op-in-unsafe-fn -Ccodegen-units=1",
+          "RUST_TEST_THREADS": "1",
+          "TMPDIR": "${RAW}/native-compile/tmp"
+        },
+        "file_bytes": 134217728,
+        "stderr": "${RAW}/native-compile/stderr.txt",
+        "stdout": "${RAW}/native-compile/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    {
+      "capture_files": 213,
+      "elapsed_seconds": 3.0728680088650435,
+      "environment_evidence": "Directly recorded complete request environment.",
+      "exit": 0,
+      "kind": "native campaign",
+      "name": "straight",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW}/straight/request.json",
+          "--receipt",
+          "${RAW}/straight/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "parent_elapsed_seconds": 3.123095599003136,
+      "profile_sha256": "e6a417b5c3440c6d0ede5640c4b6b38a78babeb1e296270c5a917310490722cd",
+      "raw_result_sha256": "c186c9a9f391353f65d0244ce19f0f2ba0307b9d54463134540b14ac0beed57f",
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 3.0728680088650435,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "e11952f3f87808abad3396f18450e0e51313a8b417a897f304b6005d23df866b",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "2f98728814b24d3ad9c985df4850610f98647a75981e475eb036835f46a5929b",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "receipt_sha256": "54218ae26f960bc7e2a9a1c737a545b570eb14670de9450255e9801dec71b3f8",
+      "request": {
+        "argv": [
+          "${RAW}/artifacts/native-oracle",
+          "straight",
+          "${LEAF_DSO}",
+          "${RAW}/straight/captures"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/straight/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/straight/stderr.txt",
+        "stdout": "${RAW}/straight/stdout.txt",
+        "wall_seconds": 30
+      },
+      "stdout_summary": "native-leaf:straight:calls_per_phase=2:phases=3:visits_per_phase=10:events=4:completed=2:refused=0\n"
+    },
+    {
+      "capture_files": 620,
+      "elapsed_seconds": 6.259429455036297,
+      "environment_evidence": "Directly recorded complete request environment.",
+      "exit": 0,
+      "kind": "native campaign",
+      "name": "budget",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW}/budget/request.json",
+          "--receipt",
+          "${RAW}/budget/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "parent_elapsed_seconds": 6.326615565922111,
+      "profile_sha256": "982d228af62934519fa90877a54f2231f7aa54c5932a84816955dbd8a657e468",
+      "raw_result_sha256": "97878411cd9d5da80d1b1874e49e9e09427c5a1da424da5af84e872cc4205db9",
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 6.259429455036297,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "d7b6be65265538c6ebf868ada31c4c2d5b8bc000d6dad05a9d1b01a234af7391",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "0ee05496b83bdcf3ff5fc8351cd765a4f1bdc3442b72fdc186b9c456e55b126e",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "receipt_sha256": "4ec96e84bfce52331ed09595b7cf8d1f8ab1ef826445d2105f1f25e6ad3fbf37",
+      "request": {
+        "argv": [
+          "${RAW}/artifacts/native-oracle",
+          "budget",
+          "${LEAF_DSO}",
+          "${RAW}/budget/captures"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/budget/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/budget/stderr.txt",
+        "stdout": "${RAW}/budget/stdout.txt",
+        "wall_seconds": 30
+      },
+      "stdout_summary": "native-leaf:budget:calls_per_phase=6:phases=3:visits_per_phase=30:events=12:completed=2:refused=4\n"
+    },
+    {
+      "capture_files": 422,
+      "elapsed_seconds": 5.909187082899734,
+      "environment_evidence": "Directly recorded complete request environment.",
+      "exit": 0,
+      "kind": "native campaign",
+      "name": "generation",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW}/generation/request.json",
+          "--receipt",
+          "${RAW}/generation/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "parent_elapsed_seconds": 5.976194636197761,
+      "profile_sha256": "58a873da7de2e173c926b78b891753d7632bd6f5ae98d7bca4829fdb9bedda3b",
+      "raw_result_sha256": "caf2a8240ae2f049099987cb85ae7e10522793ac7753066b8414b08dbeaaf798",
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 5.909187082899734,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "79d82f2106cde86e92eb7d035b67145061c8b6e3d81ba9f45556d84592d57a1d",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "646b205d3ddf3c4636ae2028ca260ec046ef95767f22112c4f599aeb65b02011",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "receipt_sha256": "2e78a15161cf656f5db410d72370a56d9dc87b939509abe3bc0039b0fef90f2d",
+      "request": {
+        "argv": [
+          "${RAW}/artifacts/native-oracle",
+          "generation",
+          "${LEAF_DSO}",
+          "${RAW}/generation/captures"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/generation/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/generation/stderr.txt",
+        "stdout": "${RAW}/generation/stdout.txt",
+        "wall_seconds": 30
+      },
+      "stdout_summary": "native-leaf:generation:calls_per_phase=4:phases=3:visits_per_phase=20:events=8:completed=4:refused=0\n"
+    },
+    {
+      "capture_files": 13,
+      "elapsed_seconds": 0.19873286108486354,
+      "environment_evidence": "Directly recorded complete request environment.",
+      "exit": 0,
+      "kind": "native campaign",
+      "name": "refusals",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW}/refusals/request.json",
+          "--receipt",
+          "${RAW}/refusals/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "parent_elapsed_seconds": 0.26539137004874647,
+      "profile_sha256": "4c10b0df94a2e705c9481592667c4f9e7fb5d6a7301d6427d0e42c2816b7a095",
+      "raw_result_sha256": "61459e3eef3198adc7c2a0fead0e1f20ea40284784e280405e3ce2e07f810e95",
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.19873286108486354,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "1b1529e73da6539a14c1df3995a7b86380bce10b2204013e51dca2872f18d5be",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "bd75a5cab7b841d58c99f7d0662851f4aa8398f523b66d23c32fac799c21a845",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "receipt_sha256": "596f83d4fbcd6c7bd3149a8fc5874ab8fcb80b4271d9510107556367d4807083",
+      "request": {
+        "argv": [
+          "${RAW}/artifacts/native-oracle",
+          "refusals",
+          "${LEAF_DSO}",
+          "${RAW}/refusals/captures"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/refusals/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/refusals/stderr.txt",
+        "stdout": "${RAW}/refusals/stdout.txt",
+        "wall_seconds": 30
+      },
+      "stdout_summary": "native-leaf:refusals:required=6:beforewrite=6:source-page-unchanged\nnative-leaf:permissions:required=2:beforewrite=2:header-page-restored\n"
+    },
+    {
+      "capture_files": 580,
+      "elapsed_seconds": 5.861051263054833,
+      "environment_evidence": "Directly recorded complete request environment.",
+      "exit": 0,
+      "kind": "native campaign",
+      "name": "two-returns-paths",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW}/two-returns-paths/request.json",
+          "--receipt",
+          "${RAW}/two-returns-paths/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "parent_elapsed_seconds": 5.927904853830114,
+      "profile_sha256": "53abe42a61cf8072e1f80156e2d62c0d68a996ae065c0dba7879d1c9882a28ca",
+      "raw_result_sha256": "56a1f9a97c790b0299fc8b8d28a12cd0df1064cda782683f12357aa317a5b0ff",
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 5.861051263054833,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "f25be71cea6eea4056e2560effb6fded1c369a723e88d4f7e9c85dc1e271819a",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "af04283a382992aeac2a27c61710eb4fcf20c600d3ba6f7a0aabad5a7206e290",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "receipt_sha256": "0ceba0145f976d7b11f8ed93723f845ea72010d1f583a095501f825ac31c2076",
+      "request": {
+        "argv": [
+          "${RAW}/artifacts/native-oracle",
+          "two-returns-paths",
+          "${BRANCH_DSO}",
+          "${RAW}/two-returns-paths/captures"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/two-returns-paths/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/two-returns-paths/stderr.txt",
+        "stdout": "${RAW}/two-returns-paths/stdout.txt",
+        "wall_seconds": 30
+      },
+      "stdout_summary": "native-two-returns:paths:calls_per_phase=4:phases=3:visits_per_phase=32:events=8:completed=4:refused=0\n"
+    },
+    {
+      "capture_files": 580,
+      "elapsed_seconds": 4.756135584786534,
+      "environment_evidence": "Directly recorded complete request environment.",
+      "exit": 0,
+      "kind": "native campaign",
+      "name": "two-returns-budget",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW}/two-returns-budget/request.json",
+          "--receipt",
+          "${RAW}/two-returns-budget/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "parent_elapsed_seconds": 4.827086916891858,
+      "profile_sha256": "b4ac75c35d3e4a7bb16cdaf28a76d9db26edd58828d46503851e152560ef7a72",
+      "raw_result_sha256": "b5c3871d66f080378a74d9448a1d4455609a710fbca75325e01229aa39826469",
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 4.756135584786534,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "e962ea26a71e66e007621f420d390898bbe93af9821fd6ca86e05b8466e4434d",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "0a09495d7f1d5a3baf1cc943bcecc8a77b7ec49d5f47f511908d2efb3a84d5f5",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "receipt_sha256": "6695972a6c1b8652a44b3a647b66658b826ab7b34a071cda28d733096741b30a",
+      "request": {
+        "argv": [
+          "${RAW}/artifacts/native-oracle",
+          "two-returns-budget",
+          "${BRANCH_DSO}",
+          "${RAW}/two-returns-budget/captures"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/two-returns-budget/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/two-returns-budget/stderr.txt",
+        "stdout": "${RAW}/two-returns-budget/stdout.txt",
+        "wall_seconds": 30
+      },
+      "stdout_summary": "native-two-returns:budget:calls_per_phase=4:phases=3:visits_per_phase=32:events=8:completed=2:refused=2\n"
+    },
+    {
+      "capture_files": 580,
+      "elapsed_seconds": 5.9836458780337125,
+      "environment_evidence": "Directly recorded complete request environment.",
+      "exit": 0,
+      "kind": "native campaign",
+      "name": "two-returns-generation",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW}/two-returns-generation/request.json",
+          "--receipt",
+          "${RAW}/two-returns-generation/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "parent_elapsed_seconds": 6.07725290604867,
+      "profile_sha256": "18a0fc37d9d67cdd420c8f0329721088b33111694f00c4713df52247fe2f45c2",
+      "raw_result_sha256": "f43eaf8a9660455057d74f768c1bbebaecf73ffc689e3bad6999b345ba19cee6",
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 5.9836458780337125,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "54715d99dce892f26bd021d53bc3688d8fbc651efb2ca217225c1d90dc1cc8cf",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e6a99b67a55805ccfdfbd87dc1e6bd5739f3455a61a7290e62264adbeb9131dc",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "receipt_sha256": "ecefac1f248097b4f47ffe2a17f84dd42485cad48c9ea8b88b975b0d2119aca3",
+      "request": {
+        "argv": [
+          "${RAW}/artifacts/native-oracle",
+          "two-returns-generation",
+          "${BRANCH_DSO}",
+          "${RAW}/two-returns-generation/captures"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/two-returns-generation/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/two-returns-generation/stderr.txt",
+        "stdout": "${RAW}/two-returns-generation/stdout.txt",
+        "wall_seconds": 30
+      },
+      "stdout_summary": "native-two-returns:generation:calls_per_phase=4:phases=3:visits_per_phase=32:events=8:completed=4:refused=0\n"
+    },
+    {
+      "capture_files": 5,
+      "elapsed_seconds": 0.1636085668578744,
+      "environment_evidence": "Directly recorded complete request environment.",
+      "exit": 0,
+      "kind": "native campaign",
+      "name": "two-returns-refusals",
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW}/two-returns-refusals/request.json",
+          "--receipt",
+          "${RAW}/two-returns-refusals/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "parent_elapsed_seconds": 0.21565264998935163,
+      "profile_sha256": "5a2d1a30faeb64b3075d7632123fe2525a02e368131fb7c3e8b4676fe2192327",
+      "raw_result_sha256": "b6f73296e9d33d61a7ff7b7933841cc26ab88b1658f4f1d605df518118110bdc",
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.1636085668578744,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "e61ad912618c0d44120787e1a5ef6f2cadceb257252d71c5efbb3ebd2a7a501c",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "807dd87bf8a6f0ae9b5389d8f27743042aeae67276011956a331933fd85b0e2c",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "receipt_sha256": "80a4b061d0beb10c1cb7ab909a2881c1e79536d43f0312b369d045c25ced7779",
+      "request": {
+        "argv": [
+          "${RAW}/artifacts/native-oracle",
+          "two-returns-refusals",
+          "${BRANCH_DSO}",
+          "${RAW}/two-returns-refusals/captures"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${RAW}/two-returns-refusals/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${RAW}/two-returns-refusals/stderr.txt",
+        "stdout": "${RAW}/two-returns-refusals/stdout.txt",
+        "wall_seconds": 30
+      },
+      "stdout_summary": "native-two-returns:refusals:required=4:beforewrite=4:source-page-unchanged\n"
+    }
+  ],
+  "compiler": {
+    "artifacts": 18,
+    "build_script_records": 4,
+    "cargo_records": 23,
+    "closure_scope": "Actual selected Cargo/source/producer/native binary and two DSO joins; no full target or transitive tool closure claim.",
+    "compiled_artifacts": 3,
+    "diagnostics": 0,
+    "retained_index_sha256": "a51360ff4a83e515a9fc992b64affa3baac4b1b339fe5b63c25bffa9d51d09cb",
+    "retained_subject_producer_bytes": 41875,
+    "retained_subject_producer_files": 8,
+    "reused_artifacts": 15,
+    "success_records": 1
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "label": "AMD EPYC Zen 5 dev host",
+    "libc": [
+      "glibc",
+      "2.34"
+    ],
+    "logical_cpus": 316,
+    "scope": "Single campaign preparation observation, not continuous hardware attestation.",
+    "source_sha256": "5398b85e62db96ac1e588c3213d07ad15ddfdd4302be7831115ca44c2d2c1d33"
+  },
+  "hash_semantics": {
+    "other_sha256": "Whole bytes of the named actual private record/capture or public file unless explicitly described as canonical.",
+    "profile_sha256": "SHA-256 of the actual coordinate-bearing object containing exactly argv, cwd, env, wall_seconds, cpu_seconds and file_bytes, encoded as UTF-8 JSON with sorted keys and separators comma/colon, without a trailing newline. For native commands this is the request projected onto those six fields, excluding stdout and stderr; for required commands it is the published profile object after coordinate expansion. Private inverse bindings retain exact coordinates.",
+    "record_sha256": "Same canonical JSON convention for an individual required command record.",
+    "request_roundtrip": "Complete decoded request objects, outer objects and parent records reconstruct by ordinary token substitution. Original-byte hashes bind the retained private requests. JSON key order has no execution meaning and is not preserved in this public summary; the public objects do not reconstruct the original serialized request bytes."
+  },
+  "historical_scope": "Earlier failed and held fixed-leaf attempts remain in their separate published records; this run does not relabel them. All original four native modes and their 1268-file scope are retained alongside the additive two-return modes.",
+  "independent_reviews": {
+    "native_captures": {
+      "binding_sha256": "4058a11429d10e98de742ac4381073c1180933e18114d291155da2d09a57b8bc",
+      "checks_sha256": "6a45ebb436164a58e0ee20566bd6af7a22771abb0007cedc11d6ecf9cf12ed0b",
+      "decision": "APPROVED_FIXED_NATIVE_SCOPE_CLAIM_4_PARTIAL",
+      "review_sha256": "102cdf40e25573b4fb3e46373e37227f3bab12dda357a1a3fd847ba26d32561a",
+      "scope": "All eight native modes and 3013 complete captures; no full A5 or performance claim."
+    },
+    "required_compiler": {
+      "binding_sha256": "5aded97d077b52a8256d776a05b0999952cf4c9105d77f45664c40168ec58527",
+      "checks_sha256": "f7c4b49a7ed9915234a89ce5b20ca4d0988182598105441449efaca08d46bd0b",
+      "decision": "APPROVED_BOUNDED_ACTUAL_EVIDENCE",
+      "review_sha256": "73bad0e55bab6191d1d246744993bb53cf7413a5fa906c83d879b3b69faad1ae",
+      "scope": [
+        "four original required workspace gates",
+        "actual native compiler/Cargo/source/producer/DSO linkage",
+        "nine strict helper receipts and all native exact request/output joins"
+      ],
+      "source_authorship_disclosed": true,
+      "source_scope_note": "Reviewer authored the additive oracle adapter; this is actual-data/source-linkage review, not independent self-approval of authored source semantics."
+    }
+  },
+  "native": {
+    "artifact_profile": {
+      "debug_assertions": true,
+      "debuginfo": 2,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "artifact_record_sha256": "aee6412f8654afe9a894f85843b650c478cb4d4d535536b903d5005f208f89f9",
+    "binary_sha256": "392fde1b98a4cb40582f796d9494113a480a4c665894301266e76f2b99c1c5ad",
+    "capture_files": 3013,
+    "capture_files_by_mode": {
+      "budget": 620,
+      "generation": 422,
+      "refusals": 13,
+      "straight": 213,
+      "two-returns-budget": 580,
+      "two-returns-generation": 580,
+      "two-returns-paths": 580,
+      "two-returns-refusals": 5
+    },
+    "children": 33,
+    "command_count": 8,
+    "comparisons_to_original": 456,
+    "completed_pairs": 18,
+    "expected_capture_inventory_sha256": "cb6dacd2e85bcee10b5745292158bf4098c6c1bbe84bc509c205c6b01eedbd1c",
+    "final_journal_events": 48,
+    "generation_evidence": "New branch completed owner reports are serialized and compared. Intermediate controller reservation checks are executed source assertions; no separate asynchronous controller-state capture is claimed.",
+    "independent_original_RET_effects": 24,
+    "independent_original_instruction_effects": 156,
+    "independently_reviewed_capture_hash_map_sha256": "04034806564bde5081673922c8fb11d5a1cf48b1da5860e6d0675b4766ddd2be",
+    "native_case_phases": 33,
+    "new_modes": 4,
+    "new_serialized_completed_report_rows": 10,
+    "old_and_new_scopes": {
+      "new": {
+        "CALL_witnesses": 36,
+        "budget_refused_pairs": 2,
+        "capture_files": 1745,
+        "children": 18,
+        "completed_pairs": 10,
+        "cross_phase_full_states": 264,
+        "journal_events": 24,
+        "original_instruction_effects": 96,
+        "permission_refusals": 0,
+        "setup_refusals": 4
+      },
+      "old": {
+        "CALL_witnesses": 36,
+        "budget_refused_pairs": 4,
+        "capture_files": 1268,
+        "children": 15,
+        "completed_pairs": 8,
+        "cross_phase_full_states": 192,
+        "journal_events": 24,
+        "original_instruction_effects": 60,
+        "permission_refusals": 2,
+        "setup_refusals": 6
+      }
+    },
+    "old_modes": 4,
+    "paired_budget_refusals": 6,
+    "permission_refusals": 2,
+    "real_call_witnesses": 72,
+    "setup_refusals": 10,
+    "subjects": {
+      "NATIVE_BRANCH_DSO": {
+        "coordinate": "${BRANCH_DSO}",
+        "sha256": "35eff6c92782b5e34aed143a4b710d5e773abce723468a7e5974822eb9c1e238"
+      },
+      "NATIVE_INTERVAL_DSO": {
+        "coordinate": "${LEAF_DSO}",
+        "sha256": "4d1996b63d9854260e6c4f822d8ee6d7bf09dd4ad61878e8ac721c3bfb6d2ff2"
+      }
+    },
+    "total_before_publication_refusal_cases": 12,
+    "whole_child_stop_bound": 20000,
+    "whole_child_wall_seconds": 15
+  },
+  "performance_claim": false,
+  "qualification_complete": false,
+  "reproduction": {
+    "bounded_helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "coordinate_roles": {
+      "BRANCH_DSO": {
+        "kind": "whole file",
+        "meaning": "Actual NATIVE_BRANCH_DSO whole-file owner from the native compiler build-script message."
+      },
+      "CARGO_HOME": {
+        "kind": "whole directory",
+        "meaning": "Selected offline Cargo cache directory, preserved literally in CARGO_HOME."
+      },
+      "LEAF_DSO": {
+        "kind": "whole file",
+        "meaning": "Actual NATIVE_INTERVAL_DSO whole-file owner from the native compiler build-script message."
+      },
+      "PYTHON": {
+        "kind": "whole file",
+        "meaning": "Selected Python 3.9 executable for the recorded campaign."
+      },
+      "RAW": {
+        "kind": "whole directory",
+        "meaning": "Fresh absent output directory inside REPO/ignored, with a canonical existing parent."
+      },
+      "REPO": {
+        "kind": "whole directory",
+        "meaning": "Clean checkout of the exact tested revision; also owns the single target directory."
+      },
+      "TIMEOUT": {
+        "kind": "whole file",
+        "meaning": "Selected coreutils timeout executable."
+      },
+      "TOOLCHAIN": {
+        "kind": "whole directory",
+        "meaning": "Rust 1.97.1 toolchain root containing bin/cargo, bin/rustc and bin/rustdoc."
+      },
+      "USER_HOME": {
+        "kind": "whole directory",
+        "meaning": "Selected home directory, preserved literally in HOME."
+      }
+    },
+    "parent_record": {
+      "argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "1700s",
+        "${PYTHON}",
+        "-B",
+        "${REPO}/evaluation/native-two-returns/reproduce.py",
+        "--raw",
+        "${RAW}",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}"
+      ],
+      "cwd": "${REPO}",
+      "elapsed_seconds": 352.8672696040012,
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "exit": 0,
+      "revision": "94a1fd3ad15d88cae74390b341fc3bf890ab1f39",
+      "script_sha256": "498d61ff7c4b587f596d124f624073e9d6e1d4a8cc0fa401adbf09d557954ec4",
+      "start_utc": "2026-10-26T06:18:50.814228+00:00",
+      "status": "FINISHED",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "169c400ce7e9ba14d0a7b12ce3a8b05a6bd621386e3281293c623d2a576ae2d7"
+    },
+    "readme": "../../native-two-returns/README.md",
+    "required_runner_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+    "role_semantics": "Each token denotes one complete path. Substitute token occurrences once inside decoded JSON strings; preserve all unlisted literals, order and flags. No token is a sibling-prefix shorthand. DSO roles are filled only from the actual compiler producer records. JSON-encode selected strings when writing requests.",
+    "script": "../../native-two-returns/reproduce.py",
+    "script_sha256": "498d61ff7c4b587f596d124f624073e9d6e1d4a8cc0fa401adbf09d557954ec4"
+  },
+  "required": {
+    "added_branch_tests": 9,
+    "calibrations": 26,
+    "command_count": 4,
+    "commands_record_sha256": "ef2c8edede2aaa15c02fb9dd3e16d129bfdaa0b150e0d1cbce636225cdbc625f",
+    "dispatcher": {
+      "argv": [
+        "${PYTHON}",
+        "-B",
+        "${REPO}/evaluation/required-gates.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW}/required/gates"
+      ],
+      "cwd": "${REPO}",
+      "elapsed_seconds": 316.51360315899365,
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}/required/tmp"
+      },
+      "exit": 0,
+      "name": "required",
+      "outer_argv": [
+        "${PYTHON}",
+        "-B",
+        "${REPO}/evaluation/required-gates.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW}/required/gates"
+      ],
+      "outer_env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}/required/tmp"
+      },
+      "parent_timeout_seconds": 1000
+    },
+    "docs": 10,
+    "documentation_evidence": "Ten intended source subjects/fences and passing required-log results; full compiler diagnostic bodies were not retained in this required log.",
+    "environment_note": "Per-gate env in commands is source-derived; dispatcher env is directly recorded.",
+    "failed": 0,
+    "filtered": 0,
+    "ignored": 4,
+    "models": 98,
+    "nested_complete_summaries": 5,
+    "nested_credit": "Separate from outer passes; the two starts receive no extra case credit.",
+    "nested_guard_starts_without_separate_terminal": 2,
+    "old_models": 89,
+    "outer_groups": 62,
+    "passed": 1050
+  },
+  "schema": 1,
+  "source": {
+    "after_sha256": "20971221bd376ce7c726522afe092814d5672947c6c5f14b16b769ae1a7b9fd5",
+    "before_sha256": "20971221bd376ce7c726522afe092814d5672947c6c5f14b16b769ae1a7b9fd5",
+    "canonical_source_map_sha256": "40bd3ec6774cae691c6c0bfcf21ea1fe51ca70108322350784ee2e2001c83130",
+    "tracked_files": 1059,
+    "whole_before_after_equal": true
+  },
+  "status": "PASS_RECORDED_CAMPAIGN",
+  "tested_revision": "94a1fd3ad15d88cae74390b341fc3bf890ab1f39",
+  "tool_versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)\n",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "raw_tools_sha256": "04fb2b2563c029fb28c63a9a44bc679d14fa71f6b79713c24529d65dbd78c130",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n"
+  }
+}

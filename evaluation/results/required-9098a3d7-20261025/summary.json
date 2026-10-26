@@ -1,0 +1,286 @@
+{
+  "A5_scope": {
+    "compile_fail_doctests": 8,
+    "inherited_private_model_names": 53,
+    "legacy_model_names": 7,
+    "model_tests": 60,
+    "native_frontend_activation": false,
+    "separate_diagnostic_outputs_captured": false,
+    "software_clock_qualified": false
+  },
+  "cases": [],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "heading": "systematic everytactic",
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "claims_scope": "Workspace regression only; no full A2/A3/A4/A5 or software-clock claim and no native frontend activation.",
+  "cleanup_scope": "Legacy process-group runner; no ECHILD/subreaper claim. Ten inner fixture launcher records separately show owned leader-last cleanup.",
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 1.1674844410736114,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-fmt",
+      "receipt_sha256": "b006f7ed48282d58b2c6d46fe0a2615f342cd39159154b3ca1e3df351d203c28",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 1.5181814001407474,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-clippy",
+      "receipt_sha256": "b006f7ed48282d58b2c6d46fe0a2615f342cd39159154b3ca1e3df351d203c28",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "8ef9ed1da2a887d7d8216ff2cb786e7a054972f890d17e5353963a7b535641c5",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 276.7961012949236,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-test",
+      "receipt_sha256": "b006f7ed48282d58b2c6d46fe0a2615f342cd39159154b3ca1e3df351d203c28",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "434f417486ce6cb57929a7a584a935dc0c0d300ba4b1124334fb489722f2bb06",
+      "wall_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 4.875244980910793,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-check",
+      "receipt_sha256": "b006f7ed48282d58b2c6d46fe0a2615f342cd39159154b3ca1e3df351d203c28",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "31255c7d2cb211f7b5afd210e609bf8c61b8ee9e07f340bc3c54244ed8a69017",
+      "wall_seconds": 180
+    }
+  ],
+  "complete_A2": false,
+  "complete_A3": false,
+  "complete_A4": false,
+  "complete_A5": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "cpuinfo_sha256": "d02d8d4b370b6709fab8e81900b7efe7b96061018a3f164d8c997dc39b6487e2",
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "recorded CPU/kernel context before the required runner launch; not continuous attestation",
+    "observation_sha256": "d59368a47362190584888e54bc2a29c5cbe0f116bbf2d392f0610bf9940d7eeb",
+    "observed_at_utc": "2026-10-25T21:11:39.583665+00:00",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "independent_review_binding_sha256": "47f308b85b7893be8cd7e146309951a5646f382d9ca303f8d0af5f36e74f5305",
+  "independent_review_sha256": "e8bf6be95bd8b301c15ce735df332129175fa35a8e0868b62bb9604366f9cf9d",
+  "outer_record_sha256": "50b062ae6aff6f134e4f922752afe9e70264158459061b1301e42982c3e8fa3e",
+  "pre_required_context_sha256": "d59368a47362190584888e54bc2a29c5cbe0f116bbf2d392f0610bf9940d7eeb",
+  "predecessor_attempt": {
+    "check_unrun": true,
+    "failed_report_summary_sha256": "3b5b4fdd9335de010f647faac9b106d608fe0cbbe614e7b44737a55ad3d646ed",
+    "failing_syscall_identified": false,
+    "failure": "native_chain_anchor_readable_and_fault parent owned-child cleanup failed with untagged ESRCH",
+    "source_correction_scope": "only zero-byte ENOENT/ESRCH proc-stat reads are treated as vanished processes; every partial/other error and all owned-leader/peer/cap assertions remain mandatory",
+    "status": "fail",
+    "tested_revision": "3f87ac9008238ff7d8f12fa28b15a73cb7b4ada5"
+  },
+  "preemption_clock_claim": false,
+  "private_capture_manifest_sha256": "92d91c2e6b6f6af4fe7e658c75548df06b7b157115c7e005e39abfbe29f0475b",
+  "reproduction": {
+    "argv": [
+      "${PYTHON}",
+      "-B",
+      "${REPO}/evaluation/required-gates.py",
+      "--repo",
+      "${REPO}",
+      "--output",
+      "${RAW_PARENT}/required-9098a3d7-v1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${RUST_TOOLCHAIN}/bin/rustdoc"
+    },
+    "parent_timeout_seconds": 1000,
+    "runtime_tool_versions_inferred": false
+  },
+  "reproduction_binding_note": "Each placeholder is a distinct literal coordinate binding. RAW_PARENT is the original output parent role; create a fresh corresponding ignored directory for a new run. The entire recorded outer environment is retained.",
+  "reproduction_script": "evaluation/required-gates.py",
+  "reproduction_script_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+  "review_role_note": "Receipt/source/count reviewer authored the original frontend model and some fixture code; independent of root workload execution and baseline proc-read correction, not independent semantic approval of that model.",
+  "run_id": "required-9098a3d7-20261025",
+  "runner_derived_environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "${REPO}/target",
+    "RUST_TEST_THREADS": "4",
+    "TMPDIR": "${RAW_PARENT}/required-9098a3d7-v1"
+  },
+  "schema_version": 1,
+  "scope": "Exact workspace regression after the bounded proc-stat read correction, including the unchanged public A5 frontend/owned-ticket model. The failed 3f87 required attempt remains separate; this result does not identify its historical failing syscall.",
+  "source_delta": {
+    "actual_changed_paths_since_parent": 7,
+    "added_paths": 2,
+    "all_six_A5_source_paths_unchanged": true,
+    "changed_existing_paths": 5,
+    "other_paths_unchanged": 505
+  },
+  "sources": {
+    "exact_revision": {
+      "base_revision": "3f87ac9008238ff7d8f12fa28b15a73cb7b4ada5",
+      "clean_tracked": true,
+      "file_count": 512,
+      "git_tree": "20640e25818b0e905c8067cde4d911fabce3ebcf",
+      "kind": "git_commit",
+      "source_manifest_sha256": "af9a5e38bf88abb4a6c72ca3f3e8f2641dee8d8a6b79f29a7a8274fcfb2e230c",
+      "source_tree_encoding": "SHA-256 of UTF-8 sorted-key compact JSON of the relative-path SHA-256 map, without trailing newline",
+      "source_tree_sha256": "69c695539d0f61dea5e5400d66e406200d44a25fe68843a0b0617ea5625643e8",
+      "tested_revision": "9098a3d74309fd445fd6f56a6048c1ce517bb81f",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "status": "pass",
+  "suite": "required-workspace-gates",
+  "tested_revision": "9098a3d74309fd445fd6f56a6048c1ce517bb81f",
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tool_selection_note": "The unchanged required runner invokes cargo through PATH and did not record per-command executable hashes or version text. Recorded selection paths do not establish historical executable identity.",
+  "tools": [],
+  "workspace": {
+    "added_passes_since_previous_complete": 49,
+    "all_previous_groups_retained": true,
+    "counts_sha256": "247ca771490f395f1be58fa4cbbae3ab30b03c97c5852697c2e72eaab1a4f958",
+    "failed": 0,
+    "group_inventory_sha256": "954b5765588337f3d6f9c8082111c982f2e47566ee543f6e205a5a27c05f2f2d",
+    "ignored": 4,
+    "nested_guard_groups": [
+      {
+        "filtered_each": 189,
+        "owner": "root library",
+        "passes": 2
+      },
+      {
+        "filtered_each": 26,
+        "owner": "controlled oracle",
+        "passes": 3
+      }
+    ],
+    "nested_guard_passes_not_added": 5,
+    "new_proc_stat_declared_subcases": 20,
+    "new_proc_stat_tests": 7,
+    "outer_groups": 61,
+    "passed": 984,
+    "preexisting_ignores": [
+      "live_probe_stress_matrix",
+      "patch_latency::patch_activation_latency_benchmark",
+      "probe_overhead_benchmark",
+      "rapid::tests::live::benchmark_single_byte_toggle_latency"
+    ],
+    "previous_complete_groups": 60,
+    "previous_complete_passes": 935,
+    "previous_complete_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+    "rapid_profiler_added_compile_fail_docs": 6,
+    "rapid_profiler_compile_fail_docs": 8,
+    "rapid_profiler_library_added_passes": 36,
+    "rapid_profiler_library_passes": 60,
+    "unchanged_group_counts_and_printed_status_multisets": 58
+  }
+}

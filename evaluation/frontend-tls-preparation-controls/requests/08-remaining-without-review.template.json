@@ -1,0 +1,28 @@
+{
+  "argv": [
+    "${PYTHON}",
+    "-B",
+    "${MATERIAL}/prepare.py",
+    "remaining",
+    "--raw",
+    "${CONTROL_RAW}/outputs/02-positive-v2",
+    "--prepared-sha256",
+    "${ACTUAL_POSITIVE_V2_PREPARED_SHA256}",
+    "--artifact-review",
+    "${CONTROL_SOURCE}/fixtures/unapproved-artifact-review.json",
+    "--artifact-review-sha256",
+    "18067891877829e2df92c5fe530f723ba6ef40c26278bd3669ac717127130ec7"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${REPO}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "${CONTROL_RAW}/commands/08-remaining-without-review/tmp"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${CONTROL_RAW}/commands/08-remaining-without-review/stderr.txt",
+  "stdout": "${CONTROL_RAW}/commands/08-remaining-without-review/stdout.txt",
+  "wall_seconds": 30
+}

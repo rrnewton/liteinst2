@@ -1,0 +1,1542 @@
+{
+  "alias_controls": {
+    "accepted": 3,
+    "cases": [
+      {
+        "expected": "ACCEPT",
+        "name": "reported_alias_exact_metadata_owner",
+        "observed": "ACCEPT"
+      },
+      {
+        "expected": "ACCEPT",
+        "name": "reported_dependency_exact_metadata_owner",
+        "observed": "ACCEPT"
+      },
+      {
+        "expected": "ACCEPT",
+        "name": "complete_alias_source_rule",
+        "observed": "ACCEPT"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "wrong_core_target",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "foreign_metadata_directory",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "malformed_metadata_hash",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "duplicate_metadata",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "missing_metadata",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "mismatched_library_hash",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "extra_reported_product",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "wrong_alias_rule_target",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "missing_alias_source",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "extra_alias_source",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "wrong_alias_source_owner",
+        "observed": "REFUSE"
+      }
+    ],
+    "hardware_observation": {
+      "architecture": "x86_64",
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+      "host_label": "AMD EPYC Zen 5 dev host",
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "libc": [
+        "glibc",
+        "2.34"
+      ],
+      "logical_cpus": 316,
+      "observation_scope": "Saved run observation; no continuous hardware attestation or benchmark"
+    },
+    "native_credit": false,
+    "refused": 11,
+    "review_binding_sha256": "bf7f1fcb519dd00aa45b02fae296ceca41ef13c55665e32c0cfe47ba0bf7a3fa",
+    "revision": "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36",
+    "selected_source": {
+      "evaluation/emitter-parity-library-controls.py": "0c18802b5cceb2d3921bec1ee1bcec23f02a88583d21cbf0508f48cf39ca2295",
+      "evaluation/emitter-parity-run.py": "b4cd6602e2d72ceedcfaa24dfb2d6a8069d80e44c43cb003cfadf522a364bedb",
+      "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    },
+    "selected_tool_observations": {
+      "helper_python": {
+        "path": "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "resolved": "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+      },
+      "python": {
+        "path": "${DEPFILE_CONTROL_PYTHON_PATH}",
+        "resolved": "${DEPFILE_CONTROL_PYTHON_RESOLVED}",
+        "sha256": "4599a96bc22ac6a201ff99d0c3239707bc08eef34046fb5d18312ea1c8fb2154"
+      },
+      "timeout": {
+        "path": "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "resolved": "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+      }
+    },
+    "source_sha256": "51c6967f7cc5a6435ed7d635ef9018712727f69ff4700ef7af7bf9876374f773",
+    "static_parity_credit": false,
+    "tool_observation_scope": "Saved before/after path, resolved owner and whole-byte hash; no version command inferred"
+  },
+  "artifact_qualification_complete": false,
+  "authority": "Closed saved-record audit plus original strict receipts; root separately confirmed successful parent termination/reaping",
+  "collector_source_sha256": "856a13e3475c0a6caf85fe187f6fb019a97f87c23858ce5666ccc31400549ae3",
+  "depfile_controls": {
+    "accepted": 3,
+    "cases": [
+      {
+        "expected": "ACCEPT",
+        "name": "relative_sources_and_parent_README",
+        "observed": "ACCEPT"
+      },
+      {
+        "expected": "ACCEPT",
+        "name": "absolute_sources",
+        "observed": "ACCEPT"
+      },
+      {
+        "expected": "ACCEPT",
+        "name": "escaped_space_and_backslash_owner",
+        "observed": "ACCEPT"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "wrong_depfile_target",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "wrong_product_target",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "package_escape",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "package_leave_and_return",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "missing_lib",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "missing_capture_module",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "missing_current_module",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "unknown_source",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "mutated_source_hash",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "mismatched_product_dependencies",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "missing_phony_owner",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "duplicate_source_alias",
+        "observed": "REFUSE"
+      },
+      {
+        "expected": "REFUSE",
+        "name": "extra_product",
+        "observed": "REFUSE"
+      }
+    ],
+    "hardware_observation": {
+      "architecture": "x86_64",
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+      "host_label": "AMD EPYC Zen 5 dev host",
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "libc": [
+        "glibc",
+        "2.34"
+      ],
+      "logical_cpus": 316,
+      "observation_scope": "Saved run observation; no continuous hardware attestation or benchmark"
+    },
+    "native_credit": false,
+    "refused": 13,
+    "review_binding_sha256": "ba0c05cdd903572948e207022991740ed147d75dcd1d276dff961df18d21c59c",
+    "revision": "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36",
+    "selected_source": {
+      "evaluation/emitter-parity-depfile-controls.py": "fd5b1812162e3d9bf7341b7c4bf8995345850ce1e6ed64162b398186406876df",
+      "evaluation/emitter-parity-run.py": "b4cd6602e2d72ceedcfaa24dfb2d6a8069d80e44c43cb003cfadf522a364bedb",
+      "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    },
+    "selected_tool_observations": {
+      "helper_python": {
+        "path": "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "resolved": "${DEPFILE_CONTROL_HELPER_PYTHON_PATH}",
+        "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+      },
+      "python": {
+        "path": "${DEPFILE_CONTROL_PYTHON_PATH}",
+        "resolved": "${DEPFILE_CONTROL_PYTHON_RESOLVED}",
+        "sha256": "4599a96bc22ac6a201ff99d0c3239707bc08eef34046fb5d18312ea1c8fb2154"
+      },
+      "timeout": {
+        "path": "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "resolved": "${DEPFILE_CONTROL_TIMEOUT_PATH}",
+        "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+      }
+    },
+    "source_sha256": "ea5fa4f80b4782353a1ebed68c88c5984055b8d7ada457245dbb0cd9f5adbee4",
+    "static_parity_credit": false,
+    "tool_observation_scope": "Saved before/after path, resolved owner and whole-byte hash; no version command inferred"
+  },
+  "full_A3_complete": false,
+  "hardware": {
+    "native": {
+      "architecture": "x86_64",
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+      "host_label": "AMD EPYC Zen 5 dev host",
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "libc": [
+        "glibc",
+        "2.34"
+      ],
+      "logical_cpus": 316,
+      "observation_scope": "Saved run observation; no continuous hardware attestation or benchmark"
+    },
+    "parity": {
+      "architecture": "x86_64",
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+      "host_label": "AMD EPYC Zen 5 dev host",
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "libc": [
+        "glibc",
+        "2.34"
+      ],
+      "logical_cpus": 316,
+      "observation_scope": "Saved run observation; no continuous hardware attestation or benchmark"
+    }
+  },
+  "native": {
+    "captures": 1230,
+    "full_state_comparisons": 72,
+    "helper_receipts": 26,
+    "hook_call_ret": 8,
+    "journal_rows": 4,
+    "manual_load_mappings": 0,
+    "nested_required_gates": 4,
+    "ordinary_processes": 6,
+    "original_traces": 8,
+    "post_seed_state_repairs": 0,
+    "recipe_stages": 27,
+    "rewritten_traces": 16,
+    "state_authority": "Existing reviewed driver assertions; this audit checks snapshot inventory, not a replacement comparator.",
+    "subject_call_ret": 24,
+    "trace_deadline_seconds": 15,
+    "trace_records": [
+      {
+        "files": 50,
+        "mapping_link_rows": {
+          "exec": 4,
+          "terminal": 4
+        },
+        "name": "strip-0-head-0-seed-0-original",
+        "recording_rows": 0,
+        "steps": 15
+      },
+      {
+        "files": 56,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-0-head-0-seed-0-hook-0",
+        "recording_rows": 0,
+        "steps": 91
+      },
+      {
+        "files": 56,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-0-head-0-seed-0-hook-1",
+        "recording_rows": 1,
+        "steps": 94
+      },
+      {
+        "files": 50,
+        "mapping_link_rows": {
+          "exec": 4,
+          "terminal": 4
+        },
+        "name": "strip-0-head-0-seed-1-original",
+        "recording_rows": 0,
+        "steps": 15
+      },
+      {
+        "files": 56,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-0-head-0-seed-1-hook-0",
+        "recording_rows": 0,
+        "steps": 91
+      },
+      {
+        "files": 56,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-0-head-0-seed-1-hook-1",
+        "recording_rows": 1,
+        "steps": 94
+      },
+      {
+        "files": 46,
+        "mapping_link_rows": {
+          "exec": 4,
+          "terminal": 4
+        },
+        "name": "strip-0-head-1-seed-0-original",
+        "recording_rows": 0,
+        "steps": 17
+      },
+      {
+        "files": 48,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-0-head-1-seed-0-hook-0",
+        "recording_rows": 0,
+        "steps": 17
+      },
+      {
+        "files": 48,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-0-head-1-seed-0-hook-1",
+        "recording_rows": 0,
+        "steps": 17
+      },
+      {
+        "files": 46,
+        "mapping_link_rows": {
+          "exec": 4,
+          "terminal": 4
+        },
+        "name": "strip-0-head-1-seed-1-original",
+        "recording_rows": 0,
+        "steps": 17
+      },
+      {
+        "files": 48,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-0-head-1-seed-1-hook-0",
+        "recording_rows": 0,
+        "steps": 17
+      },
+      {
+        "files": 48,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-0-head-1-seed-1-hook-1",
+        "recording_rows": 0,
+        "steps": 17
+      },
+      {
+        "files": 50,
+        "mapping_link_rows": {
+          "exec": 4,
+          "terminal": 4
+        },
+        "name": "strip-1-head-0-seed-0-original",
+        "recording_rows": 0,
+        "steps": 15
+      },
+      {
+        "files": 56,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-1-head-0-seed-0-hook-0",
+        "recording_rows": 0,
+        "steps": 91
+      },
+      {
+        "files": 56,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-1-head-0-seed-0-hook-1",
+        "recording_rows": 1,
+        "steps": 94
+      },
+      {
+        "files": 50,
+        "mapping_link_rows": {
+          "exec": 4,
+          "terminal": 4
+        },
+        "name": "strip-1-head-0-seed-1-original",
+        "recording_rows": 0,
+        "steps": 15
+      },
+      {
+        "files": 56,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-1-head-0-seed-1-hook-0",
+        "recording_rows": 0,
+        "steps": 91
+      },
+      {
+        "files": 56,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-1-head-0-seed-1-hook-1",
+        "recording_rows": 1,
+        "steps": 94
+      },
+      {
+        "files": 46,
+        "mapping_link_rows": {
+          "exec": 4,
+          "terminal": 4
+        },
+        "name": "strip-1-head-1-seed-0-original",
+        "recording_rows": 0,
+        "steps": 17
+      },
+      {
+        "files": 48,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-1-head-1-seed-0-hook-0",
+        "recording_rows": 0,
+        "steps": 17
+      },
+      {
+        "files": 48,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-1-head-1-seed-0-hook-1",
+        "recording_rows": 0,
+        "steps": 17
+      },
+      {
+        "files": 46,
+        "mapping_link_rows": {
+          "exec": 4,
+          "terminal": 4
+        },
+        "name": "strip-1-head-1-seed-1-original",
+        "recording_rows": 0,
+        "steps": 17
+      },
+      {
+        "files": 48,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-1-head-1-seed-1-hook-0",
+        "recording_rows": 0,
+        "steps": 17
+      },
+      {
+        "files": 48,
+        "mapping_link_rows": {
+          "exec": 6,
+          "terminal": 6
+        },
+        "name": "strip-1-head-1-seed-1-hook-1",
+        "recording_rows": 0,
+        "steps": 17
+      }
+    ],
+    "trace_step_limit": 20000
+  },
+  "native_audit_expected_script_sha256": "7ad6e2e0f643eed7f4a743c1cf58673527bc7fb3725ccb3981152dfdcd1d11aa",
+  "native_audit_producer_authority": "Root separately pins the v5 script invocation; audit output alone does not identify its producer",
+  "native_audit_sha256": "048e73d6e3e16c17ccddfa551e710079f5907309210899101947bcccdac1fcd9",
+  "native_revision": "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36",
+  "native_source_sha256": "8f8cd72de73f8c84c6c3655bd79831b5234469c695017db86475b993076b0701",
+  "native_tool_version_observations": {
+    "cargo": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/cargo",
+        "-V"
+      ],
+      "output": "cargo 1.97.1 (c980f4866 2026-06-30)\n",
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "gcc": {
+      "argv": [
+        "/usr/bin/gcc",
+        "--version"
+      ],
+      "output": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)\nCopyright (C) 2021 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "ld": {
+      "argv": [
+        "/usr/bin/ld",
+        "--version"
+      ],
+      "output": "GNU ld version 2.35.2-72.el9\nCopyright (C) 2020 Free Software Foundation, Inc.\nThis program is free software; you may redistribute it under the terms of\nthe GNU General Public License version 3 or (at your option) a later version.\nThis program has absolutely no warranty.\n",
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "rustc": {
+      "argv": [
+        "${NATIVE_TOOLCHAIN}/bin/rustc",
+        "-vV"
+      ],
+      "output": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "strip": {
+      "argv": [
+        "/usr/bin/strip",
+        "--version"
+      ],
+      "output": "GNU strip version 2.35.2-72.el9\nCopyright (C) 2020 Free Software Foundation, Inc.\nThis program is free software; you may redistribute it under the terms of\nthe GNU General Public License version 3 or (at your option) any later version.\nThis program has absolutely no warranty.\n",
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    }
+  },
+  "parity": {
+    "baseline_revision": "474094a7355c14c673f794cf34aa63d53566f030",
+    "configuration_observation_scope": {
+      "actual_cargo_consumption_attested": false,
+      "denied_contents_observed": false,
+      "denied_lookup_paths": [
+        "${CONFIG_LOOKUP_2}",
+        "${CONFIG_LOOKUP_3}"
+      ],
+      "denied_means_absent": false,
+      "lookup_paths": [
+        "${CONFIG_LOOKUP_0}",
+        "${CONFIG_LOOKUP_1}",
+        "${CONFIG_LOOKUP_2}",
+        "${CONFIG_LOOKUP_3}",
+        "${CONFIG_LOOKUP_4}",
+        "${CONFIG_LOOKUP_5}",
+        "${CONFIG_LOOKUP_6}",
+        "${CONFIG_LOOKUP_7}",
+        "${CONFIG_LOOKUP_8}",
+        "${CONFIG_LOOKUP_9}",
+        "${CONFIG_LOOKUP_10}",
+        "${CONFIG_LOOKUP_11}",
+        "${CONFIG_LOOKUP_12}",
+        "${CONFIG_LOOKUP_13}",
+        "${CONFIG_LOOKUP_14}",
+        "${CONFIG_LOOKUP_15}",
+        "${CONFIG_LOOKUP_16}",
+        "${CONFIG_LOOKUP_17}",
+        "${CONFIG_LOOKUP_18}",
+        "${CONFIG_LOOKUP_19}",
+        "${CONFIG_LOOKUP_20}",
+        "${CONFIG_LOOKUP_21}",
+        "${CONFIG_LOOKUP_22}",
+        "${CONFIG_LOOKUP_23}",
+        "${CONFIG_LOOKUP_24}",
+        "${CONFIG_LOOKUP_25}",
+        "${CONFIG_LOOKUP_26}",
+        "${CONFIG_LOOKUP_27}"
+      ],
+      "scope": "Selected configuration observations are compared exactly before and after each stage; denied paths have no content identity."
+    },
+    "exact_fixture_records": {
+      "current": [
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "chain_0",
+          "images": "4",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "chain_grouped",
+          "images": "4",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "chain_1",
+          "images": "5",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "chain_2",
+          "images": "4",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_normal_near",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_normal_far",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_short_2",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_short_3",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_short_4",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_upstream",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "3",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_coalesced_static",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "frame_coalesced_controlled",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_free_nop",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_free_mov",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_free_jcc",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_free_ret",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_refuse_replace",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_refuse_syscall",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_refuse_expanded",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_limit_instructions",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "frame_limit_calls",
+          "images": "1",
+          "outcome": "success"
+        }
+      ],
+      "extended": [
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "b1_observe_leaf",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "b1_observe_engine",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "b1_replace_leaf",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "b1_replace_engine",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "b2_observe_leaf",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "b2_observe_engine",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "b2_replace_leaf",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "b2_replace_engine",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t1_observe_leaf",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t1_observe_engine",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t1_replace_leaf",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t1_replace_engine",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t2_observe_leaf",
+          "images": "2",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t2_observe_engine",
+          "images": "2",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t2_replace_leaf",
+          "images": "2",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t2_replace_engine",
+          "images": "2",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t3_observe_leaf",
+          "images": "2",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t3_observe_engine",
+          "images": "2",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t3_replace_leaf",
+          "images": "2",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t3_replace_engine",
+          "images": "2",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "upstream_observe_leaf",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "upstream_observe_engine",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "upstream_replace_leaf",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "upstream_replace_engine",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t1_l2_p1",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t1_l3_p1",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t1_l3_p2",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t1_l4_p1",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t1_l4_p2",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "1",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "t1_l4_p3",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_direct_mask0",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_coalesced_mask0",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_direct_mask1",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_coalesced_mask1",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_direct_mask2",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_coalesced_mask2",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_direct_mask3",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_coalesced_mask3",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_direct_mask4",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_coalesced_mask4",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_direct_mask5",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_coalesced_mask5",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_direct_mask6",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_coalesced_mask6",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_direct_mask7",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_coalesced_mask7",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_cfg_near",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "3",
+          "dispatch_operands": "3",
+          "fixture": "controls_cfg_far",
+          "images": "1",
+          "outcome": "success"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "refuse_b1_budget",
+          "images": "0",
+          "outcome": "refusal"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "refuse_b2_budget",
+          "images": "0",
+          "outcome": "refusal"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "refuse_t1_budget",
+          "images": "0",
+          "outcome": "refusal"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "refuse_t2_budget",
+          "images": "0",
+          "outcome": "refusal"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "refuse_t3_budget",
+          "images": "0",
+          "outcome": "refusal"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "refuse_b1_aggregate",
+          "images": "0",
+          "outcome": "refusal"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "refuse_incomplete_entries",
+          "images": "0",
+          "outcome": "refusal"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "refuse_coalesced_replace",
+          "images": "0",
+          "outcome": "refusal"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "refuse_coalesced_duplicate_control",
+          "images": "0",
+          "outcome": "refusal"
+        },
+        {
+          "callback_operands": "0",
+          "control_operands": "0",
+          "dispatch_operands": "0",
+          "fixture": "refuse_coalesced_mid_instruction",
+          "images": "0",
+          "outcome": "refusal"
+        }
+      ],
+      "historical": [
+        {
+          "bytes": 304,
+          "callback_operands": 1,
+          "canonical_sha256": "0c61887074ae2024cdb1a70e176bd2cff194c9eed1e39ab937d7af38eea1ae59",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "2411f629b4a4e4c8695710938ff9c7bba20cba0f5f186f0bc83c8f628b378136",
+          "name": "legacy_observe_near"
+        },
+        {
+          "bytes": 314,
+          "callback_operands": 1,
+          "canonical_sha256": "ab13e2cb5d14ed7676fa079f7f32bb87eed2d3885a21f5fdbe04c309d92f7d45",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "eb269bc37882bcc0aec45d415c200ab56dde309892cb2f0c2156d404ee18777e",
+          "name": "legacy_observe_far"
+        },
+        {
+          "bytes": 301,
+          "callback_operands": 1,
+          "canonical_sha256": "53b07f9e6023a1871c3db79c2989640b18801f720d8da303fdf5e44f260ff252",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "68f930ea2031650cf5c68f31a1ce50d656ea5f12e72e0f3897670ecc070d7415",
+          "name": "legacy_replace"
+        },
+        {
+          "bytes": 313,
+          "callback_operands": 1,
+          "canonical_sha256": "d9df8e511a7fad0502149e002870a1c52997fe381e9bf122cdfe2aa283c231ba",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "ae7054d0eb647803a443a8dafde76f6880859e3d6362ffd22dca290c6d4a5cd5",
+          "name": "legacy_ptrace_replace"
+        },
+        {
+          "bytes": 301,
+          "callback_operands": 1,
+          "canonical_sha256": "fe824777f0915a343538b9e82e5d3a4aaf025cf160bf781554c003d4fd5eb38b",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "72f26b0b05f0fd9e47aef0341a24a7d42f9e26a8f38ea2a6a6b5862d58a5269b",
+          "name": "exact_syscall_replace"
+        },
+        {
+          "bytes": 896,
+          "callback_operands": 3,
+          "canonical_sha256": "2b1e5063c50f319dc3a4b9dec8bd4422702e585c8b708eada93ed69011611fca",
+          "changed_raw_bytes": 18,
+          "metadata_sha256": "3cca08025e1dc8314459318a9661ad4e3a425a59460e4e03a2dd1081ec7bfe72",
+          "name": "actions_all_observe"
+        },
+        {
+          "bytes": 894,
+          "callback_operands": 3,
+          "canonical_sha256": "ce3bc2ff900fc04d3f6fdadc29384a3c3c3f98b93b4cd47d059b87684ff02e22",
+          "changed_raw_bytes": 18,
+          "metadata_sha256": "017918dd35e465a4e7724d25cfe3f9ddd0b4f90a126f6bd295e5271647e6d118",
+          "name": "actions_all_replace"
+        },
+        {
+          "bytes": 889,
+          "callback_operands": 3,
+          "canonical_sha256": "44f2f51b97873ef21ad0d73ef079fc268aa073ac590ae2c148bce1b0f85c255f",
+          "changed_raw_bytes": 18,
+          "metadata_sha256": "9368db89685a1d9cc3d53566cef0158913a759c5867b21127570a85ff7c1ecd5",
+          "name": "actions_mixed"
+        },
+        {
+          "bytes": 609,
+          "callback_operands": 2,
+          "canonical_sha256": "8b437567d16662fc8bb9b1055e6afa07cd8e0df5d2e375cc6fac621bfced35db",
+          "changed_raw_bytes": 12,
+          "metadata_sha256": "c7fa8ff0312990adaeceadfe390a365788d70cbc4461a2b872c1962bff15aacf",
+          "name": "actions_upstream_prefix"
+        },
+        {
+          "bytes": 304,
+          "callback_operands": 1,
+          "canonical_sha256": "0c61887074ae2024cdb1a70e176bd2cff194c9eed1e39ab937d7af38eea1ae59",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "abeb99018c2fb9715f240d6bf179976a1631862459bf0f6915bb1e8192603cde",
+          "name": "actions_single_observe"
+        },
+        {
+          "bytes": 301,
+          "callback_operands": 1,
+          "canonical_sha256": "53b07f9e6023a1871c3db79c2989640b18801f720d8da303fdf5e44f260ff252",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "41e309325ffd7487133555584c913546bbcf26c3ecc79bb8f3b67a86299de674",
+          "name": "actions_single_replace"
+        },
+        {
+          "bytes": 605,
+          "callback_operands": 2,
+          "canonical_sha256": "163052476a413e9dd77ae6ac3b0aeab9504252dac3e1f4851daa5758d68daca4",
+          "changed_raw_bytes": 12,
+          "metadata_sha256": "c943173aeaa984c58eb4da4e938f242af8bfd27d433f8f6572f7ddb23b671740",
+          "name": "actions_forward_branch"
+        },
+        {
+          "bytes": 604,
+          "callback_operands": 2,
+          "canonical_sha256": "f78354b131f058af732fd03e880ee303317c2d23cb565496aceef99fbb1d759d",
+          "changed_raw_bytes": 12,
+          "metadata_sha256": "935f998f12f56f78a39fd3fe275acb8f90b4384b95bb212cd154e2d45e1ff0b0",
+          "name": "actions_backward_branch"
+        },
+        {
+          "bytes": 603,
+          "callback_operands": 2,
+          "canonical_sha256": "d88350780d6360a6663d6a1ed2b861e701c28a80f04596e5c1e33a6a05aa3a50",
+          "changed_raw_bytes": 12,
+          "metadata_sha256": "9af95b5c334f83407bc73f4f63673b770afce4fcedd8d3db67b6a9d867fa5394",
+          "name": "actions_rip_data_at_head"
+        },
+        {
+          "bytes": 362,
+          "callback_operands": 1,
+          "canonical_sha256": "663c73df6a211f4a5659871cef2e8ca77bccfca2dec9eb6c09e47b11bcb0f617",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "882bbd70f35f51851d663f820cf5afec563222831987043ed99963c813ada53e",
+          "name": "actions_far_literal_branch"
+        },
+        {
+          "bytes": 16,
+          "callback_operands": 0,
+          "canonical_sha256": "80c268b5756d63876257e854c68e14e947bef9977e145fdf6226f8b57a921569",
+          "changed_raw_bytes": 0,
+          "metadata_sha256": "15bae3cc35c2453170aace10cc3a86d537abbaa72884bfcbd8eebc7fb6233500",
+          "name": "callback_free_nop"
+        },
+        {
+          "bytes": 15,
+          "callback_operands": 0,
+          "canonical_sha256": "ad2db8677042ae04d20c66f1965dd329f3f970fdd5a979da98506528d558f67e",
+          "changed_raw_bytes": 0,
+          "metadata_sha256": "3d604fe99ca8ad375ec3797970c1e1f64fab06bda3155c864aa1694293ff0665",
+          "name": "callback_free_mov"
+        },
+        {
+          "bytes": 12,
+          "callback_operands": 0,
+          "canonical_sha256": "3259662feb7f55aec36df1c5743cc383e0c803cfd6f92fb08e9c7d1be75bbff7",
+          "changed_raw_bytes": 0,
+          "metadata_sha256": "e1d7cfd7ec71e80fed6e898f9f57861569a2dc2a5021d9d14d50ceac1f1335a3",
+          "name": "callback_free_rip"
+        },
+        {
+          "bytes": 17,
+          "callback_operands": 0,
+          "canonical_sha256": "2260b3f7a28aed6cd070a40f5506bc048df91e8b662c2296fa0e6734fca35226",
+          "changed_raw_bytes": 0,
+          "metadata_sha256": "e02fbe67d7e426c1b2011e975b1126851a7bc67b3520b584a4860a7803968773",
+          "name": "callback_free_loop"
+        },
+        {
+          "bytes": 58,
+          "callback_operands": 0,
+          "canonical_sha256": "a6ddfe732bb6646b60614f3c041a86ce47f7ffa354220e9dbd2583aec18dda17",
+          "changed_raw_bytes": 0,
+          "metadata_sha256": "07be3d77842a998d5ecc052f00fc0dff70bd5dab93005d66556c35b05e5dae76",
+          "name": "callback_free_far_literal_branch"
+        },
+        {
+          "bytes": 299,
+          "callback_operands": 1,
+          "canonical_sha256": "94d2df2d274f17ac43ee6554d9134c73400a2a28aa32a38dc75c10dac8d485d8",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "84fb63ecea54a896ba3e8dda5689401634f45343c73d60ef503f9ddadfaaa528",
+          "name": "short_l1_observe"
+        },
+        {
+          "bytes": 298,
+          "callback_operands": 1,
+          "canonical_sha256": "251e0ae2b479b94815ff1a3e7e2c2a31472e74a039fb193189ee5e720fb3ed02",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "d4e838fe1ab0e083184b39478958081f6592b3585f82e9f48c0f22dab25be041",
+          "name": "short_l1_replace"
+        },
+        {
+          "bytes": 300,
+          "callback_operands": 1,
+          "canonical_sha256": "f4dd973637cb7327531192d6ef34b9ca21cd8e850eb0d94dc28d6cdf4d9032de",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "ea5c97c52e1ac11b83c3ad99efa9bb0be12359f629991955df0d861a6dbeb04d",
+          "name": "short_l2_observe"
+        },
+        {
+          "bytes": 298,
+          "callback_operands": 1,
+          "canonical_sha256": "a3ea790a68549ce4e7515233e5705f00ddb39cb1b692d2f640718be1a7f18316",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "12816a50940ccdc5054f8ed7403b5e38916db50bd8b63b28aac24329e94b0679",
+          "name": "short_l2_replace"
+        },
+        {
+          "bytes": 301,
+          "callback_operands": 1,
+          "canonical_sha256": "60887d583de68389c924b35503c5f7ab761f0f0768697138cd745f5555d66638",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "e5c7223d78aa96c31f24b8e0f742bba224bb75b3401bcf757a99af9f349c1631",
+          "name": "short_l3_observe"
+        },
+        {
+          "bytes": 298,
+          "callback_operands": 1,
+          "canonical_sha256": "b30d43efa7b317b08c79bdf991831a6420e80baa79b6930df2261a2a5285329d",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "b72a0bdeecf6f0ff5d7e592f736b15e8785f0705fa94a8bd3adff21ed1a01c85",
+          "name": "short_l3_replace"
+        },
+        {
+          "bytes": 302,
+          "callback_operands": 1,
+          "canonical_sha256": "4a459e741d9cbd91aa82e9bece4c0277ae083f5f8a30f0ed1b032b6d741878c6",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "316b95383b8bae4700dc3f7cc0d3b00e9a0da700447ce7efe505b63ffa25a6ae",
+          "name": "short_l4_observe"
+        },
+        {
+          "bytes": 298,
+          "callback_operands": 1,
+          "canonical_sha256": "d547c71cf134947340de3ba39237f51874e99cc0a98ec579e50a25792eb65851",
+          "changed_raw_bytes": 6,
+          "metadata_sha256": "e1013462df77a73614eccf330f8d663f0ff22e32bedee09eca86064959b2f604",
+          "name": "short_l4_replace"
+        }
+      ]
+    },
+    "generated_code_executed": false,
+    "helper_receipts": 22,
+    "inventories": [
+      {
+        "authenticated_operands": 33,
+        "callbacks": 33,
+        "capture_files_per_side": 114,
+        "controls": 0,
+        "dispatchers": 0,
+        "fixtures": 28,
+        "frame_metadata_refusals": null,
+        "frame_metadata_successes": null,
+        "images": 28,
+        "independent_refusals": 0,
+        "inventory": "historical",
+        "planning_refusals": 0
+      },
+      {
+        "authenticated_operands": 138,
+        "callbacks": 30,
+        "capture_files_per_side": 400,
+        "controls": 54,
+        "dispatchers": 54,
+        "fixtures": 58,
+        "frame_metadata_refusals": null,
+        "frame_metadata_successes": null,
+        "images": 56,
+        "independent_refusals": 0,
+        "inventory": "extended",
+        "planning_refusals": 10
+      },
+      {
+        "authenticated_operands": 23,
+        "callbacks": 17,
+        "capture_files_per_side": 219,
+        "controls": 3,
+        "dispatchers": 3,
+        "fixtures": 21,
+        "frame_metadata_refusals": 5,
+        "frame_metadata_successes": 12,
+        "images": 34,
+        "independent_refusals": 2,
+        "inventory": "current",
+        "planning_refusals": 0
+      }
+    ],
+    "stages": 22
+  },
+  "parity_complete_sha256": "b0c1bf81a141d4da053541f62e045f850b7cc059aba93f12c8d723d7279019cc",
+  "parity_revision": "fc830799595a6f0d4bd5e699cff0b9b1f9cf0e36",
+  "parity_source_sha256": "7fccf4ffecaa8856e9cea88369b0177df4f945a2e5e7e2acd3e346b954b21bec",
+  "prior_failures": "Not relabelled by this success-only collector; publish prior stopped/failed attempts separately",
+  "same_revision": true,
+  "schema": 1,
+  "timing_scope": "Operational elapsed durations, not benchmark results; nested rows overlap parent durations"
+}

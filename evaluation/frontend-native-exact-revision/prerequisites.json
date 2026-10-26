@@ -1,0 +1,76 @@
+{
+  "artifact_admission": "external actual source/Cargo/depfile/ELF/DSO/runtime review before native modes",
+  "call_witnesses": 36,
+  "children": 15,
+  "existing_source_dependencies": {
+    "evaluation/frontend-native-gate-clock/expected/NATIVE-CAPTURE-CONTRACT.json": {
+      "bytes": 5681,
+      "mode": "100644",
+      "sha256": "cb5a096b8d751ed252f29c1b1424afc9fd644b243f6271c8e43301ce8e56712c"
+    },
+    "evaluation/frontend-native-gate-clock/expected/expected-native-files.json": {
+      "bytes": 53765,
+      "mode": "100644",
+      "sha256": "12e9ad3ea0c100347e8c4678d7cd8f35fbc5a101c71b2df833ae378145fd7ed5"
+    },
+    "evaluation/frontend-native-gate-clock/requests/subject-assemble.json": {
+      "bytes": 585,
+      "mode": "100644",
+      "sha256": "95fd64dcdf8b3be35e42ee168cf23ea3571ce4c50a7893aeb142d51af0c32dc3"
+    },
+    "evaluation/frontend-native-gate-clock/requests/subject-link.json": {
+      "bytes": 550,
+      "mode": "100644",
+      "sha256": "44368a4ee25019341d8bbc2b30b1b5f4233e91da52965b03ca16e67f3cf25cf4"
+    },
+    "tools/rapid-profiler/build.rs": {
+      "bytes": 9378,
+      "mode": "100644",
+      "sha256": "9d470e9ad06e90f3dab20af27d5bf85ccf51940c3eb2931b3f709d07a202647d"
+    },
+    "tools/rapid-profiler/native-interval/subject.S": {
+      "bytes": 1043,
+      "mode": "100644",
+      "sha256": "8f59981d833b435db5ff5d7a3300a2c10aebb2b78eb9db4be946cb61fa782d20"
+    },
+    "tools/unwind-oracle/bounded_command.py": {
+      "bytes": 7710,
+      "mode": "100644",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    }
+  },
+  "fresh_subject_template_roles": {
+    "evaluation/frontend-native-gate-clock/requests/subject-assemble.json": [
+      "${CC}",
+      "${RAW}",
+      "${WORKSPACE}"
+    ],
+    "evaluation/frontend-native-gate-clock/requests/subject-link.json": [
+      "${CC}",
+      "${RAW}",
+      "${WORKSPACE}"
+    ]
+  },
+  "full_state_comparisons": 192,
+  "new_results": null,
+  "phase_file_counts": {
+    "native-budget": 620,
+    "native-generation": 422,
+    "native-refusals": 13,
+    "native-straight": 213
+  },
+  "schema": 1,
+  "source_revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+  "subject": {
+    "bytes": 13712,
+    "fresh_producer_limits": {
+      "cpu_seconds": 60,
+      "file_bytes": 134217728,
+      "wall_seconds": 90
+    },
+    "fresh_producer_profile": "the two unchanged existing subject requests with explicit WORKSPACE=REPO, RAW and CC coordinates",
+    "recorded_producer_scope": "retained exact fixture copy; no new subject build credit",
+    "sha256": "4d1996b63d9854260e6c4f822d8ee6d7bf09dd4ad61878e8ac721c3bfb6d2ff2"
+  },
+  "total_capture_files": 1268
+}

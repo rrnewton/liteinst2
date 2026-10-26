@@ -1,0 +1,72 @@
+{
+  "accepted": 4,
+  "actual_results": null,
+  "cases": [
+    {
+      "exact_error": null,
+      "expected": "accepted",
+      "name": "exact_source_fixture"
+    },
+    {
+      "exact_error": null,
+      "expected": "accepted",
+      "name": "five_whole_requests_and_outer_inverse"
+    },
+    {
+      "exact_error": "source missing",
+      "expected": "expected_refusal",
+      "name": "missing_source"
+    },
+    {
+      "exact_error": "source digest",
+      "expected": "expected_refusal",
+      "name": "wrong_source"
+    },
+    {
+      "exact_error": "raw already exists",
+      "expected": "expected_refusal",
+      "name": "existing_output_owner"
+    },
+    {
+      "exact_error": "raw outside ignored",
+      "expected": "expected_refusal",
+      "name": "outside_ignored"
+    },
+    {
+      "exact_error": "raw coordinate",
+      "expected": "expected_refusal",
+      "name": "symlink_parent"
+    },
+    {
+      "exact_error": "raw coordinate",
+      "expected": "expected_refusal",
+      "name": "relative_coordinate"
+    },
+    {
+      "exact_error": "material sha256",
+      "expected": "expected_refusal",
+      "name": "wrong_material_digest"
+    },
+    {
+      "exact_error": null,
+      "expected": "accepted",
+      "name": "json_special_coordinate_expansion"
+    },
+    {
+      "exact_error": null,
+      "expected": "accepted",
+      "name": "literal_role_text_not_reexpanded"
+    }
+  ],
+  "expected_refusals": 7,
+  "native_credit": 0,
+  "original_inventory": {
+    "accepted": 2,
+    "expected_refusals": 7,
+    "unchanged_names_and_predicates": true
+  },
+  "schema": 1,
+  "scope": "request rendering and source/coordinate refusals only",
+  "stderr": "",
+  "stdout_sha256": "5ca47092275cd0987bf4e8e2a5a92405a32962745e048d3ae2d0265c2f4da932"
+}

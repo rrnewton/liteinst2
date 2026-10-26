@@ -1,0 +1,202 @@
+{
+  "historically_executed": 6,
+  "outer_invocations": [
+    {
+      "actual_outer_exit": 0,
+      "actual_outer_record_sha256": "6ee944e82f534ae55863f716a66d9c453d6b41ef09fa47e9a0344cbb283115f8",
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/word-sync-oracle/bounded_command.py",
+        "--request",
+        "${REQUESTS}/format.json",
+        "--receipt",
+        "${RAW}/format.receipt.json"
+      ],
+      "command_id": "format",
+      "parent_timeout_seconds": 55
+    },
+    {
+      "actual_outer_exit": 0,
+      "actual_outer_record_sha256": "3aa4b9ceddaa0b91a6f198079d0d49b13f22307bb86a4db5f1cfc04371c15659",
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/ignored/validation/bounded_command.py",
+        "--request",
+        "${REQUESTS}/library.json",
+        "--receipt",
+        "${RAW}/library.receipt.json"
+      ],
+      "command_id": "library",
+      "parent_timeout_seconds": 115
+    },
+    {
+      "actual_outer_exit": 0,
+      "actual_outer_record_sha256": "97759b40690af64a178ecad3029f30bb9fcdec99c26308203dedd4b172ee7146",
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/ignored/validation/bounded_command.py",
+        "--request",
+        "${REQUESTS}/compile.json",
+        "--receipt",
+        "${RAW}/compile.receipt.json"
+      ],
+      "command_id": "compile",
+      "parent_timeout_seconds": 115
+    },
+    {
+      "actual_outer_exit": 0,
+      "actual_outer_record_sha256": "d7c5d9c5d227dfcae41f808ed25a727ececceaa1ae7cc164a764fbfd574a611d",
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/ignored/validation/bounded_command.py",
+        "--request",
+        "${REQUESTS}/list.json",
+        "--receipt",
+        "${RAW}/list.receipt.json"
+      ],
+      "command_id": "list",
+      "parent_timeout_seconds": 55
+    },
+    {
+      "actual_outer_exit": 0,
+      "actual_outer_record_sha256": "3ae789b4169679e84010ad6dd60fc4a66810ef691872e30c02fe9fd7c9b28f68",
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/ignored/validation/bounded_command.py",
+        "--request",
+        "${REQUESTS}/models.json",
+        "--receipt",
+        "${RAW}/models.receipt.json"
+      ],
+      "command_id": "models",
+      "parent_timeout_seconds": 55
+    },
+    {
+      "actual_outer_exit": 1,
+      "actual_outer_record_sha256": "47cfa886c3e2dfecf817f83793013a1eeef90d6ef112d674b47f41924880c045",
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "100s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/ignored/validation/bounded_command.py",
+        "--request",
+        "${REQUESTS}/clippy.json",
+        "--receipt",
+        "${RAW}/clippy.receipt.json"
+      ],
+      "command_id": "clippy",
+      "parent_timeout_seconds": 115
+    }
+  ],
+  "planned_command_order": [
+    "format",
+    "library",
+    "compile",
+    "list",
+    "models",
+    "clippy",
+    "docs",
+    "msrv"
+  ],
+  "requests": [
+    {
+      "executed": true,
+      "id": "format",
+      "original_request_sha256": "b1cf8176be9919b1437eca4a1ed66f69563be7d27cd96883dc00e9ef7bc06f34",
+      "template": "requests/v2/format.template.json"
+    },
+    {
+      "executed": true,
+      "id": "library",
+      "original_request_sha256": "9b4c53377e9ac23b35a36701d7e5e46b39dc24cd602786c0e1d0e090527b108f",
+      "template": "requests/v2/library.template.json"
+    },
+    {
+      "executed": true,
+      "id": "compile",
+      "original_request_sha256": "e5ad6c7b5368f38f74218403c143c396bfe0c5c008b12a85d33322e048a8a395",
+      "template": "requests/v2/compile.template.json"
+    },
+    {
+      "executed": true,
+      "id": "list",
+      "original_request_sha256": "2397273354da703de35c1c75d8ba8ad73a38d0b29adf172184e82758b42c348b",
+      "template": "requests/v2/list.template.json"
+    },
+    {
+      "executed": true,
+      "id": "models",
+      "original_request_sha256": "317b5f7593e98dae26c5d5933dda05e0815c7175aa13d6bc3231c64bc8c5eeac",
+      "template": "requests/v2/models.template.json"
+    },
+    {
+      "executed": true,
+      "id": "clippy",
+      "original_request_sha256": "02a0560a4277dcac77009720bc077ca12a879c4208dfe8f2dc08af73cc71469d",
+      "template": "requests/v2/clippy.template.json"
+    },
+    {
+      "executed": false,
+      "id": "docs",
+      "original_request_sha256": "1c1f99095dc9e50f2600d5f00aae114397939f652bdc4b7c91ce320d42f8f8b3",
+      "template": "requests/v2/docs.template.json"
+    },
+    {
+      "executed": false,
+      "id": "msrv",
+      "original_request_sha256": "2f105fca00ac51b21e10918323c0db6531ffa05a754b62f5480f1d0ba7a78954",
+      "template": "requests/v2/msrv.template.json"
+    }
+  ],
+  "source_maps": {
+    "formatted_snapshot": {
+      "Cargo.lock": "2b9863cdd1ee433a070cd55901776d756add2e875d0d49c19ed40f60724b3a23",
+      "Cargo.toml": "35e7a224e67781c01f8114733bc4f1361ce1764ef46d6f0a61c51996f39cad16",
+      "src/frontend.rs": "f2de4c41b4de779822fe3fbb5ad734c7686d3f76576b8ca81dadabc1c65d8341",
+      "src/frontend/tests.rs": "250b312d721077589f6390ff9336fd99900bf296ddf4b5c441d39e7326414e54",
+      "src/generation.rs": "e2bb80f2402e6d295eb12022fa7cee612a9be96708a4d50d97119d975a2401c1",
+      "src/generation/owned_tests.rs": "2f34dc6fd44dae16721d24fa5c230cc557bc2fd0067c3f2360a1c0ad8cb8ef94",
+      "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+      "src/lib.rs": "68a4237d7607b45ce0d9b380087638af5cd8619d70206b96aedff1154649abcc"
+    },
+    "preformat_snapshot": {
+      "Cargo.lock": "2b9863cdd1ee433a070cd55901776d756add2e875d0d49c19ed40f60724b3a23",
+      "Cargo.toml": "35e7a224e67781c01f8114733bc4f1361ce1764ef46d6f0a61c51996f39cad16",
+      "src/frontend.rs": "4f35e36599fb9ddedd5865d240c1fa14481ea73e1290f43edec19cb1510f5f35",
+      "src/frontend/tests.rs": "d0bd0bd3f447be16993d81b7e6ee6ccf66ee714abcfa30ac94e1ead070b522a6",
+      "src/generation.rs": "8e46edc632e5da7718243890bb2842f07fde1160c1d862fa96f1de7ea0a2e806",
+      "src/generation/owned_tests.rs": "e37e008ee673b0fe3fa13f03b28f3dc0eb207da74055502b26617ea0628facf6",
+      "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+      "src/lib.rs": "c21beee46df3897e8d0f0413a3613f58ef65ea1bbfcbffe95321573c23832863"
+    }
+  },
+  "tested_revision": null
+}

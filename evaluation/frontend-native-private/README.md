@@ -1,0 +1,49 @@
+# Reproduce the private native frontend v6 snapshot
+
+This source proposal reconstructs the exact 523-file private source map and renders one unchanged bounded-helper request at a time. It does not run commands, select or approve compiler artifacts, validate results, refresh an epoch, or supervise processes. Its preparer has not been executed or qualified. The report templates contain no result rows. Historical private runs retain tested_revision=null; a later matching public commit cannot retroactively become their tested revision.
+
+The existing public TLS preparer supplied the narrow copying, hashing, token-expansion and request-only pattern. The native recipe adds the original subject build, five compiler products/profiles, 88 library models, 26 oracle calibrations, ten ownership documentation examples, Rust 1.85 MSRV, ordinary no-override build, and four bounded native modes. It preserves all 19 original request templates plus the already-required supplemental formatter and fallback profile. No general runner or supervisor is added.
+
+Provide a repository containing the unchanged public bounded helper and a base source checkout containing the 510 unchanged selected files. The 13 exact overlay files are the twelve native implementation destinations plus the historical evaluation/README.md needed only to reconstruct the private source epoch. That historical README overlay belongs only in the private workcopy; it is not permission to overwrite the active publication README. Revision 9098a3d74309fd445fd6f56a6048c1ce517bb81f is the inherited lineage base, not a complete reconstruction base. The 510 unchanged selected files were independently matched to revision a7e6a43625234fff16624c35a911b6e2e7916e7f; that matching base is not the private tested revision. A later checkout is acceptable as the base only when every selected unchanged file matches its pinned hash. Extra files in the base are not copied. The reconstructed workspace must contain exactly the 523 pinned files.
+
+Run the preparer with nonoptimized Python. MATERIAL_SHA256 is the literal hash of the published material.json; every consumed material including the script is pinned. REPO, BASE, RAW, TOOLCHAIN, MSRV_TOOLCHAIN, USER_HOME and CARGO_HOME are whole directory owners. RAW must be fresh beneath REPO/ignored; TOOLCHAIN and MSRV_TOOLCHAIN are the selected Rust 1.97.1 and 1.85.0 roots. CC is the complete selected compiler lookup path; its resolved executable, driver/specs/helpers and version evidence require independent input admission. Lookup paths need not be canonical executable owners.
+
+```sh
+python3 -B evaluation/frontend-native-private/prepare.py \
+  --materials-sha256 "$MATERIAL_SHA256" stage \
+  --repo "$REPO" --base-root "$BASE" --raw "$RAW" \
+  --toolchain "$TOOLCHAIN" --msrv-toolchain "$MSRV_TOOLCHAIN" \
+  --user-home "$USER_HOME" --cargo-home "$CARGO_HOME" --cc "$CC"
+```
+
+Record the actual prepared.json hash printed by this command as PREPARED_SHA256. The copying phase grants no launch authority. Authenticate the full current source, selected tool/runtime/registry bytes and lookup owners, actual configuration lookup operations (including denied reads), target state and exact six version records before compiler admission. The historical selected-tool set is a bounded evidence set, not a complete dynamic-loader closure. Exact before/after comparison is required per launch; any later identity replacement requires a new explicit prospective admission, never an in-place refresh.
+
+Generate only the next admitted phase:
+
+```sh
+python3 -B evaluation/frontend-native-private/prepare.py \
+  --materials-sha256 "$MATERIAL_SHA256" request \
+  --raw "$RAW" --prepared-sha256 "$PREPARED_SHA256" --phase library
+```
+
+The command creates RAW/requests/library.json and its invocation record without executing either. The invocation record contains the exact timeout/helper argv, outer environment, DEVNULL stdin, separate helper capture paths and parent backstop. A caller must preserve all of them. Use the existing public helper, never a direct unbounded native launch:
+
+```text
+/usr/bin/timeout --signal=TERM --kill-after=10s <request-wall+10>s
+  /usr/bin/python3.9 -B ${REPO}/tools/unwind-oracle/bounded_command.py
+  --request ${RAW}/requests/<phase>.json --receipt ${RAW}/<phase>/receipt.json
+```
+
+The caller also retains the original parent timeout of request-wall+25. No helper-owned output or receipt is pre-opened. This is existing per-process/owned-descendant containment, not cgroup isolation or cleanup proof after an uncatchable supervisor kill. Source preparation and request rendering should be invoked through that same helper with 20 CPU/30 wall/16 MiB and outer40/parent55 when qualifying this new preparer; no such controls have run yet.
+
+The finite order is formatting, supplemental formatting, full format check; subject assemble/link or separately authenticated retained-subject reuse; Clippy, ordinary library, library test compilation, native-bin compilation, oracle-calibration compilation; artifact admission; list88, unfiltered models88, list26, unfiltered calibrations26; docs10 with the exact ordinary-library prebind, MSRV, ordinary no-override fallback; then straight, budget, generation and refusals. Documentation precedes fallback because fallback changes build.rs environment; no hidden warming or relaxed 1 MiB doc cap is permitted. Each compiler phase's complete outputs, aliases, depfiles, fingerprints, build roots and full target delta are archived before another target writer. The fallback producer is distinct from the explicit override; it must use the same subject.S and assembler/linker argv and preserve the legacy Clang fixture behavior.
+
+Before runtime, independently select and archive the actual Cargo products as RAW/artifacts/model-tests, oracle-calibrations and native-oracle. Bind the actual ELF, interpreter/runtime owners, full source/depfile closure and exact DSO, including NATIVE_INTERVAL_DSO dependencies. The ordinary alias rlib, equal hashed rlib and matching rmeta remain the documentation prerequisite. This renderer neither fabricates those artifacts nor approves their review. The executable source module.rs, current parser controls and capture contracts govern the supported ELF semantics; the earlier rejected DT_BIND_NOW predicate is not an operative contract.
+
+The complete named expectations under expected/ are mandatory. Models retain both attributed caught panics and all 88 names; calibration output retains all 26 names (22 expected panics), including native semantic mutants. Docs require all ten exact subjects and intended diagnostics (E0599x2, E0382x2, E0616x4, E0277x2), not arbitrary compiler failures. The four native modes retain five positive cohorts, six original setup refusals, two separate permission controls, eight completion/rank rows, four paired refusals, 36 real CALL/RET pairs, 180 subject visits, 288 full snapshots, 24 installed events, 15 persistent tracees and 1,268 exact files. Terminal Completed.value is the generation-local invocation index; native pair ordinal and return value remain distinct. No alternative expected value is accepted.
+
+Each native command remains 20 CPU/30 wall/16 MiB; each persistent tracee retains its entire-cohort 15-second/20,000-step budget and original two-second cleanup/join rules. Runtime list/model commands remain 20/30/1 MiB; oracle-calibrations remains 20/30/16 MiB. Compiler, MSRV and fallback profiles stay 60/90/128 MiB; formatting stays 20/30/16. No case, assertion, state byte, permission, owner, comparator or refusal may be omitted or normalized. The copied source checks real return words and full original state; a successful command count is insufficient.
+
+Report with the existing schema-v1 five-file layout: summary.json, commands.csv, cases.csv, source-files.json and files.json. Use only actual closed helper rows in commands.csv and exact named case outcomes in cases.csv. Planned/unrun phases belong in separate summary inventories, not fictitious pass rows. Keep v4 Clippy failure, held/unexecuted source versions, v5 terminal finding, unexplained target removals and zero-helper administrative/cache stops distinct from v6 outcomes. Root-only raw maps/logs/paths stay ignored. Use hardware label AMD EPYC Zen 5 dev host with each observation's actual phase and hash; elapsed seconds are operational diagnostics, not benchmark results. No full A5, preemption clock, general foreign-caller support or complete claims 1–4 follows.
+
+Publication still needs actual complete v6 outcome review, sanitized rows and raw-reference joins, preparation-source review and bounded preparation controls, and a then-current public source join. Public exact-revision results require the new source commit and fresh unchanged workspace/focused gates. This proposal supplies none of those future outcomes.

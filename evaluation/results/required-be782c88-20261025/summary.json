@@ -1,0 +1,224 @@
+{
+  "cases": [],
+  "claims": [
+    {
+      "heading": "page-admission cross-modification-free",
+      "number": 1,
+      "status": "unqualified"
+    },
+    {
+      "heading": "sound unprivileged cpuid/rdtsc/rdrand/rdseed/rdpid firstinstruction",
+      "number": 2,
+      "status": "unqualified"
+    },
+    {
+      "heading": "in-place preemption clock",
+      "number": 3,
+      "status": "unqualified"
+    },
+    {
+      "heading": "systematic everytactic",
+      "number": 4,
+      "status": "unqualified"
+    }
+  ],
+  "claims_scope": "Workspace regression only; no complete paper claim or new native unwind/tactic qualification.",
+  "cleanup_scope": "Legacy process-group runner; no ECHILD/subreaper claim",
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 0.9168869350105524,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-fmt",
+      "receipt_sha256": "73eed4ce159cd7ed53ef92659dff594095554a10f95c73cc719d88bd0b5d26d4",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 6.028909211978316,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-clippy",
+      "receipt_sha256": "73eed4ce159cd7ed53ef92659dff594095554a10f95c73cc719d88bd0b5d26d4",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "f3e6df3a6d64fcc8b7df2a272bc0e034ec1f99ed3fb30b2cc499c856028047f1",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 284.17094623390585,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-test",
+      "receipt_sha256": "73eed4ce159cd7ed53ef92659dff594095554a10f95c73cc719d88bd0b5d26d4",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "9b9d9480b467fef0e8d317bca5c7571062715cb62af13ac0ee98ba7e9bf3cd7b",
+      "wall_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 3.6714794060681015,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "RUST_TEST_THREADS": "4"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-check",
+      "receipt_sha256": "73eed4ce159cd7ed53ef92659dff594095554a10f95c73cc719d88bd0b5d26d4",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "cabe1e07d200c35866b8b2bd090b6484a9882cac160c391e4b242843271038e8",
+      "wall_seconds": 180
+    }
+  ],
+  "complete_A2": false,
+  "complete_A3": false,
+  "complete_A4": false,
+  "complete_A5": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "separate read-only observation on the same host; phase relative to these four commands is not established; the separate recorded pre-required-gate CPU description agrees",
+    "observation_sha256": "a5bda96e4bf7665faa232dd26dea6c7802a2309c4fa116863589ed35335abd89",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "independent_review_sha256": "3b69383e31ecdc0ad084f50f0149f77449f28b177604971314140e15380a236f",
+  "pre_required_context_sha256": "1b4c4a4687ba9ee7deff1cbbb57c2a4778aed940a371c2d99fe30b512950df55",
+  "pre_required_cpuinfo_sha256": "0b29675825a96bd66f0b3659d741fafd0c40c4bfe7c3d630c06fa267da09cf6e",
+  "preemption_clock_claim": false,
+  "private_capture_manifest_sha256": "0693f94357b3aca3a5514a9c7b44aacd8a222d7b45905917baecfbd0a2da2f53",
+  "reproduction": {
+    "argv": [
+      "${PYTHON}",
+      "-B",
+      "${REPO}/evaluation/required-gates.py",
+      "--repo",
+      "${REPO}",
+      "--output",
+      "${RAW_PARENT}/required-be782c88-v1"
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${RUST_TOOLCHAIN}/bin/rustdoc"
+    },
+    "parent_timeout_seconds": 1000,
+    "runtime_tool_versions_inferred": false
+  },
+  "reproduction_binding_note": "Each placeholder is a distinct literal coordinate binding. RAW_PARENT is the original output parent role; create a fresh corresponding ignored directory for a new run. The entire recorded outer environment is retained.",
+  "reproduction_script": "evaluation/required-gates.py",
+  "reproduction_script_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+  "required_review_sha256": "d90c57bbf481740a078b1561752e90c2963ddc129de21140197762b7585b0a4e",
+  "run_id": "required-be782c88-20261025",
+  "schema_version": 1,
+  "scope": "Required workspace regression after integrating the generated-unwind consumer and strict env-dependency binding. Six new root-library models are included. The distinct native consumer, fresh parity, MSRV and reporting records remain separate.",
+  "sources": {
+    "exact_revision": {
+      "base_revision": "c537acdfa72396541efec57720a5d4573cc1a244",
+      "clean_tracked": true,
+      "file_count": 290,
+      "git_tree": "22540c75c4a6b3d5d186b28722283bfbd290ab0b",
+      "kind": "git_commit",
+      "source_tree_sha256": "30e253d873c954e6d42ad664612b106c428327dfbc4403db2928f8db9f242a1d",
+      "tested_revision": "be782c88f9f30581d67aa43aa20aa0a49062cd69",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "status": "pass",
+  "suite": "required-workspace-gates",
+  "tested_revision": "be782c88f9f30581d67aa43aa20aa0a49062cd69",
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tool_selection_note": "The unchanged required runner invokes cargo through PATH and did not record per-command executable hashes or version text. The recorded selection paths do not supply historical executable identity.",
+  "tools": [],
+  "workspace": {
+    "added_generated_unwind_models": 6,
+    "all_old_outer_cases_preserved": true,
+    "failed": 0,
+    "ignored": 4,
+    "nested_guard_passes_not_added": 5,
+    "outer_groups": 44,
+    "passed": 772,
+    "preexisting_ignores": [
+      "rapid::tests::live::benchmark_single_byte_toggle_latency",
+      "live_probe_stress_matrix",
+      "patch_latency::patch_activation_latency_benchmark",
+      "probe_overhead_benchmark"
+    ]
+  }
+}

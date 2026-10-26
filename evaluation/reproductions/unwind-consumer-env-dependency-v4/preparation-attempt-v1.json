@@ -1,0 +1,28 @@
+{
+  "accepted_request_usable": false,
+  "calibrator_started": false,
+  "cause": "Generated request/receipt paths outside the minimal repository ignored root; unchanged helper rejected before reading request or launching a command.",
+  "independent_failure_review_sha256": "c5611977f369dc4527e100f7605bbde3cbc97693200d3b7ad232afac4726abb7",
+  "new_4_32_controls_executed": 0,
+  "outer_timeout_bounds": {
+    "finite_parent_wait_seconds": 55,
+    "kill_after_seconds": 10,
+    "outer_timeout_seconds": 40
+  },
+  "preparation_acceptances": 1,
+  "preparation_refusals": 3,
+  "private_failed_record_sha256": "fe04398a4787a1152bb7004f7d0dc38de6b4f1af800809fbcd97a06ca20b36a0",
+  "requested_inner_bounds": {
+    "applied": false,
+    "cpu_seconds": 20,
+    "file_bytes": 16777216,
+    "wall_seconds": 30
+  },
+  "runtime_ECHILD_proof": null,
+  "runtime_helper_receipt_created": false,
+  "schema_version": 1,
+  "scope": "A separate public-materializer attempt; original historical 4/32 control result and original failed build data remain unchanged.",
+  "source_manifest_sha256": "ebd6dcc21f02e54ee13e1b1ddf28bbc2c4ad5a0e92a70e4150a31c8f38fc0dfc",
+  "status": "FAILED_PUBLIC_REPRODUCTION_HELPER_OUTPUT_BOUNDARY",
+  "subsequent_helper_outer_exit": 1
+}

@@ -1,0 +1,142 @@
+[
+  {
+    "actual_receipt_sha256": null,
+    "argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "100s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/requests/native-compile.json",
+      "--receipt",
+      "${RAW}/native-compile/receipt.json"
+    ],
+    "cwd": "${REPO}",
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "execution": "ROOT_ONLY_AFTER_SOURCE_AND_ACTUAL_INPUT_ADMISSION",
+    "parent_timeout_seconds": 115,
+    "phase": "native-compile",
+    "stderr": "${RAW}/native-compile/helper.stderr",
+    "stdin": "DEVNULL",
+    "stdout": "${RAW}/native-compile/helper.stdout"
+  },
+  {
+    "actual_receipt_sha256": null,
+    "argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "40s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/requests/native-straight.json",
+      "--receipt",
+      "${RAW}/native-straight/receipt.json"
+    ],
+    "cwd": "${REPO}",
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "execution": "ROOT_ONLY_AFTER_SOURCE_AND_ACTUAL_INPUT_ADMISSION",
+    "parent_timeout_seconds": 55,
+    "phase": "native-straight",
+    "stderr": "${RAW}/native-straight/helper.stderr",
+    "stdin": "DEVNULL",
+    "stdout": "${RAW}/native-straight/helper.stdout"
+  },
+  {
+    "actual_receipt_sha256": null,
+    "argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "40s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/requests/native-budget.json",
+      "--receipt",
+      "${RAW}/native-budget/receipt.json"
+    ],
+    "cwd": "${REPO}",
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "execution": "ROOT_ONLY_AFTER_SOURCE_AND_ACTUAL_INPUT_ADMISSION",
+    "parent_timeout_seconds": 55,
+    "phase": "native-budget",
+    "stderr": "${RAW}/native-budget/helper.stderr",
+    "stdin": "DEVNULL",
+    "stdout": "${RAW}/native-budget/helper.stdout"
+  },
+  {
+    "actual_receipt_sha256": null,
+    "argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "40s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/requests/native-generation.json",
+      "--receipt",
+      "${RAW}/native-generation/receipt.json"
+    ],
+    "cwd": "${REPO}",
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "execution": "ROOT_ONLY_AFTER_SOURCE_AND_ACTUAL_INPUT_ADMISSION",
+    "parent_timeout_seconds": 55,
+    "phase": "native-generation",
+    "stderr": "${RAW}/native-generation/helper.stderr",
+    "stdin": "DEVNULL",
+    "stdout": "${RAW}/native-generation/helper.stdout"
+  },
+  {
+    "actual_receipt_sha256": null,
+    "argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "40s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/requests/native-refusals.json",
+      "--receipt",
+      "${RAW}/native-refusals/receipt.json"
+    ],
+    "cwd": "${REPO}",
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "execution": "ROOT_ONLY_AFTER_SOURCE_AND_ACTUAL_INPUT_ADMISSION",
+    "parent_timeout_seconds": 55,
+    "phase": "native-refusals",
+    "stderr": "${RAW}/native-refusals/helper.stderr",
+    "stdin": "DEVNULL",
+    "stdout": "${RAW}/native-refusals/helper.stdout"
+  }
+]

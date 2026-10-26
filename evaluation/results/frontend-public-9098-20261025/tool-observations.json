@@ -1,0 +1,180 @@
+{
+  "roles": [
+    {
+      "path": "${RUST_TOOLCHAIN}/bin/cargo",
+      "resolved_path": "${RUST_TOOLCHAIN}/bin/cargo",
+      "role": "cargo",
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+      "version": "1.97.1",
+      "version_basis": "Separately captured exact executable version observation; unchanged executable identity admitted in both focused epochs.",
+      "version_observation_stdout_sha256": "d0c168c9509371d329569450e6bb43e1abb2be4f91c1c04849d863757596a7e2"
+    },
+    {
+      "path": "${RUST_TOOLCHAIN}/bin/cargo-clippy",
+      "resolved_path": "${RUST_TOOLCHAIN}/bin/cargo-clippy",
+      "role": "cargo_clippy",
+      "sha256": "a0a3808dddb32f525601e608740ee7c1c5df86db4a7183ea945449f60d29509d",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "${RUST_TOOLCHAIN}/bin/cargo-fmt",
+      "resolved_path": "${RUST_TOOLCHAIN}/bin/cargo-fmt",
+      "role": "cargo_fmt",
+      "sha256": "07ce638a5be73e97defbf0864f32a64ed40a0b7682b85625e68790f9e68d19e9",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "/usr/bin/cc",
+      "resolved_path": "/usr/bin/gcc",
+      "role": "cc",
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "/usr/bin/gcc",
+      "resolved_path": "/usr/bin/gcc",
+      "role": "cc_resolved",
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "/usr/bin/clang",
+      "resolved_path": "/usr/bin/clang-22",
+      "role": "clang",
+      "sha256": "953ea1ca38bec62e4b2b9c916db4d76d5a48edb91e0cce0d5c4d7efe62e34b97",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "/usr/bin/clang-22",
+      "resolved_path": "/usr/bin/clang-22",
+      "role": "clang_resolved",
+      "sha256": "953ea1ca38bec62e4b2b9c916db4d76d5a48edb91e0cce0d5c4d7efe62e34b97",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "${RUST_TOOLCHAIN}/bin/clippy-driver",
+      "resolved_path": "${RUST_TOOLCHAIN}/bin/clippy-driver",
+      "role": "clippy_driver",
+      "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "/usr/bin/python3.9",
+      "resolved_path": "/usr/bin/python3.9",
+      "role": "helper_python",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "resolved_path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "role": "helper_source",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "/usr/bin/ld",
+      "resolved_path": "/usr/bin/ld.bfd",
+      "role": "ld",
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "/usr/bin/ld.bfd",
+      "resolved_path": "/usr/bin/ld.bfd",
+      "role": "ld_resolved",
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "${MSRV_TOOLCHAIN}/bin/cargo",
+      "resolved_path": "${MSRV_TOOLCHAIN}/bin/cargo",
+      "role": "msrv_cargo",
+      "sha256": "1815642e0eaa0cf4ea86c3ba4299c21c4f2d68ae4a427881ea1f33070b2aae9b",
+      "version": "1.85.0",
+      "version_basis": "Separately captured exact executable version observation; unchanged executable identity admitted in both focused epochs.",
+      "version_observation_stdout_sha256": "83cf4a2ef693f33c0c34aca8e2579e4178f707b0da4e7c723848e27ba298f006"
+    },
+    {
+      "path": "${MSRV_TOOLCHAIN}/bin/rustc",
+      "resolved_path": "${MSRV_TOOLCHAIN}/bin/rustc",
+      "role": "msrv_rustc",
+      "sha256": "07d5a76ba859dc045883efd538d96c7b86cf10166f4e834afbb5981012b461c3",
+      "version": "1.85.0",
+      "version_basis": "Separately captured exact executable version observation; unchanged executable identity admitted in both focused epochs.",
+      "version_observation_stdout_sha256": "be9e105cd61ce407c0e06d80a25240f93cc48de72942117e1886f09aa08f9a2a"
+    },
+    {
+      "path": "${MSRV_TOOLCHAIN}/bin/rustdoc",
+      "resolved_path": "${MSRV_TOOLCHAIN}/bin/rustdoc",
+      "role": "msrv_rustdoc",
+      "sha256": "1cd0edbcce02fd5c2a9db63541cb086f4f89f85911cf705317a12241ef15653f",
+      "version": "1.85.0",
+      "version_basis": "Separately captured exact executable version observation; unchanged executable identity admitted in both focused epochs.",
+      "version_observation_stdout_sha256": "0a7dac044f2d2a3ca047ba5c1b646ac6d2092aedfb8d0e606fc10d836d545e58"
+    },
+    {
+      "path": "${RUST_TOOLCHAIN}/bin/rustc",
+      "resolved_path": "${RUST_TOOLCHAIN}/bin/rustc",
+      "role": "rustc",
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+      "version": "1.97.1",
+      "version_basis": "Separately captured exact executable version observation; unchanged executable identity admitted in both focused epochs.",
+      "version_observation_stdout_sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4"
+    },
+    {
+      "path": "${RUST_TOOLCHAIN}/bin/rustdoc",
+      "resolved_path": "${RUST_TOOLCHAIN}/bin/rustdoc",
+      "role": "rustdoc",
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+      "version": "1.97.1",
+      "version_basis": "Separately captured exact executable version observation; unchanged executable identity admitted in both focused epochs.",
+      "version_observation_stdout_sha256": "1ed8aa68c5b7567ffefd285c103678a8529c3148531398deee38e43b0c00d0e1"
+    },
+    {
+      "path": "${RUST_TOOLCHAIN}/bin/rustfmt",
+      "resolved_path": "${RUST_TOOLCHAIN}/bin/rustfmt",
+      "role": "rustfmt",
+      "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    },
+    {
+      "path": "/usr/bin/timeout",
+      "resolved_path": "/usr/bin/timeout",
+      "role": "timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+      "version": null,
+      "version_basis": "Whole tool identity observed; no separate version banner claimed.",
+      "version_observation_stdout_sha256": null
+    }
+  ],
+  "scope": "Selected tools/runtime and configuration files, not a complete runtime closure. Full raw lookup/owner/stat maps remain private.",
+  "selected_file_count_per_epoch": 209,
+  "v2_record_sha256": "0ed48407c4c2aa54da19671dfa8100db9f8aeb375fd3860d01d546baeec118ac",
+  "v3_record_sha256": "2ee3aeaf58f800ae7073428a6ba67f1a87856d17654fc3b24f3a1643ecd3b8b8",
+  "version_observation_report_sha256": "3b02ecd001639cbab293e7ddc78ba58ca9088508933c5c716e3e25518bef525b"
+}

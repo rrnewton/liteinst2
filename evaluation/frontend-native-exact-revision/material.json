@@ -1,0 +1,83 @@
+{
+  "control_scope": {
+    "accepted": 4,
+    "actual_results_at_creation": null,
+    "additive_coordinate_expansion_acceptances": 2,
+    "expected_refusals": 7,
+    "original_accepted": 2,
+    "original_refusals": 7
+  },
+  "coordinate_roles": {
+    "CARGO_HOME": "whole canonical Cargo home directory",
+    "MATERIALS": "separate canonical recipe owner; never substituted for REPO",
+    "RAW": "whole absent output directory below REPO/ignored",
+    "REPO": "whole canonical tested checkout directory",
+    "RUST_TOOLCHAIN": "whole canonical Rust 1.97.1 toolchain directory",
+    "USER_HOME": "whole canonical HOME directory"
+  },
+  "files": {
+    "README.md": {
+      "bytes": 9439,
+      "sha256": "ee351fd70833515d6667f943dab0bbe26d2dd06567c19b56503d32dda09a2650"
+    },
+    "control-inventory.json": {
+      "bytes": 1762,
+      "sha256": "ac18558183dd7b4046a2f5ecd05350986214b5deadddc606fe97d1457c5f18f4"
+    },
+    "controls.py": {
+      "bytes": 4547,
+      "sha256": "f3f9fb07d0c0218819936b1329713101f02df0b4437c3e02e9b826489e8df41b"
+    },
+    "expected-controls.stdout": {
+      "bytes": 416,
+      "sha256": "5ca47092275cd0987bf4e8e2a5a92405a32962745e048d3ae2d0265c2f4da932"
+    },
+    "outer.json": {
+      "bytes": 3875,
+      "sha256": "bce5b63a66fe777cddfe723e448a57ab255934f843f1781ca64b7c7d4433a8c7"
+    },
+    "prerequisites.json": {
+      "bytes": 2677,
+      "sha256": "8cea6e60db5ee57988c4ce39e357a13805b23e88e4d5b40b1fdd584956a19f85"
+    },
+    "render.py": {
+      "bytes": 7198,
+      "sha256": "7d1bdc6407bbff3417f5c1c2dbacd2e4c034cdd110b6cba6197e0c8d7e2cd16a"
+    },
+    "requests/native-budget.json": {
+      "bytes": 465,
+      "sha256": "f268054cc18fbed581813008c26106457b36a3b9f6348517fbdc6b407d6454f1"
+    },
+    "requests/native-compile.json": {
+      "bytes": 1235,
+      "sha256": "75c76c10e0aed8cd9b88fb733506fcdc3b2179c0ecf3d9596a5c25fa4946a6a8"
+    },
+    "requests/native-generation.json": {
+      "bytes": 485,
+      "sha256": "c4571ca19685fa14b75fa1dd0c58a9de34945996f4a05857ff7a7a0c9a3270cd"
+    },
+    "requests/native-refusals.json": {
+      "bytes": 475,
+      "sha256": "db76af55dccb8cde13addd119fe8b25d57621129c31860c070be2cbabf089132"
+    },
+    "requests/native-straight.json": {
+      "bytes": 475,
+      "sha256": "2585157596dd9008e8a93490a6c6c55475c62e81ca408b58cf94e18554e997b4"
+    },
+    "source-files.json": {
+      "bytes": 194057,
+      "sha256": "639186dad7c8402c0bf940b09c4f9201d071e5454c8b7ba933d642ba260efe90"
+    }
+  },
+  "phases": [
+    "native-compile",
+    "native-straight",
+    "native-budget",
+    "native-generation",
+    "native-refusals"
+  ],
+  "renderer_scope": "request-only; exact source bytes and modes, no Git HEAD observation, artifact selection or execution",
+  "schema": 1,
+  "source_count": 1008,
+  "tested_revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a"
+}

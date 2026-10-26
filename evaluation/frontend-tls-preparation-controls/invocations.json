@@ -1,0 +1,322 @@
+{
+  "generated_requests_to_execute": 0,
+  "invocations": [
+    {
+      "expected_direct_exit": 0,
+      "expected_helper_exit": 0,
+      "expected_helper_stderr": "",
+      "expected_helper_stdout": "{\"exit\": 0, \"wall_timeout\": false, \"absence_proof\": \"ECHILD\", \"descendants\": 0, \"success\": true}\n",
+      "historical_request_sha256": "bcd928f7e4da8a18d06f556e806d2970a815605fb72145a22c5a68c4353cc328",
+      "id": "01-positive-v1",
+      "order": 1,
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${CONTROL_SOURCE}/requests/01-positive-v1.json",
+          "--receipt",
+          "${CONTROL_RAW}/commands/01-positive-v1/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${CONTROL_RAW}/commands/01-positive-v1/tmp"
+        },
+        "parent_timeout_seconds": 55,
+        "stderr": "${CONTROL_RAW}/commands/01-positive-v1/helper.stderr",
+        "stdout": "${CONTROL_RAW}/commands/01-positive-v1/helper.stdout"
+      },
+      "request_destination": "${CONTROL_SOURCE}/requests/01-positive-v1.json",
+      "request_template": "requests/01-positive-v1.json",
+      "requires_positive_v2_actual_admission": false,
+      "template_sha256": "7bc911c208b0be341ce9f861b7e0507a776c4b6aa4e0a23efc5f8053deee4024"
+    },
+    {
+      "expected_direct_exit": 0,
+      "expected_helper_exit": 0,
+      "expected_helper_stderr": "",
+      "expected_helper_stdout": "{\"exit\": 0, \"wall_timeout\": false, \"absence_proof\": \"ECHILD\", \"descendants\": 0, \"success\": true}\n",
+      "historical_request_sha256": "6193da2bc1985cfe644bf1d9c9c13da719d05fd091d42f85b1339fe646dbf357",
+      "id": "02-positive-v2",
+      "order": 2,
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${CONTROL_SOURCE}/requests/02-positive-v2.json",
+          "--receipt",
+          "${CONTROL_RAW}/commands/02-positive-v2/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${CONTROL_RAW}/commands/02-positive-v2/tmp"
+        },
+        "parent_timeout_seconds": 55,
+        "stderr": "${CONTROL_RAW}/commands/02-positive-v2/helper.stderr",
+        "stdout": "${CONTROL_RAW}/commands/02-positive-v2/helper.stdout"
+      },
+      "request_destination": "${CONTROL_SOURCE}/requests/02-positive-v2.json",
+      "request_template": "requests/02-positive-v2.json",
+      "requires_positive_v2_actual_admission": false,
+      "template_sha256": "0db40aeadda4264732b8ee40e493c131f3be5d33da6119e541618c911f728cca"
+    },
+    {
+      "expected_direct_exit": 1,
+      "expected_helper_exit": 1,
+      "expected_helper_stderr": "",
+      "expected_helper_stdout": "{\"exit\": 1, \"wall_timeout\": false, \"absence_proof\": \"ECHILD\", \"descendants\": 0, \"success\": false}\n",
+      "historical_request_sha256": "6bb6609171d7fb3513cccd816723e62ff9d1574e4a3936f4f6a122f1c95a1004",
+      "id": "03-changed-base",
+      "order": 3,
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${CONTROL_SOURCE}/requests/03-changed-base.json",
+          "--receipt",
+          "${CONTROL_RAW}/commands/03-changed-base/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${CONTROL_RAW}/commands/03-changed-base/tmp"
+        },
+        "parent_timeout_seconds": 55,
+        "stderr": "${CONTROL_RAW}/commands/03-changed-base/helper.stderr",
+        "stdout": "${CONTROL_RAW}/commands/03-changed-base/helper.stdout"
+      },
+      "request_destination": "${CONTROL_SOURCE}/requests/03-changed-base.json",
+      "request_template": "requests/03-changed-base.json",
+      "requires_positive_v2_actual_admission": false,
+      "template_sha256": "c155211d4e003937e1a377ba95d6564cbcda13ab7ca58941b2177c4df5c469ee"
+    },
+    {
+      "expected_direct_exit": 1,
+      "expected_helper_exit": 1,
+      "expected_helper_stderr": "",
+      "expected_helper_stdout": "{\"exit\": 1, \"wall_timeout\": false, \"absence_proof\": \"ECHILD\", \"descendants\": 0, \"success\": false}\n",
+      "historical_request_sha256": "9a59e71fafcd40901f80dfa7fcbaa85417e1cd18f8664080391849421c9bcbc6",
+      "id": "04-changed-overlay",
+      "order": 4,
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${CONTROL_SOURCE}/requests/04-changed-overlay.json",
+          "--receipt",
+          "${CONTROL_RAW}/commands/04-changed-overlay/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${CONTROL_RAW}/commands/04-changed-overlay/tmp"
+        },
+        "parent_timeout_seconds": 55,
+        "stderr": "${CONTROL_RAW}/commands/04-changed-overlay/helper.stderr",
+        "stdout": "${CONTROL_RAW}/commands/04-changed-overlay/helper.stdout"
+      },
+      "request_destination": "${CONTROL_SOURCE}/requests/04-changed-overlay.json",
+      "request_template": "requests/04-changed-overlay.json",
+      "requires_positive_v2_actual_admission": false,
+      "template_sha256": "472eaf20084868c19e7038bce9c381e9839dbacb9238ff7bde103c5d84eac057"
+    },
+    {
+      "expected_direct_exit": 1,
+      "expected_helper_exit": 1,
+      "expected_helper_stderr": "",
+      "expected_helper_stdout": "{\"exit\": 1, \"wall_timeout\": false, \"absence_proof\": \"ECHILD\", \"descendants\": 0, \"success\": false}\n",
+      "historical_request_sha256": "e97c06191944c4eb817db7f7ca3d8cc0428bda47c5c09a95d0dc20dc9db367c7",
+      "id": "05-wrong-tool-byte",
+      "order": 5,
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${CONTROL_SOURCE}/requests/05-wrong-tool-byte.json",
+          "--receipt",
+          "${CONTROL_RAW}/commands/05-wrong-tool-byte/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${CONTROL_RAW}/commands/05-wrong-tool-byte/tmp"
+        },
+        "parent_timeout_seconds": 55,
+        "stderr": "${CONTROL_RAW}/commands/05-wrong-tool-byte/helper.stderr",
+        "stdout": "${CONTROL_RAW}/commands/05-wrong-tool-byte/helper.stdout"
+      },
+      "request_destination": "${CONTROL_SOURCE}/requests/05-wrong-tool-byte.json",
+      "request_template": "requests/05-wrong-tool-byte.json",
+      "requires_positive_v2_actual_admission": false,
+      "template_sha256": "d65f21b3dda2334a096192fdafcc8bb4fed31ea92b1fc5c4ba28cb2b09f8b701"
+    },
+    {
+      "expected_direct_exit": 1,
+      "expected_helper_exit": 1,
+      "expected_helper_stderr": "",
+      "expected_helper_stdout": "{\"exit\": 1, \"wall_timeout\": false, \"absence_proof\": \"ECHILD\", \"descendants\": 0, \"success\": false}\n",
+      "historical_request_sha256": "00efe14630739374600a58a36e38d0fc6c2c175d0dea49561243646473a5fe2e",
+      "id": "06-occupied-output",
+      "order": 6,
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${CONTROL_SOURCE}/requests/06-occupied-output.json",
+          "--receipt",
+          "${CONTROL_RAW}/commands/06-occupied-output/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${CONTROL_RAW}/commands/06-occupied-output/tmp"
+        },
+        "parent_timeout_seconds": 55,
+        "stderr": "${CONTROL_RAW}/commands/06-occupied-output/helper.stderr",
+        "stdout": "${CONTROL_RAW}/commands/06-occupied-output/helper.stdout"
+      },
+      "request_destination": "${CONTROL_SOURCE}/requests/06-occupied-output.json",
+      "request_template": "requests/06-occupied-output.json",
+      "requires_positive_v2_actual_admission": false,
+      "template_sha256": "f8bf780fb53cb73acf51bb5e88cac1112f89c48a118d002cfd7bd47c835e8758"
+    },
+    {
+      "expected_direct_exit": 1,
+      "expected_helper_exit": 1,
+      "expected_helper_stderr": "",
+      "expected_helper_stdout": "{\"exit\": 1, \"wall_timeout\": false, \"absence_proof\": \"ECHILD\", \"descendants\": 0, \"success\": false}\n",
+      "historical_request_sha256": "e08b0a4134f5c578055363ecbd160fb03edca5625fdc4bf92b87d7f4af68e17e",
+      "id": "07-optimized-python",
+      "order": 7,
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${CONTROL_SOURCE}/requests/07-optimized-python.json",
+          "--receipt",
+          "${CONTROL_RAW}/commands/07-optimized-python/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${CONTROL_RAW}/commands/07-optimized-python/tmp"
+        },
+        "parent_timeout_seconds": 55,
+        "stderr": "${CONTROL_RAW}/commands/07-optimized-python/helper.stderr",
+        "stdout": "${CONTROL_RAW}/commands/07-optimized-python/helper.stdout"
+      },
+      "request_destination": "${CONTROL_SOURCE}/requests/07-optimized-python.json",
+      "request_template": "requests/07-optimized-python.json",
+      "requires_positive_v2_actual_admission": false,
+      "template_sha256": "8fcd56d5292ab9064c257d5fec1eff5a421ae860dc1d86514c5f3afd59977a4d"
+    },
+    {
+      "expected_direct_exit": 1,
+      "expected_helper_exit": 1,
+      "expected_helper_stderr": "",
+      "expected_helper_stdout": "{\"exit\": 1, \"wall_timeout\": false, \"absence_proof\": \"ECHILD\", \"descendants\": 0, \"success\": false}\n",
+      "historical_request_sha256": "9ee857f7a5c631e947c2c4e2e83e9c278c68c2ab58f62011be4037d4ce9b494e",
+      "id": "08-remaining-without-review",
+      "order": 8,
+      "outer": {
+        "argv": [
+          "${TIMEOUT}",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "${PYTHON}",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${CONTROL_RAW}/stage2/08-remaining-without-review.json",
+          "--receipt",
+          "${CONTROL_RAW}/commands/08-remaining-without-review/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${CONTROL_RAW}/commands/08-remaining-without-review/tmp"
+        },
+        "parent_timeout_seconds": 55,
+        "stderr": "${CONTROL_RAW}/commands/08-remaining-without-review/helper.stderr",
+        "stdout": "${CONTROL_RAW}/commands/08-remaining-without-review/helper.stdout"
+      },
+      "request_destination": "${CONTROL_RAW}/stage2/08-remaining-without-review.json",
+      "request_template": "requests/08-remaining-without-review.template.json",
+      "requires_positive_v2_actual_admission": true,
+      "template_sha256": "b249cb7c0a5752c1a5fef89ac874a12a187fb913a2994aee01e24a3b42f5e057"
+    }
+  ],
+  "order": [
+    "01-positive-v1",
+    "02-positive-v2",
+    "03-changed-base",
+    "04-changed-overlay",
+    "05-wrong-tool-byte",
+    "06-occupied-output",
+    "07-optimized-python",
+    "08-remaining-without-review"
+  ],
+  "retries": false,
+  "schema_version": 1,
+  "scope": "Only existing prepare.py is invoked. An expected refusal retains direct/helper exit 1; each parent caller checks that exact expected status."
+}

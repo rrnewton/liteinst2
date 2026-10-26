@@ -17,6 +17,7 @@ include = [
     "/INTERFACES.md",
     "/A1-QUIESCENT.md",
     "/A2-COMPOSITION.md",
+    "/A3-OFFLINE.md",
     "/A4-SYNCHRONIZED.md",
     "/COALESCED-CONTROLS.md",
     "/SEARCH-EVIDENCE.md",
@@ -34,6 +35,14 @@ include = [
     "/tools/word-sync-oracle/inventory.json",
     "/tools/word-sync-oracle/*.rs",
     "/tools/word-sync-oracle/runtime/*.py",
+    "/tools/unwind-oracle/README.md",
+    "/tools/unwind-oracle/*.py",
+    "/tools/unwind-oracle/*.json",
+    "/tools/unwind-oracle/*.rs",
+    "/tools/unwind-oracle/*.cpp",
+    "/tools/unwind-oracle/*.S",
+    "/tools/unwind-oracle/*.h",
+    "/tools/unwind-oracle/runtime/*.py",
 ]
 
 [[example]]
@@ -45,7 +54,7 @@ test = false
 # Make the tools/ crates part of the workspace so, e.g.,
 # `cargo run --release -p rapid-profiler` works from the repository root.
 [workspace]
-members = ["tools/rapid-profiler", "tools/exception-oracle", "crates/liteinst-admission", "crates/liteinst-launch"]
+members = ["tools/rapid-profiler", "tools/exception-oracle", "crates/liteinst-admission", "crates/liteinst-launch", "crates/liteinst-artifact", "tools/elf-rewrite"]
 
 [dependencies]
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "block_encoder", "code_asm", "instr_info"] }
@@ -100,6 +109,14 @@ doc = false
 [[bin]]
 name = "sync-core-capability-driver"
 path = "tests/support/sync_core_driver.rs"
+test = false
+bench = false
+doc = false
+
+# Normal-kernel-exec offline-image oracle; run explicitly after fixture emission.
+[[bin]]
+name = "elf-exec-oracle"
+path = "tests/support/elf_exec_driver.rs"
 test = false
 bench = false
 doc = false

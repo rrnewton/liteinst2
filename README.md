@@ -70,6 +70,10 @@ Each module owns one correctness boundary:
   locks and quiescent transactions spanning several generated images. The
   [composition contract](A2-COMPOSITION.md) describes staging, retirement,
   aggregate allocation limits and the remaining tactic-engine work.
+- `emission`: explicit target descriptions and symbolic same-module hooks for
+  offline plans. The [offline tool](A3-OFFLINE.md) produces ELF candidates,
+  metadata and sparse overlays through the same tactic engine; it records
+  outstanding runtime requirements separately from structural success.
 - `cache_line`: overflow-safe patch-span classification.
 - `scanner`: fail-closed x86-64 decoding and cache-line crossing discovery.
 - `patcher`: multi-instruction jump planning and all-front-byte WordPatch++ publication.

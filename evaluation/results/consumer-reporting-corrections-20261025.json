@@ -1,0 +1,203 @@
+{
+  "claims": [
+    {
+      "number": 1,
+      "status": "unqualified_by_reporting"
+    },
+    {
+      "number": 2,
+      "status": "unqualified_by_reporting"
+    },
+    {
+      "number": 3,
+      "status": "unqualified_by_reporting"
+    },
+    {
+      "number": 4,
+      "status": "unqualified_by_reporting"
+    }
+  ],
+  "commands": [
+    {
+      "actual_request_sha256": "eb14a753f93d0854db1f7b88eaf72476e5a44870aafa176b39aac802bb0c936f",
+      "cleanup": "ECHILD_zero_descendants",
+      "elapsed_seconds": 0.20799125684425235,
+      "exit": 0,
+      "finite_parent_timeout_seconds": 55,
+      "id": "export-required-be782c88-20261025",
+      "inputs_sha256": "e98ccdb0d79c668d8f92ce6beb460465495ec4356cbb5d5905c3b7b54518a887",
+      "outer_argv_template": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10",
+        "40",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${COMMAND_RAW}/request.json",
+        "--receipt",
+        "${COMMAND_RAW}/receipt.json"
+      ],
+      "outer_kill_after_seconds": 10,
+      "outer_timeout_seconds": 40,
+      "receipt_sha256": "54ff6a44fc00f24548991a130362a6325a946aa9839e9f749fb44cd7a0a7ecb2",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/evaluation/export-word.py",
+          "--inputs",
+          "${INPUTS_DIR}/export-inputs.json",
+          "--inputs-sha256",
+          "e98ccdb0d79c668d8f92ce6beb460465495ec4356cbb5d5905c3b7b54518a887",
+          "--output",
+          "${FRESH_OUTPUT}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${COMMAND_RAW}/stderr",
+        "stdout": "${COMMAND_RAW}/stdout",
+        "wall_seconds": 30
+      },
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "actual_request_sha256": "072cda4743eeb7431723e267cb81c8c1269432bbb72d4338bdad0527d4da9ac0",
+      "cleanup": "ECHILD_zero_descendants",
+      "elapsed_seconds": 0.20544595690444112,
+      "exit": 0,
+      "finite_parent_timeout_seconds": 55,
+      "id": "export-required-d6b56273-20261025",
+      "inputs_sha256": "504b6a9eb54cb2a79183e086ff29d703437555b7ce956eac7d584e9913917626",
+      "outer_argv_template": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10",
+        "40",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${COMMAND_RAW}/request.json",
+        "--receipt",
+        "${COMMAND_RAW}/receipt.json"
+      ],
+      "outer_kill_after_seconds": 10,
+      "outer_timeout_seconds": 40,
+      "receipt_sha256": "e477c1fcda53b737721903de7f46bf2e914d3aa07be7d7f366726ff4c75ed5d5",
+      "request_template": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/evaluation/export-word.py",
+          "--inputs",
+          "${INPUTS_DIR}/export-inputs.json",
+          "--inputs-sha256",
+          "504b6a9eb54cb2a79183e086ff29d703437555b7ce956eac7d584e9913917626",
+          "--output",
+          "${FRESH_OUTPUT}"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${COMMAND_RAW}/stderr",
+        "stdout": "${COMMAND_RAW}/stdout",
+        "wall_seconds": 30
+      },
+      "status": "pass",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "correction": {
+    "changed_fields": [
+      "reproduction",
+      "reproduction_binding_note"
+    ],
+    "historical_gate_results_unchanged": true,
+    "historical_prior_export_receipt_unchanged": true,
+    "prior_record": "consumer-reporting-steps-20261025.json",
+    "prior_required_summary_sha256": "66cc3d5c0e73fdba2c1ac86b51acb08eef841a268f934cb7a9c5809f899023d3",
+    "reason": "One placeholder could not represent both Python and Rust toolchain locations; the complete recorded environment is now retained."
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "continuous_attestation": false,
+    "cpuinfo_sha256": "00696ead7b8e7514dbbe9242d734efb1bbbbeded26d3ac1af847a59be32fcf56",
+    "family": 26,
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "model": 17,
+    "observation_phase": "recorded CPU/kernel context before the required runner launch; not continuous attestation",
+    "observation_sha256": "b17d54c5732229bcf359ef1fbeb87fa028e046d05684112b9749a2320fe2f6a4",
+    "observed_at_utc": "2026-10-25T20:32:11.670800+00:00",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "hardware_scope": "Separate observation before the merged workspace gates; no new hardware capture at export time.",
+  "native_commands": 0,
+  "output_inventory": {
+    "required-be782c88-20261025": {
+      "cases.csv": "5527894905b2fc719672562b928cd6e93a921a1c8b2a7d6b9e11d82e9328fcd1",
+      "commands.csv": "70fb46dd66039bb6db31f7d41f054513ec7c03f3aa1d9f7220afb189533554ac",
+      "files.json": "24684c466b6af4c594f2e15030b479d50060929364004f976302a1a87ad9a575",
+      "source-files.json": "9527a91d5d69fabe7a315e42f0645ac376f65060cbb50340b67f10f56ee21f55",
+      "summary.json": "1dd9c61d39c7624178773d381dbc4c16c03a77a7528a9d890e50660498d23bf2"
+    },
+    "required-d6b56273-20261025": {
+      "cases.csv": "5527894905b2fc719672562b928cd6e93a921a1c8b2a7d6b9e11d82e9328fcd1",
+      "commands.csv": "45243f7533ccfb0746b505308766aa0fd5bc4e864b58754cf7931b943abc6d23",
+      "files.json": "cf16737f6e7978a703c135134d9914115395eced891a3b6761dc90cf30ae23a4",
+      "source-files.json": "b98fed3ff4413f01be951eb9af21b4dd344325349601c0321b3a6f02f80dedb8",
+      "summary.json": "ab316f81c8201da03eed2017700dee3e2afc450802c920a2058f1e85a1aef344"
+    }
+  },
+  "reproduction": "Use evaluation/consumer-reporting.md and exact request templates above. Bind fresh input inventories and their actual digest; all output coordinates must be beneath the source checkout ignored directory. The reporting source epoch is d6b56273; historical gate results retain their own source epochs.",
+  "run_id": "consumer-reporting-corrections-20261025",
+  "schema_version": 1,
+  "source_map": "required-d6b56273-20261025/source-files.json",
+  "source_map_sha256": "b98fed3ff4413f01be951eb9af21b4dd344325349601c0321b3a6f02f80dedb8",
+  "status": "pass",
+  "suite": "required_report_metadata_correction_and_merge_export",
+  "tested_revision": "d6b56273c0d43b7d9311a5d57cb6dd0be6c51041",
+  "timing_class": "operational_diagnostics_not_performance_benchmarks",
+  "tool_scope": "Selected four executable/source identities checked before and after, not a complete runtime closure.",
+  "tools": [
+    {
+      "role": "python",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "version": null
+    },
+    {
+      "role": "timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+      "version": null
+    },
+    {
+      "role": "helper",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "version": null
+    },
+    {
+      "role": "exporter",
+      "sha256": "65c9e02a4496b72eb3bfdaecd618cd3d4b3f114b8d371725e5b764661bb983a2",
+      "version": null
+    }
+  ]
+}

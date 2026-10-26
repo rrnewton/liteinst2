@@ -1,0 +1,61 @@
+group_id,scope,header,status,passed,failed,ignored,measured,filtered,seconds,declared_tests,summary_line
+outer-001,outer,     Running unittests src/lib.rs (target/debug/deps/liteinst_admission-4f623a7cdb0114a8),ok,1,0,0,0,0,0.0,1,8
+outer-002,outer,     Running tests/core_bridge.rs (target/debug/deps/core_bridge-a0b2483657279c56),ok,3,0,0,0,0,0.0,3,17
+outer-003,outer,     Running tests/model.rs (target/debug/deps/model-989771f6921469c3),ok,15,0,0,0,0,0.01,15,38
+outer-004,outer,     Running tests/oracle.rs (target/debug/deps/oracle-97d2971bbfedf167),ok,12,0,0,0,0,0.02,12,56
+outer-005,outer,     Running tests/return_obligations.rs (target/debug/deps/return_obligations-7379271f44b53805),ok,13,0,0,0,0,0.0,13,75
+outer-006,outer,     Running unittests src/lib.rs (target/debug/deps/liteinst_launch-00ee8d4ff26a6609),ok,2,0,0,0,0,0.01,2,83
+outer-007,outer,     Running tests/checkpoint.rs (target/debug/deps/checkpoint-ca6696bd73d17b1b),ok,23,0,0,0,0,0.16,23,112
+outer-008,outer,     Running tests/concurrent_control.rs (target/debug/deps/concurrent_control-49cf20d0cdb9e960),ok,3,0,0,0,0,0.13,3,121
+outer-009,outer,     Running tests/concurrent_gate.rs (target/debug/deps/concurrent_gate-0ce26f320078fe04),ok,7,0,0,0,0,0.36,7,134
+outer-010,outer,     Running tests/native_selected.rs (target/debug/deps/native_selected-e045d355c2970b09),ok,33,0,0,0,0,0.52,33,173
+outer-011,outer,     Running tests/native_syscall.rs (target/debug/deps/native_syscall-cf95f39646a5d8e7),ok,7,0,0,0,0,0.18,7,186
+outer-012,outer,     Running tests/page_gate.rs (target/debug/deps/page_gate-e3122d0313cf1b74),ok,17,0,0,0,0,0.36,17,209
+outer-013,outer,     Running tests/selected_gate.rs (target/debug/deps/selected_gate-05a3c9ffdf6c8a77),ok,13,0,0,0,0,0.24,13,228
+outer-014,outer,     Running tests/selected_semantics.rs (target/debug/deps/selected_semantics-23bf0d58c8b308e3),ok,14,0,0,0,0,0.0,14,248
+outer-015,outer,     Running unittests src/lib.rs (target/debug/deps/liteinst2-bec6d9d2028eb017),ok,189,0,1,0,0,1.7,190,458
+outer-016,outer,     Running unittests tests/support/arena_fork_fixture.rs (target/debug/deps/liteinst2_arena_fork_fixture-7d3b8d5694efc71b),ok,0,0,0,0,0,0.0,0,464
+outer-017,outer,     Running tests/a2_oracle.rs (target/debug/deps/a2_oracle-b2ccff8e3468bfd6),ok,40,0,0,0,0,5.56,40,510
+outer-018,outer,     Running tests/arena_fork.rs (target/debug/deps/arena_fork-9b9fd12c7c2ea767),ok,6,0,0,0,0,0.02,6,522
+outer-019,outer,     Running tests/boundary_signal_oracle.rs (target/debug/deps/boundary_signal_oracle-cc8fb831ca172b04),ok,27,0,0,0,0,0.92,27,555
+outer-020,outer,     Running tests/bounded_proc_stat.rs (target/debug/deps/bounded_proc_stat-9a661ffd24b63b4e),ok,7,0,0,0,0,0.0,7,568
+outer-021,outer,     Running tests/bundle_contract.rs (target/debug/deps/bundle_contract-80011e29665009e6),ok,1,0,0,0,0,0.57,1,575
+outer-022,outer,     Running tests/call_return_oracle.rs (target/debug/deps/call_return_oracle-a3703526d88fa906),ok,27,0,0,0,0,1.06,27,608
+outer-023,outer,     Running tests/concurrent_overlap.rs (target/debug/deps/concurrent_overlap-272f522968eb647a),ok,11,0,0,0,0,0.04,11,625
+outer-024,outer,     Running tests/controlled_coalescing_contract.rs (target/debug/deps/controlled_coalescing_contract-5ba9739cca56237a),ok,1,0,0,0,0,0.22,1,632
+outer-025,outer,     Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-4cbd5029484f5edc),ok,27,0,0,0,0,120.26,27,687
+outer-026,outer,     Running tests/entry_backedge.rs (target/debug/deps/entry_backedge-2c62b4de18df449f),ok,1,0,0,0,0,0.01,1,694
+outer-027,outer,     Running tests/entry_paths_oracle.rs (target/debug/deps/entry_paths_oracle-8587a909dcafd944),ok,27,0,0,0,0,4.47,27,727
+outer-028,outer,     Running tests/eviction_chain_contract.rs (target/debug/deps/eviction_chain_contract-940668b736ad8adb),ok,13,0,0,0,0,0.01,13,746
+outer-029,outer,     Running tests/eviction_chain_extensions.rs (target/debug/deps/eviction_chain_extensions-fc728d4dcdeeca6b),ok,28,0,0,0,0,5.75,28,780
+outer-030,outer,     Running tests/eviction_chain_oracle.rs (target/debug/deps/eviction_chain_oracle-98711939362b780e),ok,28,0,0,0,0,0.96,28,814
+outer-031,outer,     Running tests/exact_syscall.rs (target/debug/deps/exact_syscall-4d94a065c40aabd9),ok,7,0,0,0,0,0.01,7,827
+outer-032,outer,     Running tests/generalized_pun_contract.rs (target/debug/deps/generalized_pun_contract-f584396ef9a7cf5f),ok,1,0,0,0,0,0.28,1,834
+outer-033,outer,     Running tests/mandatory_prefix_oracle.rs (target/debug/deps/mandatory_prefix_oracle-001c2714a73a397c),ok,28,0,0,0,0,6.12,28,868
+outer-034,outer,     Running tests/neighbor_eviction_contract.rs (target/debug/deps/neighbor_eviction_contract-7cc1ee5d8a7fb73e),ok,1,0,0,0,0,0.95,1,875
+outer-035,outer,     Running tests/neighbor_eviction_oracle.rs (target/debug/deps/neighbor_eviction_oracle-28aef11fa7f08d9f),ok,70,0,0,0,0,103.52,70,951
+outer-036,outer,     Running tests/overlap_concurrency.rs (target/debug/deps/overlap_concurrency-372fde1461fcf0a8),ok,1,0,0,0,0,0.02,1,958
+outer-037,outer,     Running tests/parked_context_oracle.rs (target/debug/deps/parked_context_oracle-af9f9e6b796560b5),ok,27,0,0,0,0,1.1,27,991
+outer-038,outer,     Running tests/pc_relative.rs (target/debug/deps/pc_relative-8950d34733c05856),ok,1,0,0,0,0,0.01,1,998
+outer-039,outer,     Running tests/prefixed_pun_contract.rs (target/debug/deps/prefixed_pun_contract-3fe87d876fedfe37),ok,1,0,0,0,0,0.46,1,1005
+outer-040,outer,     Running tests/prefixed_pun_oracle.rs (target/debug/deps/prefixed_pun_oracle-9a9bd0c33eaf7e5e),ok,27,0,0,0,0,1.29,27,1038
+outer-041,outer,     Running tests/quiescent_contract.rs (target/debug/deps/quiescent_contract-00cf6037acccddb9),ok,1,0,0,0,0,0.26,1,1045
+outer-042,outer,     Running tests/quiescent_oracle.rs (target/debug/deps/quiescent_oracle-15fa6a4595721a9d),ok,30,0,0,0,0,7.34,30,1081
+outer-043,outer,     Running tests/rel32_endpoint_oracle.rs (target/debug/deps/rel32_endpoint_oracle-069aafe2c467a044),ok,27,0,0,0,0,0.13,27,1114
+outer-044,outer,     Running tests/replace_first_cet.rs (target/debug/deps/replace_first_cet-25e9f23647a63e3a),ok,2,0,0,0,0,0.01,2,1122
+outer-045,outer,     Running tests/search_eviction_evidence.rs (target/debug/deps/search_eviction_evidence-8b2201bbcfd73f44),ok,4,0,0,0,0,0.0,4,1132
+outer-046,outer,     Running tests/search_evidence.rs (target/debug/deps/search_evidence-d1619f3fc78ddbb4),ok,8,0,0,0,0,0.0,8,1146
+outer-047,outer,     Running tests/sigtrap_origin.rs (target/debug/deps/sigtrap_origin-867209317a8b0131),ok,2,0,0,0,0,0.77,2,1154
+outer-048,outer,     Running tests/stress.rs (target/debug/deps/stress-f44bf19006e912ca),ok,4,0,3,0,0,0.17,7,1169
+outer-049,outer,     Running tests/successor_eviction_contract.rs (target/debug/deps/successor_eviction_contract-b3368f845800a5aa),ok,1,0,0,0,0,1.23,1,1176
+outer-050,outer,     Running tests/successor_eviction_oracle.rs (target/debug/deps/successor_eviction_oracle-1f62163a7c3a3167),ok,31,0,0,0,0,5.19,31,1213
+outer-051,outer,     Running tests/sync_core_capability.rs (target/debug/deps/sync_core_capability-325ab2ae89c98f4b),ok,1,0,0,0,0,0.15,1,1220
+outer-052,outer,     Running tests/tactic_engine.rs (target/debug/deps/tactic_engine-b2e4ead628dbfe4b),ok,1,0,0,0,0,0.13,1,1227
+outer-053,outer,     Running tests/trampoline_tail.rs (target/debug/deps/trampoline_tail-71800b32fd63e078),ok,12,0,0,0,0,0.03,12,1245
+outer-054,outer,     Running tests/exception_landing.rs (target/debug/deps/exception_landing-336e7170d95d76ad),ok,27,0,0,0,0,0.26,27,1278
+outer-055,outer,     Running unittests src/lib.rs (target/debug/deps/rapid_profiler-3b7bba2155a86575),FAILED,74,14,0,0,0,0.01,88,1461
+nested-001,nested_guard,     Running unittests src/lib.rs (target/debug/deps/liteinst2-bec6d9d2028eb017),ok,1,0,0,0,189,0.0,1,369
+nested-002,nested_guard,     Running unittests src/lib.rs (target/debug/deps/liteinst2-bec6d9d2028eb017),ok,1,0,0,0,189,0.01,1,381
+nested-003,nested_guard,     Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-4cbd5029484f5edc),ok,1,0,0,0,26,31.57,1,668
+nested-004,nested_guard,     Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-4cbd5029484f5edc),ok,1,0,0,0,26,9.61,1,675
+nested-005,nested_guard,     Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-4cbd5029484f5edc),ok,1,0,0,0,26,79.06,1,683

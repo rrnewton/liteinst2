@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "${MODEL_BINARY}",
+    "--list"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${REPO}",
+  "env": {
+    "HOME": "${USER_HOME}",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RUST_TEST_THREADS": "1"
+  },
+  "file_bytes": 1048576,
+  "stderr": "${RAW}/list.stderr",
+  "stdout": "${RAW}/list.stdout",
+  "wall_seconds": 30
+}

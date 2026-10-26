@@ -1,0 +1,19 @@
+{
+  "evaluation/elf-exec/render_tactics.py": "e15d379e525a9962882529df4c82df2f3387d4008856745eddfb720d09de07bf",
+  "evaluation/elf-exec/reproduce.py": "ab041ad6611d0c8000a77b70cdaaee4ef25433c94e5c9e4ff4d46b81a14b2c36",
+  "evaluation/elf-exec/reproduce_tactics.py": "c586e7df93f69031f947bbdadfa5df1de7c12b8fb1dfc13387f5f0f6bbf912ec",
+  "evaluation/elf-exec/tactics.md": "3abb9256a715ee0778117369cb3930875e84becfb715257ce80b6b2f257ef6fc",
+  "evaluation/required-gates.py": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+  "tests/fixtures/elf-exec-tactics/README.md": "29633fa8415c99f7caca8fc8df28086ae293a1829c10196226f0c70214b7f765",
+  "tests/fixtures/elf-exec-tactics/subject.S": "abc0a35f0448026638ba4314fc8c2fd70151153aac6566ca4028770b1ef4166d",
+  "tests/fixtures/elf-exec-tactics/subject.ld": "4971a370b353d0e1fe9b1d662e482864d667117043d20301b4c80d046cc115ed",
+  "tests/support/elf_exec_driver.rs": "1da9f3519e8bc5d3ef07e42613d8f947d215c6ebd2c36ff0afff9160b2a7eecc",
+  "tests/support/elf_exec_oracle.rs": "c577c24536c1f42f36634e5cf9e429d0081348cb579ed7f4b79ca967d6c4c04a",
+  "tests/support/elf_exec_provider.rs": "9b5562034fc6bbdc32f889ab64df7f414e96ee5d9a99c06e39bf6728f128e730",
+  "tests/support/elf_exec_tactics.rs": "c0910c4d918a5b34e6af1933fe9490b973e767a9ebc5a890cb62484b3a2a5c61",
+  "tests/support/elf_exec_tactics_contract.rs": "caca8169432f466dc00967304eacd187c7bc2915b5f73add9f6edce491af768e",
+  "tests/support/quiescent_oracle.rs": "e8c17e5daaf6e9720d6c515fd5e6f986307eca9c12ce115cdd51b465406dc756",
+  "tools/elf-rewrite/examples/check_elf_tactic_refusals.rs": "1d68109394e33386e22273e324873a228bad70fd860045a9f6d5888ba02bf1a8",
+  "tools/elf-rewrite/examples/verify_elf_tactics.rs": "b2d087a707fbe11014370569491bfffbb24a7ca74947ca82871a93acbf3b6008",
+  "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+}

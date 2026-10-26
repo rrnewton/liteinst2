@@ -1,0 +1,22 @@
+{
+  "formatted_snapshot": {
+    "Cargo.lock": "2b9863cdd1ee433a070cd55901776d756add2e875d0d49c19ed40f60724b3a23",
+    "Cargo.toml": "35e7a224e67781c01f8114733bc4f1361ce1764ef46d6f0a61c51996f39cad16",
+    "src/frontend.rs": "c810b06e7994b15e29a756aeb77c9d62b399752fb94ee82b4c39e2a5317abb94",
+    "src/frontend/tests.rs": "250b312d721077589f6390ff9336fd99900bf296ddf4b5c441d39e7326414e54",
+    "src/generation.rs": "e2bb80f2402e6d295eb12022fa7cee612a9be96708a4d50d97119d975a2401c1",
+    "src/generation/owned_tests.rs": "2f34dc6fd44dae16721d24fa5c230cc557bc2fd0067c3f2360a1c0ad8cb8ef94",
+    "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+    "src/lib.rs": "68a4237d7607b45ce0d9b380087638af5cd8619d70206b96aedff1154649abcc"
+  },
+  "preformat_snapshot": {
+    "Cargo.lock": "2b9863cdd1ee433a070cd55901776d756add2e875d0d49c19ed40f60724b3a23",
+    "Cargo.toml": "35e7a224e67781c01f8114733bc4f1361ce1764ef46d6f0a61c51996f39cad16",
+    "src/frontend.rs": "c810b06e7994b15e29a756aeb77c9d62b399752fb94ee82b4c39e2a5317abb94",
+    "src/frontend/tests.rs": "250b312d721077589f6390ff9336fd99900bf296ddf4b5c441d39e7326414e54",
+    "src/generation.rs": "e2bb80f2402e6d295eb12022fa7cee612a9be96708a4d50d97119d975a2401c1",
+    "src/generation/owned_tests.rs": "2f34dc6fd44dae16721d24fa5c230cc557bc2fd0067c3f2360a1c0ad8cb8ef94",
+    "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+    "src/lib.rs": "68a4237d7607b45ce0d9b380087638af5cd8619d70206b96aedff1154649abcc"
+  }
+}

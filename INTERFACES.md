@@ -94,3 +94,26 @@ Application SIGILL handlers require a separately qualified embedding contract.
 The implementation and its additional concrete restrictions are documented in
 `A1-QUIESCENT.md`. These restrictions stay visible as refusals; they are not
 successful coverage.
+
+
+## Offline artifacts
+
+`emission::PlanningSite` retains the source/entry/search facts of an install
+request without a build-process callback pointer. `ArtifactRequest` combines
+those facts with an explicit target state, occupied target ranges and symbolic
+same-module hook. `engine::plan_with_emission` preserves tactic selection and
+returns an opaque `ArtifactPlan` with source steps, read-only images, producer
+fixups, entry/PC maps and diagnostics. It has no live publish/retire operation.
+
+The [offline frontend](A3-OFFLINE.md) authenticates ELF ownership and original
+content and emits an executable candidate, metadata and sparse edits from this
+one plan. Original-content and patched-artifact identities are distinct. Exact
+format/planner/encoder/hook/arena, CPU-state, selection and bias compatibility
+are required. Invalid or stale cache material leaves the consumer gated for
+`RuntimeScan`; a valid checksum does not confer a lease or admission receipt.
+
+Artifact images currently retain `qualification_complete=false`. Target CPU
+and state at entry, dynamic-relocation and immediate-pointer provenance, hook
+ABI/readiness, code-as-data, router and generated-unwind requirements remain
+explicit. Current live grouped-chain and frame/unwind APIs do not imply an
+artifact implementation of those features.

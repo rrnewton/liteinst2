@@ -1,0 +1,16 @@
+{
+  "files": {
+    "README.md": "ac0f3d1cae65362ef923ac318e39a4bb7c93f8782708e92db53ac2a5f60c4e74",
+    "body-cases.csv": "c3f686ce1cf9701c7d389a60237feb3f5ea206b453c9b520e2ce3e0ae905cc08",
+    "cases.csv": "dee1e430ea6030a7eb92b8fc80e7839919edb5ce5fde8b936be0fb5aa1bd96c9",
+    "commands.csv": "3940932e3a17dd25ca307d39492f8298d78e5d0352012b932a815f5658c920ed",
+    "emission-cases.csv": "819a0c4cddb0dbfce442f74e44a8aeb0aec2dec365cfabb6b6016ff711e5f88f",
+    "historical-requests.json": "ad8724fdf68da37c6b5f0fc76a98c1d8978748277d59141aabf15610e1b07a2a",
+    "lineage.json": "cfd11643715861b0b19a4487cf38448f2918a506e54780ad1c54535745086a8f",
+    "loader-cases.csv": "53068dc3215c403481ff7851775199f15c4f17985d8d44bbb61e39a445e0efee",
+    "runtime-observations.json": "0319a01a26b331d749a6ea334d85ee9a97ae99dd9816b5f297b1da2a431a63cd",
+    "source-files.json": "63e4d6967dc6e801351333db11fcb676e912da7a28a4e8cd2571bf313bd26746",
+    "summary.json": "472a2f3e9e34bcb852c01a9246f322965a4040787c87ba7eb62ebe8f55e08780"
+  },
+  "self_excluded": true
+}

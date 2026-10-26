@@ -47,7 +47,16 @@ use iced_x86::code_asm::rdx;
 use iced_x86::code_asm::rsi;
 use iced_x86::code_asm::rsp;
 
+use crate::artifact_fixups::{
+    self as fixups, BiasDomain, Encoding, Fixup, ImageId, ImagePlacement, RelativeAddress, Role,
+    Target,
+};
+use crate::artifact_fragments;
 use crate::controls::{ControlledAction, ProbeControl};
+use crate::emission::{
+    ArtifactEmission, ArtifactField, ArtifactFieldEncoding, ArtifactImageMetadata,
+    ArtifactRequirement,
+};
 use crate::frame_trace::{
     FrameCallKind, FrameEffect, FrameEmission, FrameEntryOrigin, FrameRecorder, FrameStage,
     FrameTraceLimits, FrameTraceRefusal, HelperFrames,
@@ -220,6 +229,90 @@ impl SavedExtendedStateLayout {
             component_count,
             components,
         }
+    }
+
+    /// Declares the legacy 512-byte target save layout without querying this CPU.
+    /// The eventual execution environment must independently qualify this ISA
+    /// and the absence of additional application state requiring preservation.
+    pub const fn describe_target_fxsave64() -> Self {
+        Self::FXSAVE64
+    }
+
+    /// Checks a supplied standard XSAVE target layout without CPUID/XGETBV.
+    /// Tuples are `(one_hot_xfeature, byte_offset, byte_size)` for every selected
+    /// non-legacy user component, in increasing feature order. This authenticates
+    /// shape only; exact target CPU/XCR0/permissions remain an admission duty.
+    pub fn describe_target_xsave64(
+        mask: u64,
+        supplied: &[(u64, u64, u64)],
+    ) -> Result<Self, TrampolineError> {
+        let invalid = |message| TrampolineError::InvalidExtendedStateLayout { message };
+        if mask & 0b11 != 0b11 || mask & !PRESERVED_USER_STATE_MASK != 0 {
+            return Err(invalid(
+                "declared target mask is outside the current preserved-state envelope",
+            ));
+        }
+        let avx512 = (1 << 5) | (1 << 6) | (1 << 7);
+        if mask & avx512 != 0 && mask & (avx512 | (1 << 2)) != (avx512 | (1 << 2)) {
+            return Err(invalid(
+                "declared target AVX-512 mask lacks architectural dependencies",
+            ));
+        }
+        if supplied.len() > SAVED_EXTENDED_STATE_COMPONENT_CAPACITY {
+            return Err(invalid(
+                "declared target component capacity is insufficient",
+            ));
+        }
+        let mut components =
+            [SavedExtendedStateComponent::UNAVAILABLE; SAVED_EXTENDED_STATE_COMPONENT_CAPACITY];
+        let mut seen = 0b11;
+        let mut last = 2;
+        let mut image_len = 576_u64;
+        for (index, &(feature, offset, size)) in supplied.iter().enumerate() {
+            if !feature.is_power_of_two()
+                || feature <= last
+                || mask & feature == 0
+                || size == 0
+                || offset < 576
+            {
+                return Err(invalid(
+                    "declared target component identity or extent is invalid",
+                ));
+            }
+            let end = offset
+                .checked_add(size)
+                .ok_or_else(|| invalid("declared target component extent overflows"))?;
+            if components[..index]
+                .iter()
+                .any(|prior| offset < prior.offset + prior.size && prior.offset < end)
+            {
+                return Err(invalid("declared target component extents overlap"));
+            }
+            if feature == PKRU_XFEATURE && size < 8 {
+                return Err(invalid(
+                    "declared PKRU component cannot hold its reserved word",
+                ));
+            }
+            components[index] = SavedExtendedStateComponent::new(feature, offset, size);
+            seen |= feature;
+            last = feature;
+            image_len = image_len.max(end);
+        }
+        if seen != mask {
+            return Err(invalid("declared target component table is incomplete"));
+        }
+        let allocation = image_len
+            .checked_add(63)
+            .map(|len| len & !63)
+            .and_then(|len| i32::try_from(len).ok())
+            .ok_or_else(|| invalid("declared target save allocation is not representable"))?;
+        Ok(Self::standard_xsave64(
+            allocation as u64,
+            image_len,
+            mask,
+            supplied.len() as u64,
+            components,
+        ))
     }
 
     /// Returns the allocated saved-area length.
@@ -637,9 +730,26 @@ pub struct TrampolineImage {
     entry_routes: Vec<(u64, u64)>,
     instruction_boundaries: Vec<(u64, u64)>,
     controls: Vec<ProbeControl>,
+    artifact: Option<ArtifactImageMetadata>,
 }
 
 impl TrampolineImage {
+    pub(crate) fn artifact_metadata(&self) -> Option<&ArtifactImageMetadata> {
+        self.artifact.as_ref()
+    }
+    pub(crate) fn require_artifact_router(&mut self) {
+        if let Some(metadata) = self.artifact.as_mut() {
+            if !metadata
+                .requirements
+                .contains(&ArtifactRequirement::EntryRouterBootstrap)
+            {
+                metadata
+                    .requirements
+                    .push(ArtifactRequirement::EntryRouterBootstrap);
+            }
+        }
+    }
+
     /// Returns the exact executable address used to encode this image.
     pub const fn address(&self) -> u64 {
         self.address
@@ -817,6 +927,13 @@ pub enum TrampolineError {
         /// Encoder diagnostic.
         message: String,
     },
+    /// Provisional artifact emission failed a field/provenance/PIC obligation.
+    Artifact {
+        /// Stable reason category; no executable-artifact success is implied.
+        reason: crate::emission::ArtifactRefusalKind,
+        /// Exact encoder/field diagnostic.
+        message: String,
+    },
     /// An address cannot be represented by this process.
     AddressNotRepresentable {
         /// Address that failed conversion.
@@ -899,6 +1016,7 @@ impl fmt::Display for TrampolineError {
             Self::Encoding { message } => {
                 write!(formatter, "machine-code encoding failed: {message}")
             }
+            Self::Artifact { reason, message } => write!(formatter, "artifact {reason:?}: {message}"),
             Self::AddressNotRepresentable { address } => {
                 write!(formatter, "address {address:#x} is not representable")
             }
@@ -1175,6 +1293,27 @@ impl TrampolinePlan {
         hook: HookCallback,
         replace: bool,
     ) -> Result<Self, TrampolineError> {
+        Self::from_window_binding(scan, physical, logical, end, Some(hook), replace)
+    }
+
+    pub(crate) fn from_symbolic_window(
+        scan: &ScanResult,
+        physical: u64,
+        logical: u64,
+        end: u64,
+        replace: bool,
+    ) -> Result<Self, TrampolineError> {
+        Self::from_window_binding(scan, physical, logical, end, None, replace)
+    }
+
+    fn from_window_binding(
+        scan: &ScanResult,
+        physical: u64,
+        logical: u64,
+        end: u64,
+        hook: Option<HookCallback>,
+        replace: bool,
+    ) -> Result<Self, TrampolineError> {
         let start = scan
             .instructions()
             .iter()
@@ -1227,7 +1366,7 @@ impl TrampolinePlan {
         Ok(Self {
             execute_address: physical,
             return_address: end,
-            hook: Some(hook),
+            hook,
             actions: Vec::new(),
             controls: Vec::new(),
             instructions,
@@ -1251,6 +1390,23 @@ impl TrampolinePlan {
         hook: HookCallback,
         replace: bool,
     ) -> Result<Self, TrampolineError> {
+        Self::from_short_instruction_binding(scan, execute_address, Some(hook), replace)
+    }
+
+    pub(crate) fn from_symbolic_short_instruction(
+        scan: &ScanResult,
+        execute_address: u64,
+        replace: bool,
+    ) -> Result<Self, TrampolineError> {
+        Self::from_short_instruction_binding(scan, execute_address, None, replace)
+    }
+
+    fn from_short_instruction_binding(
+        scan: &ScanResult,
+        execute_address: u64,
+        hook: Option<HookCallback>,
+        replace: bool,
+    ) -> Result<Self, TrampolineError> {
         let scanned = scan
             .instructions()
             .iter()
@@ -1272,7 +1428,7 @@ impl TrampolinePlan {
         Ok(Self {
             execute_address,
             return_address,
-            hook: Some(hook),
+            hook,
             actions: Vec::new(),
             controls: Vec::new(),
             instructions: vec![*scanned.instruction()],
@@ -1514,14 +1670,19 @@ impl TrampolinePlan {
             let recording = frames.as_deref().is_some_and(FrameRecorder::recording);
             let mut instrumentation_frames = HelperFrames::new(FrameStage::SaveAndCall);
             let mut restore_frames = HelperFrames::new(FrameStage::Restore);
-            let instrumentation = self.encode_instrumentation(
-                instrumentation_address,
-                &extended_state,
-                self.logical_address(),
-                self.hook.expect("legacy plan always has a callback"),
-                None,
-                recording.then_some(&mut instrumentation_frames),
-            )?;
+            let instrumentation = self
+                .encode_instrumentation(
+                    instrumentation_address,
+                    &extended_state,
+                    self.logical_address(),
+                    (
+                        Some(self.hook.expect("legacy plan always has a callback")),
+                        None,
+                    ),
+                    None,
+                    recording.then_some(&mut instrumentation_frames),
+                )?
+                .bytes;
             let restore_address = instrumentation_address
                 .checked_add(instrumentation.len() as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })?;
@@ -1687,6 +1848,7 @@ impl TrampolinePlan {
                 frames.return_jump(return_jump_address, return_jump.len(), self.return_address);
             }
             Ok(TrampolineImage {
+                artifact: None,
                 address,
                 bytes,
                 layout,
@@ -1708,7 +1870,62 @@ impl TrampolinePlan {
         address: u64,
         frames: Option<&mut FrameRecorder>,
     ) -> Result<TrampolineImage, TrampolineError> {
-        let extended_state = SavedExtendedStateLayout::detect()?;
+        self.emit_ordered_at(address, None, frames)
+    }
+
+    pub(crate) fn emit_artifact_at(
+        &self,
+        address: u64,
+        input: &ArtifactEmission,
+    ) -> Result<TrampolineImage, TrampolineError> {
+        #[cfg(not(all(target_os = "linux", target_arch = "x86_64")))]
+        {
+            let _ = (address, input);
+            return Err(TrampolineError::UnsupportedPlatform);
+        }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        {
+            if self.ptrace_stops
+                || !self.controls.is_empty()
+                || !matches!(
+                    self.kind,
+                    TrampolineKind::PatchWindow | TrampolineKind::Instruction
+                )
+            {
+                return Err(artifact_error(
+                    "artifact profile does not implement ptrace, controlled or multi-action binding",
+                ));
+            }
+            self.emit_ordered_at(address, Some(input), None)
+        }
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn emit_ordered_at(
+        &self,
+        address: u64,
+        artifact: Option<&ArtifactEmission>,
+        frames: Option<&mut FrameRecorder>,
+    ) -> Result<TrampolineImage, TrampolineError> {
+        let extended_state = match artifact {
+            Some(input) => input.profile().saved_state(),
+            None => SavedExtendedStateLayout::detect()?,
+        };
+        let actions: Vec<(u64, Option<HookCallback>, bool)> = match artifact {
+            Some(_) if self.kind == TrampolineKind::PatchWindow => vec![(
+                self.logical_address(),
+                None,
+                self.relocated_start != self.logical_index,
+            )],
+            Some(_) => Vec::new(),
+            None => self
+                .actions
+                .iter()
+                .map(|&(pc, hook, replace)| (pc, Some(hook), replace))
+                .collect(),
+        };
+        let mut fragments = Vec::new();
+        let mut original_operands = Vec::new();
         // Give every encoder label an identity distinct from *all* original
         // addresses and operands. Direct branches are retargeted explicitly;
         // RIP-relative data references must never follow an encoder label.
@@ -1746,8 +1963,7 @@ impl TrampolinePlan {
             let mut entry = Instruction::with(Code::Zero_bytes);
             entry.set_ip(entry_identities[index]);
             encoded_instructions.push(entry);
-            let action = self
-                .actions
+            let action = actions
                 .get(action_index)
                 .filter(|action| action.0 == original.ip());
             if let Some(&(_, hook, _)) = action {
@@ -1761,23 +1977,26 @@ impl TrampolinePlan {
                     0,
                     &extended_state,
                     original.ip(),
-                    hook,
-                    self.controls
-                        .get(action_index)
-                        .map(|action| &action.control),
+                    (
+                        hook,
+                        self.controls
+                            .get(action_index)
+                            .map(|action| &action.control),
+                    ),
+                    artifact,
                     recording.then_some(&mut instrumentation_frames),
                 )?;
                 let restore = encode_restore(
-                    instrumentation.len() as u64,
+                    instrumentation.bytes.len() as u64,
                     &extended_state,
                     recording.then_some(&mut restore_frames),
                 )?;
                 first_hook_lengths.get_or_insert((
                     entry_index,
-                    instrumentation.len(),
+                    instrumentation.bytes.len(),
                     restore.len(),
                 ));
-                for bytes in [instrumentation.as_slice(), restore.as_slice()] {
+                for bytes in [instrumentation.bytes.as_slice(), restore.as_slice()] {
                     for chunk in bytes.chunks(16) {
                         let mut directive =
                             Instruction::with_declare_byte(chunk).map_err(encoding_error)?;
@@ -1789,12 +2008,13 @@ impl TrampolinePlan {
                     helper_frames.push((
                         entry_index,
                         original.ip(),
-                        instrumentation.len(),
+                        instrumentation.bytes.len(),
                         restore.len(),
                         instrumentation_frames,
                         restore_frames,
                     ));
                 }
+                fragments.push((entry_index, instrumentation));
                 action_index += 1;
             }
             let body_index = encoded_instructions.len();
@@ -1824,11 +2044,17 @@ impl TrampolinePlan {
                         _ => unreachable!(),
                     }
                 }
+                original_operands.push((encoded_instructions.len(), *original));
                 encoded_instructions.push(instruction);
             }
             heads.push((original.ip(), entry_index, body_index, replaced));
         }
-        let block = encode_relocated_block(&encoded_instructions, address, None)?;
+        let block = encode_relocated_block_with_metadata(
+            &encoded_instructions,
+            address,
+            None,
+            artifact.is_some(),
+        )?;
         let offset = |index: usize| -> Result<usize, TrampolineError> {
             block
                 .encoded
@@ -1880,7 +2106,13 @@ impl TrampolinePlan {
             );
         }
         let return_start = generated(block.encoded.code_buffer.len())?;
-        let return_jump = encode_return_jump(return_start, self.return_address)?;
+        let return_fragment = artifact.map(|input| {
+            artifact_fragments::return_jump(artifact_target(input, self.return_address))
+        });
+        let return_jump = match &return_fragment {
+            Some(fragment) => fragment.bytes.clone(),
+            None => encode_return_jump(return_start, self.return_address)?,
+        };
         let return_code_len = if return_jump.len() == NOTRACK_ABSOLUTE_JUMP_BYTES {
             return_jump.len() - core::mem::size_of::<u64>()
         } else {
@@ -1976,10 +2208,67 @@ impl TrampolinePlan {
             }
             frames.return_jump(return_start, return_jump.len(), self.return_address);
         }
+        let mut fields = Vec::new();
+        if let Some(input) = artifact {
+            for (entry, fragment) in &fragments {
+                let start = offset(*entry)?;
+                if block
+                    .encoded
+                    .code_buffer
+                    .get(start..start + fragment.bytes.len())
+                    != Some(fragment.bytes.as_slice())
+                {
+                    return Err(artifact_error(
+                        "fixed instrumentation fragment moved or changed",
+                    ));
+                }
+                for field in &fragment.fields {
+                    fields.push(field.rebased(start as u64).map_err(artifact_fixup_error)?);
+                }
+            }
+            append_artifact_original_fields(
+                &mut fields,
+                input,
+                address,
+                &block.encoded,
+                &original_operands,
+                &entry_routes,
+            )?;
+            if let Some(fragment) = &return_fragment {
+                for field in &fragment.fields {
+                    fields.push(
+                        field
+                            .rebased(block.encoded.code_buffer.len() as u64)
+                            .map_err(artifact_fixup_error)?,
+                    );
+                }
+            }
+        }
         let mut bytes = block.encoded.code_buffer;
         bytes.extend_from_slice(&return_jump);
+        let artifact = if let Some(input) = artifact {
+            let placement = ImagePlacement {
+                image: ImageId(address),
+                address: RelativeAddress {
+                    domain: BiasDomain(input.profile().bias_domain()),
+                    offset: i128::from(address),
+                },
+                len: bytes.len() as u64,
+            };
+            bytes = fixups::link_bias_invariant(ImageId(address), &bytes, &fields, &[placement])
+                .map_err(artifact_fixup_error)?;
+            Some(artifact_metadata(
+                input,
+                address,
+                &fields,
+                self.kind != TrampolineKind::Instruction,
+            )?)
+        } else {
+            None
+        };
         debug_assert_eq!(layout.total_len(), Some(bytes.len()));
         Ok(TrampolineImage {
+            artifact,
             address,
             bytes,
             layout,
@@ -2000,10 +2289,12 @@ impl TrampolinePlan {
         address: u64,
         extended_state: &SavedExtendedStateLayout,
         logical_address: u64,
-        hook: HookCallback,
-        control: Option<&ProbeControl>,
+        hook_control: (Option<HookCallback>, Option<&ProbeControl>),
+        artifact: Option<&ArtifactEmission>,
         mut frames: Option<&mut HelperFrames>,
-    ) -> Result<Vec<u8>, TrampolineError> {
+    ) -> Result<InstrumentationEmission, TrampolineError> {
+        let (hook, control) = hook_control;
+        let mut fragments = Vec::new();
         let mut assembler = CodeAssembler::new(64).map_err(encoding_error)?;
         assembler
             .lea(rsp, rsp - SYSTEM_V_RED_ZONE_BYTES)
@@ -2071,11 +2362,17 @@ impl TrampolinePlan {
         }
         assembler.push(rax).map_err(encoding_error)?;
         record_frame_effect(&mut frames, &assembler, FrameEffect::MetadataWord);
-        assembler
-            .mov(rax, logical_address)
-            .map_err(encoding_error)?;
-        assembler.push(rax).map_err(encoding_error)?;
-        record_frame_effect(&mut frames, &assembler, FrameEffect::MetadataWord);
+        if let Some(input) = artifact {
+            let fragment = artifact_fragments::logical_pc(artifact_target(input, logical_address));
+            fragments.push((assembler.instructions().len(), fragment.clone()));
+            assembler.db(&fragment.bytes).map_err(encoding_error)?;
+        } else {
+            assembler
+                .mov(rax, logical_address)
+                .map_err(encoding_error)?;
+            assembler.push(rax).map_err(encoding_error)?;
+            record_frame_effect(&mut frames, &assembler, FrameEffect::MetadataWord);
+        }
         assembler.mov(r12, rsp).map_err(encoding_error)?;
         record_frame_effect(&mut frames, &assembler, FrameEffect::AnchorContext);
         extended_state.encode_save(&mut assembler)?;
@@ -2110,33 +2407,85 @@ impl TrampolinePlan {
         }
         assembler.cld().map_err(encoding_error)?;
         assembler.mov(rdi, r12).map_err(encoding_error)?;
-        if let Some(control) = control {
-            // Application RSI was saved before this instrumentation-private
-            // argument. The stable block is retained for the code lifetime.
-            assembler
-                .mov(rsi, control.block_address())
-                .map_err(encoding_error)?;
-            assembler
-                .mov(rax, crate::controls::dispatch as *const () as usize as u64)
-                .map_err(encoding_error)?;
+        if let Some(input) = artifact {
+            if control.is_some() || hook.is_some() {
+                return Err(artifact_error(
+                    "process callback/control cannot enter artifact emission",
+                ));
+            }
+            let target = input
+                .hook()
+                .address
+                .map(|address| artifact_target(input, address))
+                .unwrap_or(Target::UnresolvedSymbol(input.hook().identity));
+            let fragment = artifact_fragments::hook_call(target);
+            fragments.push((assembler.instructions().len(), fragment.clone()));
+            assembler.db(&fragment.bytes).map_err(encoding_error)?;
         } else {
-            // Keep the legacy static callback path byte-for-byte unchanged.
-            assembler
-                .mov(rax, hook as usize as u64)
-                .map_err(encoding_error)?;
+            if let Some(control) = control {
+                // Application RSI was saved before this instrumentation-private
+                // argument. The stable block is retained for the code lifetime.
+                assembler
+                    .mov(rsi, control.block_address())
+                    .map_err(encoding_error)?;
+                assembler
+                    .mov(rax, crate::controls::dispatch as *const () as usize as u64)
+                    .map_err(encoding_error)?;
+            } else {
+                // Keep the legacy static callback path byte-for-byte unchanged.
+                assembler
+                    .mov(
+                        rax,
+                        hook.expect("live instrumentation has a real callback") as usize as u64,
+                    )
+                    .map_err(encoding_error)?;
+            }
+            assembler.call(rax).map_err(encoding_error)?;
+            if let Some(frames) = frames.as_deref_mut() {
+                frames.call(
+                    assembler.instructions().len(),
+                    if control.is_some() {
+                        FrameCallKind::ControlDispatcher
+                    } else {
+                        FrameCallKind::Observer
+                    },
+                );
+            }
         }
-        assembler.call(rax).map_err(encoding_error)?;
-        if let Some(frames) = frames.as_deref_mut() {
-            frames.call(
-                assembler.instructions().len(),
-                if control.is_some() {
-                    FrameCallKind::ControlDispatcher
-                } else {
-                    FrameCallKind::Observer
-                },
-            );
+        if artifact.is_none() {
+            return Ok(InstrumentationEmission {
+                bytes: assemble_frame_helper(&mut assembler, address, frames)?,
+                fields: Vec::new(),
+            });
         }
-        assemble_frame_helper(&mut assembler, address, frames)
+        let encoded = assembler
+            .assemble_options(address, BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS)
+            .map_err(encoding_error)?
+            .inner;
+        let mut fields = Vec::new();
+        for (index, fragment) in fragments {
+            let offset = encoded
+                .new_instruction_offsets
+                .get(index)
+                .copied()
+                .filter(|value| *value != u32::MAX)
+                .ok_or_else(|| artifact_error("instrumentation fragment has no encoder offset"))?
+                as usize;
+            if encoded
+                .code_buffer
+                .get(offset..offset + fragment.bytes.len())
+                != Some(fragment.bytes.as_slice())
+            {
+                return Err(artifact_error("instrumentation fragment is not contiguous"));
+            }
+            for field in fragment.fields {
+                fields.push(field.rebased(offset as u64).map_err(artifact_fixup_error)?);
+            }
+        }
+        Ok(InstrumentationEmission {
+            bytes: encoded.code_buffer,
+            fields,
+        })
     }
 }
 
@@ -2501,13 +2850,32 @@ fn encode_relocated_block(
     address: u64,
     observing_entry: Option<u64>,
 ) -> Result<RelocatedBlock, TrampolineError> {
+    encode_relocated_block_with_metadata(instructions, address, observing_entry, false)
+}
+
+fn encode_relocated_block_with_metadata(
+    instructions: &[Instruction],
+    address: u64,
+    observing_entry: Option<u64>,
+    artifact: bool,
+) -> Result<RelocatedBlock, TrampolineError> {
     let normalized = relocation_encoder_instructions(instructions, observing_entry)?;
     let instructions = normalized.as_slice();
     let options = BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS
-        | BlockEncoderOptions::RETURN_RELOC_INFOS;
+        | BlockEncoderOptions::RETURN_RELOC_INFOS
+        | if artifact {
+            BlockEncoderOptions::RETURN_CONSTANT_OFFSETS
+        } else {
+            0
+        };
     let mut encoded =
         BlockEncoder::encode(64, InstructionBlock::new(instructions, address), options)
             .map_err(encoding_error)?;
+    if artifact && !encoded.reloc_infos.is_empty() {
+        return Err(artifact_error(
+            "absolute iced branch literals require a qualified PIC bridge",
+        ));
+    }
     if encoded.reloc_infos.is_empty() {
         return Ok(RelocatedBlock {
             encoded,
@@ -2696,6 +3064,274 @@ fn append_relocated_program_counter_mappings(
         );
     }
     Ok(())
+}
+
+// Artifact fields are captured at producer-owned instruction/directive indices.
+// This is not a scan for integers that happen to resemble process addresses.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+struct InstrumentationEmission {
+    bytes: Vec<u8>,
+    fields: Vec<Fixup>,
+}
+
+fn artifact_error(message: &str) -> TrampolineError {
+    TrampolineError::Artifact {
+        reason: crate::emission::ArtifactRefusalKind::UnmodelledEncoding,
+        message: message.into(),
+    }
+}
+
+fn artifact_fixup_error(error: fixups::Error) -> TrampolineError {
+    let reason = match error {
+        fixups::Error::DisplacementOutOfRange { .. } => {
+            crate::emission::ArtifactRefusalKind::OutOfRange
+        }
+        fixups::Error::RequiresRuntimeAbsoluteFixup { .. } => {
+            crate::emission::ArtifactRefusalKind::RuntimeAbsoluteFixup
+        }
+        fixups::Error::CrossBiasDomain { .. } | fixups::Error::UnresolvedSymbol(_) => {
+            crate::emission::ArtifactRefusalKind::TargetBinding
+        }
+        _ => crate::emission::ArtifactRefusalKind::InvalidFieldLedger,
+    };
+    TrampolineError::Artifact {
+        reason,
+        message: format!("{error:?}"),
+    }
+}
+
+fn artifact_target(input: &ArtifactEmission, address: u64) -> Target {
+    Target::Address(RelativeAddress {
+        domain: BiasDomain(input.profile().bias_domain()),
+        offset: i128::from(address),
+    })
+}
+
+fn append_artifact_original_fields(
+    fields: &mut Vec<Fixup>,
+    input: &ArtifactEmission,
+    address: u64,
+    block: &BlockEncoderResult,
+    originals: &[(usize, Instruction)],
+    entries: &[(u64, u64)],
+) -> Result<(), TrampolineError> {
+    for &(index, original) in originals {
+        let branch = matches!(
+            original.op0_kind(),
+            OpKind::NearBranch16 | OpKind::NearBranch32 | OpKind::NearBranch64
+        );
+        let rip = original.is_ip_rel_memory_operand();
+        // A SIB index does not make a base-less disp32 load-bias invariant.
+        // Until its address contribution has an explicit runtime fixup, retain
+        // the required refusal rather than omitting a known address field.
+        if original.op_kinds().any(|kind| kind == OpKind::Memory)
+            && !rip
+            && original.memory_base() == iced_x86::Register::None
+            && original.memory_index() != iced_x86::Register::None
+        {
+            return Err(TrampolineError::Artifact {
+                reason: crate::emission::ArtifactRefusalKind::RuntimeAbsoluteFixup,
+                message: "base-less indexed memory needs explicit displacement provenance and a runtime fixup".into(),
+            });
+        }
+        let absolute = original.op_kinds().any(|kind| kind == OpKind::Memory)
+            && !rip
+            && original.memory_base() == iced_x86::Register::None
+            && original.memory_index() == iced_x86::Register::None;
+        if !branch && !rip && !absolute {
+            continue;
+        }
+        if (branch && original.op0_kind() != OpKind::NearBranch64)
+            || (rip && original.memory_base() != iced_x86::Register::RIP)
+        {
+            return Err(artifact_error(
+                "truncated-address branch or EIP operand lacks a common-bias proof",
+            ));
+        }
+        let offset = block
+            .new_instruction_offsets
+            .get(index)
+            .copied()
+            .filter(|offset| *offset != u32::MAX)
+            .ok_or_else(|| {
+                artifact_error("expanded original address operand needs an explicit PIC bridge")
+            })? as usize;
+        let generated = address
+            .checked_add(offset as u64)
+            .ok_or(TrampolineError::AddressNotRepresentable { address })?;
+        let tail = block
+            .code_buffer
+            .get(offset..)
+            .ok_or_else(|| artifact_error("encoder instruction offset exceeds image"))?;
+        let decoded = Decoder::with_ip(64, tail, generated, DecoderOptions::NONE).decode();
+        if decoded.is_invalid() {
+            return Err(artifact_error(
+                "encoder-owned original instruction is invalid",
+            ));
+        }
+        let constants = block
+            .constant_offsets
+            .get(index)
+            .ok_or_else(|| artifact_error("encoder omitted original constant offsets"))?;
+        let (local, width, target, role) = if branch {
+            if decoded.op0_kind() != OpKind::NearBranch64 {
+                return Err(artifact_error(
+                    "original branch is no longer a single direct branch",
+                ));
+            }
+            let internal = entries
+                .iter()
+                .find(|(pc, _)| *pc == original.near_branch_target());
+            let target =
+                internal.map_or(original.near_branch_target(), |(_, generated)| *generated);
+            if decoded.near_branch_target() != target {
+                return Err(artifact_error(
+                    "encoder branch target differs from explicit entry routing",
+                ));
+            }
+            let target = match internal {
+                Some(_) => Target::Image {
+                    image: ImageId(address),
+                    offset: target
+                        .checked_sub(address)
+                        .ok_or_else(|| artifact_error("internal branch target precedes image"))?,
+                },
+                None => artifact_target(input, target),
+            };
+            (
+                constants.immediate_offset(),
+                constants.immediate_size(),
+                target,
+                Role::OriginalBranch {
+                    original_pc: original.ip(),
+                },
+            )
+        } else if rip {
+            if decoded.memory_base() != iced_x86::Register::RIP
+                || decoded.ip_rel_memory_address() != original.ip_rel_memory_address()
+            {
+                return Err(artifact_error("encoder changed original RIP data identity"));
+            }
+            (
+                constants.displacement_offset(),
+                constants.displacement_size(),
+                artifact_target(input, original.ip_rel_memory_address()),
+                Role::OriginalRipOperand {
+                    original_pc: original.ip(),
+                },
+            )
+        } else {
+            (
+                constants.displacement_offset(),
+                constants.displacement_size(),
+                artifact_target(input, original.memory_displacement64()),
+                Role::OriginalAbsoluteOperand {
+                    original_pc: original.ip(),
+                },
+            )
+        };
+        let next = offset
+            .checked_add(decoded.len())
+            .ok_or_else(|| artifact_error("original instruction end overflow"))?
+            as u64;
+        let encoding = match (absolute, width) {
+            (true, 8) => Encoding::Absolute64,
+            (false, 1) if branch => Encoding::PcRelative8 { next },
+            (false, 4) => Encoding::PcRelative32 { next },
+            _ => {
+                return Err(artifact_error(
+                    "original operand has unsupported relative width",
+                ));
+            }
+        };
+        if local
+            .checked_add(width)
+            .is_none_or(|end| end > decoded.len())
+        {
+            return Err(artifact_error(
+                "encoder operand field exceeds original instruction",
+            ));
+        }
+        let field_offset = offset
+            .checked_add(local)
+            .ok_or_else(|| artifact_error("original field offset overflow"))?;
+        let end = field_offset
+            .checked_add(width)
+            .ok_or_else(|| artifact_error("original field extent overflow"))?;
+        let expected = block
+            .code_buffer
+            .get(field_offset..end)
+            .ok_or_else(|| artifact_error("original field exceeds image"))?
+            .to_vec();
+        fields.push(Fixup {
+            offset: field_offset as u64,
+            encoding,
+            target,
+            role,
+            expected,
+        });
+    }
+    Ok(())
+}
+
+fn artifact_metadata(
+    input: &ArtifactEmission,
+    address: u64,
+    fields: &[Fixup],
+    has_hook: bool,
+) -> Result<ArtifactImageMetadata, TrampolineError> {
+    let fields = fields
+        .iter()
+        .map(|field| {
+            let (encoding, origin) = match field.encoding {
+                Encoding::PcRelative8 { next } | Encoding::PcRelative32 { next } => {
+                    (ArtifactFieldEncoding::Relative, next)
+                }
+                Encoding::Delta64 { anchor } => (ArtifactFieldEncoding::Delta, anchor),
+                Encoding::Absolute64 => {
+                    return Err(artifact_error("absolute field escaped artifact linking"));
+                }
+            };
+            let target = match field.target {
+                Target::Address(target) => target,
+                Target::Image { image, offset } if image == ImageId(address) => RelativeAddress {
+                    domain: BiasDomain(input.profile().bias_domain()),
+                    offset: i128::from(address) + i128::from(offset),
+                },
+                _ => {
+                    return Err(artifact_error(
+                        "unresolved image/symbol escaped artifact linking",
+                    ));
+                }
+            };
+            Ok(ArtifactField {
+                offset: field.offset,
+                width: field.encoding.width(),
+                encoding,
+                origin,
+                target: target.offset,
+                bias_domain: target.domain.0,
+                role: format!("{:?}", field.role),
+            })
+        })
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut requirements = vec![
+        ArtifactRequirement::ArtifactIdentityAndAddressBinding,
+        ArtifactRequirement::TargetCpuAndStateAtEntry,
+        ArtifactRequirement::OriginalDynamicRelocationOwnership,
+        ArtifactRequirement::OriginalImmediatePointerProvenance,
+        ArtifactRequirement::GeneratedUnwindInformation,
+        ArtifactRequirement::OriginalCodeAsDataContract,
+    ];
+    if has_hook {
+        requirements.push(ArtifactRequirement::HookAbiAndReadiness(
+            input.hook().identity,
+        ));
+    }
+    Ok(ArtifactImageMetadata {
+        fields,
+        requirements,
+    })
 }
 
 /// Process-lifetime dual-mapped trampoline storage prepared before instrumentation.

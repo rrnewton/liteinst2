@@ -1,0 +1,193 @@
+{
+  "design_groups": {
+    "1": [
+      "two functions each retain K=2; exact four record/payload rows; global A=4 and M=2 distinct"
+    ],
+    "10": [
+      "registry busy",
+      "registry poisoned",
+      "unknown thread",
+      "no current binding",
+      "callback reentry",
+      "duplicate slot",
+      "wrong exit slot",
+      "empty exit",
+      "attempt sequence overflow",
+      "completion sequence overflow"
+    ],
+    "11": [
+      "A closes but B still observable so shared group remains",
+      "B closes so group disables",
+      "mandatory group remains after both close"
+    ],
+    "12": [
+      "publication before-mutation failure retains old binding",
+      "deactivation before-mutation failure retains enabled group",
+      "publication after-mutation failure retains new closed owner and reachable model group",
+      "deactivation after-mutation failure retains disabled group and terminal owner",
+      "terminal sessions refuse all publish/deactivate/remove retries",
+      "history exhaustion refuses before mutation",
+      "bounded full-function capacity scan recovers closure without queue",
+      "closed staged epoch refuses republish",
+      "duplicate current original handle and cloned handle each refuse AlreadyCurrent for all three FailurePoint values; six unchanged-controller/record/slot/open-admission-and-completion subcases"
+    ],
+    "2": [
+      "old frame retains removed owner through new publication; old-only payload and final owner release"
+    ],
+    "3": [
+      "old outer A, old B, new B, then old A; old A observes two completed children"
+    ],
+    "4": [
+      "old request after new publish is Stale; all exact action rows and new group data unchanged"
+    ],
+    "5": [
+      "acquired-before-close/admitted-after-close refuses",
+      "reserved-before-close completes to original epoch",
+      "wrong install identity refuses",
+      "foreign session acquisition handle refuses",
+      "foreign registered-thread handle refuses",
+      "unavailable observation remains completed"
+    ],
+    "6": [
+      "Kth winner pauses before close; five intervening completions plus held seventh; seven exact terminals, one retention, six drops, other reservations at close=1"
+    ],
+    "7": [
+      "16 exact payload/terminal pairs visible before join, worker held alive until parent assertions",
+      "payload exists but terminal/drain unavailable during pre-release pause; final value before join"
+    ],
+    "8": [
+      "explicit cancel publishes Explicit payload/terminal",
+      "ordinary frame Drop publishes DroppedTicket payload/terminal",
+      "Drop makes no external model slot restoration claim",
+      "one forgotten complete frame retains outstanding obligation and E",
+      "standalone forgotten OwnedTicket retains Epoch only and no E permit"
+    ],
+    "9": [
+      "A exhaustion closes epoch without changing earlier records/slot",
+      "M exhaustion changes no admission/slot",
+      "T duplicate/lifetime limit refusals including after Thread drop",
+      "D exhaustion keeps exact old frame",
+      "E retained acquisition handle releases only at final owner",
+      "E retained report releases only at final owner",
+      "forgotten acquisition handle retains E",
+      "forgotten report retains E",
+      "20 exact setup/stage refusals including checked E*A and failed-constructor permit rollback"
+    ]
+  },
+  "doc_cases": [
+    {
+      "case_id": "frontend::AdmissionHandle.owner",
+      "expected_error": "E0616"
+    },
+    {
+      "case_id": "frontend::EpochHandle.owner",
+      "expected_error": "E0616"
+    },
+    {
+      "case_id": "frontend::Report.owner",
+      "expected_error": "E0616"
+    },
+    {
+      "case_id": "frontend::ThreadModel.frames",
+      "expected_error": "E0616"
+    },
+    {
+      "case_id": "generation::OwnedTicket.no_clone",
+      "expected_error": "E0599"
+    },
+    {
+      "case_id": "generation::OwnedTicket.no_double_finish",
+      "expected_error": "E0382"
+    },
+    {
+      "case_id": "generation::Ticket.no_clone",
+      "expected_error": "E0599"
+    },
+    {
+      "case_id": "generation::Ticket.no_double_finish",
+      "expected_error": "E0382"
+    }
+  ],
+  "doc_count": 8,
+  "model_count": 53,
+  "model_names": [
+    "frontend::tests::g01_per_function_k_two_and_global_storage",
+    "frontend::tests::g02_old_frame_keeps_removed_owner_and_payload",
+    "frontend::tests::g03_nested_old_new_frames_keep_two_children",
+    "frontend::tests::g04_stale_disable_cannot_mutate_new_generation",
+    "frontend::tests::g05_acquired_owner_after_close_refuses",
+    "frontend::tests::g05_install_and_foreign_handle_refuse_without_slot_change",
+    "frontend::tests::g05_reserved_before_close_completes_to_old",
+    "frontend::tests::g06_kth_gap_keeps_seven_terminals_and_one_other",
+    "frontend::tests::g07_payload_before_release_pause_blocks_drain",
+    "frontend::tests::g07_sixteen_payloads_visible_after_drain_before_join",
+    "frontend::tests::g08_explicit_cancel_and_drop_publish_distinct_payloads_first",
+    "frontend::tests::g08_forgotten_complete_frame_retains_reservation_and_permit",
+    "frontend::tests::g08_standalone_owned_ticket_has_no_frontend_permit_claim",
+    "frontend::tests::g09_a_storage_exhaustion_preserves_records_and_slot",
+    "frontend::tests::g09_constructor_bounds_and_failed_stage_release_permit",
+    "frontend::tests::g09_d_frame_limit_preserves_owned_frame_and_slot",
+    "frontend::tests::g09_e_handles_reports_final_owner_and_forgotten_owners",
+    "frontend::tests::g09_m_reservation_exhaustion_preserves_records_and_slot",
+    "frontend::tests::g09_t_registration_limit_and_duplicate_are_exact",
+    "frontend::tests::g10_nonwrapping_sequences_refuse_and_remain_terminal",
+    "frontend::tests::g10_reentry_and_duplicate_slot_preserve_existing_frames",
+    "frontend::tests::g10_registry_contention_refuses_before_slot_mutation",
+    "frontend::tests::g10_registry_poison_refuses_before_slot_mutation",
+    "frontend::tests::g10_unregistered_thread_and_empty_binding_are_explicit",
+    "frontend::tests::g11_mandatory_action_remains_after_all_profiling_functions_close",
+    "frontend::tests::g11_shared_group_keeps_b_then_disables_after_b_closes",
+    "frontend::tests::g12_after_mutation_failures_retain_owner_and_refuse_retry",
+    "frontend::tests::g12_before_mutation_failures_keep_binding_and_group_state",
+    "frontend::tests::g12_bounded_scan_recovers_closed_actions_without_notification_queue",
+    "frontend::tests::g12_history_exhaustion_refuses_before_any_controller_mutation",
+    "frontend::tests::g12_republishing_current_original_or_clone_refuses_all_failure_modes",
+    "frontend::tests::reference_ledger_rejects_eight_identity_payload_action_mutations",
+    "generation::owned_tests::owned_and_borrowed_records_have_exact_terminal_parity",
+    "generation::owned_tests::owned_cancel_and_drop_keep_exact_old_epoch_after_new_creation",
+    "generation::owned_tests::owned_refusals_preserve_slots_and_original_identity",
+    "generation::owned_tests::owned_ticket_retains_original_epoch_until_its_terminal",
+    "generation::tests::checked_generation_exhaustion_never_wraps_or_reuses",
+    "generation::tests::close_after_admission_waits_for_terminal_record",
+    "generation::tests::close_before_admission_refuses_without_record",
+    "generation::tests::close_gap_allows_five_post_k_completions_but_only_one_other_reservation",
+    "generation::tests::exact_constructor_refusals_and_largest_budget_do_not_wrap",
+    "generation::tests::explicit_and_drop_cancellation_are_distinct_and_do_not_consume_k",
+    "generation::tests::final_acquire_observes_all_sixteen_exact_terminal_values",
+    "generation::tests::independent_ledger_rejects_six_wrong_populations_or_identities",
+    "generation::tests::independent_two_generation_two_function_event_ledger",
+    "generation::tests::inflight_refusal_does_not_consume_a_slot",
+    "generation::tests::nested_invocations_keep_identity_and_completion_selection_order",
+    "generation::tests::old_ticket_completion_does_not_close_or_write_new_epoch",
+    "generation::tests::partial_records_keep_unfinished_in_two_epochs_separate",
+    "generation::tests::retained_budget_is_per_function_for_one_ten_and_thousand",
+    "generation::tests::simultaneous_completions_have_exactly_one_final_retention_and_request",
+    "generation::tests::total_storage_exhaustion_closes_epoch_without_losing_records",
+    "generation::tests::unknown_function_refusal_and_closed_function_do_not_hide_other_function"
+  ],
+  "reference_calibration": {
+    "included_in_model_test_functions": true,
+    "required_negative": 8,
+    "required_positive": 1
+  },
+  "source_after_format": {
+    "Cargo.lock": "2b9863cdd1ee433a070cd55901776d756add2e875d0d49c19ed40f60724b3a23",
+    "Cargo.toml": "35e7a224e67781c01f8114733bc4f1361ce1764ef46d6f0a61c51996f39cad16",
+    "src/frontend.rs": "c810b06e7994b15e29a756aeb77c9d62b399752fb94ee82b4c39e2a5317abb94",
+    "src/frontend/tests.rs": "250b312d721077589f6390ff9336fd99900bf296ddf4b5c441d39e7326414e54",
+    "src/generation.rs": "e2bb80f2402e6d295eb12022fa7cee612a9be96708a4d50d97119d975a2401c1",
+    "src/generation/owned_tests.rs": "2f34dc6fd44dae16721d24fa5c230cc557bc2fd0067c3f2360a1c0ad8cb8ef94",
+    "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+    "src/lib.rs": "68a4237d7607b45ce0d9b380087638af5cd8619d70206b96aedff1154649abcc"
+  },
+  "source_before": {
+    "Cargo.lock": "2b9863cdd1ee433a070cd55901776d756add2e875d0d49c19ed40f60724b3a23",
+    "Cargo.toml": "35e7a224e67781c01f8114733bc4f1361ce1764ef46d6f0a61c51996f39cad16",
+    "src/frontend.rs": "c810b06e7994b15e29a756aeb77c9d62b399752fb94ee82b4c39e2a5317abb94",
+    "src/frontend/tests.rs": "250b312d721077589f6390ff9336fd99900bf296ddf4b5c441d39e7326414e54",
+    "src/generation.rs": "e2bb80f2402e6d295eb12022fa7cee612a9be96708a4d50d97119d975a2401c1",
+    "src/generation/owned_tests.rs": "2f34dc6fd44dae16721d24fa5c230cc557bc2fd0067c3f2360a1c0ad8cb8ef94",
+    "src/generation/tests.rs": "73199ffb0034e5d8658397aa77c547c899f8c9fcb23247d962a62649833e5a9f",
+    "src/lib.rs": "68a4237d7607b45ce0d9b380087638af5cd8619d70206b96aedff1154649abcc"
+  }
+}

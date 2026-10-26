@@ -194,3 +194,39 @@ refusals, unrun cases remain unrun, and formatter-review assertion failures
 remain distinct from the actual successful formatter command. Reporting and
 request preparation do not execute the modeled workload. Timing is operational
 only; per-command tool and hardware provenance limits remain in each record.
+
+Generated-unwind consumer results and reproduction materials are indexed in [consumer-public.md](consumer-public.md). The index separates historical native/parity results, failed fresh-reproduction prerequisites, workspace regressions and reporting operations; these records do not establish full A2 or general unwind support.
+
+The [frontend model history](frontend-model-private/README.md) preserves the held, failed and completed private ownership/controller model attempts. These snapshots do not establish public-crate qualification, native interval exits or a software preemption clock.
+
+The [A3 common-corpus index](e9-common-public.md) separates historical prototype loader/body evidence from the four completed portable-preparation commands. The portable pipeline remains unrun beyond staging, and full A3 remains open.
+
+The [public frontend model index](frontend-public.md) joins the focused 60-model/eight-doc qualification at `9098a3d7`, the separate required workspace pass, the preserved failed `3f87ac90` attempt and six independent tool-version observations. It retains each record's source, admission epochs and denominator. This ownership/model evidence leaves native frontend execution, a preemption clock, full A5 and claims 1–4 unqualified.
+
+## TLS ownership evidence
+
+[Private TLS failure and corrected qualification](frontend-tls-private.md) retain separate null-revision snapshots, exact74-model/10-doc inventories and request-only reproduction materials. [Public required gates at4c754df8](results/required-4c754df8-20261025/summary.json) report1000 outer passes/0 failures/4 existing ignores, with five nested guard executions separate. Repeated private/public runs do not add unique coverage; native machine-return-slot integration, the preemption clock and full A5 remain unqualified.
+
+The [fresh A3 reproduction cohort](e9-common-fresh.md) now records completion of all 13 original phases in a separate private epoch. Its 40 loader runs and 144 manual body traces retain distinct scopes; the earlier pending/stopped records above remain historical, and full A3 remains open.
+
+The [normal-kernel-exec four-tactic cohort](elf-exec-tactics-e6243a8.md) adds
+B2/T1/T2/T3 at exact source `e6243a862fda2572304cccbcfe698ac9ea6212a6`:
+204 traces, 676 full-state comparisons, 18 refusals and 24 ordinary executions.
+Its independent audit covers all 11,132 captures. The B1 prerequisite and
+[development failures](elf-exec-tactics-development.md) retain separate counts
+and outcomes. Scripts and sanitized CSV/JSON support partial claim 4; full A3
+and claims 1–3 remain open.
+
+The [gate-clock native record](frontend-native-gate-clock-actual.md) covers four original native modes and their format/compile prerequisites. The [separate continuation record](frontend-native-gate-clock-continuation-actual.md) covers the remaining eleven private commands, while the [preparer record](frontend-native-gate-clock-preparer-actual.md) distinguishes nine helper outcomes, the preserved collector failure and clean source staging. The [reproduction material](frontend-native-gate-clock/README.md), [row predecessor](frontend-native-journal-row-actual.md) and [v6 history](frontend-native-v6-actual.md) retain separate source snapshots, limits and failures.
+
+These bounded leaf-frontend results supply partial evidence under heading 4, **systematic everytactic**; they do not establish complete claim 4, claims 1–3, full A5 or a software preemption clock. All private reports retain `tested_revision: null`. Public exact-revision workspace validation is a separate record; a later matching commit does not relabel these private executions.
+
+The [exact-revision native record at `74aaf19a`](frontend-native-74aaf19a-actual.md) records the separate native build and four original execution modes. Its [required workspace run](frontend-native-required-74aaf19a-success.md) passed after the [failed parent attempt](frontend-native-required-7e464a42-failure.md); the [alignment analysis](frontend-native-alignment.md) explains the fixture correction using preserved ELF bytes. The [current-source replay recipe](frontend-native-exact-revision/README.md) names the exact tested checkout and keeps these runs separate from historical private snapshots. These results support bounded partial claim 4; they do not complete A2–A5 or claims 1–3.
+
+The separate [renderer controls](frontend-native-exact-revision-controls.md) record four accepted cases and seven expected refusals, with no native execution.
+
+The [two-return native leaf record at `94a1fd3`](native-two-returns-94a1fd3.md) adds both ordinary return paths while retaining all four original modes. Its exact-revision workspace run passed 1,050 tests with four unchanged ignores; eight native modes passed 456 full-state comparisons. The [finite recipe](native-two-returns/README.md) reproduces the campaign. These are bounded claim 4 results, with full A2–A5 still open.
+
+The [grouped successor-chain result at `7520688`](chain-grouping-7520688.md) records 108 full-state comparisons and four virtual pages sharing one sealed backing page, with collision rollback and writable-upgrade refusals. The required workspace run passed 1,056 tests with four unchanged ignores. The [recipe](chain-grouping/README.md) runs the unchanged gates once; the result supports one bounded slice of claim 4.
+
+The [normal kernel-exec ELF frontend record](elf-frontend-fc83079.md) joins exact-source workspace gates, four B1 executable candidates, 24 full-state traces and three separate static-parity inventories at `fc830799`. Its [development history](elf-exec-development-attempts.md) preserves all earlier failures and the incomplete control postcheck. This supports bounded partial claim 4; full A3 and claims 1–3 remain open.

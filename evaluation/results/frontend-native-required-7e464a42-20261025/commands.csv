@@ -1,0 +1,5 @@
+command_id,status,argv_json,wall_seconds,cpu_seconds,file_bytes,exit,elapsed_seconds,merged_log_sha256,tested_revision
+fmt,passed,"[""cargo"", ""fmt"", ""--check""]",180,,,0,1.167353113181889,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,7e464a424c5ad3eaef92e1db78d2a5f0cbd3eb60
+clippy,passed,"[""cargo"", ""clippy"", ""--workspace"", ""--all-targets"", ""--all-features"", ""--"", ""-D"", ""warnings""]",180,,,0,7.379052163101733,3c5df2f792a60ee386dca0cb890e568c1def8861ea8eb209af56fd874517bef2,7e464a424c5ad3eaef92e1db78d2a5f0cbd3eb60
+test,failed,"[""cargo"", ""test"", ""--workspace""]",360,,,101,275.5335448491387,eb3f8e1e6325dbc284d62478455ad624e8a1319be6d953cbed85df05fe9392d2,7e464a424c5ad3eaef92e1db78d2a5f0cbd3eb60
+check,not_run,"[""cargo"", ""check"", ""--workspace"", ""--all-features"", ""--all-targets""]",180,,,,,,7e464a424c5ad3eaef92e1db78d2a5f0cbd3eb60
