@@ -10,6 +10,8 @@ import unittest
 
 import native_fixtures as fixtures
 from parsing import InvalidEvidence, require
+from consumer_inventory import (CONSUMER_METHODS, OLD_PYTHON284_SHA256,
+                                before_consumer, before_consumer_python)
 
 PURE_INCREMENT = 64
 NATIVE_INCREMENT = 6
@@ -140,6 +142,7 @@ def before_kernel(declared):
     This is only a historical-test projection, never recorder acceptance or a
     fallback for missing runtime evidence. Every unknown or altered row fails.
     """
+    declared = before_consumer(declared)
     require(type(declared) is dict, "kernel_inventory_differs")
     require(type(declared.get("recorder_tests")) is int
             and declared["recorder_tests"] == 273 + RECORDER_INCREMENT,
@@ -203,6 +206,7 @@ class RuntimeKernelInventoryTests(unittest.TestCase):
         self.assertEqual([KERNEL_NATIVE_ROOT + "::" + name for name in KERNEL_METHODS[KERNEL_NATIVE_SOURCE]],
                          [row["test"] for row in KERNEL_ROWS])
         old_python, new_python = [], []
+        current_python = []
         new_modules = {"test_runtime_kernel_inventory", "test_runtime_kernel_fixtures"}
         for path in sorted(Path(__file__).parent.glob("test_*.py")):
             tree = ast.parse(path.read_text())
@@ -213,14 +217,31 @@ class RuntimeKernelInventoryTests(unittest.TestCase):
                     if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef)) and method.name.startswith("test_"):
                         identity = path.stem + "." + cls.name + "." + method.name
                         (new_python if path.stem in new_modules else old_python).append(identity)
+                        current_python.append(identity)
+        previous_python = before_consumer_python(current_python)
+        self.assertEqual(len(previous_python), 284)
+        self.assertEqual(digest(previous_python), OLD_PYTHON284_SHA256)
+        old_python = [value for value in old_python if value in previous_python]
         self.assertEqual(len(old_python), 273)
         self.assertEqual(digest(old_python), OLD_PYTHON273_SHA256)
         self.assertEqual(len(new_python), RECORDER_INCREMENT)
         self.assertEqual(len(old_python + new_python), len(set(old_python + new_python)))
+        for changed in (current_python[:-1], current_python + [current_python[-1]],
+                        ["PRIVATE_SENTINEL"] + current_python[1:], list(reversed(current_python))):
+            with self.assertRaisesRegex(InvalidEvidence, "^consumer_source_inventory_differs$") as caught:
+                before_consumer_python(changed)
+            self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+        for identity in CONSUMER_METHODS:
+            changed = list(current_python)
+            changed[changed.index(identity)] = identity + "_unlisted"
+            with self.assertRaisesRegex(InvalidEvidence, "^consumer_source_inventory_differs$"):
+                before_consumer_python(changed)
 
     def test_kernel_current_counts_preserve_exact_old_corpus_and_separate_collections(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
         original = copy.deepcopy(declared)
+        pre_consumer = before_consumer(declared)
+        self.assertEqual(pre_consumer | {"recorder_tests": 296}, declared)
         previous = before_kernel(declared)
         self.assertEqual(declared, original)
         self.assertEqual(digest(previous), PRE_KERNEL_CORPUS_SHA256)
@@ -237,7 +258,8 @@ class RuntimeKernelInventoryTests(unittest.TestCase):
             self.assertEqual({key: value for key, value in current.items() if key != fixtures.UNIT},
                              {key: value for key, value in previous["harness_test_counts"][name].items()
                               if key != fixtures.UNIT})
-        self.assertEqual(declared["recorder_tests"], 284)
+        self.assertEqual(before_consumer(declared)["recorder_tests"], 284)
+        self.assertEqual(declared["recorder_tests"], 296)
         self.assertEqual(len(fixtures.catalog(declared["native_validation_fixtures"])), 81)
         for field, count in (("native_cases", 50), ("dynamic_admission_fixtures", 15),
                              ("dynamic_matrix_cases", 388)):
@@ -247,6 +269,13 @@ class RuntimeKernelInventoryTests(unittest.TestCase):
 
     def test_kernel_projection_refuses_new_or_old_identity_source_and_count_tampering(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        for changed in (declared | {"recorder_tests": 284},
+                        declared | {"recorder_tests": 296.0},
+                        declared | {"recorder_tests": True},
+                        declared | {"unlisted": "PRIVATE_SENTINEL"}):
+            with self.assertRaisesRegex(InvalidEvidence, "^consumer_inventory_differs$") as caught:
+                before_consumer(changed)
+            self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
         for index in range(6):
             for change in ("missing", "duplicate", "position", "cohort", "harness", "test", "extra"):
                 changed = copy.deepcopy(declared)

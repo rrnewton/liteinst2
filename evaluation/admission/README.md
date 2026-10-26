@@ -72,8 +72,16 @@ native fixture identities, separately checked against all 138 existing runtime
 identities. Expected totals are 564 launcher units, 1940 workspace tests in the
 same 89 harnesses (1936 possible passes and four unchanged ignores), and 856
 serial launch tests in the same 27 harnesses.
-The recorder expects 284 Python controls. These are source-derived expectations;
+The recorder expects 296 Python controls, including twelve separate compiler-consumer
+record/schema regressions. These are source-derived expectations;
 this inventory makes no execution or qualification claim.
+The [compiler-produced C consumer](runtime-kernel-consumer.md) has a separate
+exact-revision driver and receipt.
+It adds no Rust test, native fixture identity or instruction sample to these
+inventories. Its historical projection reconstructs the complete prior 284-test
+recorder corpus and preserves all prior method identities. The existing six
+commands, output bounds, cleanup rules and native acceptance gates stay exact;
+consumer execution requires its own completed record after those commands pass.
 Three of the pure controls check the isolated child's exact result, completion
 receipt and parent-bound role. The original 16 runtime native identities remain
 unchanged and the two cross-page identities append separately. Child execution

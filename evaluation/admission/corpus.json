@@ -7356,6 +7356,6 @@
       "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_stale_reply_keeps_physical_custody"
     }
   ],
-  "recorder_tests": 284,
+  "recorder_tests": 296,
   "schema_version": 1
 }
