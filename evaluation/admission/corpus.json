@@ -6037,7 +6037,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 202
+        "tests": 221
       }
     },
     "workspace_tests": {
@@ -6339,7 +6339,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 202
+        "tests": 221
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,
@@ -7033,8 +7033,13 @@
       "cohort": "b3_signal",
       "harness": "test/b3_signal_admission",
       "test": "pristine_comparator_rejects_metadata_and_unrelated_state_corruption"
+    },
+    {
+      "cohort": "b3_source_census",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::tests::source_census::changed_reserved_census_refuses_before_entry_patch_or_permission_change"
     }
   ],
-  "recorder_tests": 208,
+  "recorder_tests": 213,
   "schema_version": 1
 }

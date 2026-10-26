@@ -16,6 +16,9 @@ UNIT = "unit/liteinst_launch/lib"
 REFERENCE = "test/b2_mode_reference"
 SIGNAL_REFERENCE = "test/b3_signal_admission"
 RESET_PREFIX = "linux::remote::dynamic::launch::anchor::reset::tests::"
+SOURCE_CENSUS_PREFIX = "linux::remote::dynamic::owner::tests::source_census::"
+SOURCE_CENSUS_TEST = (SOURCE_CENSUS_PREFIX
+                      + "changed_reserved_census_refuses_before_entry_patch_or_permission_change")
 PREFIXES = (
     "linux::remote::dynamic::owner::kernel_journal::tests::native::",
     "linux::remote::dynamic::owner::admission::completion::journal_dispatch_tests::",
@@ -38,7 +41,9 @@ def catalog(fixtures):
                 or (row["cohort"] == "b3_signal" and row["harness"] == SIGNAL_REFERENCE
                     and "::" not in row["test"])
                 or (row["cohort"] == "b3_reset" and row["harness"] == UNIT
-                    and row["test"].startswith(RESET_PREFIX)), "invalid_native_fixture_scope")
+                    and row["test"].startswith(RESET_PREFIX))
+                or (row["cohort"] == "b3_source_census" and row["harness"] == UNIT
+                    and row["test"] == SOURCE_CENSUS_TEST), "invalid_native_fixture_scope")
         key = (row["harness"], row["test"])
         require(key not in identities, "duplicate_native_fixture_catalog")
         identities[key] = row
@@ -103,7 +108,7 @@ def fixture_outcomes(output, fixtures, successful_command):
                 require(key not in seen_tests, "duplicate_native_fixture_test")
                 require(start[1] not in known_names or key in expected,
                         "native_fixture_wrong_harness")
-                require(key in expected or (current == UNIT and not start[1].startswith(PREFIXES + (RESET_PREFIX,))),
+                require(key in expected or (current == UNIT and not start[1].startswith(PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX))),
                         "native_fixture_cohort_differs")
                 seen_tests.add(key)
                 active = key

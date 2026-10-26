@@ -160,11 +160,13 @@ fifteen native fault/oracle/capacity tests and two native forced-dispatch tests;
 the B2 finite comparator adds six integration tests. Expected launcher unit
 count before the signal increment is 138. The signal increment adds 56 pure
 frame/census/profile/journal/extent/sizing controls, eight native reset controls
-and five native integration fixtures. Expected launcher unit count is 202.
-Workspace expectations are 1322 outer tests in 77 harnesses (1318 possible passes
-and four existing ignores); serial launch expects 484 tests in 25 harnesses.
-The recorder catalog expects 208 controls, including eight additive signal/reset
-cohort checks. These are source-derived expected cohorts, not reported execution
+and five native integration fixtures, reaching 202 launcher unit tests.
+The [retained source census](source-history.md) adds eighteen pure controls and
+one native refusal fixture with three subcases, reaching 221 launcher unit tests.
+Workspace expectations are 1341 outer tests in 77 harnesses (1337 possible passes
+and four existing ignores); serial launch expects 503 tests in 25 harnesses.
+The recorder catalog expects 213 controls, including eight signal/reset and five
+source-census cohort checks. These are source-derived expected cohorts, not reported execution
 results.
 
 The serial command exports four distinct evidence collections. The existing
@@ -193,11 +195,13 @@ The schema rejects extra fields, malformed or duplicate keys, wrong contexts and
 unknown identities. No raw addresses, output values or private diagnostics are
 exported.
 
-`native_validation_fixtures` separately retains 36 exact named outcomes: the
+`native_validation_fixtures` separately retains 37 exact named outcomes: the
 seventeen native journal/capacity/dispatch cases under their declared unit-module
 prefixes, six B2 reference integration cases, eight native reset controls and
-five signal integration cases. The reset and signal cohorts have distinct closed
-namespaces. These are test outcomes, not
+five signal integration cases, plus the original-EXEC/EXIT source-census refusal
+control. The source-census control requires its full exact identity; its three
+mutations remain one named test outcome. The reset, signal and source-census
+cohorts have distinct closed namespaces. These are test outcomes, not
 instruction samples, event counts or performance measurements. A case requires
 its exact harness and an explicit terminal `ok` within one announced libtest run.
 Missing, duplicate, skipped, failed, misattributed or unlisted cohort names refuse.
