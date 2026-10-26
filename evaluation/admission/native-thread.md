@@ -140,12 +140,13 @@ natural-parent reaping and pidfd HUP.
 | [arch/x86/kernel/process_64.c](https://github.com/gregkh/linux/blob/v7.1.3/arch/x86/kernel/process_64.c) | `a873329933dbbf4f53683a29277231017b571003ba9e11ba56c9e62f26d9e6ce` |
 | [arch/x86/include/uapi/asm/prctl.h](https://github.com/gregkh/linux/blob/v7.1.3/arch/x86/include/uapi/asm/prctl.h) | `fd0cce03f3ed53b8d2598f905352cc150c84ba7b8005603a63a625024c012279` |
 | [arch/x86/include/asm/shstk.h](https://github.com/gregkh/linux/blob/v7.1.3/arch/x86/include/asm/shstk.h) | `a68ab5ad608652bb2cb4f7508f6052d9de938039dd6c44f8e415b1e23ca672fe` |
+| [arch/x86/include/uapi/asm/ptrace-abi.h](https://github.com/gregkh/linux/blob/v7.1.3/arch/x86/include/uapi/asm/ptrace-abi.h) | `04f3cd620a5f7714f0bf2083d0af85b53f1828d4491d852bf7acf3695373d9f3` |
 
 Retrieve the exact sources into ignored storage without committing them:
 
 ```sh
 set -eu
-for source in kernel/fork.c kernel/exit.c fs/pidfs.c include/uapi/linux/pidfd.h include/uapi/linux/sched.h include/linux/sched/signal.h arch/x86/kernel/process.c arch/x86/kernel/shstk.c arch/x86/kernel/fpu/core.c arch/x86/kernel/fpu/regset.c arch/x86/kernel/cpu/proc.c arch/x86/kernel/ptrace.c arch/x86/kernel/process_64.c arch/x86/include/uapi/asm/prctl.h arch/x86/include/asm/shstk.h; do
+for source in kernel/fork.c kernel/exit.c fs/pidfs.c include/uapi/linux/pidfd.h include/uapi/linux/sched.h include/linux/sched/signal.h arch/x86/kernel/process.c arch/x86/kernel/shstk.c arch/x86/kernel/fpu/core.c arch/x86/kernel/fpu/regset.c arch/x86/kernel/cpu/proc.c arch/x86/kernel/ptrace.c arch/x86/kernel/process_64.c arch/x86/include/uapi/asm/prctl.h arch/x86/include/asm/shstk.h arch/x86/include/uapi/asm/ptrace-abi.h; do
     destination="target/review-linux-thread/$source"
     mkdir -p "$(dirname "$destination")"
     curl --fail --silent --show-error --location --max-time 30 \

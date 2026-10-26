@@ -8,6 +8,8 @@ mod tests;
 /// CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD.
 const THREAD_FLAGS: u64 = 0x10f00;
 const ARCH_SHSTK_STATUS: usize = 0x5005;
+// Linux x86 UAPI ptrace-abi.h; not exported by the supported libc release.
+const PTRACE_ARCH_PRCTL: libc::c_uint = 30;
 
 /// PTRACE_ARCH_PRCTL reverses arch_prctl's argument order. The pointer is a
 /// tracer-owned word, never a remote pointer. This reads target->thread.features
@@ -16,7 +18,7 @@ const ARCH_SHSTK_STATUS: usize = 0x5005;
 pub(super) fn shadow_stack_disabled(tid: libc::pid_t) -> Result<(), LaunchError> {
     let mut features = u64::MAX;
     ptrace(
-        libc::PTRACE_ARCH_PRCTL,
+        PTRACE_ARCH_PRCTL,
         tid,
         (&raw mut features) as usize,
         ARCH_SHSTK_STATUS,
