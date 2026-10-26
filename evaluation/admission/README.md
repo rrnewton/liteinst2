@@ -222,6 +222,8 @@ exception metadata and a strict corruption control. The separate reset cohort
 requires physical helper cleanup before any application is released.
 The [recorded signal result](b3-signals-e4d1322.md) binds the complete successful
 protocol to source `e4d13229` and retains the seven earlier failed attempts.
+The [retained-source result](source-history-a9d7f66.md) binds the subsequent
+complete protocol to `a9d7f66a` and preserves its earlier catalog-invalid attempt.
 
 The seven original named fixtures cover first CPUID entry, interpreter entry,
 native clone return boundaries, scripted default-policy RDPID coverage,
