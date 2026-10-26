@@ -1,7 +1,7 @@
 //! Actual refused native paths. The two faults are one-shot and owner-local;
 //! limits, valid observations and ordinary execution paths remain unchanged.
 use super::super::super::inputs::{InputFailureCause, InputPhase, StringRole};
-use super::super::super::native_support::*;
+use super::super::super::native_support::{NEXT_SESSION, *};
 use super::super::super::*;
 use crate::exec_oracle_support::{
     self as support, APP_MASK, Architecture, CODE, DATA_LEN, Fixture, INPUT, Maps, NEW, NEW_DATA,
