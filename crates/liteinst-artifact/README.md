@@ -9,8 +9,8 @@ prospective size bounds.
 A valid digest proves byte identity. A `Rewritten` metadata outcome records the
 producer's structural decision; it does not admit hooks, instructions, selected
 entries, CPU state, loader readiness, or execution. Unsurveyed original pages
-remain unknown. Sparse reconstruction requires the exact complete original
-identity and the declared compatibility values. No API maps or executes code.
+remain unknown. Sparse reconstruction requires exact complete original identity and declared
+byte edits. Metadata separately requires the declared compatibility values. No API maps or executes code.
 
 The source includes 20 existing test functions: nine metadata, five sparse
 composition, and six sparse-wire cases. Their assertions are preserved. Test

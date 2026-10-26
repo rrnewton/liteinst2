@@ -49,7 +49,8 @@ reads/writes, original entry assumptions, actual store spans, allocations,
 images, symbolic hook routes, restored boundaries, reverse-PC ranges, producer
 address fields, and outstanding requirements. `ledger.tsv` records carrier
 placement, original loader/dynamic ownership, and header/source changes.
-`metadata.li2meta` and `source.li2sparse` bind the same original and selection.
+`metadata.li2meta` binds original and selection identities; `source.li2sparse`
+binds original identity and exact edit declarations.
 Generated image files, the candidate ELF, and sidecars are hashed by
 `bundle-index.tsv`; `COMPLETE` binds that index. Hashes provide integrity, not
 trusted producer signatures or runtime approval.
