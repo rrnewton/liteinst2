@@ -3,7 +3,7 @@ use super::*;
 use crate::gate::OraclePhaseMetrics;
 
 impl ExecState {
-    pub(super) fn add_retired_metrics(
+    pub(in super::super) fn add_retired_metrics(
         &self,
         census: &ResumeCensus,
         metrics: &mut DynamicAdmissionMetrics,
