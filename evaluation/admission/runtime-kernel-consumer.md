@@ -1,13 +1,17 @@
 # Freestanding C runtime consumer
 
-This revised recipe is unqualified for one compiler-produced static x86-64 executable.
-It requests separate read-only and executable load pages with `-z separate-code`.
-The earlier recipe produced overlapping file-page mappings and was refused; its
+The compiler-produced static x86-64 artifact now has separate read-only and
+executable file pages (`-z separate-code`) and exits 7 as a reference. Runtime
+startup still refuses its final bootstrap mapping layout, so admitted execution
+remains unqualified. Failed construction now completes physical cleanup before
+the example exits. See the [results and reproduction record](runtime-consumer-cleanup-results.md)
+for exact revisions, artifact hashes, successful cleanup controls and every
+preserved failed attempt.
+
+The earlier recipe's overlapping file-page mappings remain refused; its
 [failed receipt](results/20261026T214847.495009Z-runtime-consumer-a2ed122cad44.json)
-remains unchanged. The revised artifact still requires actual page-geometry,
-reference-execution and admitted-execution evidence before qualification. It does not establish libc, loader,
-interpreter, dynamic linking, memory/stack, signal/thread or general application
-support.
+is unchanged. These results do not establish libc, loader, interpreter, dynamic
+linking, memory/stack, signal/thread or general application support.
 
 The [C source](consumers/runtime_identity.c) performs original getpid and gettid,
 uses their actual results in C XOR-plus-seven arithmetic, and invokes original
