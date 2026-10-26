@@ -7,28 +7,12 @@ mod tests;
 
 /// CLONE_VM | CLONE_FS | CLONE_FILES | CLONE_SIGHAND | CLONE_THREAD.
 const THREAD_FLAGS: u64 = 0x10f00;
-const ARCH_SHSTK_STATUS: usize = 0x5005;
-// Linux x86 UAPI ptrace-abi.h; not exported by the supported libc release.
-const PTRACE_ARCH_PRCTL: libc::c_uint = 30;
+mod cet;
 
-/// PTRACE_ARCH_PRCTL reverses arch_prctl's argument order. The pointer is a
-/// tracer-owned word, never a remote pointer. This reads target->thread.features
-/// (shadow-stack/WRSS state), not CPUID or an inferred CONFIG setting. Every
-/// unavailable interface/error and every nonzero or unknown feature refuses.
+/// Accepts either an exact disabled-state report or a separately authenticated
+/// native Linux ABI absence certificate. Neither grants publication authority.
 pub(super) fn shadow_stack_disabled(tid: libc::pid_t) -> Result<(), LaunchError> {
-    let mut features = u64::MAX;
-    ptrace(
-        PTRACE_ARCH_PRCTL,
-        tid,
-        (&raw mut features) as usize,
-        ARCH_SHSTK_STATUS,
-    )?;
-    if features != 0 {
-        return Err(LaunchError::Invalid(
-            "native thread clone requires disabled shadow-stack features",
-        ));
-    }
-    Ok(())
+    cet::disabled(tid).map(|_| ())
 }
 
 fn thread_pin_supported(tid: libc::pid_t) -> Result<(), LaunchError> {

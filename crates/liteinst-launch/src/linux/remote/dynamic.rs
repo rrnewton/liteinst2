@@ -50,8 +50,9 @@ pub enum DynamicCreationPolicy {
     Fork,
     /// One native SYS_clone with flags 0x10f00, from a singleton leader.
     /// Shares the process/mm; TLS and TID outputs are excluded. Requires an
-    /// authenticated zero per-task shadow-stack/WRSS status and exact inherited
-    /// XSTATE before either task resumes. This is not pthread qualification.
+    /// authenticated zero per-task shadow-stack/WRSS status or a controlled
+    /// native-ABI absence certificate, and exact inherited XSTATE before either
+    /// task resumes. This is not pthread qualification.
     ThreadClone,
 }
 

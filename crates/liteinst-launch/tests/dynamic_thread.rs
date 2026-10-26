@@ -574,12 +574,135 @@ struct Run {
     worker: i32,
     phases: Vec<Snapshot>,
 }
-fn raw_cet_disabled(tid: i32) {
-    let mut state = MARKER;
-    trace(tid, 30, (&raw mut state) as usize, 0x5005);
-    assert_eq!(state, 0, "per-task CET state must be observed disabled");
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+// This certifies only user shadow-stack/WRSS state, never unrelated CET modes.
+enum RawCetCertificate {
+    StatusZero,
+    AbiAbsent,
 }
-fn raw_run(path: &Path, code: &[u8]) -> Run {
+struct CertifiedRun {
+    run: Run,
+    certificate: RawCetCertificate,
+}
+fn original_cet_output(data: &[u8], certificate: RawCetCertificate) {
+    let (state, result) = match certificate {
+        RawCetCertificate::StatusZero => (0, 0),
+        RawCetCertificate::AbiAbsent => (MARKER, (-i64::from(libc::EINVAL)) as u64),
+    };
+    assert_eq!(&data[176..184], &state.to_le_bytes());
+    assert_eq!(&data[184..192], &result.to_le_bytes());
+}
+fn raw_tracer_unfiltered() {
+    let tid = unsafe { libc::syscall(libc::SYS_gettid) };
+    assert!(tid > 0 && tid <= i64::from(i32::MAX));
+    let file = fs::File::open("/proc/thread-self/status").unwrap();
+    let mut filesystem: libc::statfs = unsafe { std::mem::zeroed() };
+    assert_eq!(
+        unsafe { libc::fstatfs(file.as_raw_fd(), &raw mut filesystem) },
+        0
+    );
+    assert_eq!(filesystem.f_type, 0x9fa0);
+    let mut bytes = Vec::new();
+    file.take(16 * 1024 + 1).read_to_end(&mut bytes).unwrap();
+    assert!(bytes.len() <= 16 * 1024);
+    let status = std::str::from_utf8(&bytes).unwrap();
+    assert!(status.ends_with('\n') && !status.contains('\0'));
+    let (mut pid, mut seccomp) = (None, None);
+    for line in status.lines() {
+        let (field, value) = line.split_once(':').expect("malformed proc status field");
+        assert!(
+            !field.is_empty()
+                && field
+                    .bytes()
+                    .all(|byte| byte.is_ascii_alphanumeric() || byte == b'_')
+        );
+        if field == "Pid" || field == "Seccomp" {
+            let values = value.split_ascii_whitespace().collect::<Vec<_>>();
+            assert_eq!(values.len(), 1);
+            if field == "Pid" {
+                assert!(pid.replace(values[0]).is_none());
+            } else {
+                assert!(seccomp.replace(values[0]).is_none());
+            }
+        }
+    }
+    let expected_pid = tid.to_string();
+    assert_eq!(pid, Some(expected_pid.as_str()));
+    assert_eq!(seccomp, Some("0"));
+}
+fn raw_status_absent(tid: i32) {
+    let mut state = MARKER;
+    let result = unsafe { libc::ptrace(30_u32, tid, (&raw mut state) as usize, 0x5005_usize) };
+    let error = io::Error::last_os_error().raw_os_error();
+    assert_eq!(result, -1);
+    assert_eq!(error, Some(libc::EINVAL));
+    assert_eq!(state, MARKER);
+}
+fn raw_cet_disabled(tid: i32) -> RawCetCertificate {
+    let mut state = MARKER;
+    let result = unsafe { libc::ptrace(30_u32, tid, (&raw mut state) as usize, 0x5005_usize) };
+    let error = io::Error::last_os_error().raw_os_error();
+    let certificate = if result == 0 {
+        assert_eq!(state, 0, "per-task CET state must be observed disabled");
+        RawCetCertificate::StatusZero
+    } else {
+        assert_eq!(result, -1);
+        assert_eq!(error, Some(libc::EINVAL));
+        assert_eq!(state, MARKER);
+        // Under the conforming native Linux ABI, an absent SHSTK regset gives
+        // EINVAL; the present getter can return ENODEV, which is not proof.
+        // Repeat STATUS inside the seccomp-free interval. A concurrent TSYNC
+        // filter cannot disappear before the final per-thread mode check.
+        raw_tracer_unfiltered();
+        let before = raw_registers(tid);
+        assert_eq!(before.cs, 0x33);
+        let mut general = [MARKER; 27];
+        let general_base = general.as_mut_ptr().cast();
+        let mut general_iov = libc::iovec {
+            iov_base: general_base,
+            iov_len: 216,
+        };
+        trace(
+            tid,
+            libc::PTRACE_GETREGSET,
+            1,
+            (&raw mut general_iov) as usize,
+        );
+        assert_eq!(general_iov.iov_base, general_base);
+        assert_eq!(general_iov.iov_len, 216);
+        assert_eq!(registers(general), before);
+        let mut fs_base = !before.fs_base;
+        trace(tid, 30, (&raw mut fs_base) as usize, 0x1003);
+        assert_eq!(fs_base, before.fs_base);
+        raw_status_absent(tid);
+        let mut shadow_stack = MARKER;
+        let shadow_base = (&raw mut shadow_stack).cast();
+        let mut shadow_iov = libc::iovec {
+            iov_base: shadow_base,
+            iov_len: 8,
+        };
+        let result = unsafe {
+            libc::ptrace(
+                libc::PTRACE_GETREGSET,
+                tid,
+                0x204_usize,
+                (&raw mut shadow_iov) as usize,
+            )
+        };
+        let error = io::Error::last_os_error().raw_os_error();
+        assert_eq!(result, -1);
+        assert_eq!(error, Some(libc::EINVAL));
+        assert_eq!(shadow_stack, MARKER);
+        assert_eq!(shadow_iov.iov_base, shadow_base);
+        assert_eq!(shadow_iov.iov_len, 8);
+        raw_tracer_unfiltered();
+        assert_eq!(raw_registers(tid), before);
+        RawCetCertificate::AbiAbsent
+    };
+    original_cet_output(&raw_memory(tid, DATA, RESULT_SIZE), certificate);
+    certificate
+}
+fn raw_run(path: &Path, code: &[u8]) -> CertifiedRun {
     let mut raw = Raw::launch(path);
     let leader = raw.parent.id() as i32;
     raw.resume(leader, libc::PTRACE_SYSCALL, 0);
@@ -607,8 +730,8 @@ fn raw_run(path: &Path, code: &[u8]) -> Run {
     }
     let worker = created.unwrap();
     assert_eq!(newborn, Some(worker));
-    raw_cet_disabled(leader);
-    raw_cet_disabled(worker);
+    let certificate = raw_cet_disabled(leader);
+    assert_eq!(raw_cet_disabled(worker), certificate);
     phases.push(raw_snapshot(leader, code));
     raw.resume(leader, libc::PTRACE_SYSCALL, 0);
     raw.syscall_stop(
@@ -625,10 +748,13 @@ fn raw_run(path: &Path, code: &[u8]) -> Run {
     raw_fault(&mut raw, worker);
     phases.push(raw_snapshot(worker, code));
     assert!(raw.cleanup(), "native foreground physical cleanup deadline");
-    Run {
-        leader,
-        worker,
-        phases,
+    CertifiedRun {
+        run: Run {
+            leader,
+            worker,
+            phases,
+        },
+        certificate,
     }
 }
 fn observed(path: &Path, code: &[u8]) -> Run {
@@ -656,14 +782,13 @@ fn observed(path: &Path, code: &[u8]) -> Run {
         phases,
     }
 }
-fn comparable(run: &Run) -> Vec<Snapshot> {
+fn comparable(run: &Run, certificate: RawCetCertificate) -> Vec<Snapshot> {
     assert_eq!(run.phases.len(), 6);
     for at in 0..4 {
         assert_eq!(run.phases[at].registers.eflags, FLAGS);
         assert_eq!(run.phases[at].mask, MASK);
         assert_eq!(&run.phases[at].data[160..168], &0_u64.to_le_bytes());
-        assert_eq!(&run.phases[at].data[176..184], &0_u64.to_le_bytes());
-        assert_eq!(&run.phases[at].data[184..192], &0_u64.to_le_bytes());
+        original_cet_output(&run.phases[at].data, certificate);
     }
     assert_eq!(run.phases[0].registers.orig_rax, libc::SYS_clone as u64);
     assert_eq!(run.phases[1].registers.rax as i64, -i64::from(libc::ENOSYS));
@@ -815,7 +940,8 @@ fn isolated(
         1
     );
 }
-fn save(path: &Path, run: &Run, count: usize) {
+fn save(path: &Path, captured: &CertifiedRun, count: usize) {
+    let run = &captured.run;
     assert_eq!(run.phases.len(), count);
     let mut f = OpenOptions::new()
         .write(true)
@@ -823,7 +949,12 @@ fn save(path: &Path, run: &Run, count: usize) {
         .mode(0o600)
         .open(path)
         .unwrap();
-    f.write_all(b"LITHRD01").unwrap();
+    f.write_all(b"LITHRD02").unwrap();
+    f.write_all(&[match captured.certificate {
+        RawCetCertificate::StatusZero => 0,
+        RawCetCertificate::AbiAbsent => 1,
+    }])
+    .unwrap();
     for tid in [run.leader, run.worker] {
         f.write_all(&tid.to_le_bytes()).unwrap();
     }
@@ -837,11 +968,18 @@ fn save(path: &Path, run: &Run, count: usize) {
         }
     }
 }
-fn load(path: &Path, count: usize) -> Run {
+fn load(path: &Path, count: usize) -> CertifiedRun {
     let mut f = fs::File::open(path).unwrap();
     let mut magic = [0; 8];
     f.read_exact(&mut magic).unwrap();
-    assert_eq!(&magic, b"LITHRD01");
+    assert_eq!(&magic, b"LITHRD02");
+    let mut proof = [0xff];
+    f.read_exact(&mut proof).unwrap();
+    let certificate = match proof[0] {
+        0 => RawCetCertificate::StatusZero,
+        1 => RawCetCertificate::AbiAbsent,
+        _ => panic!("invalid native CET certificate"),
+    };
     let mut id = || {
         let mut bytes = [0; 4];
         f.read_exact(&mut bytes).unwrap();
@@ -883,13 +1021,16 @@ fn load(path: &Path, count: usize) -> Run {
     }
     let mut extra = [0];
     assert_eq!(f.read(&mut extra).unwrap(), 0);
-    Run {
-        leader,
-        worker,
-        phases,
+    CertifiedRun {
+        run: Run {
+            leader,
+            worker,
+            phases,
+        },
+        certificate,
     }
 }
-fn native(f: &Fixture, path: &Path, code: &[u8], role: &str, count: usize) -> Run {
+fn native(f: &Fixture, path: &Path, code: &[u8], role: &str, count: usize) -> CertifiedRun {
     let record = f.directory.join(format!("{role}.bin"));
     let source = f.directory.join(format!("{role}-code.bin"));
     fs::write(&source, code).unwrap();
@@ -916,7 +1057,7 @@ fn corruption_controls(expected: &Snapshot) {
         assert_ne!(&changed, expected);
     }
 }
-fn raw_created(raw: &mut Raw, leader: i32) -> i32 {
+fn raw_created(raw: &mut Raw, leader: i32) -> (i32, RawCetCertificate) {
     let (mut parent, mut child) = (None, None);
     while parent.is_none() || child.is_none() {
         let (tid, status) = raw.wait();
@@ -936,9 +1077,9 @@ fn raw_created(raw: &mut Raw, leader: i32) -> i32 {
     }
     let worker = parent.unwrap();
     assert_eq!(child, Some(worker));
-    raw_cet_disabled(leader);
-    raw_cet_disabled(worker);
-    worker
+    let certificate = raw_cet_disabled(leader);
+    assert_eq!(raw_cet_disabled(worker), certificate);
+    (worker, certificate)
 }
 fn raw_unwind(path: &Path) {
     let mut retained = Vec::new();
@@ -948,7 +1089,7 @@ fn raw_unwind(path: &Path) {
         raw.resume(leader, libc::PTRACE_SYSCALL, 0);
         raw_entry(&mut raw, leader, libc::SYS_clone as u64);
         raw.resume(leader, libc::PTRACE_SYSCALL, 0);
-        let worker = raw_created(&mut raw, leader);
+        let (worker, _) = raw_created(&mut raw, leader);
         retained.push(pin(leader));
         retained.push(pin_task(worker, leader));
         let payload = vec![b'X'; 256 * 1024];
@@ -1015,8 +1156,8 @@ fn clone_phases_and_first_original_instructions_match_independent_native_state()
     let path = f.image("original", &code, &initial_data(), false, None);
     let raw = native(&f, &path, &code, "first", 6);
     let controlled = observed(&path, &code);
-    let expected = comparable(&raw);
-    let actual = comparable(&controlled);
+    let expected = comparable(&raw.run, raw.certificate);
+    let actual = comparable(&controlled, raw.certificate);
     assert_eq!(actual, expected);
     corruption_controls(&actual[5]);
     isolated(
@@ -1105,14 +1246,14 @@ fn shared_observed(path: &Path, code: &[u8], second: bool) -> Run {
         phases,
     }
 }
-fn raw_shared(path: &Path, code: &[u8]) -> Run {
+fn raw_shared(path: &Path, code: &[u8]) -> CertifiedRun {
     let mut raw = Raw::launch(path);
     let leader = raw.parent.id() as i32;
     raw.resume(leader, libc::PTRACE_SYSCALL, 0);
     raw_entry(&mut raw, leader, libc::SYS_clone as u64);
     let mut phases = vec![raw_snapshot(leader, code)];
     raw.resume(leader, libc::PTRACE_SYSCALL, 0);
-    let worker = raw_created(&mut raw, leader);
+    let (worker, certificate) = raw_created(&mut raw, leader);
     phases.push(raw_snapshot(leader, code));
     raw.resume(leader, libc::PTRACE_SYSCALL, 0);
     raw.syscall_stop(
@@ -1154,13 +1295,16 @@ fn raw_shared(path: &Path, code: &[u8]) -> Run {
         raw.cleanup(),
         "shared native foreground physical cleanup deadline"
     );
-    Run {
-        leader,
-        worker,
-        phases,
+    CertifiedRun {
+        run: Run {
+            leader,
+            worker,
+            phases,
+        },
+        certificate,
     }
 }
-fn shared_comparable(run: &Run) -> Vec<Snapshot> {
+fn shared_comparable(run: &Run, certificate: RawCetCertificate) -> Vec<Snapshot> {
     assert_eq!(run.phases.len(), 8);
     assert_eq!(run.phases[2].registers.rax, run.worker as u64);
     assert_eq!(run.phases[3].registers.rax, 0);
@@ -1169,8 +1313,7 @@ fn shared_comparable(run: &Run) -> Vec<Snapshot> {
     let data = &run.phases[5].data;
     let word = |at| u64::from_le_bytes(data[at..at + 8].try_into().unwrap());
     assert_eq!(word(168), 0);
-    assert_eq!(word(176), 0);
-    assert_eq!(word(184), 0);
+    original_cet_output(data, certificate);
     assert_eq!(word(64), DATA + 3 * PAGE as u64);
     assert_eq!(word(72), 0);
     assert_eq!(word(80), 8192);
@@ -1193,8 +1336,8 @@ fn shared_writes_altstack_reset_and_thread_exit_match_native_with_leader_alive()
     let path = f.image("original", &code, &initial_data(), false, None);
     let raw = native(&f, &path, &code, "shared", 8);
     let controlled = shared_observed(&path, &code, false);
-    let expected = shared_comparable(&raw);
-    let actual = shared_comparable(&controlled);
+    let expected = shared_comparable(&raw.run, raw.certificate);
+    let actual = shared_comparable(&controlled, raw.certificate);
     assert_eq!(actual, expected);
     corruption_controls(&actual[5]);
 }
@@ -1365,7 +1508,7 @@ fn raw_leader_exit(path: &Path) -> [i32; 4] {
     raw.resume(leader, libc::PTRACE_SYSCALL, 0);
     raw_entry(&mut raw, leader, libc::SYS_clone as u64);
     raw.resume(leader, libc::PTRACE_SYSCALL, 0);
-    let worker = raw_created(&mut raw, leader);
+    let (worker, _) = raw_created(&mut raw, leader);
     raw.resume(leader, libc::PTRACE_SYSCALL, 0);
     raw.syscall_stop(
         leader,

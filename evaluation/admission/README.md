@@ -132,9 +132,10 @@ and first-user phases remain distinct. Failed exec refuses continuation,
 including the independently observed post-point-of-no-return case. The original
 workspace, serial, telemetry, cleanup and recorder gates remain unchanged.
 
-The bounded native thread increment adds 25 outer tests: twelve public native
-cases, five private actual-order/refusal/exit cases, five pure shared-mm cases
-and three pure Exiting-phase cases. Four captured single-test oracle/control
+The bounded native thread increment adds 33 outer tests: twelve public native
+cases, five private actual-order/refusal/exit cases, eight private CET-certificate
+control/refusal cases, five pure shared-mm cases and three pure Exiting-phase
+cases. Four captured single-test oracle/control
 invocations cover first-user state, shared writes and alternate-stack effects,
 leader-first exit statuses and output-pressure unwind. Each requires one exact
 summary and physical-cleanup witness, without adding outer or parser-nested

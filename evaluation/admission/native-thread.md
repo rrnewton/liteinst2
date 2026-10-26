@@ -37,12 +37,34 @@ CET and dynamically managed extended state require explicit qualification.
 Linux allocates a new shadow stack for a CLONE_VM child when the parent has
 shadow stacks enabled. It can also omit dynamic XTILE_DATA and clear PASID
 state. CPUID alone does not identify per-task state. The finite native profile
-requires successful read-only `PTRACE_ARCH_PRCTL` / `ARCH_SHSTK_STATUS`
-with an exact zero result in tracer-owned memory. The kernel reads the held
-target task's full feature bitmap. An errno, nonzero bitmap or missing interface
-refuses before clone; absent kernel configuration is not inferred from CPUID
-or an unavailable regset. The full parent/newborn XSTATE comparator remains. A differing native transition fails
+requires one of two read-only certificates. The first is successful
+`PTRACE_ARCH_PRCTL` / `ARCH_SHSTK_STATUS` with an exact zero feature bitmap in
+tracer-owned memory. The second authenticates that the native Linux ABI has
+neither a shadow-stack status implementation nor a shadow-stack regset. It
+requires both exact EINVAL results, successful independent general-register and
+FS-base control queries, a native 64-bit register view, and a correctly sized
+8-byte regset query whose buffer and descriptor remain unchanged. An arbitrary
+errno or missing interface alone is insufficient.
+
+The absence certificate requires the current tracer thread's genuine procfs
+status to report exactly `Seccomp: 0` before and after the probes. This rejects
+filters that could synthesize errno results, including a concurrent TSYNC
+installation under the conforming seccomp ABI. Missing, malformed, duplicate
+or nonzero status refuses. A trusted procfs and a conforming, unintercepted
+kernel ABI are explicit host requirements; these queries do not attest a vendor
+kernel build. Source pins establish the argument, not the running build's
+configuration.
+
+The configured regset exists even when shadow stacks are disabled. Its read
+returns data or ENODEV; the enabled-but-missing-state failure also uses ENODEV.
+Thus ENODEV and a successful zero SSP never establish disabled features.
+CPUID and absent procfs feature rows remain insufficient. The full
+parent/newborn XSTATE comparator remains. A differing native transition fails
 closed before original child instructions execute; no component is masked out.
+The original fixture still executes its own status syscall. Its exact result
+and output bytes must match the independently established certificate: success
+and zero features, or EINVAL with the original output sentinel unchanged.
+No register or memory field is removed from the differential comparison.
 
 ## Task removal and process reaping
 
@@ -84,9 +106,9 @@ overhead, not application or instrumentation performance.
 
 The existing parser, command deadlines, old tests, ignores, comparators and
 zero-adoptee gates remain required. Failed attempts stay failed in the tracked
-results. The corpus declares 25 added outer cases: twelve public native cases, five
-private native cases, five pure shared-mm cases and three pure Exiting-phase
-cases. Four captured single-test raw-oracle/control invocations add no outer
+results. The corpus declares 33 added outer cases: twelve public native cases, five
+private native cases, eight private CET-certificate control/refusal cases, five
+pure shared-mm cases and three pure Exiting-phase cases. Four captured single-test raw-oracle/control invocations add no outer
 or parser-nested passes. The independent original-state oracle compares six
 clone/first-user checkpoints; the shared-state oracle compares eight. Each
 snapshot includes all 27 general-register fields, flags/orig_rax, full XSTATE,
@@ -118,8 +140,17 @@ separate evidence. `kernel/fork.c` supplies native flag narrowing, thread-group
 creation and alternate-stack behavior. `process.c`, `shstk.c` and FPU sources
 establish register and extended-state transitions. The x86 ptrace and
 arch-prctl implementations identify the per-task CET
-observation contract; the regset implementation explains why ENODEV alone is
-not a disabled-state proof.
+observation contract. In the native x86-64 view, the SHSTK regset is installed
+exactly when `CONFIG_X86_USER_SHADOW_STACK` is enabled, with one 8-byte element.
+Generic GETREGSET can produce EINVAL for an absent regset or a nonmultiple
+length; the fixed correct length excludes the latter. The configured getter
+has no EINVAL path. Full PRSTATUS equality with GETREGS checks the view, and
+GET_FS checks the reversed arch-prctl dispatch. Other wrapper failures remain
+errors. The seccomp implementation permits installation and same-mode filter
+stacking, but no return to disabled mode in a surviving thread; procfs reports
+that thread's current mode. The pre/post zero observations exclude a lasting
+TSYNC filter under the stated host contract. ENODEV remains ambiguous and is
+never used as a disabled-state proof.
 `exit.c` and `pidfs.c` distinguish thread removal, delayed leader exit,
 natural-parent reaping and pidfd HUP.
 
@@ -141,12 +172,19 @@ natural-parent reaping and pidfd HUP.
 | [arch/x86/include/uapi/asm/prctl.h](https://github.com/gregkh/linux/blob/v7.1.3/arch/x86/include/uapi/asm/prctl.h) | `fd0cce03f3ed53b8d2598f905352cc150c84ba7b8005603a63a625024c012279` |
 | [arch/x86/include/asm/shstk.h](https://github.com/gregkh/linux/blob/v7.1.3/arch/x86/include/asm/shstk.h) | `a68ab5ad608652bb2cb4f7508f6052d9de938039dd6c44f8e415b1e23ca672fe` |
 | [arch/x86/include/uapi/asm/ptrace-abi.h](https://github.com/gregkh/linux/blob/v7.1.3/arch/x86/include/uapi/asm/ptrace-abi.h) | `04f3cd620a5f7714f0bf2083d0af85b53f1828d4491d852bf7acf3695373d9f3` |
+| [kernel/ptrace.c](https://github.com/gregkh/linux/blob/v7.1.3/kernel/ptrace.c) | `6f158c7b443a7a20c36c36abbe68e012fc3dc8017d73771834648541101e85c8` |
+| [kernel/regset.c](https://github.com/gregkh/linux/blob/v7.1.3/kernel/regset.c) | `9e658f96517ef325ed9c269da8190405f18b0e3b6df5ebf204bb02e0ec3bbb1e` |
+| [include/linux/regset.h](https://github.com/gregkh/linux/blob/v7.1.3/include/linux/regset.h) | `5d8d794e00ace1d01865f310fa39d07224818cc505145c14440e7f8315228c2d` |
+| [include/uapi/linux/elf.h](https://github.com/gregkh/linux/blob/v7.1.3/include/uapi/linux/elf.h) | `15613d116a6c77c4826036740dd5023c6a7779c776acd3ac7a1a661fe7432b3c` |
+| [kernel/seccomp.c](https://github.com/gregkh/linux/blob/v7.1.3/kernel/seccomp.c) | `faadf7f5f2b9fe3e7f08ab76ac73f37a62b36a86b7f5b2c8389d132620850c8c` |
+| [include/linux/seccomp.h](https://github.com/gregkh/linux/blob/v7.1.3/include/linux/seccomp.h) | `07000b35cb4737bf3d4e357ce7ff01e34081815fa96df29f2bf95979b7aaa83a` |
+| [fs/proc/array.c](https://github.com/gregkh/linux/blob/v7.1.3/fs/proc/array.c) | `18fd1100d317589f22bdfedbdf2ae114b9765c9652ee15254573f50e9657bfb7` |
 
 Retrieve the exact sources into ignored storage without committing them:
 
 ```sh
 set -eu
-for source in kernel/fork.c kernel/exit.c fs/pidfs.c include/uapi/linux/pidfd.h include/uapi/linux/sched.h include/linux/sched/signal.h arch/x86/kernel/process.c arch/x86/kernel/shstk.c arch/x86/kernel/fpu/core.c arch/x86/kernel/fpu/regset.c arch/x86/kernel/cpu/proc.c arch/x86/kernel/ptrace.c arch/x86/kernel/process_64.c arch/x86/include/uapi/asm/prctl.h arch/x86/include/asm/shstk.h arch/x86/include/uapi/asm/ptrace-abi.h; do
+for source in kernel/fork.c kernel/exit.c fs/pidfs.c include/uapi/linux/pidfd.h include/uapi/linux/sched.h include/linux/sched/signal.h arch/x86/kernel/process.c arch/x86/kernel/shstk.c arch/x86/kernel/fpu/core.c arch/x86/kernel/fpu/regset.c arch/x86/kernel/cpu/proc.c arch/x86/kernel/ptrace.c arch/x86/kernel/process_64.c arch/x86/include/uapi/asm/prctl.h arch/x86/include/asm/shstk.h arch/x86/include/uapi/asm/ptrace-abi.h kernel/ptrace.c kernel/regset.c include/linux/regset.h include/uapi/linux/elf.h kernel/seccomp.c include/linux/seccomp.h fs/proc/array.c; do
     destination="target/review-linux-thread/$source"
     mkdir -p "$(dirname "$destination")"
     curl --fail --silent --show-error --location --max-time 30 \
