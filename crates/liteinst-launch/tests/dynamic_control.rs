@@ -224,6 +224,9 @@ fn assert_reaped(handle: &OwnedFd) {
     // SAFETY: one initialized descriptor record, with a zero waiting interval.
     assert_eq!(unsafe { libc::poll(&raw mut poll, 1, 0) }, 1);
     assert_ne!(poll.revents & libc::POLLIN, 0);
+    // A ptrace terminal wait may leave a real-parent zombie. HUP additionally
+    // requires this pinned PID to have no remaining task.
+    assert_ne!(poll.revents & libc::POLLHUP, 0);
     let mut info = std::mem::MaybeUninit::<libc::siginfo_t>::uninit();
     // SAFETY: a stable descriptor and WNOWAIT prevent unrelated or competing reaps.
     assert_eq!(
@@ -734,9 +737,33 @@ fn run_exit(session: &mut DynamicSession, expected: i32) {
     assert!(event.stop_token().is_none());
 }
 
+fn host_subreaper() -> i32 {
+    let mut setting = -1_i32;
+    // SAFETY: PR_GET_CHILD_SUBREAPER writes one initialized native integer.
+    assert_eq!(
+        unsafe { libc::prctl(libc::PR_GET_CHILD_SUBREAPER, &raw mut setting, 0, 0, 0) },
+        0
+    );
+    assert!(matches!(setting, 0 | 1));
+    setting
+}
+
+fn real_parent(pid: i32) -> i32 {
+    // This is an observation in the test, never production signaling authority.
+    // The application is held while its real-parent pidfd is acquired below.
+    let status = fs::read_to_string(format!("/proc/{pid}/status")).unwrap();
+    let parents: Vec<_> = status
+        .lines()
+        .filter_map(|line| line.strip_prefix("PPid:"))
+        .collect();
+    assert_eq!(parents.len(), 1);
+    parents[0].trim().parse().unwrap()
+}
+
 #[test]
 fn independent_sessions_never_reap_each_other_or_an_unrelated_host_child() {
     let _serial = TEST_LOCK.lock().unwrap();
+    let original_subreaper = host_subreaper();
     let directory = Directory::new();
     let host_image = directory.image("host", &exit_code(23), false, None);
     let mut host = Native::launch(&host_image, false);
@@ -749,6 +776,18 @@ fn independent_sessions_never_reap_each_other_or_an_unrelated_host_child() {
     assert_ne!(first_pid, second_pid);
     assert_ne!(host.pid(), first_pid);
     assert_ne!(host.pid(), second_pid);
+    let first_parent = real_parent(first_pid);
+    let second_parent = real_parent(second_pid);
+    let host_pid = std::process::id() as i32;
+    assert!(first_parent > 0 && second_parent > 0);
+    assert_ne!(first_parent, second_parent);
+    assert_ne!(first_parent, host_pid);
+    assert_ne!(second_parent, host_pid);
+    assert_eq!(real_parent(first_parent), host_pid);
+    assert_eq!(real_parent(second_parent), host_pid);
+    let first_parent_handle = pidfd(first_parent);
+    let second_parent_handle = pidfd(second_parent);
+    assert_eq!(host_subreaper(), original_subreaper);
     let first_handle = pidfd(first_pid);
     let second_handle = pidfd(second_pid);
     run_exit(&mut second, 17);
@@ -765,7 +804,11 @@ fn independent_sessions_never_reap_each_other_or_an_unrelated_host_child() {
     );
     run_exit(&mut first, 11);
     finish(second, &second_handle, second_pid);
+    assert_reaped(&second_parent_handle);
+    assert_eq!(host_subreaper(), original_subreaper);
     finish(first, &first_handle, first_pid);
+    assert_reaped(&first_parent_handle);
+    assert_eq!(host_subreaper(), original_subreaper);
     let status = host.wait(); // It must still be waitable by its original owner.
     assert!(libc::WIFEXITED(status));
     assert_eq!(libc::WEXITSTATUS(status), 23);

@@ -383,6 +383,15 @@ fn is_terminal(handle: &OwnedFd) -> bool {
 
 fn assert_reaped(handle: &OwnedFd) {
     assert!(is_terminal(handle));
+    let mut poll = libc::pollfd {
+        fd: handle.as_raw_fd(),
+        events: libc::POLLIN,
+        revents: 0,
+    };
+    // SAFETY: one initialized pidfd record; HUP proves task detachment rather
+    // than the exited-but-still-zombie state accepted by POLLIN alone.
+    assert_eq!(unsafe { libc::poll(&raw mut poll, 1, 0) }, 1);
+    assert_ne!(poll.revents & libc::POLLHUP, 0);
     // SAFETY: the stable pidfd cannot name a reused PID; WNOWAIT never consumes
     // a status, including if an assertion exposes an incomplete owner cleanup.
     let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
