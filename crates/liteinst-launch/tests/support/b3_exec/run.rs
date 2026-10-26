@@ -64,6 +64,98 @@ impl InstructionProvider for Provider {
         }))
     }
 }
+// The two kernel ABI projections are compared only within their own
+// namespaces. These are detached observations, never native authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct FileProjection {
+    device: u64,
+    inode: u64,
+    mode: u32,
+    length: u64,
+}
+fn file_projection(metadata: &fs::Metadata) -> FileProjection {
+    assert!(metadata.is_file() && metadata.ino() != 0 && metadata.len() > 0);
+    FileProjection {
+        device: metadata.dev(),
+        inode: metadata.ino(),
+        mode: metadata.mode(),
+        length: metadata.len(),
+    }
+}
+#[derive(Clone, Debug)]
+pub struct ExecutableIdentity {
+    fixture_before: FileProjection,
+    fixture_after: FileProjection,
+    path_before: FileProjection,
+    path_after: FileProjection,
+    executable_before: FileProjection,
+    executable_after: FileProjection,
+    actual: Map,
+    raw_exec: Map,
+    raw_exit: Map,
+}
+impl ExecutableIdentity {
+    fn matches(&self) -> bool {
+        [
+            self.fixture_after,
+            self.path_before,
+            self.path_after,
+            self.executable_before,
+            self.executable_after,
+        ]
+        .into_iter()
+        .all(|value| value == self.fixture_before)
+            && self.actual == self.raw_exec
+            && self.raw_exec == self.raw_exit
+    }
+}
+fn executable_identity(
+    fixture: &Fixture,
+    reference: &raw::Transcript,
+    pid: i32,
+    pin: &OwnedFd,
+    actual: &Map,
+    until: Instant,
+) -> ExecutableIdentity {
+    alive(pin);
+    assert!(Instant::now() < until);
+    // Both real descriptors remain owned through all observations. The fixture
+    // is private, immutable and shared with the independent original-exec lane.
+    // Proc's magic link opens the held task's actual object, not a readlink path.
+    let fixture_file = File::open(&fixture.new_path).unwrap();
+    let executable = File::open(format!("/proc/{pid}/exe")).unwrap();
+    let fixture_before = file_projection(&fixture_file.metadata().unwrap());
+    let path_before = file_projection(&fs::metadata(&fixture.new_path).unwrap());
+    let executable_before = file_projection(&executable.metadata().unwrap());
+    let raw_exec = reference.exec.maps.covering(NEW, CODE).clone();
+    let raw_exit = reference.exit.maps.covering(NEW, CODE).clone();
+    assert_eq!(
+        (raw_exec.start, raw_exec.end, raw_exec.offset),
+        (NEW, NEW + CODE as u64, 0)
+    );
+    assert_eq!(raw_exec.permissions, "r-xp");
+    assert_eq!(raw_exec.path.as_deref(), fixture.new_path.to_str());
+    let value = ExecutableIdentity {
+        fixture_before,
+        fixture_after: file_projection(&fixture_file.metadata().unwrap()),
+        path_before,
+        path_after: file_projection(&fs::metadata(&fixture.new_path).unwrap()),
+        executable_before,
+        executable_after: file_projection(&executable.metadata().unwrap()),
+        actual: actual.clone(),
+        raw_exec,
+        raw_exit,
+    };
+    // No filesystem device is compared with a VMA device. Full Map equality
+    // preserves fixed addresses, every permission/backing/path field and line.
+    assert!(
+        value.matches(),
+        "exact executable stat or original VMA identity differs"
+    );
+    alive(pin);
+    assert!(Instant::now() < until);
+    value
+}
 pub struct Witness {
     pub pin: OwnedFd,
     pub until: Instant,
@@ -87,6 +179,7 @@ pub struct Resolver {
     old_maps: Arc<Mutex<Option<Maps>>>,
     previous: Option<liteinst_launch::DynamicTask>,
     pub context: Option<archive::Context>,
+    identity: Option<ExecutableIdentity>,
     pub reply: Option<DynamicSourceFacts>,
     pub calls: usize,
 }
@@ -147,18 +240,15 @@ impl DynamicSourceResolver for Resolver {
         let source = held_memory(*pid, pin, NEW, CODE);
         let data = held_memory(*pid, pin, NEW_DATA, DATA_LEN);
         assert_eq!(source, image.bytes());
-        let actual_file = fs::metadata(&self.fixture.new_path).unwrap();
-        let map = logical.covering(NEW, CODE);
-        assert_eq!(map.inode, actual_file.ino());
-        let (major, minor) = map.device.split_once(':').unwrap();
-        assert_eq!(
-            u32::from_str_radix(major, 16).unwrap(),
-            libc::major(actual_file.dev())
+        let identity = executable_identity(
+            &self.fixture,
+            &self.reference,
+            *pid,
+            pin,
+            logical.covering(NEW, CODE),
+            request.expires_at(),
         );
-        assert_eq!(
-            u32::from_str_radix(minor, 16).unwrap(),
-            libc::minor(actual_file.dev())
-        );
+        assert!(self.identity.replace(identity).is_none());
         let context = archive::Context {
             stack,
             before: DynamicAdmissionState {
@@ -282,6 +372,7 @@ impl Owned {
                     old_maps,
                     previous: None,
                     context: None,
+                    identity: None,
                     reply: None,
                     calls: 0,
                 },
@@ -505,6 +596,7 @@ fn completion(
 }
 #[derive(Clone, Debug)]
 pub struct Observed {
+    pub identity: ExecutableIdentity,
     pub comparisons: Vec<Compared>,
     pub snapshot: ExecProgressSnapshot,
     pub context: archive::Context,
@@ -543,6 +635,14 @@ fn lane(f: Arc<Fixture>, reference: Arc<raw::Transcript>, replay: bool) -> Obser
         .unwrap()
         .clone();
     let snapshot = owner.reader.snapshot();
+    let identity = owner
+        .session()
+        .source_resolver()
+        .identity
+        .as_ref()
+        .unwrap()
+        .clone();
+    assert!(identity.matches());
     let ready = archive::check(&f, &reference, &snapshot, &context, true, false);
     assert_eq!(replaced.before, context.before);
     assert_eq!(replaced.attempt, snapshot.attempt.as_ref().unwrap().id);
@@ -628,6 +728,7 @@ fn lane(f: Arc<Fixture>, reference: Arc<raw::Transcript>, replay: bool) -> Obser
     let snapshot = owner.reader.snapshot();
     archive::check(&f, &reference, &snapshot, &context, true, true);
     Observed {
+        identity,
         comparisons,
         snapshot,
         context,
@@ -798,6 +899,73 @@ pub fn corrupt(observed: &[Observed]) {
             other.context.candidate.address_space,
             lane.context.candidate.address_space
         );
+        // Same exact comparator as the live resolver, now using detached real
+        // observations after physical cleanup. No synthetic native evidence.
+        assert!(lane.identity.matches());
+        for slot in 0..6 {
+            for field in 0..4 {
+                let mut bad = lane.identity.clone();
+                let value = match slot {
+                    0 => &mut bad.fixture_before,
+                    1 => &mut bad.fixture_after,
+                    2 => &mut bad.path_before,
+                    3 => &mut bad.path_after,
+                    4 => &mut bad.executable_before,
+                    5 => &mut bad.executable_after,
+                    _ => unreachable!(),
+                };
+                match field {
+                    0 => value.device ^= 1,
+                    1 => value.inode ^= 1,
+                    2 => value.mode ^= 0o020,
+                    3 => value.length ^= 1,
+                    _ => unreachable!(),
+                }
+                assert!(!bad.matches());
+            }
+        }
+        for slot in 0..3 {
+            for field in 0..8 {
+                let mut bad = lane.identity.clone();
+                let row = match slot {
+                    0 => &mut bad.actual,
+                    1 => &mut bad.raw_exec,
+                    2 => &mut bad.raw_exit,
+                    _ => unreachable!(),
+                };
+                match field {
+                    0 => row.start += PAGE as u64,
+                    1 => row.end += PAGE as u64,
+                    2 => row.permissions = "rwxp".into(),
+                    3 => row.offset ^= 1,
+                    4 => row.device.push('0'),
+                    5 => row.inode ^= 1,
+                    6 => row.path = Some("/wrong-object".into()),
+                    7 => row.line.push(' '),
+                    _ => unreachable!(),
+                };
+                assert!(!bad.matches());
+            }
+            for column in 0..4 {
+                let mut bad = lane.identity.clone();
+                let row = match slot {
+                    0 => &mut bad.actual,
+                    1 => &mut bad.raw_exec,
+                    2 => &mut bad.raw_exit,
+                    _ => unreachable!(),
+                };
+                let mut permissions = row.permissions.as_bytes().to_vec();
+                permissions[column] = match column {
+                    0 => b'-',
+                    1 => b'w',
+                    2 => b'-',
+                    3 => b's',
+                    _ => unreachable!(),
+                };
+                row.permissions = String::from_utf8(permissions).unwrap();
+                assert!(!bad.matches());
+            }
+        }
         for compared in &lane.comparisons {
             assert!(compared.matches());
             for index in 0..27 {
