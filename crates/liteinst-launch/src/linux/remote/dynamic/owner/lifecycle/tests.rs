@@ -90,11 +90,13 @@ impl Harness {
         .unwrap()
         .event
     }
+    #[track_caller]
     fn request(&mut self, request: Request) -> Response {
         self.owner()
             .execute(request, Instant::now() + TIMEOUT)
             .unwrap()
     }
+    #[track_caller]
     fn next(&mut self) -> DynamicEvent {
         let Response::Event(event) = self.request(Request::Wait) else {
             panic!("event response")
