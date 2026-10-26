@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "${RAW}/artifacts/native-oracle",
+    "refusals",
+    "${RAW}/subject/subject.so",
+    "${RAW}/native-refusals/captures"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${REPO}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "${RAW}/native-refusals/tmp"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${RAW}/native-refusals/stderr.txt",
+  "stdout": "${RAW}/native-refusals/stdout.txt",
+  "wall_seconds": 30
+}

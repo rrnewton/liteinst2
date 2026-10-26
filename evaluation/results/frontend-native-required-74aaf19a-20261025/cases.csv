@@ -1,0 +1,1051 @@
+ordinal,group_id,scope,case,expected,observed,ignore_reason,log_line_or_nested_summary_line
+1,outer-01,outer,model::tests::reverse_dependency_closure_handles_chains_and_cycles,pass,ok,,6
+2,outer-02,outer,ambiguous_reports_cannot_be_exported_as_positive_core_facts,pass,ok,,13
+3,outer-02,outer,core_export_preserves_identity_bytes_policy_and_does_not_invent_resume_proof,pass,ok,,14
+4,outer-02,outer,exhaustive_resume_census_does_not_turn_an_interior_pc_into_a_verified_head,pass,ok,,15
+5,outer-03,outer,absent_adjacent_dependency_refuses_without_publication,pass,ok,,22
+6,outer-03,outer,adding_an_executable_neighbor_cannot_invalidate_a_closed_boundary_claim_silently,pass,ok,,23
+7,outer-03,outer,changed_extra_dependency_invalidates_a_cached_plan_even_if_primary_is_unchanged,pass,ok,,24
+8,outer-03,outer,cross_page_snapshot_bytes_must_match_registered_neighbor,pass,ok,,25
+9,outer-03,outer,admitted_bundle_locks_its_unadmitted_dependencies_and_invalidation_revokes_it,pass,ok,,26
+10,outer-03,outer,concurrent_first_requests_publish_exactly_once,pass,ok,,27
+11,outer-03,outer,new_boundary_claims_cannot_exclude_already_registered_code,pass,ok,,28
+12,outer-03,outer,missing_site_coverage_never_calls_publish,pass,ok,,29
+13,outer-03,outer,failures_before_and_after_write_keep_the_right_bundle_gated,pass,ok,,30
+14,outer-03,outer,poisoned_lock_from_panicking_publisher_fails_closed,pass,ok,,31
+15,outer-03,outer,replacement_boundary_conflict_does_not_mutate_or_invalidate_current_facts,pass,ok,,32
+16,outer-03,outer,refused_shared_dependency_cannot_reach_a_partially_writing_publisher,pass,ok,,33
+17,outer-03,outer,receipts_cannot_be_replayed_across_transactions_or_gates,pass,ok,,34
+18,outer-03,outer,saved_resumes_and_aliases_in_a_victim_page_are_refused,pass,ok,,35
+19,outer-03,outer,stale_plan_cannot_cross_a_generation_change,pass,ok,,36
+20,outer-04,outer,aliases_are_selected_only_when_explicitly_requested,pass,ok,,43
+21,outer-04,outer,embedded_no_backstop_sites_never_silently_admit,pass,ok,,44
+22,outer-04,outer,entry_version_and_provenance_survive_and_cannot_escape_scope,pass,ok,,45
+23,outer-04,outer,every_selected_encoding_is_found_at_its_known_head,pass,ok,,46
+24,outer-04,outer,incomplete_entries_stale_identity_saved_resumes_and_unowned_writers_refuse,pass,ok,,47
+25,outer-04,outer,invalid_range_is_a_total_refusal_and_address_overflow_is_rejected,pass,ok,,48
+26,outer-04,outer,clean_unknown_code_does_not_need_an_invented_cfg_proof,pass,ok,,49
+27,outer-04,outer,rdpid_keeps_the_alternate_rdseed_decode_visible,pass,ok,,50
+28,outer-04,outer,truncated_known_instruction_and_overlapping_entry_are_refused,pass,ok,,51
+29,outer-04,outer,maximum_length_prefixed_instruction_needs_the_full_left_halo,pass,ok,,52
+30,outer-04,outer,missing_boundary_bytes_are_not_a_clean_page,pass,ok,,53
+31,outer-04,outer,all_class_encodings_are_found_across_page_edges_in_both_directions,pass,ok,,54
+32,outer-05,outer,invalid_later_instruction_refuses_without_partial_records,pass,ok,,61
+33,outer-05,outer,call_started_on_previous_page_is_recorded_before_admitting_its_final_bytes,pass,ok,,62
+34,outer-05,outer,direct_call_ending_at_boundary_obligates_unadmitted_next_page,pass,ok,,63
+35,outer-05,outer,call_return_provenance_supplements_destination_facts_without_claiming_completeness,pass,ok,,64
+36,outer-05,outer,newer_generation_does_not_erase_a_return_pushed_by_an_old_caller,pass,ok,,65
+37,outer-05,outer,overlapping_verified_streams_are_refused,pass,ok,,66
+38,outer-05,outer,partial_or_unverified_heads_cannot_record_a_caller,pass,ok,,67
+39,outer-05,outer,memory_indirect_call_ending_at_boundary_obligates_unadmitted_next_page,pass,ok,,68
+40,outer-05,outer,register_indirect_call_ending_at_boundary_obligates_unadmitted_next_page,pass,ok,,69
+41,outer-05,outer,stale_identity_and_uncontrolled_source_bytes_are_refused,pass,ok,,70
+42,outer-05,outer,stale_or_conflicting_versions_of_one_entry_scope_are_refused,pass,ok,,71
+43,outer-05,outer,unknown_leading_bytes_and_incomplete_entry_scope_are_refused,pass,ok,,72
+44,outer-05,outer,repeated_admission_is_idempotent_but_changed_same_generation_bytes_are_refused,pass,ok,,73
+45,outer-06,outer,linux::remote::group::tests::cleanup_never_discovers_reused_tgid_after_leader_reap,pass,ok,,80
+46,outer-06,outer,linux::tests::a_real_child_wait_timeout_keeps_ownership_until_kill_and_reap,pass,ok,,81
+47,outer-07,outer,checked_writes_and_island_guards_refuse_without_mutating_source,pass,ok,,88
+48,outer-07,outer,application_jump_to_private_syscall_island_is_refused,pass,ok,,89
+49,outer-07,outer,custom_interpreter_and_main_both_retain_their_selected_first_instruction,pass,ok,,90
+50,outer-07,outer,actual_nx_gate_requires_owned_fault_before_restoring_permissions,pass,ok,,91
+51,outer-07,outer,core_lease_borrows_real_stop_and_preserves_state_on_success,pass,ok,,92
+52,outer-07,outer,exact_code_allocation_initializes_offsets_and_refuses_collisions,pass,ok,,93
+53,outer-07,outer,exact_store_from_resume_flag_state_restores_every_register_and_neighbor,pass,ok,,94
+54,outer-07,outer,exact_stores_reject_stale_rx_readonly_island_and_unmapped_ranges,pass,ok,,95
+55,outer-07,outer,core_lease_error_poison_and_panic_kill_and_reap,pass,ok,,96
+56,outer-07,outer,invalid_commands_and_exec_failures_are_reported,pass,ok,,97
+57,outer-07,outer,memory_and_timeout_bounds_refuse_without_resuming,pass,ok,,98
+58,outer-07,outer,first_execution_xstate_matches_independent_native_entry_trap,pass,ok,,99
+59,outer-07,outer,native_entry_oracle_forgets_reaped_child_before_early_exit_assertion,pass,ok,,100
+60,outer-07,outer,pie_without_interpreter_uses_relocated_executable_entry,pass,ok,,101
+61,outer-07,outer,first_user_instruction_observes_natural_successful_exec_result,pass,ok,,102
+62,outer-07,outer,poisoned_core_lease_result_destructor_panic_kills_and_reaps,pass,ok,,103
+63,outer-07,outer,raw_getpid_and_exit_single_steps_report_exact_kernel_events,pass,ok,,104
+64,outer-07,outer,static_executable_is_stopped_at_its_selected_first_instruction,pass,ok,,105
+65,outer-07,outer,syscall_island_bootstrap_preserves_original_code_gprs_and_xstate,pass,ok,,106
+66,outer-07,outer,unapproved_syscall_is_refused_before_kernel_execution_and_reaped,pass,ok,,107
+67,outer-07,outer,unknown_signal_cannot_be_suppressed_as_an_owned_fault,pass,ok,,108
+68,outer-07,outer,resumed_loop_timeout_kills_and_reaps_the_owned_child,pass,ok,,109
+69,outer-07,outer,exact_native_stores_cover_all_widths_alignments_and_page_splits,pass,ok,,110
+70,outer-08,outer,unacknowledged_worker_fault_refuses_trusted_execution_and_group_resume,pass,ok,,117
+71,outer-08,outer,group_publication_holds_every_real_task_and_preserves_complete_state,pass,ok,,118
+72,outer-08,outer,group_lease_errors_poison_and_unwinds_reap_every_task,pass,ok,,119
+73,outer-09,outer,four_workers_fault_one_nx_page_before_one_publication,pass,ok,,126
+74,outer-09,outer,native_group_retires_leader_identity_before_unexpected_exit_assertion,pass,ok,,127
+75,outer-09,outer,four_workers_share_one_publication_with_cross_page_e9_fetch,pass,ok,,128
+76,outer-09,outer,concurrent_saved_call_returns_refuse_selected_destination_while_still_nx,pass,ok,,129
+77,outer-09,outer,concurrent_cpuid_matches_independent_native_group_state_for_every_worker,pass,ok,,130
+78,outer-09,outer,valid_clone_after_membership_freeze_is_refused_and_all_tasks_are_reaped,pass,ok,,131
+79,outer-09,outer,noncooperating_worker_hits_collective_deadline_and_all_tasks_are_reaped,pass,ok,,132
+80,outer-10,outer,cpuid_basic_vendor_leaf,pass,ok,,139
+81,outer-10,outer,cpuid_structured_features_leaf,pass,ok,,140
+82,outer-10,outer,cpuid_processor_features_leaf,pass,ok,,141
+83,outer-10,outer,rdpid_rax,pass,ok,,142
+84,outer-10,outer,rdpid_rbp,pass,ok,,143
+85,outer-10,outer,rdpid_rbx,pass,ok,,144
+86,outer-10,outer,rdpid_rcx,pass,ok,,145
+87,outer-10,outer,rdpid_rdi,pass,ok,,146
+88,outer-10,outer,rdpid_rdx,pass,ok,,147
+89,outer-10,outer,rdpid_rsi,pass,ok,,148
+90,outer-10,outer,rdpid_rsp,pass,ok,,149
+91,outer-10,outer,rdrand_eax,pass,ok,,150
+92,outer-10,outer,rdrand_ebp,pass,ok,,151
+93,outer-10,outer,rdrand_ebx,pass,ok,,152
+94,outer-10,outer,rdrand_ecx,pass,ok,,153
+95,outer-10,outer,rdrand_edi,pass,ok,,154
+96,outer-10,outer,rdrand_edx,pass,ok,,155
+97,outer-10,outer,rdrand_esi,pass,ok,,156
+98,outer-10,outer,rdrand_esp,pass,ok,,157
+99,outer-10,outer,rdseed_eax,pass,ok,,158
+100,outer-10,outer,rdseed_ebp,pass,ok,,159
+101,outer-10,outer,rdseed_ebx,pass,ok,,160
+102,outer-10,outer,rdseed_ecx,pass,ok,,161
+103,outer-10,outer,rdseed_edi,pass,ok,,162
+104,outer-10,outer,rdseed_edx,pass,ok,,163
+105,outer-10,outer,rdseed_esi,pass,ok,,164
+106,outer-10,outer,rdseed_esp,pass,ok,,165
+107,outer-10,outer,rdtsc_all_flags,pass,ok,,166
+108,outer-10,outer,rdtsc_clear_flags,pass,ok,,167
+109,outer-10,outer,rdtsc_zero_parity,pass,ok,,168
+110,outer-10,outer,rdtscp_all_flags,pass,ok,,169
+111,outer-10,outer,rdtscp_clear_flags,pass,ok,,170
+112,outer-10,outer,rdtscp_zero_parity,pass,ok,,171
+113,outer-11,outer,native_fetch_fault_is_explicit_and_never_acknowledged_as_completion,pass,ok,,178
+114,outer-11,outer,native_exit_is_explicit_and_already_reaped,pass,ok,,179
+115,outer-11,outer,direct_native_syscall_preserves_rf_input_semantics_against_raw_oracle,pass,ok,,180
+116,outer-11,outer,selected_page_native_exit_has_one_dispatch_and_no_fabricated_completion,pass,ok,,181
+117,outer-11,outer,selected_page_native_syscalls_match_raw_completion_and_continuation,pass,ok,,182
+118,outer-11,outer,malformed_alias_stale_and_disallowed_syscalls_refuse_before_execution,pass,ok,,183
+119,outer-11,outer,native_syscall_bridge_matches_independent_complete_state_without_tf_leakage,pass,ok,,184
+120,outer-12,outer,core_pun_cache_line_constraint_refuses_without_source_changes_or_execution,pass,ok,,191
+121,outer-12,outer,call_records_return_into_never_executed_nx_page_and_plain_return_completes,pass,ok,,192
+122,outer-12,outer,core_bundle_budget_is_checked_before_planning_site_sixty_five,pass,ok,,193
+123,outer-12,outer,core_native_cpuid_replacement_matches_independent_native_complete_state,pass,ok,,194
+124,outer-12,outer,core_pun_consumed_jump_fetch_admits_both_pages_once,pass,ok,,195
+125,outer-12,outer,core_pun_observes_first_cpuid_before_native_child_replacement_and_exits,pass,ok,,196
+126,outer-12,outer,core_pun_observes_custom_interpreter_and_main_first_instructions_once_each,pass,ok,,197
+127,outer-12,outer,core_selected_destination_refuses_a_saved_call_return_while_still_nx,pass,ok,,198
+128,outer-12,outer,cpuid_at_the_first_instruction_is_observed_before_execution_then_exits,pass,ok,,199
+129,outer-12,outer,native_trace_retires_identity_before_unexpected_exit_assertion,pass,ok,,200
+130,outer-12,outer,custom_interpreter_and_main_are_both_observed_at_instruction_one,pass,ok,,201
+131,outer-12,outer,selected_destination_with_saved_call_return_is_refused_while_still_nx,pass,ok,,202
+132,outer-12,outer,no_op_cpuid_observer_matches_independent_native_gprs_xstate_and_memory,pass,ok,,203
+133,outer-12,outer,selected_syscall_remains_selected_and_is_refused_before_any_original_instruction,pass,ok,,204
+134,outer-12,outer,selected_instruction_split_across_pages_admits_both_pages_once,pass,ok,,205
+135,outer-12,outer,unselected_mmap_and_clone_syscalls_are_refused_before_kernel_execution,pass,ok,,206
+136,outer-12,outer,repeated_allowed_syscall_stops_do_not_restart_the_whole_event_deadline,pass,ok,,207
+137,outer-13,outer,independent_model_checks_all_random_widths_and_rsp_without_claiming_page_support,pass,ok,,214
+138,outer-13,outer,exhausted_provider_never_executes_the_original_random_instruction,pass,ok,,215
+139,outer-13,outer,native_seed_owner_retires_terminal_identity_before_assertion_unwinding,pass,ok,,216
+140,outer-13,outer,bare_rdseed_cross_page_fetch_admits_both_pages_and_matches_block_model,pass,ok,,217
+141,outer-13,outer,masked_cpuid_still_dispatches_random_and_time_against_independent_block_model,pass,ok,,218
+142,outer-13,outer,declared_int80_and_sysenter_dispatch_typed_inputs_and_fault_without_execution,pass,ok,,219
+143,outer-13,outer,rdpid_only_policy_dispatches_aux_without_relaxing_default_policy,pass,ok,,220
+144,outer-13,outer,scripted_fault_keeps_full_uncompleted_state_and_closes_execution,pass,ok,,221
+145,outer-13,outer,scripted_getpid_gettid_match_independent_full_state_and_replacement_metadata,pass,ok,,222
+146,outer-13,outer,selected_bytes_inside_immediates_never_run_or_consume_provider_rows,pass,ok,,223
+147,outer-13,outer,selected_interpreter_and_executable_instruction_one_complete_exactly_once,pass,ok,,224
+148,outer-13,outer,undeclared_mismatched_and_misplaced_aliases_refuse_before_publication_or_callback,pass,ok,,225
+149,outer-13,outer,prefixed_random_and_default_rdpid_keep_embedded_suffix_refusals,pass,ok,,226
+150,outer-14,outer,cpuid_input_width_and_all_four_outputs_are_exact,pass,ok,,233
+151,outer-14,outer,alias_inputs_require_exact_declarations_and_never_borrow_x64_completion,pass,ok,,234
+152,outer-14,outer,every_cross_class_result_mismatch_refuses_without_changing_inputs,pass,ok,,235
+153,outer-14,outer,exact_decode_keeps_prefix_length_and_refuses_invalid_encodings,pass,ok,,236
+154,outer-14,outer,faults_do_not_complete_or_normalize_rf_outputs_pc_or_metadata,pass,ok,,237
+155,outer-14,outer,invalid_scripted_completions_refuse_without_consuming_or_skipping_a_row,pass,ok,,238
+156,outer-14,outer,native_provider_only_requests_execution_and_script_consumption_is_exact,pass,ok,,239
+157,outer-14,outer,long_mode_rdpid_zero_extends_aux_in_every_destination_without_rex_w,pass,ok,,240
+158,outer-14,outer,native_validation_checks_upper_halves_flags_and_unaffected_registers,pass,ok,,241
+159,outer-14,outer,random_zero_success_is_distinct_from_failure_and_bad_values_refuse,pass,ok,,242
+160,outer-14,outer,timestamp_halves_and_rdtscp_aux_are_independent_zero_extended_outputs,pass,ok,,243
+161,outer-14,outer,scripted_syscalls_refuse_unmodeled_effects_flags_and_invalid_returns,pass,ok,,244
+162,outer-14,outer,x64_getid_completion_preserves_full_state_and_defines_rcx_r11,pass,ok,,245
+163,outer-14,outer,random_success_and_failure_cover_every_gpr_width_including_rsp,pass,ok,,246
+164,outer-15,outer,cache_line::tests::range_ending_at_boundary_does_not_cross,pass,ok,,253
+165,outer-15,outer,cache_line::tests::classification_does_not_overflow_at_max_address,pass,ok,,254
+166,outer-15,outer,cache_line::tests::range_extending_past_boundary_crosses,pass,ok,,255
+167,outer-15,outer,cache_line::tests::span_larger_than_a_line_crosses,pass,ok,,256
+168,outer-15,outer,cache_line::tests::zero_length_range_does_not_cross,pass,ok,,257
+169,outer-15,outer,composition::tests::conflicting_generated_images_refuse_transactionally_and_allow_corrected_retry,pass,ok,,258
+170,outer-15,outer,composition::tests::adjacent_snapshots_support_multiple_reads_and_a_spanning_dependency,pass,ok,,259
+171,outer-15,outer,composition::tests::disjoint_steps_in_one_snapshot_require_the_current_overlay,pass,ok,,260
+172,outer-15,outer,composition::tests::consumed_successors_and_left_padding_remain_locked,pass,ok,,261
+173,outer-15,outer,composition::tests::extra_source_stores_outside_displaced_are_also_locked,pass,ok,,262
+174,outer-15,outer,composition::tests::generation_and_mapping_conflicts_leave_the_composition_unchanged,pass,ok,,263
+175,outer-15,outer,composition::tests::initial_snapshot_overlap_overflow_and_dependency_gaps_are_refused,pass,ok,,264
+176,outer-15,outer,composition::tests::relocation_locks_unchanged_displaced_bytes_and_duplicate_physical_sites,pass,ok,,265
+177,outer-15,outer,composition::tests::routed_invalid_evex_fetch_allows_an_identical_later_store_pad,pass,ok,,266
+178,outer-15,outer,composition::tests::prefixed_pun_locks_extended_fetch_and_both_store_padding_positions,pass,ok,,267
+179,outer-15,outer,composition::tests::routed_invalid_evex_tail_locks_its_complete_qualified_fetch,pass,ok,,268
+180,outer-15,outer,composition::tests::routed_invalid_evex_fetch_requires_complete_nonwrapping_source_coverage,pass,ok,,269
+181,outer-15,outer,composition::tests::routed_single_byte_invalid_opcode_does_not_lock_an_evex_tail,pass,ok,,270
+182,outer-15,outer,composition::tests::successor_first_write_enables_a_pun_with_an_identical_locked_pad,pass,ok,,271
+183,outer-15,outer,contracts::tests::edits_must_be_held_and_authenticated,pass,ok,,272
+184,outer-15,outer,contracts::tests::lease_rejects_wrong_generation_missing_dependency_and_poison,pass,ok,,273
+185,outer-15,outer,contracts::tests::generalized_pun_contract_rejects_forged_padding_window_and_profile,pass,ok,,274
+186,outer-15,outer,composition::tests::unresolved_entry_facts_are_rejected_without_reserving_the_site,pass,ok,,275
+187,outer-15,outer,contracts::tests::static_completeness_does_not_discharge_dynamic_resumes,pass,ok,,276
+188,outer-15,outer,controls::tests::identity_is_shared_by_clones_and_independent_of_enabled_state,pass,ok,,277
+189,outer-15,outer,contracts::tests::ranges_never_wrap_or_accept_empty_input,pass,ok,,278
+190,outer-15,outer,frame_trace::tests::callback_free_rows_have_no_invented_instrumentation_or_frame_contract,pass,ok,,279
+191,outer-15,outer,frame_trace::tests::expanded_branch_metadata_refusal_does_not_reject_supported_code,pass,ok,,280
+192,outer-15,outer,frame_trace::tests::invalid_producer_rows_and_uncovered_bytes_are_explicit_metadata_failures,pass,ok,,281
+193,outer-15,outer,frame_trace::tests::metadata_limits_do_not_change_normal_image_or_ordinary_errors,pass,ok,,282
+194,outer-15,outer,frame_trace::tests::model_rejects_wrong_intermediate_rsp_and_saved_register_rules,pass,ok,,283
+195,outer-15,outer,frame_trace::tests::normal_helper_rows_match_decoded_effects_and_live_bytes,pass,ok,,284
+196,outer-15,outer,frame_trace::tests::unsupported_origins_and_replacements_keep_ordinary_emission_success,pass,ok,,285
+197,outer-15,outer,generated_unwind::tests::expression_and_record_limits_remain_required_refusals,pass,ok,,286
+198,outer-15,outer,generated_unwind::tests::interval_coverage_does_not_replace_exact_point_authority,pass,ok,,287
+199,outer-15,outer,generated_unwind::tests::malformed_and_unmodelled_source_records_refuse,pass,ok,,288
+200,outer-15,outer,generated_unwind::tests::original_rows_preserve_exact_caller_slots,pass,ok,,289
+201,outer-15,outer,generated_unwind::tests::real_stable_ledger_composes_caller_memory_not_context_values,pass,ok,,290
+202,outer-15,outer,generated_unwind::tests::void_registration_lookup_failure_retains_exact_metadata_and_source,pass,ok,,291
+203,outer-15,outer,grouping::native::tests::native_grouped_images_seals_aliases_and_transactional_cleanup,pass,ok,,292
+204,outer-15,outer,frame_trace::tests::short_selected_and_upstream_records_keep_distinct_original_heads,pass,ok,,293
+205,outer-15,outer,grouping::tests::shared_backing_does_not_relax_any_virtual_or_physical_budget,pass,ok,,294
+206,outer-15,outer,neighbor::tests::short_redirect_has_exact_signed_endpoints_without_wrapping,pass,ok,,295
+207,outer-15,outer,patcher::synchronized::tests::atomic_members_have_no_mutation_until_front_publication,pass,ok,,296
+208,outer-15,outer,patcher::synchronized::tests::dropping_at_every_incomplete_phase_never_unlocks_mutated_members,pass,ok,,297
+209,outer-15,outer,patcher::synchronized::tests::envelope_validation_rejects_duplicates_overlap_empty_and_wrapped_extents,pass,ok,,298
+210,outer-15,outer,patcher::synchronized::tests::every_barrier_failure_is_terminal_and_retains_exact_incomplete_bytes,pass,ok,,299
+211,outer-15,outer,patcher::synchronized::tests::every_route_verification_failure_keeps_the_correct_store_boundary,pass,ok,,300
+212,outer-15,outer,patcher::synchronized::tests::split_words_preserve_all_padding_and_authenticate_every_byte,pass,ok,,301
+213,outer-15,outer,patcher::synchronized::tests::two_member_phases_have_exact_bytes_and_only_three_shared_barriers,pass,ok,,302
+214,outer-15,outer,patcher::synchronized::tests::unwind_after_first_store_keeps_all_leases_and_cannot_retry,pass,ok,,303
+215,outer-15,outer,patcher::tests::classifies_all_word_splits,pass,ok,,304
+216,outer-15,outer,frame_trace::tests::coalesced_static_and_controlled_helpers_have_fresh_rows_and_call_returns,pass,ok,,305
+217,outer-15,outer,patcher::tests::live::overlapping_writers_and_registration_hold_an_exclusive_lease,pass,ok,,306
+218,outer-15,outer,patcher::tests::live::quiescent_entrypoint_redirects_every_split_without_guard_traps,pass,ok,,307
+219,outer-15,outer,patcher::tests::live::redirects_execution_across_every_word_split,pass,ok,,308
+220,outer-15,outer,patcher::tests::live::redirects_execution_and_restores_original_code,pass,ok,,309
+221,outer-15,outer,grouping::tests::explicit_groups_cover_overlapping_offsets_and_multipage_images,pass,ok,,310
+222,outer-15,outer,patcher::tests::plans_jump_across_multiple_short_instructions,pass,ok,,311
+223,outer-15,outer,patcher::tests::plans_jump_for_immediate_instruction_crossing_a_line,pass,ok,,312
+224,outer-15,outer,patcher::tests::plans_jump_for_rip_relative_instruction_encoding,pass,ok,,313
+225,outer-15,outer,patcher::tests::rejects_a_direct_branch_into_the_displaced_window,pass,ok,,314
+226,outer-15,outer,patcher::tests::rejects_scan_from_different_code_bytes,pass,ok,,315
+227,outer-15,outer,patcher::tests::rejects_semantically_equivalent_byte_staleness,pass,ok,,316
+228,outer-15,outer,patcher::tests::rejects_trampoline_outside_rel32_reach,pass,ok,,317
+229,outer-15,outer,patcher::tests::word_ending_at_boundary_is_single_line,pass,ok,,318
+230,outer-15,outer,planner::tests::exact_five_byte_instruction_prefers_rapid_punning,pass,ok,,319
+231,outer-15,outer,planner::tests::incomplete_window_requests_client_trap_fallback,pass,ok,,320
+232,outer-15,outer,planner::tests::replace_first_rejects_a_stale_scan,pass,ok,,321
+233,outer-15,outer,planner::tests::replace_first_syscall_uses_multi_instruction_relocation,pass,ok,,322
+234,outer-15,outer,probe::tests::installed_probe_can_toggle_repeatedly,pass,ok,,323
+235,outer-15,outer,probe::tests::planned_probe_cannot_be_activated_before_installation,pass,ok,,324
+236,outer-15,outer,quiescent::mandatory_prefix_qualification_tests::exact_codes_do_not_bypass_register_or_memory_operand_checks,pass,ok,,325
+237,outer-15,outer,quiescent::mandatory_prefix_qualification_tests::exact_five_mandatory_prefix_forms_require_admission,pass,ok,,326
+238,outer-15,outer,quiescent::mandatory_prefix_qualification_tests::existing_gpr_and_refused_special_forms_keep_their_outcomes,pass,ok,,327
+239,outer-15,outer,quiescent::mandatory_prefix_qualification_tests::nearby_simd_string_address_and_extra_prefix_forms_stay_refused,pass,ok,,328
+240,outer-15,outer,quiescent::search_candidate_tests::all_masks_keep_their_original_slots_and_prove_permanent_upper_end,pass,ok,,329
+241,outer-15,outer,quiescent::search_candidate_tests::indexed_endpoint_preserves_invalid_prefix_and_eager_default,pass,ok,,330
+242,outer-15,outer,quiescent::search_candidate_tests::invalid_choice_is_not_permanent_end_and_unproved_tail_stays_unknown,pass,ok,,331
+243,outer-15,outer,quiescent::search_candidate_tests::pun_duplicate_preference_ranges_and_both_caps_have_exact_evidence,pass,ok,,332
+244,outer-15,outer,quiescent::tests::unmappable_last_cache_line_refuses_without_address_overflow,pass,ok,,333
+245,outer-15,outer,rapid::tests::live::benchmark_single_byte_toggle_latency,ignored,ignored,release-mode latency benchmark,334
+246,outer-15,outer,rapid::tests::live::install_rejects_each_mutated_window_byte,pass,ok,,335
+247,outer-15,outer,rapid::tests::live::many_threads_toggle_while_other_threads_execute,pass,ok,,336
+248,outer-15,outer,rapid::tests::live::occupied_exact_destination_fails_without_replacing_it,pass,ok,,337
+249,outer-15,outer,rapid::tests::live::tail_overlap_failure_discards_non_page_aligned_trampoline,pass,ok,,338
+250,outer-15,outer,rapid::tests::live::toggling_changes_only_the_opcode_and_preserves_semantics,pass,ok,,339
+251,outer-15,outer,rapid::tests::original_tail_bytes_determine_the_exact_target,pass,ok,,340
+252,outer-15,outer,rapid::tests::rejects_a_direct_branch_target_inside_the_pun_window,pass,ok,,341
+253,outer-15,outer,rapid::tests::rejects_an_existing_near_jump_opcode,pass,ok,,342
+254,outer-15,outer,rapid::tests::rejects_an_instruction_head_inside_the_pun_window,pass,ok,,343
+255,outer-15,outer,rapid::tests::rejects_semantically_equivalent_byte_staleness,pass,ok,,344
+256,outer-15,outer,rapid::tests::rejects_stale_scan_even_when_instruction_lengths_match,pass,ok,,345
+257,outer-15,outer,scanner::tests::empty_region_has_no_instructions_or_sites,pass,ok,,346
+258,outer-15,outer,scanner::tests::geometry_spanning_more_than_two_lines_is_rejected,pass,ok,,347
+259,outer-15,outer,scanner::tests::instruction_ending_at_boundary_is_single_line,pass,ok,,348
+260,outer-15,outer,scanner::tests::invalid_tail_fails_without_a_partial_result,pass,ok,,349
+261,outer-15,outer,scanner::tests::known_instruction_fixture_finds_both_crossers,pass,ok,,350
+262,outer-15,outer,scanner::tests::nonzero_base_address_controls_alignment,pass,ok,,351
+263,outer-15,outer,scanner::tests::overflowing_region_is_rejected_before_decoding,pass,ok,,352
+264,outer-15,outer,scanner::tests::prefix_scan_stops_on_the_first_boundary_after_the_minimum,pass,ok,,353
+265,outer-15,outer,search::tests::equality_with_limit_is_not_itself_exhaustion,pass,ok,,354
+266,outer-15,outer,sync_core::tests::each_system_call_error_retains_exact_operation_and_errno,pass,ok,,355
+267,outer-15,outer,sync_core::tests::either_missing_capability_stops_before_registration,pass,ok,,356
+268,outer-15,outer,sync_core::tests::fork_identity_is_refused_before_syscall,pass,ok,,357
+269,outer-15,outer,sync_core::tests::later_restriction_is_reported_after_successful_preparation,pass,ok,,358
+270,outer-15,outer,sync_core::tests::nonzero_completion_is_not_success,pass,ok,,359
+271,outer-15,outer,sync_core::tests::preparation_queries_registers_and_synchronizes_in_order,pass,ok,,360
+272,outer-15,outer,trampoline::observing_control_tests::observing_control_arena_refusal_preserves_slots_bytes_and_static_support,pass,ok,,361
+273,outer-15,outer,trampoline::observing_control_tests::observing_control_changes_leave_all_emitted_bytes_and_maps_identical,pass,ok,,362
+274,outer-15,outer,trampoline::observing_control_tests::observing_control_executable_drop_keeps_code_dependencies_alive,pass,ok,,363
+275,outer-15,outer,trampoline::observing_control_tests::observing_control_grouped_rollback_releases_its_clones,pass,ok,,364
+276,outer-15,outer,trampoline::observing_control_tests::observing_control_native_subsets_and_retained_dispatch_after_handle_drop,pass,ok,,371
+277,outer-15,outer,trampoline::observing_control_tests::observing_control_plans_and_images_release_unused_references,pass,ok,,372
+278,outer-15,outer,trampoline::observing_control_tests::observing_control_refusals_leave_no_hidden_control_owner,pass,ok,,373
+279,outer-15,outer,trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners,pass,ok,,374
+280,outer-15,outer,trampoline::saved_pkru::tests::emitted_saved_pkru_component_absence,pass,ok,,375
+281,outer-15,outer,trampoline::tests::a2_emitter_foundation::callback_free_lengths_and_far_branch_maps_are_exact,pass,ok,,376
+282,outer-15,outer,trampoline::tests::a2_emitter_foundation::native_instructions_actions_and_backedges,pass,ok,,383
+283,outer-15,outer,trampoline::tests::a2_emitter_foundation::validates_exact_instruction_and_ordered_action_boundaries,pass,ok,,384
+284,outer-15,outer,trampoline::tests::arena_seals_preserve_existing_writer_and_close_external_mutation_paths,pass,ok,,385
+285,outer-15,outer,trampoline::tests::branch_relay_layout_refuses_length_address_and_rel32_overflow,pass,ok,,386
+286,outer-15,outer,trampoline::tests::branch_relay_rejects_malformed_final_offset64_slots,pass,ok,,387
+287,outer-15,outer,trampoline::tests::dropping_staged_image_releases_its_exact_mapping,pass,ok,,388
+288,outer-15,outer,trampoline::tests::emits_checked_layouts_for_five_seven_and_ten_byte_instructions,pass,ok,,389
+289,outer-15,outer,trampoline::tests::exhausted_arena_reservation_cannot_wrap_and_reuse_storage,pass,ok,,390
+290,outer-15,outer,trampoline::tests::failed_emission_consumes_its_slot_without_overwriting_published_bytes,pass,ok,,391
+291,outer-15,outer,trampoline::tests::far_tail_code_and_data_have_distinct_pc_mappings,pass,ok,,392
+292,outer-15,outer,trampoline::tests::live::arena_hook_replaces_a_short_first_instruction_and_runs_the_tail,pass,ok,,393
+293,outer-15,outer,trampoline::tests::live::concurrent_execution_survives_rapid_hook_toggling,pass,ok,,394
+294,outer-15,outer,trampoline::tests::live::hook_fires_preserves_result_and_toggles_idempotently,pass,ok,,395
+295,outer-15,outer,trampoline::tests::live::preserves_avx_upper_lane_across_a_clobbering_callback,pass,ok,,396
+296,outer-15,outer,trampoline::tests::live::preserves_live_flags_and_the_system_v_red_zone,pass,ok,,397
+297,outer-15,outer,trampoline::tests::live::preserves_xmm_argument_across_a_clobbering_callback,pass,ok,,398
+298,outer-15,outer,trampoline::tests::live::ptrace_stopped_hook_executes_on_owned_stack,pass,ok,,401
+299,outer-15,outer,trampoline::tests::live::ptrace_stopped_hook_leaves_global_pc_publication_explicit,pass,ok,,402
+300,outer-15,outer,trampoline::tests::live::quiescent_arena_hook_patches_a_cache_line_straddler,pass,ok,,403
+301,outer-15,outer,trampoline::tests::live::relocates_relative_call_and_resumes_after_its_return,pass,ok,,404
+302,outer-15,outer,trampoline::tests::live::relocates_rip_relative_load_and_returns_to_original_code,pass,ok,,405
+303,outer-15,outer,trampoline::tests::maps_each_consecutive_expanded_branch_to_its_original_pc,pass,ok,,406
+304,outer-15,outer,trampoline::tests::out_of_range_return_uses_cet_notrack_indirect_jump,pass,ok,,407
+305,outer-15,outer,trampoline::tests::pc_relative::branch_relay_grouping_is_deterministic_for_shared_and_mixed_targets,pass,ok,,408
+306,outer-15,outer,trampoline::tests::pc_relative::far_branch_relays_preserve_entry_and_external_destinations,pass,ok,,409
+307,outer-15,outer,trampoline::tests::pc_relative::far_entry_relay_preserves_all_direct_transfer_kinds_and_fallthrough,pass,ok,,410
+308,outer-15,outer,trampoline::tests::pc_relative::far_external_direct_branch_uses_cet_relay,pass,ok,,411
+309,outer-15,outer,trampoline::tests::pc_relative::far_external_relays_cover_all_direct_forms_and_plan_modes,pass,ok,,412
+310,outer-15,outer,trampoline::tests::pc_relative::keeps_entry_branches_and_memory_at_application_address,pass,ok,,413
+311,outer-15,outer,trampoline::tests::pc_relative::maps_consecutive_far_entry_backedges_to_their_original_pcs,pass,ok,,414
+312,outer-15,outer,trampoline::tests::pc_relative::mixed_short_jcc_and_call_get_distinct_relays_in_public_plans,pass,ok,,415
+313,outer-15,outer,trampoline::tests::pc_relative::near_entry_backedges_do_not_add_relay_or_change_encoding,pass,ok,,416
+314,outer-15,outer,trampoline::tests::pc_relative::near_external_branches_keep_iced_bytes_and_offsets_in_all_plan_modes,pass,ok,,417
+315,outer-15,outer,trampoline::tests::pc_relative::normalization_preserves_direct_branch_operand_widths,pass,ok,,418
+316,outer-15,outer,trampoline::tests::pc_relative::observing_entry_targets_stay_external_for_direct_control_flow,pass,ok,,419
+317,outer-15,outer,trampoline::tests::pc_relative::preserves_eip_wrap_and_high_ip_external_targets,pass,ok,,420
+318,outer-15,outer,trampoline::tests::pc_relative::preserves_memory_and_pc_mappings_with_far_branch_literals,pass,ok,,421
+319,outer-15,outer,trampoline::tests::pc_relative::preserves_memory_targets_for_all_operand_classes,pass,ok,,422
+320,outer-15,outer,trampoline::tests::pc_relative::preserves_replace_first_omitted_and_retained_targets,pass,ok,,423
+321,outer-15,outer,trampoline::tests::pc_relative::refuses_unreachable_original_memory_instead_of_rebinding_it,pass,ok,,424
+322,outer-15,outer,trampoline::tests::pc_relative::relay_selection_uses_relocations_not_equal_immediates_or_continuation_identity,pass,ok,,425
+323,outer-15,outer,trampoline::tests::pc_relative::retained_interior_branches_still_follow_their_relocated_instruction,pass,ok,,426
+324,outer-15,outer,trampoline::tests::process_maps_io_regressions::open_result_delegates_success_to_the_bounded_reader,pass,ok,,427
+325,outer-15,outer,trampoline::tests::process_maps_io_regressions::open_result_reports_numeric_errno_without_reading,pass,ok,,428
+326,outer-15,outer,trampoline::tests::process_maps_io_regressions::read_error_reports_numeric_errno,pass,ok,,429
+327,outer-15,outer,trampoline::tests::process_maps_io_regressions::read_error_retains_kind_without_display_or_debug_of_its_payload,pass,ok,,430
+328,outer-15,outer,trampoline::tests::process_maps_reader_accepts_the_exact_cap_and_rejects_one_extra_byte,pass,ok,,431
+329,outer-15,outer,trampoline::tests::ptrace_stops_restore_saved_state_but_leave_rsp_at_owned_top,pass,ok,,432
+330,outer-15,outer,trampoline::tests::reachable_mapping_order_preserves_upward_heap_growth,pass,ok,,433
+331,outer-15,outer,trampoline::tests::reencodes_rip_relative_memory_for_the_trampoline_address,pass,ok,,434
+332,outer-15,outer,trampoline::tests::rejects_a_short_region_without_five_complete_bytes,pass,ok,,435
+333,outer-15,outer,trampoline::tests::relocates_multiple_short_instructions_as_one_patch_window,pass,ok,,436
+334,outer-15,outer,trampoline::tests::relocates_relative_calls_and_expands_out_of_range_branches,pass,ok,,437
+335,outer-15,outer,trampoline::tests::replace_first_omits_a_two_byte_syscall_but_relocates_its_tail,pass,ok,,438
+336,outer-15,outer,trampoline::tests::same_site_window_emits_identical_legacy_bytes_and_layout,pass,ok,,439
+337,outer-15,outer,trampoline::tests::short_instruction_constructor_rejects_nonheads_and_long_instructions,pass,ok,,440
+338,outer-15,outer,trampoline::tests::short_instruction_emission_maps_exact_entry_and_original_end,pass,ok,,441
+339,outer-15,outer,trampoline::tests::short_instruction_native_observe_and_replace_resume_at_original_successor,pass,ok,,442
+340,outer-15,outer,trampoline::tests::staged_image_rejects_wrong_address_without_mapping,pass,ok,,443
+341,outer-15,outer,trampoline::tests::terminal_instruction_does_not_capture_low_application_targets,pass,ok,,444
+342,outer-15,outer,trampoline::tests::total_length_includes_every_section,pass,ok,,445
+343,outer-15,outer,trampoline::tests::total_length_rejects_overflow,pass,ok,,446
+344,outer-15,outer,trampoline::tests::upstream_entries_execute_the_required_prefix_hook_and_suffix,pass,ok,,447
+345,outer-15,outer,trampoline::tests::window_constructor_requires_complete_physical_logical_and_end_boundaries,pass,ok,,448
+346,outer-15,outer,trampoline::tests::window_emission_separates_entry_routes_from_architectural_boundaries,pass,ok,,449
+347,outer-15,outer,trap::imp::tests::atomic_word_admission_preserves_pending_and_complete_displacement_ownership,pass,ok,,450
+348,outer-15,outer,trap::imp::tests::concurrent_pending_commit_and_drop_preserve_the_list,pass,ok,,451
+349,outer-15,outer,trap::imp::tests::pending_reservation_blocks_only_overlapping_registrations,pass,ok,,452
+350,outer-15,outer,patcher::tests::live::concurrent_execution_observes_only_complete_versions,pass,ok,,453
+351,outer-15,outer,patcher::tests::live::secondary_guarded_byte_waits_and_retries,pass,ok,,454
+352,outer-15,outer,trap::imp::tests::standalone_install_accepts_only_default_and_ignore,pass,ok,,455
+353,outer-15,outer,entry_router::imp::tests::quiescent_sigill_contract,pass,ok,,456
+354,outer-17,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,469
+355,outer-17,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,470
+356,outer-17,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,471
+357,outer-17,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,472
+358,outer-17,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,473
+359,outer-17,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,474
+360,outer-17,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,475
+361,outer-17,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,476
+362,outer-17,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,477
+363,outer-17,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,478
+364,outer-17,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,479
+365,outer-17,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,480
+366,outer-17,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,481
+367,outer-17,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,482
+368,outer-17,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,483
+369,outer-17,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,484
+370,outer-17,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,485
+371,outer-17,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,486
+372,outer-17,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,487
+373,outer-17,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,488
+374,outer-17,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,489
+375,outer-17,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,490
+376,outer-17,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,491
+377,outer-17,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,492
+378,outer-17,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,493
+379,outer-17,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,494
+380,outer-17,outer,mixed_bundle_publication_and_retirement_preserve_complete_state,pass,ok,,495
+381,outer-17,outer,grouped_bundle_publication_and_retirement_preserve_complete_state,pass,ok,,496
+382,outer-17,outer,rejects_duplicate_executed_boundary - should panic,pass,ok,,497
+383,outer-17,outer,original_trace_steps_between_repeated_identical_pcs,pass,ok,,498
+384,outer-17,outer,rejects_duplicate_physical_map_boundary - should panic,pass,ok,,499
+385,outer-17,outer,ordered_trace_compares_two_images_and_multiple_logical_hooks,pass,ok,,500
+386,outer-17,outer,rejects_missing_executed_boundary_without_skipping_to_the_rejoin - should panic,pass,ok,,501
+387,outer-17,outer,rejects_hook_event_log_overflow - should panic,pass,ok,,502
+388,outer-17,outer,rejects_missing_map_boundary - should panic,pass,ok,,503
+389,outer-17,outer,rejects_missing_hook_event - should panic,pass,ok,,504
+390,outer-17,outer,rejects_wrong_restored_boundary - should panic,pass,ok,,505
+391,outer-17,outer,rejects_duplicate_hook_event - should panic,pass,ok,,506
+392,outer-17,outer,rejects_wrong_hook_logical_pc - should panic,pass,ok,,507
+393,outer-17,outer,action_images_preserve_state_for_four_masks_and_three_entries,pass,ok,,508
+394,outer-18,outer,arena_capacity_and_reachability_remain_checked,pass,ok,,515
+395,outer-18,outer,late_close_failure_preserves_reused_descriptor_and_releases_mappings,pass,ok,,516
+396,outer-18,outer,child_first_fork_reservations_preserve_both_executable_images,pass,ok,,517
+397,outer-18,outer,metadata_mmap_failure_releases_pending_code_aliases_and_descriptor,pass,ok,,518
+398,outer-18,outer,concurrent_fork_reservations_share_the_exact_finite_capacity,pass,ok,,519
+399,outer-18,outer,parent_first_fork_reservations_preserve_both_executable_images,pass,ok,,520
+400,outer-19,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,527
+401,outer-19,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,528
+402,outer-19,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,529
+403,outer-19,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,530
+404,outer-19,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,531
+405,outer-19,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,532
+406,outer-19,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,533
+407,outer-19,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,534
+408,outer-19,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,535
+409,outer-19,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,536
+410,outer-19,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,537
+411,outer-19,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,538
+412,outer-19,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,539
+413,outer-19,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,540
+414,outer-19,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,541
+415,outer-19,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,542
+416,outer-19,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,543
+417,outer-19,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,544
+418,outer-19,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,545
+419,outer-19,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,546
+420,outer-19,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,547
+421,outer-19,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,548
+422,outer-19,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,549
+423,outer-19,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,550
+424,outer-19,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,551
+425,outer-19,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,552
+426,outer-19,outer,boundary_signals_every_restored_visit,pass,ok,,553
+427,outer-20,outer,empty_eof_is_present_empty_data,pass,ok,,560
+428,outer-20,outer,all_other_errors_propagate_before_and_after_bytes,pass,ok,,561
+429,outer-20,outer,exactly_4096_bytes_remain_exact,pass,ok,,562
+430,outer-20,outer,oversize_sentinel_stops_at_4097_without_another_read,pass,ok,,563
+431,outer-20,outer,partial_enoent_and_esrch_remain_errors,pass,ok,,564
+432,outer-20,outer,zero_byte_enoent_and_esrch_are_disappearance,pass,ok,,565
+433,outer-20,outer,short_reads_preserve_all_bytes_without_text_conversion,pass,ok,,566
+434,outer-21,outer,bundle_transactions,pass,ok,,573
+435,outer-22,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,580
+436,outer-22,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,581
+437,outer-22,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,582
+438,outer-22,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,583
+439,outer-22,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,584
+440,outer-22,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,585
+441,outer-22,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,586
+442,outer-22,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,587
+443,outer-22,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,588
+444,outer-22,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,589
+445,outer-22,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,590
+446,outer-22,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,591
+447,outer-22,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,592
+448,outer-22,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,593
+449,outer-22,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,594
+450,outer-22,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,595
+451,outer-22,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,596
+452,outer-22,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,597
+453,outer-22,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,598
+454,outer-22,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,599
+455,outer-22,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,600
+456,outer-22,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,601
+457,outer-22,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,602
+458,outer-22,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,603
+459,outer-22,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,604
+460,outer-22,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,605
+461,outer-22,outer,original_call_returns_inside_unchanged_pun_displacement,pass,ok,,606
+462,outer-23,outer,concurrent_handles_keep_neighbor_state_across_quiescent_calls,pass,ok,,613
+463,outer-23,outer,active_e9_rebind_preserves_nested_redirect_and_original_interval,pass,ok,,614
+464,outer-23,outer,cpuid_rdtsc_atomic_neighbors_preserve_both_hooks,pass,ok,,615
+465,outer-23,outer,displaced_window_and_guarded_split_overlaps_are_refused,pass,ok,,616
+466,outer-23,outer,explicit_quiescent_binding_retains_strict_snapshot_contract,pass,ok,,617
+467,outer-23,outer,later_neighbor_cannot_authenticate_an_existing_stale_tail,pass,ok,,618
+468,outer-23,outer,live_neighbor_snapshot_is_normalized_and_mixed_snapshots_are_refused,pass,ok,,619
+469,outer-23,outer,preplanned_e9_redirect_requires_its_expected_first_bytes,pass,ok,,620
+470,outer-23,outer,rapid_and_atomic_word_neighbors_still_refuse_overlap,pass,ok,,621
+471,outer-23,outer,unexplained_neighbor_and_unowned_tail_bytes_are_refused,pass,ok,,622
+472,outer-23,outer,atomic_neighbors_gaps_and_line_edges_preserve_each_state,pass,ok,,623
+473,outer-24,outer,controlled_coalescing_required_contracts,pass,ok,,630
+474,outer-25,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,637
+475,outer-25,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,638
+476,outer-25,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,639
+477,outer-25,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,640
+478,outer-25,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,641
+479,outer-25,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,642
+480,outer-25,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,643
+481,outer-25,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,644
+482,outer-25,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,645
+483,outer-25,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,646
+484,outer-25,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,647
+485,outer-25,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,648
+486,outer-25,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,649
+487,outer-25,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,650
+488,outer-25,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,651
+489,outer-25,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,652
+490,outer-25,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,653
+491,outer-25,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,654
+492,outer-25,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,655
+493,outer-25,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,656
+494,outer-25,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,657
+495,outer-25,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,658
+496,outer-25,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,659
+497,outer-25,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,660
+498,outer-25,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,663
+499,outer-25,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,664
+500,outer-25,outer,runtime_control_oracle_modes,pass,ok,,685
+501,outer-26,outer,observing_hook_runs_on_every_entry_backedge,pass,ok,,692
+502,outer-27,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,699
+503,outer-27,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,700
+504,outer-27,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,701
+505,outer-27,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,702
+506,outer-27,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,703
+507,outer-27,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,704
+508,outer-27,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,705
+509,outer-27,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,706
+510,outer-27,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,707
+511,outer-27,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,708
+512,outer-27,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,709
+513,outer-27,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,710
+514,outer-27,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,711
+515,outer-27,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,712
+516,outer-27,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,713
+517,outer-27,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,714
+518,outer-27,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,715
+519,outer-27,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,716
+520,outer-27,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,717
+521,outer-27,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,718
+522,outer-27,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,719
+523,outer-27,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,720
+524,outer-27,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,721
+525,outer-27,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,722
+526,outer-27,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,723
+527,outer-27,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,724
+528,outer-27,outer,entry_paths_required_native_puzzles,pass,ok,,725
+529,outer-28,outer,a_missing_anchor_or_direct_long_successor_is_not_a_recursive_chain,pass,ok,,732
+530,outer-28,outer,complete_entry_scope_and_cet_obligations_remain_mandatory,pass,ok,,733
+531,outer-28,outer,direct_original_branch_to_a_victim_midpoint_is_positive_counterevidence,pass,ok,,734
+532,outer-28,outer,forced_dependency_cycles_skips_and_extra_heads_never_substitute,pass,ok,,735
+533,outer-28,outer,midpoint_entries_and_saved_resume_pcs_are_rejected,pass,ok,,736
+534,outer-28,outer,one_less_depth_is_a_witnessed_cutoff_not_a_no_window_claim,pass,ok,,737
+535,outer-28,outer,depth_hard_limit_and_exact_search_mode_do_not_silently_fallback,pass,ok,,738
+536,outer-28,outer,every_node_zero_candidate_budget_remains_local,pass,ok,,739
+537,outer-28,outer,semantic_qualification_and_existing_replacement_rule_are_preserved,pass,ok,,740
+538,outer-28,outer,exact_depth_two_and_three_genuine_reverse_compositions,pass,ok,,741
+539,outer-28,outer,per_node_and_aggregate_capacity_limits_refuse_without_relabelling,pass,ok,,742
+540,outer-28,outer,suffix_backtracking_is_charged_and_retains_the_first_failed_path,pass,ok,,743
+541,outer-28,outer,zero_and_one_less_global_budget_keep_exact_work_inventory,pass,ok,,744
+542,outer-29,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,751
+543,outer-29,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,752
+544,outer-29,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,753
+545,outer-29,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,754
+546,outer-29,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,755
+547,outer-29,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,756
+548,outer-29,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,757
+549,outer-29,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,758
+550,outer-29,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,759
+551,outer-29,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,760
+552,outer-29,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,761
+553,outer-29,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,762
+554,outer-29,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,763
+555,outer-29,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,764
+556,outer-29,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,765
+557,outer-29,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,766
+558,outer-29,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,767
+559,outer-29,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,768
+560,outer-29,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,769
+561,outer-29,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,770
+562,outer-29,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,771
+563,outer-29,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,772
+564,outer-29,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,773
+565,outer-29,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,774
+566,outer-29,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,775
+567,outer-29,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,776
+568,outer-29,outer,native_chain_anchor_readable_and_fault,pass,ok,,777
+569,outer-29,outer,native_chain_short_conditional_backedge,pass,ok,,778
+570,outer-30,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,785
+571,outer-30,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,786
+572,outer-30,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,787
+573,outer-30,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,788
+574,outer-30,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,789
+575,outer-30,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,790
+576,outer-30,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,791
+577,outer-30,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,792
+578,outer-30,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,793
+579,outer-30,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,794
+580,outer-30,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,795
+581,outer-30,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,796
+582,outer-30,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,797
+583,outer-30,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,798
+584,outer-30,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,799
+585,outer-30,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,800
+586,outer-30,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,801
+587,outer-30,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,802
+588,outer-30,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,803
+589,outer-30,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,804
+590,outer-30,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,805
+591,outer-30,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,806
+592,outer-30,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,807
+593,outer-30,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,808
+594,outer-30,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,809
+595,outer-30,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,810
+596,outer-30,outer,native_eviction_chain_postwrite_failure_keeps_every_image,pass,ok,,811
+597,outer-30,outer,native_eviction_chains_all_original_entries,pass,ok,,812
+598,outer-31,outer,exact_constructor_requires_the_literal_two_byte_syscall,pass,ok,,819
+599,outer-31,outer,exact_emission_has_zero_tail_and_truthful_save_restore_masks,pass,ok,,820
+600,outer-31,outer,exact_execution_preserves_xmm_and_enabled_avx_upper_lanes,pass,ok,,821
+601,outer-31,outer,exact_pc_maps_cover_only_capture_restore_and_the_neutral_return,pass,ok,,822
+602,outer-31,outer,exact_execution_uses_the_live_tail_and_preserves_abi_flags_and_red_zone,pass,ok,,823
+603,outer-31,outer,exact_execution_respects_denied_rights_and_retains_changed_pkru,pass,ok,,824
+604,outer-31,outer,exact_execution_retains_genuine_signal_return_pkru,pass,ok,,825
+605,outer-32,outer,generalized_pun_contract_puzzles,pass,ok,,832
+606,outer-33,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,839
+607,outer-33,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,840
+608,outer-33,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,841
+609,outer-33,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,842
+610,outer-33,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,843
+611,outer-33,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,844
+612,outer-33,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,845
+613,outer-33,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,846
+614,outer-33,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,847
+615,outer-33,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,848
+616,outer-33,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,849
+617,outer-33,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,850
+618,outer-33,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,851
+619,outer-33,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,852
+620,outer-33,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,853
+621,outer-33,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,854
+622,outer-33,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,855
+623,outer-33,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,856
+624,outer-33,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,857
+625,outer-33,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,858
+626,outer-33,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,859
+627,outer-33,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,860
+628,outer-33,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,861
+629,outer-33,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,862
+630,outer-33,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,863
+631,outer-33,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,864
+632,outer-33,outer,both_movdqu_memory_directions_preserve_exact_null_faults,pass,ok,,865
+633,outer-33,outer,all_five_mandatory_prefix_forms_execute_all_five_tactics,pass,ok,,866
+634,outer-34,outer,neighbor_eviction_contract_puzzles,pass,ok,,873
+635,outer-35,outer,existing_gateway_rule_still_rejects_internal_source_relay - should panic,pass,ok,,880
+636,outer-35,outer,independent_native_self_loop_relay_calibration,pass,ok,,881
+637,outer-35,outer,independent_native_relay_self_calibration,pass,ok,,882
+638,outer-35,outer,native_neighbor_endpoint_forward_l2_m10_all_125_heads,pass,ok,,883
+639,outer-35,outer,native_neighbor_endpoint_backward_l4_m15_all_119_heads,pass,ok,,884
+640,outer-35,outer,native_neighbor_endpoint_backward_l3_m12_all_122_heads,pass,ok,,887
+641,outer-35,outer,native_neighbor_endpoint_inventory_is_the_complete_frozen_cohort,pass,ok,,888
+642,outer-35,outer,native_neighbor_endpoint_backward_l2_m10_all_124_heads,pass,ok,,889
+643,outer-35,outer,native_neighbor_jnz_m10_all_32_heads,pass,ok,,890
+644,outer-35,outer,native_neighbor_loop_seed_derivation_is_reproducible,pass,ok,,891
+645,outer-35,outer,native_neighbor_jnz_m15_all_32_heads,pass,ok,,892
+646,outer-35,outer,native_neighbor_endpoint_forward_l3_m12_all_124_heads,pass,ok,,893
+647,outer-35,outer,native_neighbor_moffs_fault_m10_all_33_heads,pass,ok,,894
+648,outer-35,outer,native_neighbor_moffs_fault_m15_all_33_heads,pass,ok,,895
+649,outer-35,outer,native_neighbor_rip_load_m10_all_34_heads,pass,ok,,896
+650,outer-35,outer,native_neighbor_rip_load_m15_all_34_heads,pass,ok,,897
+651,outer-35,outer,native_neighbor_selected_loop_all_33_heads,pass,ok,,898
+652,outer-35,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,899
+653,outer-35,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,900
+654,outer-35,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,901
+655,outer-35,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,902
+656,outer-35,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,903
+657,outer-35,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,904
+658,outer-35,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,905
+659,outer-35,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,906
+660,outer-35,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,907
+661,outer-35,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,908
+662,outer-35,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,909
+663,outer-35,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,910
+664,outer-35,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,911
+665,outer-35,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,912
+666,outer-35,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,913
+667,outer-35,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,914
+668,outer-35,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,915
+669,outer-35,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,916
+670,outer-35,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,917
+671,outer-35,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,918
+672,outer-35,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,919
+673,outer-35,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,920
+674,outer-35,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,921
+675,outer-35,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,922
+676,outer-35,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,923
+677,outer-35,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,924
+678,outer-35,outer,refuses_neighbor_relay_just_outside_both_signed_endpoints,pass,ok,,925
+679,outer-35,outer,rejects_application_side_effect_at_source_relay - should panic,pass,ok,,926
+680,outer-35,outer,rejects_changed_gpr_at_source_relay - should panic,pass,ok,,927
+681,outer-35,outer,rejects_duplicate_source_relay_record - should panic,pass,ok,,928
+682,outer-35,outer,rejects_extra_hook_event_before_source_relay - should panic,pass,ok,,929
+683,outer-35,outer,rejects_foreign_native_victim_witness - should panic,pass,ok,,930
+684,outer-35,outer,rejects_jz_lookalike_whose_target_coincides_with_native_fallthrough - should panic,pass,ok,,931
+685,outer-35,outer,rejects_loop_lookalike_whose_target_coincides_with_native_fallthrough - should panic,pass,ok,,932
+686,outer-35,outer,rejects_loop_witness_with_three_native_visits - should panic,pass,ok,,933
+687,outer-35,outer,rejects_malformed_relay_image_range - should panic,pass,ok,,934
+688,outer-35,outer,rejects_missing_required_source_relay_visit - should panic,pass,ok,,935
+689,outer-35,outer,rejects_nonqualified_native_victim_witness - should panic,pass,ok,,936
+690,outer-35,outer,rejects_original_head_inside_source_relay - should panic,pass,ok,,937
+691,outer-35,outer,rejects_redzone_side_effect_at_source_relay - should panic,pass,ok,,938
+692,outer-35,outer,rejects_relay_image_owning_wrong_original_instruction - should panic,pass,ok,,939
+693,outer-35,outer,rejects_relay_target_inside_image_instead_of_entry - should panic,pass,ok,,940
+694,outer-35,outer,rejects_restored_boundary_inside_source_relay - should panic,pass,ok,,941
+695,outer-35,outer,rejects_unexpected_source_relay_visit - should panic,pass,ok,,942
+696,outer-35,outer,rejects_unrecorded_internal_source_relay - should panic,pass,ok,,943
+697,outer-35,outer,rejects_wrong_relay_e9_opcode - should panic,pass,ok,,944
+698,outer-35,outer,rejects_wrong_relay_e9_target - should panic,pass,ok,,945
+699,outer-35,outer,rejects_wrong_selected_relay_opcode - should panic,pass,ok,,946
+700,outer-35,outer,rejects_wrong_selected_relay_target - should panic,pass,ok,,947
+701,outer-35,outer,rejects_wrong_source_relay_offset - should panic,pass,ok,,948
+702,outer-35,outer,native_neighbor_victim_loop_m10_all_25_heads,pass,ok,,949
+703,outer-35,outer,native_neighbor_victim_loop_m15_all_20_heads,pass,ok,,950
+704,outer-35,outer,native_neighbor_endpoint_forward_l4_m15_all_123_heads,pass,ok,,951
+705,outer-36,outer,three_overlapping_envelopes_allow_only_complete_executions,pass,ok,,958
+706,outer-37,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,965
+707,outer-37,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,966
+708,outer-37,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,967
+709,outer-37,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,968
+710,outer-37,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,969
+711,outer-37,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,970
+712,outer-37,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,971
+713,outer-37,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,972
+714,outer-37,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,973
+715,outer-37,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,974
+716,outer-37,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,975
+717,outer-37,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,976
+718,outer-37,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,977
+719,outer-37,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,978
+720,outer-37,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,979
+721,outer-37,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,980
+722,outer-37,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,981
+723,outer-37,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,982
+724,outer-37,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,983
+725,outer-37,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,984
+726,outer-37,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,985
+727,outer-37,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,986
+728,outer-37,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,987
+729,outer-37,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,988
+730,outer-37,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,989
+731,outer-37,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,990
+732,outer-37,outer,prepublication_parked_context_required_native_puzzles,pass,ok,,991
+733,outer-38,outer,observing_hook_preserves_self_lea_address,pass,ok,,998
+734,outer-39,outer,prefixed_pun_contract_puzzles,pass,ok,,1005
+735,outer-40,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,1012
+736,outer-40,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,1013
+737,outer-40,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,1014
+738,outer-40,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,1015
+739,outer-40,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,1016
+740,outer-40,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,1017
+741,outer-40,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,1018
+742,outer-40,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,1019
+743,outer-40,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,1020
+744,outer-40,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,1021
+745,outer-40,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,1022
+746,outer-40,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,1023
+747,outer-40,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,1024
+748,outer-40,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,1025
+749,outer-40,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,1026
+750,outer-40,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,1027
+751,outer-40,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,1028
+752,outer-40,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,1029
+753,outer-40,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,1030
+754,outer-40,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,1031
+755,outer-40,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,1032
+756,outer-40,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,1033
+757,outer-40,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,1034
+758,outer-40,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,1035
+759,outer-40,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,1036
+760,outer-40,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,1037
+761,outer-40,outer,native_state_covers_every_prefixed_pun_and_original_successor,pass,ok,,1038
+762,outer-41,outer,quiescent_contract_puzzles,pass,ok,,1045
+763,outer-42,outer,native_no_op_oracle_preserves_synchronous_fault_state,pass,ok,,1052
+764,outer-42,outer,native_no_op_oracle_preserves_generalized_pun_fault_state,pass,ok,,1053
+765,outer-42,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,1054
+766,outer-42,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,1055
+767,outer-42,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,1056
+768,outer-42,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,1057
+769,outer-42,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,1058
+770,outer-42,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,1059
+771,outer-42,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,1060
+772,outer-42,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,1061
+773,outer-42,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,1062
+774,outer-42,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,1063
+775,outer-42,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,1064
+776,outer-42,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,1065
+777,outer-42,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,1066
+778,outer-42,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,1067
+779,outer-42,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,1068
+780,outer-42,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,1069
+781,outer-42,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,1070
+782,outer-42,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,1071
+783,outer-42,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,1072
+784,outer-42,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,1073
+785,outer-42,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,1074
+786,outer-42,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,1075
+787,outer-42,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,1076
+788,outer-42,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,1077
+789,outer-42,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,1078
+790,outer-42,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,1079
+791,outer-42,outer,native_no_op_oracle_covers_generalized_puns_and_unchanged_successors,pass,ok,,1080
+792,outer-42,outer,native_no_op_oracle_covers_same_site_upstream_and_every_entry,pass,ok,,1081
+793,outer-43,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,1088
+794,outer-43,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,1089
+795,outer-43,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,1090
+796,outer-43,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,1091
+797,outer-43,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,1092
+798,outer-43,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,1093
+799,outer-43,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,1094
+800,outer-43,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,1095
+801,outer-43,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,1096
+802,outer-43,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,1097
+803,outer-43,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,1098
+804,outer-43,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,1099
+805,outer-43,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,1100
+806,outer-43,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,1101
+807,outer-43,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,1102
+808,outer-43,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,1103
+809,outer-43,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,1104
+810,outer-43,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,1105
+811,outer-43,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,1106
+812,outer-43,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,1107
+813,outer-43,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,1108
+814,outer-43,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,1109
+815,outer-43,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,1110
+816,outer-43,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,1111
+817,outer-43,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,1112
+818,outer-43,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,1113
+819,outer-43,outer,native_rel32_exact_endpoints_and_one_byte_outside,pass,ok,,1114
+820,outer-44,outer,near_replace_first_entry_branches_keep_the_original_encoding,pass,ok,,1121
+821,outer-44,outer,far_replace_first_entry_branches_use_one_cet_relay,pass,ok,,1122
+822,outer-45,outer,neighbor_forced_singleton_completes_victims_without_global_impossibility,pass,ok,,1129
+823,outer-45,outer,successor_selected_no_window_still_dominates_later_victim_unavailability,pass,ok,,1130
+824,outer-45,outer,neighbor_entered_pair_cutoff_then_second_pair_wins_unchanged,pass,ok,,1131
+825,outer-45,outer,neighbor_automatic_victim_limit_has_its_own_one_two_evidence,pass,ok,,1132
+826,outer-46,outer,coalesced_zero_candidate_budget_uses_the_same_exact_generator_evidence,pass,ok,,1139
+827,outer-46,outer,accepted_leaf_and_outer_capacity_refusal_remain_an_engine_failure,pass,ok,,1140
+828,outer-46,outer,one_site_cutoff_then_two_site_success_preserves_order_and_positive_plan,pass,ok,,1141
+829,outer-46,outer,same_allocation_refusal_and_equal_limit_do_not_conflate_complete_with_cutoff,pass,ok,,1142
+830,outer-46,outer,capacity_address_semantics_and_short_window_keep_distinct_local_evidence,pass,ok,,1143
+831,outer-46,outer,zero_prefix_only_gate_does_not_invent_a_prefix_candidate,pass,ok,,1144
+832,outer-46,outer,singleton_prefixed_pun_domain_completes_at_limit_one,pass,ok,,1145
+833,outer-46,outer,zero_site_and_zero_candidate_budgets_preserve_raw_refusals_and_known_work,pass,ok,,1146
+834,outer-47,outer,ignored_application_sigtrap_at_guarded_site_preserves_return,pass,ok,,1153
+835,outer-47,outer,default_application_sigtrap_at_guarded_site_terminates,pass,ok,,1154
+836,outer-48,outer,live_probe_stress_matrix,ignored,ignored,long-running M5 live stress matrix,1161
+837,outer-48,outer,patch_latency::patch_activation_latency_benchmark,ignored,ignored,opt-in release-mode cross-core LiveJumpPatch latency distribution,1162
+838,outer-48,outer,probe_overhead_benchmark,ignored,ignored,release-mode M5 overhead benchmark,1163
+839,outer-48,outer,patch_latency::nearest_rank_keeps_tail_and_handles_empty,pass,ok,,1164
+840,outer-48,outer,patch_latency::window_classifier_matches_every_offset_in_small_envelopes,pass,ok,,1165
+841,outer-48,outer,relocated_fault_pc_translation,pass,ok,,1168
+842,outer-48,outer,random_rips_and_real_libc_windows_never_panic,pass,ok,,1169
+843,outer-49,outer,successor_eviction_contract_puzzles,pass,ok,,1176
+844,outer-50,outer,native_successor_eviction_preserves_seven_byte_victim_fault,pass,ok,,1183
+845,outer-50,outer,occupied_successor_page_refuses_without_mutation,pass,ok,,1184
+846,outer-50,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,1185
+847,outer-50,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,1186
+848,outer-50,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,1187
+849,outer-50,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,1188
+850,outer-50,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,1189
+851,outer-50,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,1190
+852,outer-50,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,1191
+853,outer-50,outer,native_successor_eviction_preserves_victim_rip_relative_data,pass,ok,,1192
+854,outer-50,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,1193
+855,outer-50,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,1194
+856,outer-50,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,1195
+857,outer-50,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,1196
+858,outer-50,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,1197
+859,outer-50,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,1198
+860,outer-50,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,1199
+861,outer-50,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,1200
+862,outer-50,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,1201
+863,outer-50,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,1202
+864,outer-50,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,1203
+865,outer-50,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,1204
+866,outer-50,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,1205
+867,outer-50,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,1206
+868,outer-50,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,1207
+869,outer-50,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,1208
+870,outer-50,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,1209
+871,outer-50,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,1210
+872,outer-50,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,1211
+873,outer-50,outer,native_state_covers_successor_eviction_into_b2_and_t1_puns,pass,ok,,1212
+874,outer-50,outer,native_successor_eviction_preserves_bounded_victim_backedge,pass,ok,,1213
+875,outer-51,outer,sync_core_capability_lifetime,pass,ok,,1220
+876,outer-52,outer,tactic_engine_required_puzzles,pass,ok,,1227
+877,outer-53,outer,direct_call_return,pass,ok,,1234
+878,outer-53,outer,direct_jcc_fallthrough,pass,ok,,1235
+879,outer-53,outer,direct_jcc_taken,pass,ok,,1236
+880,outer-53,outer,far_far_return_call_return,pass,ok,,1237
+881,outer-53,outer,far_far_return_jcc_taken,pass,ok,,1238
+882,outer-53,outer,far_near_return_call_return,pass,ok,,1239
+883,outer-53,outer,far_far_return_jcc_fallthrough,pass,ok,,1240
+884,outer-53,outer,far_near_return_jcc_fallthrough,pass,ok,,1241
+885,outer-53,outer,far_near_return_jcc_taken,pass,ok,,1242
+886,outer-53,outer,near_call_return,pass,ok,,1243
+887,outer-53,outer,near_jcc_fallthrough,pass,ok,,1244
+888,outer-53,outer,near_jcc_taken,pass,ok,,1245
+889,outer-54,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,1252
+890,outer-54,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,1253
+891,outer-54,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,1254
+892,outer-54,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,1255
+893,outer-54,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,1256
+894,outer-54,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,1257
+895,outer-54,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,1258
+896,outer-54,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,1259
+897,outer-54,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,1260
+898,outer-54,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,1261
+899,outer-54,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,1262
+900,outer-54,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,1263
+901,outer-54,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,1264
+902,outer-54,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,1265
+903,outer-54,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,1266
+904,outer-54,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,1267
+905,outer-54,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,1268
+906,outer-54,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,1269
+907,outer-54,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,1270
+908,outer-54,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,1271
+909,outer-54,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,1272
+910,outer-54,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,1273
+911,outer-54,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,1274
+912,outer-54,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,1275
+913,outer-54,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,1276
+914,outer-54,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,1277
+915,outer-54,outer,exception_landing_actual_unwind_and_exact_prefix_state,pass,ok,,1278
+916,outer-55,outer,frontend::tests::g02_old_frame_keeps_removed_owner_and_payload,pass,ok,,1285
+917,outer-55,outer,frontend::tests::g01_per_function_k_two_and_global_storage,pass,ok,,1286
+918,outer-55,outer,frontend::tests::g04_stale_disable_cannot_mutate_new_generation,pass,ok,,1287
+919,outer-55,outer,frontend::tests::g03_nested_old_new_frames_keep_two_children,pass,ok,,1288
+920,outer-55,outer,frontend::tests::g05_install_and_foreign_handle_refuse_without_slot_change,pass,ok,,1289
+921,outer-55,outer,frontend::tests::g05_acquired_owner_after_close_refuses,pass,ok,,1290
+922,outer-55,outer,frontend::tests::g05_reserved_before_close_completes_to_old,pass,ok,,1291
+923,outer-55,outer,frontend::tests::g08_explicit_cancel_and_drop_publish_distinct_payloads_first,pass,ok,,1292
+924,outer-55,outer,frontend::tests::g07_payload_before_release_pause_blocks_drain,pass,ok,,1293
+925,outer-55,outer,frontend::tests::g07_sixteen_payloads_visible_after_drain_before_join,pass,ok,,1294
+926,outer-55,outer,frontend::tests::g06_kth_gap_keeps_seven_terminals_and_one_other,pass,ok,,1295
+927,outer-55,outer,frontend::tests::g08_forgotten_complete_frame_retains_reservation_and_permit,pass,ok,,1296
+928,outer-55,outer,frontend::tests::g08_standalone_owned_ticket_has_no_frontend_permit_claim,pass,ok,,1297
+929,outer-55,outer,frontend::tests::g09_a_storage_exhaustion_preserves_records_and_slot,pass,ok,,1298
+930,outer-55,outer,frontend::tests::g09_constructor_bounds_and_failed_stage_release_permit,pass,ok,,1299
+931,outer-55,outer,frontend::tests::g09_d_frame_limit_preserves_owned_frame_and_slot,pass,ok,,1300
+932,outer-55,outer,frontend::tests::g09_e_handles_reports_final_owner_and_forgotten_owners,pass,ok,,1301
+933,outer-55,outer,frontend::tests::g09_m_reservation_exhaustion_preserves_records_and_slot,pass,ok,,1302
+934,outer-55,outer,frontend::tests::g09_t_registration_limit_and_duplicate_are_exact,pass,ok,,1303
+935,outer-55,outer,frontend::tests::g10_nonwrapping_sequences_refuse_and_remain_terminal,pass,ok,,1304
+936,outer-55,outer,frontend::tests::g10_registry_contention_refuses_before_slot_mutation,pass,ok,,1305
+937,outer-55,outer,frontend::tests::g10_reentry_and_duplicate_slot_preserve_existing_frames,pass,ok,,1306
+938,outer-55,outer,frontend::tests::g10_unregistered_thread_and_empty_binding_are_explicit,pass,ok,,1307
+939,outer-55,outer,frontend::tests::g10_registry_poison_refuses_before_slot_mutation,pass,ok,,1308
+940,outer-55,outer,frontend::tests::g11_mandatory_action_remains_after_all_profiling_functions_close,pass,ok,,1309
+941,outer-55,outer,frontend::tests::g11_shared_group_keeps_b_then_disables_after_b_closes,pass,ok,,1310
+942,outer-55,outer,frontend::tests::g12_after_mutation_failures_retain_owner_and_refuse_retry,pass,ok,,1311
+943,outer-55,outer,frontend::tests::g12_before_mutation_failures_keep_binding_and_group_state,pass,ok,,1312
+944,outer-55,outer,frontend::tests::g12_bounded_scan_recovers_closed_actions_without_notification_queue,pass,ok,,1313
+945,outer-55,outer,frontend::tests::g12_history_exhaustion_refuses_before_any_controller_mutation,pass,ok,,1314
+946,outer-55,outer,frontend::tests::reference_ledger_rejects_eight_identity_payload_action_mutations,pass,ok,,1315
+947,outer-55,outer,frontend::tests::g12_republishing_current_original_or_clone_refuses_all_failure_modes,pass,ok,,1316
+948,outer-55,outer,frontend_native::module::tests::parser_fixture_has_explicit_elf_alignment,pass,ok,,1317
+949,outer-55,outer,frontend_native::module::tests::parser_accepts_actual_subject_complete_grammar,pass,ok,,1318
+950,outer-55,outer,frontend_native::module::tests::parser_rejects_duplicate_bind_now,pass,ok,,1319
+951,outer-55,outer,frontend_native::module::tests::parser_rejects_fini_destructor,pass,ok,,1320
+952,outer-55,outer,frontend_native::module::tests::parser_accepts_each_single_eager_binding_indicator,pass,ok,,1321
+953,outer-55,outer,frontend_native::module::tests::parser_rejects_init_array_constructor,pass,ok,,1322
+954,outer-55,outer,frontend_native::module::tests::parser_rejects_invalid_flags1_bits,pass,ok,,1323
+955,outer-55,outer,frontend_native::module::tests::parser_rejects_init_constructor,pass,ok,,1324
+956,outer-55,outer,frontend_native::module::tests::parser_rejects_invalid_flags_bits,pass,ok,,1325
+957,outer-55,outer,frontend_native::module::tests::parser_rejects_missing_eager_binding,pass,ok,,1326
+958,outer-55,outer,frontend_native::module::tests::parser_rejects_needed_dependency,pass,ok,,1327
+959,outer-55,outer,frontend_native::module::tests::parser_rejects_nonnull_after_terminator,pass,ok,,1328
+960,outer-55,outer,frontend_native::module::tests::parser_rejects_nonzero_bind_now_payload,pass,ok,,1329
+961,outer-55,outer,frontend_native::module::tests::parser_rejects_unknown_dynamic_tag,pass,ok,,1330
+962,outer-55,outer,frontend_native::module::tests::parser_rejects_textrel_tag,pass,ok,,1331
+963,outer-55,outer,frontend_tls::tests::tls_invariant_failure_retains_frame_and_poison_until_actual_thread_teardown,pass,ok,,1332
+964,outer-55,outer,frontend_tls::tests::tls_p2_two_reservations_keep_one_k_winner_and_one_dropped_completion,pass,ok,,1333
+965,outer-55,outer,frontend_tls::tests::tls_p3_nested_panic_cancels_exact_frames_then_same_registration_recovers,pass,ok,,1334
+966,outer-55,outer,frontend_tls::tests::tls_p1_two_actual_threads_rotate_and_finish_exact_old_frames,pass,ok,,1335
+967,outer-55,outer,frontend_tls::tests::tls_r1_duplicate_attachment_preserves_original_and_t_budget,pass,ok,,1336
+968,outer-55,outer,frontend_tls::tests::tls_p4_detach_and_forgotten_registration_follow_actual_thread_teardown,pass,ok,,1337
+969,outer-55,outer,frontend_tls::tests::tls_r3_removed_current_runs_body_once_without_admission,pass,ok,,1338
+970,outer-55,outer,frontend_tls::tests::tls_r2_wrong_install_runs_body_once_without_admission,pass,ok,,1339
+971,outer-55,outer,frontend_tls::tests::tls_r5_bookkeeping_borrow_busy_runs_body_once_without_panic,pass,ok,,1340
+972,outer-55,outer,frontend_tls::tests::tls_r4_depth_refusal_keeps_exact_existing_outer_frame,pass,ok,,1341
+973,outer-55,outer,frontend_tls::tests::tls_r6_lifetime_thread_limit_does_not_recycle_after_os_thread_exit,pass,ok,,1342
+974,outer-55,outer,frontend_tls::tests::tls_r7_registration_identity_overflow_refuses_before_t_consumption,pass,ok,,1343
+975,outer-55,outer,frontend_tls::tests::unwind_seam_rejects_two_mismatches_and_drops_only_matching_inner_frame,pass,ok,,1344
+976,outer-55,outer,frontend_tls::tests::tls_r8_slot_identity_overflow_preserves_records_and_runs_body_once,pass,ok,,1345
+977,outer-55,outer,generation::owned_tests::owned_and_borrowed_records_have_exact_terminal_parity,pass,ok,,1346
+978,outer-55,outer,generation::owned_tests::owned_cancel_and_drop_keep_exact_old_epoch_after_new_creation,pass,ok,,1347
+979,outer-55,outer,generation::owned_tests::owned_refusals_preserve_slots_and_original_identity,pass,ok,,1348
+980,outer-55,outer,generation::owned_tests::owned_ticket_retains_original_epoch_until_its_terminal,pass,ok,,1349
+981,outer-55,outer,generation::tests::checked_generation_exhaustion_never_wraps_or_reuses,pass,ok,,1350
+982,outer-55,outer,generation::tests::close_after_admission_waits_for_terminal_record,pass,ok,,1351
+983,outer-55,outer,generation::tests::close_before_admission_refuses_without_record,pass,ok,,1352
+984,outer-55,outer,generation::tests::exact_constructor_refusals_and_largest_budget_do_not_wrap,pass,ok,,1353
+985,outer-55,outer,generation::tests::explicit_and_drop_cancellation_are_distinct_and_do_not_consume_k,pass,ok,,1354
+986,outer-55,outer,generation::tests::close_gap_allows_five_post_k_completions_but_only_one_other_reservation,pass,ok,,1355
+987,outer-55,outer,generation::tests::independent_ledger_rejects_six_wrong_populations_or_identities,pass,ok,,1356
+988,outer-55,outer,generation::tests::independent_two_generation_two_function_event_ledger,pass,ok,,1357
+989,outer-55,outer,generation::tests::inflight_refusal_does_not_consume_a_slot,pass,ok,,1358
+990,outer-55,outer,generation::tests::nested_invocations_keep_identity_and_completion_selection_order,pass,ok,,1359
+991,outer-55,outer,generation::tests::final_acquire_observes_all_sixteen_exact_terminal_values,pass,ok,,1360
+992,outer-55,outer,generation::tests::partial_records_keep_unfinished_in_two_epochs_separate,pass,ok,,1361
+993,outer-55,outer,generation::tests::old_ticket_completion_does_not_close_or_write_new_epoch,pass,ok,,1362
+994,outer-55,outer,generation::tests::total_storage_exhaustion_closes_epoch_without_losing_records,pass,ok,,1363
+995,outer-55,outer,generation::tests::unknown_function_refusal_and_closed_function_do_not_hide_other_function,pass,ok,,1364
+996,outer-55,outer,interval::tests::distribution_tracks_constant_space_summary,pass,ok,,1365
+997,outer-55,outer,generation::tests::simultaneous_completions_have_exactly_one_final_retention_and_request,pass,ok,,1366
+998,outer-55,outer,interval::tests::exit_continuation_emits_cet_notrack_indirect_jump,pass,ok,,1367
+999,outer-55,outer,interval::tests::plain_indirect_jump_is_not_accepted_as_cet_notrack,pass,ok,,1368
+1000,outer-55,outer,interval::tests::sample_slot_saturates_and_identifies_the_kth_completion,pass,ok,,1369
+1001,outer-55,outer,pmu::tests::a_counter_that_never_ran_is_unavailable,pass,ok,,1370
+1002,outer-55,outer,pmu::tests::counter_delta_scales_multiplexed_events_and_preserves_unavailable_ones,pass,ok,,1371
+1003,outer-55,outer,generation::tests::retained_budget_is_per_function_for_one_ten_and_thousand,pass,ok,,1372
+1004,outer-55,outer,pmu::tests::amd_l2_event_matches_the_perf_event_encoding,pass,ok,,1373
+1005,outer-56,outer,tests::default_fixture_accepts_options_without_a_positional_image,pass,ok,,1380
+1006,outer-56,outer,tests::missing_image_and_default_is_rejected,pass,ok,,1381
+1007,outer-56,outer,tests::positional_image_overrides_the_default_fixture,pass,ok,,1382
+1008,outer-57,outer,rejects_functions_with_colliding_trampoline_pages,pass,ok,,1389
+1009,outer-57,outer,profiles_entry_to_exit_intervals_and_progresses_to_leaf_samples,pass,ok,,1390
+1010,outer-58,outer,oracle::calibration::rejects_gpr_corruption - should panic,pass,ok,,1397
+1011,outer-58,outer,oracle::calibration::rejects_defined_flag_corruption - should panic,pass,ok,,1398
+1012,outer-58,outer,oracle::calibration::rejects_fault_address_corruption - should panic,pass,ok,,1399
+1013,outer-58,outer,oracle::calibration::rejects_application_memory_corruption - should panic,pass,ok,,1400
+1014,outer-58,outer,oracle::calibration::rejects_simd_corruption - should panic,pass,ok,,1401
+1015,outer-58,outer,oracle::calibration::rejects_redzone_corruption - should panic,pass,ok,,1402
+1016,outer-58,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip - should panic,pass,ok,,1403
+1017,outer-58,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip - should panic,pass,ok,,1404
+1018,outer-58,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip - should panic,pass,ok,,1405
+1019,outer-58,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc - should panic,pass,ok,,1406
+1020,outer-58,outer,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc - should panic,pass,ok,,1407
+1021,outer-58,outer,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,ok,,1408
+1022,outer-58,outer,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write - should panic,pass,ok,,1409
+1023,outer-58,outer,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status - should panic,pass,ok,,1410
+1024,outer-58,outer,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation - should panic,pass,ok,,1411
+1025,outer-58,outer,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication - should panic,pass,ok,,1412
+1026,outer-58,outer,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity - should panic,pass,ok,,1413
+1027,outer-58,outer,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,ok,,1414
+1028,outer-58,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status - should panic,pass,ok,,1415
+1029,outer-58,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization - should panic,pass,ok,,1416
+1030,outer-58,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity - should panic,pass,ok,,1417
+1031,outer-58,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field - should panic,pass,ok,,1418
+1032,outer-58,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process - should panic,pass,ok,,1419
+1033,outer-58,outer,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction - should panic,pass,ok,,1420
+1034,outer-58,outer,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,ok,,1421
+1035,outer-58,outer,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,ok,,1422
+1036,outer-62,outer,tools/rapid-profiler/src/frontend.rs - frontend::AdmissionHandle (line 284) - compile fail,pass,ok,,1447
+1037,outer-62,outer,tools/rapid-profiler/src/frontend.rs - frontend::ThreadModel (line 859) - compile fail,pass,ok,,1448
+1038,outer-62,outer,tools/rapid-profiler/src/frontend.rs - frontend::EpochHandle (line 221) - compile fail,pass,ok,,1449
+1039,outer-62,outer,tools/rapid-profiler/src/frontend.rs - frontend::Report (line 261) - compile fail,pass,ok,,1450
+1040,outer-62,outer,tools/rapid-profiler/src/frontend_tls.rs - frontend_tls::ThreadRegistration (line 138) - compile fail,pass,ok,,1451
+1041,outer-62,outer,tools/rapid-profiler/src/frontend_tls.rs - frontend_tls::ThreadRegistration (line 145) - compile fail,pass,ok,,1452
+1042,outer-62,outer,tools/rapid-profiler/src/generation.rs - generation::OwnedTicket (line 646) - compile fail,pass,ok,,1453
+1043,outer-62,outer,tools/rapid-profiler/src/generation.rs - generation::OwnedTicket (line 638) - compile fail,pass,ok,,1454
+1044,outer-62,outer,tools/rapid-profiler/src/generation.rs - generation::Ticket (line 574) - compile fail,pass,ok,,1455
+1045,outer-62,outer,tools/rapid-profiler/src/generation.rs - generation::Ticket (line 567) - compile fail,pass,ok,,1456
+1046,nested-1,nested,trampoline::observing_control_tests::observing_control_native_subsets_and_retained_dispatch_after_handle_drop,pass,ok,,369
+1047,nested-2,nested,trampoline::tests::a2_emitter_foundation::native_instructions_actions_and_backedges,pass,ok,,381
+1048,nested-3,nested,runtime_control_oracle_modes,pass,ok,,668
+1049,nested-4,nested,runtime_control_oracle_modes,pass,ok,,675
+1050,nested-5,nested,runtime_control_oracle_modes,pass,ok,,683

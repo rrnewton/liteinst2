@@ -1,0 +1,20 @@
+{
+  "argv": [
+    "${RAW}/artifacts/native-oracle",
+    "straight",
+    "${RAW}/subject/subject.so",
+    "${RAW}/native-straight/captures"
+  ],
+  "cpu_seconds": 20,
+  "cwd": "${REPO}",
+  "env": {
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TMPDIR": "${RAW}/native-straight/tmp"
+  },
+  "file_bytes": 16777216,
+  "stderr": "${RAW}/native-straight/stderr.txt",
+  "stdout": "${RAW}/native-straight/stdout.txt",
+  "wall_seconds": 30
+}

@@ -1,0 +1,12 @@
+PASS exact_source_fixture
+PASS five_whole_requests_and_outer_inverse
+PASS refusal missing_source
+PASS refusal wrong_source
+PASS refusal existing_output_owner
+PASS refusal outside_ignored
+PASS refusal symlink_parent
+PASS refusal relative_coordinate
+PASS refusal wrong_material_digest
+PASS json_special_coordinate_expansion
+PASS literal_role_text_not_reexpanded
+PASS renderer controls: 4 accepted, 7 expected refusals

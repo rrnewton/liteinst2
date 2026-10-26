@@ -1,0 +1,42 @@
+target,case,expected,observed,basis
+rapid-profiler binary unit tests,tests::default_fixture_accepts_options_without_a_positional_image,pass,not_run,unchanged source and prior required inventory
+rapid-profiler binary unit tests,tests::missing_image_and_default_is_rejected,pass,not_run,unchanged source and prior required inventory
+rapid-profiler binary unit tests,tests::positional_image_overrides_the_default_fixture,pass,not_run,unchanged source and prior required inventory
+rapid-profiler e2e,rejects_functions_with_colliding_trampoline_pages,pass,not_run,unchanged source and prior required inventory
+rapid-profiler e2e,profiles_entry_to_exit_intervals_and_progresses_to_leaf_samples,pass,not_run,unchanged source and prior required inventory
+frontend-native-calibrations,oracle::calibration::rejects_application_memory_corruption,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::calibration::rejects_defined_flag_corruption,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::calibration::rejects_fault_address_corruption,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::calibration::rejects_gpr_corruption,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::calibration::rejects_redzone_corruption,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::calibration::rejects_simd_corruption,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process,pass,not_run,current source-bound fixed name inventory
+frontend-native-calibrations,oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction,pass,not_run,current source-bound fixed name inventory
+rapid-profiler doc tests,tools/rapid-profiler/src/frontend.rs - frontend::AdmissionHandle (line 284),compile_fail E0616,not_run,current source/fence/name/diagnostic inventory
+rapid-profiler doc tests,tools/rapid-profiler/src/frontend.rs - frontend::EpochHandle (line 221),compile_fail E0616,not_run,current source/fence/name/diagnostic inventory
+rapid-profiler doc tests,tools/rapid-profiler/src/frontend.rs - frontend::Report (line 261),compile_fail E0616,not_run,current source/fence/name/diagnostic inventory
+rapid-profiler doc tests,tools/rapid-profiler/src/frontend.rs - frontend::ThreadModel (line 859),compile_fail E0616,not_run,current source/fence/name/diagnostic inventory
+rapid-profiler doc tests,tools/rapid-profiler/src/frontend_tls.rs - frontend_tls::ThreadRegistration (line 138),compile_fail E0277,not_run,current source/fence/name/diagnostic inventory
+rapid-profiler doc tests,tools/rapid-profiler/src/frontend_tls.rs - frontend_tls::ThreadRegistration (line 145),compile_fail E0277,not_run,current source/fence/name/diagnostic inventory
+rapid-profiler doc tests,tools/rapid-profiler/src/generation.rs - generation::OwnedTicket (line 638),compile_fail E0599,not_run,current source/fence/name/diagnostic inventory
+rapid-profiler doc tests,tools/rapid-profiler/src/generation.rs - generation::OwnedTicket (line 646),compile_fail E0382,not_run,current source/fence/name/diagnostic inventory
+rapid-profiler doc tests,tools/rapid-profiler/src/generation.rs - generation::Ticket (line 567),compile_fail E0599,not_run,current source/fence/name/diagnostic inventory
+rapid-profiler doc tests,tools/rapid-profiler/src/generation.rs - generation::Ticket (line 574),compile_fail E0382,not_run,current source/fence/name/diagnostic inventory

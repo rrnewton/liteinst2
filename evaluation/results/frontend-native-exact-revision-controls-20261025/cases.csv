@@ -1,0 +1,12 @@
+actual_result,exact_expected_error,expected,name,ordinal,scope,observed_stdout_line,refusal_detail_scope
+pass,,accepted,exact_source_fixture,1,original,PASS exact_source_fixture,Complete expected control output matched.
+pass,,accepted,five_whole_requests_and_outer_inverse,2,original,PASS five_whole_requests_and_outer_inverse,Complete expected control output matched.
+pass,source missing,expected_refusal,missing_source,3,original,PASS refusal missing_source,Exact error equality enforced by the authenticated control source; stdout serializes the case name.
+pass,source digest,expected_refusal,wrong_source,4,original,PASS refusal wrong_source,Exact error equality enforced by the authenticated control source; stdout serializes the case name.
+pass,raw already exists,expected_refusal,existing_output_owner,5,original,PASS refusal existing_output_owner,Exact error equality enforced by the authenticated control source; stdout serializes the case name.
+pass,raw outside ignored,expected_refusal,outside_ignored,6,original,PASS refusal outside_ignored,Exact error equality enforced by the authenticated control source; stdout serializes the case name.
+pass,raw coordinate,expected_refusal,symlink_parent,7,original,PASS refusal symlink_parent,Exact error equality enforced by the authenticated control source; stdout serializes the case name.
+pass,raw coordinate,expected_refusal,relative_coordinate,8,original,PASS refusal relative_coordinate,Exact error equality enforced by the authenticated control source; stdout serializes the case name.
+pass,material sha256,expected_refusal,wrong_material_digest,9,original,PASS refusal wrong_material_digest,Exact error equality enforced by the authenticated control source; stdout serializes the case name.
+pass,,accepted,json_special_coordinate_expansion,10,additive_coordinate_expansion,PASS json_special_coordinate_expansion,Complete expected control output matched.
+pass,,accepted,literal_role_text_not_reexpanded,11,additive_coordinate_expansion,PASS literal_role_text_not_reexpanded,Complete expected control output matched.

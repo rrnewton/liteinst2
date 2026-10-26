@@ -1,0 +1,142 @@
+[
+  {
+    "case": "frontend_native::module::tests::parser_accepts_actual_subject_complete_grammar",
+    "column": 30,
+    "expected": "pass",
+    "line": 41,
+    "message": "actual admitted subject grammar: Format",
+    "observed": "failed",
+    "raw_block_sha256": "673d79eb3490e37f972e60e0f72a905d5f99cee2de8f0de6136b53eeda4e497f",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_accepts_each_single_eager_binding_indicator",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "ea13bb13a1fc4146d8c12fc2ae5fd75c4ee96e13fff1d1ce242956310251e32f",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_duplicate_bind_now",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "1a636ae73d20688e72f6eb31b975ca12501138a544697cbd77afd7b5a83f6c6e",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_fini_destructor",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "fbc6c0e5a26b7ebdbecf25731ea1f5a2e0415469a709714d42fdd951532152be",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_init_constructor",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "8a75849805dcde3f80bd339cbf9710f4d6b7e5c6bccb9ac18735da1970454eac",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_invalid_flags1_bits",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "037a8aa5a117d2eb3b7b8a42e40c1449bbd0f7fb021c1d7d513c44656b2a8515",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_init_array_constructor",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "12b79059fe82da7e849f786a51b9fa9251b2a951ec26145fa3824ae41f422dac",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_invalid_flags_bits",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "3e26df63db6560b316ec936a41bd2cdbae52feac456222b44e4c6fdcc3ec5e13",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_missing_eager_binding",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "8ec8d6682c5c5afca0b0bae49f2e8829559b8cd88a62455dd54997e3bb8858dd",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_needed_dependency",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "7a95adafbc3e1d37aff22234b0378f8b052d5ede1d842e5f92bfa00ee36e0b5b",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_nonzero_bind_now_payload",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "bb8c9328d48d9ba128e55b788f9c5880ace1c5f7a9906b1478e03699a98e8a70",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_nonnull_after_terminator",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "f5113c3727c91def9e8e76344d80556aec33ff97d0529217d0b4ab9719da94c6",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_textrel_tag",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "8e59cd6b6290516481e966ede9c026a30ffcd15bf611ef3e75b64a19e7db6222",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  },
+  {
+    "case": "frontend_native::module::tests::parser_rejects_unknown_dynamic_tag",
+    "column": 45,
+    "expected": "pass",
+    "line": 7,
+    "message": "called `Result::unwrap()` on an `Err` value: Error(\"Invalid ELF header size or alignment\")",
+    "observed": "failed",
+    "raw_block_sha256": "92bd1c15da533f5edf126e6ea5cbef08ad48fbdbeb97fea2d620ae898548c28a",
+    "source": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+  }
+]

@@ -1,0 +1,242 @@
+{
+  "actual_case_records": {
+    "nested": 5,
+    "outer": 1003
+  },
+  "cleanup_scope": "Unchanged required runner process-group timeout cleanup; no CPU/file/ECHILD/subreaper/cgroup claim; inherited post-kill wait has no separate deadline.",
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "log": "ignored/a5/frontend-native-exact-revision-root-v1/required/gates/fmt.log",
+      "name": "fmt",
+      "seconds": 1.167353113181889,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start_utc": "2026-10-26T05:04:04.407545+00:00",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "log": "ignored/a5/frontend-native-exact-revision-root-v1/required/gates/clippy.log",
+      "name": "clippy",
+      "seconds": 7.379052163101733,
+      "sha256": "3c5df2f792a60ee386dca0cb890e568c1def8861ea8eb209af56fd874517bef2",
+      "start_utc": "2026-10-26T05:04:05.576139+00:00",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit": 101,
+      "log": "ignored/a5/frontend-native-exact-revision-root-v1/required/gates/test.log",
+      "name": "test",
+      "seconds": 275.5335448491387,
+      "sha256": "eb3f8e1e6325dbc284d62478455ad624e8a1319be6d953cbed85df05fe9392d2",
+      "start_utc": "2026-10-26T05:04:12.957027+00:00",
+      "timeout_seconds": 360
+    }
+  ],
+  "coordinate_roles": {
+    "GATES": "Whole fresh directory passed to existing required runner below REPO/ignored",
+    "PYTHON": "Whole admitted runner Python executable",
+    "REPO": "Whole canonical checkout of exact C"
+  },
+  "execution_outer": {
+    "argv": [
+      "@PYTHON@",
+      "-B",
+      "@REPO@/evaluation/required-gates.py",
+      "--repo",
+      "@REPO@",
+      "--output",
+      "@GATES@"
+    ],
+    "before_after_equal": true,
+    "cwd": "@REPO@",
+    "elapsed_seconds": 284.23134799301624,
+    "exit": 1,
+    "head": "7e464a424c5ad3eaef92e1db78d2a5f0cbd3eb60",
+    "input_scope": "1008 tracked sources,27 selected tools,33 selected configurations; no complete closure claim",
+    "parent_timeout_seconds": 1000,
+    "start_utc": "2026-10-26T05:04:04.312979+00:00",
+    "stderr_sha256": "e63c68d4e3864e6dea1e4256b71ded7118aa10a924bd9cabedae61065042a65a",
+    "stdout_sha256": "41544ef7b61052f757681a9585cfab7f460a0851dd89788849109f28ccd6d8d9"
+  },
+  "failure_messages": {
+    "Format": 1,
+    "Invalid_ELF_header_size_or_alignment": 13
+  },
+  "failure_semantics": "All14 tests expected pass. Twelve intended rejection tests failed during fixture construction before their target refusal assertion; no successful refusal credit. Underlying cause is separate from this capture packet.",
+  "group_counts": {
+    "nested": 5,
+    "outer": 55
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "cpuinfo_sha256": "c9dbf8a0e13a55c26fc2fdafffe3b90f66437a2aef216583cd9bad6f5b44819a",
+    "family": "26",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "microcode": "0xb101066",
+    "model": "17",
+    "observed_at_utc": "2026-10-26T05:03:16.017792+00:00",
+    "performance_measurement": false,
+    "scope": "Fresh metadata read before a proposed required-gate launch; not continuous attestation, benchmark control or a launch receipt.",
+    "stepping": "0",
+    "vendor": "AuthenticAMD"
+  },
+  "ignored_tests": [
+    [
+      "live_probe_stress_matrix",
+      "long-running M5 live stress matrix"
+    ],
+    [
+      "patch_latency::patch_activation_latency_benchmark",
+      "opt-in release-mode cross-core LiveJumpPatch latency distribution"
+    ],
+    [
+      "probe_overhead_benchmark",
+      "release-mode M5 overhead benchmark"
+    ],
+    [
+      "rapid::tests::live::benchmark_single_byte_toggle_latency",
+      "release-mode latency benchmark"
+    ]
+  ],
+  "landing_ready": false,
+  "missing_suffix": {
+    "additional_current_target": "frontend-native-calibrations,26 fixed names",
+    "all_doc_test_groups": "not_run",
+    "cargo_check": "not_run",
+    "exact_revision_native_compile_and_four_modes": "not_run",
+    "identity_inventory_only": true,
+    "known_prior_groups": [
+      "     Running unittests src/main.rs (target/debug/deps/rapid_profiler-bcb3d39648d266a2)",
+      "     Running tests/e2e.rs (target/debug/deps/e2e-869357d29bb545db)",
+      "   Doc-tests liteinst_admission",
+      "   Doc-tests liteinst_launch",
+      "   Doc-tests liteinst2",
+      "   Doc-tests rapid_profiler"
+    ],
+    "known_unrun_case_identities": 41
+  },
+  "nested_guard_passes": 5,
+  "nested_passes_not_added_to_unique_coverage": true,
+  "outer_totals": {
+    "failed": 14,
+    "filtered": 0,
+    "ignored": 4,
+    "measured": 0,
+    "passed": 985
+  },
+  "qualification_complete": false,
+  "rapid_profiler_library": {
+    "failed": 14,
+    "failed_names": [
+      "frontend_native::module::tests::parser_accepts_actual_subject_complete_grammar",
+      "frontend_native::module::tests::parser_accepts_each_single_eager_binding_indicator",
+      "frontend_native::module::tests::parser_rejects_nonzero_bind_now_payload",
+      "frontend_native::module::tests::parser_rejects_duplicate_bind_now",
+      "frontend_native::module::tests::parser_rejects_needed_dependency",
+      "frontend_native::module::tests::parser_rejects_init_constructor",
+      "frontend_native::module::tests::parser_rejects_fini_destructor",
+      "frontend_native::module::tests::parser_rejects_init_array_constructor",
+      "frontend_native::module::tests::parser_rejects_invalid_flags_bits",
+      "frontend_native::module::tests::parser_rejects_invalid_flags1_bits",
+      "frontend_native::module::tests::parser_rejects_missing_eager_binding",
+      "frontend_native::module::tests::parser_rejects_unknown_dynamic_tag",
+      "frontend_native::module::tests::parser_rejects_nonnull_after_terminator",
+      "frontend_native::module::tests::parser_rejects_textrel_tag"
+    ],
+    "filtered": 0,
+    "ignored": 0,
+    "passed": 74
+  },
+  "raw_commands_sha256": "ed28c994b9a763e12728180ff5f2fd0ec7abb66b9492e4eb5a23e93935a4cb06",
+  "report_authorship": "Actual capture reviewer also authored prospective input/planning/reporting. Independent source review and actual outcomes remain distinct.",
+  "reproduction": {
+    "NATIVE_INTERVAL_DSO": "absent",
+    "argv": [
+      "@PYTHON@",
+      "-B",
+      "@REPO@/evaluation/required-gates.py",
+      "--repo",
+      "@REPO@",
+      "--output",
+      "@GATES@"
+    ],
+    "cwd": "@REPO@",
+    "environment_overrides": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "@REPO@/target",
+      "RUSTUP_TOOLCHAIN": "1.97.1-x86_64-unknown-linux-gnu",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "@GATES@"
+    },
+    "parent_timeout_seconds": 1000,
+    "rule": "Exact clean C; fresh selected input/config observations; all original four argv/walls. Pin Cargo.lock without adding --locked. Runtime layout may affect reproduction; this is an exact recipe and actual failed outcome, not a deterministic repeated-failure guarantee.",
+    "script": "evaluation/required-gates.py",
+    "script_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b"
+  },
+  "schema_version": 1,
+  "scope": "Exact committed-source required workspace failure. Private snapshot passes remain separate; no native/fullA5/integrated loader-state credit.",
+  "selected_inputs": {
+    "READ_DENIED": 4,
+    "complete_closure": false,
+    "configurations": 33,
+    "new_version_queries": 0,
+    "private_environment_admission_sha256": "a3bd3ea7812a72467a0cb3343398452b01bda3366dee3a17e69a730c9ce36cd7",
+    "toolchain_selector": "1.97.1-x86_64-unknown-linux-gnu",
+    "tools": 27
+  },
+  "sources": {
+    "Git_blobs_verified": true,
+    "count": 1008,
+    "pre_post_equal": true,
+    "source_map_sha256": "29fa2d88645c73fdd22648e8e4ca6093f37dfd387b7b73d70a1671eed39a63c4",
+    "tracked_diff_empty": true,
+    "tree": "b0d10d863f03c5f4b63ef917777134f790606463"
+  },
+  "status": "failed",
+  "suite": "required-workspace",
+  "tested_revision": "7e464a424c5ad3eaef92e1db78d2a5f0cbd3eb60",
+  "timing_class": "Operational durations, not benchmark measurements.",
+  "unrun_commands": [
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "exit": null,
+      "name": "check",
+      "wall_seconds": 180
+    }
+  ],
+  "whitespace_advisory": {
+    "exit": 2,
+    "required_gate_waiver": false,
+    "six_double_final_LF_templates_preserved": true
+  }
+}

@@ -1,0 +1,1544 @@
+{
+  "artifact_scope": "Required workspace logs and source/selected tools/config before-after only. No added per-target archive gate. Strict native artifacts are a separate later admission.",
+  "case_accounting": "The five nested passes are separate child summaries, not additional unique outer coverage. Two other nested launch markers receive no extra pass unit. The 93 retained scratch files and ten parent-record joins support already-counted cases only.",
+  "claims": {
+    "claim_4": "not_completed_by_this_suite",
+    "claims_1_to_3": "not_established_by_this_suite"
+  },
+  "cleanup_scope": "Unchanged required runner process-group timeout cleanup; no CPU/file/ECHILD/subreaper/cgroup claim; inherited post-kill wait has no separate deadline.",
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 1.199169895844534,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-fmt",
+      "receipt_sha256": "8f7d28981b41df900756fff7753bab9f4e565c4dfc823ee812b244896a56dd4e",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 1.0698728850111365,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-clippy",
+      "receipt_sha256": "8f7d28981b41df900756fff7753bab9f4e565c4dfc823ee812b244896a56dd4e",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "60bc0f4f02c7f756bdf4aee7164131b3f72ee1f6a5d8fae918d6601b5c1f7f97",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 280.97293369006366,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-test",
+      "receipt_sha256": "8f7d28981b41df900756fff7753bab9f4e565c4dfc823ee812b244896a56dd4e",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "3285583092bcfb4b906b0e98e652e89d10b579ab57e3747ba81d331a8341cb72",
+      "wall_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cleanup": "process_group_runner_no_ECHILD_claim",
+      "cpu_seconds": null,
+      "elapsed_seconds": 5.075095077976584,
+      "environment": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}"
+      },
+      "exit": 0,
+      "file_bytes": null,
+      "id": "required-check",
+      "receipt_sha256": "8f7d28981b41df900756fff7753bab9f4e565c4dfc823ee812b244896a56dd4e",
+      "source_id": "exact_revision",
+      "status": "pass",
+      "stderr_sha256": null,
+      "stdout_sha256": "72abe3146cf7d160ae243539f4e096f6d4fb151a4c0a18b995128d1f4e39c543",
+      "wall_seconds": 180
+    }
+  ],
+  "coordinate_roles": {
+    "${PYTHON}": "Whole explicitly selected Python executable path. All roles use ordinary literal substitution.",
+    "${RAW}": "Whole new canonical required-gate output directory, strictly below REPO/ignored; absent at runner start.",
+    "${REPO}": "Whole canonical clean checkout of tested_revision."
+  },
+  "environment_scope": "The runner inherited the complete privately bound 167-entry admission environment and set the six displayed overrides. RUSTUP_TOOLCHAIN=1.97.1-x86_64-unknown-linux-gnu was explicitly selected; NATIVE_INTERVAL_DSO was absent. The displayed overrides are not the full inherited environment.",
+  "execution_outer": {
+    "argv": [
+      "${PYTHON}",
+      "-B",
+      "${REPO}/evaluation/required-gates.py",
+      "--repo",
+      "${REPO}",
+      "--output",
+      "${RAW}"
+    ],
+    "before_after_equal": true,
+    "cwd": "${REPO}",
+    "elapsed_seconds": 288.51484723505564,
+    "exit": 0,
+    "head": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+    "input_scope": "1008 tracked sources,27 selected tools,33 selected configurations; no complete closure claim",
+    "parent_timeout_seconds": 1000,
+    "start_utc": "2026-10-26T05:14:59.046260+00:00",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "aa54e6a38e2bf2627d1ce06fc150281a1b957a1df083226efa055d21ab280c3b"
+  },
+  "group_counts": {
+    "nested_summaries": 5,
+    "outer": 62,
+    "unsummarized_nested_launches": 2
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "cpuinfo_sha256": "783d4c45e011a0c504913466331af3319f2a79876d93b6f36e410e64e01abf1b",
+    "family": "26",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "microcode": "0xb101066",
+    "model": "17",
+    "observed_at_utc": "2026-10-26T05:14:58.909280+00:00",
+    "performance_measurement": false,
+    "scope": "Fresh metadata captured before this launch; not continuous attestation or a performance measurement.",
+    "stepping": "0",
+    "vendor": "AuthenticAMD"
+  },
+  "historical_preservation": {
+    "additions": {
+      "alignment_invariant": 1,
+      "oracle_calibrations": 26,
+      "parser_controls": 14
+    },
+    "failure_packet_binding_sha256": "3434516a6588e3c6ffce49ff384333e495b914384c542bdab7c752a3e072db65",
+    "failure_packet_manifest_sha256": "7b089b35a2785dad210d6bfb40f76eb9b8fb016598d86717b7fd5297a9a6feee",
+    "failure_report": "../../frontend-native-required-7e464a42-failure.md",
+    "failure_summary_sha256": "fec952d6c496663f5393f2ef820bdd51ad204ad9d1177d22e8ebb3b3c5d92a90",
+    "new_outer_identities": 41,
+    "prior_failed_check": "unrun",
+    "prior_failed_native_campaign": "unrun",
+    "prior_failed_nested_passes": 5,
+    "prior_failed_outer_groups": 55,
+    "prior_failed_outer_totals": {
+      "failed": 14,
+      "ignored": 4,
+      "passed": 985
+    },
+    "prior_failed_revision": "7e464a424c5ad3eaef92e1db78d2a5f0cbd3eb60",
+    "prior_failed_status": "failed",
+    "prior_outer_identities_preserved": 1004,
+    "prior_success_revision": "2f97d8389902a409f568551a59c9a57ada55a0e0",
+    "private_method_count_erratum_sha256": "5f3e975e67bf2cf978f5600ee58deff59637078898965c6401332ba551ac402b"
+  },
+  "ignored_tests": [
+    {
+      "group_id": "outer-15",
+      "ignore_reason": "release-mode latency benchmark",
+      "line": 334,
+      "name": "rapid::tests::live::benchmark_single_byte_toggle_latency",
+      "status": "ignored"
+    },
+    {
+      "group_id": "outer-48",
+      "ignore_reason": "long-running M5 live stress matrix",
+      "line": 1161,
+      "name": "live_probe_stress_matrix",
+      "status": "ignored"
+    },
+    {
+      "group_id": "outer-48",
+      "ignore_reason": "opt-in release-mode cross-core LiveJumpPatch latency distribution",
+      "line": 1162,
+      "name": "patch_latency::patch_activation_latency_benchmark",
+      "status": "ignored"
+    },
+    {
+      "group_id": "outer-48",
+      "ignore_reason": "release-mode M5 overhead benchmark",
+      "line": 1163,
+      "name": "probe_overhead_benchmark",
+      "status": "ignored"
+    }
+  ],
+  "independent_review": {
+    "binding_sha256": "d1c1740ea277b7028c20e2216196d081b7fb7bd154932ecee359489cd9752082",
+    "model_doc_subcheck_sha256": "2542270505baac03d3d1d19e8898cd88da5ab0818aef535c6847a7fea191a233",
+    "report_sha256": "befc0a10ae2774efc08e0041ffe4b0141cc9592abaf59fe1a6157fd8cf23fe04",
+    "scope": "Actual four required commands, source/selected-input identities and full case accounting; no per-target product archive or separate native campaign credit."
+  },
+  "model_and_doc_scope": {
+    "added_alignment_case": 1,
+    "compile_fail_docs": 10,
+    "doc_evidence": "Complete named subjects/results and exact committed source fences. No diagnostic bodies are present in this required log; earlier private full diagnostics are not transferred.",
+    "models": 89,
+    "old_parser_bodies_preserved": 14,
+    "oracle_calibrations": 26,
+    "prior_model_names_preserved": 88
+  },
+  "nested_case_records": 5,
+  "nested_guard_groups": [
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 189,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "elapsed_seconds": 0.0,
+      "id": "nested-1",
+      "mode": "single nested harness",
+      "name": "trampoline::observing_control_tests::observing_control_native_subsets_and_retained_dispatch_after_handle_drop",
+      "outer_group_id": "outer-15",
+      "result": "ok",
+      "summary_line": 369
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 189,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "elapsed_seconds": 0.01,
+      "id": "nested-2",
+      "mode": "single nested harness",
+      "name": "trampoline::tests::a2_emitter_foundation::native_instructions_actions_and_backedges",
+      "outer_group_id": "outer-15",
+      "result": "ok",
+      "summary_line": 381
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 26,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "elapsed_seconds": 31.51,
+      "id": "nested-3",
+      "mode": "emitter",
+      "name": "runtime_control_oracle_modes",
+      "outer_group_id": "outer-25",
+      "result": "ok",
+      "summary_line": 668
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 26,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "elapsed_seconds": 9.67,
+      "id": "nested-4",
+      "mode": "single",
+      "name": "runtime_control_oracle_modes",
+      "outer_group_id": "outer-25",
+      "result": "ok",
+      "summary_line": 675
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 26,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "elapsed_seconds": 79.6,
+      "id": "nested-5",
+      "mode": "grouped",
+      "name": "runtime_control_oracle_modes",
+      "outer_group_id": "outer-25",
+      "result": "ok",
+      "summary_line": 683
+    }
+  ],
+  "nested_totals": {
+    "failed": 0,
+    "ignored": 0,
+    "passed": 5
+  },
+  "outer_case_records": 1045,
+  "outer_test_groups": [
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.0,
+      "header": "Running unittests src/lib.rs (target/debug/deps/liteinst_admission-4f623a7cdb0114a8)",
+      "header_line": 3,
+      "id": "outer-01",
+      "identity": "Running unittests src/lib.rs (target/debug/deps/liteinst_admission)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 8
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 3
+      },
+      "declared_count": 3,
+      "elapsed_seconds": 0.0,
+      "header": "Running tests/core_bridge.rs (target/debug/deps/core_bridge-a0b2483657279c56)",
+      "header_line": 10,
+      "id": "outer-02",
+      "identity": "Running tests/core_bridge.rs (target/debug/deps/core_bridge)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 17
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 15
+      },
+      "declared_count": 15,
+      "elapsed_seconds": 0.01,
+      "header": "Running tests/model.rs (target/debug/deps/model-989771f6921469c3)",
+      "header_line": 19,
+      "id": "outer-03",
+      "identity": "Running tests/model.rs (target/debug/deps/model)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 38
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 12
+      },
+      "declared_count": 12,
+      "elapsed_seconds": 0.02,
+      "header": "Running tests/oracle.rs (target/debug/deps/oracle-97d2971bbfedf167)",
+      "header_line": 40,
+      "id": "outer-04",
+      "identity": "Running tests/oracle.rs (target/debug/deps/oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 56
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 13
+      },
+      "declared_count": 13,
+      "elapsed_seconds": 0.0,
+      "header": "Running tests/return_obligations.rs (target/debug/deps/return_obligations-7379271f44b53805)",
+      "header_line": 58,
+      "id": "outer-05",
+      "identity": "Running tests/return_obligations.rs (target/debug/deps/return_obligations)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 75
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 2
+      },
+      "declared_count": 2,
+      "elapsed_seconds": 0.01,
+      "header": "Running unittests src/lib.rs (target/debug/deps/liteinst_launch-00ee8d4ff26a6609)",
+      "header_line": 77,
+      "id": "outer-06",
+      "identity": "Running unittests src/lib.rs (target/debug/deps/liteinst_launch)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 83
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 23
+      },
+      "declared_count": 23,
+      "elapsed_seconds": 0.16,
+      "header": "Running tests/checkpoint.rs (target/debug/deps/checkpoint-ca6696bd73d17b1b)",
+      "header_line": 85,
+      "id": "outer-07",
+      "identity": "Running tests/checkpoint.rs (target/debug/deps/checkpoint)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 112
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 3
+      },
+      "declared_count": 3,
+      "elapsed_seconds": 0.13,
+      "header": "Running tests/concurrent_control.rs (target/debug/deps/concurrent_control-49cf20d0cdb9e960)",
+      "header_line": 114,
+      "id": "outer-08",
+      "identity": "Running tests/concurrent_control.rs (target/debug/deps/concurrent_control)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 121
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 7
+      },
+      "declared_count": 7,
+      "elapsed_seconds": 0.36,
+      "header": "Running tests/concurrent_gate.rs (target/debug/deps/concurrent_gate-0ce26f320078fe04)",
+      "header_line": 123,
+      "id": "outer-09",
+      "identity": "Running tests/concurrent_gate.rs (target/debug/deps/concurrent_gate)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 134
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 33
+      },
+      "declared_count": 33,
+      "elapsed_seconds": 0.52,
+      "header": "Running tests/native_selected.rs (target/debug/deps/native_selected-e045d355c2970b09)",
+      "header_line": 136,
+      "id": "outer-10",
+      "identity": "Running tests/native_selected.rs (target/debug/deps/native_selected)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 173
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 7
+      },
+      "declared_count": 7,
+      "elapsed_seconds": 0.19,
+      "header": "Running tests/native_syscall.rs (target/debug/deps/native_syscall-cf95f39646a5d8e7)",
+      "header_line": 175,
+      "id": "outer-11",
+      "identity": "Running tests/native_syscall.rs (target/debug/deps/native_syscall)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 186
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 17
+      },
+      "declared_count": 17,
+      "elapsed_seconds": 0.36,
+      "header": "Running tests/page_gate.rs (target/debug/deps/page_gate-e3122d0313cf1b74)",
+      "header_line": 188,
+      "id": "outer-12",
+      "identity": "Running tests/page_gate.rs (target/debug/deps/page_gate)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 209
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 13
+      },
+      "declared_count": 13,
+      "elapsed_seconds": 0.25,
+      "header": "Running tests/selected_gate.rs (target/debug/deps/selected_gate-05a3c9ffdf6c8a77)",
+      "header_line": 211,
+      "id": "outer-13",
+      "identity": "Running tests/selected_gate.rs (target/debug/deps/selected_gate)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 228
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 14
+      },
+      "declared_count": 14,
+      "elapsed_seconds": 0.0,
+      "header": "Running tests/selected_semantics.rs (target/debug/deps/selected_semantics-23bf0d58c8b308e3)",
+      "header_line": 230,
+      "id": "outer-14",
+      "identity": "Running tests/selected_semantics.rs (target/debug/deps/selected_semantics)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 248
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 1,
+        "measured": 0,
+        "passed": 189
+      },
+      "declared_count": 190,
+      "elapsed_seconds": 1.65,
+      "header": "Running unittests src/lib.rs (target/debug/deps/liteinst2-bec6d9d2028eb017)",
+      "header_line": 250,
+      "id": "outer-15",
+      "identity": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+      "nested_summary_count": 2,
+      "result": "ok",
+      "summary_line": 458
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "declared_count": 0,
+      "elapsed_seconds": 0.0,
+      "header": "Running unittests tests/support/arena_fork_fixture.rs (target/debug/deps/liteinst2_arena_fork_fixture-7d3b8d5694efc71b)",
+      "header_line": 460,
+      "id": "outer-16",
+      "identity": "Running unittests tests/support/arena_fork_fixture.rs (target/debug/deps/liteinst2_arena_fork_fixture)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 464
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 40
+      },
+      "declared_count": 40,
+      "elapsed_seconds": 5.58,
+      "header": "Running tests/a2_oracle.rs (target/debug/deps/a2_oracle-b2ccff8e3468bfd6)",
+      "header_line": 466,
+      "id": "outer-17",
+      "identity": "Running tests/a2_oracle.rs (target/debug/deps/a2_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 510
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 6
+      },
+      "declared_count": 6,
+      "elapsed_seconds": 0.02,
+      "header": "Running tests/arena_fork.rs (target/debug/deps/arena_fork-9b9fd12c7c2ea767)",
+      "header_line": 512,
+      "id": "outer-18",
+      "identity": "Running tests/arena_fork.rs (target/debug/deps/arena_fork)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 522
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 27
+      },
+      "declared_count": 27,
+      "elapsed_seconds": 0.94,
+      "header": "Running tests/boundary_signal_oracle.rs (target/debug/deps/boundary_signal_oracle-cc8fb831ca172b04)",
+      "header_line": 524,
+      "id": "outer-19",
+      "identity": "Running tests/boundary_signal_oracle.rs (target/debug/deps/boundary_signal_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 555
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 7
+      },
+      "declared_count": 7,
+      "elapsed_seconds": 0.0,
+      "header": "Running tests/bounded_proc_stat.rs (target/debug/deps/bounded_proc_stat-9a661ffd24b63b4e)",
+      "header_line": 557,
+      "id": "outer-20",
+      "identity": "Running tests/bounded_proc_stat.rs (target/debug/deps/bounded_proc_stat)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 568
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.55,
+      "header": "Running tests/bundle_contract.rs (target/debug/deps/bundle_contract-80011e29665009e6)",
+      "header_line": 570,
+      "id": "outer-21",
+      "identity": "Running tests/bundle_contract.rs (target/debug/deps/bundle_contract)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 575
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 27
+      },
+      "declared_count": 27,
+      "elapsed_seconds": 1.08,
+      "header": "Running tests/call_return_oracle.rs (target/debug/deps/call_return_oracle-a3703526d88fa906)",
+      "header_line": 577,
+      "id": "outer-22",
+      "identity": "Running tests/call_return_oracle.rs (target/debug/deps/call_return_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 608
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 11
+      },
+      "declared_count": 11,
+      "elapsed_seconds": 0.04,
+      "header": "Running tests/concurrent_overlap.rs (target/debug/deps/concurrent_overlap-272f522968eb647a)",
+      "header_line": 610,
+      "id": "outer-23",
+      "identity": "Running tests/concurrent_overlap.rs (target/debug/deps/concurrent_overlap)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 625
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.26,
+      "header": "Running tests/controlled_coalescing_contract.rs (target/debug/deps/controlled_coalescing_contract-5ba9739cca56237a)",
+      "header_line": 627,
+      "id": "outer-24",
+      "identity": "Running tests/controlled_coalescing_contract.rs (target/debug/deps/controlled_coalescing_contract)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 632
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 27
+      },
+      "declared_count": 27,
+      "elapsed_seconds": 120.8,
+      "header": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle-4cbd5029484f5edc)",
+      "header_line": 634,
+      "id": "outer-25",
+      "identity": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)",
+      "nested_summary_count": 3,
+      "result": "ok",
+      "summary_line": 687
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.01,
+      "header": "Running tests/entry_backedge.rs (target/debug/deps/entry_backedge-2c62b4de18df449f)",
+      "header_line": 689,
+      "id": "outer-26",
+      "identity": "Running tests/entry_backedge.rs (target/debug/deps/entry_backedge)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 694
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 27
+      },
+      "declared_count": 27,
+      "elapsed_seconds": 4.51,
+      "header": "Running tests/entry_paths_oracle.rs (target/debug/deps/entry_paths_oracle-8587a909dcafd944)",
+      "header_line": 696,
+      "id": "outer-27",
+      "identity": "Running tests/entry_paths_oracle.rs (target/debug/deps/entry_paths_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 727
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 13
+      },
+      "declared_count": 13,
+      "elapsed_seconds": 0.01,
+      "header": "Running tests/eviction_chain_contract.rs (target/debug/deps/eviction_chain_contract-940668b736ad8adb)",
+      "header_line": 729,
+      "id": "outer-28",
+      "identity": "Running tests/eviction_chain_contract.rs (target/debug/deps/eviction_chain_contract)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 746
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 28
+      },
+      "declared_count": 28,
+      "elapsed_seconds": 5.79,
+      "header": "Running tests/eviction_chain_extensions.rs (target/debug/deps/eviction_chain_extensions-fc728d4dcdeeca6b)",
+      "header_line": 748,
+      "id": "outer-29",
+      "identity": "Running tests/eviction_chain_extensions.rs (target/debug/deps/eviction_chain_extensions)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 780
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 28
+      },
+      "declared_count": 28,
+      "elapsed_seconds": 0.97,
+      "header": "Running tests/eviction_chain_oracle.rs (target/debug/deps/eviction_chain_oracle-98711939362b780e)",
+      "header_line": 782,
+      "id": "outer-30",
+      "identity": "Running tests/eviction_chain_oracle.rs (target/debug/deps/eviction_chain_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 814
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 7
+      },
+      "declared_count": 7,
+      "elapsed_seconds": 0.01,
+      "header": "Running tests/exact_syscall.rs (target/debug/deps/exact_syscall-4d94a065c40aabd9)",
+      "header_line": 816,
+      "id": "outer-31",
+      "identity": "Running tests/exact_syscall.rs (target/debug/deps/exact_syscall)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 827
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.26,
+      "header": "Running tests/generalized_pun_contract.rs (target/debug/deps/generalized_pun_contract-f584396ef9a7cf5f)",
+      "header_line": 829,
+      "id": "outer-32",
+      "identity": "Running tests/generalized_pun_contract.rs (target/debug/deps/generalized_pun_contract)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 834
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 28
+      },
+      "declared_count": 28,
+      "elapsed_seconds": 6.16,
+      "header": "Running tests/mandatory_prefix_oracle.rs (target/debug/deps/mandatory_prefix_oracle-001c2714a73a397c)",
+      "header_line": 836,
+      "id": "outer-33",
+      "identity": "Running tests/mandatory_prefix_oracle.rs (target/debug/deps/mandatory_prefix_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 868
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.96,
+      "header": "Running tests/neighbor_eviction_contract.rs (target/debug/deps/neighbor_eviction_contract-7cc1ee5d8a7fb73e)",
+      "header_line": 870,
+      "id": "outer-34",
+      "identity": "Running tests/neighbor_eviction_contract.rs (target/debug/deps/neighbor_eviction_contract)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 875
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 70
+      },
+      "declared_count": 70,
+      "elapsed_seconds": 107.94,
+      "header": "Running tests/neighbor_eviction_oracle.rs (target/debug/deps/neighbor_eviction_oracle-28aef11fa7f08d9f)",
+      "header_line": 877,
+      "id": "outer-35",
+      "identity": "Running tests/neighbor_eviction_oracle.rs (target/debug/deps/neighbor_eviction_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 953
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.02,
+      "header": "Running tests/overlap_concurrency.rs (target/debug/deps/overlap_concurrency-372fde1461fcf0a8)",
+      "header_line": 955,
+      "id": "outer-36",
+      "identity": "Running tests/overlap_concurrency.rs (target/debug/deps/overlap_concurrency)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 960
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 27
+      },
+      "declared_count": 27,
+      "elapsed_seconds": 1.1,
+      "header": "Running tests/parked_context_oracle.rs (target/debug/deps/parked_context_oracle-af9f9e6b796560b5)",
+      "header_line": 962,
+      "id": "outer-37",
+      "identity": "Running tests/parked_context_oracle.rs (target/debug/deps/parked_context_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 993
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.01,
+      "header": "Running tests/pc_relative.rs (target/debug/deps/pc_relative-8950d34733c05856)",
+      "header_line": 995,
+      "id": "outer-38",
+      "identity": "Running tests/pc_relative.rs (target/debug/deps/pc_relative)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1000
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.41,
+      "header": "Running tests/prefixed_pun_contract.rs (target/debug/deps/prefixed_pun_contract-3fe87d876fedfe37)",
+      "header_line": 1002,
+      "id": "outer-39",
+      "identity": "Running tests/prefixed_pun_contract.rs (target/debug/deps/prefixed_pun_contract)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1007
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 27
+      },
+      "declared_count": 27,
+      "elapsed_seconds": 1.29,
+      "header": "Running tests/prefixed_pun_oracle.rs (target/debug/deps/prefixed_pun_oracle-9a9bd0c33eaf7e5e)",
+      "header_line": 1009,
+      "id": "outer-40",
+      "identity": "Running tests/prefixed_pun_oracle.rs (target/debug/deps/prefixed_pun_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1040
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.25,
+      "header": "Running tests/quiescent_contract.rs (target/debug/deps/quiescent_contract-00cf6037acccddb9)",
+      "header_line": 1042,
+      "id": "outer-41",
+      "identity": "Running tests/quiescent_contract.rs (target/debug/deps/quiescent_contract)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1047
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 30
+      },
+      "declared_count": 30,
+      "elapsed_seconds": 7.41,
+      "header": "Running tests/quiescent_oracle.rs (target/debug/deps/quiescent_oracle-15fa6a4595721a9d)",
+      "header_line": 1049,
+      "id": "outer-42",
+      "identity": "Running tests/quiescent_oracle.rs (target/debug/deps/quiescent_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1083
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 27
+      },
+      "declared_count": 27,
+      "elapsed_seconds": 0.14,
+      "header": "Running tests/rel32_endpoint_oracle.rs (target/debug/deps/rel32_endpoint_oracle-069aafe2c467a044)",
+      "header_line": 1085,
+      "id": "outer-43",
+      "identity": "Running tests/rel32_endpoint_oracle.rs (target/debug/deps/rel32_endpoint_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1116
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 2
+      },
+      "declared_count": 2,
+      "elapsed_seconds": 0.01,
+      "header": "Running tests/replace_first_cet.rs (target/debug/deps/replace_first_cet-25e9f23647a63e3a)",
+      "header_line": 1118,
+      "id": "outer-44",
+      "identity": "Running tests/replace_first_cet.rs (target/debug/deps/replace_first_cet)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1124
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 4
+      },
+      "declared_count": 4,
+      "elapsed_seconds": 0.0,
+      "header": "Running tests/search_eviction_evidence.rs (target/debug/deps/search_eviction_evidence-8b2201bbcfd73f44)",
+      "header_line": 1126,
+      "id": "outer-45",
+      "identity": "Running tests/search_eviction_evidence.rs (target/debug/deps/search_eviction_evidence)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1134
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 8
+      },
+      "declared_count": 8,
+      "elapsed_seconds": 0.0,
+      "header": "Running tests/search_evidence.rs (target/debug/deps/search_evidence-d1619f3fc78ddbb4)",
+      "header_line": 1136,
+      "id": "outer-46",
+      "identity": "Running tests/search_evidence.rs (target/debug/deps/search_evidence)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1148
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 2
+      },
+      "declared_count": 2,
+      "elapsed_seconds": 0.86,
+      "header": "Running tests/sigtrap_origin.rs (target/debug/deps/sigtrap_origin-867209317a8b0131)",
+      "header_line": 1150,
+      "id": "outer-47",
+      "identity": "Running tests/sigtrap_origin.rs (target/debug/deps/sigtrap_origin)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1156
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 3,
+        "measured": 0,
+        "passed": 4
+      },
+      "declared_count": 7,
+      "elapsed_seconds": 0.17,
+      "header": "Running tests/stress.rs (target/debug/deps/stress-f44bf19006e912ca)",
+      "header_line": 1158,
+      "id": "outer-48",
+      "identity": "Running tests/stress.rs (target/debug/deps/stress)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1171
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 1.27,
+      "header": "Running tests/successor_eviction_contract.rs (target/debug/deps/successor_eviction_contract-b3368f845800a5aa)",
+      "header_line": 1173,
+      "id": "outer-49",
+      "identity": "Running tests/successor_eviction_contract.rs (target/debug/deps/successor_eviction_contract)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1178
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 31
+      },
+      "declared_count": 31,
+      "elapsed_seconds": 5.45,
+      "header": "Running tests/successor_eviction_oracle.rs (target/debug/deps/successor_eviction_oracle-1f62163a7c3a3167)",
+      "header_line": 1180,
+      "id": "outer-50",
+      "identity": "Running tests/successor_eviction_oracle.rs (target/debug/deps/successor_eviction_oracle)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1215
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.16,
+      "header": "Running tests/sync_core_capability.rs (target/debug/deps/sync_core_capability-325ab2ae89c98f4b)",
+      "header_line": 1217,
+      "id": "outer-51",
+      "identity": "Running tests/sync_core_capability.rs (target/debug/deps/sync_core_capability)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1222
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1
+      },
+      "declared_count": 1,
+      "elapsed_seconds": 0.16,
+      "header": "Running tests/tactic_engine.rs (target/debug/deps/tactic_engine-b2e4ead628dbfe4b)",
+      "header_line": 1224,
+      "id": "outer-52",
+      "identity": "Running tests/tactic_engine.rs (target/debug/deps/tactic_engine)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1229
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 12
+      },
+      "declared_count": 12,
+      "elapsed_seconds": 0.03,
+      "header": "Running tests/trampoline_tail.rs (target/debug/deps/trampoline_tail-71800b32fd63e078)",
+      "header_line": 1231,
+      "id": "outer-53",
+      "identity": "Running tests/trampoline_tail.rs (target/debug/deps/trampoline_tail)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1247
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 27
+      },
+      "declared_count": 27,
+      "elapsed_seconds": 0.26,
+      "header": "Running tests/exception_landing.rs (target/debug/deps/exception_landing-336e7170d95d76ad)",
+      "header_line": 1249,
+      "id": "outer-54",
+      "identity": "Running tests/exception_landing.rs (target/debug/deps/exception_landing)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1280
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 89
+      },
+      "declared_count": 89,
+      "elapsed_seconds": 0.01,
+      "header": "Running unittests src/lib.rs (target/debug/deps/rapid_profiler-3b7bba2155a86575)",
+      "header_line": 1282,
+      "id": "outer-55",
+      "identity": "Running unittests src/lib.rs (target/debug/deps/rapid_profiler)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1375
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 3
+      },
+      "declared_count": 3,
+      "elapsed_seconds": 0.0,
+      "header": "Running unittests src/main.rs (target/debug/deps/rapid_profiler-bcb3d39648d266a2)",
+      "header_line": 1377,
+      "id": "outer-56",
+      "identity": "Running unittests src/main.rs (target/debug/deps/rapid_profiler)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1384
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 2
+      },
+      "declared_count": 2,
+      "elapsed_seconds": 0.09,
+      "header": "Running tests/e2e.rs (target/debug/deps/e2e-a5fdc8e2fa4eee3f)",
+      "header_line": 1386,
+      "id": "outer-57",
+      "identity": "Running tests/e2e.rs (target/debug/deps/e2e)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1392
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 26
+      },
+      "declared_count": 26,
+      "elapsed_seconds": 0.02,
+      "header": "Running native-interval/calibrations.rs (target/debug/deps/frontend_native_calibrations-13c6ea6a57696eaf)",
+      "header_line": 1394,
+      "id": "outer-58",
+      "identity": "Running native-interval/calibrations.rs (target/debug/deps/frontend_native_calibrations)",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1424
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "declared_count": 0,
+      "elapsed_seconds": 0.0,
+      "header": "Doc-tests liteinst_admission",
+      "header_line": 1426,
+      "id": "outer-59",
+      "identity": "Doc-tests liteinst_admission",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1430
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "declared_count": 0,
+      "elapsed_seconds": 0.0,
+      "header": "Doc-tests liteinst_launch",
+      "header_line": 1432,
+      "id": "outer-60",
+      "identity": "Doc-tests liteinst_launch",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1436
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 0
+      },
+      "declared_count": 0,
+      "elapsed_seconds": 0.0,
+      "header": "Doc-tests liteinst2",
+      "header_line": 1438,
+      "id": "outer-61",
+      "identity": "Doc-tests liteinst2",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1442
+    },
+    {
+      "counts": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 10
+      },
+      "declared_count": 10,
+      "elapsed_seconds": 0.11,
+      "header": "Doc-tests rapid_profiler",
+      "header_line": 1444,
+      "id": "outer-62",
+      "identity": "Doc-tests rapid_profiler",
+      "nested_summary_count": 0,
+      "result": "ok",
+      "summary_line": 1458
+    }
+  ],
+  "outer_totals": {
+    "failed": 0,
+    "filtered": 0,
+    "ignored": 4,
+    "measured": 0,
+    "passed": 1041
+  },
+  "qualification_complete": false,
+  "raw_command_receipt_sha256": "8f7d28981b41df900756fff7753bab9f4e565c4dfc823ee812b244896a56dd4e",
+  "report_authorship": "Related implementation/alignment author prepared this data packet from root-owned execution and an independent whole-gate review; this is not a new independent source approval.",
+  "reproduction": {
+    "NATIVE_INTERVAL_DSO": "absent",
+    "argv": [
+      "${PYTHON}",
+      "-B",
+      "${REPO}/evaluation/required-gates.py",
+      "--repo",
+      "${REPO}",
+      "--output",
+      "${RAW}"
+    ],
+    "cwd": "${REPO}",
+    "environment_overrides": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "RUSTUP_TOOLCHAIN": "1.97.1-x86_64-unknown-linux-gnu",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW}"
+    },
+    "parent_timeout_seconds": 1000,
+    "rule": "Use an exact clean checkout of tested_revision, original Cargo.lock and runner. Select and record fresh tools/configuration/environment/hardware; retain later reporting files separately. Run all four unchanged commands with original walls. No --locked, test filter, cap change or alternate parser policy is added.",
+    "script": "evaluation/required-gates.py",
+    "script_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b"
+  },
+  "run_id": "frontend-native-required-74aaf19a-20261025",
+  "schema_version": 1,
+  "scope": "Exactly the four required workspace commands at the clean alignment-correction commit. This packet does not qualify the separate four-mode native campaign, complete A5, real clock/PMU profiling or claims 1\u20134.",
+  "selected_inputs": {
+    "READ_DENIED": 4,
+    "after_sha256": "ce48feba1c12135fde7c11fb6753fe89f9835711aaa4e1457cbd7d02d9768da1",
+    "before_sha256": "ce48feba1c12135fde7c11fb6753fe89f9835711aaa4e1457cbd7d02d9768da1",
+    "complete_closure": false,
+    "configurations": 33,
+    "new_version_queries": 0,
+    "private_admission_sha256": "68a55763dcfb6f5d6db0a04c3238bdc1df5fddda1d1659698fb155bc169e837d",
+    "saved_before_after_equal": true,
+    "toolchain_selector": "1.97.1-x86_64-unknown-linux-gnu",
+    "tools": 27
+  },
+  "separate_exact_revision_native_modes": "unrun_at_required_capture_closure; any later native evidence is separate",
+  "source_correction": {
+    "description": "Aligned static ownership satisfies the unchanged ELF parser alignment requirement; all fourteen parser test bodies and subject bytes remain exact, and one alignment/whole-byte invariant is added.",
+    "new_case": "frontend_native::module::tests::parser_fixture_has_explicit_elf_alignment",
+    "parent_failed_revision": "7e464a424c5ad3eaef92e1db78d2a5f0cbd3eb60",
+    "paths": [
+      {
+        "after": "78d6558bda4dfef43650f056d5266e07a3bfb2f9306b00d69ffd3ffa164c515b",
+        "before": "6bd84c668e2e5f6c912add575b5ef3e1ee9f1da74644809241f3c07907caad32",
+        "path": "tools/rapid-profiler/src/frontend_native/module_tests.rs"
+      }
+    ],
+    "separate_archived_alignment_review_sha256": "32d42b11603506436a8c1a7d3fccf3aa6fcbff8910587c3bf5c01a9a8b82bdb6"
+  },
+  "sources": {
+    "exact_revision": {
+      "Git_blobs_and_modes_verified": true,
+      "before_after_equal": true,
+      "file_count": 1008,
+      "git_tree": "4c2511b9b9c0b2b93af8e59f44105500762ae0c5",
+      "kind": "git_commit",
+      "source_map_sha256": "468985591f2a5e628949d7f9161c846ee15ca19de1e398de359cdd6037e12e51",
+      "tested_revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+      "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "status": "pass",
+  "stream_scope": "Each command stdout_sha256 names its complete merged stdout/stderr log. Child stderr_sha256 is null because no separate child stderr capture exists. Root outer streams are separately hashed.",
+  "suite": "required-workspace",
+  "tested_revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+  "timing_class": "operational_diagnostic_not_benchmark",
+  "unsummarized_nested_launches": [
+    {
+      "name": "trampoline::tests::live::ptrace_stopped_hook_executes_on_owned_stack",
+      "running_line": 400,
+      "status_scope": "nested launch marker only; parent outer case is ok; no additional summary/pass unit"
+    },
+    {
+      "name": "relocated_fault_pc_translation",
+      "running_line": 1167,
+      "status_scope": "nested launch marker only; parent outer case is ok; no additional summary/pass unit"
+    }
+  ]
+}

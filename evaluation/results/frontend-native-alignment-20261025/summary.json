@@ -1,0 +1,184 @@
+{
+  "alignment": {
+    "address_scope": "ELF-relative virtual addresses and file offsets only. PT_LOAD alignment is 4096; an admitted page-aligned PIE load bias preserves modulo eight. No actual process address is reported.",
+    "corrected_complete_occurrences": 2,
+    "corrected_named_symbol_mod8": 0,
+    "corrected_named_symbol_virtual_address": 280368,
+    "corrected_other_embedding_mod8": 1,
+    "corrected_other_embedding_virtual_address": 294081,
+    "failed_complete_occurrences": 1,
+    "named_aligned_symbol_size": 13712,
+    "named_symbol_authority": "The decoded local STT_OBJECT ALIGNED_SUBJECT symbol covers all fixture bytes; the corrected source makes SUBJECT a slice of that owner. The additional identical occurrence is not labelled a parser owner.",
+    "required_bytes": 8
+  },
+  "attempts": [
+    {
+      "failure_preserved": true,
+      "native_status": "unrun",
+      "original_parser_cases": {
+        "failed": 14,
+        "passed": 0
+      },
+      "required_check_status": "unrun",
+      "required_test_exit": 101,
+      "tested_revision": "7e464a424c5ad3eaef92e1db78d2a5f0cbd3eb60",
+      "unit_bytes": 29261512,
+      "unit_group": {
+        "failed": 14,
+        "filtered": 0,
+        "ignored": 0,
+        "passed": 74
+      },
+      "unit_sha256": "39799cab2a06759c362abd35e81c8ede21f2a4593376ca17b144eabbb6624d1c"
+    },
+    {
+      "added_alignment_case": {
+        "failed": 0,
+        "passed": 1
+      },
+      "native_status": "not established by this appendix",
+      "original_parser_cases": {
+        "failed": 0,
+        "passed": 14
+      },
+      "required_test_exit": 0,
+      "tested_revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+      "unit_bytes": 29294696,
+      "unit_group": {
+        "failed": 0,
+        "filtered": 0,
+        "ignored": 0,
+        "passed": 89
+      },
+      "unit_sha256": "d64b3c5f6c65890815dedfc5eb78f34d1b9cc72acb0b472f5490b11a577f07fe"
+    }
+  ],
+  "authorship": "The author prepared the failed-attempt data packet and the corrected selected-artifact review. Independent public-data review is recorded separately.",
+  "cause": {
+    "basis": "The archived failed unit embeds the full fixture at an address misaligned for the configured object 0.36.7 FileHeader64 reader. Its size exceeds the 64-byte header requirement. The configured reader rejects misaligned storage; production parse maps that failure to Format.",
+    "diagnostic_label": "Invalid ELF header size or alignment",
+    "direct_positive_Format_errors": 1,
+    "evidence_limit": "This causal explanation joins archived ELF geometry, configured parser source and saved errors. It does not infer an unknown runtime address or change the failed test outcomes.",
+    "failed_mutants_reached": 0,
+    "failed_negative_refusal_credit": 0,
+    "mutant_builder_header_alignment_errors": 13,
+    "unchanged_fixture_grammar": true
+  },
+  "evidence": {
+    "corrected_actual_artifact_binding_sha256": "32d42b11603506436a8c1a7d3fccf3aa6fcbff8910587c3bf5c01a9a8b82bdb6",
+    "corrected_elf_analysis_sha256": "a7318dbfa26727c809df1344a8e4fb392627042535b2ea0d30394ab5c9aa8173",
+    "corrected_unit_log_sha256": "3285583092bcfb4b906b0e98e652e89d10b579ab57e3747ba81d331a8341cb72",
+    "failed_cause_binding_sha256": "0d61f5697b28b7c77502b87ea0509ebda48fed46cfff07499388fe11dea370fa",
+    "failed_unit_log_sha256": "eb3f8e1e6325dbc284d62478455ad624e8a1319be6d953cbed85df05fe9392d2"
+  },
+  "fixture": {
+    "bytes": 13712,
+    "producer_kind": "out-dir-fallback",
+    "same_bytes_in_both_attempts": true,
+    "same_six_non_unit_evidence_files": [
+      "build-output",
+      "producer.txt",
+      "subject.d",
+      "subject.o",
+      "subject.so",
+      "unit-tests.d"
+    ],
+    "sha256": "4d1996b63d9854260e6c4f822d8ee6d7bf09dd4ad61878e8ac721c3bfb6d2ff2",
+    "subject_object_sha256": "af1a55328045546000426f9eedfcf37b2f390d4c485105df951e06d0e628206b"
+  },
+  "kind": "actual_unit_fixture_alignment_appendix",
+  "limits": {
+    "complete_target_closure": false,
+    "full_A5_claim": false,
+    "native_execution_credit": false,
+    "new_full_required_review_claim": false,
+    "new_workloads": 0,
+    "old_failure_relabelled": false,
+    "raw_elf_and_logs_public": false
+  },
+  "schema_version": 1,
+  "scope": "Static decoding of archived actual unit ELF bytes and saved unit-test output; no new workload, runtime address observation, benchmark or native qualification.",
+  "source_correction": {
+    "added_case": "frontend_native::module::tests::parser_fixture_has_explicit_elf_alignment",
+    "additive_regression": "Checks alignment to eight and the actual ELF header type, plus exact equality with the included fixture bytes.",
+    "helpers_literal": true,
+    "new_tests_sha256": "78d6558bda4dfef43650f056d5266e07a3bfb2f9306b00d69ffd3ffa164c515b",
+    "old_parser_cases": [
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_accepts_actual_subject_complete_grammar"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_accepts_each_single_eager_binding_indicator"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_nonzero_bind_now_payload"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_duplicate_bind_now"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_needed_dependency"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_init_constructor"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_fini_destructor"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_init_array_constructor"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_invalid_flags_bits"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_invalid_flags1_bits"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_missing_eager_binding"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_unknown_dynamic_tag"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_nonnull_after_terminator"
+      },
+      {
+        "corrected_attempt": "passed",
+        "failed_attempt": "failed",
+        "name": "frontend_native::module::tests::parser_rejects_textrel_tag"
+      }
+    ],
+    "old_tests_sha256": "6bd84c668e2e5f6c912add575b5ef3e1ee9f1da74644809241f3c07907caad32",
+    "original14_test_bodies_literal": true,
+    "owner": "repr(C, align(8)) static ALIGNED_SUBJECT with SUBJECT slicing its first field",
+    "production_parser_sha256": "f698ddaf96ebc5e04ac1cbda181472369a3ab255ae4980785da06b7ac6852061",
+    "production_parser_unchanged": true
+  }
+}

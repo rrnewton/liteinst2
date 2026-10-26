@@ -1,0 +1,351 @@
+{
+  "actual_control_evidence_scope": "One actual bounded control run, four accepted controls and seven exact expected refusals. The helper receipt/whole stdout establish the control result; no native requests were executed.",
+  "actual_hardware_observation": {
+    "architecture": "x86_64",
+    "cpuinfo_sha256": "2c5cb7b7b88d4cf26d604434dd32339f2252db8968f1f938a5a2057d7f4306be",
+    "family": "26",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host",
+    "microcode": "0xb101066",
+    "model": "17",
+    "observed_at_utc": "2026-10-26T05:51:59.463190+00:00",
+    "record_sha256": "6241907192baae3d8532b1a8f988bf1932dbae072acbbe8e3798244d5ad6032a",
+    "scope": "Fresh metadata before renderer controls; not continuous attestation or benchmark evidence.",
+    "stepping": "0",
+    "vendor": "AuthenticAMD"
+  },
+  "actual_independent_review": {
+    "binding_sha256": "7e4c8d03761121516a8725154b64235bf34939036cd675fac75d6178e1c411af",
+    "checks_sha256": "022ac60de7ccccf312a41129296ffacddc617428b7c373a99df5bd8ce59a497e",
+    "decision": "APPROVED_ACTUAL_RENDERER_CONTROLS_ONLY",
+    "review_sha256": "e215f484108f1ea9e766820354200ff56aea688c321fa995d578146bb81b3698",
+    "scope": "Actual renderer controls only; source checkout 74aaf19a and recipe revision null remain distinct. Exact refusal messages are authenticated source assertions, not saved traceback bodies."
+  },
+  "authorship": "Report author also authored the renderer and controls. Independent source/control and actual execution reviews are separate bound authorities.",
+  "cases": [
+    {
+      "actual_result": "pass",
+      "exact_expected_error": "",
+      "expected": "accepted",
+      "name": "exact_source_fixture",
+      "observed_stdout_line": "PASS exact_source_fixture",
+      "ordinal": 1,
+      "refusal_detail_scope": "Complete expected control output matched.",
+      "scope": "original"
+    },
+    {
+      "actual_result": "pass",
+      "exact_expected_error": "",
+      "expected": "accepted",
+      "name": "five_whole_requests_and_outer_inverse",
+      "observed_stdout_line": "PASS five_whole_requests_and_outer_inverse",
+      "ordinal": 2,
+      "refusal_detail_scope": "Complete expected control output matched.",
+      "scope": "original"
+    },
+    {
+      "actual_result": "pass",
+      "exact_expected_error": "source missing",
+      "expected": "expected_refusal",
+      "name": "missing_source",
+      "observed_stdout_line": "PASS refusal missing_source",
+      "ordinal": 3,
+      "refusal_detail_scope": "Exact error equality enforced by the authenticated control source; stdout serializes the case name.",
+      "scope": "original"
+    },
+    {
+      "actual_result": "pass",
+      "exact_expected_error": "source digest",
+      "expected": "expected_refusal",
+      "name": "wrong_source",
+      "observed_stdout_line": "PASS refusal wrong_source",
+      "ordinal": 4,
+      "refusal_detail_scope": "Exact error equality enforced by the authenticated control source; stdout serializes the case name.",
+      "scope": "original"
+    },
+    {
+      "actual_result": "pass",
+      "exact_expected_error": "raw already exists",
+      "expected": "expected_refusal",
+      "name": "existing_output_owner",
+      "observed_stdout_line": "PASS refusal existing_output_owner",
+      "ordinal": 5,
+      "refusal_detail_scope": "Exact error equality enforced by the authenticated control source; stdout serializes the case name.",
+      "scope": "original"
+    },
+    {
+      "actual_result": "pass",
+      "exact_expected_error": "raw outside ignored",
+      "expected": "expected_refusal",
+      "name": "outside_ignored",
+      "observed_stdout_line": "PASS refusal outside_ignored",
+      "ordinal": 6,
+      "refusal_detail_scope": "Exact error equality enforced by the authenticated control source; stdout serializes the case name.",
+      "scope": "original"
+    },
+    {
+      "actual_result": "pass",
+      "exact_expected_error": "raw coordinate",
+      "expected": "expected_refusal",
+      "name": "symlink_parent",
+      "observed_stdout_line": "PASS refusal symlink_parent",
+      "ordinal": 7,
+      "refusal_detail_scope": "Exact error equality enforced by the authenticated control source; stdout serializes the case name.",
+      "scope": "original"
+    },
+    {
+      "actual_result": "pass",
+      "exact_expected_error": "raw coordinate",
+      "expected": "expected_refusal",
+      "name": "relative_coordinate",
+      "observed_stdout_line": "PASS refusal relative_coordinate",
+      "ordinal": 8,
+      "refusal_detail_scope": "Exact error equality enforced by the authenticated control source; stdout serializes the case name.",
+      "scope": "original"
+    },
+    {
+      "actual_result": "pass",
+      "exact_expected_error": "material sha256",
+      "expected": "expected_refusal",
+      "name": "wrong_material_digest",
+      "observed_stdout_line": "PASS refusal wrong_material_digest",
+      "ordinal": 9,
+      "refusal_detail_scope": "Exact error equality enforced by the authenticated control source; stdout serializes the case name.",
+      "scope": "original"
+    },
+    {
+      "actual_result": "pass",
+      "exact_expected_error": "",
+      "expected": "accepted",
+      "name": "json_special_coordinate_expansion",
+      "observed_stdout_line": "PASS json_special_coordinate_expansion",
+      "ordinal": 10,
+      "refusal_detail_scope": "Complete expected control output matched.",
+      "scope": "additive_coordinate_expansion"
+    },
+    {
+      "actual_result": "pass",
+      "exact_expected_error": "",
+      "expected": "accepted",
+      "name": "literal_role_text_not_reexpanded",
+      "observed_stdout_line": "PASS literal_role_text_not_reexpanded",
+      "ordinal": 11,
+      "refusal_detail_scope": "Complete expected control output matched.",
+      "scope": "additive_coordinate_expansion"
+    }
+  ],
+  "claim_scope": "No general A5 or claims 1\u20133 completion; outstanding A2\u2013A4 scope unchanged.",
+  "command": {
+    "actual_receipt_sha256": "09fb55f51b09c1edd80eacae5a13e901665d4af1a2944d61016645ac4a2373da",
+    "command_id": "renderer-controls",
+    "elapsed_seconds": 0.37935121986083686,
+    "exit_code": 0,
+    "expected_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "expected_stdout_sha256": "5ca47092275cd0987bf4e8e2a5a92405a32962745e048d3ae2d0265c2f4da932",
+    "helper_stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "helper_stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+    "outer": {
+      "actual_exit": 0,
+      "actual_receipt_sha256": null,
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CONTROL_REQUEST}",
+        "--receipt",
+        "${RAW}/command/receipt.json"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "execution": "ROOT_ONLY_AFTER_INDEPENDENT_SOURCE_AND_CURRENT_INPUT_REVIEW",
+      "parent_elapsed_seconds": 0.46665774192661047,
+      "parent_timeout": false,
+      "parent_timeout_seconds": 55,
+      "stderr": "${RAW}/command/helper.stderr",
+      "stdin": "DEVNULL",
+      "stdout": "${RAW}/command/helper.stdout"
+    },
+    "outer_sha256": "3e30d3e002d408558620f9f446d8de943e61826c3d3cae9af23d869a944f4e16",
+    "outer_template": {
+      "actual_receipt_sha256": null,
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${CONTROL_REQUEST}",
+        "--receipt",
+        "${RAW}/command/receipt.json"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "execution": "ROOT_ONLY_AFTER_INDEPENDENT_SOURCE_AND_CURRENT_INPUT_REVIEW",
+      "parent_timeout_seconds": 55,
+      "stderr": "${RAW}/command/helper.stderr",
+      "stdin": "DEVNULL",
+      "stdout": "${RAW}/command/helper.stdout"
+    },
+    "outer_template_sha256": "1d3494f0e6d4805f9dec92fc62c23eb043aee216d0cff7eb396c69444028f4ee",
+    "outer_template_text": "{\n  \"actual_receipt_sha256\": null,\n  \"argv\": [\n    \"/usr/bin/timeout\",\n    \"--signal=TERM\",\n    \"--kill-after=10s\",\n    \"40s\",\n    \"/usr/bin/python3.9\",\n    \"-B\",\n    \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n    \"--request\",\n    \"${CONTROL_REQUEST}\",\n    \"--receipt\",\n    \"${RAW}/command/receipt.json\"\n  ],\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\"\n  },\n  \"execution\": \"ROOT_ONLY_AFTER_INDEPENDENT_SOURCE_AND_CURRENT_INPUT_REVIEW\",\n  \"parent_timeout_seconds\": 55,\n  \"stderr\": \"${RAW}/command/helper.stderr\",\n  \"stdin\": \"DEVNULL\",\n  \"stdout\": \"${RAW}/command/helper.stdout\"\n}\n",
+    "outer_text": "{\n  \"actual_exit\": 0,\n  \"actual_receipt_sha256\": null,\n  \"argv\": [\n    \"/usr/bin/timeout\",\n    \"--signal=TERM\",\n    \"--kill-after=10s\",\n    \"40s\",\n    \"/usr/bin/python3.9\",\n    \"-B\",\n    \"${REPO}/tools/unwind-oracle/bounded_command.py\",\n    \"--request\",\n    \"${CONTROL_REQUEST}\",\n    \"--receipt\",\n    \"${RAW}/command/receipt.json\"\n  ],\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\"\n  },\n  \"execution\": \"ROOT_ONLY_AFTER_INDEPENDENT_SOURCE_AND_CURRENT_INPUT_REVIEW\",\n  \"parent_elapsed_seconds\": 0.46665774192661047,\n  \"parent_timeout\": false,\n  \"parent_timeout_seconds\": 55,\n  \"stderr\": \"${RAW}/command/helper.stderr\",\n  \"stdin\": \"DEVNULL\",\n  \"stdout\": \"${RAW}/command/helper.stdout\"\n}\n",
+    "parent_elapsed_seconds": 0.46665774192661047,
+    "parent_exit": 0,
+    "parent_timeout": false,
+    "receipt": {
+      "aborted": null,
+      "absence_proof": "ECHILD",
+      "cleanup_error": null,
+      "cleanup_events": [],
+      "elapsed_seconds": 0.37935121986083686,
+      "exit": 0,
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "inputs_unchanged": true,
+      "request_sha256": "445541913d4bc36ea2024a8c88a2c0959fbb8a0b9b50601811a6e4d4316f9c6a",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "5ca47092275cd0987bf4e8e2a5a92405a32962745e048d3ae2d0265c2f4da932",
+      "unexpected_descendants": [],
+      "wall_timeout": false
+    },
+    "request": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${MATERIALS}/controls.py",
+        "--material-sha256",
+        "101d97f9a079c2270b06911283735fa99b058786cd9b211ea2280d11b03719cd",
+        "--repo",
+        "${REPO}",
+        "--scratch",
+        "${RAW}/scratch",
+        "--toolchain",
+        "${RUST_TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "TMPDIR": "${RAW}/command/tmp"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${RAW}/command/stderr.txt",
+      "stdout": "${RAW}/command/stdout.txt",
+      "wall_seconds": 30
+    },
+    "request_sha256": "445541913d4bc36ea2024a8c88a2c0959fbb8a0b9b50601811a6e4d4316f9c6a",
+    "request_text": "{\n  \"argv\": [\n    \"/usr/bin/python3.9\",\n    \"-B\",\n    \"${MATERIALS}/controls.py\",\n    \"--material-sha256\",\n    \"101d97f9a079c2270b06911283735fa99b058786cd9b211ea2280d11b03719cd\",\n    \"--repo\",\n    \"${REPO}\",\n    \"--scratch\",\n    \"${RAW}/scratch\",\n    \"--toolchain\",\n    \"${RUST_TOOLCHAIN}\",\n    \"--user-home\",\n    \"${USER_HOME}\",\n    \"--cargo-home\",\n    \"${CARGO_HOME}\"\n  ],\n  \"cpu_seconds\": 20,\n  \"cwd\": \"${REPO}\",\n  \"env\": {\n    \"LC_ALL\": \"C\",\n    \"PATH\": \"/usr/bin:/bin\",\n    \"PYTHONDONTWRITEBYTECODE\": \"1\",\n    \"TMPDIR\": \"${RAW}/command/tmp\"\n  },\n  \"file_bytes\": 16777216,\n  \"stderr\": \"${RAW}/command/stderr.txt\",\n  \"stdout\": \"${RAW}/command/stdout.txt\",\n  \"wall_seconds\": 30\n}\n",
+    "root_result_sha256": "4ef77715b5eda5bc4ac3df86ec2da66653939ff9eec9b941d3496cb412a6ef0a",
+    "status": "pass",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "5ca47092275cd0987bf4e8e2a5a92405a32962745e048d3ae2d0265c2f4da932"
+  },
+  "coordinate_roles": {
+    "CARGO_HOME": "Whole admitted Cargo home directory coordinate.",
+    "CONTROL_REQUEST": "Whole file containing the expanded exact controls request; this file owner is separate from MATERIALS and RAW.",
+    "MATERIALS": "Whole separate recipe directory; the material is an uncommitted source snapshot, not the tested checkout.",
+    "RAW": "Whole fresh controls output directory below REPO/ignored; command/tmp exists before the helper and scratch is absent.",
+    "REPO": "Whole clean source checkout at 74aaf19a382461aa24c715cab5e17beeaa045e0a.",
+    "RUST_TOOLCHAIN": "Whole admitted Rust 1.97.1 toolchain directory, used only as a rendered coordinate by these controls.",
+    "USER_HOME": "Whole admitted HOME directory coordinate."
+  },
+  "counts": {
+    "actual_accepted": 4,
+    "actual_expected_refusals": 7,
+    "additive_coordinate_expansion_accepted": 2,
+    "closed_commands": 1,
+    "expected_accepted_total": 4,
+    "expected_refusals_total": 7,
+    "named_controls": 11,
+    "native_execution_credit": 0,
+    "original_accepted": 2,
+    "original_expected_refusals": 7,
+    "planned_commands": 1
+  },
+  "failed_or_pending_history": "Recipe draft expansion bug was corrected before any authored execution; earlier native/required failures remain separate immutable evidence.",
+  "qualification_complete": false,
+  "recipe_link": "../../frontend-native-exact-revision/README.md",
+  "recipe_material_sha256": "101d97f9a079c2270b06911283735fa99b058786cd9b211ea2280d11b03719cd",
+  "recipe_source": {
+    "control-inventory.json": "ac18558183dd7b4046a2f5ecd05350986214b5deadddc606fe97d1457c5f18f4",
+    "controls.py": "f3f9fb07d0c0218819936b1329713101f02df0b4437c3e02e9b826489e8df41b",
+    "expected-controls.stdout": "5ca47092275cd0987bf4e8e2a5a92405a32962745e048d3ae2d0265c2f4da932",
+    "render.py": "7d1bdc6407bbff3417f5c1c2dbacd2e4c034cdd110b6cba6197e0c8d7e2cd16a",
+    "source-files.json": "639186dad7c8402c0bf940b09c4f9201d071e5454c8b7ba933d642ba260efe90"
+  },
+  "recipe_source_revision": null,
+  "saved_input_contract": {
+    "admitted_sha256": "afd50d8c78f500ec022357bafc621f1d5b6c7fdd104508cbf1e6acf75cee97fa",
+    "after_sha256": "afd50d8c78f500ec022357bafc621f1d5b6c7fdd104508cbf1e6acf75cee97fa",
+    "before_sha256": "afd50d8c78f500ec022357bafc621f1d5b6c7fdd104508cbf1e6acf75cee97fa",
+    "counts": {
+      "configurations": 24,
+      "gcc_absent": 6,
+      "gcc_directories": 3,
+      "gcc_lookup": 4,
+      "immutable_hashes": 17591,
+      "loader_directories": 1,
+      "path_lookups": 6,
+      "preload": 4,
+      "selected_inputs": 1265,
+      "workspace_sources": 1008
+    },
+    "scope": "Exact saved pre/post comparison of the admitted owners; no new target or native execution claim.",
+    "whole_equality": true
+  },
+  "schema": 1,
+  "scope": "One bounded renderer-control helper only. No compiler or native request was executed.",
+  "scratch": {
+    "artifact_or_runtime_admission": false,
+    "executed_native_requests": 0,
+    "fixture_restored": false,
+    "generated_native_requests": 5,
+    "generated_outer_rows": 5,
+    "in_place_retry": false,
+    "regular_files": 8,
+    "rendered_result_sha256": "a32b86076d6bc19ac606f36b90cef3bffea5418e393db8352c0bf6108451e499",
+    "rendered_result_status": "RENDERED_REVIEW_REQUIRED_NO_EXECUTION",
+    "source_fixture_final_bytes": "xyz",
+    "source_fixture_sha256": "3608bca1e44ea6c4d268eb6db02260269892c0b42b86bbf1e77a6fa16c3c9282",
+    "symlink_scope": "Retained alias points to the private source fixture beneath the fresh scratch owner.",
+    "symlinks": 1
+  },
+  "source_checkout": {
+    "actual_root_git_observation": {
+      "admission_sha256": "090a3240e8e0194c9ef12bd6af276bada678a076a7f45d84de99a33d94e46f0b",
+      "scope": "Root admission records the actual checkout separately; renderer verifies mapped source bytes and modes without invoking Git.",
+      "source_checkout": "74aaf19a382461aa24c715cab5e17beeaa045e0a"
+    },
+    "renderer_observes_git_HEAD": false,
+    "revision": "74aaf19a382461aa24c715cab5e17beeaa045e0a",
+    "scope": "Renderer checks the source map bytes and executable modes; actual root Git observation is separate from the uncommitted recipe source.",
+    "tracked_files": 1008
+  },
+  "static_reviews": {
+    "source_and_controls_binding_sha256": "cc121b96e3ca309454326e40e18a4b848c40ee4d3a4fba383d832b4e183ef325",
+    "source_and_profile_subcheck_sha256": "d0f9016d2a0bb9bd3c159ab3f888a03c6cca622a2d4253e2bf9dcb1370ba77ad"
+  },
+  "status": "PASS_RENDERER_CONTROLS_ONLY",
+  "tested_revision": null
+}
