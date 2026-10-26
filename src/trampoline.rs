@@ -4704,6 +4704,87 @@ fn align_up(value: usize, alignment: usize) -> usize {
     value.saturating_add(alignment - 1) & !(alignment - 1)
 }
 
+// These two ownership tests must not compete with unrelated unit tests for
+// near-map gaps or for the address between a tested drop and exact reclamation.
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
+fn run_staged_drop_test(name: &str, body: fn()) {
+    use std::os::unix::process::CommandExt;
+    use std::process::{Child, Command, Stdio};
+    use std::time::{Duration, Instant};
+
+    const CHILD: &str = "LITEINST2_STAGED_DROP_CHILD";
+    const BODY_RETURNED: i32 = 102;
+    assert!(matches!(
+        name,
+        "trampoline::tests::dropping_staged_image_releases_its_exact_mapping"
+            | "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners"
+    ));
+    if let Some(selected) = std::env::var_os(CHILD) {
+        assert_eq!(selected.as_os_str(), std::ffi::OsStr::new(name));
+        body();
+        // SAFETY: the complete body has returned, including all local drops.
+        // This distinct receipt cannot be produced by an empty test filter.
+        unsafe { libc::_exit(BODY_RETURNED) };
+    }
+
+    struct ReapOnUnwind(Option<Child>);
+    impl Drop for ReapOnUnwind {
+        fn drop(&mut self) {
+            if let Some(child) = self.0.as_mut() {
+                // A parent failure must not leave a test child running. The
+                // ordinary success path disarms this only after try_wait reaps.
+                let killed = child.kill();
+                let reaped = child.wait();
+                if killed.is_err() || reaped.is_err() {
+                    eprintln!("staged-drop child cleanup: kill={killed:?}, reap={reaped:?}");
+                }
+            }
+        }
+    }
+
+    let mut command = Command::new(std::env::current_exe().unwrap());
+    command
+        .args(["--exact", name, "--nocapture", "--test-threads=1"])
+        .env(CHILD, name)
+        .stdin(Stdio::null());
+    // stdout/stderr stay inherited, preserving the child's assertion output.
+    // SAFETY: only async-signal-safe resource calls run before child exec.
+    unsafe {
+        command.pre_exec(|| {
+            for (resource, value) in [(libc::RLIMIT_CORE, 0), (libc::RLIMIT_CPU, 5)] {
+                let limit = libc::rlimit {
+                    rlim_cur: value,
+                    rlim_max: value,
+                };
+                if libc::setrlimit(resource, &limit) != 0 {
+                    return Err(std::io::Error::last_os_error());
+                }
+            }
+            Ok(())
+        });
+    }
+    let mut child = ReapOnUnwind(Some(command.spawn().unwrap()));
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let status = loop {
+        match child.0.as_mut().unwrap().try_wait() {
+            Ok(Some(status)) => {
+                drop(child.0.take()); // try_wait already reaped this child.
+                break status;
+            }
+            Ok(None) if Instant::now() < deadline => {
+                std::thread::sleep(Duration::from_millis(10));
+            }
+            Ok(None) => panic!("{name}: child exceeded ten seconds"),
+            Err(error) => panic!("{name}: could not poll child: {error}"),
+        }
+    };
+    assert_eq!(
+        status.code(),
+        Some(BODY_RETURNED),
+        "{name}: complete child body did not return: {status}"
+    );
+}
+
 #[cfg(test)]
 mod tests {
     use super::HookContext;
@@ -6064,6 +6145,14 @@ mod tests {
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     #[test]
     fn dropping_staged_image_releases_its_exact_mapping() {
+        super::run_staged_drop_test(
+            "trampoline::tests::dropping_staged_image_releases_its_exact_mapping",
+            dropping_staged_image_releases_its_exact_mapping_body,
+        );
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn dropping_staged_image_releases_its_exact_mapping_body() {
         let base = noop_hook as *const () as usize as u64;
         let plan = plan(&[0x90, 0x90, 0x90, 0x90, 0xc3], base).unwrap();
         let mapping = super::PendingMapping::allocate_near(base).unwrap();
@@ -9167,6 +9256,13 @@ mod observing_control_tests {
 
     #[test]
     fn observing_control_staged_drop_unmaps_before_releasing_last_owners() {
+        super::run_staged_drop_test(
+            "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners",
+            observing_control_staged_drop_unmaps_before_releasing_last_owners_body,
+        );
+    }
+
+    fn observing_control_staged_drop_unmaps_before_releasing_last_owners_body() {
         let base = observe as *const () as usize as u64;
         let scan = scan(base);
         let actions = actions(base);
