@@ -27,6 +27,8 @@ pub use signal::*;
 
 mod broker;
 mod launch;
+mod launch_cleanup;
+pub use launch_cleanup::{DynamicRuntimeCleanupStatus, DynamicRuntimeLaunchFailure};
 mod owner;
 pub use owner::exec_journal::{
     ExecAttemptSnapshot, ExecBootstrapEffect, ExecJournalFact, ExecJournalStage, ExecMapsRecord,
@@ -418,6 +420,8 @@ struct Ready {
     event: DynamicEvent,
 }
 struct TracerStart {
+    #[cfg(test)]
+    cleanup_probe: Option<owner::launch_cleanup_probe::Probe>,
     signal_journal: Option<owner::signal_journal::SignalJournalWriter>,
     anchor: Option<(launch::anchor::AnchorRequest, launch::anchor::AnchorArchive)>,
     command: LaunchCommand,
@@ -576,23 +580,56 @@ impl DynamicSession {
         exec: DynamicExecPolicy,
         until: Instant,
     ) -> Result<Self, LaunchError> {
+        // Preserve the legacy asynchronous error/Drop contract. Only the new
+        // opt-in runtime constructor returns this retained observation.
+        Self::launch_options_until_retained(
+            command,
+            timeout,
+            lifecycle,
+            exec,
+            until,
+            #[cfg(test)]
+            None,
+        )
+        .map_err(|failure| failure.error)
+    }
+
+    fn launch_options_until_retained(
+        command: &LaunchCommand,
+        timeout: Duration,
+        lifecycle: Option<DynamicLifecycleOptions>,
+        exec: DynamicExecPolicy,
+        until: Instant,
+        #[cfg(test)] cleanup_probe: Option<owner::launch_cleanup_probe::Probe>,
+    ) -> Result<Self, launch_cleanup::OwnedLaunchFailure> {
         let session = NEXT_SESSION
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
-            .map_err(|_| LaunchError::Invalid("dynamic session identity exhausted"))?;
+            .map_err(|_| {
+                launch_cleanup::OwnedLaunchFailure::not_started(LaunchError::Invalid(
+                    "dynamic session identity exhausted",
+                ))
+            })?;
         let command = command.clone();
         let cancel = Arc::new(AtomicBool::new(false));
         let thread_cancel = Arc::clone(&cancel);
+        let mut construction = launch_cleanup::CancelConstruction {
+            cancel: Arc::clone(&cancel),
+            armed: true,
+        };
         let (commands, receiver) = channel();
         let (ready_tx, ready_rx) = channel();
         let (done_tx, done) = channel();
         // Block before spawn, not merely at the thread's first instruction:
         // otherwise an embedding signal handler could run before owner::run.
-        let blocked = launch::BlockedSignals::new()?;
+        let blocked = launch::BlockedSignals::new()
+            .map_err(launch_cleanup::OwnedLaunchFailure::not_started)?;
         let inherited_mask = blocked.original();
         let spawned = std::thread::Builder::new()
             .name("liteinst-dynamic-tracer".into())
             .spawn(move || {
                 owner::run(TracerStart {
+                    #[cfg(test)]
+                    cleanup_probe,
                     anchor: None,
                     signal_journal: None,
                     command,
@@ -607,26 +644,43 @@ impl DynamicSession {
                     done: done_tx,
                 })
             });
+        let owner_started = spawned.is_ok();
         if let Err(error) = blocked.restore() {
-            cancel.store(true, Ordering::Release);
-            return Err(error);
+            return Err(launch_cleanup::OwnedLaunchFailure::after_spawn(
+                error,
+                cancel,
+                done,
+                owner_started,
+            ));
         }
-        spawned.map_err(|error| io_error("start dynamic tracer", error))?;
+        spawned.map_err(|error| {
+            launch_cleanup::OwnedLaunchFailure::not_started(io_error("start dynamic tracer", error))
+        })?;
         let ready = match ready_rx.recv_timeout(until.saturating_duration_since(Instant::now())) {
             Ok(Ok(ready)) => ready,
             Ok(Err(error)) => {
-                cancel.store(true, Ordering::Release);
-                return Err(error);
+                return Err(launch_cleanup::OwnedLaunchFailure::after_spawn(
+                    error, cancel, done, true,
+                ));
             }
             Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
-                cancel.store(true, Ordering::Release);
-                return Err(LaunchError::Timeout("seized launch"));
+                return Err(launch_cleanup::OwnedLaunchFailure::after_spawn(
+                    LaunchError::Timeout("seized launch"),
+                    cancel,
+                    done,
+                    true,
+                ));
             }
             Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
-                cancel.store(true, Ordering::Release);
-                return Err(LaunchError::Invalid("dynamic launch tracer closed"));
+                return Err(launch_cleanup::OwnedLaunchFailure::after_spawn(
+                    LaunchError::Invalid("dynamic launch tracer closed"),
+                    cancel,
+                    done,
+                    true,
+                ));
             }
         };
+        construction.armed = false;
         Ok(Self {
             pid: ready.pid,
             initial: ready.event,
@@ -693,6 +747,8 @@ impl DynamicSession {
                 .name("liteinst-dynamic-tracer".into())
                 .spawn(move || {
                     owner::run(TracerStart {
+                        #[cfg(test)]
+                        cleanup_probe: None,
                         anchor: Some((request, archive)),
                         signal_journal: Some(signal_journal),
                         command,

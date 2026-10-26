@@ -7,8 +7,8 @@ use liteinst_launch::selected::{
 };
 use liteinst_launch::{
     DynamicAdmissionEvent, DynamicAdmissionMetrics, DynamicAdmissionSession, DynamicAdmissionState,
-    DynamicRuntimeOptions, KernelFailureKind, KernelProgressSnapshot, KernelWriterStatus,
-    LaunchCommand, RuntimeKernelFact, RuntimeKernelProfile,
+    DynamicRuntimeCleanupStatus, DynamicRuntimeOptions, KernelFailureKind, KernelProgressSnapshot,
+    KernelWriterStatus, LaunchCommand, RuntimeKernelFact, RuntimeKernelProfile,
 };
 use std::fs::{File, OpenOptions};
 use std::io::Read;
@@ -455,20 +455,34 @@ fn execute(path: PathBuf, report: &mut Report) -> Result<()> {
     // static artifact only. No external writer/tracer, signals, mapping/lifecycle
     // composition or opaque saved contexts are allowed. Unknown effects refuse.
     // The separate recorder authenticates ELF geometry and the fixed source.
-    let mut session = diagnostic(
-        unsafe {
-            DynamicAdmissionSession::launch_runtime(
-                &command,
-                DynamicRuntimeOptions {
-                    kernel: RuntimeKernelProfile::IdentityAndTermination,
-                    ..Default::default()
-                },
-                provider,
-                TIMEOUT,
-            )
-        },
-        "runtime_launch",
-    )?;
+    let mut session = match unsafe {
+        DynamicAdmissionSession::launch_runtime_with_cleanup(
+            &command,
+            DynamicRuntimeOptions {
+                kernel: RuntimeKernelProfile::IdentityAndTermination,
+                ..Default::default()
+            },
+            provider,
+            TIMEOUT,
+        )
+    } {
+        Ok(session) => session,
+        Err(mut failure) => {
+            // Preserve the original error before observing separate cleanup.
+            // No provider/source/native success is inferred from cleanup.
+            eprintln!("runtime_launch: {:?}", failure.error());
+            match failure.wait_cleanup(TIMEOUT) {
+                Ok(DynamicRuntimeCleanupStatus::NotStarted) => {}
+                Ok(DynamicRuntimeCleanupStatus::Complete(_)) => report.cleanup = true,
+                observation => {
+                    eprintln!("runtime_launch_cleanup: {observation:?}");
+                    report.print(Some("runtime_launch"));
+                    std::process::abort();
+                }
+            }
+            return Err("runtime_launch");
+        }
+    };
     let pid = session.pid();
     let reader = session.kernel_progress();
     let result = catch_unwind(AssertUnwindSafe(|| drive(&mut session, report)));

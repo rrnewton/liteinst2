@@ -141,6 +141,110 @@ impl<P: InstructionProvider> DynamicAdmissionSession<P> {
         })
     }
 
+    /// Launches the same runtime profile while retaining cleanup observation
+    /// on an ordinary returned construction error, including failures before
+    /// the initial Ready handshake. The error's bounded cleanup waits are
+    /// separate from the one original startup deadline.
+    ///
+    /// Unlike a cleanup receipt, returning an error does not mean that the
+    /// tracees are gone. Keep the host alive and inspect/wait the error until
+    /// its cleanup status is Complete or NotStarted. Failed/Disconnected and
+    /// wait timeouts remain failures. Dropping the error only cancels.
+    ///
+    /// # Safety
+    /// All immutable-source, alias, control, task, signal and native-profile
+    /// obligations of [`Self::launch_runtime`] apply unchanged. This adds no
+    /// source, execution, lifecycle or raw-session authority. Provider Drop
+    /// panics propagate; cancellation is armed before provider destruction,
+    /// but arbitrary caller unwinding/process lifetime remains caller custody.
+    pub unsafe fn launch_runtime_with_cleanup(
+        command: &LaunchCommand,
+        options: DynamicRuntimeOptions,
+        provider: P,
+        timeout: Duration,
+    ) -> Result<Self, DynamicRuntimeLaunchFailure> {
+        // SAFETY: this is exactly the caller's documented runtime envelope.
+        unsafe {
+            Self::launch_runtime_with_cleanup_inner(
+                command,
+                options,
+                provider,
+                timeout,
+                #[cfg(test)]
+                None,
+            )
+        }
+    }
+
+    pub(in crate::linux::remote::dynamic) unsafe fn launch_runtime_with_cleanup_inner(
+        command: &LaunchCommand,
+        options: DynamicRuntimeOptions,
+        provider: P,
+        timeout: Duration,
+        #[cfg(test)] cleanup_probe: Option<owner::launch_cleanup_probe::Probe>,
+    ) -> Result<Self, DynamicRuntimeLaunchFailure> {
+        options
+            .limits
+            .validate()
+            .map_err(DynamicRuntimeLaunchFailure::not_started)?;
+        let (until, response_until) = command_deadlines(timeout, timeout)
+            .map_err(DynamicRuntimeLaunchFailure::not_started)?;
+        // Fixed client-control metadata is allocated before any owner thread.
+        // Success drops the unused holder; error transfer performs no allocation.
+        let cleanup = launch_cleanup::PreparedCleanup::new();
+        let mut session = match DynamicSession::launch_options_until_retained(
+            command,
+            timeout,
+            Some(DynamicLifecycleOptions::default()),
+            DynamicExecPolicy::Refuse,
+            until,
+            #[cfg(test)]
+            cleanup_probe,
+        ) {
+            Ok(session) => session,
+            Err(failure) => return Err(cleanup.finish_launch(failure)),
+        };
+        let mut cancel = CancelOnFailure {
+            cancel: Arc::clone(&session.cancel),
+            armed: true,
+        };
+        let outcome = (|| -> Result<_, GateError> {
+            let initial = session
+                .initial_event()
+                .stop_token()
+                .ok_or(GateError::Refused(
+                    "runtime launch lacks its pristine exec stop",
+                ))?
+                .clone();
+            let reply = session.admission_call(
+                AdmissionRequest::StartRuntime { initial, options },
+                until,
+                response_until,
+            )?;
+            let AdmissionReply::RuntimeReady(initial, kernel_progress) = reply else {
+                return Err(GateError::Refused(
+                    "runtime startup returned the wrong phase",
+                ));
+            };
+            Ok((initial, kernel_progress))
+        })();
+        let (initial, kernel_progress) = match outcome {
+            Ok(ready) => ready,
+            Err(error) => {
+                return Err(cleanup.finish_session(error, session));
+            }
+        };
+        cancel.armed = false;
+        Ok(Self {
+            session,
+            provider,
+            initial,
+            kernel_progress,
+            timeout,
+            closed: false,
+        })
+    }
+
     pub(super) fn finish_runtime_provider(
         &mut self,
         input: Box<RuntimeProviderInput>,

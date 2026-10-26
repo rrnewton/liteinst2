@@ -13,6 +13,8 @@ pub(super) mod instruction;
 #[cfg(test)]
 mod isolation;
 pub(in crate::linux::remote::dynamic::owner) mod kernel;
+#[cfg(test)]
+mod launch_cleanup_native_tests;
 pub(super) mod maps;
 #[cfg(test)]
 mod native_tests;

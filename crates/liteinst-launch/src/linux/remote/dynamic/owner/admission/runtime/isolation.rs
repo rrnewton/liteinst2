@@ -1,4 +1,4 @@
-//! Test-process isolation for the twenty-four actual runtime controls. This removes
+//! Test-process isolation for the twenty-six actual runtime controls. This removes
 //! unrelated libtest cases from the tracer mm, not the real public API threads.
 //! A child result and a separately owned post-body receipt are both mandatory.
 use std::fs::File;
@@ -22,7 +22,7 @@ const PROCESS_TIMEOUT: Duration = Duration::from_secs(120);
 const CLEANUP_TIMEOUT: Duration = Duration::from_secs(3);
 static NONCE: AtomicU64 = AtomicU64::new(1);
 
-const CASES: [&str; 24] = [
+const CASES: [&str; 26] = [
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_expired_original_deadline_keeps_pristine_exec",
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec",
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_owner_refuses_raw_bypass_and_repeated_start",
@@ -47,6 +47,8 @@ const CASES: [&str; 24] = [
     "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_default_native_and_cpu_refusals_keep_current_state",
     "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_fault_and_unsupported_syscalls_never_release",
     "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_stale_reply_keeps_physical_custody",
+    "linux::remote::dynamic::owner::admission::runtime::launch_cleanup_native_tests::runtime_launch_alias_refusal_retains_pending_cleanup_and_physical_custody",
+    "linux::remote::dynamic::owner::admission::runtime::launch_cleanup_native_tests::runtime_launch_pre_ready_failure_preserves_original_error_and_cleanup",
 ];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

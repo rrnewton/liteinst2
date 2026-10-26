@@ -2,6 +2,8 @@ use super::*;
 use std::collections::{BTreeMap, BTreeSet};
 
 #[cfg(test)]
+pub(super) mod launch_cleanup_probe;
+#[cfg(test)]
 mod tests;
 
 mod admission;
@@ -101,6 +103,8 @@ pub(super) struct Owner {
 
 pub(super) fn run(start: TracerStart) {
     let TracerStart {
+        #[cfg(test)]
+        mut cleanup_probe,
         signal_journal,
         anchor,
         command,
@@ -136,6 +140,10 @@ pub(super) fn run(start: TracerStart) {
         } else {
             launch::start(&mut owner, &command, inherited_mask, until)?
         };
+        #[cfg(test)]
+        if let Some(probe) = &mut cleanup_probe {
+            probe.before_ready(&owner, &initial, until)?;
+        }
         ready
             .send(Ok(initial))
             .map_err(|_| LaunchError::Invalid("seized launch client disconnected"))?;
@@ -182,6 +190,10 @@ pub(super) fn run(start: TracerStart) {
         let _ = ready.send(Err(
             failure.unwrap_or(LaunchError::Invalid("dynamic launch cancelled"))
         ));
+    }
+    #[cfg(test)]
+    if let Some(probe) = cleanup_probe {
+        probe.before_cleanup(&owner, until);
     }
     let cleanup = owner.cleanup();
     let _ = done.send(cleanup);
