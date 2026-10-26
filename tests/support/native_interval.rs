@@ -752,3 +752,6 @@ impl Prepared {
             self.child.pid, status, steps, self.tasks, before)).unwrap();
     }
 }
+
+#[path = "native_branch.rs"]
+pub mod native_branch;

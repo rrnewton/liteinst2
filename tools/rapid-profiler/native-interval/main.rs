@@ -2,6 +2,7 @@
 #![deny(warnings)]
 #![forbid(unsafe_op_in_unsafe_fn)]
 
+mod branch;
 #[allow(dead_code)]
 #[path = "../../../tests/support/native_interval_oracle.rs"]
 mod oracle;
@@ -854,11 +855,24 @@ fn main() {
     let args: Vec<_> = std::env::args_os().collect();
     assert_eq!(args.len(), 4);
     let mode = args[1].to_str().unwrap();
-    assert!(MODE_NAMES.contains(&mode));
+    assert!(
+        MODE_NAMES.contains(&mode)
+            || [
+                "two-returns-paths",
+                "two-returns-budget",
+                "two-returns-generation",
+                "two-returns-refusals"
+            ]
+            .contains(&mode)
+    );
     let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
     let output = PathBuf::from(&args[3]);
     assert!(output.is_absolute() && !output.exists());
     std::fs::create_dir(&output).unwrap();
     assert_eq!(output.canonicalize().unwrap(), output);
-    run(mode, &subject, &output);
+    if let Some(branch_mode) = mode.strip_prefix("two-returns-") {
+        branch::run(branch_mode, &subject, &output);
+    } else {
+        run(mode, &subject, &output);
+    }
 }
