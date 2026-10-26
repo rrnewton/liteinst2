@@ -28,6 +28,9 @@ pub mod frontend_native;
 /// Generation-owned bookkeeping, independent of the active profiler frontend.
 pub mod generation;
 
+/// Lossless counter endpoints and exact arithmetic; no acquisition or activation.
+pub mod counter_reading;
+
 mod interval;
 mod pmu;
 
