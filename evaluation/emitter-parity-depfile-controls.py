@@ -4,7 +4,7 @@ import hashlib
 import sys
 from pathlib import Path
 
-RUNNER_SHA256 = "716dc4aff8ff87c36d6e7b1f617d6de540e40188fd7eb4cf070d3a87a8edf25f"
+RUNNER_SHA256 = "b4cd6602e2d72ceedcfaa24dfb2d6a8069d80e44c43cb003cfadf522a364bedb"
 
 
 def main():

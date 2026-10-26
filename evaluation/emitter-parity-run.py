@@ -163,6 +163,35 @@ def bind_core_depfile(text, depfile, products, source_dir, expected, current, te
     return {"package_owner": str(source_dir), "targets": expected_targets, "sources": sources}
 
 
+def ordinary_library_layout(filenames, name, target):
+    # Only Cargo's exact reported metadata owner supplies the dependency stem.
+    assert re.fullmatch(r"liteinst2_parity_(?:old|new)_[0-9a-f]{12}", name)
+    assert len(filenames) == 2 and len(set(filenames)) == 2
+    metadata = [value for value in filenames if value.endswith(".rmeta")]
+    libraries = [value for value in filenames if value.endswith(".rlib")]
+    assert len(metadata) == len(libraries) == 1
+    prefix = str(target / "debug/deps" / ("lib" + name + "-"))
+    match = re.fullmatch(re.escape(prefix) + r"([0-9a-f]{16})\.rmeta", metadata[0])
+    assert match is not None
+    stem = name + "-" + match.group(1)
+    derived = str(target / "debug/deps" / ("lib" + stem + ".rlib"))
+    alias = str(target / "debug" / ("lib" + name + ".rlib"))
+    assert libraries[0] in (derived, alias)
+    return {"reported_library": libraries[0], "reported_metadata": metadata[0],
+            "derived_library": derived,
+            "dependency_depfile": str(target / "debug/deps" / (stem + ".d")),
+            "reported_alias_depfile": str(Path(alias).with_suffix(".d")) if libraries[0] == alias else None}
+
+
+def bind_library_alias_depfile(text, reported_library, source_dir, core_binding):
+    # Cargo's alias depfile has one rule, with the complete absolute source set.
+    assert core_binding["package_owner"] == str(source_dir)
+    rules = depfile_rules(text)
+    expected = [str(source_dir / name) for name in sorted(core_binding["sources"], key=lambda name: Path(name).parts)]
+    assert rules == [(reported_library, expected)]
+    return {"target": reported_library, "sources": expected}
+
+
 def main():
     if sys.flags.optimize:
         raise SystemExit("Assertions required")
@@ -355,6 +384,12 @@ def main():
                 assert path.is_absolute() and path.resolve(strict=True) == path and path.is_relative_to(target)
                 if filename not in products:
                     products[filename] = retain(path, archive / path.relative_to(target))
+        library_layout = None
+        library_before = None
+        derived_library_copy = None
+        alias_depcopy = None
+        alias_binding = None
+        dep_products = item["filenames"]
         if test:
             actual = Path(item["executable"])
             assert item["filenames"] == [str(actual)] and actual.parent == target / "debug/deps"
@@ -365,20 +400,40 @@ def main():
                 assert stream.read(5) == b"\x7fELF\x02"
         else:
             assert item["executable"] is None
-            libraries = [Path(n) for n in item["filenames"] if n.endswith(".rlib")]
-            assert len(libraries) == 1
-            actual = libraries[0]
-            assert actual.parent == target / "debug/deps" and actual.name.startswith("lib" + name + "-")
-            depfile = actual.with_name(actual.name[3:-5] + ".d")
+            library_layout = ordinary_library_layout(item["filenames"], name, target)
+            owners = {key: Path(value) for key, value in library_layout.items() if value is not None}
+            for path in owners.values():
+                assert path.resolve(strict=True) == path and not path.is_symlink()
+            library_before = {key: identity(path) for key, path in owners.items()}
+            actual = owners["reported_library"]
+            derived = owners["derived_library"]
+            assert library_before["reported_library"] == products[str(actual)]["source_identity"]
+            assert library_before["reported_metadata"] == products[library_layout["reported_metadata"]]["source_identity"]
+            assert actual.read_bytes() == derived.read_bytes(), "reported and dependency library bytes differ"
+            assert library_before["reported_library"]["sha256"] == library_before["derived_library"]["sha256"]
+            depfile = owners["dependency_depfile"]
+            dep_products = [str(derived), library_layout["reported_metadata"]]
             selected_product = products[str(actual)]["copy"]
+            if str(derived) in products:
+                derived_library_copy = products[str(derived)]
+            else:
+                derived_library_copy = retain(derived, archive / derived.relative_to(target))
             with actual.open("rb") as stream:
                 assert stream.read(8) == b"!<arch>\n"
         # Resolve rustc's relative source spellings against this authenticated
         # Cargo manifest owner, and bind every dependency to the prepared bytes.
         deptext = depfile.read_text()
-        core_depfile = bind_core_depfile(deptext, depfile, item["filenames"], source_dir,
+        core_depfile = bind_core_depfile(deptext, depfile, dep_products, source_dir,
                                         prepared[side]["prepared_sha256"], file_map(source_dir), test)
         depcopy = retain(depfile, archive / depfile.relative_to(target))
+        library_after = None
+        if library_layout is not None:
+            if library_layout["reported_alias_depfile"] is not None:
+                alias_depfile = Path(library_layout["reported_alias_depfile"])
+                alias_binding = bind_library_alias_depfile(alias_depfile.read_text(), str(actual), source_dir, core_depfile)
+                alias_depcopy = retain(alias_depfile, archive / alias_depfile.relative_to(target))
+            library_after = {key: identity(path) for key, path in owners.items()}
+            assert library_after == library_before
         iced = [row for row in rows if row["reason"] == "compiler-artifact" and row["target"]["name"] == "iced_x86"]
         assert len(iced) == 1 and iced[0]["target"]["kind"] == ["lib"]
         locked = tomllib.loads((source_dir / "Cargo.lock").read_text())["package"]
@@ -404,6 +459,9 @@ def main():
         record = {"core": item, "selected_copy": selected_product, "iced": iced[0],
                   "iced_copy": products[iced_libs[0]]["copy"], "products": products,
                   "depfile": depcopy, "core_depfile_binding": core_depfile, "iced_depfile": iced_depcopy,
+                  "ordinary_library_layout": library_layout, "ordinary_library_before": library_before,
+                  "ordinary_library_after": library_after, "derived_library_copy": derived_library_copy,
+                  "reported_alias_depfile": alias_depcopy, "reported_alias_binding": alias_binding,
                   "iced_manifest_identity": identity(iced_manifest)}
         save(directory / "artifacts.json", record)
         return record
