@@ -1422,10 +1422,11 @@ fn syscall_free_thread_pair_deadline_closes_and_physically_reaps_both() {
     release(&mut s, &parent);
     release(&mut s, &worker);
     let start = Instant::now();
-    assert!(matches!(
-        s.next_event(Duration::from_millis(100)),
-        Err(LaunchError::Timeout("native lifecycle event"))
-    ));
+    let result = s.next_event(Duration::from_millis(100));
+    assert!(
+        matches!(result, Err(LaunchError::Timeout("native lifecycle event"))),
+        "unexpected thread deadline result: {result:?}"
+    );
     assert!(start.elapsed() < TIMEOUT);
     assert!(s.next_event(TIMEOUT).is_err());
     finish(s, &handles);
