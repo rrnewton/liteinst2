@@ -246,3 +246,8 @@ The [compiled-corpus reproduction sequence](e9-common-app/PIPELINE.md) links
 the fixed preparation, complete build/inventory, original observation and
 core/E9 production recipes, with their separate revisions and current execution
 limits.
+
+The [allocation-isolation regression](allocation-parallel-8ff87a0.md) records
+seven complete default-parallel invocations and the four separate required gates
+at `8ff87a0`. All original cases and assertions remain required; child terminal
+summaries stay separate. The reproducible JSON/CSV support partial claim 4.
