@@ -175,7 +175,7 @@ fn initial_runtime_coalescence_one_short_capacity_keeps_pristine_exec() {
                                 ))
                             ));
                         }
-                        before.pristine(owner, initial, until);
+                        before.pristine_after_refusal(owner, initial, until);
                         let runtime = owner.runtime.as_ref().unwrap();
                         assert!(
                             runtime.bootstrap.is_none()

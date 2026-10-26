@@ -72,6 +72,47 @@ impl Before {
             .time_left(until, "coalescence full byte observation complete")
             .unwrap();
     }
+    /// Observe the already-refused owner without asking it to authorize a new
+    /// operation. Cancellation itself is required, and the original absolute
+    /// deadline still brackets all read-only state/map/byte observations.
+    pub(super) fn pristine_after_refusal(
+        &self,
+        owner: &Owner,
+        initial: &DynamicStop,
+        until: Instant,
+    ) {
+        assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
+        assert!(
+            Instant::now() < until,
+            "coalescence refusal observation expired"
+        );
+        owner.require_stop(initial).unwrap();
+        assert_eq!(state(owner.pid), self.state);
+        assert_eq!(read_maps(owner.pid), self.maps);
+        let pin = owner.handles.get(&owner.pid).unwrap();
+        live(pin);
+        assert!(
+            owner
+                .stopped
+                .get(&owner.pid)
+                .is_some_and(|status| libc::WIFSTOPPED(*status))
+        );
+        let mut stack = vec![0; self.stack.len()];
+        let mut pair = vec![0; 8192];
+        self.memory
+            .read_exact_at(&mut stack, self.stack_start)
+            .unwrap();
+        self.memory.read_exact_at(&mut pair, BASE).unwrap();
+        assert_eq!(stack, self.stack, "entire original stack changed");
+        assert_eq!(pair, self.bytes, "complete original R/RX pair changed");
+        assert_eq!(memory(owner.pid, BASE, 8192), self.bytes);
+        live(pin);
+        assert!(
+            Instant::now() < until,
+            "coalescence refusal observation expired"
+        );
+        assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
+    }
     pub(super) fn pristine(&self, owner: &Owner, initial: &DynamicStop, until: Instant) {
         owner.require_stop(initial).unwrap();
         assert_eq!(state(owner.pid), self.state);
