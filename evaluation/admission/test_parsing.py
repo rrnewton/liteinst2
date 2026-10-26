@@ -23,13 +23,14 @@ def counts(tests, ignored=0):
 
 
 CASE = {"test": "rdrand_eax", "class": "rdrand", "destination": 0,
-        "input_flags": 3799, "cpuid_leaf": None, "cpuid_subleaf": None}
-OTHER = CASE | {"test": "rdrand_ecx", "destination": 1}
+        "input_flags": 3799, "cpuid_leaf": None, "cpuid_subleaf": None,
+        "encoding": "0fc7f0", "coverage_backend": False}
+OTHER = CASE | {"test": "rdrand_ecx", "destination": 1, "encoding": "0fc7f1"}
 
 
 def receipt(case=CASE, fault=False):
     random = case["class"] in ("rdrand", "rdseed") and not fault
-    return {"schema_version": 1, **{k: case[k] for k in parsing.KEYS},
+    return {"schema_version": 2, **{k: case[k] for k in parsing.KEYS},
             **dict(zip(parsing.COUNTERS, (0, 0, 0, 1, 1, 1) if fault else (1, 1, 1, 0, 0, 0))),
             "raw_native_random_cf": 0 if random else None,
             "native_gate_random_cf": 1 if random else None}
@@ -224,14 +225,16 @@ class NativeParsingTests(unittest.TestCase):
         record = parsing.PREFIX + json.dumps(receipt()) + "\n"
         for text in (native_text() + native_text(),
                      native_text(terminal=record + "ok"),
-                     native_text().replace('"schema_version": 1', '"schema_version": 2, "schema_version": 1')):
+                     native_text().replace('"schema_version": 2', '"schema_version": 1, "schema_version": 2')):
             with self.assertRaises(parsing.InvalidEvidence):
                 parsing.native_receipts(text, [CASE], True)
 
     def test_closed_fields_types_identities_outcomes_and_carry(self):
         for patch in ({"raw_native_completed": True}, {"native_gate_signal": 1},
                       {"raw_native_random_cf": None}, {"native_gate_random_cf": 2},
-                      {"schema_version": 2}, {"destination": 8}, {"host_path": "PRIVATE_SENTINEL"}):
+                      {"schema_version": 1}, {"destination": 8}, {"host_path": "PRIVATE_SENTINEL"},
+                      {"encoding": "480fc7f0"}, {"encoding": []}, {"coverage_backend": 0},
+                      {"coverage_backend": True}):
             with self.subTest(patch=patch), self.assertRaises(parsing.InvalidEvidence) as caught:
                 parsing.native_receipts(native_text(row=receipt() | patch), [CASE], True)
             self.assertNotIn("PRIVATE_SENTINEL", json.dumps(caught.exception.partial))
@@ -256,11 +259,11 @@ class DeclaredCorpusTests(unittest.TestCase):
 
     def test_fixed_workspace_and_launch_denominators(self):
         expected = self.corpus["harness_test_counts"]
-        self.assertEqual(len(expected["workspace_tests"]), 60)
-        self.assertEqual(len(expected["serial_launch"]), 9)
-        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 933)
+        self.assertEqual(len(expected["workspace_tests"]), 63)
+        self.assertEqual(len(expected["serial_launch"]), 11)
+        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 1018)
         self.assertEqual(sum(row["ignored"] for row in expected["workspace_tests"].values()), 4)
-        self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 119)
+        self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 180)
         self.assertEqual(sum(row["ignored"] for row in expected["serial_launch"].values()), 0)
         self.assertEqual(expected["workspace_tests"]["unit/liteinst2/lib"], counts(184, 1))
         self.assertEqual(expected["workspace_tests"]["unit/rapid_profiler/lib"], counts(24))
@@ -272,16 +275,17 @@ class DeclaredCorpusTests(unittest.TestCase):
             parsing.parse_harnesses(historical, {
                 "unit/liteinst2/lib": expected["workspace_tests"]["unit/liteinst2/lib"]}, 0)
 
-    def test_all_33_native_case_records_and_exact_class_counts(self):
+    def test_all_50_native_case_records_and_exact_class_counts(self):
         cases = self.corpus["native_cases"]
-        self.assertEqual(len(cases), 33)
-        expected = {"cpuid": 3, "rdrand": 8, "rdseed": 8, "rdpid": 8, "rdtsc": 3, "rdtscp": 3}
+        self.assertEqual(len(cases), 50)
+        expected = {"cpuid": 3, "rdrand": 15, "rdseed": 15, "rdpid": 11, "rdtsc": 3, "rdtscp": 3}
         self.assertEqual({key: sum(case["class"] == key for case in cases) for key in expected}, expected)
         rows = parsing.native_receipts("".join(native_text(case) for case in cases), cases, True)
-        self.assertEqual(len(rows), 33)
-        self.assertEqual(sum(row["raw_native_completed"] for row in rows), 33)
-        self.assertEqual(sum(row["scripted_completed"] for row in rows), 33)
-        self.assertEqual(sum(row["native_gate_completed"] for row in rows), 33)
+        self.assertEqual(len(rows), 50)
+        self.assertEqual(sum(row["raw_native_completed"] for row in rows), 50)
+        self.assertEqual(sum(row["scripted_completed"] for row in rows), 50)
+        self.assertEqual(sum(row["native_gate_completed"] for row in rows), 50)
+        self.assertEqual(sum(row["coverage_backend"] for row in rows), 17)
         self.assertFalse(any(row["qualified_run"] for row in rows))
 
 

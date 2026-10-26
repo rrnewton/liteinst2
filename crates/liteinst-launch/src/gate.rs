@@ -3,8 +3,9 @@
 //! The single-task gate offers a slow native SINGLESTEP reference and a native
 //! replacement callback through A1. The concurrent gate registers a fixed set
 //! of real shared-mm workers and publishes under collective stopped exclusion.
-//! Both require declared immutable code. Other selected classes remain explicit
-//! prepublication refusals; general lifecycle support is outside this module.
+//! Both require declared immutable code. The explicit selected backend supplies
+//! typed CPU/syscall dispatch and optional overlap guards; general lifecycle
+//! support is outside this module.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -27,6 +28,8 @@ pub use concurrent::*;
 
 mod selected;
 pub use selected::*;
+
+mod coverage;
 
 use crate::{
     ExecCheckpoint, LaunchError, MemoryMapping, ProcessEvent, RegisterSnapshot, SignalStop,
@@ -59,6 +62,8 @@ pub enum GateError {
     Control(LaunchError),
     /// The declared envelope or runtime fact could not be established.
     Refused(&'static str),
+    /// Explicit coverage proof failure, including its remaining obligations.
+    Coverage(crate::trap_coverage::TrapCoverageRefusal),
     /// RuntimeScan retained an unresolved obligation.
     Scan(Vec<liteinst_admission::scan::Obligation>),
     /// The A1 planner refused the selected instruction's required tactic.
@@ -84,6 +89,7 @@ impl std::fmt::Display for GateError {
         match self {
             Self::Control(error) => write!(f, "{error}"),
             Self::Refused(reason) => write!(f, "page gate refused: {reason}"),
+            Self::Coverage(reason) => write!(f, "trap coverage refused: {reason}"),
             Self::Scan(obligations) => write!(f, "page scan refused: {obligations:?}"),
             Self::Core(reason) => write!(f, "core planning refused: {reason}"),
             Self::Selected(reason) => write!(f, "selected instruction refused: {reason}"),
@@ -137,6 +143,12 @@ pub struct GateMetrics {
     pub untouched_pages: usize,
     /// Selected-instruction observations delivered to the caller.
     pub observations: usize,
+    /// Selected candidate starts protected by the explicit coverage backend.
+    pub covered_candidates: usize,
+    /// Non-selected instruction heads guarded to preserve embedded bytes.
+    pub collateral_guards: usize,
+    /// Original collateral instructions completed without logical callbacks.
+    pub collateral_completions: usize,
 }
 
 struct Image {
@@ -162,6 +174,10 @@ pub struct SingleThreadPageGate {
     metrics: GateMetrics,
     core: Option<CpuidPublisher>,
     selected_aliases: Option<crate::selected::SyscallAliases>,
+    coverage_budget: Option<crate::trap_coverage::TrapCoverageBudget>,
+    covered_guards: BTreeMap<u64, crate::trap_coverage::TrapGuard>,
+    #[cfg(test)]
+    coverage_failure: Option<coverage::failure::Injection>,
 }
 
 impl SingleThreadPageGate {
@@ -295,6 +311,10 @@ impl SingleThreadPageGate {
             metrics,
             core: None,
             selected_aliases: None,
+            coverage_budget: None,
+            covered_guards: BTreeMap::new(),
+            #[cfg(test)]
+            coverage_failure: None,
         })
     }
 
@@ -411,6 +431,25 @@ impl SingleThreadPageGate {
                     if signal.signal == libc::SIGTRAP
                         && (signal.code == libc::SI_KERNEL || signal.code == libc::TRAP_BRKPT)
                     {
+                        if let Some(guard) = signal
+                            .instruction_pointer
+                            .checked_sub(1)
+                            .and_then(|pc| self.covered_guards.get(&pc))
+                            .filter(|guard| {
+                                matches!(
+                                    guard.role(),
+                                    crate::trap_coverage::TrapGuardRole::Collateral
+                                )
+                            })
+                            .cloned()
+                        {
+                            if let Some(event) =
+                                self.execute_collateral(&guard, &signal, deadline)?
+                            {
+                                return Ok(event);
+                            }
+                            continue;
+                        }
                         if let Some(publisher) = &self.core {
                             if publisher
                                 .callback_address()
@@ -510,6 +549,9 @@ impl SingleThreadPageGate {
     }
 
     fn admit(&mut self, signal: &SignalStop, deadline: Instant) -> Result<(), GateError> {
+        if self.coverage_budget.is_some() {
+            return self.admit_covered(signal, deadline);
+        }
         let started = Instant::now();
         let address = signal
             .address

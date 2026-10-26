@@ -1,8 +1,9 @@
 //! Explicit single-task selected-instruction trap/interpreter execution.
 //!
 //! This path reuses page admission and owns every selected trap. It does not
-//! claim A1 publication, does not change the scanner's embedded-site refusals,
-//! and never chooses itself as an implicit fallback from a core refusal.
+//! claim A1 publication. The optional coverage backend preserves original scan
+//! refusals and supplies a separate guard proof; neither backend is an implicit
+//! fallback from a core refusal.
 
 use super::{GateError, GateEvent, GateMetrics, ImageFacts, SingleThreadPageGate, remaining};
 use crate::selected::{
@@ -118,6 +119,19 @@ pub struct SelectedPageGate<P: InstructionProvider> {
 }
 
 impl<P: InstructionProvider> SelectedPageGate<P> {
+    #[cfg(test)]
+    pub(super) fn inject_coverage_failure(&mut self, phase: super::coverage::failure::Phase) {
+        self.inner.coverage_failure = Some(super::coverage::failure::Injection::new(phase));
+    }
+
+    #[cfg(test)]
+    pub(super) fn coverage_failure_evidence(&self) -> &super::coverage::failure::Injection {
+        self.inner
+            .coverage_failure
+            .as_ref()
+            .expect("test configured injection")
+    }
+
     /// Creates the explicit trap/interpreter backend before original execution.
     /// No selected site is deselected when decoding, scanning or execution fails.
     ///
@@ -148,6 +162,34 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
             metrics: SelectedMetrics::default(),
             closed: false,
         })
+    }
+
+    /// Selects explicit trap coverage for overlapping selected instruction starts.
+    ///
+    /// Unlike the strict reference constructor, this backend may discharge
+    /// embedded-candidate obligations using a separately checked guard closure.
+    /// Collateral guards execute original instructions without logical callbacks.
+    /// Unsupported collateral instructions refuse before publication. This is
+    /// an explicitly selected backend, never an implicit fallback from A1.
+    ///
+    /// # Safety
+    /// All certifications of [`Self::new`] apply, including complete original
+    /// instruction heads, immutable private code, no code-as-data and clear TF/RF
+    /// at every guarded instruction entry. Overlapping streams must all appear
+    /// in the supplied head census; they are decoded independently.
+    pub unsafe fn new_with_coverage(
+        checkpoint: ExecCheckpoint,
+        facts: Vec<ImageFacts>,
+        policy: Policy,
+        aliases: SyscallAliases,
+        provider: P,
+        timeout: Duration,
+        budget: crate::trap_coverage::TrapCoverageBudget,
+    ) -> Result<Self, GateError> {
+        // SAFETY: forwards all ownership and original-entry certifications.
+        let mut gate = unsafe { Self::new(checkpoint, facts, policy, aliases, provider, timeout)? };
+        gate.inner.coverage_budget = Some(budget);
+        Ok(gate)
     }
 
     /// Owned task identity, for diagnostics only.
@@ -299,8 +341,10 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
     }
 
     fn authenticate_trap(&self, input: &SelectedInput) -> Result<(), GateError> {
-        let mut expected = input.instruction().bytes().to_vec();
-        expected[0] = 0xcc;
+        let expected = self.inner.armed_instruction(
+            input.instruction().logical_pc(),
+            input.instruction().bytes(),
+        );
         if self
             .inner
             .read_memory(input.instruction().logical_pc(), expected.len())?
@@ -325,13 +369,26 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
         }
         self.authenticate_trap(&input)?;
         let pc = input.instruction().logical_pc();
-        let first = input.instruction().bytes()[0];
+        let original = input.instruction().bytes();
+        let armed = self.inner.armed_instruction(pc, original);
         let mut stop = self.inner.process.hold()?;
         if stop.read_registers()? != *input.registers() || stop.read_xstate()? != before_xstate {
             return Err(GateError::Refused("native selected input changed"));
         }
-        stop.write_memory_checked(pc, &[0xcc], &[first])?;
+        #[cfg(test)]
+        super::coverage::failure::capture(
+            &mut self.inner.coverage_failure,
+            super::coverage::failure::Scope::Selected,
+            &stop,
+        )?;
+        stop.write_memory_checked(pc, &armed, original)?;
         stop.sync_core(remaining(deadline)?)?;
+        #[cfg(test)]
+        super::coverage::failure::hit(
+            &mut self.inner.coverage_failure,
+            super::coverage::failure::Phase::SelectedRestored,
+            &stop,
+        )?;
         let (after, xstate) = if matches!(operation, Operation::Syscall { .. }) {
             match stop.execute_native_syscall(
                 pc,
@@ -395,7 +452,13 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
             ));
         }
         let mut stop = self.inner.process.hold()?;
-        stop.write_memory_checked(pc, &[first], &[0xcc])?;
+        #[cfg(test)]
+        super::coverage::failure::hit(
+            &mut self.inner.coverage_failure,
+            super::coverage::failure::Phase::SelectedCompleted,
+            &stop,
+        )?;
+        stop.write_memory_checked(pc, original, &armed)?;
         stop.sync_core(remaining(deadline)?)?;
         if stop.read_registers()? != after || stop.read_xstate()? != xstate {
             return Err(GateError::Refused(

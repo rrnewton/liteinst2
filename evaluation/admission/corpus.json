@@ -1,5 +1,5 @@
 {
-  "baseline_revision": "27df290bd203a8235bb478a210fa700d3b8feaa3",
+  "baseline_revision": "b6f23bf243baaa6d576c3d8754d701bb718757ad",
   "harness_test_counts": {
     "serial_launch": {
       "test/checkpoint": {
@@ -14,9 +14,13 @@
         "ignored": 0,
         "tests": 7
       },
+      "test/lifecycle": {
+        "ignored": 0,
+        "tests": 16
+      },
       "test/native_selected": {
         "ignored": 0,
-        "tests": 33
+        "tests": 50
       },
       "test/native_syscall": {
         "ignored": 0,
@@ -28,15 +32,19 @@
       },
       "test/selected_gate": {
         "ignored": 0,
-        "tests": 13
+        "tests": 19
       },
       "test/selected_semantics": {
         "ignored": 0,
         "tests": 14
       },
+      "test/trap_coverage": {
+        "ignored": 0,
+        "tests": 16
+      },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 2
+        "tests": 8
       }
     },
     "workspace_tests": {
@@ -140,6 +148,10 @@
         "ignored": 0,
         "tests": 1
       },
+      "test/lifecycle": {
+        "ignored": 0,
+        "tests": 16
+      },
       "test/mandatory_prefix_oracle": {
         "ignored": 0,
         "tests": 28
@@ -150,7 +162,7 @@
       },
       "test/native_selected": {
         "ignored": 0,
-        "tests": 33
+        "tests": 50
       },
       "test/native_syscall": {
         "ignored": 0,
@@ -167,6 +179,10 @@
       "test/oracle": {
         "ignored": 0,
         "tests": 12
+      },
+      "test/oracle_chain": {
+        "ignored": 0,
+        "tests": 21
       },
       "test/overlap_concurrency": {
         "ignored": 0,
@@ -210,7 +226,7 @@
       },
       "test/return_obligations": {
         "ignored": 0,
-        "tests": 13
+        "tests": 15
       },
       "test/search_eviction_evidence": {
         "ignored": 0,
@@ -222,7 +238,7 @@
       },
       "test/selected_gate": {
         "ignored": 0,
-        "tests": 13
+        "tests": 19
       },
       "test/selected_semantics": {
         "ignored": 0,
@@ -256,6 +272,10 @@
         "ignored": 0,
         "tests": 12
       },
+      "test/trap_coverage": {
+        "ignored": 0,
+        "tests": 16
+      },
       "unit/liteinst2/lib": {
         "ignored": 1,
         "tests": 184
@@ -266,11 +286,11 @@
       },
       "unit/liteinst_admission/lib": {
         "ignored": 0,
-        "tests": 1
+        "tests": 2
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 2
+        "tests": 8
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,
@@ -285,267 +305,503 @@
   "native_cases": [
     {
       "class": "rdrand",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 0,
+      "encoding": "0fc7f0",
       "input_flags": 3799,
       "test": "rdrand_eax"
     },
     {
       "class": "rdrand",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 1,
+      "encoding": "0fc7f1",
       "input_flags": 3799,
       "test": "rdrand_ecx"
     },
     {
       "class": "rdrand",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 2,
+      "encoding": "0fc7f2",
       "input_flags": 3799,
       "test": "rdrand_edx"
     },
     {
       "class": "rdrand",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 3,
+      "encoding": "0fc7f3",
       "input_flags": 3799,
       "test": "rdrand_ebx"
     },
     {
       "class": "rdrand",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 4,
+      "encoding": "0fc7f4",
       "input_flags": 3799,
       "test": "rdrand_esp"
     },
     {
       "class": "rdrand",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 5,
+      "encoding": "0fc7f5",
       "input_flags": 3799,
       "test": "rdrand_ebp"
     },
     {
       "class": "rdrand",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 6,
+      "encoding": "0fc7f6",
       "input_flags": 3799,
       "test": "rdrand_esi"
     },
     {
       "class": "rdrand",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 7,
+      "encoding": "0fc7f7",
       "input_flags": 3799,
       "test": "rdrand_edi"
     },
     {
       "class": "rdseed",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 0,
+      "encoding": "0fc7f8",
       "input_flags": 3799,
       "test": "rdseed_eax"
     },
     {
       "class": "rdseed",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 1,
+      "encoding": "0fc7f9",
       "input_flags": 3799,
       "test": "rdseed_ecx"
     },
     {
       "class": "rdseed",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 2,
+      "encoding": "0fc7fa",
       "input_flags": 3799,
       "test": "rdseed_edx"
     },
     {
       "class": "rdseed",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 3,
+      "encoding": "0fc7fb",
       "input_flags": 3799,
       "test": "rdseed_ebx"
     },
     {
       "class": "rdseed",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 4,
+      "encoding": "0fc7fc",
       "input_flags": 3799,
       "test": "rdseed_esp"
     },
     {
       "class": "rdseed",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 5,
+      "encoding": "0fc7fd",
       "input_flags": 3799,
       "test": "rdseed_ebp"
     },
     {
       "class": "rdseed",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 6,
+      "encoding": "0fc7fe",
       "input_flags": 3799,
       "test": "rdseed_esi"
     },
     {
       "class": "rdseed",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 7,
+      "encoding": "0fc7ff",
       "input_flags": 3799,
       "test": "rdseed_edi"
     },
     {
       "class": "rdpid",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 0,
+      "encoding": "f30fc7f8",
       "input_flags": 3799,
       "test": "rdpid_rax"
     },
     {
       "class": "rdpid",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 1,
+      "encoding": "f30fc7f9",
       "input_flags": 3799,
       "test": "rdpid_rcx"
     },
     {
       "class": "rdpid",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 2,
+      "encoding": "f30fc7fa",
       "input_flags": 3799,
       "test": "rdpid_rdx"
     },
     {
       "class": "rdpid",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 3,
+      "encoding": "f30fc7fb",
       "input_flags": 3799,
       "test": "rdpid_rbx"
     },
     {
       "class": "rdpid",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 4,
+      "encoding": "f30fc7fc",
       "input_flags": 3799,
       "test": "rdpid_rsp"
     },
     {
       "class": "rdpid",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 5,
+      "encoding": "f30fc7fd",
       "input_flags": 3799,
       "test": "rdpid_rbp"
     },
     {
       "class": "rdpid",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 6,
+      "encoding": "f30fc7fe",
       "input_flags": 3799,
       "test": "rdpid_rsi"
     },
     {
       "class": "rdpid",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 7,
+      "encoding": "f30fc7ff",
       "input_flags": 3799,
       "test": "rdpid_rdi"
     },
     {
       "class": "rdtsc",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 0,
+      "encoding": "0f31",
       "input_flags": 3799,
       "test": "rdtsc_all_flags"
     },
     {
       "class": "rdtsc",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 0,
+      "encoding": "0f31",
       "input_flags": 514,
       "test": "rdtsc_clear_flags"
     },
     {
       "class": "rdtsc",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 0,
+      "encoding": "0f31",
       "input_flags": 582,
       "test": "rdtsc_zero_parity"
     },
     {
       "class": "rdtscp",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 0,
+      "encoding": "0f01f9",
       "input_flags": 3799,
       "test": "rdtscp_all_flags"
     },
     {
       "class": "rdtscp",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 0,
+      "encoding": "0f01f9",
       "input_flags": 514,
       "test": "rdtscp_clear_flags"
     },
     {
       "class": "rdtscp",
+      "coverage_backend": false,
       "cpuid_leaf": null,
       "cpuid_subleaf": null,
       "destination": 0,
+      "encoding": "0f01f9",
       "input_flags": 582,
       "test": "rdtscp_zero_parity"
     },
     {
       "class": "cpuid",
+      "coverage_backend": false,
       "cpuid_leaf": 0,
       "cpuid_subleaf": 0,
       "destination": 0,
+      "encoding": "0fa2",
       "input_flags": 3799,
       "test": "cpuid_basic_vendor_leaf"
     },
     {
       "class": "cpuid",
+      "coverage_backend": false,
       "cpuid_leaf": 1,
       "cpuid_subleaf": 0,
       "destination": 0,
+      "encoding": "0fa2",
       "input_flags": 514,
       "test": "cpuid_processor_features_leaf"
     },
     {
       "class": "cpuid",
+      "coverage_backend": false,
       "cpuid_leaf": 7,
       "cpuid_subleaf": 0,
       "destination": 0,
+      "encoding": "0fa2",
       "input_flags": 582,
       "test": "cpuid_structured_features_leaf"
+    },
+    {
+      "class": "rdrand",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "encoding": "660fc7f0",
+      "input_flags": 3799,
+      "test": "covered_rdrand_ax"
+    },
+    {
+      "class": "rdrand",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 4,
+      "encoding": "660fc7f4",
+      "input_flags": 3799,
+      "test": "covered_rdrand_sp"
+    },
+    {
+      "class": "rdrand",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 15,
+      "encoding": "66410fc7f7",
+      "input_flags": 3799,
+      "test": "covered_rdrand_r15w"
+    },
+    {
+      "class": "rdrand",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 8,
+      "encoding": "410fc7f0",
+      "input_flags": 3799,
+      "test": "covered_rdrand_r8d"
+    },
+    {
+      "class": "rdrand",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "encoding": "480fc7f0",
+      "input_flags": 3799,
+      "test": "covered_rdrand_rax"
+    },
+    {
+      "class": "rdrand",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 4,
+      "encoding": "480fc7f4",
+      "input_flags": 3799,
+      "test": "covered_rdrand_rsp"
+    },
+    {
+      "class": "rdrand",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 15,
+      "encoding": "490fc7f7",
+      "input_flags": 3799,
+      "test": "covered_rdrand_r15"
+    },
+    {
+      "class": "rdseed",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "encoding": "660fc7f8",
+      "input_flags": 3799,
+      "test": "covered_rdseed_ax"
+    },
+    {
+      "class": "rdseed",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 4,
+      "encoding": "660fc7fc",
+      "input_flags": 3799,
+      "test": "covered_rdseed_sp"
+    },
+    {
+      "class": "rdseed",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 15,
+      "encoding": "66410fc7ff",
+      "input_flags": 3799,
+      "test": "covered_rdseed_r15w"
+    },
+    {
+      "class": "rdseed",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 8,
+      "encoding": "410fc7f8",
+      "input_flags": 3799,
+      "test": "covered_rdseed_r8d"
+    },
+    {
+      "class": "rdseed",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "encoding": "480fc7f8",
+      "input_flags": 3799,
+      "test": "covered_rdseed_rax"
+    },
+    {
+      "class": "rdseed",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 4,
+      "encoding": "480fc7fc",
+      "input_flags": 3799,
+      "test": "covered_rdseed_rsp"
+    },
+    {
+      "class": "rdseed",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 15,
+      "encoding": "490fc7ff",
+      "input_flags": 3799,
+      "test": "covered_rdseed_r15"
+    },
+    {
+      "class": "rdpid",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 0,
+      "encoding": "f30fc7f8",
+      "input_flags": 3799,
+      "test": "covered_rdpid_rax"
+    },
+    {
+      "class": "rdpid",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 4,
+      "encoding": "f30fc7fc",
+      "input_flags": 3799,
+      "test": "covered_rdpid_rsp"
+    },
+    {
+      "class": "rdpid",
+      "coverage_backend": true,
+      "cpuid_leaf": null,
+      "cpuid_subleaf": null,
+      "destination": 15,
+      "encoding": "f3410fc7ff",
+      "input_flags": 3799,
+      "test": "covered_rdpid_r15"
     }
   ],
   "recorder_tests": 53,

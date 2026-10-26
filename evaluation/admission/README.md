@@ -50,7 +50,9 @@ Git index optimization flags. Valid invocations refused during preflight retain
 a result with every command marked `not_run`. Per-harness summaries retain
 the complete passed/failed/ignored/measured/filtered counts. Native CPU records
 retain each case's parameters, actual random carry outcomes and explicit native,
-scripted or fault counts. The command and result schema version is 1.
+scripted or fault counts. The command and result schema version is 1. Native-case telemetry uses version 2,
+which adds exact instruction bytes and the selected coverage backend. Historical
+receipts retain the format of their recorded source revision.
 
 These JSON files are the numerical observations for analysis. Commit them after
 review, including failed attempts; reruns create new files instead of overwriting
@@ -77,7 +79,7 @@ equivalence is inferred from matching this protocol.
 
 ## Evidence accounting
 
-`corpus.json` declares the expected outer harness cohort and 33 native cases.
+`corpus.json` declares the expected outer harness cohort and 50 native cases.
 Update it explicitly when adding/removing tests, and review denominator changes.
 The parser requires exactly one final unfiltered outer summary matching each
 declared cohort. Nested child summaries are separate observations and never
@@ -88,15 +90,20 @@ without libtest summaries and the parent assertions check those exit statuses.
 Other unmatched child starts refuse; these starts never increase passed totals. Missing, duplicate,
 ambiguous or changed outer cohorts invalidate the evidence.
 
-The corpus for source revision `27df290bd203a8235bb478a210fa700d3b8feaa3` has 60 workspace
-harnesses and 933 outer tests, including four existing ignores. Relative to the
-previous admission corpus, core adds eight synchronized-publisher tests,
-17 generation tests, two generation compile-fail doctests and seven shared
-Word calibration tests in each of 15 importing harnesses. These 132 additional
-outer test instances give 929 possible outer passes; repeated calibrations are
-not distinct scenarios. The five nested child passes remain
-separate; summing all libtest summaries would report 934 passes and count those
-children twice. The serial launch cohort remains 119 tests and 33 native cases.
+The current corpus extends baseline `b6f23bf243baaa6d576c3d8754d701bb718757ad`
+with 85 outer instances: 16 pure guard-closure tests, 16 pure lifecycle tests,
+21 cache tests plus one poison unit test, two return-ledger tests, six scripted
+coverage tests, 17 native coverage cases and six injected-failure unit fixtures. It declares 63 workspace harnesses
+and 1018 outer tests, including four existing ignores: 1014 possible outer
+passes. The five nested child passes remain separate. The serial launch cohort
+has 180 tests in 11 harnesses, with 50 native cases. These are expected
+cohorts, not results; each run must satisfy them independently.
+
+The new scripted random matrix forces 192 invocations covering both classes,
+all 16 GPR destinations, 16/32/64-bit widths and both carry outcomes. Native
+coverage adds 14 prefixed random cases and three default-policy RDPID cases to
+the original 33. Native carry values remain observations, never forced evidence
+for both outcomes. The original strict-backend refusal tests remain present.
 
 Native receipts are emitted only after existing original/replay/native checks
 and owned-child cleanup succeed. `LITEINST_EVALUATION=1` enables their fixed
@@ -124,12 +131,15 @@ targets, not statements that the full claims have been established.
 | Claim | Admission evidence supports | Remaining limits |
 | --- | --- | --- |
 | 1: cross-modification-free publication via page admission | NX admission, actual held-task leases, source reauthentication, exact stores, synchronization, one publication for competing faults | Immutable/private ownership certifications; fixed cooperative group; aliases, readers/writers, arbitrary saved contexts and lifecycle remain open |
-| 2: sound unprivileged selected coverage from instruction one | Finite all-start puzzles; executable/interpreter first-instruction fixtures; exact typed/native/scripted effects; masked-CPUID callbacks; explicit positive/fault receipts | Actual privilege metadata must qualify the run; prefix/default-RDPID refusals, aliases, loaders/signals/JIT, full-class concurrency and broader hardware remain open |
+| 2: sound unprivileged selected coverage from instruction one | Finite all-start puzzles; executable/interpreter first-instruction fixtures; exact typed/native/scripted effects; masked-CPUID callbacks; explicit positive/fault receipts | Actual privilege metadata must qualify the run; coverage is limited to qualified selected encodings and MOV-immediate collateral; aliases, loaders/signals/JIT, full-class concurrency and broader hardware remain open |
 | 3: in-place software preemption clock | No evidence from this protocol | Not implemented/evaluated here; wall-clock timeouts are not a preemption clock |
 | 4: systematic validation of every tactic | Workspace core regressions plus B's trap/interpreter and CPUID generalized-pun integration | A passing workspace is not an all-tactic coverage matrix; forced tactics/composition, generated/sampled campaigns and full core claims need their own manifests |
 
 The four-worker race fixture requires four callbacks, one publication and at
 least two collected faults. Do not turn that into a claim of four simultaneous
-faults. RDPID-only positive policy does not establish default-policy coverage.
+faults. The default-policy native RDPID cases separately qualify their finite encodings.
 Pure all-width semantics do not establish live admission of every encoding.
+The pure lifecycle registry does not establish native event ownership; the
+in-memory cache does not establish persistent-artifact verification. Errors
+close execution; source-byte rollback after partial publication is not claimed.
 No performance, preemption-clock or unrestricted release claim is made here.

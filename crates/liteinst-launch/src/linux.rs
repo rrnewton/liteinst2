@@ -333,6 +333,7 @@ impl ExecCheckpoint {
             }
         }
         drop(error_write);
+        drop(fork_guard);
         let mut child = ChildOwner {
             pid,
             reaped: false,
@@ -752,6 +753,7 @@ mod tests {
     #[test]
     fn a_real_child_wait_timeout_keeps_ownership_until_kill_and_reap() {
         let reaper = prepare_reaper().unwrap();
+        let fork_guard = crate::TEST_FILE_FORK.lock().unwrap();
         // SAFETY: the child uses only raw libc calls before exit, with no Rust
         // allocation, unwinding or destructors after fork.
         let pid = unsafe { libc::fork() };

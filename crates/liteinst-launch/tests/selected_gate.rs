@@ -3,7 +3,8 @@
 //! Independent, bounded fixture interpreter versus actual scripted page execution.
 //! The expectation decoder below does not use iced-x86 or selected::complete.
 //! Native setup is captured by separate raw ptrace code at an authenticated INT3.
-//! Prefixed random and default-policy RDPID remain explicit admission refusals.
+//! The strict backend retains prefix/default-policy refusals; the explicit
+//! coverage backend separately qualifies overlapping selected streams.
 
 use std::collections::{BTreeSet, VecDeque};
 use std::fs::{self, OpenOptions};
@@ -380,6 +381,7 @@ impl State {
                     self.store(self.registers.rsp, value);
                     5
                 }
+                [0x90, ..] => 1,
                 [0x9d, ..] => {
                     let offset = usize::try_from(self.registers.rsp - STACK).unwrap();
                     self.registers.eflags =
@@ -538,6 +540,251 @@ fn check_completed(gate: &mut SelectedPageGate<RecordingProvider>, row: &Row) {
     assert_eq!(gate.read_registers().unwrap(), row.after.registers);
     assert_eq!(gate.read_xstate().unwrap(), row.after.xstate);
     assert_eq!(gate.read_memory(STACK, STACK_LEN).unwrap(), row.after.stack);
+}
+
+fn covered_gate(
+    checkpoint: ExecCheckpoint,
+    facts: Vec<ImageFacts>,
+    rows: &[Row],
+) -> SelectedPageGate<RecordingProvider> {
+    // SAFETY: same complete closed-world fixture ownership as page_gate. Every
+    // alternate entry is explicitly enumerated and all guarded entries have
+    // clear TF/RF. The new backend preserves each overlapping decode separately.
+    unsafe {
+        SelectedPageGate::new_with_coverage(
+            checkpoint,
+            facts,
+            Policy::default(),
+            SyscallAliases::new(),
+            RecordingProvider {
+                rows: rows.iter().cloned().collect(),
+                ..RecordingProvider::default()
+            },
+            TIMEOUT,
+            Default::default(),
+        )
+    }
+    .unwrap()
+}
+
+#[test]
+fn covered_default_rdpid_and_deliberate_rdseed_suffix_match_independent_block_states() {
+    let directory = Directory::new();
+    let mut image = Elf::new(2, false);
+    image.setup();
+    let first = image.emit(&[0xf3, 0x0f, 0xc7, 0xfa]);
+    image.heads.insert(first + 1);
+    image.jump(first + 1);
+    let expected = rows(
+        &image,
+        native_seed(&directory, &image, first),
+        &[
+            Reply::Processor(0xabcd_1234),
+            Reply::Random {
+                seed: true,
+                value: 0x1234_5678,
+                carry: true,
+            },
+        ],
+    );
+    let path = image.write(&directory, "covered-alternate");
+    let mut gate = covered_gate(launch(&path), vec![image.facts(BASE)], &expected);
+    for row in &expected {
+        check_completed(&mut gate, row);
+    }
+    assert_eq!(gate.metrics().callbacks.get(&SiteClass::Rdpid), Some(&1));
+    assert_eq!(gate.metrics().callbacks.get(&SiteClass::Rdseed), Some(&1));
+    assert_eq!(gate.gate_metrics().covered_candidates, 2);
+    assert_eq!(gate.gate_metrics().collateral_completions, 0);
+}
+
+#[test]
+fn covered_random_widths_and_all_gprs_match_independent_block_states() {
+    let directory = Directory::new();
+    let mut image = Elf::new(3, false);
+    image.setup();
+    let first = image.cursor;
+    let mut replies = Vec::new();
+    for seed in [false, true] {
+        for bits in [16, 32, 64] {
+            for destination in 0..16 {
+                for carry in [true, false] {
+                    image.mov64(4, SP);
+                    image.mov64(
+                        destination,
+                        if destination == 4 {
+                            SP
+                        } else {
+                            0x8877_6655_4433_2211
+                        },
+                    );
+                    image.flags();
+                    let mut instruction = Vec::new();
+                    if bits == 16 {
+                        instruction.push(0x66);
+                    }
+                    let rex = 0x40
+                        | if bits == 64 { 8 } else { 0 }
+                        | if destination >= 8 { 1 } else { 0 };
+                    if rex != 0x40 {
+                        instruction.push(rex);
+                    }
+                    instruction.extend_from_slice(&[
+                        0x0f,
+                        0xc7,
+                        (if seed { 0xf8 } else { 0xf0 }) + (destination & 7) as u8,
+                    ]);
+                    image.emit(&instruction);
+                    replies.push(Reply::Random {
+                        seed,
+                        value: if !carry {
+                            0
+                        } else if bits == 16 {
+                            0x9876
+                        } else if bits == 32 {
+                            0xfedc_9876
+                        } else {
+                            0xfedc_ba98_7654_3210
+                        },
+                        carry,
+                    });
+                }
+            }
+        }
+    }
+    image.emit(&[0x0f, 0x0b]);
+    let expected = rows(&image, native_seed(&directory, &image, first), &replies);
+    let path = image.write(&directory, "covered-widths");
+    let mut gate = covered_gate(launch(&path), vec![image.facts(BASE)], &expected);
+    for row in &expected {
+        check_completed(&mut gate, row);
+    }
+    assert_eq!(gate.metrics().callbacks.get(&SiteClass::Rdrand), Some(&96));
+    assert_eq!(gate.metrics().callbacks.get(&SiteClass::Rdseed), Some(&96));
+    assert_eq!(gate.provider().consumed, 192);
+    assert!(gate.gate_metrics().covered_candidates > 192);
+}
+
+#[test]
+fn covered_embedded_constant_executes_original_mov_without_an_extra_callback() {
+    let directory = Directory::new();
+    let mut image = Elf::new(2, false);
+    image.setup();
+    let first = image.cursor;
+    image.mov64(3, 0x9090_9090_f8c7_0f90);
+    image.store(3, 0);
+    image.emit(&[0x0f, 0x31]);
+    image
+        .heads
+        .extend([first + 3, first + 6, first + 7, first + 8, first + 9]);
+    image.jump(first + 3);
+    image.emit(&[0x0f, 0x0b]);
+    let expected = rows(
+        &image,
+        native_seed(&directory, &image, first),
+        &[
+            Reply::Counter {
+                value: 0x1122_3344_5566_7788,
+                auxiliary: None,
+            },
+            Reply::Random {
+                seed: true,
+                value: 0xfedc_1234,
+                carry: true,
+            },
+            Reply::Counter {
+                value: 0x8877_6655_4433_2211,
+                auxiliary: None,
+            },
+        ],
+    );
+    let path = image.write(&directory, "covered-immediate");
+    let mut gate = covered_gate(launch(&path), vec![image.facts(BASE)], &expected);
+    check_completed(&mut gate, &expected[0]);
+    check_completed(&mut gate, &expected[1]);
+    check_completed(&mut gate, &expected[2]);
+    assert_eq!(gate.metrics().callbacks.len(), 2);
+    assert_eq!(gate.metrics().callbacks.get(&SiteClass::Rdtsc), Some(&2));
+    assert_eq!(gate.metrics().callbacks.get(&SiteClass::Rdseed), Some(&1));
+    assert_eq!(gate.gate_metrics().collateral_guards, 1);
+    assert_eq!(gate.gate_metrics().collateral_completions, 1);
+}
+
+#[test]
+fn covered_unqualified_collateral_refuses_before_any_write() {
+    let directory = Directory::new();
+    let mut image = Elf::new(2, false);
+    // PUSH imm32 contains RDTSC; stack mutation/debug-step semantics are not
+    // qualified by the MOV collateral executor, so this remains a refusal.
+    image.emit(&[0x68, 0x0f, 0x31, 0x90, 0x90]);
+    image.emit(&[0x0f, 0x0b]);
+    let path = image.write(&directory, "covered-refusal");
+    let mut gate = covered_gate(launch(&path), vec![image.facts(BASE)], &[]);
+    assert!(
+        format!("{:?}", gate.next_event().unwrap_err()).contains("collateral instruction lacks")
+    );
+    assert_eq!(
+        gate.read_memory(BASE, image.bytes.len()).unwrap(),
+        image.bytes
+    );
+    assert_eq!(gate.provider().calls, 0);
+    assert!(!gate.is_admitted(BASE + PAGE as u64));
+    assert_nx(gate.pid(), BASE + PAGE as u64);
+}
+
+#[test]
+fn covered_rdpid_straddler_closes_both_pages_before_dispatch() {
+    let directory = Directory::new();
+    let mut image = Elf::new(3, false);
+    image.setup();
+    let first = 2 * PAGE - 2;
+    image.jump(first);
+    image.cursor = first;
+    image.emit(&[0xf3, 0x0f, 0xc7, 0xfa]);
+    image.emit(&[0x0f, 0x0b]);
+    let expected = rows(
+        &image,
+        native_seed(&directory, &image, first),
+        &[Reply::Processor(0x1234_5678)],
+    );
+    let path = image.write(&directory, "covered-straddler");
+    let mut gate = covered_gate(launch(&path), vec![image.facts(BASE)], &expected);
+    check_completed(&mut gate, &expected[0]);
+    assert!(gate.is_admitted(BASE + first as u64));
+    assert!(gate.is_admitted(BASE + first as u64 + 3));
+    assert_eq!(gate.gate_metrics().covered_candidates, 2);
+}
+
+#[test]
+fn covered_saved_call_return_into_never_executed_page_preserves_original_head() {
+    let directory = Directory::new();
+    let mut image = Elf::new(4, false);
+    image.setup();
+    let call = 2 * PAGE - 5;
+    image.jump(call);
+    image.cursor = call;
+    let mut bytes = vec![0xe8];
+    bytes.extend_from_slice(&i32::try_from(3 * PAGE - (call + 5)).unwrap().to_le_bytes());
+    image.emit(&bytes);
+    let first = image.emit(&[0xf3, 0x0f, 0xc7, 0xfa]);
+    assert_eq!(first, 2 * PAGE);
+    image.emit(&[0x0f, 0x0b]);
+    image.cursor = 3 * PAGE;
+    image.emit(&[0xc3]);
+    let expected = rows(
+        &image,
+        native_seed(&directory, &image, first),
+        &[Reply::Processor(0x1234_5678)],
+    );
+    let path = image.write(&directory, "covered-call-return");
+    let mut gate = covered_gate(launch(&path), vec![image.facts(BASE)], &expected);
+    check_completed(&mut gate, &expected[0]);
+    assert_eq!(
+        gate.read_memory(SP - 8, 8).unwrap(),
+        (BASE + first as u64).to_le_bytes()
+    );
+    assert_eq!(gate.gate_metrics().admitted_pages, 3);
+    assert_eq!(gate.metrics().callbacks.get(&SiteClass::Rdpid), Some(&1));
 }
 fn policy(classes: &[SiteClass]) -> Policy {
     Policy {

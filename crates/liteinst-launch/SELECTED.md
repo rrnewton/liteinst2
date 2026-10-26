@@ -67,12 +67,41 @@ child. Providers must return promptly; the deadline is checked after dispatch
 but cannot preempt a caller's blocking provider implementation.
 
 All-start scanning, complete cross-page closure, expected-byte authentication
-and the qualified CALL-return ledger remain required. Embedded selected starts
-still refuse. Consequently prefixed random encodings can refuse because their
+and the qualified CALL-return ledger remain required. In the strict `new`
+constructor, embedded selected starts still refuse. Consequently prefixed random encodings can refuse because their
 selected suffix has no backstop, and default-policy RDPID can refuse because
 its suffix is RDSEED. RDPID-only positive fixtures explicitly choose that policy;
 they do not demonstrate default-policy coverage. Pure support for all widths
 and GPRs is not a claim that every encoding passes live admission.
+
+## Explicit coverage of overlapping starts
+
+`new_with_coverage` selects an additional trap backend. `TrapCoveragePlan`
+retains the original scanner reports and their refusals, then records separate
+guard evidence for each resolved embedded, unresolved or overlapping candidate.
+Every selected start gets an INT3. Guard closure also covers each declared
+original instruction whose bytes contain another guard, recursively. Such
+collateral instructions execute without logical callbacks. Missing ownership,
+identity, boundary, complete-head or saved-context facts still refuse.
+
+The live backend qualifies each selected decode and collateral execution before
+writing. Currently collateral execution accepts only MOV-immediate-to-register
+encodings; other collateral operations remain explicit prepublication refusals.
+Publication authenticates the complete expected source image, records potential
+CALL returns from every independently decoded original head, writes the guards,
+admits the full page closure and synchronizes while the sole task is held.
+A prior CALL return into a never-executed page needs a certified original head
+preserved by that closure. Execution history alone is never a return proof.
+
+For a native instruction, all guards within its complete original byte interval
+are temporarily restored together. After its authenticated completion, the exact
+guarded interval is rearmed and synchronized before any further original
+execution. A failure closes the owner; partial restoration is never resumable.
+Scripted selected completion leaves the guards in place. These operations keep
+default-policy RDPID and its RDSEED suffix distinct and preserve the immediate
+value of a collateral MOV containing a selected opcode. They require the same
+immutable/private/no-code-as-data and clear-TF/RF contract as the strict backend.
+They do not extend A1 publication or dynamic lifecycle support.
 
 ## Independent evidence
 
@@ -99,6 +128,6 @@ to fail. A host capability fault is explicitly tested as an original-PC fault,
 never counted as a successful native instruction qualification.
 
 This is a closed-world single-task reference increment. It does not establish
-general alias returns, all prefix/overlap decodes, full-class A1 publication,
+general alias returns, unrestricted collateral/prefix/overlap decodes, full-class A1 publication,
 multi-task selected providers, application signal delivery, lifecycle/JIT
 support, or a cross-vendor/CET release envelope. Those remain separate work.
