@@ -1,5 +1,5 @@
 //! One original mapping invocation, followed by a held source-set transaction.
-use super::super::completion::{CompletionEvidence, CompletionRecord};
+use super::super::completion::{CompletionEvidence, CompletionRecord, same_state};
 use super::*;
 
 impl AdmissionOwner {
@@ -314,7 +314,13 @@ impl AdmissionOwner {
         })?;
         let journal_bytes = prepared.retained_bytes();
         let record_bytes = size_of::<MappingRecord>()
-            .checked_add(record.archive.retained_bytes())
+            .checked_add(
+                record
+                    .archive
+                    .retained_bytes()
+                    .checked_sub(size_of::<MappingCaptureArchive>())
+                    .ok_or_else(|| refused("mapping archive retained header differs"))?,
+            )
             .and_then(|value| {
                 value.checked_add(
                     if matches!(record.operation, MappingOperation::Create { .. }) {
@@ -485,9 +491,18 @@ impl AdmissionOwner {
         if current != *revoked.closed_stop() {
             return Err(refused("mapping quarantine lost its exact native stop"));
         }
-        let native_bytes = proof_bytes
-            .checked_add(revoked.retained_bytes()?)
-            .and_then(|value| value.checked_add(size_of::<PendingMapping>()))
+        // PendingMapping embeds the revocation, which embeds the proof. Moving
+        // these values does not allocate another copy of their inline headers.
+        let proof_payload = proof_bytes
+            .checked_sub(size_of::<VerifiedMappingExit>())
+            .ok_or_else(|| refused("mapping proof retained header differs"))?;
+        let revocation_payload = revoked
+            .retained_bytes()?
+            .checked_sub(size_of::<routes::MappingRevocation>())
+            .ok_or_else(|| refused("mapping quarantine retained header differs"))?;
+        let native_bytes = size_of::<PendingMapping>()
+            .checked_add(proof_payload)
+            .and_then(|value| value.checked_add(revocation_payload))
             .and_then(|value| value.checked_add(state.xstate.len()))
             .ok_or_else(|| refused("mapping native retained size overflows"))?;
         if native_bytes > native_bound {

@@ -297,7 +297,7 @@ fn no_capture_retains_whole_source_storage_and_old_plan_bound_for_same_or_subset
         let mut images = original.projected_images(1, &projections).unwrap();
         let mut maps = original.original_executables.clone();
         if !keep_target {
-            images.retain(|image| image.snapshot.range().start == BASE);
+            images.retain(|image| image.snapshot.range().start() == BASE);
             maps.retain(|mapping| mapping.start == BASE);
         }
         let staged = original.stage_replacement(images, maps, until()).unwrap();

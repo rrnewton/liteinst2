@@ -229,9 +229,8 @@ pub(in super::super) fn mapping_request_storage_bytes(
         bytes = total([
             bytes,
             size_of::<DynamicSourceImage>(),
-            2 * size_of::<usize>(),
             if include_source_payload {
-                image.bytes().len()
+                add(image.bytes().len(), 2 * size_of::<usize>())?
             } else {
                 0
             },

@@ -1213,7 +1213,7 @@ fn validate_cpu_trace(raw: &[u8; 128]) -> Result<(), GateError> {
     Ok(())
 }
 
-fn same_state(observed: &ObservedStop, state: &TaskStateSnapshot) -> bool {
+pub(super) fn same_state(observed: &ObservedStop, state: &TaskStateSnapshot) -> bool {
     observed.registers == state.registers
         && observed.xstate == state.xstate
         && observed.signal_mask == state.mask

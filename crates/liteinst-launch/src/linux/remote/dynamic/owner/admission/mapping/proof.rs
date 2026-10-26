@@ -1,6 +1,7 @@
 //! Native readbacks behind the mapping window's consuming authority.
 use super::super::domain::ReplacementIdentity;
 use super::*;
+use crate::publication::PublicationStop;
 
 /// Created only after the exact original syscall and its neutral return bridge
 /// have completed, with a retained complete ENTRY/EXIT and map difference.
