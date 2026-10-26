@@ -346,9 +346,6 @@ impl PreparedInitialSources {
     pub(super) fn until(&self) -> Instant {
         self.storage.until()
     }
-    pub(super) fn original_binding(&self) -> Option<&OriginalBinding> {
-        self.storage.original.as_ref()
-    }
     pub(super) fn original_complete(&self) -> bool {
         self.storage.original_complete
     }

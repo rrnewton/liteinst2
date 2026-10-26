@@ -6,10 +6,12 @@ use super::super::super::exec_journal::{
 use super::super::super::kernel_journal::{KernelAttemptId, KernelStopIdentity};
 use super::super::mapping::maps::{MapEntry, ParsedMaps};
 use super::*;
+use crate::linux::EntryEvidence;
+#[cfg(test)]
+use crate::linux::FirstImage;
 use crate::linux::remote::dynamic::admission::{
     DynamicExecProfile, DynamicSourceCaptureId, DynamicSourceImage, DynamicSourceRequestId,
 };
-use crate::linux::{EntryEvidence, FirstImage};
 use std::alloc::Layout;
 use std::sync::Arc;
 

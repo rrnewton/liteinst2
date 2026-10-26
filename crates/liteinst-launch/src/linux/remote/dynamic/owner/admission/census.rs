@@ -18,7 +18,7 @@ mod panic_custody;
 mod runtime;
 pub(super) use runtime::{InitialRuntimeReservation, initial_runtime_origin_charge};
 mod ordinary;
-pub(super) use ordinary::{OrdinaryCensusResult, PreparedOrdinaryCensus, ordinary_census_charge};
+pub(super) use ordinary::{PreparedOrdinaryCensus, ordinary_census_charge};
 mod selected_runtime;
 pub(super) use selected_runtime::PreparedRuntimeSelected;
 mod signal;

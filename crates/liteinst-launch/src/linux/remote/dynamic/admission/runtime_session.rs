@@ -41,18 +41,18 @@ pub struct DynamicRuntimeOptions {
 /// Private wire identity. This is separate from a legacy installed-plan token;
 /// the owner also retains and authenticates its full consume-once permit.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(super) struct RuntimePendingToken {
-    pub(super) stop: DynamicStop,
-    pub(super) task: DynamicTask,
-    pub(super) generation: Generation,
-    pub(super) mapping: MappingId,
-    pub(super) window: usize,
-    pub(super) pc: u64,
-    pub(super) invocation: u64,
+pub(in crate::linux::remote::dynamic) struct RuntimePendingToken {
+    pub(in crate::linux::remote::dynamic) stop: DynamicStop,
+    pub(in crate::linux::remote::dynamic) task: DynamicTask,
+    pub(in crate::linux::remote::dynamic) generation: Generation,
+    pub(in crate::linux::remote::dynamic) mapping: MappingId,
+    pub(in crate::linux::remote::dynamic) window: usize,
+    pub(in crate::linux::remote::dynamic) pc: u64,
+    pub(in crate::linux::remote::dynamic) invocation: u64,
 }
-pub(super) struct RuntimeProviderInput {
-    pub(super) token: RuntimePendingToken,
-    pub(super) input: SelectedInput,
+pub(in crate::linux::remote::dynamic) struct RuntimeProviderInput {
+    pub(in crate::linux::remote::dynamic) token: RuntimePendingToken,
+    pub(in crate::linux::remote::dynamic) input: SelectedInput,
 }
 
 impl<P: InstructionProvider> DynamicAdmissionSession<P> {
