@@ -58,7 +58,7 @@ SOURCE_PINS = {'evaluation/e9-common-app/BUILD.md': '0fc9c7f1a7cd0ec0dbf4a4be15a
  'tests/support/elf_exec_driver.rs': 'e94b0768b83873481dfd723c01fa2c376de0c8272939fbd523bd6a7ba6130feb',
  'tests/support/elf_exec_oracle.rs': '22d63acfd7ef6576e588791623cdc82231248c9c345305144319a6dec94ccedb',
  'tests/support/elf_exec_provider.rs': '9b5562034fc6bbdc32f889ab64df7f414e96ee5d9a99c06e39bf6728f128e730',
- 'tools/elf-rewrite/examples/common_sites.rs': '329b5a0e878faa076b164bcaf358eeacc1647357df049fb1634952d64834c668',
+ 'tools/elf-rewrite/examples/common_sites.rs': '838c795e3a107bee340a0d29c349b1f6f3c05123b3c6e4d14d5a850973ae8831',
  'tools/unwind-oracle/bounded_command.py': 'c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44'}
 HEADS = [
     (4200512, '488914f7', 'li2_array_store', 'Next', None, 0),

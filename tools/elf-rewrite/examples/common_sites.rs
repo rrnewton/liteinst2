@@ -544,7 +544,7 @@ fn graph(f: &Function, entries: &BTreeSet<u64>) -> Graph {
 fn depths(f: &Function, g: &Graph) -> Result<BTreeMap<u64, i64>> {
     check(g.errors.is_empty(), "invalid function CFG")?;
     let instructions: BTreeMap<_, _> = f.instructions.iter().map(|i| (i.ip(), i)).collect();
-    let mut result = BTreeMap::from([(f.owner.pc, 0)]);
+    let mut result: BTreeMap<u64, i64> = BTreeMap::from([(f.owner.pc, 0)]);
     let mut queue = VecDeque::from([f.owner.pc]);
     while let Some(pc) = queue.pop_front() {
         let i = instructions[&pc];
