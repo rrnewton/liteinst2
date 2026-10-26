@@ -47,9 +47,44 @@ fn observed_copy(observed: &ObservedStop, record: &RuntimeKernelStateRecord) {
         observed.xstate.as_slice()
     );
     assert_eq!(u64::from_ne_bytes(record.mask), observed.signal_mask);
-    let registers = RegisterSnapshot::from(unsafe {
-        std::ptr::read_unaligned(record.registers.as_ptr().cast::<libc::user_regs_struct>())
+    // Independently decode the complete x86-64 GETREGS UAPI order, without
+    // pointer casts or the production register conversion.
+    let words: [u64; 27] = std::array::from_fn(|index| {
+        u64::from_ne_bytes(
+            record.registers[index * 8..index * 8 + 8]
+                .try_into()
+                .expect("fixed register word"),
+        )
     });
+    let registers = RegisterSnapshot {
+        r15: words[0],
+        r14: words[1],
+        r13: words[2],
+        r12: words[3],
+        rbp: words[4],
+        rbx: words[5],
+        r11: words[6],
+        r10: words[7],
+        r9: words[8],
+        r8: words[9],
+        rax: words[10],
+        rcx: words[11],
+        rdx: words[12],
+        rsi: words[13],
+        rdi: words[14],
+        orig_rax: words[15],
+        rip: words[16],
+        cs: words[17],
+        eflags: words[18],
+        rsp: words[19],
+        ss: words[20],
+        fs_base: words[21],
+        gs_base: words[22],
+        ds: words[23],
+        es: words[24],
+        fs: words[25],
+        gs: words[26],
+    };
     assert_eq!(registers, observed.registers);
 }
 fn validated(

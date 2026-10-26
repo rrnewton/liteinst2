@@ -3,6 +3,7 @@
 use super::super::super::bootstrap::Request;
 use super::super::super::kernel_journal::{KernelAttemptId, KernelStopIdentity};
 use super::super::super::trusted::{AdmissionPhase, TaskStateSnapshot};
+use super::super::exact_storage::{self, AllocationError};
 use super::super::runtime::kernel::{
     RuntimeKernelBinding, RuntimeKernelIdentity, RuntimeKernelOperation,
 };
@@ -15,7 +16,6 @@ use super::*;
 use crate::linux::remote::dynamic::admission::RuntimePendingToken;
 use crate::{DynamicEvent, DynamicEventKind};
 use liteinst2::contracts::CodeIdentity;
-use std::alloc::{Layout, alloc_zeroed};
 use std::mem::size_of;
 use std::time::Instant;
 
@@ -236,34 +236,17 @@ impl PreparedRuntimeKernelCensus {
     }
 }
 
-fn buffer() -> Result<Vec<u8>, CensusError> {
-    let layout = Layout::array::<u8>(MAX_XSTATE_BYTES).map_err(|_| CensusError::Capacity)?;
-    // The global allocation has exactly the element alignment and capacity
-    // used by Vec's eventual Drop. Initialized capacity is never exposed as
-    // observed length; copy_observed/copy_state fill only their real prefix.
-    let pointer = unsafe { alloc_zeroed(layout) };
-    if pointer.is_null() {
-        return Err(CensusError::Allocation);
+fn allocation_error(error: AllocationError) -> CensusError {
+    match error {
+        AllocationError::Capacity => CensusError::Capacity,
+        AllocationError::Allocation => CensusError::Allocation,
     }
-    // SAFETY: nonzero checked u8 layout, matching allocator/alignment, len 0,
-    // exact capacity. This sole owning Vec releases the same layout on Drop.
-    Ok(unsafe { Vec::from_raw_parts(pointer, 0, MAX_XSTATE_BYTES) })
+}
+fn buffer() -> Result<Vec<u8>, CensusError> {
+    exact_storage::empty_bytes(MAX_XSTATE_BYTES).map_err(allocation_error)
 }
 fn evidence_box(value: KernelEvidence) -> Result<Box<[KernelEvidence]>, CensusError> {
-    let layout = Layout::array::<KernelEvidence>(1).map_err(|_| CensusError::Capacity)?;
-    let pointer = unsafe { alloc_zeroed(layout) }.cast::<KernelEvidence>();
-    if pointer.is_null() {
-        return Err(CensusError::Allocation);
-    }
-    // SAFETY: checked nonzero one-element layout. Initialize the only element
-    // before creating its owning slice; Box<[T]> drops/deallocates exactly this
-    // length/alignment. There is no fallible operation between write/transfer.
-    unsafe {
-        pointer.write(value);
-        Ok(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
-            pointer, 1,
-        )))
-    }
+    exact_storage::one(value).map_err(allocation_error)
 }
 fn copy_observed(value: &ObservedStop, mut bytes: Vec<u8>) -> ObservedStop {
     bytes.extend_from_slice(&value.xstate);

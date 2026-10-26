@@ -198,4 +198,25 @@ fn runtime_kernel_exact_allocation_owns_only_initialized_elements() {
     assert!(exact_vec::<u64>(usize::MAX).is_err());
     assert!(exact_vec::<()>(1).is_err());
     assert_eq!(exact_vec::<u8>(0).unwrap().capacity(), 0);
+
+    // Exercise the census's safe allocation boundary without weakening any
+    // existing owner-vector assertions above.
+    use super::super::super::exact_storage::{self, AllocationError};
+    let mut bytes = exact_storage::empty_bytes(MAX_XSTATE).unwrap();
+    assert_eq!((bytes.len(), bytes.capacity()), (0, MAX_XSTATE));
+    bytes.extend_from_slice(&[1, 2, 3]);
+    assert_eq!(bytes, [1, 2, 3]);
+    assert_eq!(bytes.capacity(), MAX_XSTATE);
+    assert_eq!(
+        exact_storage::empty_bytes(usize::MAX),
+        Err(AllocationError::Capacity)
+    );
+    assert_eq!(exact_storage::empty_bytes(0).unwrap().capacity(), 0);
+    assert_eq!(exact_storage::one(()), Err(AllocationError::Capacity));
+    let drops = Arc::new(AtomicUsize::new(0));
+    let value = exact_storage::one(Count(Arc::clone(&drops))).unwrap();
+    assert_eq!(value.len(), 1);
+    assert_eq!(drops.load(Ordering::SeqCst), 0);
+    drop(value);
+    assert_eq!(drops.load(Ordering::SeqCst), 1);
 }

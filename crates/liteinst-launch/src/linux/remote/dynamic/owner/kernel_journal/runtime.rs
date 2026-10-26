@@ -30,7 +30,7 @@ const FACT_COUNT: usize = 32;
 // Return: waits9 + copies6 + releases4 + opened/entry/exit/closed4 +
 // native-return1 + census1 =25. Terminal: waits6 + copies3 + releases6 +
 // opened/entry/pre-exit3 + terminal1 + census1 =20. First unexpected adds1.
-const _: () = assert!(25 + 1 <= FACT_COUNT && 20 + 1 <= FACT_COUNT);
+const _: () = assert!(25 < FACT_COUNT && 20 < FACT_COUNT);
 
 /// Exact result of one request. None at a containing field means unattempted.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

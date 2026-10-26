@@ -17,6 +17,7 @@ use crate::selected::{ProviderDecision, SelectedInput};
 use std::collections::VecDeque;
 
 mod census;
+mod exact_storage;
 pub(in crate::linux::remote::dynamic::owner) mod runtime;
 mod runtime_capture;
 mod runtime_instruction;

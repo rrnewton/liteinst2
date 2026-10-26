@@ -2,6 +2,7 @@
 //! This adapter cannot mint an actual-PC RuntimeWindowProof or an owned stop.
 use super::super::super::source_identity::{RuntimeKernelReadCheckpoint, RuntimeKernelSourceRead};
 use super::*;
+use crate::DynamicEvent;
 use crate::linux::remote::dynamic::owner::trusted::TaskStateSnapshot;
 
 pub(in crate::linux::remote::dynamic::owner::admission) struct KernelCatalogCheckpoint<'a> {
