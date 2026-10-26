@@ -62,21 +62,29 @@ Its source inventory is separate from a completed qualification receipt.
 ## Bounded runtime source inventory
 
 The [actual-PC runtime profile](actual-pc-runtime.md) defines the mechanism and
-its remaining limits. The current increment adds 136 launcher unit tests: 120 pure controls,
-six native startup controls, five ordinary-instruction native controls and five
-selected-instruction native controls. Expected totals are 491 launcher units,
-1867 workspace tests in the same 89 harnesses (1863 possible passes and four
-unchanged ignores), and 783 serial launch tests in the same 27 harnesses.
+its remaining limits. The current inventory adds 138 launcher unit tests: 120 pure controls,
+six native startup controls, six ordinary-instruction native controls and six
+selected-instruction native controls. The two cross-page controls are a separate
+addition to the previous 136-test runtime inventory. Expected totals are 493
+launcher units, 1869 workspace tests in the same 89 harnesses (1865 possible
+passes and four unchanged ignores), and 785 serial launch tests in the same 27
+harnesses.
 The recorder expects 265 Python controls. These are source-derived expectations;
 this inventory makes no execution or qualification claim.
 Three of the pure controls check the isolated child's exact result, completion
-receipt and parent-bound role. The 16 runtime native identities are unchanged;
-child execution does not add another outer case or instruction sample.
+receipt and parent-bound role. The original 16 runtime native identities remain
+unchanged and the two cross-page identities append separately. Child execution
+does not add another outer case or instruction sample.
 
 The serial `native_validation_fixtures` catalog retains its original 56 rows in
-order and adds exactly 16 names under the separate `b3_runtime_startup`,
+order and adds exactly 18 names under the separate `b3_runtime_startup`,
 `b3_runtime_ordinary` and `b3_runtime_selected` cohorts. The parser requires each
 full Rust identity in the launcher unit harness and its explicit terminal `ok`.
+The previous 72 names remain an exact ordered prefix; the ordinary and selected
+`cross_page` child identities append as the final two rows. Both new controls
+use one complete 8192-byte private source VMA. Ordinary MOV crosses the page
+boundary through a real two-page fetch; selected CPUID crosses the source
+boundary with a scripted completion while both original pages remain NX.
 Unknown names in any of the three closed native modules refuse. The workspace
 command independently requires the complete outer unit count; its saved output
 can be audited for the same names. Neither command may substitute a partial or

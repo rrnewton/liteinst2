@@ -102,6 +102,54 @@ impl Fixture {
         drop(file);
         Self { directory, path }
     }
+    pub(super) fn code_at_entry(entry_offset: usize, code: &[u8]) -> Self {
+        let _guard = crate::TEST_FILE_FORK.lock().unwrap();
+        assert!(matches!(entry_offset, 4093 | 4095));
+        assert!(
+            entry_offset
+                .checked_add(code.len())
+                .is_some_and(|end| end <= 8192)
+        );
+        let directory = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("test-tmp")
+            .join(format!(
+                "dynamic-private-{}-{}",
+                std::process::id(),
+                FIXTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+            ));
+        std::fs::create_dir_all(directory.parent().unwrap()).unwrap();
+        std::fs::create_dir(&directory).unwrap();
+        std::fs::set_permissions(&directory, std::fs::Permissions::from_mode(0o700)).unwrap();
+        let path = directory.join("fixture");
+        let mut bytes = vec![0_u8; 8192];
+        bytes[..7].copy_from_slice(b"\x7fELF\x02\x01\x01");
+        for (offset, value) in [(16, 2_u16), (18, 62), (52, 64), (54, 56), (56, 1)] {
+            bytes[offset..offset + 2].copy_from_slice(&value.to_le_bytes());
+        }
+        for (offset, value) in [(20, 1_u32), (64, 1), (68, 5)] {
+            bytes[offset..offset + 4].copy_from_slice(&value.to_le_bytes());
+        }
+        for (offset, value) in [
+            (24, 0x400000_u64 + entry_offset as u64),
+            (32, 64),
+            (80, 0x400000),
+            (96, 8192),
+            (104, 8192),
+            (112, 4096),
+        ] {
+            bytes[offset..offset + 8].copy_from_slice(&value.to_le_bytes());
+        }
+        bytes[entry_offset..entry_offset + code.len()].copy_from_slice(code);
+        let mut file = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .mode(0o500)
+            .open(&path)
+            .unwrap();
+        file.write_all(&bytes).unwrap();
+        drop(file);
+        Self { directory, path }
+    }
 }
 
 impl Drop for Fixture {

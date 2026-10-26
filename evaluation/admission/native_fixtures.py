@@ -79,8 +79,18 @@ RUNTIME_COHORTS = (('b3_runtime_startup',
    'runtime_selected_syscall_refuses_without_ordinary_fallback',
    'runtime_ordinary_memory_and_stack_refuse_before_effects',
    'runtime_actual_dr7_refuses_before_original_release')))
+# Separate child identities append after the established 16 runtime rows.
+# The original three native roots already reject every unlisted child name.
+CROSS_PAGE_COHORTS = (
+    ("b3_runtime_ordinary",
+     "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::cross_page::",
+     ("runtime_ordinary_cross_page_move_preserves_exact_two_page_fetch",)),
+    ("b3_runtime_selected",
+     "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::cross_page::",
+     ("runtime_selected_cross_page_cpuid_preserves_nx_and_successor",)),
+)
 RUNTIME_ROWS = tuple({"cohort": cohort, "harness": UNIT, "test": prefix + name}
-                     for cohort, prefix, names in RUNTIME_COHORTS for name in names)
+                     for cohort, prefix, names in RUNTIME_COHORTS + CROSS_PAGE_COHORTS for name in names)
 RUNTIME_IDENTITIES = {row["test"]: row for row in RUNTIME_ROWS}
 RUNTIME_NATIVE_ROOTS = tuple(prefix.removesuffix("::") for _, prefix, _ in RUNTIME_COHORTS)
 

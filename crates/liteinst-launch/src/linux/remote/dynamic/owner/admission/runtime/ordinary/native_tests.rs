@@ -6,6 +6,7 @@ use super::super::native_tests::{bytes as memory, exact_nx_maps, maps, ready, ro
 use super::*;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
+pub(in crate::linux::remote::dynamic::owner::admission::runtime) mod cross_page;
 mod raw;
 pub(in crate::linux::remote::dynamic::owner::admission::runtime) mod support;
 use support::{BASE, ENTRY, after_cleanup, begin, check, one, retained, with_owner};

@@ -33,6 +33,7 @@ const SCRIPT: SelectedResult = SelectedResult::Cpuid {
     edx: 0xabcd_1234,
 };
 static SESSION: AtomicU64 = AtomicU64::new(840_000);
+mod cross_page;
 
 fn live(pin: &OwnedFd) {
     let mut event = libc::pollfd {

@@ -6085,7 +6085,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 491
+        "tests": 493
       }
     },
     "workspace_tests": {
@@ -6427,7 +6427,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 491
+        "tests": 493
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -7309,6 +7309,16 @@
       "cohort": "b3_runtime_selected",
       "harness": "unit/liteinst_launch/lib",
       "test": "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_actual_dr7_refuses_before_original_release"
+    },
+    {
+      "cohort": "b3_runtime_ordinary",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::cross_page::runtime_ordinary_cross_page_move_preserves_exact_two_page_fetch"
+    },
+    {
+      "cohort": "b3_runtime_selected",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::cross_page::runtime_selected_cross_page_cpuid_preserves_nx_and_successor"
     }
   ],
   "recorder_tests": 265,

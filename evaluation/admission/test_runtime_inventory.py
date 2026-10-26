@@ -10,14 +10,17 @@ import unittest
 import native_fixtures as fixtures
 from parsing import InvalidEvidence, require
 
-UNIT_INCREMENT = 136
+UNIT_INCREMENT = 138
 PURE_INCREMENT = 120
-NATIVE_INCREMENT = 16
+NATIVE_INCREMENT = 18
 RECORDER_INCREMENT = 11
 OLD_CORPUS_SHA256 = "82bae1b8166db1ab4ec6de9ed117c1d8478d294cffa7d6d61793a20d53f40d39"
 OLD_NATIVE56_SHA256 = "faa3331583cc37593b7562ae294e30ea15c72a4de95337fed9aa9a5d851b71b9"
 PRE_ISOLATION_CORPUS_SHA256 = "df1b2d8526e2e49759bbdd08b32ebf596458a62bcb32011e22c86f3bbbc38505"
 OLD_RUST133_SHA256 = "f713c1f4643cf4b346f9c1cadbf2dbbbe9c0c04c0700e66d2eb3e92410358a7e"
+PRE_CROSS_PAGE_CORPUS_SHA256 = "b8360b1fe60660fe0ea1295e5ccf98770301ee030b037947ffcb54a0a9d30ca6"
+OLD_NATIVE72_SHA256 = "47afc6dd6df9cff1b2a5a7a1168bddf1a86795f68ebd78388402e1f3cc49cc31"
+OLD_RUST136_SHA256 = "703a4f280f2ca5697610111e11a0c713508b43bdf67c18b21ec6ea5f14ef7ef4"
 RUNTIME_ROWS = ({'cohort': 'b3_runtime_startup',
   'harness': 'unit/liteinst_launch/lib',
   'test': 'linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_startup_preserves_real_boundary_state_sources_and_nx'},
@@ -65,7 +68,9 @@ RUNTIME_ROWS = ({'cohort': 'b3_runtime_startup',
   'test': 'linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_ordinary_memory_and_stack_refuse_before_effects'},
  {'cohort': 'b3_runtime_selected',
   'harness': 'unit/liteinst_launch/lib',
-  'test': 'linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_actual_dr7_refuses_before_original_release'})
+  'test': 'linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_actual_dr7_refuses_before_original_release'},
+ {'cohort': 'b3_runtime_ordinary', 'harness': 'unit/liteinst_launch/lib', 'test': 'linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::cross_page::runtime_ordinary_cross_page_move_preserves_exact_two_page_fetch'},
+ {'cohort': 'b3_runtime_selected', 'harness': 'unit/liteinst_launch/lib', 'test': 'linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::cross_page::runtime_selected_cross_page_cpuid_preserves_nx_and_successor'})
 RUST_METHODS = {'crates/liteinst-launch/src/lifecycle/initial_source_tests.rs': ('initial_source_singleton_keeps_exact_registry_and_candidate',
                                                                   'initial_source_singleton_refuses_foreign_and_numeric_bindings_without_mutation',
                                                                   'initial_source_singleton_rejects_live_model_changes_and_retains_diagnostics'),
@@ -199,7 +204,9 @@ RUST_METHODS = {'crates/liteinst-launch/src/lifecycle/initial_source_tests.rs': 
                                                                                                              'runtime_selected_syscall_refuses_without_ordinary_fallback',
                                                                                                              'runtime_ordinary_memory_and_stack_refuse_before_effects',
                                                                                                              'runtime_actual_dr7_refuses_before_original_release'),
- 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/isolation/tests.rs': ('runtime_isolation_result_requires_one_exact_successful_test', 'runtime_isolation_receipt_requires_complete_exact_body_identity', 'runtime_isolation_role_requires_exact_test_and_parent_binding')}
+ 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/isolation/tests.rs': ('runtime_isolation_result_requires_one_exact_successful_test', 'runtime_isolation_receipt_requires_complete_exact_body_identity', 'runtime_isolation_role_requires_exact_test_and_parent_binding'),
+ 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/cross_page.rs': ('runtime_ordinary_cross_page_move_preserves_exact_two_page_fetch',),
+ 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/selected/native/native_tests/cross_page.rs': ('runtime_selected_cross_page_cpuid_preserves_nx_and_successor',)}
 
 
 def digest(value):
@@ -247,6 +254,8 @@ class RuntimeInventoryTests(unittest.TestCase):
             "runtime/native_tests.rs": "linux::remote::dynamic::owner::admission::runtime::native_tests::",
             "runtime/ordinary/native_tests.rs": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::",
             "runtime/selected/native/native_tests.rs": "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::",
+            "runtime/ordinary/native_tests/cross_page.rs": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::cross_page::",
+            "runtime/selected/native/native_tests/cross_page.rs": "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::cross_page::",
         }
         for path, expected in RUST_METHODS.items():
             text = (root / path).read_text()
@@ -263,7 +272,11 @@ class RuntimeInventoryTests(unittest.TestCase):
         self.assertEqual(total - len(native), PURE_INCREMENT)
         self.assertEqual(set(native), {row["test"] for row in RUNTIME_ROWS})
         self.assertEqual(fixtures.RUNTIME_ROWS, RUNTIME_ROWS)
-        original_methods = {path: names for path, names in RUST_METHODS.items()
+        pre_cross_page_methods = {path: names for path, names in RUST_METHODS.items()
+                                  if not path.endswith("/native_tests/cross_page.rs")}
+        self.assertEqual(sum(map(len, pre_cross_page_methods.values())), 136)
+        self.assertEqual(digest(pre_cross_page_methods), OLD_RUST136_SHA256)
+        original_methods = {path: names for path, names in pre_cross_page_methods.items()
                             if not path.endswith("/runtime/isolation/tests.rs")}
         self.assertEqual(sum(map(len, original_methods.values())), 133)
         self.assertEqual(digest(original_methods), OLD_RUST133_SHA256)
@@ -274,7 +287,13 @@ class RuntimeInventoryTests(unittest.TestCase):
         previous = before_runtime(declared)
         self.assertEqual(declared, original)
         self.assertEqual(digest(previous), OLD_CORPUS_SHA256)
-        pre_isolation = copy.deepcopy(declared)
+        self.assertEqual(digest(declared["native_validation_fixtures"][:72]), OLD_NATIVE72_SHA256)
+        pre_cross_page = copy.deepcopy(declared)
+        pre_cross_page["native_validation_fixtures"] = pre_cross_page["native_validation_fixtures"][:72]
+        for cohort in pre_cross_page["harness_test_counts"].values():
+            cohort[fixtures.UNIT] = {"tests": 491, "ignored": 0}
+        self.assertEqual(digest(pre_cross_page), PRE_CROSS_PAGE_CORPUS_SHA256)
+        pre_isolation = copy.deepcopy(pre_cross_page)
         for cohort in pre_isolation["harness_test_counts"].values():
             cohort[fixtures.UNIT] = {"tests": 488, "ignored": 0}
         self.assertEqual(digest(pre_isolation), PRE_ISOLATION_CORPUS_SHA256)
@@ -283,7 +302,7 @@ class RuntimeInventoryTests(unittest.TestCase):
         for field, count in (("native_cases", 50), ("dynamic_admission_fixtures", 15), ("dynamic_matrix_cases", 388)):
             self.assertEqual(declared[field], previous[field])
             self.assertEqual(len(declared[field]), count)
-        for command, harnesses, tests, ignored in (("workspace_tests", 89, 1867, 4), ("serial_launch", 27, 783, 0)):
+        for command, harnesses, tests, ignored in (("workspace_tests", 89, 1869, 4), ("serial_launch", 27, 785, 0)):
             actual = declared["harness_test_counts"][command]
             self.assertEqual(len(actual), harnesses)
             self.assertEqual(sum(row["tests"] for row in actual.values()), tests)
@@ -292,11 +311,11 @@ class RuntimeInventoryTests(unittest.TestCase):
                 if name != fixtures.UNIT:
                     self.assertEqual(actual[name], row)
         self.assertEqual(declared["recorder_tests"], 265)
-        self.assertEqual(len(fixtures.catalog(declared["native_validation_fixtures"])), 72)
+        self.assertEqual(len(fixtures.catalog(declared["native_validation_fixtures"])), 74)
 
     def test_projection_refuses_missing_relabelled_unknown_and_changed_history(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
-        for index in range(16):
+        for index in range(18):
             for change in ("missing", "duplicate", "cohort", "harness", "name", "extra"):
                 changed = copy.deepcopy(declared)
                 rows = changed["native_validation_fixtures"]

@@ -1,4 +1,4 @@
-//! Test-process isolation for the sixteen actual runtime controls. This removes
+//! Test-process isolation for the eighteen actual runtime controls. This removes
 //! unrelated libtest cases from the tracer mm, not the real public API threads.
 //! A child result and a separately owned post-body receipt are both mandatory.
 use std::fs::File;
@@ -22,7 +22,7 @@ const PROCESS_TIMEOUT: Duration = Duration::from_secs(120);
 const CLEANUP_TIMEOUT: Duration = Duration::from_secs(3);
 static NONCE: AtomicU64 = AtomicU64::new(1);
 
-const CASES: [&str; 16] = [
+const CASES: [&str; 18] = [
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_expired_original_deadline_keeps_pristine_exec",
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec",
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_owner_refuses_raw_bypass_and_repeated_start",
@@ -39,6 +39,8 @@ const CASES: [&str; 16] = [
     "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_cpu_and_ordinary_keep_exact_control_lineage",
     "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_native_refuses_without_ordinary_fallback",
     "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_syscall_refuses_without_ordinary_fallback",
+    "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::cross_page::runtime_ordinary_cross_page_move_preserves_exact_two_page_fetch",
+    "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::cross_page::runtime_selected_cross_page_cpuid_preserves_nx_and_successor",
 ];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
