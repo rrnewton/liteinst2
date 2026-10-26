@@ -1002,16 +1002,17 @@ impl Candidate {
                     assert_eq!(target, i128::from(SUBJECT + 3));
                     assert_eq!(origin as usize, offset + width);
                     let b = image.restored[&SUBJECT];
-                    let instruction = iced_x86::Decoder::with_ip(
-                        64,
-                        &image.bytes[(b - image.address) as usize..],
-                        b,
-                        iced_x86::DecoderOptions::NONE,
-                    )
-                    .decode();
-                    assert_eq!(instruction.mnemonic(), iced_x86::Mnemonic::Jne);
-                    assert_eq!(instruction.near_branch_target(), SUBJECT + 3);
-                    assert_eq!(instruction.next_ip(), image.address + origin);
+                    // This finite fixture permits exactly JNE rel8 or rel32.
+                    // Check its opcode, displacement owner, instruction end and
+                    // signed target without adding a decoder dependency to every
+                    // crate that includes the shared native oracle module.
+                    let branch_offset = usize::try_from(b - image.address).unwrap();
+                    let opcode: &[u8] = if width == 1 { &[0x75] } else { &[0x0f, 0x85] };
+                    assert_eq!(offset, branch_offset + opcode.len());
+                    assert_eq!(&image.bytes[branch_offset..offset], opcode);
+                    let next = b + opcode.len() as u64 + width as u64;
+                    assert_eq!(next, image.address + origin);
+                    assert_eq!(i128::from(next) + delta, i128::from(SUBJECT + 3));
                 }
             }
         }
