@@ -54,9 +54,14 @@ replies cannot renew it. The default 64 MiB source/evidence ceiling and all
 other lifetime limits remain unchanged. Refusal, retirement and unused storage
 do not refund a reservation.
 
-The native retained bound is `H_native + 11 * MAX_XSTATE + 12 * 65536`, where
-`H_native` is the compiled prepared-attempt header. It includes all nine raw
-state slots, before/work state, maps and bounded membership storage. The census
+The native retained bound is
+`H_native + 11 * MAX_XSTATE + 12 * 65536 + 11 * size_of::<ControlProfile>()`,
+where `H_native` is the compiled prepared-attempt header. It includes all nine raw
+state slots, before/work state, maps and bounded membership storage. The eleven
+distinct control profiles occupy an exact-capacity heap allocation, initialized
+one at a time after reservation; their large CET arrays are not copied inside
+the attempt's by-value constructor. Their full retained bytes remain charged.
+The census
 separately prepares 19 MAX buffers for a return or eight for termination. The
 persistent public journal separately owns eight MAX state copies. Root source
 checks, response buffers, full replacement indices and named temporary-query

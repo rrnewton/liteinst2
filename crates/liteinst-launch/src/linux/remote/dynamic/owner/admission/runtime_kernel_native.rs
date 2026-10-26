@@ -23,6 +23,7 @@ const MAP_BYTES: usize = 65536;
 const WAITS: usize = 9;
 const STATES: usize = 11;
 const MAPS: usize = 11;
+const PROFILES: usize = 11;
 const EFFECTS: usize = 37;
 const BEFORE: usize = 0;
 const WORK: usize = 10;
@@ -322,7 +323,10 @@ impl RuntimeKernelShape {
     pub(super) fn reservation_bytes() -> Result<usize, LaunchError> {
         add(
             size_of::<PreparedRuntimeKernel>(),
-            add(mul(STATES, MAX_XSTATE)?, mul(MAPS + 1, MAP_BYTES)?)?,
+            add(
+                add(mul(STATES, MAX_XSTATE)?, mul(MAPS + 1, MAP_BYTES)?)?,
+                mul(PROFILES, size_of::<ControlProfile>())?,
+            )?,
         )
     }
     /// Fixed named source-evidence values nested in this producer. This is
@@ -352,7 +356,10 @@ pub(super) struct PreparedRuntimeKernel {
     states: [StateRead; STATES],
     maps: [MapsRead; MAPS],
     membership: Option<Box<[u8; MAP_BYTES]>>,
-    profiles: [ControlProfile; 11],
+    // Distinct retained observations, allocated after the complete reservation.
+    // Keeping the large CET arrays out of by-value constructor temporaries also
+    // bounds the inline attempt header on ordinary worker stacks.
+    profiles: Vec<ControlProfile>,
     namespaces: [NamespaceObservation; 5],
     raw: [RawWait; WAITS],
     effects: [Option<RuntimeKernelEffectRecord>; EFFECTS],
@@ -410,7 +417,7 @@ impl PreparedRuntimeKernel {
             states: std::array::from_fn(|_| StateRead::default()),
             maps: std::array::from_fn(|_| MapsRead::default()),
             membership: None,
-            profiles: std::array::from_fn(|_| ControlProfile::default()),
+            profiles: Vec::new(),
             namespaces: std::array::from_fn(|_| NamespaceObservation::default()),
             raw: std::array::from_fn(|_| RawWait::default()),
             effects: [None; EFFECTS],
@@ -453,6 +460,28 @@ impl PreparedRuntimeKernel {
                 ));
             }
             self.membership = Some(fixed_buffer()?);
+            if self.profiles.capacity() != 0 {
+                return Err(LaunchError::Invalid(
+                    "runtime kernel profile allocation reused",
+                ));
+            }
+            let layout = std::alloc::Layout::array::<ControlProfile>(PROFILES)
+                .map_err(|_| LaunchError::Invalid("runtime kernel profile layout differs"))?;
+            // SAFETY: checked nonzero layout, aligned for ControlProfile. The
+            // Vec owns this exact global allocation with no initialized items.
+            let pointer = unsafe { std::alloc::alloc_zeroed(layout) }.cast::<ControlProfile>();
+            if pointer.is_null() {
+                return Err(LaunchError::Invalid(
+                    "runtime kernel profile allocation failed",
+                ));
+            }
+            // SAFETY: len zero exposes none of the uninitialized typed values.
+            // Each push initializes one item within the exact prepaid capacity;
+            // partial initialization remains owned if construction unwinds.
+            self.profiles = unsafe { Vec::from_raw_parts(pointer, 0, PROFILES) };
+            for _ in 0..PROFILES {
+                self.profiles.push(ControlProfile::default());
+            }
             if self.allocated_bytes()? != RuntimeKernelShape::reservation_bytes()? {
                 return Err(LaunchError::Invalid(
                     "runtime kernel allocation differs from reservation",
@@ -471,6 +500,10 @@ impl PreparedRuntimeKernel {
     }
     pub(super) fn payload_bytes(&self) -> Result<usize, LaunchError> {
         let mut bytes = usize::from(self.membership.is_some()) * MAP_BYTES;
+        bytes = add(
+            bytes,
+            mul(self.profiles.capacity(), size_of::<ControlProfile>())?,
+        )?;
         for state in &self.states {
             bytes = add(bytes, state.capacity())?;
         }

@@ -17,7 +17,10 @@ fn invalid<T>(result: Result<T, LaunchError>, expected: &'static str) {
 
 #[test]
 fn runtime_kernel_native_fixed_layout_charges_all_unused_terminal_capacity() {
-    let expected = size_of::<PreparedRuntimeKernel>() + 11 * MAX_XSTATE + 12 * MAP_BYTES;
+    let profile_bytes = 11 * size_of::<ControlProfile>();
+    let expected =
+        size_of::<PreparedRuntimeKernel>() + 11 * MAX_XSTATE + 12 * MAP_BYTES + profile_bytes;
+    const { assert!(size_of::<PreparedRuntimeKernel>() < 11 * size_of::<ControlProfile>()) };
     for operation in [
         RuntimeKernelOperation::Getpid,
         RuntimeKernelOperation::Gettid,
@@ -28,13 +31,17 @@ fn runtime_kernel_native_fixed_layout_charges_all_unused_terminal_capacity() {
         assert_eq!(RuntimeKernelShape::reservation_bytes().unwrap(), expected);
     }
     let mut prepared = attempt();
+    assert!(prepared.profiles.is_empty());
+    assert_eq!(prepared.profiles.capacity(), 0);
     assert_eq!(
         prepared.allocated_bytes().unwrap(),
         size_of::<PreparedRuntimeKernel>()
     );
     prepared.allocate_payloads().unwrap();
     assert_eq!(prepared.allocated_bytes().unwrap(), expected);
-    assert_eq!(prepared.payload_bytes().unwrap(), 1_507_328);
+    assert_eq!(prepared.payload_bytes().unwrap(), 1_507_328 + profile_bytes);
+    assert_eq!(prepared.profiles.len(), 11);
+    assert_eq!(prepared.profiles.capacity(), 11);
     assert!(prepared.states.iter().all(|state| {
         state.capacity() == MAX_XSTATE
             && state
@@ -146,6 +153,7 @@ fn runtime_kernel_native_effect_capacity_is_thirty_seven_and_never_skips_pending
 #[test]
 fn runtime_kernel_native_terminal_raw_header_has_no_fabricated_request_credit() {
     let mut prepared = attempt();
+    prepared.allocate_payloads().unwrap();
     let status = 7 << 8;
     prepared.raw[5].wait = Some((42, status));
     let raw = prepared.raw_view(5).unwrap();
