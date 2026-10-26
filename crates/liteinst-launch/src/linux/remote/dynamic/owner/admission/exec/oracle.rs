@@ -14,9 +14,9 @@ pub(in crate::linux::remote::dynamic::owner) enum ExecFault {
     RawGetregs(u8),
     #[cfg(test)]
     BeforeWriteStub,
-    BackingMapsRead,
-    BackingAfterMapPanic,
-    BackingMunmapUnaligned,
+    MapsRead,
+    AfterMapPanic,
+    MunmapUnaligned,
 }
 
 pub(in crate::linux::remote::dynamic::owner) trait ExecOracle {

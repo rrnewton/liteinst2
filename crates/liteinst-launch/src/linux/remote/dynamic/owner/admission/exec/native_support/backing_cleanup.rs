@@ -29,9 +29,9 @@ pub(super) fn failed_attempt(
         Scenario::ReadError | Scenario::Unwind
     ));
     owner.exec_fault.set(Some(if panic {
-        ExecFault::BackingAfterMapPanic
+        ExecFault::AfterMapPanic
     } else {
-        ExecFault::BackingMapsRead
+        ExecFault::MapsRead
     }));
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         owner.execute_admission(

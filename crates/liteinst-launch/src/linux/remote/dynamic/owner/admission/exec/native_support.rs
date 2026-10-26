@@ -895,9 +895,7 @@ pub(crate) fn backing_child(role: crate::exec_cleanup_support::Role, receipt: &s
         owner.exec_backing = Some(Rc::new(ExecBackingInspection::new(Some(
             receipt.as_raw_fd(),
         ))));
-        owner
-            .exec_fault
-            .set(Some(ExecFault::BackingMunmapUnaligned));
+        owner.exec_fault.set(Some(ExecFault::MunmapUnaligned));
         super::sources::backing_cleanup_leaf(&owner, &std::env::current_exe().unwrap(), until);
         unreachable!("invalid unmap must fail-stop");
     }

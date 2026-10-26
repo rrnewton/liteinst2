@@ -307,7 +307,7 @@ impl Probe {
         let index = storage.count;
         storage.count += 1;
         storage.rows[index].until = Some(until);
-        storage.rows[index].wrong_unmap = owner.take_exec_fault(ExecFault::BackingMunmapUnaligned);
+        storage.rows[index].wrong_unmap = owner.take_exec_fault(ExecFault::MunmapUnaligned);
         drop(storage);
         Ok(Some(Self {
             inspection: Rc::clone(inspection),

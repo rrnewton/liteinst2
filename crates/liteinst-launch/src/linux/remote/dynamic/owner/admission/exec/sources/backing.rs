@@ -226,7 +226,7 @@ fn self_maps(context: &ExecSourceContext<'_>, storage: &mut [u8]) -> Result<usiz
             };
             let destination = address;
             #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
-            let destination = if context.owner.take_exec_fault(ExecFault::BackingMapsRead) {
+            let destination = if context.owner.take_exec_fault(ExecFault::MapsRead) {
                 std::ptr::null_mut()
             } else {
                 destination
@@ -329,10 +329,7 @@ pub(super) fn observe(
         .time_left(context.until, "exec identity probe mapping")?;
     let page = Page::new(&file)?;
     #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
-    if context
-        .owner
-        .take_exec_fault(ExecFault::BackingAfterMapPanic)
-    {
+    if context.owner.take_exec_fault(ExecFault::AfterMapPanic) {
         panic!("private exec backing post-map panic");
     }
     context
