@@ -359,6 +359,13 @@ impl AdmissionOwner {
                 self.domain.audit_history()?;
                 self.metrics.retained_origins = self.census.rows().count();
                 self.metrics.continuation_history_records = self.census.history().len();
+                self.metrics.retained_call_obligations = self.domain.returns.obligations().count();
+                self.metrics.oldest_call_generation = self
+                    .domain
+                    .returns
+                    .obligations()
+                    .map(|obligation| obligation.source_generation.0)
+                    .min();
                 self.metrics.charged_source_bytes = self.census.charged().source_fact_bytes;
                 self.metrics.retained_source_bytes = self.census.used().source_fact_bytes;
                 self.metrics.bootstrap_xstate_bytes = self.bootstrap.exec_event.xstate.len()

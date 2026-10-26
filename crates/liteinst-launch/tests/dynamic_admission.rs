@@ -736,3 +736,9 @@ fn blocked_provider_observes_owner_cleanup_before_returning_a_decision() {
     assert!(session.is_closed());
     cleanup(session, &pin);
 }
+
+#[path = "support/dynamic_admission_matrix.rs"]
+mod matrix;
+
+#[path = "support/dynamic_admission_call.rs"]
+mod call_boundary;

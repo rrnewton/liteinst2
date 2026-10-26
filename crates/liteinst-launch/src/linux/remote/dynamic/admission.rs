@@ -197,6 +197,11 @@ pub struct DynamicAdmissionMetrics {
     pub retained_origins: usize,
     /// Retained origin-refresh, consumption, and epoch records.
     pub continuation_history_records: usize,
+    /// Retained potential CALL returns across all source generations. These
+    /// records do not prove that the corresponding CALLs actually executed.
+    pub retained_call_obligations: usize,
+    /// Oldest retained CALL source generation, or None for an empty ledger.
+    pub oldest_call_generation: Option<u64>,
     /// Reserved lifetime source-evidence bytes, including unused reservations.
     pub charged_source_bytes: usize,
     /// Source-evidence bytes actually retained under those reservations.

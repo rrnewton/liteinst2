@@ -95,3 +95,35 @@ coverage for every selected class or encoding. Existing static-gate oracles,
 pure semantics and uninstrumented lifecycle/signal fixtures are separate
 evidence. Counts, failures and cleanup outcomes must be read from the exact
 revision's receipt; counters alone are not qualification or performance evidence.
+
+The additive [CPU matrix](../../crates/liteinst-launch/tests/support/dynamic_admission_matrix.rs)
+declares seven outer tests, 385 sessions and 388 selected completions. Its
+handwritten encodings and expected transitions cover all 16 GPR destinations
+and 16/32/64-bit random operands, both scripted carry results, RDPID with and
+without REX.W, CPUID leaves 0/1/7 and both timestamp instructions. Twelve
+sessions place one of the six CPU classes literally at the ELF entry, with
+native and scripted execution for each. A four-completion sequence masks the
+CPUID feature bits and still requires callbacks for deliberate RDRAND/RDSEED
+instructions. These are source inventory counts until an exact-revision result
+qualifies them. Their typed per-invocation summaries remain separate from the
+50 existing static samples and the containing fixture test outcomes.
+
+Native nondeterministic values are taken only from their defined output fields;
+the complete unrelated state comes from handwritten setup or the stated initial
+checkpoint. This matrix does not independently compare native CPUID contents
+with another execution. Native random failure is checked when observed, and
+hardware CF=0 is never inferred from scripted coverage. Native instruction
+unavailability fails its case. Summaries are emitted only after every assertion
+in their containing test and its physical cleanup checks succeed; qualification
+also requires the exact test terminal, command and whole-run gates.
+
+The [boundary CALL/RET puzzle](../../crates/liteinst-launch/tests/support/dynamic_admission_call.rs)
+uses one real CALL ending at an admitted page boundary. At the callee, its exact
+stack slot points to a never-executed NX page. After RET, the first selected
+instruction on that page must be admitted and completed. The three completions
+check complete GPR/XSTATE/mask and stack/data state, with independent host CPUID
+leaf-zero values and a fixed scripted timestamp. Bounded process-map reads are
+bracketed by nonterminal polls of the original retained pidfd. Direct read-only
+ledger metrics must retain generation-zero CALL obligations through all three
+completions; observing the current return PC alone is insufficient. This finite
+trajectory does not establish completeness for arbitrary saved contexts.
