@@ -1,0 +1,251 @@
+{
+  "allocation_profile": "original-derived-v1",
+  "artifact_hash_scope": "Copied from reviewed saved archive records; this collector does not reopen products, target files or binaries.",
+  "build": {
+    "archive_record_sha256": "8622ecf2b4eb98fb3b745a10a8ae273c9d44215a5a6883b346f6195b72c50ba2",
+    "config_scope": {
+      "consumed_configuration_attested": false,
+      "denied_lookup_is_absent": false,
+      "invocation_cwd": "${REPO}",
+      "lookup": "cwd and ancestors plus explicit CARGO_HOME; no changed compiler cwd",
+      "scope": "Observed lookup identities only; denied content remains unknown and a later open/read denial fails."
+    },
+    "configs_sha256": "067cf135a07ab682941106ade12712589cd45404260bf8fdbcf405580c2dd030",
+    "hardware": {
+      "architecture": "x86_64",
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+      "host_label": "AMD EPYC Zen 5 dev host",
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "libc": [
+        "glibc",
+        "2.34"
+      ],
+      "logical_cpus": 316
+    },
+    "id": "placement-build",
+    "independent_review_references_sha256": "d658705fd30d485a13f80d44cd477b2cd5e9a5550b8bf8ff897d7da4b5061f04",
+    "independent_review_sha256": "7fcfe42f44d7add837001f62d21f438fa2d3350ac12632a877c246b474d8799b",
+    "independent_review_verdict": "CLOSED_BUILD_AND_STATIC_INVENTORIES_PASS_EXECUTION_RECORD_SCOPE",
+    "parent_closure_sha256": "90b59e71a1cc9da0289df63e2caab9e343a69f68a0eb9da2f4d232b91c616b51",
+    "raw_inputs_sha256": "957fab84e46b91e9a07cf1c1e80a456e66ac46265c0631095b81be59f16e4e51",
+    "raw_summary_sha256": "c6019e8f203698bb55930852d95e948dc965e46bbd8fb5e71cd640ee3e5d314e",
+    "recorded_artifacts": 88,
+    "script_hashes": {
+      "evaluation/e9-common-app/build_inventory.py": "31545ba44b5cb3b055a96269c689b9235957ec3dab0cfd3e65ba86efbdde71ed",
+      "evaluation/required-gates.py": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+      "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    },
+    "selected_tools": {
+      "${TOOLCHAIN}/bin/cargo": {
+        "resolved": "${TOOLCHAIN}/bin/cargo",
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "${TOOLCHAIN}/bin/clippy-driver": {
+        "resolved": "${TOOLCHAIN}/bin/clippy-driver",
+        "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373"
+      },
+      "${TOOLCHAIN}/bin/rustc": {
+        "resolved": "${TOOLCHAIN}/bin/rustc",
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "${TOOLCHAIN}/bin/rustdoc": {
+        "resolved": "${TOOLCHAIN}/bin/rustdoc",
+        "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+      },
+      "${TOOLCHAIN}/bin/rustfmt": {
+        "resolved": "${TOOLCHAIN}/bin/rustfmt",
+        "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8"
+      },
+      "/usr/bin/git": {
+        "resolved": "/usr/bin/git",
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "/usr/bin/python3.9": {
+        "resolved": "/usr/bin/python3.9",
+        "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+      },
+      "/usr/bin/timeout": {
+        "resolved": "/usr/bin/timeout",
+        "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+      }
+    },
+    "source_files": 1555,
+    "source_map_sha256": "a12e9961424ba4d918ce8a359161dc0a642213f5f1753ec50b3dc89b9c1b5c97",
+    "source_record_sha256": "2b0f6581330d8760776c6595f43d8bc80916385c6134b6c59a2ee6caae4cce47",
+    "summary": {
+      "archive_scope": "Cargo-reported files and selected depfile/source joins only; full archive review and caller admission remain separate.",
+      "cells_complete": 8,
+      "completed": true,
+      "failure": null,
+      "last_phase": "inventory-journal-heap-write-stripped",
+      "native_application_runs": 0,
+      "observed_stages": 12,
+      "original_execution_credit": false,
+      "planned_stages": [
+        "required",
+        "native-compile",
+        "common-sites-compile",
+        "target",
+        "inventory-null-jump-site-unstripped",
+        "inventory-null-jump-site-stripped",
+        "inventory-null-heap-write-unstripped",
+        "inventory-null-heap-write-stripped",
+        "inventory-journal-jump-site-unstripped",
+        "inventory-journal-jump-site-stripped",
+        "inventory-journal-heap-write-unstripped",
+        "inventory-journal-heap-write-stripped"
+      ],
+      "preparation_revision": "ab443afc2f4d9b62a9d04d56c4ca78a10e48ec05",
+      "qualification_complete": false,
+      "revision": "29be7f8424e75ae16ed92a5d9df7459d821474d0",
+      "rewriting_runs": 0,
+      "schema": 1,
+      "selected_tools_before_after_equal": true,
+      "source_before_after_equal": true,
+      "source_scope": "Current exact clean committed build and static inventory; prior original preparation remains a separate revision.",
+      "target_observation_only": true,
+      "unrun_stages": []
+    },
+    "tested_revision": "29be7f8424e75ae16ed92a5d9df7459d821474d0",
+    "tools_sha256": "8adf642910f2a0dccc697a77bfb8f91819aa838876f8bb09d7ded36abe908440"
+  },
+  "collector_revision": "9f9f7b298ab4d2abfe4d94bbe228e2821cb4e795",
+  "collector_sha256": "967e5ab1c7fc5697b7bf0584cd591b05c9c04b363adbbb1f7fb40dadea1bc3ad",
+  "command_inverse": "Complete decoded objects under literal symbolic path roles. Original JSON key order is not preserved; raw file hashes bind original bytes.",
+  "input_index_sha256": "8ee1199e0dc25393b085ff926254590c345416a8f098ec344005993fa9050a62",
+  "operational_durations_are_benchmarks": false,
+  "qualification_complete": false,
+  "raw_logs_and_products_private": true,
+  "schema": 1,
+  "scope": "Build/gate/static-inventory reporting only. Artifact bytes and full log/content validation remain in the separately identified independent reviews.",
+  "source_map_hash_semantics": "SHA256 of sorted compact JSON path-to-{bytes,mode,sha256}, without a trailing newline; identical to the build archive source digest. Public source-files.json uses indented JSON and has its own whole-file hash.",
+  "source_or_runtime_result_transfer": false,
+  "state_equivalence": false,
+  "test_identity_retention": {
+    "added_cases": [
+      {
+        "group": "Running unittests examples/common_sites.rs (target/debug/examples/common_sites)",
+        "name": "tests::complete_jump_cell_keeps_unplaceable_id15_as_neutral_permit",
+        "status": "ok"
+      },
+      {
+        "group": "Running unittests examples/common_sites.rs (target/debug/examples/common_sites)",
+        "name": "tests::derived_domain_must_own_loads_carrier_and_all_permits",
+        "status": "ok"
+      },
+      {
+        "group": "Running unittests examples/common_sites.rs (target/debug/examples/common_sites)",
+        "name": "tests::digit_minimum_matches_bounded_independent_byte_enumeration",
+        "status": "ok"
+      },
+      {
+        "group": "Running unittests examples/common_sites.rs (target/debug/examples/common_sites)",
+        "name": "tests::explicit_v2_grammar_keeps_exact_caps_and_v1_separate",
+        "status": "ok"
+      },
+      {
+        "group": "Running unittests examples/common_sites.rs (target/debug/examples/common_sites)",
+        "name": "tests::full_page_slot_ownership_and_exhaustion_are_not_byte_only",
+        "status": "ok"
+      },
+      {
+        "group": "Running unittests examples/common_sites.rs (target/debug/examples/common_sites)",
+        "name": "tests::heap_store_uses_complete_ret_entry_and_unaligned_preferred_pc",
+        "status": "ok"
+      },
+      {
+        "group": "Running unittests examples/common_sites.rs (target/debug/examples/common_sites)",
+        "name": "tests::signed_digit_successor_retains_negative_edges_and_entry_bytes",
+        "status": "ok"
+      },
+      {
+        "group": "Running unittests examples/common_sites.rs (target/debug/examples/common_sites)",
+        "name": "tests::unchanged_core_accepts_heap_b1_but_retains_old_arena_and_id15_refusals",
+        "status": "ok"
+      },
+      {
+        "group": "Running unittests examples/common_sites.rs (target/debug/examples/common_sites)",
+        "name": "tests::upstream_windows_use_original_head_budget_before_qualification",
+        "status": "ok"
+      }
+    ],
+    "baseline_inventory_sha256": "cec143ad09954a8178d1ad165d21274006c05ad3665bc50fc0a69c63788a32a2",
+    "baseline_revision": "cbb189d1d17f947c97194842129b66eb68b0531f",
+    "child_starts_without_separate_terminal": 5,
+    "complete_case_inventory_sha256": "e626e4498bf46645b1661a080fb3bef5a72dd772c86c0e5e90027a508c45db7d",
+    "nested_completed_summaries": [
+      {
+        "counts": [
+          1,
+          0,
+          0,
+          0,
+          207
+        ],
+        "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+        "line": 1126,
+        "seconds_text": "0.01"
+      },
+      {
+        "counts": [
+          1,
+          0,
+          0,
+          0,
+          207
+        ],
+        "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+        "line": 1140,
+        "seconds_text": "0.01"
+      },
+      {
+        "counts": [
+          1,
+          0,
+          0,
+          0,
+          26
+        ],
+        "group": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)",
+        "line": 1429,
+        "seconds_text": "31.65"
+      },
+      {
+        "counts": [
+          1,
+          0,
+          0,
+          0,
+          26
+        ],
+        "group": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)",
+        "line": 1436,
+        "seconds_text": "9.48"
+      },
+      {
+        "counts": [
+          1,
+          0,
+          0,
+          0,
+          26
+        ],
+        "group": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)",
+        "line": 1444,
+        "seconds_text": "78.96"
+      }
+    ],
+    "nested_passes_aggregated": false,
+    "outer_counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 4,
+      "measured": 0,
+      "passed": 1694
+    },
+    "outer_groups": 90,
+    "outer_named_cases": 1698,
+    "retained_cbb_cases": 1689,
+    "review_sha256": "f46a0febb2a7fdbb5a9b6bef3d5021122c8cd05d46a21f176c9080b3eb8e29e6"
+  }
+}
