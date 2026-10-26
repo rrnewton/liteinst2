@@ -1,7 +1,13 @@
 //! Pure admission controls. The file is parsed, never mapped or executed.
 use super::*;
 
-const SUBJECT: &[u8] = include_bytes!(env!("NATIVE_INTERVAL_DSO"));
+// object/read_core borrows aligned ELF structures from this exact byte owner.
+#[repr(C, align(8))]
+struct AlignedSubject([u8; include_bytes!(env!("NATIVE_INTERVAL_DSO")).len()]);
+
+static ALIGNED_SUBJECT: AlignedSubject =
+    AlignedSubject(*include_bytes!(env!("NATIVE_INTERVAL_DSO")));
+const SUBJECT: &[u8] = &ALIGNED_SUBJECT.0;
 
 fn changed_dynamic(change: impl FnOnce(&mut Vec<(u64, u64)>)) -> Vec<u8> {
     let file = object::File::parse(SUBJECT).unwrap();
@@ -150,4 +156,12 @@ fn parser_rejects_nonnull_after_terminator() {
 #[test]
 fn parser_rejects_textrel_tag() {
     refuses(&changed_dynamic(|rows| rows.push((22, 0))));
+}
+
+#[test]
+fn parser_fixture_has_explicit_elf_alignment() {
+    let header_alignment = std::mem::align_of::<object::elf::FileHeader64<object::Endianness>>();
+    assert_eq!(SUBJECT.as_ptr().align_offset(8), 0);
+    assert_eq!(SUBJECT.as_ptr().align_offset(header_alignment), 0);
+    assert_eq!(SUBJECT, include_bytes!(env!("NATIVE_INTERVAL_DSO")));
 }
