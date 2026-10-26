@@ -70,8 +70,35 @@ fn control_remaining(until: Instant) -> Result<Duration, LaunchError> {
         .filter(|duration| !duration.is_zero())
         .ok_or(LaunchError::Timeout("dynamic admission transaction"))
 }
-fn census_error(_: census::CensusError) -> GateError {
-    GateError::Refused("dynamic continuation inventory or lifetime budget refused")
+fn census_error(error: census::CensusError) -> GateError {
+    GateError::Refused(match error {
+        census::CensusError::InvalidLimits => "dynamic continuation invalid limits",
+        census::CensusError::Capacity => "dynamic continuation lifetime capacity exhausted",
+        census::CensusError::Allocation => "dynamic continuation allocation failed",
+        census::CensusError::OutstandingReservation => {
+            "dynamic continuation reservation already outstanding"
+        }
+        census::CensusError::StaleReservation => "dynamic continuation stale reservation",
+        census::CensusError::ReservationExhausted => "dynamic continuation reservation exhausted",
+        census::CensusError::UnknownOrigin => "dynamic continuation unknown origin",
+        census::CensusError::InactiveOrigin => "dynamic continuation inactive origin",
+        census::CensusError::IdentityMismatch => "dynamic continuation identity mismatch",
+        census::CensusError::StaleObservation => "dynamic continuation stale observation",
+        census::CensusError::InvalidObservation => "dynamic continuation invalid observation",
+        census::CensusError::WrongOriginPhase => "dynamic continuation wrong origin phase",
+        census::CensusError::PersistentUnknown => {
+            "dynamic continuation unqualified persistent origin"
+        }
+        census::CensusError::InvalidConsumption => {
+            "dynamic continuation invalid consumption evidence"
+        }
+        census::CensusError::GenerationNotAdvanced => {
+            "dynamic continuation generation did not advance"
+        }
+        census::CensusError::MissingImage => "dynamic continuation missing source image",
+        census::CensusError::OverlappingImages => "dynamic continuation overlapping source images",
+        census::CensusError::ProjectionMismatch => "dynamic continuation entry projection mismatch",
+    })
 }
 
 impl Owner {
