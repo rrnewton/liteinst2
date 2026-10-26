@@ -336,6 +336,7 @@ impl Domain {
 
 // The original getpid panic fixture has no CALL. Its complete empty ledger
 // still compares exactly; the exec fixture above keeps its nonempty controls.
+#[cfg(test)]
 impl Domain {
     pub(in super::super) fn panic_custody_check(&self) -> Check<Self> {
         self.audit_history().unwrap();

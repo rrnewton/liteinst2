@@ -1,31 +1,27 @@
 //! Independent complete-state, source and physical-ownership helpers.
-use liteinst_launch::gate::{GateError, ImageFacts, SelectedExecution};
-use liteinst_launch::selected::{
-    InstructionProvider, ProviderDecision, SelectedInput, SelectedResult, SemanticsError,
-};
+use liteinst_launch::gate::ImageFacts;
 use liteinst_launch::{
-    DynamicAdmissionBackend, DynamicAdmissionEvent, DynamicAdmissionOptions,
-    DynamicAdmissionSession, DynamicAdmissionState, DynamicExecProfile, DynamicSourceCaptureId,
-    DynamicSourceFacts, DynamicSourceHeads, DynamicSourceRequest, DynamicSourceResolver,
-    DynamicSourceSession, DynamicSourceTransition, ExecAttemptSnapshot, ExecBootstrapEffect,
-    ExecJournalFact, ExecJournalStage, ExecMapsStatus, ExecProgressReader, ExecProgressSnapshot,
-    ExecRawRecord, ExecReleasePhase, ExecValidatedPhase, KernelCapturedState, KernelFailureKind,
-    LaunchCommand, LaunchError, RegisterSnapshot,
+    DynamicAdmissionBackend, DynamicAdmissionOptions, DynamicAdmissionState, DynamicExecProfile,
+    KernelCapturedState, RegisterSnapshot,
 };
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs::{self, File, OpenOptions};
 use std::io::{self, Read, Write};
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
-use std::os::unix::fs::{FileExt, MetadataExt, OpenOptionsExt, PermissionsExt};
+#[cfg(test)]
+use std::os::unix::fs::FileExt;
+use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Arc, RwLock};
 use std::time::{Duration, Instant};
 
+#[cfg(test)]
 pub mod archive;
 pub mod compare;
 pub mod fixture;
 pub mod raw;
+#[cfg(test)]
 pub mod run;
 pub use fixture::Fixture;
 pub const PAGE: usize = 4096;
@@ -114,6 +110,7 @@ pub fn spawn_masked<T: Send + 'static>(
     worker
 }
 
+#[cfg(test)]
 pub fn pin(pid: i32) -> OwnedFd {
     let value = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) };
     // A successful session exists, but no independently owned pin guard yet.
@@ -293,6 +290,7 @@ impl Maps {
 }
 /// Independent non-controlling read by the client while the owner holds the
 /// original pin. It supplies no ptrace capability and reads no retired mm.
+#[cfg(test)]
 pub fn held_memory(pid: i32, pin: &OwnedFd, address: u64, count: usize) -> Vec<u8> {
     assert!(count <= 65536);
     alive(pin);

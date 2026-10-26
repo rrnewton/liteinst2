@@ -2,6 +2,7 @@
 //! registration before its first instruction. It does not share files, signal
 //! dispositions or a thread group. Exec installs the original private mm.
 use super::*;
+#[cfg(test)]
 use std::cell::UnsafeCell;
 use std::ffi::CString;
 
@@ -10,9 +11,9 @@ use std::ffi::CString;
 // caller stack and executes no Rust, TLS access, libc callback or allocator.
 std::arch::global_asm!(
     ".text",
-    ".global liteinst_pristine_signal_clone_vm",
-    ".type liteinst_pristine_signal_clone_vm,@function",
-    "liteinst_pristine_signal_clone_vm:",
+    ".global {entry}",
+    ".type {entry},@function",
+    "{entry}:",
     "push r12",
     "mov r12, rdi",
     "mov edi, 0x1100", // CLONE_VM | CLONE_PIDFD, exit_signal0.
@@ -101,9 +102,13 @@ std::arch::global_asm!(
     "mov eax, 231",
     "syscall",
     "jmp .Lpristine_signal_fail",
-    ".size liteinst_pristine_signal_clone_vm,.-liteinst_pristine_signal_clone_vm",
+    ".size {entry},.-{entry}",
+    entry = sym liteinst_pristine_signal_clone_vm,
 );
 unsafe extern "C" {
+    // Feature-library support and the existing integration target coexist in
+    // one link. Unit/integration builds retain their original symbol spelling.
+    #[cfg_attr(not(test), link_name = "liteinst_backing_cleanup_clone_vm")]
     fn liteinst_pristine_signal_clone_vm(
         config: *const Config,
         stack: *mut u8,
@@ -127,12 +132,14 @@ struct Config {
 /// stored raw flag. Only a successful explicit setter establishes raw zero.
 #[repr(C)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[cfg(test)]
 struct Altstack {
     sp: u64,
     flags: u32,
     padding: u32,
     size: u64,
 }
+#[cfg(test)]
 impl Altstack {
     const EMPTY: Self = Self {
         sp: 0,
@@ -159,16 +166,19 @@ impl Altstack {
 }
 #[repr(C)]
 #[derive(Clone, Copy)]
+#[cfg(test)]
 struct AltstackObservation {
     set_result: i64,
     query_result: i64,
     observed: u64,
     descriptor: Altstack,
 }
+#[cfg(test)]
 struct AltstackBaseline {
     requested: Box<Altstack>,
     output: Box<UnsafeCell<AltstackObservation>>,
 }
+#[cfg(test)]
 const _: () = {
     assert!(std::mem::size_of::<Altstack>() == 24);
     assert!(std::mem::offset_of!(Altstack, flags) == 8);
@@ -177,6 +187,8 @@ const _: () = {
     assert!(std::mem::offset_of!(AltstackObservation, query_result) == 8);
     assert!(std::mem::offset_of!(AltstackObservation, observed) == 16);
     assert!(std::mem::offset_of!(AltstackObservation, descriptor) == 24);
+};
+const _: () = {
     assert!(std::mem::offset_of!(Config, altstack) == 48);
     assert!(std::mem::offset_of!(Config, altstack_observation) == 56);
 };
@@ -228,13 +240,17 @@ impl Drop for Stack {
 pub struct Resources {
     config: Box<Config>,
     stack: Stack,
+    #[cfg(test)]
     altstack: Option<AltstackBaseline>,
     _arguments: Vec<CString>,
     _environment: Vec<CString>,
     _argv: Box<[*const libc::c_char]>,
     _env: Box<[*const libc::c_char]>,
     _read: Option<OwnedFd>,
+    #[cfg(test)]
     write: Option<OwnedFd>,
+    #[cfg(not(test))]
+    _write: Option<OwnedFd>,
     _null: OwnedFd,
 }
 impl Resources {
@@ -303,13 +319,17 @@ impl Resources {
         Self {
             config,
             stack,
+            #[cfg(test)]
             altstack: None,
             _arguments: strings,
             _environment: environment,
             _argv: argv,
             _env: env,
             _read: read,
+            #[cfg(test)]
             write,
+            #[cfg(not(test))]
+            _write: write,
             _null: null,
         }
     }
@@ -318,6 +338,7 @@ impl Resources {
     /// with flags zero resolves query ambiguity without touching its storage.
     /// The assembly child repeats this setter after CLONE_VM's reset; exec
     /// then clears sp/size while preserving the explicitly stored raw zero.
+    #[cfg(test)]
     pub fn prepare_altstack(&mut self, until: Instant) {
         assert!(self.write.is_some());
         assert!(self.altstack.is_none());
@@ -369,6 +390,7 @@ impl Resources {
     }
     /// Called only while the original pinned child is held at actual EXEC.
     /// It cannot run while A might still write these shared pre-exec outputs.
+    #[cfg(test)]
     pub fn authenticate_altstack_at_exec(&self, until: Instant) {
         assert!(
             Instant::now() < until,
@@ -401,6 +423,7 @@ impl Resources {
         // fallible syscall between atomic clone success and stable ownership.
         (result as i32, unsafe { OwnedFd::from_raw_fd(fd) })
     }
+    #[cfg(test)]
     pub fn release(&mut self) {
         let write = self.write.take().unwrap();
         let byte = 0x51_u8;

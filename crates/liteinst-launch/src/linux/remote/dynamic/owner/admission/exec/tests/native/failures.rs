@@ -1,8 +1,21 @@
 //! Actual refused native paths. The two faults are one-shot and owner-local;
 //! limits, valid observations and ordinary execution paths remain unchanged.
 use super::super::super::inputs::{InputFailureCause, InputPhase, StringRole};
-use super::*;
-use crate::{ExecBootstrapEffect, ExecMapsStatus, ExecReadOutcome, ExecReleasePhase};
+use super::super::super::native_support::*;
+use super::super::super::*;
+use crate::exec_oracle_support::{
+    self as support, APP_MASK, Architecture, CODE, DATA_LEN, Fixture, INPUT, Maps, NEW, NEW_DATA,
+    OLD, OLD_DATA, PAGE, TIMEOUT, compare, raw,
+};
+use crate::{
+    ExecBootstrapEffect, ExecJournalFact, ExecJournalStage, ExecMapsStatus, ExecProgressReader,
+    ExecReadOutcome, ExecReleasePhase, KernelFailureKind,
+};
+use std::cell::RefCell;
+use std::os::fd::OwnedFd;
+use std::rc::Rc;
+use std::sync::atomic::Ordering as AtomicOrdering;
+use std::sync::mpsc::sync_channel;
 
 #[derive(Clone, Copy)]
 enum FailureCase {

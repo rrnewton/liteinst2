@@ -11,3 +11,15 @@ libc = "0.2.186"
 liteinst-admission = { version = "0.1.0", path = "../liteinst-admission" }
 liteinst2 = { version = "0.1.0", path = "../.." }
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder"] }
+
+# Fixed development-only native resource controls; no default runtime API.
+[features]
+dev-exec-backing-cleanup = []
+
+[dev-dependencies]
+liteinst-launch = { version = "=0.1.0", path = ".", features = ["dev-exec-backing-cleanup"] }
+
+[[test]]
+name = "exec_backing_cleanup"
+path = "tests/exec_backing_cleanup.rs"
+harness = false

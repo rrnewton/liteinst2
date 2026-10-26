@@ -23,14 +23,32 @@ pub struct Record {
 pub struct Transcript {
     pub old_cpu: Cpu,
     pub before_exec: Frame,
+    #[cfg(test)]
     pub arguments: Vec<u8>,
+    #[cfg(not(test))]
+    _arguments: Vec<u8>,
     pub entry: Frame,
+    #[cfg(test)]
     pub entry_info: (usize, [u8; 88]),
+    #[cfg(not(test))]
+    _entry_info: (usize, [u8; 88]),
+    #[cfg(test)]
     pub entry_status: i32,
+    #[cfg(not(test))]
+    _entry_status: i32,
+    #[cfg(test)]
     pub exec: Record,
+    #[cfg(not(test))]
+    _exec: Record,
+    #[cfg(test)]
     pub exit: Record,
+    #[cfg(not(test))]
+    _exit: Record,
     pub trap: Record,
+    #[cfg(test)]
     pub first_cpu: Cpu,
+    #[cfg(not(test))]
+    _first_cpu: Cpu,
     pub final_cpu: Cpu,
 }
 pub fn trace(pid: i32, operation: u32, address: usize, data: usize) {
@@ -228,7 +246,7 @@ impl Raw {
         );
         // Match the unit harness lock order: shared crate custody before the
         // fixture-local reader. Release crate custody immediately after clone.
-        #[cfg(test)]
+        #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
         let shared_file_fork = crate::TEST_FILE_FORK.lock().unwrap();
         let file_fork = FILE_FORK.read().unwrap();
         assert!(Instant::now() < until);
@@ -260,7 +278,7 @@ impl Raw {
             terminal: false,
             complete: false,
         };
-        #[cfg(test)]
+        #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
         drop(shared_file_fork);
         assert_eq!(raw.wait(until), (libc::SIGSTOP << 8) | 0x7f);
         trace(
@@ -486,14 +504,32 @@ impl Raw {
         Transcript {
             old_cpu,
             before_exec,
+            #[cfg(test)]
             arguments,
+            #[cfg(not(test))]
+            _arguments: arguments,
             entry,
+            #[cfg(test)]
             entry_info,
+            #[cfg(not(test))]
+            _entry_info: entry_info,
+            #[cfg(test)]
             entry_status,
+            #[cfg(not(test))]
+            _entry_status: entry_status,
+            #[cfg(test)]
             exec,
+            #[cfg(not(test))]
+            _exec: exec,
+            #[cfg(test)]
             exit,
+            #[cfg(not(test))]
+            _exit: exit,
             trap,
+            #[cfg(test)]
             first_cpu,
+            #[cfg(not(test))]
+            _first_cpu: first_cpu,
             final_cpu,
         }
     }

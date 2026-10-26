@@ -317,7 +317,7 @@ fn execute_inner(
         ));
     }
     observation.entry(&entry, &entry_state)?;
-    #[cfg(test)]
+    #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
     owner.exec_oracle_entry(&entry, until)?;
     resume(
         owner,

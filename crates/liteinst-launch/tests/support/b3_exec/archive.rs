@@ -1,4 +1,10 @@
 use super::*;
+use liteinst_launch::{
+    DynamicAdmissionState, DynamicSourceCaptureId, ExecAttemptSnapshot, ExecBootstrapEffect,
+    ExecJournalFact, ExecJournalStage, ExecMapsStatus, ExecProgressSnapshot, ExecRawRecord,
+    ExecReleasePhase, ExecValidatedPhase, KernelFailureKind,
+};
+
 use liteinst_launch::{ExecMapsRecord, KernelPinKind, KernelStopIdentity};
 
 pub fn architecture(raw: &ExecRawRecord) -> Architecture {

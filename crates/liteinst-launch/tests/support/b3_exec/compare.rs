@@ -241,6 +241,7 @@ pub fn first_trap(f: &Fixture, exit: &raw::Record, trap: &raw::Record) {
     // differ from the kernel EXIT image. No byte or component is normalized.
     assert!(trap.architecture.xstate.len() >= 512 && trap.architecture.xstate.len() < 65536);
 }
+#[cfg(test)]
 pub fn execute_bit(map: &mut Map, from: bool, to: bool) {
     assert_ne!(from, to);
     let expected = if from { "r-xp" } else { "r--p" };
@@ -257,6 +258,7 @@ pub fn execute_bit(map: &mut Map, from: bool, to: bool) {
     map.line.replace_range(start + 2..start + 3, &result[2..3]);
     map.permissions = result.into();
 }
+#[cfg(test)]
 pub fn quarantine(original: &Maps, current: &Maps) -> Map {
     let extra = current
         .rows

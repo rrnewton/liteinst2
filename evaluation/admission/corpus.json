@@ -1,4 +1,44 @@
 {
+  "backing_cleanup_harnesses": {
+    "serial_launch": [
+      {
+        "binary": "exec_backing_cleanup",
+        "controls": [
+          "admitted_exec_native_backing_probes_close_exact_owned_resources",
+          "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
+          "exec_backing_native_invalid_unmap_aborts_isolated_owner"
+        ],
+        "id": "control/exec_backing_cleanup",
+        "protocol": "LITEINST_BACKING_CLEANUP_V1",
+        "source": "tests/exec_backing_cleanup.rs",
+        "trajectories": [
+          "complete",
+          "read_error",
+          "unwind",
+          "invalid_unmap"
+        ]
+      }
+    ],
+    "workspace_tests": [
+      {
+        "binary": "exec_backing_cleanup",
+        "controls": [
+          "admitted_exec_native_backing_probes_close_exact_owned_resources",
+          "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
+          "exec_backing_native_invalid_unmap_aborts_isolated_owner"
+        ],
+        "id": "control/exec_backing_cleanup",
+        "protocol": "LITEINST_BACKING_CLEANUP_V1",
+        "source": "tests/exec_backing_cleanup.rs",
+        "trajectories": [
+          "complete",
+          "read_error",
+          "unwind",
+          "invalid_unmap"
+        ]
+      }
+    ]
+  },
   "baseline_revision": "79356323c4b38aa344655909392779adecd495cc",
   "dynamic_admission_fixtures": [
     "literal_first_cpuid_preserves_complete_state_and_native_memory",
@@ -7191,6 +7231,6 @@
       "test": "linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_pending_flags_change_refuses_before_restore"
     }
   ],
-  "recorder_tests": 240,
+  "recorder_tests": 254,
   "schema_version": 1
 }

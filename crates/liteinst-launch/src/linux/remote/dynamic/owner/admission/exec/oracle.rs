@@ -1,14 +1,22 @@
-//! Private same-tracer inspection points. These exist only in the unit build.
+//! Private same-tracer inspection points. These exist only in unit/development-control builds.
 //! The checker never receives a resume, source-publication or census capability.
 use super::*;
 use std::os::fd::OwnedFd;
 
-/// Per-owner one-shot faults; the enclosing module is compiled only for tests.
-/// Neither value fabricates a successful observation or grants control authority.
+mod backing;
+pub(in crate::linux::remote::dynamic::owner) use backing::{ExecBackingInspection, Probe, ProbeFd};
+
+/// Per-owner one-shot faults; the enclosing module is test/development-only.
+/// No value fabricates a successful observation or grants control authority.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::linux::remote::dynamic::owner) enum ExecFault {
+    #[cfg(test)]
     RawGetregs(u8),
+    #[cfg(test)]
     BeforeWriteStub,
+    BackingMapsRead,
+    BackingAfterMapPanic,
+    BackingMunmapUnaligned,
 }
 
 pub(in crate::linux::remote::dynamic::owner) trait ExecOracle {

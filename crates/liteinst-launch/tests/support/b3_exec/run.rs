@@ -1,4 +1,17 @@
 use super::*;
+use liteinst_launch::gate::{GateError, SelectedExecution};
+use liteinst_launch::selected::{
+    InstructionProvider, ProviderDecision, SelectedInput, SelectedResult, SemanticsError,
+};
+use liteinst_launch::{
+    DynamicAdmissionEvent, DynamicAdmissionSession, DynamicAdmissionState, DynamicSourceCaptureId,
+    DynamicSourceFacts, DynamicSourceHeads, DynamicSourceRequest, DynamicSourceResolver,
+    DynamicSourceSession, DynamicSourceTransition, ExecAttemptSnapshot, ExecBootstrapEffect,
+    ExecJournalFact, ExecJournalStage, ExecProgressReader, ExecProgressSnapshot,
+    ExecValidatedPhase, KernelFailureKind, LaunchCommand, LaunchError, RegisterSnapshot,
+};
+use std::os::unix::fs::MetadataExt;
+
 use std::sync::{
     Mutex,
     mpsc::{Receiver, SyncSender},

@@ -269,7 +269,7 @@ fn bootstrap_inner(
     let (observed, status) = owner.wait_raw(until, "admission first-user INT3")?;
     if let Some(observer) = observation.as_deref_mut() {
         observer.raw(owner, observed, status)?;
-        #[cfg(test)]
+        #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
         owner.exec_oracle_first_user(observed, status, exit, until)?;
         owner.time_left(until, "replacement first-user raw observation")?;
     }

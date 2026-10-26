@@ -12,7 +12,7 @@ use liteinst_admission::returns::CallReturnLedger;
 use liteinst_admission::scan::{Candidate, Policy, Snapshot};
 use std::collections::{BTreeMap, BTreeSet};
 
-#[cfg(test)]
+#[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
 mod exec_oracle;
 mod replacement;
 mod resource;

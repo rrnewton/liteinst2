@@ -21,8 +21,10 @@ mod completion;
 mod domain;
 mod drive;
 mod exec;
-#[cfg(test)]
-pub(in crate::linux::remote::dynamic::owner) use exec::oracle::{ExecFault, ExecOracle};
+#[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+pub(in crate::linux::remote::dynamic::owner) use exec::oracle::{
+    ExecBackingInspection, ExecFault, ExecOracle,
+};
 mod mapping;
 #[cfg(test)]
 mod panic_custody;
@@ -730,3 +732,6 @@ impl AdmissionOwner {
         ))
     }
 }
+
+#[cfg(feature = "dev-exec-backing-cleanup")]
+pub(crate) use exec::exec_backing_cleanup_main;

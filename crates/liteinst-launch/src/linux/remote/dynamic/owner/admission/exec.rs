@@ -15,7 +15,7 @@ mod budget;
 mod history;
 mod inputs;
 mod observer;
-#[cfg(test)]
+#[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
 pub(in crate::linux::remote::dynamic::owner::admission) mod oracle;
 mod seal;
 mod sources;
@@ -145,4 +145,11 @@ impl ExecCensusCommit {
 
 fn refused(reason: &'static str) -> GateError {
     GateError::Refused(reason)
+}
+
+#[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+mod native_support;
+#[cfg(feature = "dev-exec-backing-cleanup")]
+pub(crate) fn exec_backing_cleanup_main() -> std::process::ExitCode {
+    crate::exec_cleanup_support::main(native_support::backing_child)
 }

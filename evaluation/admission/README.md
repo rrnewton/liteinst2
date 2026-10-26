@@ -1,5 +1,11 @@
 # Admission evaluation
 
+The additional [backing-cleanup helper protocol](backing-cleanup.md) records
+one real ordinary-main Cargo target separately from the existing libtest
+inventories. Its three controls and four child trajectories are not libtest
+case counts. The unchanged workspace and serial commands require both kinds
+of evidence; an absent or incomplete helper cannot qualify the command.
+
 Run the admission validation protocol from a clean checkout of an exact commit:
 
 ```sh

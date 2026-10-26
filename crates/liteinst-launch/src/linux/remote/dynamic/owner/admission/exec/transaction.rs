@@ -166,7 +166,7 @@ impl AdmissionOwner {
             bootstrap,
             observed,
         } = seal.seal(owner, &self.native, ready, until)?;
-        #[cfg(test)]
+        #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
         if let Some(oracle) = owner.exec_oracle.as_mut() {
             oracle.before_retire(oracle::BeforeRetire {
                 domain: &self.domain,
@@ -200,7 +200,7 @@ impl AdmissionOwner {
             bootstrap: retired_bootstrap,
             origins: retired_origins,
         });
-        #[cfg(test)]
+        #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
         if let Some(oracle) = owner.exec_oracle.as_mut() {
             oracle.after_retire(oracle::AfterRetire {
                 retired: state.retired.as_ref().unwrap(),

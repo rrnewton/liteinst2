@@ -977,3 +977,8 @@ fn descriptor(row: MapEntry<'_>, permissions: [u8; 4]) -> Result<MemoryMapping, 
         pathname: row.pathname.map(text).transpose()?,
     })
 }
+
+#[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+pub(super) fn backing_cleanup_leaf(owner: &Owner, path: &std::path::Path, until: Instant) {
+    backing::cleanup_leaf(owner, path, until);
+}

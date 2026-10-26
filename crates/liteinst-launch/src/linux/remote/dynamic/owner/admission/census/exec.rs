@@ -6,7 +6,7 @@
 
 use super::super::exec::ExecCensusCommit;
 use super::*;
-#[cfg(test)]
+#[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
 mod oracle;
 
 /// Descriptive, non-authoritative identity fixed before the original effect.

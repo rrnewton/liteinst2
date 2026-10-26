@@ -53,10 +53,12 @@ pub(super) struct Owner {
     exec_journal: Option<exec_journal::ExecJournalWriter>,
     #[cfg(test)]
     journal_fault: Option<JournalFault>,
-    #[cfg(test)]
+    #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
     exec_oracle: Option<Box<dyn admission::ExecOracle>>,
-    #[cfg(test)]
+    #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
     exec_fault: std::cell::Cell<Option<admission::ExecFault>>,
+    #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+    exec_backing: Option<std::rc::Rc<admission::ExecBackingInspection>>,
     session: u64,
     sequence: u64,
     state: State,
@@ -199,10 +201,12 @@ impl Owner {
             exec_journal: None,
             #[cfg(test)]
             journal_fault: None,
-            #[cfg(test)]
+            #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
             exec_oracle: None,
-            #[cfg(test)]
+            #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
             exec_fault: std::cell::Cell::new(None),
+            #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+            exec_backing: None,
             session,
             sequence: 0,
             state: State::Startup,
@@ -1097,3 +1101,6 @@ impl Owner {
         }
     }
 }
+
+#[cfg(feature = "dev-exec-backing-cleanup")]
+pub(crate) use admission::exec_backing_cleanup_main;

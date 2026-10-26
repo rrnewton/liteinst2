@@ -925,3 +925,6 @@ impl Drop for DynamicSession {
         self.cancel.store(true, Ordering::Release);
     }
 }
+
+#[cfg(feature = "dev-exec-backing-cleanup")]
+pub(crate) use owner::exec_backing_cleanup_main;
