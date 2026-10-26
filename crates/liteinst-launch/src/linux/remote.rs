@@ -11,6 +11,9 @@ use liteinst2::contracts::{AddressRange, CodeIdentity, QuiescenceLease};
 mod group;
 pub use group::*;
 
+mod dynamic;
+pub use dynamic::*;
+
 const STUB: [u8; 3] = [0x0f, 0x05, 0xcc];
 // Each entry is one exact native MOV to [RDI], then its own terminating INT3.
 const STORE_STUBS: [(usize, &[u8]); 4] = [

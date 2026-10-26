@@ -15,6 +15,7 @@ qualifies. Existing strict-backend negative fixtures remain required.
 | Boundary publication | Cross-page selected decode and conservative CALL return into a never-executed page retain complete closure | Arbitrary saved frames and concurrent dynamic contexts |
 | Declared syscall aliases | INT 0x80/SYSENTER input conventions, declaration refusals and explicit provider faults | Successful alias execution/return conventions |
 | Lifecycle registry | Non-reused task/mm IDs, clone/fork/vfork/exec ordering, retained signals/resumes, invalidation and rollback on bookkeeping errors | Actual native dynamic ownership, signal delivery, exception return, mapping churn, dlopen, JIT and real applications |
+| Native dynamic controller | Seized bootstrap, authenticated stops, active interruption, original signal payload delivery and LISTEN; ordinary untraced signal/handler/restart comparisons; explicit owned cleanup | No instrumentation or publication lease; actual creation/exec ownership and registry integration remain required |
 | In-memory oracle chain | Exact fact reuse, immutable refusals, bounded storage, stale/poison fallback, dependency invalidation; bounded preparation and demand accounting in strict, coverage and fixed-worker live owners; full-state comparisons and fresh saved-return refusal on an actual hit | Verified persistent metadata and sparse overlays using the core artifact contract; dynamic lifecycle integration |
 
 B2 is still incomplete while selected aliases and broader execution coverage

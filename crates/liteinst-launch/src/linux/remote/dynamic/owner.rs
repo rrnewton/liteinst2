@@ -1,0 +1,602 @@
+use super::*;
+use std::collections::{BTreeMap, BTreeSet};
+
+#[cfg(test)]
+mod tests;
+
+enum State {
+    Startup,
+    Held(DynamicEvent),
+    Running,
+    Listening,
+    Terminal,
+}
+
+pub(super) struct Owner {
+    pub(super) pid: libc::pid_t,
+    pub(super) initial_exec: Option<RegisterSnapshot>,
+    session: u64,
+    sequence: u64,
+    state: State,
+    cancel: Arc<AtomicBool>,
+    closing: bool,
+    // An observed stop may have been queued before INTERRUPT. After that first
+    // stop is resumed, the next stop is necessarily newer and clears the kernel
+    // pending request (Linux v7.1.3 ptrace_request/ptrace_stop). This is an upper
+    // bound on possible deferred control, not an assertion about queue timing.
+    interrupt_stops_remaining: u8,
+    syscall_open: bool,
+    owned: BTreeSet<libc::pid_t>,
+    stopped: BTreeMap<libc::pid_t, i32>,
+    handles: BTreeMap<libc::pid_t, OwnedFd>,
+    reaped: Vec<libc::pid_t>,
+    lost_wait: bool,
+    #[cfg(test)]
+    pub(super) fail_before_seize: bool,
+    #[cfg(test)]
+    deny_kill_for_test: bool,
+}
+
+pub(super) fn run(start: TracerStart) {
+    let TracerStart {
+        command,
+        session,
+        inherited_mask,
+        until,
+        cancel,
+        commands,
+        ready,
+        done,
+    } = start;
+    let mut owner = Owner::new(session, cancel);
+    let mut announced = false;
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        // NPTL may unblock its own reserved cancellation signal during thread
+        // initialization. Ordinary application-handler signals were inherited
+        // blocked; finish the exact kernel mask before touching the wait domain.
+        launch::set_current_mask(u64::MAX)?;
+        let initial = launch::start(&mut owner, &command, inherited_mask, until)?;
+        ready
+            .send(Ok(initial))
+            .map_err(|_| LaunchError::Invalid("seized launch client disconnected"))?;
+        announced = true;
+        owner.serve(commands)
+    }));
+    let failure = match result {
+        Ok(Ok(())) => None,
+        Ok(Err(error)) => Some(error),
+        Err(_) => Some(LaunchError::Invalid(
+            "dynamic tracer unwound; cleanup remains owned",
+        )),
+    };
+    if !announced {
+        let _ = ready.send(Err(
+            failure.unwrap_or(LaunchError::Invalid("dynamic launch cancelled"))
+        ));
+    }
+    let cleanup = owner.cleanup();
+    let _ = done.send(cleanup);
+}
+
+impl Owner {
+    fn new(session: u64, cancel: Arc<AtomicBool>) -> Self {
+        Self {
+            pid: 0,
+            initial_exec: None,
+            session,
+            sequence: 0,
+            state: State::Startup,
+            cancel,
+            closing: false,
+            interrupt_stops_remaining: 0,
+            syscall_open: true,
+            owned: BTreeSet::new(),
+            stopped: BTreeMap::new(),
+            handles: BTreeMap::new(),
+            reaped: Vec::new(),
+            lost_wait: false,
+            #[cfg(test)]
+            fail_before_seize: false,
+            #[cfg(test)]
+            deny_kill_for_test: false,
+        }
+    }
+    pub(super) fn register_root(&mut self, pid: libc::pid_t) {
+        self.pid = pid;
+        self.owned.insert(pid);
+    }
+    pub(super) fn pin_root(&mut self, handle: OwnedFd) {
+        self.handles.insert(self.pid, handle);
+    }
+    #[cfg(test)]
+    pub(super) fn kill_bootstrap_for_test(&self) -> Result<(), LaunchError> {
+        let handle = self.handles.get(&self.pid).unwrap();
+        // SAFETY: CLONE_PIDFD pinned this exact bootstrap before any fallible
+        // operation. This private failure injection runs before PTRACE_SEIZE.
+        if unsafe {
+            libc::syscall(
+                libc::SYS_pidfd_send_signal,
+                handle.as_raw_fd(),
+                libc::SIGKILL,
+                std::ptr::null::<libc::siginfo_t>(),
+                0,
+            )
+        } == 0
+        {
+            Ok(())
+        } else {
+            Err(system("private bootstrap kill"))
+        }
+    }
+    pub(super) fn released(&mut self, tid: libc::pid_t) {
+        self.stopped.remove(&tid);
+    }
+    pub(super) fn time_left(
+        &self,
+        until: Instant,
+        operation: &'static str,
+    ) -> Result<(), LaunchError> {
+        if self.cancel.load(Ordering::Acquire) {
+            return Err(LaunchError::Invalid("dynamic operation cancelled"));
+        }
+        if Instant::now() >= until {
+            return Err(LaunchError::Timeout(operation));
+        }
+        Ok(())
+    }
+    pub(super) fn pin_process(&mut self, pid: libc::pid_t) -> Result<(), LaunchError> {
+        if self.handles.contains_key(&pid) {
+            return Ok(());
+        }
+        // SAFETY: pid is an exclusively owned, unreaped process incarnation.
+        let descriptor = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) };
+        if descriptor < 0 {
+            return Err(system("pidfd_open dynamic process"));
+        }
+        // SAFETY: the syscall returned one newly owned descriptor.
+        self.handles
+            .insert(pid, unsafe { OwnedFd::from_raw_fd(descriptor as i32) });
+        Ok(())
+    }
+    fn terminal(&mut self, tid: libc::pid_t, status: i32) {
+        if libc::WIFEXITED(status) || libc::WIFSIGNALED(status) {
+            // Retire numeric signalling authority before any caller assertion.
+            self.owned.remove(&tid);
+            self.stopped.remove(&tid);
+            self.reaped.push(tid);
+        }
+    }
+    fn poll_raw(&mut self) -> Result<Option<(libc::pid_t, i32)>, LaunchError> {
+        let mut status = 0;
+        // SAFETY: this dedicated tracer thread creates no unrelated children and
+        // invokes no supplied callbacks. The embedding contract also prohibits
+        // global hooks from creating children here. __WNOTHREAD excludes other
+        // host threads' children.
+        let tid = unsafe {
+            libc::waitpid(
+                -1,
+                &raw mut status,
+                libc::WNOHANG | libc::__WALL | libc::__WNOTHREAD,
+            )
+        };
+        if tid > 0 {
+            if libc::WIFSTOPPED(status) {
+                self.owned.insert(tid);
+                self.stopped.insert(tid, status);
+            }
+            self.terminal(tid, status);
+            Ok(Some((tid, status)))
+        } else if tid == 0 {
+            Ok(None)
+        } else {
+            let error = io::Error::last_os_error();
+            if error.kind() == io::ErrorKind::Interrupted {
+                Ok(None)
+            } else {
+                Err(io_error("wait dynamic tracer domain", error))
+            }
+        }
+    }
+    pub(super) fn wait_raw(
+        &mut self,
+        until: Instant,
+        operation: &'static str,
+    ) -> Result<(libc::pid_t, i32), LaunchError> {
+        loop {
+            self.time_left(until, operation)?;
+            if let Some(event) = self.poll_raw()? {
+                return Ok(event);
+            }
+            std::thread::sleep(Duration::from_millis(1));
+        }
+    }
+    pub(super) fn hold(&mut self, kind: DynamicEventKind) -> Result<DynamicEvent, LaunchError> {
+        self.sequence = self
+            .sequence
+            .checked_add(1)
+            .ok_or(LaunchError::Invalid("dynamic stop identity exhausted"))?;
+        let event = DynamicEvent {
+            tid: self.pid,
+            kind,
+            stop: Some(DynamicStop {
+                session: self.session,
+                sequence: self.sequence,
+                tid: self.pid,
+            }),
+        };
+        self.state = State::Held(event.clone());
+        Ok(event)
+    }
+    fn require_stop(&self, token: &DynamicStop) -> Result<&DynamicEvent, LaunchError> {
+        match &self.state {
+            State::Held(event) if event.stop.as_ref() == Some(token) => Ok(event),
+            _ => Err(LaunchError::Invalid("dynamic stop token is not current")),
+        }
+    }
+    fn serve(&mut self, commands: Receiver<Command>) -> Result<(), LaunchError> {
+        while !self.cancel.load(Ordering::Acquire) && !self.closing {
+            let command = match commands.recv_timeout(Duration::from_millis(1)) {
+                Ok(command) => command,
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue,
+                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+            };
+            let response = self.execute(command.request, command.until);
+            if matches!(&response, Err(LaunchError::Timeout(_))) {
+                self.closing = true;
+            }
+            if self.closing {
+                self.cancel.store(true, Ordering::Release);
+            }
+            if command.reply.send(response).is_err() {
+                self.closing = true;
+            }
+        }
+        Ok(())
+    }
+    fn execute(&mut self, request: Request, until: Instant) -> Result<Response, LaunchError> {
+        self.time_left(until, "dynamic command")?;
+        match request {
+            #[cfg(test)]
+            Request::PanicForCleanupTest => panic!("injected dynamic tracer unwind"),
+            Request::Resume(token, action) => self.resume(&token, action).map(|()| Response::Unit),
+            Request::Wait => {
+                if !matches!(self.state, State::Running | State::Listening) {
+                    return Err(LaunchError::Invalid(
+                        "dynamic wait requires a released task",
+                    ));
+                }
+                self.wait_event(until).map(Response::Event)
+            }
+            Request::Interrupt => {
+                if !matches!(self.state, State::Running) {
+                    return Err(LaunchError::Invalid(
+                        "dynamic interruption requires running execution",
+                    ));
+                }
+                if let Err(error) = ptrace(libc::PTRACE_INTERRUPT, self.pid, 0, 0) {
+                    self.closing = true;
+                    return Err(error);
+                }
+                self.interrupt_stops_remaining = 2;
+                self.wait_event(until).map(Response::Event)
+            }
+            Request::Registers(token) => {
+                self.require_stop(&token)?;
+                read_registers(self.pid).map(Response::Registers)
+            }
+            Request::Xstate(token) => {
+                self.require_stop(&token)?;
+                xstate(self.pid).map(Response::Bytes)
+            }
+            Request::Memory(token, address, len) => {
+                self.require_stop(&token)?;
+                read_memory(self.pid, address, len).map(Response::Bytes)
+            }
+            Request::Mask(token) => {
+                self.require_stop(&token)?;
+                launch::task_mask(self.pid).map(Response::Mask)
+            }
+        }
+    }
+    fn resume(&mut self, token: &DynamicStop, action: DynamicResume) -> Result<(), LaunchError> {
+        let event = self.require_stop(token)?;
+        let (request, signal) = match (&event.kind, action) {
+            (DynamicEventKind::SignalDelivery(info), DynamicResume::DeliverOriginal) => {
+                (libc::PTRACE_SYSCALL, info.signal())
+            }
+            (DynamicEventKind::GroupStop { .. }, DynamicResume::Listen) => (libc::PTRACE_LISTEN, 0),
+            (
+                DynamicEventKind::Exec { .. }
+                | DynamicEventKind::SyscallEntry { .. }
+                | DynamicEventKind::SyscallExit { .. }
+                | DynamicEventKind::Interrupted
+                | DynamicEventKind::GroupContinued,
+                DynamicResume::Continue,
+            ) => (libc::PTRACE_SYSCALL, 0),
+            _ => {
+                return Err(LaunchError::Invalid(
+                    "dynamic stop requires its exact signal or control disposition",
+                ));
+            }
+        };
+        if let DynamicEventKind::SyscallEntry { number, .. } = &event.kind {
+            if matches!(
+                *number as libc::c_long,
+                libc::SYS_clone
+                    | libc::SYS_clone3
+                    | libc::SYS_fork
+                    | libc::SYS_vfork
+                    | libc::SYS_execve
+                    | libc::SYS_execveat
+            ) {
+                self.closing = true;
+                return Err(LaunchError::Invalid(
+                    "dynamic creation and later exec are not yet qualified",
+                ));
+            }
+        }
+        if let Err(error) = ptrace(request, self.pid, 0, signal as usize) {
+            self.closing = true;
+            return Err(error);
+        }
+        self.released(self.pid);
+        self.state = if request == libc::PTRACE_LISTEN {
+            State::Listening
+        } else {
+            State::Running
+        };
+        Ok(())
+    }
+    fn wait_event(&mut self, until: Instant) -> Result<DynamicEvent, LaunchError> {
+        let result = (|| {
+            loop {
+                let (tid, status) = self.wait_raw(until, "dynamic native event")?;
+                if tid != self.pid {
+                    return Err(LaunchError::Invalid(
+                        "unexpected dynamic child is owned for cleanup",
+                    ));
+                }
+                if libc::WIFEXITED(status) || libc::WIFSIGNALED(status) {
+                    self.state = State::Terminal;
+                    return Ok(DynamicEvent {
+                        tid,
+                        stop: None,
+                        kind: if libc::WIFEXITED(status) {
+                            DynamicEventKind::Exited {
+                                code: libc::WEXITSTATUS(status),
+                            }
+                        } else {
+                            DynamicEventKind::Signaled {
+                                signal: libc::WTERMSIG(status),
+                            }
+                        },
+                    });
+                }
+                if !libc::WIFSTOPPED(status) {
+                    return Err(LaunchError::Invalid("invalid dynamic wait status"));
+                }
+                let possible_interrupt = self.interrupt_stops_remaining != 0;
+                self.interrupt_stops_remaining = self.interrupt_stops_remaining.saturating_sub(1);
+                let signal = libc::WSTOPSIG(status);
+                let event = status >> 16;
+                if event == libc::PTRACE_EVENT_EXIT {
+                    // Pre-exit is not a reaping receipt. No original instruction
+                    // remains to run; continue to the actual terminal wait.
+                    ptrace(libc::PTRACE_CONT, tid, 0, 0)?;
+                    self.released(tid);
+                    continue;
+                }
+                if event == libc::PTRACE_EVENT_STOP {
+                    if matches!(
+                        signal,
+                        libc::SIGSTOP | libc::SIGTSTP | libc::SIGTTIN | libc::SIGTTOU
+                    ) {
+                        return self.hold(DynamicEventKind::GroupStop { signal });
+                    }
+                    if signal == libc::SIGTRAP {
+                        if matches!(self.state, State::Listening) {
+                            // Linux v7.1.3 do_jobctl_trap emits SIGTRAP only
+                            // after group_stop_count and SIGNAL_STOP_STOPPED
+                            // clear. Even a deferred INTERRUPT cannot bypass
+                            // a live job-control stop: it retains the stop signal.
+                            return self.hold(DynamicEventKind::GroupContinued);
+                        }
+                        if possible_interrupt {
+                            return self.hold(DynamicEventKind::Interrupted);
+                        }
+                    }
+                    return Err(LaunchError::Invalid("unowned dynamic control stop"));
+                }
+                if event != 0 {
+                    self.discover_event_child(tid, status);
+                    return Err(LaunchError::Invalid("unexpected dynamic lifecycle event"));
+                }
+                if signal == (libc::SIGTRAP | 0x80) {
+                    return self.syscall_event();
+                }
+                let mut raw = [0_u8; 128];
+                ptrace(libc::PTRACE_GETSIGINFO, tid, 0, raw.as_mut_ptr() as usize)?;
+                let info = DynamicSignalInfo { raw };
+                if info.signal() != signal {
+                    return Err(LaunchError::Invalid(
+                        "dynamic siginfo disagrees with wait status",
+                    ));
+                }
+                read_registers(tid)?;
+                return self.hold(DynamicEventKind::SignalDelivery(info));
+            }
+        })();
+        if result.is_err() {
+            self.closing = true;
+        }
+        result
+    }
+    fn syscall_event(&mut self) -> Result<DynamicEvent, LaunchError> {
+        let info = syscall_info(self.pid)?;
+        let registers = read_registers(self.pid)?;
+        if info.arch != AUDIT_ARCH_X86_64
+            || registers.cs != 0x33
+            || info.instruction_pointer != registers.rip
+            || info.stack_pointer != registers.rsp
+        {
+            return Err(LaunchError::Invalid(
+                "dynamic syscall ABI/state did not authenticate",
+            ));
+        }
+        match info.op {
+            libc::PTRACE_SYSCALL_INFO_ENTRY => {
+                // SAFETY: GET_SYSCALL_INFO authenticated the ENTRY variant.
+                let entry = unsafe { info.u.entry };
+                // Linux dispatch uses a signed 32-bit syscall number. Refuse
+                // upper-word aliases before they can bypass native lifecycle
+                // checks (and refuse the distinct x32 ABI explicitly).
+                if self.syscall_open
+                    || entry.nr > i32::MAX as u64
+                    || entry.nr & 0x4000_0000 != 0
+                    || entry.nr != registers.orig_rax
+                    || entry.args != arguments(&registers)
+                {
+                    return Err(LaunchError::Invalid(
+                        "dynamic syscall entry is out of order or non-native",
+                    ));
+                }
+                self.syscall_open = true;
+                self.hold(DynamicEventKind::SyscallEntry {
+                    number: entry.nr,
+                    arguments: entry.args,
+                })
+            }
+            libc::PTRACE_SYSCALL_INFO_EXIT => {
+                // SAFETY: GET_SYSCALL_INFO authenticated the EXIT variant.
+                let exit = unsafe { info.u.exit };
+                if !self.syscall_open || registers.rax as i64 != exit.sval {
+                    return Err(LaunchError::Invalid(
+                        "dynamic syscall exit is out of order or changed",
+                    ));
+                }
+                if let Some(mut expected) = self.initial_exec.take() {
+                    expected.rax = 0;
+                    if registers != expected || exit.sval != 0 || exit.is_error != 0 {
+                        return Err(LaunchError::Invalid(
+                            "initial dynamic exec return changed state",
+                        ));
+                    }
+                }
+                self.syscall_open = false;
+                self.hold(DynamicEventKind::SyscallExit {
+                    result: exit.sval,
+                    is_error: exit.is_error != 0,
+                })
+            }
+            _ => Err(LaunchError::Invalid("unsupported dynamic syscall stop")),
+        }
+    }
+    fn discover_event_child(&mut self, tid: libc::pid_t, status: i32) {
+        if !matches!(
+            status >> 16,
+            libc::PTRACE_EVENT_FORK | libc::PTRACE_EVENT_VFORK | libc::PTRACE_EVENT_CLONE
+        ) {
+            return;
+        }
+        let mut child = 0_u64;
+        if ptrace(libc::PTRACE_GETEVENTMSG, tid, 0, (&raw mut child) as usize).is_ok() {
+            if let Ok(child) = libc::pid_t::try_from(child) {
+                // Child terminal and parent creation statuses may be consumed
+                // in either order. A late payload must not recreate numeric
+                // signalling authority after the child has already been reaped.
+                // This increment never resumes a creation entry publicly, and
+                // cleanup never resumes application code, so a retired number
+                // cannot legitimately acquire a new creation incarnation here.
+                if child > 0 && !self.reaped.contains(&child) {
+                    self.owned.insert(child);
+                    let _ = self.pin_process(child);
+                }
+            }
+        }
+    }
+    fn kill_owned(&self) -> BTreeSet<libc::pid_t> {
+        let mut confirmed = BTreeSet::new();
+        #[cfg(test)]
+        if self.deny_kill_for_test {
+            return confirmed;
+        }
+        for &tid in &self.owned {
+            if let Some(handle) = self.handles.get(&tid) {
+                // SAFETY: this descriptor pins this exact owned process.
+                if unsafe {
+                    libc::syscall(
+                        libc::SYS_pidfd_send_signal,
+                        handle.as_raw_fd(),
+                        libc::SIGKILL,
+                        std::ptr::null::<libc::siginfo_t>(),
+                        0,
+                    )
+                } == 0
+                {
+                    confirmed.insert(tid);
+                    continue;
+                }
+            }
+            // SAFETY: only this thread consumes these terminal waits. Numeric
+            // authority is removed immediately when a terminal status is seen.
+            if unsafe { libc::syscall(libc::SYS_tkill, tid, libc::SIGKILL) } == 0 {
+                confirmed.insert(tid);
+            }
+        }
+        confirmed
+    }
+    fn release_killed_stops(&mut self, killed: &BTreeSet<libc::pid_t>) {
+        self.stopped.retain(|&tid, status| {
+            // A pre-exit event cannot return to application instructions. Every
+            // other stop needs positive SIGKILL success for this exact task;
+            // ESRCH, permission failure or any uncertain result is not evidence.
+            if *status >> 16 != libc::PTRACE_EVENT_EXIT && !killed.contains(&tid) {
+                return true;
+            }
+            ptrace(libc::PTRACE_CONT, tid, 0, 0).is_err()
+        });
+    }
+    fn cleanup(&mut self) -> Result<DynamicCleanup, LaunchError> {
+        if self.pid == 0 {
+            return Ok(DynamicCleanup { reaped: Vec::new() });
+        }
+        loop {
+            // First collect queued creation payloads before a kill can replace
+            // the parent's ptrace event with a terminal status.
+            loop {
+                match self.poll_raw() {
+                    Ok(Some((tid, status))) => {
+                        if libc::WIFSTOPPED(status) {
+                            self.discover_event_child(tid, status);
+                        }
+                    }
+                    Ok(None) => break,
+                    Err(LaunchError::System { source, .. })
+                        if source.raw_os_error() == Some(libc::ECHILD) =>
+                    {
+                        if !self.owned.is_empty() {
+                            self.lost_wait = true;
+                        }
+                        self.owned.clear();
+                        return if self.lost_wait {
+                            Err(LaunchError::Invalid(
+                                "dynamic terminal wait ownership was lost",
+                            ))
+                        } else {
+                            Ok(DynamicCleanup {
+                                reaped: std::mem::take(&mut self.reaped),
+                            })
+                        };
+                    }
+                    Err(_) => {
+                        self.lost_wait = true;
+                        break;
+                    }
+                }
+            }
+            let killed = self.kill_owned();
+            self.release_killed_stops(&killed);
+            std::thread::sleep(Duration::from_millis(1));
+        }
+    }
+}

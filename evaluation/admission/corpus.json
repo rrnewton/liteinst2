@@ -14,6 +14,14 @@
         "ignored": 0,
         "tests": 10
       },
+      "test/dynamic_control": {
+        "ignored": 0,
+        "tests": 8
+      },
+      "test/dynamic_signals": {
+        "ignored": 0,
+        "tests": 4
+      },
       "test/lifecycle": {
         "ignored": 0,
         "tests": 16
@@ -48,7 +56,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 8
+        "tests": 15
       }
     },
     "workspace_tests": {
@@ -115,6 +123,14 @@
       "test/core_bridge": {
         "ignored": 0,
         "tests": 3
+      },
+      "test/dynamic_control": {
+        "ignored": 0,
+        "tests": 8
+      },
+      "test/dynamic_signals": {
+        "ignored": 0,
+        "tests": 4
       },
       "test/e2e": {
         "ignored": 0,
@@ -298,7 +314,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 8
+        "tests": 15
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,

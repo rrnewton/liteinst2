@@ -146,7 +146,8 @@ marker; the comparison checks every worker's GPRs, flags, full kernel extended
 state and initialized stack bytes against A1 execution. Fixed worker stack
 addresses allow exact RSP comparison without normalization.
 
-Dropping any owner kills and reaps only its child. The caller must not trace or
+Dropping a checkpoint, stopped-process or page-gate owner kills and reaps only
+its child. The caller must not trace or
 reap it independently, install a competing global child reaper, or change
 SIGCHLD disposition to discard children. Launch/control waits are bounded by
 at most 30 seconds. Cleanup waits two seconds per attempt; a failed explicit
@@ -205,3 +206,23 @@ cross-page reuse and cached A1 full-state observations. These are finite
 immutable-owner reuse checks. No persisted artifact, load-bias binding, lazy
 hashing, file-backed sparse overlay, mapping-lifecycle integration or full B4
 completion is established; preparation cost must not be omitted from timing.
+
+`DynamicSession` is a separate, uninstrumented native controller for the next
+lifecycle increment. It uses `PTRACE_SEIZE`, active interruption and a dedicated
+tracer thread with an exclusive wait domain. Its initial event is the actual
+kernel exec event; its next syscall-exit event still describes that kernel stop.
+Neither is relabelled as a completed first-user register image. Session/sequence
+stop tokens prevent stale inspection and release. Original signal information
+is retained in full, and the only delivery disposition forwards the original
+signal. Job-control stops use `PTRACE_LISTEN`; syscall restart and signal return
+remain native kernel operations.
+
+This controller grants no page admission or publication lease. Application
+creation and later exec are refused before execution in this increment, as are
+unsupported syscall personalities. Its native fixtures compare queued signal
+payloads, handler records, alternate-stack use, interrupted/restarted reads and
+continuation output with ordinary untraced runs of the same ELF. These are
+finite native-control checks, not instrumented signal-entry or general lifecycle
+qualification. `Drop` requests cancellation without waiting. `terminate` returns
+a cleanup receipt only after terminal waits and an empty owned wait domain; on
+a client timeout the original tracer keeps cleanup ownership in the background.
