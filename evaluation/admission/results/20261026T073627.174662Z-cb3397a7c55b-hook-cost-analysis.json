@@ -1,0 +1,71 @@
+{
+  "experiment": "b2-hook-cost-invocation",
+  "failure_code": "correctness_hardware_differs",
+  "hardware_field_differences": {
+    "affinity_cpu_count": {
+      "before": 316,
+      "inside_reservation": 2
+    },
+    "logical_cpus_visible": {
+      "before": 316,
+      "inside_reservation": 2
+    }
+  },
+  "interpretation": "The preflight comparator treated scope-visible logical CPU count as invariant across hard CPU reservation. The failed attempt supplies no performance observation.",
+  "measurement_started": false,
+  "observed_completions": 0,
+  "observed_sessions": 0,
+  "other_recorded_hardware_fields_identical": true,
+  "outer_cleanup_complete": true,
+  "outer_reaped_descendants": 0,
+  "placement": {
+    "affinity": [
+      3,
+      5
+    ],
+    "effective_cpuset": [
+      3,
+      5
+    ],
+    "hard_cpuset": "cgroup_v2_effective",
+    "physical_core_exclusivity_claimed": false,
+    "reserved_logical_cpus": 2,
+    "selected_physical_cores": 2,
+    "topology": [
+      {
+        "core": 3,
+        "cpu": 3,
+        "governor": {
+          "status": "observed",
+          "value": "performance"
+        },
+        "package": 0,
+        "thread_siblings": [
+          3,
+          161
+        ]
+      },
+      {
+        "core": 5,
+        "cpu": 5,
+        "governor": {
+          "status": "observed",
+          "value": "performance"
+        },
+        "package": 0,
+        "thread_siblings": [
+          5,
+          163
+        ]
+      }
+    ]
+  },
+  "private_inner_staging_sha256": "a14ac315db2be2732541ee6e50f83d997df12bda8fa581864e1da924f16fa491",
+  "qualified": false,
+  "receipt": "20261026T073627.174662Z-cb3397a7c55b-hook-cost.json",
+  "receipt_sha256": "c8c1d2f552998c1b87d6f1a3d19dddecac0d7a909e177cdd9aa3fe1bd9508f18",
+  "record_kind": "derived_failure_analysis",
+  "release_build_started": false,
+  "schema_version": 1,
+  "source_revision": "cb3397a7c55b45bb7d11c7b337f8199be9286279"
+}
