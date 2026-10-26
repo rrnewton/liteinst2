@@ -33,14 +33,16 @@ fn stop() -> AdmissionStop {
     }
 }
 fn model_profile(dr6: u64) -> ControlProfile {
-    let mut value = ControlProfile::default();
-    value.complete = true;
-    value.tid = Some(42);
+    let mut value = ControlProfile {
+        complete: true,
+        tid: Some(42),
+        rseq_request: Some(Request {
+            result: 24,
+            errno: None,
+        }),
+        ..ControlProfile::default()
+    };
     value.cet.complete = true; // synthetic certificate predicate, never a query claim
-    value.rseq_request = Some(Request {
-        result: 24,
-        errno: None,
-    });
     value.debug.values = [0, 0, 0, 0, dr6, 0];
     value.debug.requests = std::array::from_fn(|index| {
         Some(Request {

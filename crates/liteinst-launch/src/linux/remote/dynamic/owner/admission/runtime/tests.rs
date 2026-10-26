@@ -14,7 +14,7 @@ fn complete(storage: &[u8], copied: usize) -> SourceReadProgress {
         requested_bytes: storage.len(),
         copied_bytes: copied,
         complete: true,
-        filesystem_type: Some(libc::PROC_SUPER_MAGIC as i64),
+        filesystem_type: Some(libc::PROC_SUPER_MAGIC),
         last_request: Some(SourceReadRequest {
             operation: SourceReadOperation::ReadMaps,
             address: copied as u64,

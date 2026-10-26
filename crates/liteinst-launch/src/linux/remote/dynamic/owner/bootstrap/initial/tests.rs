@@ -98,8 +98,10 @@ fn initial_bootstrap_capacity_counts_six_max_states_three_maps_and_descriptors()
 
 #[test]
 fn initial_bootstrap_effect_capacity_keeps_every_attempt_and_first_failure() {
-    let mut progress = InitialBootstrapProgress::default();
-    progress.phase = InitialBootstrapPhase::Quarantine;
+    let mut progress = InitialBootstrapProgress {
+        phase: InitialBootstrapPhase::Quarantine,
+        ..InitialBootstrapProgress::default()
+    };
     for index in 0..EFFECTS {
         let effect = InitialBootstrapEffect::Bootstrap(BootstrapEffect::Quarantine {
             start: (index * PAGE) as u64,
@@ -232,8 +234,10 @@ fn initial_bootstrap_transfer_is_one_shot_and_preserves_failed_data() {
         "initial bootstrap is not complete",
     );
     assert_eq!(value, Some([1, 2, 3]));
-    let mut progress = InitialBootstrapProgress::default();
-    progress.phase = InitialBootstrapPhase::Complete;
+    let mut progress = InitialBootstrapProgress {
+        phase: InitialBootstrapPhase::Complete,
+        ..InitialBootstrapProgress::default()
+    };
     assert_eq!(
         storage::transfer(&mut progress, &mut value).unwrap(),
         [1, 2, 3]

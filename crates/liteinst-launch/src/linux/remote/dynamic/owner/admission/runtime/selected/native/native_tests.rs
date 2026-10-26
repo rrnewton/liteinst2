@@ -91,6 +91,17 @@ struct CetRetained {
     status: Vec<CetStatusRetained>,
     complete: bool,
 }
+type RetainedStateRequests = (
+    Option<Request>,
+    Option<Request>,
+    Option<Request>,
+    usize,
+    usize,
+    usize,
+    bool,
+);
+type RetainedMap = (Vec<u8>, usize, Option<Request>, Option<i64>, bool);
+type RetainedControlProfile = ([u64; 6], [Option<Request>; 6], [u8; 24], Option<Request>);
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct SelectedRetained {
     until: Instant,
@@ -106,18 +117,10 @@ struct SelectedRetained {
     source: Vec<Vec<u8>>,
     progress: Vec<SourceReadProgress>,
     states: Vec<TaskStateSnapshot>,
-    requests: Vec<(
-        Option<Request>,
-        Option<Request>,
-        Option<Request>,
-        usize,
-        usize,
-        usize,
-        bool,
-    )>,
+    requests: Vec<RetainedStateRequests>,
     effects: [Option<NativeEffectRecord>; 4],
-    maps: Vec<(Vec<u8>, usize, Option<Request>, Option<i64>, bool)>,
-    profiles: Vec<([u64; 6], [Option<Request>; 6], [u8; 24], Option<Request>)>,
+    maps: Vec<RetainedMap>,
+    profiles: Vec<RetainedControlProfile>,
     cet: Vec<CetRetained>,
     wait: Option<(i32, i32)>,
     queries_started: bool,
