@@ -155,7 +155,7 @@ pub(super) fn start(
     let argv_pointer = argv.as_ptr();
     let envp_pointer = envp.as_ptr();
     owner.time_left(until, "seized launch preparation")?;
-    let all_blockable = u64::MAX & !(1 << (libc::SIGKILL - 1)) & !(1 << (libc::SIGSTOP - 1));
+    let all_blockable = !(1_u64 << (libc::SIGKILL - 1)) & !(1_u64 << (libc::SIGSTOP - 1));
     if current_mask()? != all_blockable {
         return Err(LaunchError::Invalid(
             "dynamic tracer does not block every blockable signal",
