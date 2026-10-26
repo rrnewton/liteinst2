@@ -171,3 +171,12 @@ and delivered observation counts. Concurrent metrics additionally record
 selected publication transactions, faults collected before publication, and
 time from the first observed stop through verified collective exclusion.
 Debug shared-host samples are diagnostic only.
+
+`lifecycle::LifecycleRegistry` is bounded, pure bookkeeping for a future native
+controller. It tracks non-reused task/process/mm identities, creation and exec
+intents, newborn stops, vfork, signal and saved-resume obligations, mm generation
+invalidation and poison. Failed transitions preserve the entire registry.
+An exclusion candidate is a consistent registry snapshot, never a core lease
+or native exclusion proof. It does not trace tasks, authenticate kernel events,
+reap children, revoke mappings or deliver application signals; the existing
+runtime's lifecycle restrictions remain in force.
