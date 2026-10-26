@@ -147,14 +147,13 @@ impl Owner {
         let (admission, ready) = AdmissionOwner::start(
             self, initial, facts, options, signal, until,
         )
-        .map_err(|error| {
+        .inspect_err(|error| {
             if let Some(journal) = &self.signal_journal {
-                match &error {
+                match error {
                     GateError::Control(error) => journal.fail_error(error),
                     _ => journal.fail(super::signal_journal::SignalJournalFailure::InvalidState),
                 }
             }
-            error
         })?;
         self.admission = Some(admission);
         Ok(if signal_enabled {

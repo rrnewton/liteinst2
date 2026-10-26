@@ -116,8 +116,7 @@ pub(super) unsafe fn execute(
             || before.registers.eflags & (0x100 | 0x10000) != 0
             || expected.registers.orig_rax != u64::MAX
             || expected.registers.cs != 0x33
-            || extent < 512
-            || extent >= MAX_XSTATE
+            || !(512..MAX_XSTATE).contains(&extent)
             || extent % 8 != 0
             || before.xstate.len() != extent
             || expected.xstate.len() != extent

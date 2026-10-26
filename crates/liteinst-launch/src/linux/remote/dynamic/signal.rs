@@ -162,8 +162,11 @@ pub(super) fn overlaps(left: &Range<u64>, right: &Range<u64>) -> bool {
 /// Exact original exception metadata exposed in a later real native frame.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct DynamicExceptionMetadata {
+    /// Saved x86 exception vector from the authenticated original context.
     pub trapno: u64,
+    /// Saved x86 exception error code, including a genuine zero value.
     pub error_code: u64,
+    /// Saved page-fault address field from the original context.
     pub cr2: u64,
 }
 
@@ -180,15 +183,20 @@ pub struct SignalDeliveryToken {
 /// A real held application signal, pending the one supported original delivery.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DynamicSignalPending {
+    /// Single-use identity tied to this owned stop and its original deadline.
     pub token: SignalDeliveryToken,
+    /// Complete authenticated interrupted state at the pending delivery stop.
     pub state: DynamicAdmissionState,
+    /// Actual native signal information at that stop.
     pub signal: DynamicSignalInfo,
 }
 
 /// Non-reused identity of one actual live frame; never a memory-write permit.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SignalFrameId {
+    /// Session identity; a frame from another session cannot be substituted.
     pub session: u64,
+    /// Non-reused frame sequence within the session.
     pub serial: u64,
 }
 
@@ -196,10 +204,15 @@ pub struct SignalFrameId {
 /// Addresses are original process addresses, not local pointers.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DynamicSignalFrame {
+    /// Identity of the actual frame to which these bytes belong.
     pub id: SignalFrameId,
+    /// Immutable census version for this retained frame observation.
     pub version: u64,
+    /// Original address of the beginning of the retained frame image.
     pub address: u64,
+    /// Original address of the frame's floating-point state payload.
     pub fpstate: u64,
+    /// Complete retained image beginning at `address`, including native padding.
     pub bytes: Vec<u8>,
 }
 
@@ -208,27 +221,38 @@ pub struct DynamicSignalFrame {
 /// that the original kernel frame was already transparent.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DynamicSignalEntry {
+    /// Complete original state interrupted by the delivered signal.
     pub interrupted: DynamicAdmissionState,
     /// Actual first NX fault, before private work; RF is retained exactly.
     pub handler_fetch: DynamicAdmissionState,
     /// Actual owned handler-head INT3 before RIP-only neutral restoration.
     pub handler_guard: DynamicAdmissionState,
+    /// Actual signal information associated with the owned handler guard stop.
     pub handler_guard_signal: DynamicSignalInfo,
     /// Complete logical head state after the genuine neutral bridge.
     pub handler: DynamicAdmissionState,
+    /// Actual information for the original application signal being delivered.
     pub signal: DynamicSignalInfo,
+    /// Authenticated original exception fields used for the three-word projection.
     pub original_metadata: DynamicExceptionMetadata,
+    /// Actual kernel-constructed frame before metadata projection.
     pub raw_frame: DynamicSignalFrame,
+    /// Application-visible frame after the exact three-word projection.
     pub projected_frame: DynamicSignalFrame,
 }
 
 /// Actual native syscall EXIT information retained without semantic relabeling.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct DynamicSignalReturnInfo {
+    /// Architecture identifier reported by `PTRACE_GET_SYSCALL_INFO`.
     pub architecture: u32,
+    /// Instruction pointer reported at the actual return EXIT stop.
     pub instruction_pointer: u64,
+    /// Stack pointer reported at that stop.
     pub stack_pointer: u64,
+    /// Raw EXIT result bits, retained even when restored RAX resembles an errno.
     pub result: i64,
+    /// Kernel-reported error flag, without reinterpreting restored application state.
     pub is_error: bool,
 }
 
@@ -236,18 +260,26 @@ pub struct DynamicSignalReturnInfo {
 /// RCX/R11 and orig_rax are not an ordinary selected-SYSCALL completion.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DynamicSignalReturn {
+    /// Identity of the frame consumed by the actual return.
     pub frame: SignalFrameId,
+    /// Final authenticated frame version consumed by the return.
     pub version: u64,
+    /// Selected original `rt_sigreturn` input before kernel entry.
     pub input: SelectedInput,
+    /// Complete state at the genuine syscall ENTRY stop.
     pub entry: DynamicAdmissionState,
+    /// Complete restored state observed at the genuine return EXIT stop.
     pub returned: DynamicAdmissionState,
+    /// Raw native EXIT information accompanying the restored state.
     pub information: DynamicSignalReturnInfo,
 }
 
 /// Only the opt-in signal constructor returns this evidence-bearing failure.
 /// An absent archive means validation/allocation failed before any anchor existed.
 pub struct DynamicSignalLaunchFailure {
+    /// Original constructor failure, independent of later cleanup observations.
     pub error: GateError,
+    /// Retained anchor reader when its archive existed before the failure.
     pub anchor: Option<AnchorReader>,
     pub(super) native_owner_started: bool,
 }

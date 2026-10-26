@@ -461,8 +461,7 @@ fn capture_frame(
     let state_length =
         u32::from_ne_bytes(bytes[offset + 480..offset + 484].try_into().unwrap()) as usize;
     if magic != 0x4650_5853
-        || state_length < 512
-        || state_length > MAX_XSTATE
+        || !(512..=MAX_XSTATE).contains(&state_length)
         || extent != state_length + 4
         || offset.checked_add(extent).is_none_or(|end| end > length)
         || u32::from_ne_bytes(

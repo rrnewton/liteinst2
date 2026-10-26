@@ -12,32 +12,66 @@ const STATE_SLOTS: usize = 16;
 const FRAME_SLOTS: usize = 32;
 pub(in crate::linux::remote::dynamic) const FRAME_BOUND: usize = MAX_XSTATE + 4096;
 
+type CapturedSyscallState = (
+    (libc::ptrace_syscall_info, [u8; 88], usize),
+    TaskStateSnapshot,
+);
+
+/// Diagnostic stage of the bounded signal transaction.
+///
+/// A stage alone does not establish successful observation or validation;
+/// those outcomes are retained as separate journal facts.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SignalJournalPhase {
+    /// Fixed evidence storage is prepared, before delivery is pending.
     Prepared,
+    /// An original signal-delivery stop is being checked and held for delivery.
     DeliveryPending,
+    /// The owner is releasing the held task with the original signal.
     DeliveryRelease,
+    /// The owner is examining the handler's initial nonexecutable-page fault.
     HandlerFetch,
+    /// The original kernel-created signal frame is being captured.
     FrameCapture,
+    /// The authenticated original exception metadata is being projected.
     Projection,
+    /// The owner is examining the actual trap at the handler's selected head.
     HandlerGuard,
+    /// The handler-head checkpoint is being prepared for the client.
     HandlerReady,
+    /// Retained frame contents and route obligations are being rechecked.
     FrameRevalidation,
+    /// The owner is advancing to and checking the real `rt_sigreturn` entry.
     ReturnEntry,
+    /// The authenticated `rt_sigreturn` entry is being released to the kernel.
     ReturnRelease,
+    /// The owner is observing and checking the actual restored return state.
     ReturnObserved,
+    /// A genuine neutral checkpoint is restoring owner control after return.
     ReturnBridge,
+    /// Admission state and frame obligations are being reconciled after return.
     ReturnRearmed,
 }
 
+/// First recorded failure category, independent of the later cleanup outcome.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SignalJournalFailure {
+    /// An operation reached its deadline.
     Timeout,
-    NativeIo(Option<i32>),
+    /// A native operation failed, retaining its OS error number when available.
+    NativeIo(
+        /// The original OS error number, if the underlying error supplies one.
+        Option<i32>,
+    ),
+    /// A required state, identity or operation contract was not satisfied.
     InvalidState,
+    /// Fixed evidence capacity was unavailable or the archive was closed.
     Capacity,
+    /// Cancellation was recorded for the transaction.
     Cancelled,
+    /// The owner caught a panic while performing the transaction.
     CaughtPanic,
+    /// The archive mutex was observed poisoned.
     ArchivePoisoned,
 }
 
@@ -45,100 +79,173 @@ pub enum SignalJournalFailure {
 /// label; the separate Validated fact names which checks actually completed.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SignalJournalFact {
-    Phase(SignalJournalPhase),
+    /// The writer entered a diagnostic stage, without claiming its success.
+    Phase(
+        /// The stage selected by the writer.
+        SignalJournalPhase,
+    ),
+    /// An actual wait result retained before interpreting its stop kind.
     RawWait {
+        /// The task identifier returned by the wait operation.
         tid: i32,
+        /// The unchanged wait-status word.
         status: i32,
     },
+    /// A `PTRACE_GETSIGINFO` outcome, including initialized bytes on failure.
     Siginfo {
+        /// The task identifier used for the request.
         tid: i32,
+        /// The unmodified request return value; zero denotes success.
         result: i64,
+        /// The OS error number captured immediately when the result is minus one.
         errno: Option<i32>,
+        /// The initialized 128-byte request buffer, including any kernel writes.
         raw: [u8; 128],
     },
     /// Initialized ABI bytes and the unmodified request result, even on error.
     SyscallInfo {
+        /// The task identifier used for `PTRACE_GET_SYSCALL_INFO`.
         tid: i32,
+        /// The unchanged request result, which reports a byte count on success.
         result: i64,
+        /// The OS error number captured immediately when the result is minus one.
         errno: Option<i32>,
+        /// The initialized ABI buffer, retained before interpreting phase or size.
         initialized: [u8; 88],
     },
+    /// A link to a reserved state record, which may contain incomplete reads.
     State {
+        /// The index of the associated record in the snapshot's `states` list.
         slot: usize,
+        /// The task identifier used for the state requests.
         tid: i32,
+        /// Optional typed stop identity; absence supplies no typed stop proof.
         stop: Option<KernelStopIdentity>,
     },
+    /// A link to a frame read whose retained prefix survives a later read failure.
     Frame {
+        /// The index of the associated record in the snapshot's `frames` list.
         slot: usize,
+        /// The starting application address requested by the capture.
         address: u64,
     },
+    /// The owner recorded its intent to resume from an authenticated held stop.
     ReleaseAttempt {
+        /// The held stop identity before the attempted release.
         token: KernelStopIdentity,
     },
+    /// The native resume operation succeeded; no later stop or cleanup is implied.
     Released {
+        /// The stop identity from which the task was released.
         token: KernelStopIdentity,
     },
+    /// The phase-specific checks completed successfully without replacing raw facts.
     Validated {
+        /// The phase whose checks completed.
         phase: SignalJournalPhase,
     },
 }
 
+/// Outcome and initialized scalar substrate of one `PTRACE_GETREGS` request.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SignalRegisterRead {
+    /// The unchanged request return value; zero denotes success.
     pub result: i64,
+    /// The OS error number captured immediately when the result is minus one.
     pub errno: Option<i32>,
     /// Initialized scalar fields, including any partial kernel write. Only
     /// result==0 authenticates these as a complete register observation.
     pub initialized: RegisterSnapshot,
 }
+/// Request metadata for one maximum-capacity `NT_X86_XSTATE` regset read.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SignalXstateRead {
+    /// The unchanged `PTRACE_GETREGSET` return value; zero denotes success.
     pub result: i64,
+    /// The OS error number captured immediately when the result is minus one.
     pub errno: Option<i32>,
+    /// The returned iovec length, retained even when the request failed.
     pub reported_bytes: usize,
+    /// Whether the returned iovec base still identifies the supplied buffer.
     pub pointer_unchanged: bool,
 }
+/// Outcome and initialized kernel-mask word of one `PTRACE_GETSIGMASK` request.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct SignalMaskRead {
+    /// The unchanged request return value; zero denotes success.
     pub result: i64,
+    /// The OS error number captured immediately when the result is minus one.
     pub errno: Option<i32>,
+    /// The initialized mask word, including any write from a failed request.
     pub initialized: u64,
 }
 
+/// Retained independent register, XSTATE and signal-mask request outcomes.
+///
+/// Individual successful reads can coexist with a failed or incomplete record.
+/// Record completion does not establish the surrounding phase's validation.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SignalStateRecord {
+    /// The stable index assigned when this archive state slot was reserved.
     pub slot: usize,
+    /// Whether all three reads passed their capture checks and formed a snapshot.
     pub complete: bool,
+    /// Register fields from a successful GETREGS, even if another read failed.
     pub registers: Option<RegisterSnapshot>,
+    /// The raw GETREGS outcome, or none if that request has not been retained.
     pub register_read: Option<SignalRegisterRead>,
     /// All initialized buffer bytes on a failed request; only a complete
     /// record claims these bytes are an authenticated kernel XSTATE image.
     pub xstate: Vec<u8>,
+    /// Raw XSTATE request metadata, or none if that request has not been retained.
     pub xstate_read: Option<SignalXstateRead>,
+    /// The kernel mask from a successful read, even if another read failed.
     pub signal_mask: Option<u64>,
+    /// The raw mask-read outcome, or none if that request has not been retained.
     pub signal_mask_read: Option<SignalMaskRead>,
 }
 
+/// A requested frame range and the exact prefix copied from successful reads.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SignalFrameRecord {
+    /// The stable index assigned when this archive frame slot was reserved.
     pub slot: usize,
+    /// The starting application address requested by the capture.
     pub address: u64,
+    /// The complete requested byte count, including any unread suffix.
     pub requested: usize,
+    /// Whether the full requested range was read; this does not validate its layout.
     pub complete: bool,
+    /// The actual retained read prefix, without padding an unread suffix.
     pub bytes: Vec<u8>,
 }
 
+/// A detached diagnostic copy of the signal archive at one locked observation.
+///
+/// Partial evidence, the first failure and cleanup are reported independently;
+/// this snapshot grants no authority to resume or modify the application.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct SignalProgressSnapshot {
+    /// The immutable owning session identity.
     pub session: u64,
+    /// The fixed evidence reservation, including unused storage; not live usage.
     pub reserved_bytes: usize,
+    /// The most recently recorded stage, without an implied success claim.
     pub phase: SignalJournalPhase,
+    /// Logical facts in their original order, expanded from bounded storage records.
     pub facts: Vec<SignalJournalFact>,
+    /// Reserved state records, including incomplete observations.
     pub states: Vec<SignalStateRecord>,
+    /// Reserved frame records, including partial read prefixes.
     pub frames: Vec<SignalFrameRecord>,
+    /// The first recorded failure and the stage active when it was recorded.
     pub first_failure: Option<(SignalJournalPhase, SignalJournalFailure)>,
+    /// Whether the owner has closed the archive to further transaction captures.
     pub closing: bool,
+    /// The owner's cleanup result: none until reported, true only on success.
+    /// False does not establish physical disappearance of the owned tasks.
     pub cleanup_complete: Option<bool>,
+    /// Whether archive mutex poisoning was retained or observed during this read.
     pub poisoned: bool,
 }
 
@@ -150,9 +257,14 @@ pub struct SignalProgressReader {
     anchor: AnchorReader,
 }
 impl SignalProgressReader {
+    /// Returns the read-only anchor archive associated with this same session.
     pub fn anchor(&self) -> AnchorReader {
         self.anchor.clone()
     }
+    /// Copies retained evidence under the archive lock, without a tracer request.
+    ///
+    /// Poisoned storage remains readable for diagnosis and is explicitly marked;
+    /// reading it does not validate partial facts or establish cleanup.
     pub fn snapshot(&self) -> SignalProgressSnapshot {
         let (archive, poisoned) = match self.archive.lock() {
             Ok(guard) => (guard, false),
@@ -603,13 +715,7 @@ impl SignalJournalWriter {
         &self,
         tid: i32,
         status: i32,
-    ) -> Result<
-        (
-            (libc::ptrace_syscall_info, [u8; 88], usize),
-            TaskStateSnapshot,
-        ),
-        LaunchError,
-    > {
+    ) -> Result<CapturedSyscallState, LaunchError> {
         self.capture_pair_with(tid, status, Self::read_syscall_into, Self::read_state_into)
     }
     fn capture_pair_with<T>(

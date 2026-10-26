@@ -16,12 +16,15 @@ std::arch::global_asm!(
     reaper = sym reaper,
 );
 unsafe extern "C" {
-    fn liteinst_anchor_reset_spawn(context: *mut Context, descriptor: *mut i32) -> i64;
+    // Assembly receives an address and uses the offset_of! constants above;
+    // nested Rust-only payloads are not passed or interpreted as C values.
+    fn liteinst_anchor_reset_spawn(context: *mut libc::c_void, descriptor: *mut i32) -> i64;
 }
 pub(super) unsafe fn spawn(context: *mut Context, descriptor: *mut i32) -> i64 {
-    unsafe { liteinst_anchor_reset_spawn(context, descriptor) }
+    unsafe { liteinst_anchor_reset_spawn(context.cast(), descriptor) }
 }
-unsafe extern "C" fn reaper(context: *const Context) -> ! {
+unsafe extern "C" fn reaper(context: *const libc::c_void) -> ! {
+    let context = context.cast::<Context>();
     // R has a private mm and copied descriptor table. Only existing bounded
     // raw broker code is called, never arbitrary Rust or caller hooks.
     unsafe { broker::anchor_child((*context).broker, (*context).channels) }

@@ -1,6 +1,9 @@
 //! Opt-in wrapper; no raw session or publication permit escapes to the client.
 use super::*;
 
+/// An admitted singleton session supporting one declared original signal
+/// delivery and return. The wrapper retains the admission owner's exclusive
+/// control; its observations do not grant raw execution or frame-write access.
 pub struct DynamicSignalSession<P: InstructionProvider> {
     inner: DynamicAdmissionSession<P>,
     anchor: AnchorReader,
@@ -116,33 +119,43 @@ impl<P: InstructionProvider> DynamicAdmissionSession<P> {
 }
 
 impl<P: InstructionProvider> DynamicSignalSession<P> {
+    /// Numeric leader PID for diagnostics, without control authority.
     pub fn pid(&self) -> libc::pid_t {
         self.inner.pid()
     }
+    /// Initial authenticated state before original execution, retained as history.
     pub fn initial_state(&self) -> &DynamicAdmissionState {
         self.inner.initial_state()
     }
+    /// Read-only access to the caller's provider state.
     pub fn provider(&self) -> &P {
         self.inner.provider()
     }
+    /// Update caller-owned provider policy between completed operations.
     pub fn provider_mut(&mut self) -> &mut P {
         self.inner.provider_mut()
     }
+    /// Whether this wrapper has permanently lost original-execution authority.
     pub fn is_closed(&self) -> bool {
         self.inner.is_closed()
     }
+    /// Retained launch-anchor observations, including failures and cleanup.
     pub fn anchor_progress(&self) -> AnchorReader {
         self.anchor.clone()
     }
+    /// Retained signal observations; partial evidence never authorizes release.
     pub fn signal_progress(&self) -> SignalProgressReader {
         self.progress.clone()
     }
+    /// Retained original-kernel progress, independently of signal completion.
     pub fn kernel_progress(&self) -> KernelProgressReader {
         self.inner.kernel_progress()
     }
+    /// Read complete held native state. Running or stale tasks refuse.
     pub fn state(&mut self, task: TaskId) -> Result<DynamicAdmissionState, GateError> {
         self.inner.state(task)
     }
+    /// Read bounded memory through a current held task, without mutation access.
     pub fn read_memory(
         &mut self,
         task: TaskId,
@@ -151,10 +164,14 @@ impl<P: InstructionProvider> DynamicSignalSession<P> {
     ) -> Result<Vec<u8>, GateError> {
         self.inner.read_memory(task, address, len)
     }
+    /// Current diagnostic counters; these grant no publication authority.
     pub fn metrics(&mut self) -> Result<DynamicAdmissionMetrics, GateError> {
         self.inner.metrics()
     }
 
+    /// Advance admitted execution to its next event. A pending signal must be
+    /// delivered with its exact token before its existing deadline; advancing
+    /// past an unfinished delivery closes the session and requests cleanup.
     pub fn next_event(&mut self) -> Result<DynamicAdmissionEvent, GateError> {
         self.inner.require_open()?;
         self.inner.closed = true;
@@ -196,6 +213,8 @@ impl<P: InstructionProvider> DynamicSignalSession<P> {
         Ok(event)
     }
 
+    /// Deliver the pending original signal and return the authenticated handler
+    /// entry. A stale, replayed or expired token refuses without a new deadline.
     pub fn deliver_signal(
         &mut self,
         token: &SignalDeliveryToken,
@@ -231,6 +250,7 @@ impl<P: InstructionProvider> DynamicSignalSession<P> {
         Ok(*entry)
     }
 
+    /// Cancel execution and wait for the underlying session's physical cleanup.
     pub fn terminate(self, timeout: Duration) -> Result<DynamicCleanup, LaunchError> {
         self.inner.terminate(timeout)
     }
