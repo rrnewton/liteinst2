@@ -16,6 +16,9 @@ use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
 
+#[path = "elf_exec_tactics.rs"]
+pub mod tactics;
+
 #[path = "elf_exec_provider.rs"]
 mod provider;
 

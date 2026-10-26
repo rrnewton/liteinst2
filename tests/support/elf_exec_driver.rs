@@ -7,5 +7,9 @@
 mod oracle;
 
 fn main() {
+    if std::env::args_os().nth(1).as_deref() == Some(std::ffi::OsStr::new("run-tactics")) {
+        oracle::elf_exec_oracle::tactics::main();
+        return;
+    }
     oracle::elf_exec_oracle::main();
 }
