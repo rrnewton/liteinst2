@@ -4,12 +4,22 @@ use super::*;
 #[cfg(test)]
 mod tests;
 
-/// Opt-in singleton mapping session with a caller-thread source resolver.
+/// Opt-in singleton mapping or exec session with a caller-thread source resolver.
 /// Its private inner session cannot lend native or publication authority.
 pub struct DynamicSourceSession<P: InstructionProvider, S: DynamicSourceResolver> {
     inner: DynamicAdmissionSession<P>,
     sources: S,
-    profile: DynamicMappingProfile,
+    profile: SourceProfile,
+}
+
+// A closed constructor-selected profile; it cannot be changed or composed by
+// callbacks. The exec reader belongs only to the exec wrapper variant.
+enum SourceProfile {
+    Mapping(DynamicMappingProfile),
+    Exec {
+        profile: DynamicExecProfile,
+        progress: crate::ExecProgressReader,
+    },
 }
 
 impl<P: InstructionProvider> DynamicAdmissionSession<P> {
@@ -82,7 +92,82 @@ impl<P: InstructionProvider> DynamicAdmissionSession<P> {
                 closed: false,
             },
             sources,
-            profile,
+            profile: SourceProfile::Mapping(profile),
+        })
+    }
+
+    /// Launch the explicit singleton one-exec profile with runtime source
+    /// capture. The original native64 exec instruction executes once; its
+    /// replacement image is admitted under a fresh task/mm identity.
+    ///
+    /// # Safety
+    /// The ordinary launch source/head/no-writer/no-code-as-data contract still
+    /// applies. Every resolver answer must give complete original, alternate
+    /// and indirect heads for each owner's actual immutable captured VMA.
+    /// There are no external writers, aliases, untracked mm sharers, opaque
+    /// saved contexts, signals, independent tracers/reapers, or mapping-profile
+    /// composition. Original filename/argv/envp storage is bounded immutable
+    /// application data outside instrumented source and private owner storage.
+    /// Runtime main/interpreter identity and permissions are authenticated by
+    /// the owner, never by pathname or resolver-supplied versions. Unsupported
+    /// images or effects close the transaction under the original deadline.
+    pub unsafe fn launch_with_exec<S: DynamicSourceResolver>(
+        command: &LaunchCommand,
+        facts: Vec<ImageFacts>,
+        options: DynamicAdmissionOptions,
+        profile: DynamicExecProfile,
+        provider: P,
+        sources: S,
+        timeout: Duration,
+    ) -> Result<DynamicSourceSession<P, S>, GateError> {
+        profile.validate(&options)?;
+        crate::gate::domain::validate_image_count(&facts)?;
+        let (until, response_until) = command_deadlines(timeout, timeout)?;
+        let mut session = DynamicSession::launch_options_until(
+            command,
+            timeout,
+            Some(options.lifecycle),
+            DynamicExecPolicy::ExecveOnce,
+            until,
+        )?;
+        let mut cancel = CancelOnFailure {
+            cancel: Arc::clone(&session.cancel),
+            armed: true,
+        };
+        let initial = session
+            .initial_event()
+            .stop_token()
+            .ok_or(GateError::Refused(
+                "dynamic launch lacks its pristine exec stop",
+            ))?
+            .clone();
+        let reply = session.admission_call(
+            AdmissionRequest::StartExec {
+                initial,
+                facts,
+                options,
+                profile: profile.clone(),
+            },
+            until,
+            response_until,
+        )?;
+        let AdmissionReply::ReadyExec(initial, kernel_progress, progress) = reply else {
+            return Err(GateError::Refused(
+                "exec bootstrap returned the wrong phase",
+            ));
+        };
+        cancel.armed = false;
+        Ok(DynamicSourceSession {
+            inner: DynamicAdmissionSession {
+                session,
+                provider,
+                initial,
+                kernel_progress,
+                timeout,
+                closed: false,
+            },
+            sources,
+            profile: SourceProfile::Exec { profile, progress },
         })
     }
 }
@@ -120,6 +205,14 @@ impl<P: InstructionProvider, S: DynamicSourceResolver> DynamicSourceSession<P, S
     pub fn kernel_progress(&self) -> KernelProgressReader {
         self.inner.kernel_progress()
     }
+    /// Retained exec progress for the explicit exec profile. Mapping sessions
+    /// return None; cloning this reader cannot request or resume native work.
+    pub fn exec_progress(&self) -> Option<crate::ExecProgressReader> {
+        match &self.profile {
+            SourceProfile::Mapping(_) => None,
+            SourceProfile::Exec { progress, .. } => Some(progress.clone()),
+        }
+    }
     /// Read complete held native state without a resume capability.
     pub fn state(&mut self, task: TaskId) -> Result<DynamicAdmissionState, GateError> {
         self.inner.state(task)
@@ -142,8 +235,8 @@ impl<P: InstructionProvider, S: DynamicSourceResolver> DynamicSourceSession<P, S
         self.inner.terminate(timeout)
     }
 
-    /// Advance one original operation. A mapping completion can require one
-    /// source-resolution batch, on this caller thread, before its final event.
+    /// Advance one original operation. Mapping or exec can require one
+    /// source-resolution batch on this caller thread before its final event.
     /// Both callbacks and all owner commands share the original absolute budget.
     pub fn next_event(&mut self) -> Result<DynamicAdmissionEvent, GateError> {
         self.inner.require_open()?;
@@ -161,6 +254,7 @@ impl<P: InstructionProvider, S: DynamicSourceResolver> DynamicSourceSession<P, S
         if matches!(
             &event,
             DynamicAdmissionEvent::Completed(_)
+                | DynamicAdmissionEvent::ImageReplaced(_)
                 | DynamicAdmissionEvent::Lifecycle(_)
                 | DynamicAdmissionEvent::TaskTerminal {
                     all_terminal: false,
@@ -169,6 +263,18 @@ impl<P: InstructionProvider, S: DynamicSourceResolver> DynamicSourceSession<P, S
         ) {
             self.inner.closed = false;
             cancel.armed = false;
+        }
+        Ok(event)
+    }
+
+    fn ordinary_event(
+        &self,
+        event: DynamicAdmissionEvent,
+    ) -> Result<DynamicAdmissionEvent, GateError> {
+        if matches!(&event, DynamicAdmissionEvent::ImageReplaced(_)) {
+            return Err(GateError::Refused(
+                "image replacement lacks its pending exec acquisition",
+            ));
         }
         Ok(event)
     }
@@ -188,7 +294,7 @@ impl<P: InstructionProvider, S: DynamicSourceResolver> DynamicSourceSession<P, S
         response_until: Instant,
     ) -> Result<DynamicAdmissionEvent, GateError> {
         let input = match reply {
-            AdmissionReply::Event(event) => return Ok(event),
+            AdmissionReply::Event(event) => return self.ordinary_event(event),
             AdmissionReply::Provider(input) => input,
             _ => {
                 return Err(GateError::Refused(
@@ -208,7 +314,17 @@ impl<P: InstructionProvider, S: DynamicSourceResolver> DynamicSourceSession<P, S
             response_until,
         )?;
         let request = match reply {
-            AdmissionReply::Event(event) => return Ok(event),
+            AdmissionReply::Event(event) => {
+                if matches!(&self.profile, SourceProfile::Exec { .. })
+                    && matches!(decision, ProviderDecision::Native)
+                    && is_exec_input(&input.input)
+                {
+                    return Err(GateError::Refused(
+                        "exec completion lacks source acquisition",
+                    ));
+                }
+                return self.ordinary_event(event);
+            }
             AdmissionReply::AcquireSources(request) => request,
             _ => {
                 return Err(GateError::Refused(
@@ -216,50 +332,112 @@ impl<P: InstructionProvider, S: DynamicSourceResolver> DynamicSourceSession<P, S
                 ));
             }
         };
-        // Only an original native mprotect(RX) in this explicit profile can
-        // request source facts. Native policy and actual capture remain owner
-        // duties; this closed client check prevents contradictory dispatch.
-        if !matches!(decision, ProviderDecision::Native)
-            || !matches!(
-                input.input.instruction().operation(),
-                crate::selected::Operation::Syscall {
-                    abi: crate::selected::SyscallAbi::LinuxX64
+        match &self.profile {
+            SourceProfile::Mapping(profile) => {
+                // Only an original native mprotect(RX) in this explicit profile can
+                // request source facts. Native policy and actual capture remain owner
+                // duties; this closed client check prevents contradictory dispatch.
+                if !matches!(decision, ProviderDecision::Native)
+                    || !matches!(
+                        input.input.instruction().operation(),
+                        crate::selected::Operation::Syscall {
+                            abi: crate::selected::SyscallAbi::LinuxX64
+                        }
+                    )
+                    || input.input.registers().rax != libc::SYS_mprotect as u64
+                    || input.input.registers().rdx != (libc::PROT_READ | libc::PROT_EXEC) as u64
+                {
+                    return Err(GateError::Refused(
+                        "source acquisition lacks an original native RX mapping request",
+                    ));
                 }
-            )
-            || input.input.registers().rax != libc::SYS_mprotect as u64
-            || input.input.registers().rdx != (libc::PROT_READ | libc::PROT_EXEC) as u64
-        {
-            return Err(GateError::Refused(
-                "source acquisition lacks an original native RX mapping request",
-            ));
-        }
-        request.check_mapping_binding(&input.token, &self.profile, until)?;
-        let end = input
-            .input
-            .registers()
-            .rdi
-            .checked_add(input.input.registers().rsi);
-        let image = &request.images()[0]; // exact one-VMA shape checked above
-        if image.range().start != input.input.registers().rdi || Some(image.range().end) != end {
-            return Err(GateError::Refused(
-                "source capture differs from original mapping range",
-            ));
+                request.check_mapping_binding(&input.token, profile, until)?;
+                let end = input
+                    .input
+                    .registers()
+                    .rdi
+                    .checked_add(input.input.registers().rsi);
+                let image = &request.images()[0]; // exact one-VMA shape checked above
+                if image.range().start != input.input.registers().rdi
+                    || Some(image.range().end) != end
+                {
+                    return Err(GateError::Refused(
+                        "source capture differs from original mapping range",
+                    ));
+                }
+            }
+            SourceProfile::Exec { profile, .. } => {
+                if !matches!(decision, ProviderDecision::Native) || !is_exec_input(&input.input) {
+                    return Err(GateError::Refused(
+                        "source acquisition lacks an original native exec request",
+                    ));
+                }
+                request.check_exec_binding(&input.token, profile, until)?;
+            }
         }
         self.before_callback(until, "dynamic source acquisition")?;
         let facts = self.sources.resolve(&request)?;
         self.before_callback(until, "dynamic source acquisition")?;
         request.check_facts(&facts)?;
         let token = request.token.clone();
+        let binding = token.clone();
         drop(request); // release caller's shared view before owner staging
         match self.inner.session.admission_call(
             AdmissionRequest::ResolveSources { token, facts },
             until,
             response_until,
         )? {
-            AdmissionReply::Event(event) => Ok(event),
+            AdmissionReply::Event(event) => match &self.profile {
+                SourceProfile::Mapping(_) => self.ordinary_event(event),
+                SourceProfile::Exec { .. } => checked_exec_event(event, &input, &binding),
+            },
             _ => Err(GateError::Refused(
                 "source reply did not finish its pending acquisition",
             )),
         }
     }
+}
+
+fn is_exec_input(input: &SelectedInput) -> bool {
+    matches!(
+        input.instruction().operation(),
+        crate::selected::Operation::Syscall {
+            abi: crate::selected::SyscallAbi::LinuxX64
+        }
+    ) && input.registers().rax == libc::SYS_execve as u64
+}
+
+// Client dispatch consistency only: all full states and actual native phase
+// witnesses are reauthenticated by the owner before it constructs the event.
+fn checked_exec_event(
+    event: DynamicAdmissionEvent,
+    input: &ProviderInput,
+    binding: &PendingSourceToken,
+) -> Result<DynamicAdmissionEvent, GateError> {
+    let DynamicAdmissionEvent::ImageReplaced(replaced) = &event else {
+        return Err(GateError::Refused(
+            "exec source reply lacks image replacement",
+        ));
+    };
+    let SourceTransitionBinding::Exec(transition) = &binding.transition else {
+        return Err(GateError::Refused("image replacement binding differs"));
+    };
+    let ExecSourceBinding {
+        previous,
+        replacement,
+        attempt,
+        ..
+    } = transition.as_ref();
+    if binding.original != input.token
+        || replaced.input != input.input
+        || replaced.before.task != *previous
+        || replaced.before.registers != *input.input.registers()
+        || replaced.ready.task != *replacement
+        || replaced.ready.task != binding.task
+        || replaced.ready.task.generation != 0
+        || replaced.attempt != *attempt
+    {
+        return Err(GateError::Refused("image replacement binding differs"));
+    }
+    Ok(event)
 }

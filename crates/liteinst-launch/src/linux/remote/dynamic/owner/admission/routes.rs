@@ -604,6 +604,12 @@ pub(super) struct OriginalWindow {
     entry_version: u64,
 }
 
+impl OriginalWindow {
+    pub(super) fn retained_payload_bytes(&self) -> usize {
+        self.original.capacity()
+    }
+}
+
 /// A completed real revoke/restore transaction. It cannot be cloned or
 /// constructed outside this module and is consumed by finish_rebind.
 pub(super) struct RevokedDomain {

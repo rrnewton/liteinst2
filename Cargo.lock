@@ -111,6 +111,7 @@ dependencies = [
  "iced-x86",
  "libc",
  "liteinst-admission",
+ "liteinst-launch",
  "liteinst2",
 ]
 

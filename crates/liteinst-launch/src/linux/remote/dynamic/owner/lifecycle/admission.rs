@@ -4,8 +4,12 @@ use super::super::trusted::{
     AdmissionPhase, AdmissionStop, OwnedSignal, TrapExpectation, TrustedIsland, authenticate_trap,
 };
 use super::*;
+mod runtime_kernel;
 use crate::lifecycle::{
     AddressSpaceId, ExclusionCandidate, ProcessId, RegistrySnapshot, TaskState,
+};
+pub(in crate::linux::remote::dynamic::owner) use runtime_kernel::{
+    RuntimeKernelExitMessage, RuntimeKernelPreExit,
 };
 
 #[derive(Clone, Debug)]
@@ -19,6 +23,53 @@ pub(in crate::linux::remote::dynamic) struct MmMembership {
 }
 
 impl NativeLifecycle {
+    /// Read-only preflight for the separate admitted-exec transport. Existing
+    /// ordinary selected and public lifecycle policies are not widened.
+    pub(in crate::linux::remote::dynamic::owner) fn require_admission_exec_profile(
+        &self,
+        owner: &Owner,
+        stop: &AdmissionStop,
+    ) -> Result<(), LaunchError> {
+        self.require_admission_stop(stop)?;
+        let membership = self.check_admission_mm(owner, stop.identity.task)?;
+        if self.exec_policy != DynamicExecPolicy::ExecveOnce
+            || self.exec_successes != 0
+            || self.options.creation != DynamicCreationPolicy::Refuse
+            || self.options.max_tasks != 1
+            || self.tasks.len() != 1
+            || !self.events.is_empty()
+            || owner.signal_journal.is_some()
+            || owner.anchor_receipt.is_some()
+            || stop.token.session != owner.session
+            || stop.token.tid != owner.pid
+            || stop.token.task != Some(stop.identity.task)
+            || stop.signal.is_some()
+            || !matches!(
+                stop.phase,
+                AdmissionPhase::EntryReady | AdmissionPhase::Restored
+            )
+            || self.admission_interrupt_credit(owner.pid)? != 0
+            || membership.address_space != stop.identity.address_space
+            || membership.process != stop.identity.process
+            || membership.generation != stop.identity.generation
+            || membership.tgid != owner.pid
+            || membership.tids.len() != 1
+            || !membership.tids.contains(&owner.pid)
+            || membership.candidate.tasks.as_slice() != [stop.identity.task]
+            || owner.owned.len() != 1
+            || !owner.owned.contains(&owner.pid)
+            || owner.pin_kinds.get(&owner.pid) != Some(&PinKind::Process)
+            || owner.handles.get(&owner.pid).is_none_or(broker::hup)
+            || owner.reaped.contains(&owner.pid)
+            || owner.tracer_terminal.contains_key(&owner.pid)
+        {
+            return Err(LaunchError::Invalid(
+                "admitted exec requires the settled singleton ExecveOnce profile",
+            ));
+        }
+        Ok(())
+    }
+
     pub(in crate::linux::remote::dynamic) fn admission_snapshot(&self) -> RegistrySnapshot {
         self.registry.snapshot()
     }
@@ -568,6 +619,79 @@ impl NativeLifecycle {
         action: DynamicResume,
     ) -> Result<(), LaunchError> {
         self.resume(owner, token, action)
+    }
+
+    /// Allocation-free membership authentication for the initial runtime source
+    /// reader. Caller-owned fixed scratch is reused by the actual procfs census;
+    /// this path creates no exclusion candidate and permits no execution.
+    pub(in crate::linux::remote::dynamic::owner) fn require_initial_source_mm(
+        &self,
+        owner: &Owner,
+        stop: &AdmissionStop,
+        until: Instant,
+        scratch: &mut [u8],
+    ) -> Result<(), LaunchError> {
+        owner.time_left(until, "initial source membership")?;
+        self.require_admission_stop(stop)?;
+        let task = self.tasks.get(&owner.pid).ok_or(LaunchError::Invalid(
+            "initial source task is not the owned leader",
+        ))?;
+        if self.session != owner.session
+            || stop.token.session != owner.session
+            || stop.token.tid != owner.pid
+            || stop.token.task != Some(stop.identity.task)
+            || stop.identity.generation != 0
+            || task.identity != stop.identity
+            || self.tasks.len() != 1
+            || self.pending.is_some()
+            || self.exec_pending.is_some()
+            || self.exec_successes != 0
+            || !self.events.is_empty()
+            || task.interrupt_stops_remaining != 0
+            || task.syscall_open
+            || task.fork_return.is_some()
+            || task.signal_obligation.is_some()
+            || stop.signal.is_some()
+            || !matches!(
+                stop.phase,
+                AdmissionPhase::EntryReady | AdmissionPhase::Restored
+            )
+            || owner.lifecycle.is_some()
+            || owner.owned.len() != 1
+            || !owner.owned.contains(&owner.pid)
+            || owner.pin_kinds.get(&owner.pid) != Some(&PinKind::Process)
+            || owner.handles.get(&owner.pid).is_none_or(broker::hup)
+            || owner
+                .stopped
+                .get(&owner.pid)
+                .is_none_or(|status| !libc::WIFSTOPPED(*status))
+            || owner.reaped.contains(&owner.pid)
+            || owner.tracer_terminal.contains_key(&owner.pid)
+            || owner.lost_wait
+            || owner.missing_pin
+        {
+            return Err(LaunchError::Invalid(
+                "initial source requires the exact held original singleton",
+            ));
+        }
+        recorded(self.registry.require_initial_source_singleton(
+            stop.identity.task,
+            stop.identity.process,
+            stop.identity.address_space,
+            owner.pid,
+        ))?;
+        super::super::admission::require_initial_task_identity(owner, until, scratch)?;
+        // Keep the same physical process identity and current token on both
+        // sides of every numeric procfs observation. Owner/native are borrowed
+        // immutably for the entire operation; no event is consumed or retried.
+        if owner.handles.get(&owner.pid).is_none_or(broker::hup) {
+            return Err(LaunchError::Invalid(
+                "initial source process pin became terminal",
+            ));
+        }
+        self.require_admission_stop(stop)?;
+        owner.time_left(until, "initial source membership")?;
+        Ok(())
     }
 
     pub(in crate::linux::remote::dynamic) fn check_admission_mm(

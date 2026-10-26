@@ -1,12 +1,12 @@
 .text
 .p2align 4
-.global li2_anchor_code_begin
-.hidden li2_anchor_code_begin
-li2_anchor_code_begin:
-.global li2_anchor_enter
-.hidden li2_anchor_enter
-.type li2_anchor_enter,@function
-li2_anchor_enter:
+.global {li2_anchor_code_begin}
+.hidden {li2_anchor_code_begin}
+{li2_anchor_code_begin}:
+.global {li2_anchor_enter}
+.hidden {li2_anchor_enter}
+.type {li2_anchor_enter},@function
+{li2_anchor_enter}:
     mov %rdi,%r12
     mov {stack_top}(%r12),%rsp
     and $-16,%rsp
@@ -71,25 +71,25 @@ li2_anchor_enter:
     mov $64,%edx
     mov $1,%eax
     syscall
-.global li2_anchor_prepared_return
-.hidden li2_anchor_prepared_return
-li2_anchor_prepared_return:
+.global {li2_anchor_prepared_return}
+.hidden {li2_anchor_prepared_return}
+{li2_anchor_prepared_return}:
     cmp $64,%rax
     jne li2_anchor_invalid
-.global li2_anchor_pre_read
-.hidden li2_anchor_pre_read
-li2_anchor_pre_read:
+.global {li2_anchor_pre_read}
+.hidden {li2_anchor_pre_read}
+{li2_anchor_pre_read}:
     mov {release}(%r12),%rdi
     lea {release_byte}(%r12),%rsi
     mov $1,%edx
     mov $0,%eax
-.global li2_anchor_read_insn
-.hidden li2_anchor_read_insn
-li2_anchor_read_insn:
+.global {li2_anchor_read_insn}
+.hidden {li2_anchor_read_insn}
+{li2_anchor_read_insn}:
     syscall
-.global li2_anchor_read
-.hidden li2_anchor_read
-li2_anchor_read:
+.global {li2_anchor_read}
+.hidden {li2_anchor_read}
+{li2_anchor_read}:
     cmp $1,%rax
     jne li2_anchor_invalid
     cmpb $0xa5,{release_byte}(%r12)
@@ -97,9 +97,9 @@ li2_anchor_read:
     mov {release}(%r12),%rdi
     mov $3,%eax
     syscall
-.global li2_anchor_close_release
-.hidden li2_anchor_close_release
-li2_anchor_close_release:
+.global {li2_anchor_close_release}
+.hidden {li2_anchor_close_release}
+{li2_anchor_close_release}:
     test %rax,%rax
     jne li2_anchor_fail
     mov ${probe},%edi
@@ -108,9 +108,9 @@ li2_anchor_close_release:
     mov $8,%r10d
     mov $13,%eax
     syscall
-.global li2_anchor_install
-.hidden li2_anchor_install
-li2_anchor_install:
+.global {li2_anchor_install}
+.hidden {li2_anchor_install}
+{li2_anchor_install}:
     test %rax,%rax
     jne li2_anchor_fail
     mov ${probe},%edi
@@ -119,18 +119,18 @@ li2_anchor_install:
     mov $8,%r10d
     mov $13,%eax
     syscall
-.global li2_anchor_query_installed
-.hidden li2_anchor_query_installed
-li2_anchor_query_installed:
+.global {li2_anchor_query_installed}
+.hidden {li2_anchor_query_installed}
+{li2_anchor_query_installed}:
     test %rax,%rax
     jne li2_anchor_fail
     lea {pending}(%r12),%rdi
     mov $8,%esi
     mov $127,%eax
     syscall
-.global li2_anchor_pending_before
-.hidden li2_anchor_pending_before
-li2_anchor_pending_before:
+.global {li2_anchor_pending_before}
+.hidden {li2_anchor_pending_before}
+{li2_anchor_pending_before}:
     test %rax,%rax
     jne li2_anchor_fail
     cmpq $0,{pending}(%r12)
@@ -141,9 +141,9 @@ li2_anchor_pending_before:
     lea {signal}(%r12),%r10
     mov $297,%eax
     syscall
-.global li2_anchor_queue
-.hidden li2_anchor_queue
-li2_anchor_queue:
+.global {li2_anchor_queue}
+.hidden {li2_anchor_queue}
+{li2_anchor_queue}:
     test %rax,%rax
     jne li2_anchor_fail
     mov $2,%edi
@@ -152,16 +152,16 @@ li2_anchor_queue:
     mov $8,%r10d
     mov $14,%eax
     syscall
-.global li2_anchor_unmask
-.hidden li2_anchor_unmask
-li2_anchor_unmask:
+.global {li2_anchor_unmask}
+.hidden {li2_anchor_unmask}
+{li2_anchor_unmask}:
     # The pending signal must be delivered before this original fallthrough.
     jmp li2_anchor_invalid
 
-.global li2_anchor_handler
-.hidden li2_anchor_handler
-.type li2_anchor_handler,@function
-li2_anchor_handler:
+.global {li2_anchor_handler}
+.hidden {li2_anchor_handler}
+.type {li2_anchor_handler},@function
+{li2_anchor_handler}:
     cmp ${probe},%edi
     jne li2_anchor_invalid
     cmp {stack_low}(%r12),%rsp
@@ -199,9 +199,9 @@ li2_anchor_handler:
     mov $8,%r10d
     mov $14,%eax
     syscall
-.global li2_anchor_reblock
-.hidden li2_anchor_reblock
-li2_anchor_reblock:
+.global {li2_anchor_reblock}
+.hidden {li2_anchor_reblock}
+{li2_anchor_reblock}:
     test %rax,%rax
     jne li2_anchor_fail
     mov $2,%edi
@@ -210,9 +210,9 @@ li2_anchor_reblock:
     mov $8,%r10d
     mov $14,%eax
     syscall
-.global li2_anchor_query_mask
-.hidden li2_anchor_query_mask
-li2_anchor_query_mask:
+.global {li2_anchor_query_mask}
+.hidden {li2_anchor_query_mask}
+{li2_anchor_query_mask}:
     test %rax,%rax
     jne li2_anchor_fail
     mov {old_mask}(%r12),%rax
@@ -222,9 +222,9 @@ li2_anchor_query_mask:
     mov $8,%esi
     mov $127,%eax
     syscall
-.global li2_anchor_pending_restore
-.hidden li2_anchor_pending_restore
-li2_anchor_pending_restore:
+.global {li2_anchor_pending_restore}
+.hidden {li2_anchor_pending_restore}
+{li2_anchor_pending_restore}:
     test %rax,%rax
     jne li2_anchor_fail
     cmpq $0,{pending}(%r12)
@@ -235,9 +235,9 @@ li2_anchor_pending_restore:
     mov $8,%r10d
     mov $13,%eax
     syscall
-.global li2_anchor_restore_action
-.hidden li2_anchor_restore_action
-li2_anchor_restore_action:
+.global {li2_anchor_restore_action}
+.hidden {li2_anchor_restore_action}
+{li2_anchor_restore_action}:
     test %rax,%rax
     jne li2_anchor_fail
     mov ${probe},%edi
@@ -246,9 +246,9 @@ li2_anchor_restore_action:
     mov $8,%r10d
     mov $13,%eax
     syscall
-.global li2_anchor_query_restored
-.hidden li2_anchor_query_restored
-li2_anchor_query_restored:
+.global {li2_anchor_query_restored}
+.hidden {li2_anchor_query_restored}
+{li2_anchor_query_restored}:
     test %rax,%rax
     jne li2_anchor_fail
     lea {old_action}(%r12),%rsi
@@ -260,9 +260,9 @@ li2_anchor_query_restored:
     lea {check_stack}(%r12),%rsi
     mov $131,%eax
     syscall
-.global li2_anchor_query_stack
-.hidden li2_anchor_query_stack
-li2_anchor_query_stack:
+.global {li2_anchor_query_stack}
+.hidden {li2_anchor_query_stack}
+{li2_anchor_query_stack}:
     test %rax,%rax
     jne li2_anchor_fail
     lea {old_stack}(%r12),%rsi
@@ -274,9 +274,9 @@ li2_anchor_query_stack:
     mov $8,%esi
     mov $127,%eax
     syscall
-.global li2_anchor_pending_after
-.hidden li2_anchor_pending_after
-li2_anchor_pending_after:
+.global {li2_anchor_pending_after}
+.hidden {li2_anchor_pending_after}
+{li2_anchor_pending_after}:
     test %rax,%rax
     jne li2_anchor_fail
     cmpq $0,{pending}(%r12)
@@ -286,17 +286,17 @@ li2_anchor_pending_after:
     mov $64,%edx
     mov $1,%eax
     syscall
-.global li2_anchor_write_anchor
-.hidden li2_anchor_write_anchor
-li2_anchor_write_anchor:
+.global {li2_anchor_write_anchor}
+.hidden {li2_anchor_write_anchor}
+{li2_anchor_write_anchor}:
     cmp $64,%rax
     jne li2_anchor_invalid
     mov {channel}(%r12),%rdi
     mov $3,%eax
     syscall
-.global li2_anchor_close_channel
-.hidden li2_anchor_close_channel
-li2_anchor_close_channel:
+.global {li2_anchor_close_channel}
+.hidden {li2_anchor_close_channel}
+{li2_anchor_close_channel}:
     test %rax,%rax
     jne li2_anchor_fail
     mov {program}(%r12),%rdi
@@ -304,14 +304,14 @@ li2_anchor_close_channel:
     mov {envp}(%r12),%rdx
     mov $59,%eax
     syscall
-.global li2_anchor_exec
-.hidden li2_anchor_exec
-li2_anchor_exec:
+.global {li2_anchor_exec}
+.hidden {li2_anchor_exec}
+{li2_anchor_exec}:
     # Any returning exec failure is terminal; never return to the helper caller.
     jmp li2_anchor_fail
-.global li2_anchor_restorer
-.hidden li2_anchor_restorer
-li2_anchor_restorer:
+.global {li2_anchor_restorer}
+.hidden {li2_anchor_restorer}
+{li2_anchor_restorer}:
     # A real ABI restorer address exists, but this protocol never returns here.
     jmp li2_anchor_invalid
 li2_anchor_invalid:
@@ -330,6 +330,6 @@ li2_anchor_fail:
     mov $231,%eax
     syscall
     jmp 2b
-.global li2_anchor_code_end
-.hidden li2_anchor_code_end
-li2_anchor_code_end:
+.global {li2_anchor_code_end}
+.hidden {li2_anchor_code_end}
+{li2_anchor_code_end}:

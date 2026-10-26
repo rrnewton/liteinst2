@@ -1,4 +1,44 @@
 {
+  "backing_cleanup_harnesses": {
+    "serial_launch": [
+      {
+        "binary": "exec_backing_cleanup",
+        "controls": [
+          "admitted_exec_native_backing_probes_close_exact_owned_resources",
+          "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
+          "exec_backing_native_invalid_unmap_aborts_isolated_owner"
+        ],
+        "id": "control/exec_backing_cleanup",
+        "protocol": "LITEINST_BACKING_CLEANUP_V1",
+        "source": "tests/exec_backing_cleanup.rs",
+        "trajectories": [
+          "complete",
+          "read_error",
+          "unwind",
+          "invalid_unmap"
+        ]
+      }
+    ],
+    "workspace_tests": [
+      {
+        "binary": "exec_backing_cleanup",
+        "controls": [
+          "admitted_exec_native_backing_probes_close_exact_owned_resources",
+          "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
+          "exec_backing_native_invalid_unmap_aborts_isolated_owner"
+        ],
+        "id": "control/exec_backing_cleanup",
+        "protocol": "LITEINST_BACKING_CLEANUP_V1",
+        "source": "tests/exec_backing_cleanup.rs",
+        "trajectories": [
+          "complete",
+          "read_error",
+          "unwind",
+          "invalid_unmap"
+        ]
+      }
+    ]
+  },
   "baseline_revision": "79356323c4b38aa344655909392779adecd495cc",
   "dynamic_admission_fixtures": [
     "literal_first_cpuid_preserves_complete_state_and_native_memory",
@@ -5943,6 +5983,10 @@
         "ignored": 0,
         "tests": 6
       },
+      "test/b3_exec_admission": {
+        "ignored": 0,
+        "tests": 5
+      },
       "test/b3_mapping_admission": {
         "ignored": 0,
         "tests": 5
@@ -6041,7 +6085,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 278
+        "tests": 573
       }
     },
     "workspace_tests": {
@@ -6080,6 +6124,10 @@
       "test/b2_mode_reference": {
         "ignored": 0,
         "tests": 6
+      },
+      "test/b3_exec_admission": {
+        "ignored": 0,
+        "tests": 5
       },
       "test/b3_mapping_admission": {
         "ignored": 0,
@@ -6379,7 +6427,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 278
+        "tests": 573
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -7111,8 +7159,213 @@
       "cohort": "b3_mapping",
       "harness": "test/b3_mapping_admission",
       "test": "full_native_mapping_comparator_rejects_each_state_source_and_map_corruption"
+    },
+    {
+      "cohort": "b3_exec",
+      "harness": "test/b3_exec_admission",
+      "test": "original_exec_replacement_matches_raw_replay_and_native_full_state"
+    },
+    {
+      "cohort": "b3_exec",
+      "harness": "test/b3_exec_admission",
+      "test": "stale_exec_source_reply_preserves_actual_replacement_without_commit"
+    },
+    {
+      "cohort": "b3_exec",
+      "harness": "test/b3_exec_admission",
+      "test": "resolver_panic_after_actual_exec_keeps_original_failure_and_cleanup"
+    },
+    {
+      "cohort": "b3_exec",
+      "harness": "test/b3_exec_admission",
+      "test": "blocked_exec_resolver_uses_original_deadline_and_owner_cleanup"
+    },
+    {
+      "cohort": "b3_exec",
+      "harness": "test/b3_exec_admission",
+      "test": "exec_full_comparator_rejects_each_state_input_map_and_identity_corruption"
+    },
+    {
+      "cohort": "b3_exec_private",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_first_user_and_retired_history_are_exact"
+    },
+    {
+      "cohort": "b3_exec_private",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_source_reply_refusal_keeps_new_mm_held"
+    },
+    {
+      "cohort": "b3_exec_private",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_errno_exit_never_mints_replacement"
+    },
+    {
+      "cohort": "b3_exec_failure",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_prefix_capacity_refuses_before_restore"
+    },
+    {
+      "cohort": "b3_exec_failure",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_getregs_capture_failure_retains_other_reads"
+    },
+    {
+      "cohort": "b3_exec_failure",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_bootstrap_failure_retains_first_user_prefix"
+    },
+    {
+      "cohort": "b3_exec_failure",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_input_bound_refuses_before_restore"
+    },
+    {
+      "cohort": "b3_exec_failure",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_source_profile_bound_refuses_after_exec"
+    },
+    {
+      "cohort": "b3_exec_failure",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::failures::admitted_exec_native_pending_flags_change_refuses_before_restore"
+    },
+    {
+      "cohort": "b3_runtime_startup",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_startup_preserves_real_boundary_state_sources_and_nx"
+    },
+    {
+      "cohort": "b3_runtime_startup",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_owner_refuses_raw_bypass_and_repeated_start"
+    },
+    {
+      "cohort": "b3_runtime_startup",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_expired_original_deadline_keeps_pristine_exec"
+    },
+    {
+      "cohort": "b3_runtime_startup",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec"
+    },
+    {
+      "cohort": "b3_runtime_startup",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_source_window_refusal_retains_completed_bootstrap"
+    },
+    {
+      "cohort": "b3_runtime_startup",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_unwind_retains_native_bootstrap_until_physical_cleanup"
+    },
+    {
+      "cohort": "b3_runtime_ordinary",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::runtime_ordinary_literal_moves_and_add_preserve_exact_checkpoints"
+    },
+    {
+      "cohort": "b3_runtime_ordinary",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::runtime_ordinary_single_step_stops_before_same_page_marker"
+    },
+    {
+      "cohort": "b3_runtime_ordinary",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::runtime_ordinary_conditional_branch_preserves_complete_state"
+    },
+    {
+      "cohort": "b3_runtime_ordinary",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::runtime_ordinary_same_pc_loop_consumes_distinct_origin"
+    },
+    {
+      "cohort": "b3_runtime_ordinary",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::runtime_ordinary_nop_matches_independent_raw_single_step"
+    },
+    {
+      "cohort": "b3_runtime_selected",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_cpu_and_ordinary_keep_exact_control_lineage"
+    },
+    {
+      "cohort": "b3_runtime_selected",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_native_refuses_without_ordinary_fallback"
+    },
+    {
+      "cohort": "b3_runtime_selected",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_syscall_refuses_without_ordinary_fallback"
+    },
+    {
+      "cohort": "b3_runtime_selected",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_ordinary_memory_and_stack_refuse_before_effects"
+    },
+    {
+      "cohort": "b3_runtime_selected",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_actual_dr7_refuses_before_original_release"
+    },
+    {
+      "cohort": "b3_runtime_ordinary",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::cross_page::runtime_ordinary_cross_page_move_preserves_exact_two_page_fetch"
+    },
+    {
+      "cohort": "b3_runtime_selected",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::cross_page::runtime_selected_cross_page_cpuid_preserves_nx_and_successor"
+    },
+    {
+      "cohort": "b3_wait_custody",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::tests::wait_withdrawal::actual_listen_withdrawal_preserves_pinned_wait_and_cleanup"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_public_getpid_selected_ordinary_exit_preserves_lineage"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_gettid_exit_group_retains_real_terminal"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_cross_page_syscall_preserves_exact_fetch"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_default_native_and_cpu_refusals_keep_current_state"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_fault_and_unsupported_syscalls_never_release"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_stale_reply_keeps_physical_custody"
+    },
+    {
+      "cohort": "b3_runtime_launch_cleanup",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::launch_cleanup_native_tests::runtime_launch_alias_refusal_retains_pending_cleanup_and_physical_custody"
+    },
+    {
+      "cohort": "b3_runtime_launch_cleanup",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::launch_cleanup_native_tests::runtime_launch_pre_ready_failure_preserves_original_error_and_cleanup"
     }
   ],
-  "recorder_tests": 230,
+  "recorder_tests": 299,
   "schema_version": 1
 }

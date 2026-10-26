@@ -7,7 +7,10 @@ from pathlib import Path
 import re
 import unittest
 
+from test_runtime_inventory import before_runtime
+
 import native_fixtures as fixtures
+from test_runtime_kernel_inventory import before_kernel
 from parsing import InvalidEvidence
 import run
 from test_dynamic_admission import corpus, fixture_block, native_block, summary
@@ -189,12 +192,14 @@ class MappingFixtureTests(unittest.TestCase):
     def test_real_catalog_pins_old37_exact_five_source_names_and_both_harness_denominators(self):
         path = Path(__file__).with_name("corpus.json")
         declared = json.loads(path.read_text())
+        declared = before_kernel(declared)
+        declared = before_runtime(declared)
         rows = declared["native_validation_fixtures"]
-        self.assertEqual(len(rows), 42)
+        self.assertEqual(len(rows), 56)
         old = json.dumps(rows[:37], sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
         self.assertEqual(hashlib.sha256(old).hexdigest(), OLD37_SHA256)
-        self.assertEqual(rows[37:], ROWS)
-        self.assertEqual(len(fixtures.catalog(rows)), 42)
+        self.assertEqual(rows[37:42], ROWS)
+        self.assertEqual(len(fixtures.catalog(rows)), 56)
         source = path.parents[2] / "crates/liteinst-launch/tests/b3_mapping_admission.rs"
         actual_names = re.findall(r"#\[test\]\s*fn\s+([A-Za-z0-9_]+)\s*\(", source.read_text())
         self.assertEqual(actual_names, list(NAMES))
@@ -212,9 +217,9 @@ class MappingFixtureTests(unittest.TestCase):
                     InvalidEvidence, "^native_fixture_cohort_differs$") as caught:
                 fixtures.fixture_outcomes(output.replace(f"test {missing['test']} ... ok\n", ""), rows, True)
             partial = caught.exception.partial
-            self.assertEqual(len(partial), 42)
+            self.assertEqual(len(partial), 56)
             self.assertEqual((partial[index]["status"], partial[index]["test_result"]), ("not_observed", None))
-            self.assertEqual(sum(row["status"] == "complete" for row in partial), 41)
+            self.assertEqual(sum(row["status"] == "complete" for row in partial), 55)
             self.assertFalse(any(row["qualified_run"] for row in partial))
 
 

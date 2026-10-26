@@ -16,6 +16,29 @@ UNIT = "unit/liteinst_launch/lib"
 REFERENCE = "test/b2_mode_reference"
 SIGNAL_REFERENCE = "test/b3_signal_admission"
 MAPPING_REFERENCE = "test/b3_mapping_admission"
+EXEC_REFERENCE = "test/b3_exec_admission"
+EXEC_TESTS = frozenset((
+    "original_exec_replacement_matches_raw_replay_and_native_full_state",
+    "stale_exec_source_reply_preserves_actual_replacement_without_commit",
+    "resolver_panic_after_actual_exec_keeps_original_failure_and_cleanup",
+    "blocked_exec_resolver_uses_original_deadline_and_owner_cleanup",
+    "exec_full_comparator_rejects_each_state_input_map_and_identity_corruption",
+))
+EXEC_PRIVATE_PREFIX = "linux::remote::dynamic::owner::admission::exec::tests::native::"
+EXEC_PRIVATE_TESTS = frozenset(EXEC_PRIVATE_PREFIX + name for name in (
+    "admitted_exec_native_first_user_and_retired_history_are_exact",
+    "admitted_exec_native_source_reply_refusal_keeps_new_mm_held",
+    "admitted_exec_native_errno_exit_never_mints_replacement",
+))
+EXEC_FAILURE_PREFIX = EXEC_PRIVATE_PREFIX + "failures::"
+EXEC_FAILURE_TESTS = frozenset(EXEC_FAILURE_PREFIX + name for name in (
+    "admitted_exec_native_prefix_capacity_refuses_before_restore",
+    "admitted_exec_native_getregs_capture_failure_retains_other_reads",
+    "admitted_exec_native_bootstrap_failure_retains_first_user_prefix",
+    "admitted_exec_native_input_bound_refuses_before_restore",
+    "admitted_exec_native_source_profile_bound_refuses_after_exec",
+    "admitted_exec_native_pending_flags_change_refuses_before_restore",
+))
 MAPPING_TESTS = frozenset((
     'original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources',
     'stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history',
@@ -33,6 +56,77 @@ PREFIXES = (
     "linux::remote::dynamic::owner::admission::completion::journal_native_budget_tests::",
 )
 
+# Closed runtime native modules. Pure runtime tests remain ordinary unit rows.
+RUNTIME_COHORTS = (('b3_runtime_startup',
+  'linux::remote::dynamic::owner::admission::runtime::native_tests::',
+  ('initial_runtime_startup_preserves_real_boundary_state_sources_and_nx',
+   'initial_runtime_owner_refuses_raw_bypass_and_repeated_start',
+   'initial_runtime_expired_original_deadline_keeps_pristine_exec',
+   'initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec',
+   'initial_runtime_source_window_refusal_retains_completed_bootstrap',
+   'initial_runtime_unwind_retains_native_bootstrap_until_physical_cleanup')),
+ ('b3_runtime_ordinary',
+  'linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::',
+  ('runtime_ordinary_literal_moves_and_add_preserve_exact_checkpoints',
+   'runtime_ordinary_single_step_stops_before_same_page_marker',
+   'runtime_ordinary_conditional_branch_preserves_complete_state',
+   'runtime_ordinary_same_pc_loop_consumes_distinct_origin',
+   'runtime_ordinary_nop_matches_independent_raw_single_step')),
+ ('b3_runtime_selected',
+  'linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::',
+  ('runtime_selected_cpu_and_ordinary_keep_exact_control_lineage',
+   'runtime_selected_native_refuses_without_ordinary_fallback',
+   'runtime_selected_syscall_refuses_without_ordinary_fallback',
+   'runtime_ordinary_memory_and_stack_refuse_before_effects',
+   'runtime_actual_dr7_refuses_before_original_release')))
+# Separate child identities append after the established 16 runtime rows.
+# The original three native roots already reject every unlisted child name.
+CROSS_PAGE_COHORTS = (
+    ("b3_runtime_ordinary",
+     "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::cross_page::",
+     ("runtime_ordinary_cross_page_move_preserves_exact_two_page_fetch",)),
+    ("b3_runtime_selected",
+     "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::cross_page::",
+     ("runtime_selected_cross_page_cpuid_preserves_nx_and_successor",)),
+)
+RUNTIME_ROWS = tuple({"cohort": cohort, "harness": UNIT, "test": prefix + name}
+                     for cohort, prefix, names in RUNTIME_COHORTS + CROSS_PAGE_COHORTS for name in names)
+RUNTIME_IDENTITIES = {row["test"]: row for row in RUNTIME_ROWS}
+RUNTIME_NATIVE_ROOTS = tuple(prefix.removesuffix("::") for _, prefix, _ in RUNTIME_COHORTS)
+
+
+# A separate exact wait-custody control; it is not a runtime native row.
+WAIT_CUSTODY_ROOT = "linux::remote::dynamic::owner::tests::wait_withdrawal"
+WAIT_CUSTODY_ROW = {"cohort": "b3_wait_custody", "harness": UNIT,
+                    "test": WAIT_CUSTODY_ROOT
+                    + "::actual_listen_withdrawal_preserves_pinned_wait_and_cleanup"}
+
+
+# Closed opt-in kernel cohort; established runtime rows remain unchanged.
+RUNTIME_KERNEL_ROOT = 'linux::remote::dynamic::owner::admission::runtime::kernel::native_tests'
+RUNTIME_KERNEL_NAMES = ('runtime_kernel_public_getpid_selected_ordinary_exit_preserves_lineage',
+ 'runtime_kernel_gettid_exit_group_retains_real_terminal',
+ 'runtime_kernel_cross_page_syscall_preserves_exact_fetch',
+ 'runtime_kernel_default_native_and_cpu_refusals_keep_current_state',
+ 'runtime_kernel_fault_and_unsupported_syscalls_never_release',
+ 'runtime_kernel_stale_reply_keeps_physical_custody')
+RUNTIME_KERNEL_ROWS = tuple({"cohort": "b3_runtime_kernel", "harness": UNIT,
+                             "test": RUNTIME_KERNEL_ROOT + "::" + name}
+                            for name in RUNTIME_KERNEL_NAMES)
+RUNTIME_KERNEL_IDENTITIES = {row["test"]: row for row in RUNTIME_KERNEL_ROWS}
+
+
+# Closed constructor-failure cleanup controls; existing native rows stay exact.
+RUNTIME_LAUNCH_CLEANUP_ROOT = "linux::remote::dynamic::owner::admission::runtime::launch_cleanup_native_tests"
+RUNTIME_LAUNCH_CLEANUP_NAMES = (
+    "runtime_launch_alias_refusal_retains_pending_cleanup_and_physical_custody",
+    "runtime_launch_pre_ready_failure_preserves_original_error_and_cleanup",
+)
+RUNTIME_LAUNCH_CLEANUP_ROWS = tuple({"cohort": "b3_runtime_launch_cleanup", "harness": UNIT,
+                                    "test": RUNTIME_LAUNCH_CLEANUP_ROOT + "::" + name}
+                                   for name in RUNTIME_LAUNCH_CLEANUP_NAMES)
+RUNTIME_LAUNCH_CLEANUP_IDENTITIES = {row["test"]: row for row in RUNTIME_LAUNCH_CLEANUP_ROWS}
+
 
 def catalog(fixtures):
     require(type(fixtures) is list, "invalid_native_fixture_catalog")
@@ -42,9 +136,27 @@ def catalog(fixtures):
                 "invalid_native_fixture_catalog")
         require(all(type(value) is str for value in row.values())
                 and NAME.fullmatch(row["test"]), "invalid_native_fixture_catalog")
+        require(not row["test"].startswith(RUNTIME_LAUNCH_CLEANUP_ROOT)
+                or row == RUNTIME_LAUNCH_CLEANUP_IDENTITIES.get(row["test"]),
+                "invalid_native_fixture_scope")
+        require(not row["test"].startswith(RUNTIME_KERNEL_ROOT)
+                or row == RUNTIME_KERNEL_IDENTITIES.get(row["test"]),
+                "invalid_native_fixture_scope")
+        require(not row["test"].startswith(WAIT_CUSTODY_ROOT)
+                or row == WAIT_CUSTODY_ROW, "invalid_native_fixture_scope")
+        require(not row["test"].startswith(RUNTIME_NATIVE_ROOTS)
+                or row == RUNTIME_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
         require(row["test"] not in MAPPING_TESTS
                 or (row["cohort"] == "b3_mapping" and row["harness"] == MAPPING_REFERENCE),
                 "invalid_native_fixture_scope")
+        require(row["test"] not in EXEC_TESTS
+                or (row["cohort"] == "b3_exec" and row["harness"] == EXEC_REFERENCE),
+                "invalid_native_fixture_scope")
+        require(not row["test"].startswith(EXEC_PRIVATE_PREFIX)
+                or (row["cohort"] == "b3_exec_private" and row["harness"] == UNIT
+                    and row["test"] in EXEC_PRIVATE_TESTS)
+                or (row["cohort"] == "b3_exec_failure" and row["harness"] == UNIT
+                    and row["test"] in EXEC_FAILURE_TESTS), "invalid_native_fixture_scope")
         require((row["cohort"] == "kernel_journal" and row["harness"] == UNIT
                  and row["test"].startswith(PREFIXES))
                 or (row["cohort"] == "b2_reference" and row["harness"] == REFERENCE
@@ -56,7 +168,17 @@ def catalog(fixtures):
                 or (row["cohort"] == "b3_source_census" and row["harness"] == UNIT
                     and row["test"] == SOURCE_CENSUS_TEST)
                 or (row["cohort"] == "b3_mapping" and row["harness"] == MAPPING_REFERENCE
-                    and row["test"] in MAPPING_TESTS), "invalid_native_fixture_scope")
+                    and row["test"] in MAPPING_TESTS)
+                or (row["cohort"] == "b3_exec" and row["harness"] == EXEC_REFERENCE
+                    and row["test"] in EXEC_TESTS)
+                or (row["cohort"] == "b3_exec_private" and row["harness"] == UNIT
+                    and row["test"] in EXEC_PRIVATE_TESTS)
+                or (row["cohort"] == "b3_exec_failure" and row["harness"] == UNIT
+                    and row["test"] in EXEC_FAILURE_TESTS)
+                or row == RUNTIME_IDENTITIES.get(row["test"])
+                or row == WAIT_CUSTODY_ROW
+                or row == RUNTIME_KERNEL_IDENTITIES.get(row["test"])
+                or row == RUNTIME_LAUNCH_CLEANUP_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
         key = (row["harness"], row["test"])
         require(key not in identities, "duplicate_native_fixture_catalog")
         identities[key] = row
@@ -121,7 +243,10 @@ def fixture_outcomes(output, fixtures, successful_command):
                 require(key not in seen_tests, "duplicate_native_fixture_test")
                 require(start[1] not in known_names or key in expected,
                         "native_fixture_wrong_harness")
-                require(key in expected or (current == UNIT and not start[1].startswith(PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX))),
+                require(key in expected or (current == UNIT and not start[1].startswith(
+                    PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX, EXEC_PRIVATE_PREFIX)
+                    + RUNTIME_NATIVE_ROOTS + (WAIT_CUSTODY_ROOT, RUNTIME_KERNEL_ROOT,
+                                              RUNTIME_LAUNCH_CLEANUP_ROOT))),
                         "native_fixture_cohort_differs")
                 seen_tests.add(key)
                 active = key

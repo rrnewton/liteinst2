@@ -11,11 +11,11 @@ mod tests;
 
 /// Matches the existing bounded proc-metadata read ceiling. This is not an
 /// allowance to increase a caller's smaller, pre-effect reserved byte bound.
-pub(in super::super) const MAX_MAPS_BYTES: usize = 1024 * 1024;
+pub(in crate::linux::remote::dynamic::owner) const MAX_MAPS_BYTES: usize = 1024 * 1024;
 const PAGE: u64 = 4096;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in super::super) enum MapParseError {
+pub(in crate::linux::remote::dynamic::owner) enum MapParseError {
     Empty,
     ByteLimit,
     RowLimit,
@@ -28,34 +28,34 @@ pub(in super::super) enum MapParseError {
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in super::super) struct MapPermissions([u8; 4]);
+pub(in crate::linux::remote::dynamic::owner) struct MapPermissions([u8; 4]);
 
 impl MapPermissions {
-    pub(in super::super) fn bytes(self) -> [u8; 4] {
+    pub(in crate::linux::remote::dynamic::owner) fn bytes(self) -> [u8; 4] {
         self.0
     }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in super::super) struct MapEntry<'a> {
-    pub(in super::super) start: u64,
-    pub(in super::super) end: u64,
-    pub(in super::super) permissions: MapPermissions,
-    pub(in super::super) file_offset: u64,
-    pub(in super::super) device_major: u32,
-    pub(in super::super) device_minor: u32,
-    pub(in super::super) inode: u64,
+pub(in crate::linux::remote::dynamic::owner) struct MapEntry<'a> {
+    pub(in crate::linux::remote::dynamic::owner) start: u64,
+    pub(in crate::linux::remote::dynamic::owner) end: u64,
+    pub(in crate::linux::remote::dynamic::owner) permissions: MapPermissions,
+    pub(in crate::linux::remote::dynamic::owner) file_offset: u64,
+    pub(in crate::linux::remote::dynamic::owner) device_major: u32,
+    pub(in crate::linux::remote::dynamic::owner) device_minor: u32,
+    pub(in crate::linux::remote::dynamic::owner) inode: u64,
     /// Descriptive bytes only. Absence does not prove anonymous provenance or
     /// the absence of aliases. Internal and trailing whitespace is retained.
-    pub(in super::super) pathname: Option<&'a [u8]>,
+    pub(in crate::linux::remote::dynamic::owner) pathname: Option<&'a [u8]>,
     /// Complete original line, excluding only its terminating newline.
-    pub(in super::super) raw_line: &'a [u8],
+    pub(in crate::linux::remote::dynamic::owner) raw_line: &'a [u8],
     /// Original bytes after the inode, including separator/alignment spaces.
-    pub(in super::super) pathname_column: &'a [u8],
+    pub(in crate::linux::remote::dynamic::owner) pathname_column: &'a [u8],
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(in super::super) struct ParsedMaps<'a> {
+pub(in crate::linux::remote::dynamic::owner) struct ParsedMaps<'a> {
     raw: &'a [u8],
     rows: usize,
 }
@@ -63,7 +63,10 @@ pub(in super::super) struct ParsedMaps<'a> {
 impl<'a> ParsedMaps<'a> {
     /// `row_limit` is an already reserved caller bound. The complete capture is
     /// checked before a view is returned; malformed suffixes cannot disappear.
-    pub(in super::super) fn parse(raw: &'a [u8], row_limit: usize) -> Result<Self, MapParseError> {
+    pub(in crate::linux::remote::dynamic::owner) fn parse(
+        raw: &'a [u8],
+        row_limit: usize,
+    ) -> Result<Self, MapParseError> {
         if raw.is_empty() {
             return Err(MapParseError::Empty);
         }
@@ -89,16 +92,16 @@ impl<'a> ParsedMaps<'a> {
         Ok(Self { raw, rows })
     }
 
-    pub(in super::super) fn raw(self) -> &'a [u8] {
+    pub(in crate::linux::remote::dynamic::owner) fn raw(self) -> &'a [u8] {
         self.raw
     }
 
     #[cfg(test)]
-    pub(in super::super) fn len(self) -> usize {
+    pub(in crate::linux::remote::dynamic::owner) fn len(self) -> usize {
         self.rows
     }
 
-    pub(in super::super) fn entries(self) -> MapEntries<'a> {
+    pub(in crate::linux::remote::dynamic::owner) fn entries(self) -> MapEntries<'a> {
         MapEntries {
             remaining: self.raw,
             rows: self.rows,
@@ -106,7 +109,7 @@ impl<'a> ParsedMaps<'a> {
     }
 }
 
-pub(in super::super) struct MapEntries<'a> {
+pub(in crate::linux::remote::dynamic::owner) struct MapEntries<'a> {
     remaining: &'a [u8],
     rows: usize,
 }

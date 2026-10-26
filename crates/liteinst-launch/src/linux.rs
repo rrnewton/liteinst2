@@ -745,6 +745,9 @@ impl Elf {
     }
 }
 
+#[cfg(feature = "dev-exec-backing-cleanup")]
+pub(crate) use remote::exec_backing_cleanup_main;
+
 #[cfg(test)]
 mod tests {
     use super::*;

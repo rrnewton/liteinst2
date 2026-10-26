@@ -63,7 +63,7 @@ fn fixture<P: InstructionProvider, S: DynamicSourceResolver>(
                 closed: false,
             },
             sources,
-            profile: profile(),
+            profile: SourceProfile::Mapping(profile()),
         },
         receiver,
         cancel,
@@ -463,3 +463,5 @@ fn expired_or_cancelled_callback_boundary_has_no_provider_effect_or_followup() {
         no_followup(&commands);
     }
 }
+
+mod exec;

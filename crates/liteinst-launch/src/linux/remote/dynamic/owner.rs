@@ -2,9 +2,12 @@ use super::*;
 use std::collections::{BTreeMap, BTreeSet};
 
 #[cfg(test)]
+pub(super) mod launch_cleanup_probe;
+#[cfg(test)]
 mod tests;
 
 mod admission;
+pub(super) mod exec_journal;
 pub(super) mod kernel_journal;
 pub(super) mod signal_journal;
 mod signal_return;
@@ -48,9 +51,19 @@ pub(super) struct Owner {
     exec_policy: DynamicExecPolicy,
     lifecycle: Option<lifecycle::NativeLifecycle>,
     admission: Option<admission::AdmissionOwner>,
+    runtime: Option<admission::RuntimeOwner>,
+    #[cfg(test)]
+    runtime_panic_after_bootstrap: bool,
     kernel_journal: kernel_journal::KernelJournalWriter,
+    exec_journal: Option<exec_journal::ExecJournalWriter>,
     #[cfg(test)]
     journal_fault: Option<JournalFault>,
+    #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+    exec_oracle: Option<Box<dyn admission::ExecOracle>>,
+    #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+    exec_fault: std::cell::Cell<Option<admission::ExecFault>>,
+    #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+    exec_backing: Option<std::rc::Rc<admission::ExecBackingInspection>>,
     session: u64,
     sequence: u64,
     state: State,
@@ -84,10 +97,14 @@ pub(super) struct Owner {
     deny_kill_for_test: bool,
     #[cfg(test)]
     deny_pin_for_test: bool,
+    #[cfg(test)]
+    wait_withdrawal: Option<tests::wait_withdrawal::ListenWithdrawal>,
 }
 
 pub(super) fn run(start: TracerStart) {
     let TracerStart {
+        #[cfg(test)]
+        mut cleanup_probe,
         signal_journal,
         anchor,
         command,
@@ -123,6 +140,10 @@ pub(super) fn run(start: TracerStart) {
         } else {
             launch::start(&mut owner, &command, inherited_mask, until)?
         };
+        #[cfg(test)]
+        if let Some(probe) = &mut cleanup_probe {
+            probe.before_ready(&owner, &initial, until)?;
+        }
         ready
             .send(Ok(initial))
             .map_err(|_| LaunchError::Invalid("seized launch client disconnected"))?;
@@ -132,6 +153,9 @@ pub(super) fn run(start: TracerStart) {
     let failure = match result {
         Ok(Ok(())) => None,
         Ok(Err(error)) => {
+            if let Some(journal) = &owner.exec_journal {
+                journal.fail_error(&error);
+            }
             if let Some(journal) = &owner.signal_journal {
                 journal.fail_error(&error);
             }
@@ -143,6 +167,9 @@ pub(super) fn run(start: TracerStart) {
             Some(error)
         }
         Err(_) => {
+            if let Some(journal) = &owner.exec_journal {
+                journal.fail_panic();
+            }
             if let Some(journal) = &owner.signal_journal {
                 journal.fail(signal_journal::SignalJournalFailure::CaughtPanic);
             }
@@ -164,6 +191,10 @@ pub(super) fn run(start: TracerStart) {
             failure.unwrap_or(LaunchError::Invalid("dynamic launch cancelled"))
         ));
     }
+    #[cfg(test)]
+    if let Some(probe) = cleanup_probe {
+        probe.before_cleanup(&owner, until);
+    }
     let cleanup = owner.cleanup();
     let _ = done.send(cleanup);
 }
@@ -183,9 +214,19 @@ impl Owner {
             exec_policy: DynamicExecPolicy::Refuse,
             lifecycle: None,
             admission: None,
+            runtime: None,
+            #[cfg(test)]
+            runtime_panic_after_bootstrap: false,
             kernel_journal: kernel_journal::KernelJournalWriter::new(session),
+            exec_journal: None,
             #[cfg(test)]
             journal_fault: None,
+            #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+            exec_oracle: None,
+            #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+            exec_fault: std::cell::Cell::new(None),
+            #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+            exec_backing: None,
             session,
             sequence: 0,
             state: State::Startup,
@@ -215,6 +256,8 @@ impl Owner {
             deny_kill_for_test: false,
             #[cfg(test)]
             deny_pin_for_test: false,
+            #[cfg(test)]
+            wait_withdrawal: None,
         }
     }
     pub(super) fn anchor_session(&self) -> u64 {
@@ -493,6 +536,8 @@ impl Owner {
                 self.missing_pin = true;
             }
         }
+        #[cfg(test)]
+        tests::wait_withdrawal::before_consume(self, tid, &info)?;
         let mut status = 0;
         // SAFETY: exclusively owned thread wait domain; the exact WNOWAIT
         // identity above remains held. The helper is never an application task.
@@ -503,6 +548,15 @@ impl Owner {
                 libc::WNOHANG | libc::__WALL | libc::__WNOTHREAD,
             )
         };
+        #[cfg(test)]
+        tests::wait_withdrawal::after_consume(self, consumed);
+        if consumed == 0 {
+            // WNOWAIT retains the unreaped identity, not the stop condition.
+            // A fatal signal can withdraw TASK_TRACED before this WNOHANG
+            // consume. Keep the exact pin and numeric custody; no status was
+            // consumed, so retry under the caller's existing wait/cleanup path.
+            return Ok(None);
+        }
         if consumed != tid {
             return Err(system("consume pinned dynamic wait"));
         }
@@ -567,6 +621,10 @@ impl Owner {
                 .admission
                 .as_ref()
                 .is_some_and(|admission| admission.provider_expired(Instant::now()))
+                || self
+                    .runtime
+                    .as_ref()
+                    .is_some_and(|runtime| runtime.provider_expired(Instant::now()))
             {
                 self.closing = true;
                 self.cancel.store(true, Ordering::Release);
@@ -603,7 +661,7 @@ impl Owner {
             }
             request => request,
         };
-        if self.admission.is_some() {
+        if self.admission.is_some() || self.runtime.is_some() {
             return Err(LaunchError::Invalid(
                 "raw dynamic requests cannot bypass admission ownership",
             ));
@@ -951,6 +1009,9 @@ impl Owner {
         });
     }
     fn cleanup(&mut self) -> Result<DynamicCleanup, LaunchError> {
+        if let Some(journal) = &self.exec_journal {
+            journal.begin_cleanup();
+        }
         self.kernel_journal.close(
             kernel_journal::KernelWriterStatus::Closing,
             Some(kernel_journal::KernelFailureKind::Cancelled),
@@ -959,6 +1020,9 @@ impl Owner {
             journal.close(None);
         }
         let result = self.cleanup_inner();
+        if let Some(journal) = &self.exec_journal {
+            journal.finish_cleanup(result.is_ok());
+        }
         if let Some(journal) = &self.signal_journal {
             journal.close(Some(result.is_ok()));
         }
@@ -1074,3 +1138,6 @@ impl Owner {
         }
     }
 }
+
+#[cfg(feature = "dev-exec-backing-cleanup")]
+pub(crate) use admission::exec_backing_cleanup_main;

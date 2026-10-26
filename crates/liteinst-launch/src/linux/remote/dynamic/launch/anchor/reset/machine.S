@@ -1,7 +1,7 @@
 .text
-.global liteinst_anchor_reset_spawn
-.type liteinst_anchor_reset_spawn,@function
-liteinst_anchor_reset_spawn:
+.global {entry}
+.type {entry},@function
+{entry}:
     push r12
     mov r12, rdi
     mov rdx, rsi
@@ -79,4 +79,4 @@ liteinst_anchor_reset_spawn:
     and rsp, -16
     call {reaper}
     ud2
-.size liteinst_anchor_reset_spawn,.-liteinst_anchor_reset_spawn
+.size {entry},.-{entry}

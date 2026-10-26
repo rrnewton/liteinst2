@@ -127,6 +127,8 @@ fn capture(observed: &ObservedStop, until: Instant) -> (DynamicSourceRequest, Dy
     let request = DynamicSourceRequest {
         token: PendingSourceToken {
             id,
+            transition:
+                crate::linux::remote::dynamic::admission::source::SourceTransitionBinding::Mapping,
             original: PendingToken {
                 stop: DynamicStop {
                     sequence: 3,

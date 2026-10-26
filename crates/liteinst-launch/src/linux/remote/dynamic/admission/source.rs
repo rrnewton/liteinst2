@@ -6,6 +6,8 @@ use std::collections::BTreeSet;
 use std::ops::Range;
 
 #[cfg(test)]
+pub(super) mod exec_tests;
+#[cfg(test)]
 pub(super) mod tests;
 
 const PAGE: u64 = 4096;
@@ -104,6 +106,61 @@ impl DynamicMappingProfile {
     }
 }
 
+/// Explicit singleton profile for one original native64 exec. Bounds apply
+/// to actual runtime inputs and whole captured VMAs, never a pathname/version
+/// allowlist. Mapping, signal and creation profiles cannot be composed with it.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct DynamicExecProfile {
+    /// Maximum main/interpreter whole VMAs in the one source-resolution batch.
+    pub max_capture_images: usize,
+    /// Maximum bytes per complete captured VMA, page aligned and at most 64 KiB.
+    pub max_capture_bytes: usize,
+    /// Maximum sum of captured bytes in the batch, within the lifetime budget.
+    pub max_total_capture_bytes: usize,
+    /// Combined argv/envp pointer slots, including both terminating NULL slots.
+    /// At least two and at most 4096 slots are permitted.
+    pub max_argument_pointers: usize,
+    /// Combined filename/argv/envp string bytes, including every terminating NUL.
+    /// The finite profile permits at most 64 KiB, not a per-string allowance.
+    pub max_string_bytes: usize,
+}
+
+impl DynamicExecProfile {
+    pub(in super::super) fn validate(
+        &self,
+        options: &DynamicAdmissionOptions,
+    ) -> Result<(), GateError> {
+        options.validate()?;
+        let maximum_total = self.max_capture_images.checked_mul(self.max_capture_bytes);
+        if options.lifecycle != DynamicLifecycleOptions::default()
+            || !(1..=MAX_IMAGES).contains(&self.max_capture_images)
+            || self.max_capture_bytes == 0
+            || self.max_capture_bytes > MAX_IMAGE_BYTES
+            || self.max_capture_bytes % PAGE as usize != 0
+            || self.max_total_capture_bytes < self.max_capture_bytes
+            || self.max_total_capture_bytes % PAGE as usize != 0
+            || maximum_total.is_none_or(|maximum| self.max_total_capture_bytes > maximum)
+            || self.max_total_capture_bytes > options.limits.source_fact_bytes
+            || !(2..=4096).contains(&self.max_argument_pointers)
+            || !(1..=MAX_IMAGE_BYTES).contains(&self.max_string_bytes)
+            || self.max_string_bytes > options.limits.source_fact_bytes
+        {
+            return Err(GateError::Refused("invalid singleton exec source profile"));
+        }
+        Ok(())
+    }
+}
+
+/// Kind of original operation preceding an owner-issued source capture.
+/// This diagnostic tag confers no native execution or commit authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum DynamicSourceTransition {
+    /// New source bytes in the same task and address space, at the next epoch.
+    Mapping,
+    /// A new task/address space after actual exec, at native generation zero.
+    Exec,
+}
+
 fn overlaps(a: &Range<u64>, b: &Range<u64>) -> bool {
     a.start < b.end && b.start < a.end
 }
@@ -197,14 +254,47 @@ impl DynamicSourceImage {
 pub(in super::super) struct PendingSourceToken {
     pub(in super::super) id: DynamicSourceRequestId,
     pub(in super::super) original: PendingToken,
+    pub(in super::super) transition: SourceTransitionBinding,
     pub(in super::super) capture_stop: DynamicStop,
     pub(in super::super) task: DynamicTask,
     pub(in super::super) candidate_epoch: u64,
     pub(in super::super) until: Instant,
 }
 
+/// Dispatch consistency data, not native proof. Only the owner supplies the
+/// actual observations and independently authenticates physical pin/stop state.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(in super::super) enum SourceTransitionBinding {
+    Mapping,
+    Exec(Arc<ExecSourceBinding>),
+}
+
+/// Immutable dispatch consistency shared by the owner and caller token copies.
+/// It contains no native permit and cannot authorize a replacement by itself.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(in super::super) struct ExecSourceBinding {
+    pub(in super::super) previous: DynamicTask,
+    pub(in super::super) replacement: DynamicTask,
+    pub(in super::super) exec_stop: DynamicStop,
+    pub(in super::super) exit_stop: DynamicStop,
+    pub(in super::super) bootstrap_stop: DynamicStop,
+    pub(in super::super) attempt: KernelAttemptId,
+}
+
+impl ExecSourceBinding {
+    pub(in super::super) fn allocated_bytes() -> Result<usize, GateError> {
+        let controls = std::alloc::Layout::new::<[std::sync::atomic::AtomicUsize; 2]>();
+        let (layout, _) = controls
+            .extend(std::alloc::Layout::new::<Self>())
+            .map_err(|_| GateError::Refused("exec source binding size overflows"))?;
+        Ok(layout.pad_to_align().size())
+    }
+}
+
 /// Owner-issued immutable source acquisition. It is delivered only after the
-/// original kernel EXIT, private return bridge and complete NX quarantine.
+/// original kernel EXIT and complete NX quarantine: mapping uses its return
+/// bridge, while exec uses a new-mm first-user bootstrap. No old-mm bridge is
+/// implied by an exec request.
 /// Facts returned for it cannot release a task or commit a source set.
 #[derive(Debug)]
 pub struct DynamicSourceRequest {
@@ -216,11 +306,23 @@ impl DynamicSourceRequest {
     pub fn id(&self) -> DynamicSourceRequestId {
         self.token.id
     }
-    /// Actual old-generation identity at the held post-bridge capture.
+    /// Actual held capture identity: old generation for mapping, new task/mm
+    /// generation zero for exec.
     pub fn task(&self) -> DynamicTask {
         self.token.task
     }
-    /// Current committed epoch. The first mapping profile keeps the same mm.
+    /// Exact previous invocation identity, retained even after mm replacement.
+    pub fn previous_task(&self) -> DynamicTask {
+        self.token.original.task
+    }
+    /// Original operation kind; this tag grants no execution authority.
+    pub fn transition(&self) -> DynamicSourceTransition {
+        match &self.token.transition {
+            SourceTransitionBinding::Mapping => DynamicSourceTransition::Mapping,
+            SourceTransitionBinding::Exec(_) => DynamicSourceTransition::Exec,
+        }
+    }
+    /// Previous mm's committed epoch. Exec does not continue that epoch chain.
     pub fn previous_epoch(&self) -> u64 {
         self.token.original.epoch
     }
@@ -239,7 +341,8 @@ impl DynamicSourceRequest {
     pub fn expires_at(&self) -> Instant {
         self.token.until
     }
-    /// Complete immutable batch. This first profile requires exactly one VMA.
+    /// Complete immutable batch: one VMA for mapping, bounded main/interpreter
+    /// whole VMAs for exec, all selected by the owner from actual runtime data.
     pub fn images(&self) -> &[DynamicSourceImage] {
         &self.images
     }
@@ -251,7 +354,8 @@ impl DynamicSourceRequest {
         until: Instant,
     ) -> Result<(), GateError> {
         let token = &self.token;
-        if token.original != *expected
+        if token.transition != SourceTransitionBinding::Mapping
+            || token.original != *expected
             || token.until != until
             || token.id.session != expected.stop.session
             || token.id.serial == 0
@@ -302,6 +406,122 @@ impl DynamicSourceRequest {
             {
                 return Err(GateError::Refused(
                     "dynamic source capture geometry differs",
+                ));
+            }
+        }
+        Ok(())
+    }
+
+    pub(in super::super) fn check_exec_binding(
+        &self,
+        expected: &PendingToken,
+        profile: &DynamicExecProfile,
+        until: Instant,
+    ) -> Result<(), GateError> {
+        let token = &self.token;
+        let SourceTransitionBinding::Exec(binding) = &token.transition else {
+            return Err(GateError::Refused(
+                "dynamic exec source request binding differs",
+            ));
+        };
+        let ExecSourceBinding {
+            previous,
+            replacement,
+            exec_stop,
+            exit_stop,
+            bootstrap_stop,
+            attempt,
+        } = binding.as_ref();
+        let bound_stop = |stop: &DynamicStop| {
+            stop.session == expected.stop.session
+                && stop.tid == expected.stop.tid
+                && stop.task == Some(replacement.task)
+        };
+        if token.original != *expected
+            || token.until != until
+            || token.id.session != expected.stop.session
+            || token.id.serial == 0
+            || *previous != expected.task
+            || token.task != *replacement
+            || expected.epoch != previous.generation
+            || expected.stop.task != Some(previous.task)
+            || previous.task == replacement.task
+            || previous.address_space == replacement.address_space
+            || previous.process != replacement.process
+            || replacement.generation != 0
+            || token.candidate_epoch != 0
+            || *attempt
+                != (KernelAttemptId {
+                    session: expected.stop.session,
+                    invocation: expected.invocation,
+                })
+            || !bound_stop(exec_stop)
+            || !bound_stop(exit_stop)
+            || !bound_stop(bootstrap_stop)
+            || token.capture_stop != *bootstrap_stop
+            || exec_stop.sequence != 0
+            || exit_stop.sequence <= exec_stop.sequence
+            || bootstrap_stop.sequence <= exit_stop.sequence
+        {
+            return Err(GateError::Refused(
+                "dynamic exec source request binding differs",
+            ));
+        }
+        if self.images.is_empty() || self.images.len() > profile.max_capture_images {
+            return Err(GateError::Refused(
+                "exec source request image bound differs",
+            ));
+        }
+        let mut total = 0_usize;
+        for (index, image) in self.images.iter().enumerate() {
+            let range = image.range();
+            total = total
+                .checked_add(image.bytes.len())
+                .ok_or(GateError::Refused(
+                    "dynamic exec source capture geometry differs",
+                ))?;
+            if image.id
+                != (DynamicSourceCaptureId {
+                    request: token.id,
+                    index,
+                })
+                || image.mapping_incarnation == 0
+                || self.images[..index].iter().any(|prior| {
+                    prior.mapping_incarnation == image.mapping_incarnation
+                        || overlaps(&prior.range(), &range)
+                })
+                || range.start == 0
+                || range.start >= range.end
+                || range.start % PAGE != 0
+                || range.end % PAGE != 0
+                || image.bytes.len() > profile.max_capture_bytes
+                || total > profile.max_total_capture_bytes
+                || u64::try_from(image.bytes.len()).ok() != range.end.checked_sub(range.start)
+                || image.original.permissions != "r-xp"
+                || image.original.file_offset % PAGE != 0
+                || image
+                    .original
+                    .pathname
+                    .as_ref()
+                    .is_none_or(|path| path.is_empty())
+                || image.quarantined.start != image.original.start
+                || image.quarantined.end != image.original.end
+                || image.quarantined.permissions != "r--p"
+                || image.quarantined.file_offset != image.original.file_offset
+                || image.quarantined.pathname != image.original.pathname
+                || image.lower_neighbor.as_ref().is_some_and(|neighbor| {
+                    neighbor.end != range.start
+                        || neighbor.start >= neighbor.end
+                        || !valid_nx_neighbor(neighbor)
+                })
+                || image.upper_neighbor.as_ref().is_some_and(|neighbor| {
+                    neighbor.start != range.end
+                        || neighbor.start >= neighbor.end
+                        || !valid_nx_neighbor(neighbor)
+                })
+            {
+                return Err(GateError::Refused(
+                    "dynamic exec source capture geometry differs",
                 ));
             }
         }

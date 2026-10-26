@@ -13,6 +13,11 @@ use crate::selected::{Operation, SelectedInput, SyscallAbi, SyscallAliases};
 use crate::trap_coverage::{TrapGuard, TrapGuardRole};
 use iced_x86::Register;
 
+mod exec;
+pub(in crate::linux::remote::dynamic::owner) use exec::{
+    ExecExitReady, ExecInvocation, ExecObservation, ExecRelease, ExecTransition, execute_exec,
+};
+
 pub(in crate::linux::remote::dynamic) struct OriginalInvocation<'a> {
     pub(in crate::linux::remote::dynamic) stop: &'a AdmissionStop,
     pub(in crate::linux::remote::dynamic) input: &'a SelectedInput,

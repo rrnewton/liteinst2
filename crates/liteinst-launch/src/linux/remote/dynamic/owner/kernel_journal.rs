@@ -8,6 +8,18 @@ use std::marker::PhantomData;
 use std::rc::Rc;
 use std::sync::{Mutex, MutexGuard};
 
+mod runtime;
+pub(in crate::linux::remote::dynamic::owner) use runtime::{
+    PreparedRuntimeJournal, RuntimeJournalBefore, RuntimeJournalShape, RuntimeJournalSink,
+    RuntimeKernelHandle,
+};
+pub use runtime::{
+    RuntimeKernelAttemptSnapshot, RuntimeKernelFact, RuntimeKernelJournalFailure,
+    RuntimeKernelJournalStage, RuntimeKernelMapsSummary, RuntimeKernelRawRecord,
+    RuntimeKernelReleasePhase, RuntimeKernelReleaseSource, RuntimeKernelRequest,
+    RuntimeKernelStateRecord, RuntimeKernelStateSlot, RuntimeKernelWaitCustody,
+};
+
 mod mapping;
 pub(in crate::linux::remote::dynamic::owner) use mapping::{
     MAPPING_CAPTURE_BYTES, MappingCaptureArchive,
@@ -388,6 +400,8 @@ pub struct KernelProgressSnapshot {
     pub archive_poisoned: bool,
     /// Immutable copies of all attached attempts, including incomplete prefixes.
     pub attempts: Vec<KernelAttemptSnapshot>,
+    /// Separate same-generation runtime invocations without installed plan IDs.
+    pub runtime_attempts: Vec<RuntimeKernelAttemptSnapshot>,
 }
 
 /// Diagnostic archive handle. It sends no command and survives closed/dropped
@@ -408,6 +422,7 @@ impl KernelProgressReader {
             writer: archive.status,
             archive_poisoned: archive.poisoned || poisoned,
             attempts: archive.attempts.iter().map(Attempt::snapshot).collect(),
+            runtime_attempts: archive.runtime.snapshot(),
         }
     }
 }
@@ -536,6 +551,7 @@ struct Archive {
     status: KernelWriterStatus,
     poisoned: bool,
     attempts: Vec<Attempt>,
+    runtime: runtime::RuntimeArchive,
 }
 
 /// Prepared storage is not attached and grants no native execution authority.
@@ -595,6 +611,7 @@ impl Drop for JournalUnwind {
                 guard
             }
         };
+        archive.runtime.fail_active(KernelFailureKind::CaughtPanic);
         if let Some(attempt) = archive.attempts.last_mut() {
             if !attempt
                 .facts()
@@ -620,6 +637,7 @@ impl KernelJournalWriter {
                 status: KernelWriterStatus::Active,
                 poisoned: false,
                 attempts: Vec::new(),
+                runtime: runtime::RuntimeArchive::default(),
             })),
             active: None,
             _thread: PhantomData,
@@ -749,6 +767,7 @@ impl KernelJournalWriter {
             let mut archive = self.lock();
             if archive.status != KernelWriterStatus::Active
                 || archive.session != id.session
+                || !archive.runtime.allows_legacy(id)
                 || archive.poisoned
                 || archive
                     .attempts
@@ -836,6 +855,7 @@ impl KernelJournalWriter {
             if archive.status != KernelWriterStatus::Active
                 || archive.poisoned
                 || id.session != archive.session
+                || !archive.runtime.allows_legacy(id)
                 || archive.attempts.len() == archive.attempts.capacity()
                 || archive
                     .attempts
@@ -865,6 +885,7 @@ impl KernelJournalWriter {
         Self::attempt_mut(&mut self.lock(), handle)?.append(fact)
     }
     pub(super) fn fail_active(&mut self, kind: KernelFailureKind) {
+        self.lock().runtime.fail_active(kind);
         let Some(handle) = self.active else {
             return;
         };

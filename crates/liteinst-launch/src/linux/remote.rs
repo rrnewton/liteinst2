@@ -2028,3 +2028,6 @@ fn qualify_single_step(pid: libc::pid_t) -> Result<(), LaunchError> {
         "instruction prefix sequence exceeds native limit",
     ))
 }
+
+#[cfg(feature = "dev-exec-backing-cleanup")]
+pub(crate) use dynamic::exec_backing_cleanup_main;

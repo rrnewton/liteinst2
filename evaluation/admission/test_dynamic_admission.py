@@ -262,7 +262,9 @@ class DynamicRecorderIntegrationTests(unittest.TestCase):
             root = Path(temporary)
             here = root / "evaluation/admission"
             here.mkdir(parents=True)
-            (here / "corpus.json").write_text(json.dumps({"schema_version": 1}))
+            (here / "corpus.json").write_text(json.dumps({"schema_version": 1,
+                "backing_cleanup_harnesses": {name: [run.backing_cleanup.specification()]
+                    for name in ("workspace_tests", "serial_launch")}}))
             source = {"revision": "a" * 40, "tracked_clean": True}
 
             def completed(argv, env, log, timeout):
@@ -308,7 +310,7 @@ class DynamicRecorderIntegrationTests(unittest.TestCase):
         self.assertEqual(len(declared["native_cases"]), 50)
         for cohort in declared["harness_test_counts"].values():
             self.assertEqual(cohort["test/dynamic_admission"], {"tests": 15, "ignored": 0})
-        self.assertEqual(declared["recorder_tests"], 230)
+        self.assertEqual(declared["recorder_tests"], 299)
 
     def test_six_commands_and_existing_deadlines_are_not_extended(self):
         self.assertEqual(run.COMMANDS, [

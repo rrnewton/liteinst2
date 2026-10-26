@@ -36,6 +36,84 @@ def complete():
 
 
 class DefaultParallelTests(unittest.TestCase):
+    def test_fork_cohort_authenticates_its_own_exact_corpus_and_commands(self):
+        expected = {dp.FORK: counts(7)}
+        corpus = {"schema_version": 1, "harness_test_counts": {
+            "workspace_tests": copy.deepcopy(EXPECTED | expected),
+            "serial_launch": copy.deepcopy(EXPECTED | expected)}}
+        data = json.dumps(corpus).encode()
+        source = {"source_sha256": {"evaluation/admission/corpus.json": dp.sha(data)}}
+        self.assertEqual(dp.authenticated_corpus(data, source, "fork"), expected)
+        self.assertEqual(dp.authenticated_corpus(data, source), EXPECTED)
+        self.assertEqual(dp.FORK_ARGV,
+                         ("cargo", "test", "-p", "liteinst-launch", "--test", "dynamic_fork"))
+        self.assertEqual([command["argv"] for command in dp.commands("fork")],
+                         [list(dp.FORK_ARGV)] * 4)
+        self.assertEqual([command["argv"] for command in dp.commands()], [list(dp.ARGV)] * 4)
+        changed = copy.deepcopy(corpus)
+        changed["harness_test_counts"]["serial_launch"][dp.FORK]["tests"] = 6
+        with self.assertRaisesRegex(InvalidEvidence, "launch_unit_corpus_differs"):
+            dp.expected_unit(changed, "fork")
+        with self.assertRaisesRegex(InvalidEvidence, "default_parallel_corpus_source_mismatch"):
+            dp.authenticated_corpus(data + b" ", source, "fork")
+        for invalid in (None, "", "dynamic_fork", "unit --test-threads=1"):
+            with self.subTest(invalid=invalid), self.assertRaisesRegex(
+                    InvalidEvidence, "invalid_default_parallel_cohort"):
+                dp.commands(invalid)
+
+    def test_fork_qualification_rejects_swapped_harness_commands_and_failed_repetitions(self):
+        record = complete()
+        record["cohort"] = "fork"
+        record["commands"] = dp.commands("fork")
+        text = "\n".join((header("dynamic_fork", unit=False), "running 7 tests", summary(7)))
+        for command in record["commands"]:
+            command.update(result())
+            dp.observe(command, text, {dp.FORK: counts(7)})
+        dp.qualify(record)
+        self.assertEqual(record["status"], "passed")
+        for index in range(4):
+            for field, value in (("argv", list(dp.ARGV)), ("status", "failed"),
+                                 ("exit_code", 101), ("reaped_descendants", 1)):
+                changed = copy.deepcopy(record)
+                changed["commands"][index][field] = value
+                dp.qualify(changed)
+                self.assertEqual(changed["status"], "failed")
+                self.assertFalse(any(row["qualified_run"] for command in changed["commands"]
+                                     for row in command["harnesses"]))
+            changed = copy.deepcopy(record)
+            changed["commands"][index]["harnesses"][0]["id"] = dp.UNIT
+            dp.qualify(changed)
+            self.assertEqual(changed["status"], "failed")
+        changed = copy.deepcopy(record)
+        changed["cohort"] = "unit"
+        dp.qualify(changed)
+        self.assertEqual(changed["status"], "failed")
+
+    def test_fork_repetitions_keep_all_seven_cases_and_stop_on_first_failure(self):
+        for failed_index in (None, 0, 3):
+            record = {"commands": dp.commands("fork")}
+            calls = []
+            with tempfile.TemporaryDirectory() as temporary:
+                def run(argv, env, path, timeout, limit):
+                    index = len(calls)
+                    calls.append(list(argv))
+                    self.assertNotIn("RUST_TEST_THREADS", env)
+                    self.assertEqual((timeout, limit), (180, 8 * 1024 * 1024))
+                    failed = int(index == failed_index)
+                    path.write_text("\n".join((header("dynamic_fork", unit=False),
+                        "running 7 tests", summary(7 - failed, failed=failed))))
+                    return result(101 if failed else 0)
+                with patch.object(dp, "run_command", side_effect=run):
+                    dp.execute(record, {}, Path(temporary), {dp.FORK: counts(7)},
+                               lambda: None, lambda: None)
+            attempts = 4 if failed_index is None else failed_index + 1
+            self.assertEqual(calls, [list(dp.FORK_ARGV)] * attempts)
+            self.assertEqual([command["status"] for command in record["commands"]],
+                ["passed"] * 4 if failed_index is None else
+                ["passed"] * failed_index + ["failed"] + ["not_run"] * (3 - failed_index))
+            self.assertFalse(any(row["qualified_run"] for command in record["commands"]
+                                 for row in command.get("harnesses", [])))
+
     def test_environment_removes_all_inherited_thread_overrides_and_keeps_build_bound(self):
         for threads in ("1", "64", "", "PRIVATE_SENTINEL"):
             env = dp.default_environment({"PATH": "/usr/bin:/bin", "HOME": "/CONFIG_HOME",

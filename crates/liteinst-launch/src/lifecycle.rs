@@ -8,6 +8,9 @@
 //! transition here authorizes freeing mappings or forgetting a saved return.
 #![forbid(unsafe_code)]
 
+mod initial_kernel;
+pub(crate) use initial_kernel::InitialKernelPhase;
+
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 
@@ -1311,6 +1314,59 @@ impl LifecycleRegistry {
         })
     }
 
+    /// Initial-source observation only: checks the same releasable/held model
+    /// predicates as an exclusion candidate without allocating a snapshot. The
+    /// stricter initial singleton restriction is local to the new runtime source
+    /// capture path. This returns no candidate, lease, or release authority.
+    pub(crate) fn require_initial_source_singleton(
+        &self,
+        selected: TaskId,
+        process: ProcessId,
+        space: AddressSpaceId,
+        tid: i32,
+    ) -> Result<(), LifecycleError> {
+        self.state.releasable(space)?;
+        let task = self.task(selected)?;
+        let address_space = self.address_space(space)?;
+        if address_space.generation != 0 {
+            return Err(LifecycleError::Stale);
+        }
+        if !matches!(
+            task.state,
+            TaskState::Held {
+                reason: HoldReason::OwnedTrap,
+                ..
+            }
+        ) {
+            return Err(LifecycleError::NotHeld);
+        }
+        if self.state.root != selected
+            || self.state.tasks.len() != 1
+            || self.state.tids.len() != 1
+            || self.state.processes.len() != 1
+            || self.state.spaces.len() != 1
+            || !self.state.obligations.is_empty()
+            || task.id != selected
+            || task.tid != tid
+            || task.process != process
+            || task.address_space != space
+            || task.origin != TaskOrigin::InitialExecSyscallExit
+            || task.syscall_open
+            || task.pending.is_some()
+            || address_space.id != space
+            || address_space.origin != AddressSpaceOrigin::Initial
+            || self.state.tids.get(&tid) != Some(&selected)
+            || self
+                .state
+                .processes
+                .get(&process)
+                .is_none_or(|record| record.tgid != tid)
+        {
+            return Err(LifecycleError::WrongState);
+        }
+        Ok(())
+    }
+
     /// Rejects candidates after any registry mutation, including unrelated events.
     pub fn validate_candidate(&self, candidate: &ExclusionCandidate) -> Result<(), LifecycleError> {
         if candidate.registry != self.state.registry
@@ -1536,3 +1592,7 @@ impl RegistrySnapshot {
         Ok(id)
     }
 }
+
+#[cfg(test)]
+#[path = "lifecycle/initial_source_tests.rs"]
+mod initial_source_tests;

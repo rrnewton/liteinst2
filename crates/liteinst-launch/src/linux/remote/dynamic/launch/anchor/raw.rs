@@ -2,6 +2,8 @@ use super::*;
 use std::mem::offset_of;
 use storage::Context;
 
+// Unit tests and the feature-enabled self dependency can share one link.
+// Bind each label to its own compilation; non-test symbol names stay unchanged.
 core::arch::global_asm!(include_str!("raw.S"),
     stack_top = const offset_of!(Context, stack_top),
     stack_low = const offset_of!(Context, stack_low),
@@ -41,33 +43,84 @@ core::arch::global_asm!(include_str!("raw.S"),
     error_errno = const offset_of!(Context, error) + 4,
     blocked = const BLOCKED,
     probe = const PROBE_SIGNAL,
+    li2_anchor_code_begin = sym li2_anchor_code_begin,
+    li2_anchor_enter = sym li2_anchor_enter,
+    li2_anchor_prepared_return = sym li2_anchor_prepared_return,
+    li2_anchor_pre_read = sym li2_anchor_pre_read,
+    li2_anchor_read_insn = sym li2_anchor_read_insn,
+    li2_anchor_read = sym li2_anchor_read,
+    li2_anchor_close_release = sym li2_anchor_close_release,
+    li2_anchor_install = sym li2_anchor_install,
+    li2_anchor_query_installed = sym li2_anchor_query_installed,
+    li2_anchor_pending_before = sym li2_anchor_pending_before,
+    li2_anchor_queue = sym li2_anchor_queue,
+    li2_anchor_unmask = sym li2_anchor_unmask,
+    li2_anchor_handler = sym li2_anchor_handler,
+    li2_anchor_reblock = sym li2_anchor_reblock,
+    li2_anchor_query_mask = sym li2_anchor_query_mask,
+    li2_anchor_pending_restore = sym li2_anchor_pending_restore,
+    li2_anchor_restore_action = sym li2_anchor_restore_action,
+    li2_anchor_query_restored = sym li2_anchor_query_restored,
+    li2_anchor_query_stack = sym li2_anchor_query_stack,
+    li2_anchor_pending_after = sym li2_anchor_pending_after,
+    li2_anchor_write_anchor = sym li2_anchor_write_anchor,
+    li2_anchor_close_channel = sym li2_anchor_close_channel,
+    li2_anchor_exec = sym li2_anchor_exec,
+    li2_anchor_restorer = sym li2_anchor_restorer,
+    li2_anchor_code_end = sym li2_anchor_code_end,
     options(att_syntax),
 );
 
 unsafe extern "C" {
+    #[cfg_attr(test, link_name = "unit_li2_anchor_enter")]
     fn li2_anchor_enter(context: *mut Context) -> !;
+    #[cfg_attr(test, link_name = "unit_li2_anchor_handler")]
     fn li2_anchor_handler();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_restorer")]
     fn li2_anchor_restorer();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_code_begin")]
     fn li2_anchor_code_begin();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_code_end")]
     fn li2_anchor_code_end();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_prepared_return")]
     fn li2_anchor_prepared_return();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_pre_read")]
+    fn li2_anchor_pre_read();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_read_insn")]
     fn li2_anchor_read_insn();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_read")]
     fn li2_anchor_read();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_close_release")]
     fn li2_anchor_close_release();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_install")]
     fn li2_anchor_install();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_query_installed")]
     fn li2_anchor_query_installed();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_pending_before")]
     fn li2_anchor_pending_before();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_queue")]
     fn li2_anchor_queue();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_unmask")]
     fn li2_anchor_unmask();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_reblock")]
     fn li2_anchor_reblock();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_query_mask")]
     fn li2_anchor_query_mask();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_pending_restore")]
     fn li2_anchor_pending_restore();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_restore_action")]
     fn li2_anchor_restore_action();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_query_restored")]
     fn li2_anchor_query_restored();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_query_stack")]
     fn li2_anchor_query_stack();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_pending_after")]
     fn li2_anchor_pending_after();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_write_anchor")]
     fn li2_anchor_write_anchor();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_close_channel")]
     fn li2_anchor_close_channel();
+    #[cfg_attr(test, link_name = "unit_li2_anchor_exec")]
     fn li2_anchor_exec();
 }
 pub(super) unsafe fn enter(context: *mut Context) -> ! {

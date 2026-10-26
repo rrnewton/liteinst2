@@ -276,3 +276,24 @@ uses an independent raw tracer for an original RW→RX→RW→RX→unmap traject
 including two different generated CPUID sites, stale replies, callback failures
 and physical cleanup. It defines finite evidence for the mapping path; general
 application discovery and the full B3/B4 milestones remain separate work.
+
+
+`DynamicAdmissionSession::launch_runtime` captures initial executable and
+interpreter sources without a caller-supplied complete head list. It executes
+a finite set of ordinary register/immediate instructions and direct branches
+one instruction at a time, then closes their fetch pages before committing
+the resulting current-PC origin. Selected CPU instructions use typed scripted
+completion with original source kept NX. The default runtime kernel policy
+refuses native syscall execution. Explicitly selecting
+`RuntimeKernelProfile::IdentityAndTermination` permits provider `Native`
+decisions for exact native64 `SYSCALL` getpid/gettid and exit/exit_group, subject
+to independent namespace, state, source and physical-custody checks. Returning
+calls close their fetch pages before reporting completion. Termination reports
+a genuine terminal event with no returned checkpoint. Memory/stack instructions,
+indirect transfers, native selected CPU decisions, other syscall effects and
+lifecycle composition still refuse. The unsafe singleton/source/control
+contract and all lifetime limits remain. See the
+[native runtime kernel profile](../../evaluation/admission/runtime-kernel-profile.md)
+for exact boundaries and the separate diagnostic journal.
+See the [actual-PC profile and validation protocol](../../evaluation/admission/actual-pc-runtime.md)
+for source identity, native control, evidence and remaining B3 limits.

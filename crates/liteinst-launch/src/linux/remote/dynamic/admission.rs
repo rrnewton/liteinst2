@@ -11,12 +11,17 @@ use crate::selected::{FaultedInstruction, InstructionProvider, ProviderDecision,
 use crate::trap_coverage::TrapCoverageBudget;
 use liteinst_admission::oracle_chain::CacheLimits;
 
+mod runtime_session;
+pub use runtime_session::{
+    DynamicRuntimeCaptureLimits, DynamicRuntimeOptions, RuntimeKernelProfile,
+};
+pub(super) use runtime_session::{RuntimePendingToken, RuntimeProviderInput};
 mod signal_session;
 pub use signal_session::DynamicSignalSession;
 pub(super) mod source;
 mod source_session;
-pub(super) use source::PendingSourceToken;
 pub use source::*;
+pub(super) use source::{ExecSourceBinding, PendingSourceToken, SourceTransitionBinding};
 pub use source_session::DynamicSourceSession;
 
 /// Explicit trap backend; neither choice is an implicit fallback from A1.
@@ -152,11 +157,30 @@ pub struct DynamicAdmissionCompletion {
     pub signal_mask: u64,
 }
 
+/// One admitted original exec with a fresh task/address-space incarnation.
+/// Actual ENTRY, EXEC, EXIT and first-user observations remain separately
+/// available through the exec progress archive; this is not a selected return.
+#[derive(Clone, Debug)]
+pub struct DynamicImageReplacement {
+    /// Complete original state before the exec instruction in the retired mm.
+    pub before: DynamicAdmissionState,
+    /// Complete held new-mm state after bootstrap and source commit, before
+    /// the first original fetch. Its native admission generation is zero.
+    pub ready: DynamicAdmissionState,
+    /// Exact original selected native64 exec input, never a replacement command.
+    pub input: SelectedInput,
+    /// Original kernel attempt retained in the exec progress archive.
+    pub attempt: KernelAttemptId,
+}
+
 /// Diagnostic events from the admission owner. None permits raw task resume.
 #[derive(Clone, Debug)]
 pub enum DynamicAdmissionEvent {
     /// One provider decision and one completed instruction, with guards rearmed.
     Completed(Box<DynamicAdmissionCompletion>),
+    /// A complete admitted image replacement; available only in the explicit
+    /// exec source profile. No ordinary selected completion is substituted.
+    ImageReplaced(Box<DynamicImageReplacement>),
     /// An actual original delivery waiting on its immutable transaction deadline.
     /// Available only through the explicitly selected signal-session profile.
     SignalPending(Box<DynamicSignalPending>),
@@ -248,6 +272,14 @@ pub(super) struct ProviderInput {
 }
 
 pub(super) enum AdmissionRequest {
+    StartRuntime {
+        initial: DynamicStop,
+        options: DynamicRuntimeOptions,
+    },
+    CompleteRuntime {
+        token: RuntimePendingToken,
+        decision: ProviderDecision,
+    },
     Start {
         initial: DynamicStop,
         facts: Vec<ImageFacts>,
@@ -265,6 +297,12 @@ pub(super) enum AdmissionRequest {
         facts: Vec<ImageFacts>,
         options: DynamicAdmissionOptions,
         profile: DynamicMappingProfile,
+    },
+    StartExec {
+        initial: DynamicStop,
+        facts: Vec<ImageFacts>,
+        options: DynamicAdmissionOptions,
+        profile: DynamicExecProfile,
     },
     ResolveSources {
         token: PendingSourceToken,
@@ -286,9 +324,16 @@ pub(super) enum AdmissionRequest {
 }
 
 pub(super) enum AdmissionReply {
+    RuntimeReady(DynamicAdmissionState, KernelProgressReader),
+    RuntimeProvider(Box<RuntimeProviderInput>),
     Ready(DynamicAdmissionState, KernelProgressReader),
     ReadySignals(DynamicAdmissionState, KernelProgressReader),
     ReadyMappings(DynamicAdmissionState, KernelProgressReader),
+    ReadyExec(
+        DynamicAdmissionState,
+        KernelProgressReader,
+        crate::ExecProgressReader,
+    ),
     AcquireSources(Box<DynamicSourceRequest>),
     SignalEntered(Box<DynamicSignalEntry>),
     Provider(Box<ProviderInput>),
@@ -464,6 +509,9 @@ impl<P: InstructionProvider> DynamicAdmissionSession<P> {
         response_until: Instant,
     ) -> Result<DynamicAdmissionEvent, GateError> {
         let event = match reply {
+            AdmissionReply::RuntimeProvider(input) => {
+                self.finish_runtime_provider(input, until, response_until)?
+            }
             AdmissionReply::Event(event) => event,
             AdmissionReply::Provider(input) => {
                 // recv_timeout may take an already queued reply after this
