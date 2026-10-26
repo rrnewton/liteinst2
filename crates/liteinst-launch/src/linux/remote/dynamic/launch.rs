@@ -168,6 +168,8 @@ pub(super) fn start(
         envp: envp.as_ptr(),
         #[cfg(test)]
         fail_before_ready: owner.fail_before_ready,
+        #[cfg(test)]
+        die_before_ready: owner.die_before_ready,
     };
     owner.spawn_broker(bootstrap)?;
     drop(release_child);
@@ -257,6 +259,8 @@ pub(super) struct Bootstrap {
     envp: *const *const libc::c_char,
     #[cfg(test)]
     pub(super) fail_before_ready: bool,
+    #[cfg(test)]
+    pub(super) die_before_ready: bool,
 }
 impl Bootstrap {
     pub(super) unsafe fn close_all(self) {

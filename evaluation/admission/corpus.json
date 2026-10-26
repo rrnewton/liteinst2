@@ -60,7 +60,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 19
+        "tests": 21
       }
     },
     "workspace_tests": {
@@ -322,7 +322,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 19
+        "tests": 21
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,

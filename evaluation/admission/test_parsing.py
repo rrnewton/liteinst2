@@ -261,13 +261,13 @@ class DeclaredCorpusTests(unittest.TestCase):
         expected = self.corpus["harness_test_counts"]
         self.assertEqual(len(expected["workspace_tests"]), 67)
         self.assertEqual(len(expected["serial_launch"]), 15)
-        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 1061)
+        self.assertEqual(sum(row["tests"] for row in expected["workspace_tests"].values()), 1063)
         self.assertEqual(sum(row["ignored"] for row in expected["workspace_tests"].values()), 4)
-        self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 223)
+        self.assertEqual(sum(row["tests"] for row in expected["serial_launch"].values()), 225)
         self.assertEqual(sum(row["ignored"] for row in expected["serial_launch"].values()), 0)
         for cohort in expected.values():
             for identity, total in {
-                "unit/liteinst_launch/lib": 19,
+                "unit/liteinst_launch/lib": 21,
                 "test/selected_semantics": 17,
                 "test/native_int80": 6,
                 "test/concurrent_gate": 10,

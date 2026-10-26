@@ -262,6 +262,14 @@ struct TracerStart {
 /// unreaped until the tracer acknowledges SEIZE or abandons attachment. Ptrace
 /// terminal status and the real parent's physical reap are recorded separately;
 /// cleanup retains the helper until its descendants and the helper are gone.
+/// Unexpected helper death destroys local natural-parent reaping authority.
+/// The tracer then retains original application pidfds until they reach HUP and
+/// returns a failed proof, never a complete cleanup receipt. If the root was
+/// never authenticated or a later task pin was lost, that proof cannot be
+/// completed without an authenticated helper drain; bounded client waits may
+/// time out while ownership remains in the
+/// background. The controller does not protect the helper from arbitrary
+/// application or external signals and is not a process-isolation sandbox.
 pub struct DynamicSession {
     pid: libc::pid_t,
     initial: DynamicEvent,

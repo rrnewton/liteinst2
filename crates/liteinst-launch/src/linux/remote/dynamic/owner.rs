@@ -31,6 +31,7 @@ pub(super) struct Owner {
     handles: BTreeMap<libc::pid_t, OwnedFd>,
     reaped: Vec<libc::pid_t>,
     lost_wait: bool,
+    missing_pin: bool,
     broker: Option<broker::Broker>,
     attached: bool,
     tracer_terminal: BTreeMap<libc::pid_t, i32>,
@@ -38,6 +39,8 @@ pub(super) struct Owner {
     pub(super) fail_before_seize: bool,
     #[cfg(test)]
     pub(super) fail_before_ready: bool,
+    #[cfg(test)]
+    pub(super) die_before_ready: bool,
     #[cfg(test)]
     pub(super) abort_before_seize: bool,
     #[cfg(test)]
@@ -104,6 +107,7 @@ impl Owner {
             handles: BTreeMap::new(),
             reaped: Vec::new(),
             lost_wait: false,
+            missing_pin: false,
             broker: None,
             attached: false,
             tracer_terminal: BTreeMap::new(),
@@ -111,6 +115,8 @@ impl Owner {
             fail_before_seize: false,
             #[cfg(test)]
             fail_before_ready: false,
+            #[cfg(test)]
+            die_before_ready: false,
             #[cfg(test)]
             abort_before_seize: false,
             #[cfg(test)]
@@ -305,6 +311,7 @@ impl Owner {
                 // Cleanup still consumes/kills/drains this owned incarnation,
                 // but cannot claim the missing independent HUP witness.
                 self.lost_wait = true;
+                self.missing_pin = true;
             }
         }
         let mut status = 0;
@@ -735,10 +742,11 @@ impl Owner {
             let killed = self.kill_owned();
             self.release_killed_stops(&killed);
             let broker = self.broker.as_ref().unwrap();
-            if domain_empty {
+            // No cleanup result, including a failed proof, retires an original
+            // retained incarnation before its independent physical HUP witness.
+            if domain_empty && self.handles.values().all(broker::hup) {
                 match broker.finished() {
                     Ok(true) => {
-                        let physical = self.handles.values().all(broker::hup);
                         let statuses = broker.physical.iter().all(|(tid, status)| {
                             self.tracer_terminal
                                 .get(tid)
@@ -746,8 +754,7 @@ impl Owner {
                                     observed == status
                                 })
                         });
-                        return if self.lost_wait || !self.owned.is_empty() || !physical || !statuses
-                        {
+                        return if self.lost_wait || !self.owned.is_empty() || !statuses {
                             Err(LaunchError::Invalid(
                                 "dynamic physical cleanup ownership was lost",
                             ))
@@ -757,7 +764,17 @@ impl Owner {
                             })
                         };
                     }
-                    Err(error) => return Err(error),
+                    Err(error) => {
+                        // A dead helper can reparent zombies outside our local
+                        // natural-parent domain. Failure does not release the
+                        // original owner while any retained incarnation exists.
+                        // Without an authenticated root, absence of Ready says
+                        // nothing about whether R already cloned A. Likewise a
+                        // lost later pin needs an authenticated helper drain.
+                        if broker.done || (self.pid > 0 && !self.missing_pin) {
+                            return Err(error);
+                        }
+                    }
                     Ok(false) => {}
                 }
             }

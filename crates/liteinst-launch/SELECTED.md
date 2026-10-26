@@ -21,6 +21,7 @@ a kernel signal. The events and counters preserve these distinctions.
 | RDTSCP | Counter plus separate zero-extended ECX AUX |
 | Native SYSCALL | Authenticated kernel entry, exit, actual full return state and errno result, or explicit signal/termination |
 | Scripted SYSCALL | Side-effect-free getpid/gettid profile only: positive pid_t, RAX result, RCX fallthrough and R11 input flags |
+| Declared Linux INT80 getid | Native i386 getpid/gettid entry/exit authentication, or typed scripted positive pid_t result; low-32-bit syscall number, RAX result, retained RCX/R11 and other registers |
 
 Untouched registers, flags and kernel bookkeeping are retained exactly by pure
 completion. Successful CPU completion clears RF; a pure fault preserves it.
@@ -54,10 +55,18 @@ injection stop. Source rearming and sync-core must preserve that completed state
 Only the existing single-task syscall allowlist may execute.
 
 INT 0x80 and SYSENTER require exact per-site declarations to represent their
-inputs. SYSENTER also requires an explicit input convention identity. These
-declarations supply no successful return convention: scripted success and
-native execution of aliases refuse. Explicit provider faults remain available.
-Undeclared or mismatched aliases refuse before page publication.
+inputs. The separate Linux long-mode INT80 profile permits only i386 getpid
+(number 20) and gettid (224), with ordinary TF/RF-clear user flags. Its native
+path authenticates the actual i386 kernel entry and complete return state; its
+typed scripted result changes RAX and logical RIP while preserving kernel
+bookkeeping and every other register. These are distinct transitions, including
+native zero-extension of the low-32-bit syscall number into `orig_rax`.
+
+SYSENTER also requires an explicit input convention identity, but no successful
+return convention is supplied. Other INT80 operations and SYSENTER success
+refuse before execution. Explicit provider faults remain available. Undeclared
+or mismatched aliases refuse before page publication. The ordinary x86-64
+syscall parser and allowlist are unchanged.
 
 Every fallible invocation closes the wrapper before calling the provider.
 Only a verified completion reopens it. Provider errors, unwinding, architectural
@@ -123,8 +132,11 @@ No unrelated random/timestamp samples are compared or masked away.
 Raw native syscall comparisons cover completion and original continuation,
 including a forced -EFAULT with no cross-run substitution. getpid comparisons
 first assert each run's exact known PID, then substitute only that declared
-external identity. Corruption controls require GPR/flag/RSP/XSTATE/memory errors
-to fail. A host capability fault is explicitly tested as an original-PC fault,
+external identity. The separate INT80 native oracle covers getpid/gettid for
+`CD 80`, `66 CD 80` and `48 CD 80`, plus typed scripted literal replacements;
+[evidence scope](../../evaluation/admission/int80.md) records its exact state
+comparisons and finite profile. Corruption controls require
+GPR/flag/RSP/XSTATE/memory errors to fail. A host capability fault is explicitly tested as an original-PC fault,
 never counted as a successful native instruction qualification.
 
 This is a closed-world single-task reference increment. It does not establish

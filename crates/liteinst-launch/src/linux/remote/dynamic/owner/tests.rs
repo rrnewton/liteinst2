@@ -1,4 +1,6 @@
 use super::*;
+
+mod helper_death;
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
 use std::process::{Child, Command as ProcessCommand, Stdio};

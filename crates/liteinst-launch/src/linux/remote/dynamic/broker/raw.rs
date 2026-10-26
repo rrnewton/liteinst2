@@ -223,6 +223,17 @@ pub(super) unsafe fn run(
             bootstrap.close_all();
         }
         #[cfg(test)]
+        if bootstrap.die_before_ready && root > 0 && failure == 0 {
+            // Actual helper loss after A exists but before any root handoff.
+            // No callback or parent-side fabricated ownership is involved.
+            libc::syscall(
+                libc::SYS_kill,
+                libc::syscall(libc::SYS_getpid),
+                libc::SIGKILL,
+            );
+            libc::_exit(126);
+        }
+        #[cfg(test)]
         if bootstrap.fail_before_ready && root > 0 {
             failure = libc::ECANCELED;
         }

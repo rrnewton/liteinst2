@@ -47,6 +47,20 @@ retained application identities and reaping of the private reaper itself.
 Client timeout requests cancellation while the original owner keeps draining;
 it does not authorize killing the reaper before its descendants are gone.
 
+Unexpected helper death loses the local natural-parent authority. It remains
+failed proof, and the original owner retains application identities until their
+physical disappearance is observed. If the helper died before transferring the
+root identity, or an allocation failure prevented pinning a later identity, an
+authenticated natural-parent drain is required to close that missing physical
+witness. Without it, the owner remains retained; client waits stay bounded.
+The helper-death regression uses a separate outer subreaper that deliberately
+withholds the natural-parent wait, then performs it to release the physical
+removal witness. A second exec-isolated regression kills the helper after its
+application clone and before the pidfd handoff. It requires retained ownership
+both before and after an external natural-parent reap: that external knowledge
+is never inserted into the owner as a reconstructed proof. No successful
+cleanup is inferred from either failure.
+
 These implementation requirements remain unqualified until a complete exact
 revision run passes. The separate fork diagnostic and strengthened public
 oracles retain the original assertions and additionally check pidfd `POLLHUP`,

@@ -98,14 +98,22 @@ without libtest summaries and the parent assertions check those exit statuses.
 Other unmatched child starts refuse; these starts never increase passed totals. Missing, duplicate,
 ambiguous or changed outer cohorts invalidate the evidence.
 
-The current corpus extends baseline `b6f23bf243baaa6d576c3d8754d701bb718757ad`
-with 85 outer instances: 16 pure guard-closure tests, 16 pure lifecycle tests,
+The published coverage increment at `2de30a88c109fd4c9e29669fcc56ef8cdeb33c57`
+extended baseline `b6f23bf243baaa6d576c3d8754d701bb718757ad` with 85 outer
+instances: 16 pure guard-closure tests, 16 pure lifecycle tests,
 21 cache tests plus one poison unit test, two return-ledger tests, six scripted
-coverage tests, 17 native coverage cases and six injected-failure unit fixtures. It declares 63 workspace harnesses
-and 1018 outer tests, including four existing ignores: 1014 possible outer
-passes. The five nested child passes remain separate. The serial launch cohort
-has 180 tests in 11 harnesses, with 50 native cases. These are expected
+coverage tests, 17 native coverage cases and six injected-failure unit fixtures.
+That revision declared 63 workspace harnesses and 1018 outer tests, including
+four existing ignores: 1014 possible outer
+passes. The five nested child passes remain separate. Its serial launch cohort
+had 180 tests in 11 harnesses, with 50 native cases. These are expected
 cohorts, not results; each run must satisfy them independently.
+
+The current corpus additionally covers live oracle reuse, native controller
+ownership and signals, physical-reaping failures, and the explicit INT80
+profile. Exact current harness denominators are declared in `corpus.json` and
+independently asserted by `test_parsing.py`. These additions do not change the
+separate 50-case native telemetry denominator or the four existing ignores.
 
 The new scripted random matrix forces 192 invocations covering both classes,
 all 16 GPR destinations, 16/32/64-bit widths and both carry outcomes. Native
