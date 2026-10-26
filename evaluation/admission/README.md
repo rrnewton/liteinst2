@@ -65,11 +65,11 @@ The [actual-PC runtime profile](actual-pc-runtime.md) defines the mechanism and
 its remaining limits. The current inventory adds 138 launcher unit tests: 120 pure controls,
 six native startup controls, six ordinary-instruction native controls and six
 selected-instruction native controls. The two cross-page controls are a separate
-addition to the previous 136-test runtime inventory. Expected totals are 493
-launcher units, 1869 workspace tests in the same 89 harnesses (1865 possible
-passes and four unchanged ignores), and 785 serial launch tests in the same 27
-harnesses.
-The recorder expects 265 Python controls. These are source-derived expectations;
+addition to the previous 136-test runtime inventory. The separate wait-custody
+control adds one launcher unit without changing this runtime inventory. Expected totals are 494 launcher units, 1870 workspace tests
+in the same 89 harnesses (1866 possible passes and four unchanged ignores), and
+786 serial launch tests in the same 27 harnesses.
+The recorder expects 273 Python controls. These are source-derived expectations;
 this inventory makes no execution or qualification claim.
 Three of the pure controls check the isolated child's exact result, completion
 receipt and parent-bound role. The original 16 runtime native identities remain
@@ -81,7 +81,11 @@ order and adds exactly 18 names under the separate `b3_runtime_startup`,
 `b3_runtime_ordinary` and `b3_runtime_selected` cohorts. The parser requires each
 full Rust identity in the launcher unit harness and its explicit terminal `ok`.
 The previous 72 names remain an exact ordered prefix; the ordinary and selected
-`cross_page` child identities append as the final two rows. Both new controls
+`cross_page` child identities append as rows 73 and 74. The separate
+`b3_wait_custody` cohort appends exactly
+`linux::remote::dynamic::owner::tests::wait_withdrawal::actual_listen_withdrawal_preserves_pinned_wait_and_cleanup`
+as row 75. Its closed module rejects every unlisted identity, and the full
+74-row prefix remains exact. The two cross-page controls
 use one complete 8192-byte private source VMA. Ordinary MOV crosses the page
 boundary through a real two-page fetch; selected CPUID crosses the source
 boundary with a scripted completion while both original pages remain NX.

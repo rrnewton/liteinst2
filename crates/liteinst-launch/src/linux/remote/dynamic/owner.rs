@@ -95,6 +95,8 @@ pub(super) struct Owner {
     deny_kill_for_test: bool,
     #[cfg(test)]
     deny_pin_for_test: bool,
+    #[cfg(test)]
+    wait_withdrawal: Option<tests::wait_withdrawal::ListenWithdrawal>,
 }
 
 pub(super) fn run(start: TracerStart) {
@@ -242,6 +244,8 @@ impl Owner {
             deny_kill_for_test: false,
             #[cfg(test)]
             deny_pin_for_test: false,
+            #[cfg(test)]
+            wait_withdrawal: None,
         }
     }
     pub(super) fn anchor_session(&self) -> u64 {
@@ -520,6 +524,8 @@ impl Owner {
                 self.missing_pin = true;
             }
         }
+        #[cfg(test)]
+        tests::wait_withdrawal::before_consume(self, tid, &info)?;
         let mut status = 0;
         // SAFETY: exclusively owned thread wait domain; the exact WNOWAIT
         // identity above remains held. The helper is never an application task.
@@ -530,6 +536,15 @@ impl Owner {
                 libc::WNOHANG | libc::__WALL | libc::__WNOTHREAD,
             )
         };
+        #[cfg(test)]
+        tests::wait_withdrawal::after_consume(self, consumed);
+        if consumed == 0 {
+            // WNOWAIT retains the unreaped identity, not the stop condition.
+            // A fatal signal can withdraw TASK_TRACED before this WNOHANG
+            // consume. Keep the exact pin and numeric custody; no status was
+            // consumed, so retry under the caller's existing wait/cleanup path.
+            return Ok(None);
+        }
         if consumed != tid {
             return Err(system("consume pinned dynamic wait"));
         }

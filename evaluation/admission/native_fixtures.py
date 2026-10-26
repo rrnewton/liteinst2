@@ -95,6 +95,13 @@ RUNTIME_IDENTITIES = {row["test"]: row for row in RUNTIME_ROWS}
 RUNTIME_NATIVE_ROOTS = tuple(prefix.removesuffix("::") for _, prefix, _ in RUNTIME_COHORTS)
 
 
+# A separate exact wait-custody control; it is not a runtime native row.
+WAIT_CUSTODY_ROOT = "linux::remote::dynamic::owner::tests::wait_withdrawal"
+WAIT_CUSTODY_ROW = {"cohort": "b3_wait_custody", "harness": UNIT,
+                    "test": WAIT_CUSTODY_ROOT
+                    + "::actual_listen_withdrawal_preserves_pinned_wait_and_cleanup"}
+
+
 def catalog(fixtures):
     require(type(fixtures) is list, "invalid_native_fixture_catalog")
     identities = {}
@@ -103,6 +110,8 @@ def catalog(fixtures):
                 "invalid_native_fixture_catalog")
         require(all(type(value) is str for value in row.values())
                 and NAME.fullmatch(row["test"]), "invalid_native_fixture_catalog")
+        require(not row["test"].startswith(WAIT_CUSTODY_ROOT)
+                or row == WAIT_CUSTODY_ROW, "invalid_native_fixture_scope")
         require(not row["test"].startswith(RUNTIME_NATIVE_ROOTS)
                 or row == RUNTIME_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
         require(row["test"] not in MAPPING_TESTS
@@ -134,7 +143,8 @@ def catalog(fixtures):
                     and row["test"] in EXEC_PRIVATE_TESTS)
                 or (row["cohort"] == "b3_exec_failure" and row["harness"] == UNIT
                     and row["test"] in EXEC_FAILURE_TESTS)
-                or row == RUNTIME_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
+                or row == RUNTIME_IDENTITIES.get(row["test"])
+                or row == WAIT_CUSTODY_ROW, "invalid_native_fixture_scope")
         key = (row["harness"], row["test"])
         require(key not in identities, "duplicate_native_fixture_catalog")
         identities[key] = row
@@ -201,7 +211,7 @@ def fixture_outcomes(output, fixtures, successful_command):
                         "native_fixture_wrong_harness")
                 require(key in expected or (current == UNIT and not start[1].startswith(
                     PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX, EXEC_PRIVATE_PREFIX)
-                    + RUNTIME_NATIVE_ROOTS)),
+                    + RUNTIME_NATIVE_ROOTS + (WAIT_CUSTODY_ROOT,))),
                         "native_fixture_cohort_differs")
                 seen_tests.add(key)
                 active = key

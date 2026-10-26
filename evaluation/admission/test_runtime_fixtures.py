@@ -178,7 +178,7 @@ class RuntimeFixtureTests(unittest.TestCase):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
         before_runtime(declared)
         rows = declared["native_validation_fixtures"]
-        self.assertEqual(rows[56:], ROWS)
+        self.assertEqual(rows[56:74], ROWS)
         # The original 72 identities remain an exact ordered prefix.
         self.assertEqual(digest(rows[:72]), OLD_NATIVE72_SHA256)
         output = named_capture(rows)
@@ -190,7 +190,7 @@ class RuntimeFixtureTests(unittest.TestCase):
                     InvalidEvidence, "^native_fixture_cohort_differs$") as caught:
                 fixtures.fixture_outcomes(output.replace(f"test {missing['test']} ... ok\n", ""), rows, True)
             partial = caught.exception.partial
-            self.assertEqual(len(partial), 74)
+            self.assertEqual(len(partial), 75)
             self.assertEqual((partial[index]["status"], partial[index]["test_result"]), ("not_observed", None))
-            self.assertEqual(sum(row["status"] == "complete" for row in partial), 73)
+            self.assertEqual(sum(row["status"] == "complete" for row in partial), 74)
             self.assertFalse(any(row["qualified_run"] for row in partial))

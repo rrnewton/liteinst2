@@ -6085,7 +6085,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 493
+        "tests": 494
       }
     },
     "workspace_tests": {
@@ -6427,7 +6427,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 493
+        "tests": 494
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -7319,8 +7319,13 @@
       "cohort": "b3_runtime_selected",
       "harness": "unit/liteinst_launch/lib",
       "test": "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::cross_page::runtime_selected_cross_page_cpuid_preserves_nx_and_successor"
+    },
+    {
+      "cohort": "b3_wait_custody",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::tests::wait_withdrawal::actual_listen_withdrawal_preserves_pinned_wait_and_cleanup"
     }
   ],
-  "recorder_tests": 265,
+  "recorder_tests": 273,
   "schema_version": 1
 }

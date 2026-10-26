@@ -9,6 +9,7 @@ import unittest
 
 import native_fixtures as fixtures
 from parsing import InvalidEvidence, require
+from test_wait_custody_fixtures import before_wait_custody
 
 UNIT_INCREMENT = 138
 PURE_INCREMENT = 120
@@ -219,6 +220,7 @@ def before_runtime(declared):
     Used only by historical controls. No parser fallback or runtime gate uses
     this projection, and an unknown/missing/relabeled new row is never erased.
     """
+    declared = before_wait_custody(declared)
     require(type(declared) is dict, "runtime_inventory_differs")
     require(type(declared.get("recorder_tests")) is int
             and declared["recorder_tests"] == 254 + RECORDER_INCREMENT, "runtime_inventory_differs")
@@ -288,7 +290,7 @@ class RuntimeInventoryTests(unittest.TestCase):
         self.assertEqual(declared, original)
         self.assertEqual(digest(previous), OLD_CORPUS_SHA256)
         self.assertEqual(digest(declared["native_validation_fixtures"][:72]), OLD_NATIVE72_SHA256)
-        pre_cross_page = copy.deepcopy(declared)
+        pre_cross_page = before_wait_custody(declared)
         pre_cross_page["native_validation_fixtures"] = pre_cross_page["native_validation_fixtures"][:72]
         for cohort in pre_cross_page["harness_test_counts"].values():
             cohort[fixtures.UNIT] = {"tests": 491, "ignored": 0}
@@ -302,7 +304,7 @@ class RuntimeInventoryTests(unittest.TestCase):
         for field, count in (("native_cases", 50), ("dynamic_admission_fixtures", 15), ("dynamic_matrix_cases", 388)):
             self.assertEqual(declared[field], previous[field])
             self.assertEqual(len(declared[field]), count)
-        for command, harnesses, tests, ignored in (("workspace_tests", 89, 1869, 4), ("serial_launch", 27, 785, 0)):
+        for command, harnesses, tests, ignored in (("workspace_tests", 89, 1870, 4), ("serial_launch", 27, 786, 0)):
             actual = declared["harness_test_counts"][command]
             self.assertEqual(len(actual), harnesses)
             self.assertEqual(sum(row["tests"] for row in actual.values()), tests)
@@ -310,8 +312,8 @@ class RuntimeInventoryTests(unittest.TestCase):
             for name, row in previous["harness_test_counts"][command].items():
                 if name != fixtures.UNIT:
                     self.assertEqual(actual[name], row)
-        self.assertEqual(declared["recorder_tests"], 265)
-        self.assertEqual(len(fixtures.catalog(declared["native_validation_fixtures"])), 74)
+        self.assertEqual(declared["recorder_tests"], 273)
+        self.assertEqual(len(fixtures.catalog(declared["native_validation_fixtures"])), 75)
 
     def test_projection_refuses_missing_relabelled_unknown_and_changed_history(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())

@@ -2,6 +2,7 @@ use super::*;
 
 mod helper_death;
 mod source_census;
+pub(super) mod wait_withdrawal;
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;
 use std::process::{Child, Command as ProcessCommand, Stdio};
