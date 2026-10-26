@@ -55,6 +55,8 @@ pub(super) struct Owner {
     journal_fault: Option<JournalFault>,
     #[cfg(test)]
     exec_oracle: Option<Box<dyn admission::ExecOracle>>,
+    #[cfg(test)]
+    exec_fault: std::cell::Cell<Option<admission::ExecFault>>,
     session: u64,
     sequence: u64,
     state: State,
@@ -199,6 +201,8 @@ impl Owner {
             journal_fault: None,
             #[cfg(test)]
             exec_oracle: None,
+            #[cfg(test)]
+            exec_fault: std::cell::Cell::new(None),
             session,
             sequence: 0,
             state: State::Startup,

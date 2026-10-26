@@ -296,6 +296,7 @@ struct Finished {
     before_cleanup: KernelProgressSnapshot,
     held: Vec<Held>,
     admission_retained: bool,
+    panic_custody_verified: bool,
     pins: Vec<(i32, OwnedFd)>,
     cleanup: Result<DynamicCleanup, LaunchError>,
 }
@@ -368,6 +369,7 @@ fn execute(
             Arc::new(AtomicBool::new(false)),
         );
         let reader = owner.kernel_journal.reader();
+        let mut panic_custody = None;
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let options = DynamicAdmissionOptions {
                 lifecycle: if fixture.number == libc::SYS_clone as u64 {
@@ -413,6 +415,23 @@ fn execute(
                         release: release_rx,
                     },
                 });
+            }
+            if matches!(release_action, Some(JournalFaultRelease::Panic)) {
+                assert_eq!(point, Some(JournalFaultPoint::AfterValidatedExit));
+                assert_eq!(fixture.number, libc::SYS_getpid as u64);
+                let identity = (
+                    owner.session,
+                    owner.pid,
+                    owner.owned.clone(),
+                    owner.pin_kinds.clone(),
+                    owner
+                        .handles
+                        .iter()
+                        .map(|(&tid, pin)| (tid, pin.as_raw_fd()))
+                        .collect::<Vec<_>>(),
+                );
+                let check = owner.admission.as_ref().unwrap().panic_custody_check();
+                panic_custody = Some((identity, check));
             }
             match owner.execute_admission(
                 AdmissionRequest::Complete {
@@ -473,7 +492,29 @@ fn execute(
                     .collect::<Vec<_>>();
                 assert_eq!(after, held);
             }
-            (held, pins)
+            let custody = panic_custody.as_ref().map(|(identity, check)| {
+                assert_eq!(
+                    (
+                        owner.session,
+                        owner.pid,
+                        owner.owned.clone(),
+                        owner.pin_kinds.clone(),
+                        owner
+                            .handles
+                            .iter()
+                            .map(|(&tid, pin)| (tid, pin.as_raw_fd()))
+                            .collect::<Vec<_>>()
+                    ),
+                    *identity
+                );
+                check(
+                    owner
+                        .admission
+                        .as_ref()
+                        .expect("unwind restored the admission owner"),
+                )
+            });
+            (held, pins, custody)
         }));
         let before_cleanup = reader.snapshot();
         let admission_retained = owner.admission.is_some();
@@ -487,19 +528,47 @@ fn execute(
             )));
             return;
         }
-        let (held, pins) = match captured {
+        let (held, pins, custody) = match captured {
             Ok(value) => value,
             Err(panic) => {
                 let _ = done_tx.send(Err(panic_text(panic)));
                 return;
             }
         };
+        let panic_custody_verified = custody.is_some();
+        let checked = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            if let Some(check) = custody {
+                check(
+                    owner
+                        .admission
+                        .as_ref()
+                        .expect("cleanup retains original admission history"),
+                );
+                let (identity, _) = panic_custody.as_ref().unwrap();
+                assert_eq!((owner.session, owner.pid), (identity.0, identity.1));
+                assert!(owner.owned.is_empty());
+                assert_eq!(owner.pin_kinds, identity.3);
+                assert_eq!(
+                    owner
+                        .handles
+                        .iter()
+                        .map(|(&tid, pin)| (tid, pin.as_raw_fd()))
+                        .collect::<Vec<_>>(),
+                    identity.4
+                );
+            }
+        }));
+        if let Err(panic) = checked {
+            let _ = done_tx.send(Err(panic_text(panic)));
+            return;
+        }
         let _ = done_tx.send(Ok(Finished {
             outcome,
             reader,
             before_cleanup,
             held,
             admission_retained,
+            panic_custody_verified,
             pins,
             cleanup,
         }));
@@ -1057,9 +1126,10 @@ fn panic_while_admission_is_taken_retains_actual_exit_and_physical_cleanup() {
     assert!(
         matches!(&trial.finished.outcome, Outcome::Panic(message) if message == "injected kernel journal panic")
     );
+    assert!(trial.finished.admission_retained);
     assert!(
-        !trial.finished.admission_retained,
-        "actual take/unwind must discard the local admission owner"
+        trial.finished.panic_custody_verified,
+        "actual take/unwind and physical cleanup retained the checked owner history"
     );
     compare_prefix(&trial, &oracle, &fixture);
     let snapshot = trial.finished.reader.snapshot();

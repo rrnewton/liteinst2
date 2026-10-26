@@ -25,18 +25,19 @@ fn checked(
     }
     Ok(())
 }
-fn state_reads(record: &mut ExecRawRecord) {
+fn state_reads(record: &mut ExecRawRecord, _owner: &Owner) {
     // SAFETY: initialized scalar storage and the actual held task are supplied
     // by the pinned-wait owner. Every call here is a read-only ptrace request.
     let mut regs: libc::user_regs_struct = unsafe { std::mem::zeroed() };
-    let result = unsafe {
-        libc::ptrace(
-            libc::PTRACE_GETREGS,
-            record.tid,
-            0,
-            &mut regs as *mut libc::user_regs_struct,
-        )
+    let destination = &mut regs as *mut libc::user_regs_struct;
+    #[cfg(test)]
+    let destination = if _owner.take_exec_fault(admission::ExecFault::RawGetregs(record.ordinal)) {
+        // An actual failed read, not a fabricated result or skipped request.
+        std::ptr::null_mut()
+    } else {
+        destination
     };
+    let result = unsafe { libc::ptrace(libc::PTRACE_GETREGS, record.tid, 0, destination) };
     record.registers_read = Some(outcome(result));
     record.registers = regs.into();
     let pointer = record.initialized_xstate.as_mut_ptr();
@@ -288,7 +289,7 @@ impl ExecJournalObserver {
                         "exec journal raw wait is not a live held observation",
                     ));
                 }
-                state_reads(raw);
+                state_reads(raw, owner);
                 info_reads(raw);
                 let maps_result = capture_maps(&mut raw.maps, tid, status, attempt.until);
                 // Required-read gating deliberately occurs only after every independent

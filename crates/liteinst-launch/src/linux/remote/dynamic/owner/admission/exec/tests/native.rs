@@ -18,6 +18,8 @@ use std::rc::Rc;
 use std::sync::atomic::{AtomicU64, Ordering as AtomicOrdering};
 use std::sync::mpsc::sync_channel;
 
+mod failures;
+
 static NEXT_SESSION: AtomicU64 = AtomicU64::new(90_000);
 
 #[derive(Clone)]

@@ -190,11 +190,11 @@ class MappingFixtureTests(unittest.TestCase):
         path = Path(__file__).with_name("corpus.json")
         declared = json.loads(path.read_text())
         rows = declared["native_validation_fixtures"]
-        self.assertEqual(len(rows), 50)
+        self.assertEqual(len(rows), 56)
         old = json.dumps(rows[:37], sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()
         self.assertEqual(hashlib.sha256(old).hexdigest(), OLD37_SHA256)
         self.assertEqual(rows[37:42], ROWS)
-        self.assertEqual(len(fixtures.catalog(rows)), 50)
+        self.assertEqual(len(fixtures.catalog(rows)), 56)
         source = path.parents[2] / "crates/liteinst-launch/tests/b3_mapping_admission.rs"
         actual_names = re.findall(r"#\[test\]\s*fn\s+([A-Za-z0-9_]+)\s*\(", source.read_text())
         self.assertEqual(actual_names, list(NAMES))
@@ -212,9 +212,9 @@ class MappingFixtureTests(unittest.TestCase):
                     InvalidEvidence, "^native_fixture_cohort_differs$") as caught:
                 fixtures.fixture_outcomes(output.replace(f"test {missing['test']} ... ok\n", ""), rows, True)
             partial = caught.exception.partial
-            self.assertEqual(len(partial), 50)
+            self.assertEqual(len(partial), 56)
             self.assertEqual((partial[index]["status"], partial[index]["test_result"]), ("not_observed", None))
-            self.assertEqual(sum(row["status"] == "complete" for row in partial), 49)
+            self.assertEqual(sum(row["status"] == "complete" for row in partial), 55)
             self.assertFalse(any(row["qualified_run"] for row in partial))
 
 

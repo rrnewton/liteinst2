@@ -30,6 +30,15 @@ EXEC_PRIVATE_TESTS = frozenset(EXEC_PRIVATE_PREFIX + name for name in (
     "admitted_exec_native_source_reply_refusal_keeps_new_mm_held",
     "admitted_exec_native_errno_exit_never_mints_replacement",
 ))
+EXEC_FAILURE_PREFIX = EXEC_PRIVATE_PREFIX + "failures::"
+EXEC_FAILURE_TESTS = frozenset(EXEC_FAILURE_PREFIX + name for name in (
+    "admitted_exec_native_prefix_capacity_refuses_before_restore",
+    "admitted_exec_native_getregs_capture_failure_retains_other_reads",
+    "admitted_exec_native_bootstrap_failure_retains_first_user_prefix",
+    "admitted_exec_native_input_bound_refuses_before_restore",
+    "admitted_exec_native_source_profile_bound_refuses_after_exec",
+    "admitted_exec_native_pending_flags_change_refuses_before_restore",
+))
 MAPPING_TESTS = frozenset((
     'original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources',
     'stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history',
@@ -64,7 +73,9 @@ def catalog(fixtures):
                 "invalid_native_fixture_scope")
         require(not row["test"].startswith(EXEC_PRIVATE_PREFIX)
                 or (row["cohort"] == "b3_exec_private" and row["harness"] == UNIT
-                    and row["test"] in EXEC_PRIVATE_TESTS), "invalid_native_fixture_scope")
+                    and row["test"] in EXEC_PRIVATE_TESTS)
+                or (row["cohort"] == "b3_exec_failure" and row["harness"] == UNIT
+                    and row["test"] in EXEC_FAILURE_TESTS), "invalid_native_fixture_scope")
         require((row["cohort"] == "kernel_journal" and row["harness"] == UNIT
                  and row["test"].startswith(PREFIXES))
                 or (row["cohort"] == "b2_reference" and row["harness"] == REFERENCE
@@ -80,7 +91,9 @@ def catalog(fixtures):
                 or (row["cohort"] == "b3_exec" and row["harness"] == EXEC_REFERENCE
                     and row["test"] in EXEC_TESTS)
                 or (row["cohort"] == "b3_exec_private" and row["harness"] == UNIT
-                    and row["test"] in EXEC_PRIVATE_TESTS), "invalid_native_fixture_scope")
+                    and row["test"] in EXEC_PRIVATE_TESTS)
+                or (row["cohort"] == "b3_exec_failure" and row["harness"] == UNIT
+                    and row["test"] in EXEC_FAILURE_TESTS), "invalid_native_fixture_scope")
         key = (row["harness"], row["test"])
         require(key not in identities, "duplicate_native_fixture_catalog")
         identities[key] = row

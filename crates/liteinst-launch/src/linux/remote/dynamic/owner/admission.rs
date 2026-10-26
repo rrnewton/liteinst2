@@ -24,6 +24,8 @@ mod exec;
 #[cfg(test)]
 pub(in crate::linux::remote::dynamic::owner) use exec::oracle::ExecOracle;
 mod mapping;
+#[cfg(test)]
+mod panic_custody;
 mod routes;
 mod signals;
 mod transitions;

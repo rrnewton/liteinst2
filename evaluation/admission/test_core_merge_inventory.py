@@ -8,7 +8,7 @@ import unittest
 
 import parsing
 from test_parsing import counts, header, summary
-from test_exec_fixtures import HARNESS as EXEC_HARNESS, ROWS as EXEC_ROWS, PRIVATE_ROWS, UNIT_INCREMENT
+from test_exec_fixtures import HARNESS as EXEC_HARNESS, ROWS as EXEC_ROWS, PRIVATE_ROWS, FAILURE_ROWS, UNIT_INCREMENT
 
 
 def digest(value):
@@ -88,6 +88,6 @@ class CoreMergeInventoryTests(unittest.TestCase):
         self.assertEqual(digest(serial), "701284ec0b5d8e593d6459a6d101deeb381de7430baa4683875f31d1c7027ea6")
         collections = {key: corpus[key] for key in ("native_cases", "dynamic_admission_fixtures",
                        "dynamic_matrix_cases", "native_validation_fixtures")}
-        self.assertEqual(collections["native_validation_fixtures"][42:], EXEC_ROWS + PRIVATE_ROWS)
+        self.assertEqual(collections["native_validation_fixtures"][42:], EXEC_ROWS + PRIVATE_ROWS + FAILURE_ROWS)
         collections["native_validation_fixtures"] = collections["native_validation_fixtures"][:42]
         self.assertEqual(digest(collections), "a1d30223eafc695832627dae1a58a600d899bf8814c6182c5556ee1b117af365")

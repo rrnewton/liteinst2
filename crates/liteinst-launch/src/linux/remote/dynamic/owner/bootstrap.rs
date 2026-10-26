@@ -167,6 +167,13 @@ fn before_effect(
     if let Some(observer) = observation.as_deref_mut() {
         owner.time_left(until, "replacement bootstrap effect")?;
         observer.before_effect(effect)?;
+        #[cfg(test)]
+        if effect == BootstrapEffect::WriteStub
+            && owner.take_exec_fault(admission::ExecFault::BeforeWriteStub)
+        {
+            // The actual attempted fact is retained; no stub byte was written.
+            return Err(LaunchError::Invalid("private exec WriteStub refusal"));
+        }
         owner.time_left(until, "replacement bootstrap effect")?;
     }
     Ok(())

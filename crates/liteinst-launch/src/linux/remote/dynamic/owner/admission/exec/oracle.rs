@@ -3,6 +3,14 @@
 use super::*;
 use std::os::fd::OwnedFd;
 
+/// Per-owner one-shot faults; the enclosing module is compiled only for tests.
+/// Neither value fabricates a successful observation or grants control authority.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(in crate::linux::remote::dynamic::owner) enum ExecFault {
+    RawGetregs(u8),
+    BeforeWriteStub,
+}
+
 pub(in crate::linux::remote::dynamic::owner) trait ExecOracle {
     fn old_entry(&mut self, view: OldEntry<'_>);
     fn first_user(&mut self, view: FirstUser<'_>);
@@ -44,6 +52,18 @@ pub(in crate::linux::remote::dynamic::owner) struct AfterRetire<'a> {
 }
 
 impl Owner {
+    pub(in crate::linux::remote::dynamic::owner) fn take_exec_fault(
+        &self,
+        fault: ExecFault,
+    ) -> bool {
+        if self.exec_fault.get() == Some(fault) {
+            self.exec_fault.set(None);
+            true
+        } else {
+            false
+        }
+    }
+
     fn exec_oracle_held(&self, tid: i32, status: i32, until: Instant) -> Result<(), LaunchError> {
         self.time_left(until, "private exec inspection")?;
         if self.pid != tid
