@@ -93,6 +93,7 @@ impl<'a> ParsedMaps<'a> {
         self.raw
     }
 
+    #[cfg(test)]
     pub(in super::super) fn len(self) -> usize {
         self.rows
     }

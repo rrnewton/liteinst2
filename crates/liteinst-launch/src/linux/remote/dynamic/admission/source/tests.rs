@@ -70,7 +70,7 @@ pub(in super::super) fn pending(state: &DynamicAdmissionState) -> ProviderInput 
 
 pub(in super::super) fn profile() -> DynamicMappingProfile {
     DynamicMappingProfile {
-        allowed_ranges: vec![SOURCE..SOURCE + 4 * PAGE],
+        allowed_ranges: std::iter::once(SOURCE..SOURCE + 4 * PAGE).collect(),
         max_operations: 8,
         max_live_mappings: 1,
         max_source_requests: 2,
@@ -142,7 +142,10 @@ fn mapping_profile_is_explicit_singleton_and_keeps_finite_bounds() {
     assert!(original.contains_range(&(SOURCE..SOURCE + PAGE)));
     assert!(!original.contains_range(&(SOURCE..SOURCE + 2 * PAGE)));
     assert!(!original.contains_range(&(SOURCE + 1..SOURCE + PAGE)));
-    assert!(!original.contains_range(&(SOURCE + PAGE..SOURCE)));
+    assert!(!original.contains_range(&Range {
+        start: SOURCE + PAGE,
+        end: SOURCE
+    }));
     for field in 0..8 {
         let mut changed = original.clone();
         match field {
@@ -194,7 +197,7 @@ fn address_envelopes_reject_overlap_wrap_and_initial_source_aliases() {
         value.validate(&options, &[]),
         "invalid anonymous mapping address envelope",
     );
-    value.allowed_ranges = vec![PAGE..PAGE + MAX_DOMAIN_BYTES + PAGE];
+    value.allowed_ranges = std::iter::once(PAGE..PAGE + MAX_DOMAIN_BYTES + PAGE).collect();
     refused(
         value.validate(&options, &[]),
         "anonymous mapping address envelope exceeds page bound",

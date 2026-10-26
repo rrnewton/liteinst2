@@ -17,8 +17,9 @@ test code.
 
 The owner temporarily restores the application's logical executable
 permissions during exactly one original mapping syscall, under a singleton
-hold. This preserves the old VMA permissions observed by `mprotect`, including
-kernel permission and protection-key decisions. Actual ENTRY, EXIT, complete
+hold. This restores the old r/w/x inputs observed by `mprotect` permission and
+protection-key decisions. It does not certify hidden VMA flags or arbitrary
+stateful security-module history. Actual ENTRY, EXIT, complete
 map tables and full state precede interpretation. The owner then closes all
 current application executable pages before invoking the source resolver.
 Only a consuming native quarantine proof permits one generation transition

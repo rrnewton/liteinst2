@@ -244,7 +244,7 @@ impl Fixture {
     }
     pub fn profile(&self) -> DynamicMappingProfile {
         DynamicMappingProfile {
-            allowed_ranges: vec![TARGET..TARGET + PAGE as u64],
+            allowed_ranges: std::iter::once(TARGET..TARGET + PAGE as u64).collect(),
             max_operations: 5,
             max_live_mappings: 1,
             max_source_requests: 2,

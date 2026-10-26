@@ -455,13 +455,12 @@ impl MappingState {
             // release proof. It is not the application's logical protection.
             let expected_nx =
                 old.protection == Protection::Executable && entry.permissions.bytes() == *b"r--p";
-            if expected_nx {
-                if (range.start..range.end)
+            if expected_nx
+                && (range.start..range.end)
                     .step_by(PAGE as usize)
                     .any(|page| domain.pages.get(&page) != Some(&false))
-                {
-                    return Err(refused("owned executable NX range lacks the current gate"));
-                }
+            {
+                return Err(refused("owned executable NX range lacks the current gate"));
             }
             if !anonymous_identity(entry, &range)
                 || (!expected_nx && entry.permissions.bytes() != old.protection.bytes())
