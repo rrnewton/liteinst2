@@ -211,7 +211,7 @@ fn exec_and_thread_orders_fit_one_process_two_mms_three_retained_tasks() {
         };
         assert_eq!(r.snapshot().tasks().count(), 3);
         assert_eq!(r.snapshot().address_spaces().count(), 2);
-        assert!(r.tasks().all(|t| t.process == process));
+        assert!(r.snapshot().tasks().all(|t| t.process == process));
         assert_eq!(r.task_for_tid(100), Some(leader));
         assert_eq!(r.task_for_tid(101), None);
         assert_eq!(
