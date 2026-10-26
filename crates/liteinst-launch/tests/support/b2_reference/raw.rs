@@ -598,10 +598,9 @@ impl Raw {
                 let got = unsafe {
                     libc::waitpid(self.pid, &raw mut status, libc::WNOHANG | libc::__WALL)
                 };
-                if got == self.pid && (libc::WIFEXITED(status) || libc::WIFSIGNALED(status)) {
-                    self.retired = true;
-                } else if got == -1
-                    && io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD)
+                if (got == self.pid && (libc::WIFEXITED(status) || libc::WIFSIGNALED(status)))
+                    || (got == -1
+                        && io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD))
                 {
                     self.retired = true;
                 }
