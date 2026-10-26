@@ -62,6 +62,18 @@ impl ResumeCensus {
         self.commit_kernel_model(reservation, &model, prepared)
     }
 
+    // Pure fixtures may exercise the model consumer without constructing a
+    // native seal. Production callers remain limited to the sealed entrypoints.
+    #[cfg(test)]
+    pub(super) fn commit_kernel_model_for_test<'a>(
+        &mut self,
+        reservation: Reservation,
+        actual: &Model<'_>,
+        prepared: &'a mut PreparedRuntimeKernelCensus,
+    ) -> Result<RuntimeKernelCensusResult<'a>, CensusError> {
+        self.commit_kernel_model(reservation, actual, prepared)
+    }
+
     fn commit_kernel_model<'a>(
         &mut self,
         reservation: Reservation,

@@ -162,7 +162,15 @@ fn runtime_kernel_reservation_refuses_one_short_and_overflow_before_allocation()
         RuntimeKernelOperation::ExitGroup,
     ] {
         let charge = reservation_charge(MAP_BYTES, 1, operation, &shape).unwrap();
-        let mut limits = super::super::super::census::Limits::default();
+        let configured = DynamicAdmissionLimits::default();
+        let mut limits = super::super::super::census::Limits {
+            epochs: configured.epochs,
+            source_fact_bytes: configured.source_fact_bytes,
+            reports: configured.reports,
+            origins: configured.origins,
+            witnesses: configured.witnesses,
+            plan_history: configured.plan_history,
+        };
         limits.source_fact_bytes = charge.source_fact_bytes - 1;
         let mut reserve =
             super::super::super::census::InitialRuntimeReservation::new(limits).unwrap();

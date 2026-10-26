@@ -479,7 +479,11 @@ impl Case {
         let evidence = self.prepared.evidence.clone();
         assert_eq!(
             self.census
-                .commit_kernel_model(self.reservation, &self.actual.model(), &mut self.prepared)
+                .commit_kernel_model_for_test(
+                    self.reservation,
+                    &self.actual.model(),
+                    &mut self.prepared
+                )
                 .err(),
             Some(expected)
         );
@@ -491,7 +495,11 @@ impl Case {
     }
     fn commit(&mut self) -> Option<OriginId> {
         self.census
-            .commit_kernel_model(self.reservation, &self.actual.model(), &mut self.prepared)
+            .commit_kernel_model_for_test(
+                self.reservation,
+                &self.actual.model(),
+                &mut self.prepared,
+            )
             .unwrap()
             .current
     }
@@ -1093,7 +1101,11 @@ fn runtime_kernel_original_deadline_and_one_use_remain_exact() {
     let state = case.census.state.clone();
     assert_eq!(
         case.census
-            .commit_kernel_model(case.reservation, &case.actual.model(), &mut case.prepared)
+            .commit_kernel_model_for_test(
+                case.reservation,
+                &case.actual.model(),
+                &mut case.prepared
+            )
             .err(),
         Some(CensusError::IdentityMismatch)
     );

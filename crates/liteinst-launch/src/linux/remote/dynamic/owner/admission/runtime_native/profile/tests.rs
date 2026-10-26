@@ -180,6 +180,21 @@ fn control_state(number: u64) -> TaskStateSnapshot {
         mask: 0x200,
     }
 }
+fn synthetic_signal(
+    stop: &AdmissionStop,
+) -> crate::linux::remote::dynamic::owner::trusted::OwnedSignal {
+    crate::linux::remote::dynamic::owner::trusted::OwnedSignal {
+        raw: [0; 128],
+        view: crate::SignalStop {
+            signal: libc::SIGUSR1,
+            code: libc::SI_USER,
+            address: None,
+            instruction_pointer: 0x401000,
+            pid: stop.token.tid,
+            sequence: stop.token.sequence,
+        },
+    }
+}
 #[test]
 fn kernel_control_requires_exact_current_checkpoint_and_original_return_identity() {
     let number = libc::SYS_getpid as u64;
@@ -196,10 +211,7 @@ fn kernel_control_requires_exact_current_checkpoint_and_original_return_identity
             3 => changed.token.task = None,
             4 => changed.identity.generation += 1,
             5 => changed.phase = AdmissionPhase::EntryReady,
-            _ => {
-                changed.signal =
-                    Some(crate::linux::remote::dynamic::DynamicSignalInfo { raw: [0; 128] })
-            }
+            _ => changed.signal = Some(synthetic_signal(&changed)),
         }
         invalid(
             lineage.require_orig_rax(&changed, number),
@@ -218,10 +230,7 @@ fn kernel_control_requires_exact_current_checkpoint_and_original_return_identity
             5 => origin.returned.token.task = None,
             6 => origin.returned.identity.generation += 1,
             7 => origin.returned.phase = AdmissionPhase::NativeCompleted,
-            8 => {
-                origin.returned.signal =
-                    Some(crate::linux::remote::dynamic::DynamicSignalInfo { raw: [0; 128] })
-            }
+            8 => origin.returned.signal = Some(synthetic_signal(&origin.returned)),
             _ => origin.number = libc::SYS_exit as u64,
         }
         invalid(
