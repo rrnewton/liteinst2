@@ -1,5 +1,5 @@
 {
-  "baseline_revision": "e698d0affa85a69f74866c9309a54894c389f059",
+  "baseline_revision": "1df66886f15012475236b52fb74df2a5c5b4108e",
   "harness_test_counts": {
     "serial_launch": {
       "test/checkpoint": {
@@ -18,6 +18,10 @@
         "ignored": 0,
         "tests": 8
       },
+      "test/dynamic_fork": {
+        "ignored": 0,
+        "tests": 6
+      },
       "test/dynamic_signals": {
         "ignored": 0,
         "tests": 4
@@ -25,6 +29,10 @@
       "test/lifecycle": {
         "ignored": 0,
         "tests": 16
+      },
+      "test/lifecycle_exec_exit": {
+        "ignored": 0,
+        "tests": 7
       },
       "test/native_int80": {
         "ignored": 0,
@@ -60,7 +68,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 21
+        "tests": 26
       }
     },
     "workspace_tests": {
@@ -132,6 +140,10 @@
         "ignored": 0,
         "tests": 8
       },
+      "test/dynamic_fork": {
+        "ignored": 0,
+        "tests": 6
+      },
       "test/dynamic_signals": {
         "ignored": 0,
         "tests": 4
@@ -175,6 +187,10 @@
       "test/lifecycle": {
         "ignored": 0,
         "tests": 16
+      },
+      "test/lifecycle_exec_exit": {
+        "ignored": 0,
+        "tests": 7
       },
       "test/mandatory_prefix_oracle": {
         "ignored": 0,
@@ -322,7 +338,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 21
+        "tests": 26
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,

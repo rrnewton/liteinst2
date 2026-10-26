@@ -3,7 +3,9 @@
 //! This first owner runs original code without instrumentation. It authenticates
 //! kernel stops, preserves signal deliveries and actively interrupts execution.
 //! It is not an admission gate or a quiescence lease. Application creation and
-//! subsequent exec syscalls are refused before kernel execution in this increment.
+//! subsequent exec syscalls refuse by default. An explicit bounded lifecycle
+//! option qualifies at most one successful fork and two lifetime task records, without
+//! granting publication authority or extending exec/clone/vfork support.
 
 use super::*;
 use std::sync::Arc;
@@ -32,6 +34,69 @@ pub struct DynamicStop {
     session: u64,
     sequence: u64,
     tid: libc::pid_t,
+    task: Option<crate::lifecycle::TaskId>,
+}
+
+/// Explicit native creation policy. Later policies must receive independent
+/// kernel-stop, identity, cleanup and state qualification.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum DynamicCreationPolicy {
+    /// Every creation syscall refuses before kernel entry.
+    #[default]
+    Refuse,
+    /// Native SYS_fork only; clone, clone3, vfork and later exec still refuse.
+    Fork,
+}
+
+/// Bounded native lifecycle options, independent of page admission.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DynamicLifecycleOptions {
+    /// Checked creation mechanism.
+    pub creation: DynamicCreationPolicy,
+    /// Lifetime task-record bound, including retired tasks. This increment
+    /// accepts only one or two records; retirement never replenishes the budget.
+    pub max_tasks: usize,
+}
+impl Default for DynamicLifecycleOptions {
+    fn default() -> Self {
+        Self {
+            creation: DynamicCreationPolicy::Refuse,
+            max_tasks: 1,
+        }
+    }
+}
+impl DynamicLifecycleOptions {
+    /// At most one successful fork, with distinct parent/child task and mm identities.
+    pub const fn fork_only() -> Self {
+        Self {
+            creation: DynamicCreationPolicy::Fork,
+            max_tasks: 2,
+        }
+    }
+    fn validate(self) -> Result<Self, LaunchError> {
+        if !(1..=2).contains(&self.max_tasks) {
+            return Err(LaunchError::Invalid(
+                "dynamic lifecycle task bound must be one or two",
+            ));
+        }
+        Ok(self)
+    }
+}
+
+/// Non-reused task/process/mm identity from the native owner's registry.
+/// This is diagnostic bookkeeping, never a publication or exclusion capability.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DynamicTask {
+    /// One task incarnation.
+    pub task: crate::lifecycle::TaskId,
+    /// Thread-group lifetime.
+    pub process: crate::lifecycle::ProcessId,
+    /// Address-space incarnation; fork creates a distinct identity.
+    pub address_space: crate::lifecycle::AddressSpaceId,
+    /// Registry generation only. This uninstrumented owner has not connected
+    /// mmap/mprotect/alias invalidation; zero does not prove mappings unchanged
+    /// and grants no executable-admission or publication authority.
+    pub generation: u64,
 }
 
 /// Full kernel signal information, retained without guessing its pending queue.
@@ -153,6 +218,24 @@ pub enum DynamicEventKind {
     /// LISTEN ended at EVENT_STOP/SIGTRAP: the kernel group stop has ended.
     /// This does not infer the provenance of a pending signal or control request.
     GroupContinued,
+    /// Authenticated parent FORK event and registered stopped child. Neither
+    /// task runs automatically; the child's Newborn event is queued separately.
+    Created {
+        /// Stopped child identity; its automatic stop has already authenticated.
+        child: DynamicTask,
+    },
+    /// Original automatic stop before the child may return to user code.
+    Newborn {
+        /// Creator's retained task identity.
+        parent: DynamicTask,
+    },
+    /// Opt-in lifecycle task terminal observed by the tracer. This is NOT a
+    /// physical reaping receipt: a stopped real parent may still need wait4.
+    /// The original pidfd remains retained until final cleanup proves removal.
+    TaskTerminal {
+        /// Actual kernel exit or terminating-signal status.
+        status: crate::lifecycle::ExitStatus,
+    },
     /// Consumed terminal wait status with matching real-parent reap and pidfd HUP.
     Exited {
         /// Native exit status.
@@ -170,6 +253,9 @@ pub enum DynamicEventKind {
 pub struct DynamicEvent {
     /// Numeric task identity for diagnostics, not authority for external waits.
     pub tid: libc::pid_t,
+    /// Opt-in registry identity; absent before initial exec syscall exit and
+    /// throughout the legacy default mode.
+    pub task: Option<DynamicTask>,
     /// Exact event classification.
     pub kind: DynamicEventKind,
     stop: Option<DynamicStop>,
@@ -206,6 +292,8 @@ pub struct DynamicCleanup {
 enum Request {
     Wait,
     Interrupt,
+    InterruptTask(crate::lifecycle::TaskId),
+    LifecycleSnapshot,
     Resume(DynamicStop, DynamicResume),
     Registers(DynamicStop),
     Xstate(DynamicStop),
@@ -220,6 +308,7 @@ enum Response {
     Registers(RegisterSnapshot),
     Bytes(Vec<u8>),
     Mask(u64),
+    LifecycleSnapshot(Option<crate::lifecycle::RegistrySnapshot>),
 }
 struct Command {
     request: Request,
@@ -234,6 +323,7 @@ struct TracerStart {
     command: LaunchCommand,
     session: u64,
     inherited_mask: u64,
+    lifecycle: Option<DynamicLifecycleOptions>,
     until: Instant,
     cancel: Arc<AtomicBool>,
     commands: Receiver<Command>,
@@ -284,6 +374,31 @@ impl DynamicSession {
     /// A failed or timed-out launch can leave cleanup running on its dedicated
     /// tracer; returning an error does not assert synchronous terminal reaping.
     pub fn launch(command: &LaunchCommand, timeout: Duration) -> Result<Self, LaunchError> {
+        Self::launch_options(command, timeout, None)
+    }
+
+    /// Opts into bounded native lifecycle ownership. The first event remains
+    /// the original exec event; task/mm registry identities begin only at its
+    /// authenticated syscall EXIT, not at an invented first-user transition.
+    /// Fork requires TF clear at native syscall entry and the same PID namespace
+    /// (including pid_for_children) as the tracer. It has a lifetime maximum of
+    /// two task records; failed attempts do not create or recycle task records.
+    /// No exec, clone, vfork, mapping invalidation or publication is qualified.
+    /// Signal delivery retains full siginfo and an Unknown queue obligation;
+    /// no queue provenance or signal-entry admission is inferred.
+    pub fn launch_with_lifecycle(
+        command: &LaunchCommand,
+        options: DynamicLifecycleOptions,
+        timeout: Duration,
+    ) -> Result<Self, LaunchError> {
+        Self::launch_options(command, timeout, Some(options.validate()?))
+    }
+
+    fn launch_options(
+        command: &LaunchCommand,
+        timeout: Duration,
+        lifecycle: Option<DynamicLifecycleOptions>,
+    ) -> Result<Self, LaunchError> {
         let until = deadline(timeout)?;
         let session = NEXT_SESSION
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
@@ -305,6 +420,7 @@ impl DynamicSession {
                     command,
                     session,
                     inherited_mask,
+                    lifecycle,
                     until,
                     cancel: thread_cancel,
                     commands: receiver,
@@ -391,6 +507,30 @@ impl DynamicSession {
             _ => unreachable!(),
         }
     }
+    /// Interrupts one running opt-in incarnation. Foreign or retired identities
+    /// cannot select a numeric PID. Other task stops remain held independently.
+    pub fn interrupt_task(
+        &mut self,
+        task: crate::lifecycle::TaskId,
+        timeout: Duration,
+    ) -> Result<DynamicEvent, LaunchError> {
+        match self.call(Request::InterruptTask(task), timeout)? {
+            Response::Event(event) => Ok(event),
+            _ => unreachable!(),
+        }
+    }
+
+    /// Retained bookkeeping only, not a quiescence proof. None before the first
+    /// authenticated exec syscall exit, or in default refusal-only mode.
+    pub fn lifecycle_snapshot(
+        &mut self,
+    ) -> Result<Option<crate::lifecycle::RegistrySnapshot>, LaunchError> {
+        match self.call(Request::LifecycleSnapshot, self.operation_timeout)? {
+            Response::LifecycleSnapshot(snapshot) => Ok(snapshot),
+            _ => unreachable!(),
+        }
+    }
+
     /// Applies exactly the disposition permitted for this current stop token.
     pub fn resume(&mut self, stop: &DynamicStop, action: DynamicResume) -> Result<(), LaunchError> {
         match self.call(

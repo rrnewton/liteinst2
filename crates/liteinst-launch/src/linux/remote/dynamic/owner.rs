@@ -4,6 +4,8 @@ use std::collections::{BTreeMap, BTreeSet};
 #[cfg(test)]
 mod tests;
 
+mod lifecycle;
+
 enum State {
     Startup,
     Held(DynamicEvent),
@@ -15,6 +17,8 @@ enum State {
 pub(super) struct Owner {
     pub(super) pid: libc::pid_t,
     pub(super) initial_exec: Option<RegisterSnapshot>,
+    lifecycle_options: Option<DynamicLifecycleOptions>,
+    lifecycle: Option<lifecycle::NativeLifecycle>,
     session: u64,
     sequence: u64,
     state: State,
@@ -54,6 +58,7 @@ pub(super) fn run(start: TracerStart) {
         command,
         session,
         inherited_mask,
+        lifecycle,
         until,
         cancel,
         commands,
@@ -61,6 +66,7 @@ pub(super) fn run(start: TracerStart) {
         done,
     } = start;
     let mut owner = Owner::new(session, cancel);
+    owner.lifecycle_options = lifecycle;
     let mut announced = false;
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         // NPTL may unblock its own reserved cancellation signal during thread
@@ -95,6 +101,8 @@ impl Owner {
         Self {
             pid: 0,
             initial_exec: None,
+            lifecycle_options: None,
+            lifecycle: None,
             session,
             sequence: 0,
             state: State::Startup,
@@ -364,11 +372,13 @@ impl Owner {
             .ok_or(LaunchError::Invalid("dynamic stop identity exhausted"))?;
         let event = DynamicEvent {
             tid: self.pid,
+            task: None,
             kind,
             stop: Some(DynamicStop {
                 session: self.session,
                 sequence: self.sequence,
                 tid: self.pid,
+                task: None,
             }),
         };
         self.state = State::Held(event.clone());
@@ -402,7 +412,18 @@ impl Owner {
     }
     fn execute(&mut self, request: Request, until: Instant) -> Result<Response, LaunchError> {
         self.time_left(until, "dynamic command")?;
+        if let Some(mut lifecycle) = self.lifecycle.take() {
+            // A panic still leaves all native wait/pidfd ownership in Owner;
+            // the catch-unwind path proceeds directly to physical cleanup.
+            let result = lifecycle.execute(self, request, until);
+            self.lifecycle = Some(lifecycle);
+            return result;
+        }
         match request {
+            Request::LifecycleSnapshot => Ok(Response::LifecycleSnapshot(None)),
+            Request::InterruptTask(_) => {
+                Err(LaunchError::Invalid("dynamic lifecycle is not initialized"))
+            }
             #[cfg(test)]
             Request::PanicForCleanupTest => panic!("injected dynamic tracer unwind"),
             Request::Resume(token, action) => self.resume(&token, action).map(|()| Response::Unit),
@@ -508,6 +529,7 @@ impl Owner {
                     self.state = State::Terminal;
                     return Ok(DynamicEvent {
                         tid,
+                        task: None,
                         stop: None,
                         kind: if libc::WIFEXITED(status) {
                             DynamicEventKind::Exited {
@@ -622,6 +644,7 @@ impl Owner {
                         "dynamic syscall exit is out of order or changed",
                     ));
                 }
+                let initial_exec_exit = self.initial_exec.is_some();
                 if let Some(mut expected) = self.initial_exec.take() {
                     expected.rax = 0;
                     if registers != expected || exit.sval != 0 || exit.is_error != 0 {
@@ -631,6 +654,21 @@ impl Owner {
                     }
                 }
                 self.syscall_open = false;
+                if let Some(options) = self.lifecycle_options {
+                    if !initial_exec_exit {
+                        return Err(LaunchError::Invalid(
+                            "lifecycle registry lacks initial exec-exit evidence",
+                        ));
+                    }
+                    let (lifecycle, event) = lifecycle::NativeLifecycle::new(
+                        self.session,
+                        self.pid,
+                        registers,
+                        options,
+                    )?;
+                    self.lifecycle = Some(lifecycle);
+                    return Ok(event);
+                }
                 self.hold(DynamicEventKind::SyscallExit {
                     result: exit.sval,
                     is_error: exit.is_error != 0,
@@ -652,9 +690,10 @@ impl Owner {
                 // Child terminal and parent creation statuses may be consumed
                 // in either order. A late payload must not recreate numeric
                 // signalling authority after the child has already been reaped.
-                // This increment never resumes a creation entry publicly, and
-                // cleanup never resumes application code, so a retired number
-                // cannot legitimately acquire a new creation incarnation here.
+                // Default policy refuses creation; the opt-in policy has at
+                // most two lifetime records, including retired tasks. Cleanup
+                // never resumes original code, so a retired number cannot
+                // legitimately gain a second creation incarnation here.
                 if child > 0 && !self.reaped.contains(&child) {
                     self.owned.insert(child);
                     let _ = self.pin_process(child);

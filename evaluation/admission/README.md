@@ -111,7 +111,12 @@ cohorts, not results; each run must satisfy them independently.
 
 The current corpus additionally covers live oracle reuse, native controller
 ownership and signals, physical-reaping failures, and the explicit INT80
-profile. Exact current harness denominators are declared in `corpus.json` and
+profile, plus the bounded opt-in native fork lifecycle. The fork increment adds
+18 outer tests: six public native fixtures, five private native event-order and
+refusal fixtures, and seven pure registry regressions. Its independent native
+oracle runs in a separate natural-parent reaping domain; the outer fixture
+checks each positive-oracle and intentional-unwind subprocess's one-test
+summary and cleanup witness without adding it to outer totals. Exact current harness denominators are declared in `corpus.json` and
 independently asserted by `test_parsing.py`. These additions do not change the
 separate 50-case native telemetry denominator or the four existing ignores.
 
@@ -143,6 +148,10 @@ attempted are explicitly `not_run`.
 argument and the private helper's observable parent relationship.
 [INT80 evidence](int80.md) records the separate finite getpid/gettid profile,
 raw native oracle and exact distinction between native and scripted bookkeeping.
+[Bounded native fork](native-fork.md) records the separate lifetime-two-task
+profile, independent original-state comparison, actual stop-order fixtures and
+physical-reaping distinction. It does not extend the 50 selected-instruction
+telemetry cases.
 
 ## Claim mapping
 

@@ -126,6 +126,8 @@ impl std::error::Error for LifecycleError {}
 pub enum HoldReason {
     /// First user entry following a checked exec transition.
     Exec,
+    /// Authenticated initial exec syscall exit, before the kernel user return.
+    ExecSyscallExit,
     /// Automatic ptrace stop before a newborn task can execute.
     Newborn,
     /// An active controller interruption, not an application signal delivery.
@@ -142,6 +144,10 @@ pub enum HoldReason {
     Creation,
     /// Kernel vfork-done event.
     VforkDone,
+    /// Authenticated job-control group stop, without signal-queue provenance.
+    GroupStop,
+    /// Authenticated end of a group stop after LISTEN.
+    GroupContinued,
 }
 
 /// Terminal identity transition; this enum is not an OS reaping receipt.
@@ -185,6 +191,8 @@ pub enum TaskState {
 pub enum TaskOrigin {
     /// Initial checked first-user checkpoint.
     Initial,
+    /// Initial authenticated exec syscall exit; user return has not occurred.
+    InitialExecSyscallExit,
     /// A checked creation event from a particular parent incarnation.
     Created {
         /// Creating task, retained even after it exits.
@@ -380,6 +388,9 @@ enum Pending {
 /// Kernel signal queue to which a pending delivery belongs.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SignalScope {
+    /// Queue provenance is unavailable. Retain conservatively across exec; this
+    /// obligation must never be treated as a classified or discharged queue.
+    Unknown,
     /// Per-thread pending delivery, preserved only for the execing task.
     Task,
     /// Process-directed pending delivery, preserved across exec.
@@ -395,7 +406,7 @@ pub struct SignalEvent {
     pub signal: u8,
     /// Exact signal code.
     pub code: i32,
-    /// Kernel queue carrying the pending delivery.
+    /// Independently authenticated queue, or Unknown when unavailable.
     pub scope: SignalScope,
 }
 
@@ -503,6 +514,40 @@ impl LifecycleRegistry {
     /// Starts with one held leader after authenticated exec completion and the
     /// first-user transition, before any original application instruction.
     pub fn new(limits: Limits, leader_tid: i32, entry_pc: u64) -> Result<Self, LifecycleError> {
+        Self::initialize(
+            limits,
+            leader_tid,
+            entry_pc,
+            HoldReason::Exec,
+            TaskOrigin::Initial,
+        )
+    }
+
+    /// Starts at an authenticated initial exec syscall-exit stop. This is before
+    /// the actual kernel return to user mode; neither stable first-user XSTATE
+    /// nor execution permission is inferred. The original earlier exec event is
+    /// not relabelled. This constructor supplies bookkeeping only.
+    pub fn new_after_exec_syscall_exit(
+        limits: Limits,
+        leader_tid: i32,
+        entry_pc: u64,
+    ) -> Result<Self, LifecycleError> {
+        Self::initialize(
+            limits,
+            leader_tid,
+            entry_pc,
+            HoldReason::ExecSyscallExit,
+            TaskOrigin::InitialExecSyscallExit,
+        )
+    }
+
+    fn initialize(
+        limits: Limits,
+        leader_tid: i32,
+        entry_pc: u64,
+        initial_reason: HoldReason,
+        initial_origin: TaskOrigin,
+    ) -> Result<Self, LifecycleError> {
         if [limits.tasks, limits.processes, limits.address_spaces]
             .into_iter()
             .any(|limit| limit == 0 || limit > MAX_RECORDS)
@@ -546,9 +591,9 @@ impl LifecycleRegistry {
                         sequence: 0,
                         state: TaskState::Held {
                             pc: entry_pc,
-                            reason: HoldReason::Exec,
+                            reason: initial_reason,
                         },
-                        origin: TaskOrigin::Initial,
+                        origin: initial_origin,
                         syscall_open: false,
                         pending: None,
                     },
@@ -670,6 +715,8 @@ impl LifecycleRegistry {
                     | HoldReason::SyscallEntry
                     | HoldReason::SyscallExit
                     | HoldReason::OwnedTrap
+                    | HoldReason::GroupStop
+                    | HoldReason::GroupContinued
             ) {
                 return Err(LifecycleError::EventMismatch);
             }
@@ -1039,6 +1086,10 @@ impl LifecycleRegistry {
                         && state.tasks[&record.task].process == old.process
                         && match record.kind {
                             ObligationKind::PendingSignal {
+                                scope: SignalScope::Unknown,
+                                ..
+                            } => true,
+                            ObligationKind::PendingSignal {
                                 scope: SignalScope::Process,
                                 ..
                             } => true,
@@ -1248,6 +1299,14 @@ impl LifecycleRegistry {
 }
 
 impl RegistrySnapshot {
+    /// Retained task incarnations, including terminal records.
+    pub fn tasks(&self) -> impl Iterator<Item = &TaskRecord> {
+        self.tasks.values()
+    }
+    /// Retained address-space identities; no admission authority is implied.
+    pub fn address_spaces(&self) -> impl Iterator<Item = &AddressSpaceRecord> {
+        self.spaces.values()
+    }
     fn allocate(&mut self) -> Result<u64, LifecycleError> {
         let value = self.next_id;
         self.next_id = value.checked_add(1).ok_or(LifecycleError::Exhausted)?;
