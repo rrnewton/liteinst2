@@ -1,0 +1,12 @@
+{
+  "files": {
+    "evaluation/elf-exec-development-attempts.md": "8e4cd9362ade9a4888b18a8a7abc7186bf558f23b88ba708ea6198284f24db37",
+    "evaluation/elf-exec/map-files-spelling-probe.py": "bc2bff2be2ce448b810af20450fc2ec459b5da113d39f639ec702beae2dc07d1",
+    "evaluation/elf-exec/provider-probe.py": "24ca24f0a20b8a4b27b4e00409dc5e37610d427ab483a76e9b83432b0f26f9ed",
+    "evaluation/results/elf-exec-development-attempts-20261026/attempts.csv": "f6fcbfecedca07325976f055b2f2d030cf68acf3efeae7d8d54147d625492cdd",
+    "evaluation/results/elf-exec-development-attempts-20261026/commands.csv": "321a0486e5b82cf3e42d72e21681290abed7b895f3cdf5c5bbae346b78e2c1ce",
+    "evaluation/results/elf-exec-development-attempts-20261026/summary.json": "20f3498c144efa2534a32dd3950ac197a73aecb021cd8b539520af4a72c7a0e0"
+  },
+  "index_excludes_itself": true,
+  "schema": 1
+}

@@ -1,0 +1,793 @@
+{
+  "groups": [
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running unittests src/lib.rs (target/debug/deps/liteinst_admission)",
+      "ignored": 0,
+      "line": 9,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/core_bridge.rs (target/debug/deps/core_bridge)",
+      "ignored": 0,
+      "line": 18,
+      "measured": 0,
+      "passed": 3
+    },
+    {
+      "elapsed_seconds": 0.01,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/model.rs (target/debug/deps/model)",
+      "ignored": 0,
+      "line": 39,
+      "measured": 0,
+      "passed": 15
+    },
+    {
+      "elapsed_seconds": 0.02,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/oracle.rs (target/debug/deps/oracle)",
+      "ignored": 0,
+      "line": 57,
+      "measured": 0,
+      "passed": 12
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/return_obligations.rs (target/debug/deps/return_obligations)",
+      "ignored": 0,
+      "line": 76,
+      "measured": 0,
+      "passed": 13
+    },
+    {
+      "elapsed_seconds": 0.49,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running unittests src/lib.rs (target/debug/deps/liteinst_artifact)",
+      "ignored": 0,
+      "line": 102,
+      "measured": 0,
+      "passed": 20
+    },
+    {
+      "elapsed_seconds": 0.01,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running unittests src/lib.rs (target/debug/deps/liteinst_launch)",
+      "ignored": 0,
+      "line": 110,
+      "measured": 0,
+      "passed": 2
+    },
+    {
+      "elapsed_seconds": 0.16,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/checkpoint.rs (target/debug/deps/checkpoint)",
+      "ignored": 0,
+      "line": 139,
+      "measured": 0,
+      "passed": 23
+    },
+    {
+      "elapsed_seconds": 0.12,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/concurrent_control.rs (target/debug/deps/concurrent_control)",
+      "ignored": 0,
+      "line": 148,
+      "measured": 0,
+      "passed": 3
+    },
+    {
+      "elapsed_seconds": 0.37,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/concurrent_gate.rs (target/debug/deps/concurrent_gate)",
+      "ignored": 0,
+      "line": 161,
+      "measured": 0,
+      "passed": 7
+    },
+    {
+      "elapsed_seconds": 0.52,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/native_selected.rs (target/debug/deps/native_selected)",
+      "ignored": 0,
+      "line": 200,
+      "measured": 0,
+      "passed": 33
+    },
+    {
+      "elapsed_seconds": 0.18,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/native_syscall.rs (target/debug/deps/native_syscall)",
+      "ignored": 0,
+      "line": 213,
+      "measured": 0,
+      "passed": 7
+    },
+    {
+      "elapsed_seconds": 0.36,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/page_gate.rs (target/debug/deps/page_gate)",
+      "ignored": 0,
+      "line": 236,
+      "measured": 0,
+      "passed": 17
+    },
+    {
+      "elapsed_seconds": 0.24,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/selected_gate.rs (target/debug/deps/selected_gate)",
+      "ignored": 0,
+      "line": 255,
+      "measured": 0,
+      "passed": 13
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/selected_semantics.rs (target/debug/deps/selected_semantics)",
+      "ignored": 0,
+      "line": 275,
+      "measured": 0,
+      "passed": 14
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running unittests src/lib.rs (target/debug/deps/liteinst_rewrite)",
+      "ignored": 0,
+      "line": 343,
+      "measured": 0,
+      "passed": 62
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running unittests src/main.rs (target/debug/deps/liteinst_rewrite)",
+      "ignored": 0,
+      "line": 349,
+      "measured": 0,
+      "passed": 0
+    },
+    {
+      "elapsed_seconds": 0.04,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/integration.rs (target/debug/deps/integration)",
+      "ignored": 0,
+      "line": 366,
+      "measured": 0,
+      "passed": 11
+    },
+    {
+      "elapsed_seconds": 1.78,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+      "ignored": 1,
+      "line": 594,
+      "measured": 0,
+      "passed": 207
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running unittests tests/support/arena_fork_fixture.rs (target/debug/deps/liteinst2_arena_fork_fixture)",
+      "ignored": 0,
+      "line": 600,
+      "measured": 0,
+      "passed": 0
+    },
+    {
+      "elapsed_seconds": 5.42,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/a2_oracle.rs (target/debug/deps/a2_oracle)",
+      "ignored": 0,
+      "line": 646,
+      "measured": 0,
+      "passed": 40
+    },
+    {
+      "elapsed_seconds": 0.02,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/arena_fork.rs (target/debug/deps/arena_fork)",
+      "ignored": 0,
+      "line": 658,
+      "measured": 0,
+      "passed": 6
+    },
+    {
+      "elapsed_seconds": 0.91,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/boundary_signal_oracle.rs (target/debug/deps/boundary_signal_oracle)",
+      "ignored": 0,
+      "line": 691,
+      "measured": 0,
+      "passed": 27
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/bounded_proc_stat.rs (target/debug/deps/bounded_proc_stat)",
+      "ignored": 0,
+      "line": 704,
+      "measured": 0,
+      "passed": 7
+    },
+    {
+      "elapsed_seconds": 0.57,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/bundle_contract.rs (target/debug/deps/bundle_contract)",
+      "ignored": 0,
+      "line": 711,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 1.04,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/call_return_oracle.rs (target/debug/deps/call_return_oracle)",
+      "ignored": 0,
+      "line": 744,
+      "measured": 0,
+      "passed": 27
+    },
+    {
+      "elapsed_seconds": 0.04,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/concurrent_overlap.rs (target/debug/deps/concurrent_overlap)",
+      "ignored": 0,
+      "line": 761,
+      "measured": 0,
+      "passed": 11
+    },
+    {
+      "elapsed_seconds": 0.24,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/controlled_coalescing_contract.rs (target/debug/deps/controlled_coalescing_contract)",
+      "ignored": 0,
+      "line": 768,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 117.89,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)",
+      "ignored": 0,
+      "line": 823,
+      "measured": 0,
+      "passed": 27
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/elf_exec_provider_contract.rs (target/debug/deps/elf_exec_provider_contract)",
+      "ignored": 0,
+      "line": 837,
+      "measured": 0,
+      "passed": 8
+    },
+    {
+      "elapsed_seconds": 0.01,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/entry_backedge.rs (target/debug/deps/entry_backedge)",
+      "ignored": 0,
+      "line": 844,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 4.38,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/entry_paths_oracle.rs (target/debug/deps/entry_paths_oracle)",
+      "ignored": 0,
+      "line": 877,
+      "measured": 0,
+      "passed": 27
+    },
+    {
+      "elapsed_seconds": 0.01,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/eviction_chain_contract.rs (target/debug/deps/eviction_chain_contract)",
+      "ignored": 0,
+      "line": 896,
+      "measured": 0,
+      "passed": 13
+    },
+    {
+      "elapsed_seconds": 5.6,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/eviction_chain_extensions.rs (target/debug/deps/eviction_chain_extensions)",
+      "ignored": 0,
+      "line": 930,
+      "measured": 0,
+      "passed": 28
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/eviction_chain_grouping_contract.rs (target/debug/deps/eviction_chain_grouping_contract)",
+      "ignored": 0,
+      "line": 941,
+      "measured": 0,
+      "passed": 5
+    },
+    {
+      "elapsed_seconds": 0.94,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/eviction_chain_oracle.rs (target/debug/deps/eviction_chain_oracle)",
+      "ignored": 0,
+      "line": 976,
+      "measured": 0,
+      "passed": 29
+    },
+    {
+      "elapsed_seconds": 0.01,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/exact_syscall.rs (target/debug/deps/exact_syscall)",
+      "ignored": 0,
+      "line": 989,
+      "measured": 0,
+      "passed": 7
+    },
+    {
+      "elapsed_seconds": 0.27,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/generalized_pun_contract.rs (target/debug/deps/generalized_pun_contract)",
+      "ignored": 0,
+      "line": 996,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 6.02,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/mandatory_prefix_oracle.rs (target/debug/deps/mandatory_prefix_oracle)",
+      "ignored": 0,
+      "line": 1030,
+      "measured": 0,
+      "passed": 28
+    },
+    {
+      "elapsed_seconds": 0.94,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/neighbor_eviction_contract.rs (target/debug/deps/neighbor_eviction_contract)",
+      "ignored": 0,
+      "line": 1037,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 104.18,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/neighbor_eviction_oracle.rs (target/debug/deps/neighbor_eviction_oracle)",
+      "ignored": 0,
+      "line": 1113,
+      "measured": 0,
+      "passed": 70
+    },
+    {
+      "elapsed_seconds": 0.01,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/overlap_concurrency.rs (target/debug/deps/overlap_concurrency)",
+      "ignored": 0,
+      "line": 1120,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 1.09,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/parked_context_oracle.rs (target/debug/deps/parked_context_oracle)",
+      "ignored": 0,
+      "line": 1153,
+      "measured": 0,
+      "passed": 27
+    },
+    {
+      "elapsed_seconds": 0.01,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/pc_relative.rs (target/debug/deps/pc_relative)",
+      "ignored": 0,
+      "line": 1160,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 0.65,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/prefixed_pun_contract.rs (target/debug/deps/prefixed_pun_contract)",
+      "ignored": 0,
+      "line": 1167,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 1.43,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/prefixed_pun_oracle.rs (target/debug/deps/prefixed_pun_oracle)",
+      "ignored": 0,
+      "line": 1200,
+      "measured": 0,
+      "passed": 27
+    },
+    {
+      "elapsed_seconds": 0.27,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/quiescent_contract.rs (target/debug/deps/quiescent_contract)",
+      "ignored": 0,
+      "line": 1207,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 7.18,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/quiescent_oracle.rs (target/debug/deps/quiescent_oracle)",
+      "ignored": 0,
+      "line": 1243,
+      "measured": 0,
+      "passed": 30
+    },
+    {
+      "elapsed_seconds": 0.13,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/rel32_endpoint_oracle.rs (target/debug/deps/rel32_endpoint_oracle)",
+      "ignored": 0,
+      "line": 1276,
+      "measured": 0,
+      "passed": 27
+    },
+    {
+      "elapsed_seconds": 0.01,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/replace_first_cet.rs (target/debug/deps/replace_first_cet)",
+      "ignored": 0,
+      "line": 1284,
+      "measured": 0,
+      "passed": 2
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/search_eviction_evidence.rs (target/debug/deps/search_eviction_evidence)",
+      "ignored": 0,
+      "line": 1294,
+      "measured": 0,
+      "passed": 4
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/search_evidence.rs (target/debug/deps/search_evidence)",
+      "ignored": 0,
+      "line": 1308,
+      "measured": 0,
+      "passed": 8
+    },
+    {
+      "elapsed_seconds": 0.76,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/sigtrap_origin.rs (target/debug/deps/sigtrap_origin)",
+      "ignored": 0,
+      "line": 1316,
+      "measured": 0,
+      "passed": 2
+    },
+    {
+      "elapsed_seconds": 0.17,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/stress.rs (target/debug/deps/stress)",
+      "ignored": 3,
+      "line": 1331,
+      "measured": 0,
+      "passed": 4
+    },
+    {
+      "elapsed_seconds": 1.57,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/successor_eviction_contract.rs (target/debug/deps/successor_eviction_contract)",
+      "ignored": 0,
+      "line": 1338,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 5.22,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/successor_eviction_oracle.rs (target/debug/deps/successor_eviction_oracle)",
+      "ignored": 0,
+      "line": 1375,
+      "measured": 0,
+      "passed": 31
+    },
+    {
+      "elapsed_seconds": 0.15,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/sync_core_capability.rs (target/debug/deps/sync_core_capability)",
+      "ignored": 0,
+      "line": 1382,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 0.15,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/tactic_engine.rs (target/debug/deps/tactic_engine)",
+      "ignored": 0,
+      "line": 1389,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 0.03,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/trampoline_tail.rs (target/debug/deps/trampoline_tail)",
+      "ignored": 0,
+      "line": 1407,
+      "measured": 0,
+      "passed": 12
+    },
+    {
+      "elapsed_seconds": 0.25,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/exception_landing.rs (target/debug/deps/exception_landing)",
+      "ignored": 0,
+      "line": 1440,
+      "measured": 0,
+      "passed": 27
+    },
+    {
+      "elapsed_seconds": 0.01,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running unittests src/lib.rs (target/debug/deps/rapid_profiler)",
+      "ignored": 0,
+      "line": 1544,
+      "measured": 0,
+      "passed": 98
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running unittests src/main.rs (target/debug/deps/rapid_profiler)",
+      "ignored": 0,
+      "line": 1553,
+      "measured": 0,
+      "passed": 3
+    },
+    {
+      "elapsed_seconds": 0.09,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running tests/e2e.rs (target/debug/deps/e2e)",
+      "ignored": 0,
+      "line": 1561,
+      "measured": 0,
+      "passed": 2
+    },
+    {
+      "elapsed_seconds": 0.02,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Running native-interval/calibrations.rs (target/debug/deps/frontend_native_calibrations)",
+      "ignored": 0,
+      "line": 1593,
+      "measured": 0,
+      "passed": 26
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Doc-tests liteinst_admission",
+      "ignored": 0,
+      "line": 1599,
+      "measured": 0,
+      "passed": 0
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Doc-tests liteinst_artifact",
+      "ignored": 0,
+      "line": 1605,
+      "measured": 0,
+      "passed": 0
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Doc-tests liteinst_launch",
+      "ignored": 0,
+      "line": 1611,
+      "measured": 0,
+      "passed": 0
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Doc-tests liteinst_rewrite",
+      "ignored": 0,
+      "line": 1617,
+      "measured": 0,
+      "passed": 0
+    },
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Doc-tests liteinst2",
+      "ignored": 0,
+      "line": 1623,
+      "measured": 0,
+      "passed": 0
+    },
+    {
+      "elapsed_seconds": 0.1,
+      "failed": 0,
+      "filtered": 0,
+      "group": "Doc-tests rapid_profiler",
+      "ignored": 0,
+      "line": 1639,
+      "measured": 0,
+      "passed": 10
+    }
+  ],
+  "nested_completed": [
+    {
+      "elapsed_seconds": 0.0,
+      "failed": 0,
+      "filtered": 207,
+      "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+      "ignored": 0,
+      "line": 505,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 0.01,
+      "failed": 0,
+      "filtered": 207,
+      "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+      "ignored": 0,
+      "line": 517,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 30.86,
+      "failed": 0,
+      "filtered": 26,
+      "group": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)",
+      "ignored": 0,
+      "line": 804,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 9.41,
+      "failed": 0,
+      "filtered": 26,
+      "group": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)",
+      "ignored": 0,
+      "line": 811,
+      "measured": 0,
+      "passed": 1
+    },
+    {
+      "elapsed_seconds": 77.6,
+      "failed": 0,
+      "filtered": 26,
+      "group": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)",
+      "ignored": 0,
+      "line": 819,
+      "measured": 0,
+      "passed": 1
+    }
+  ],
+  "nested_starts": [
+    {
+      "count": 1,
+      "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+      "line": 502
+    },
+    {
+      "count": 1,
+      "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+      "line": 514
+    },
+    {
+      "count": 1,
+      "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+      "line": 536
+    },
+    {
+      "count": 1,
+      "group": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)",
+      "line": 798
+    },
+    {
+      "count": 1,
+      "group": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)",
+      "line": 807
+    },
+    {
+      "count": 1,
+      "group": "Running tests/controlled_oracle.rs (target/debug/deps/controlled_oracle)",
+      "line": 814
+    },
+    {
+      "count": 1,
+      "group": "Running tests/stress.rs (target/debug/deps/stress)",
+      "line": 1327
+    }
+  ]
+}

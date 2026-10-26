@@ -1,0 +1,134 @@
+[
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "unstripped-null",
+    "candidate_bytes": 90418,
+    "candidate_sha256": "8ab4615accdaa98120dd849204df5fd0b8b3c44ed81f7470bb7ac44dcac13dc1",
+    "changed_source_bytes": 4,
+    "edits": [
+      {
+        "emitted_hex": "0050010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0900",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0700"
+      },
+      {
+        "emitted_hex": "e9fbee01",
+        "file_offset": 4352,
+        "kind": "DeclaredSource",
+        "original_hex": "b8050000"
+      }
+    ],
+    "generated_image_bytes": 306,
+    "growth_bytes": 6922,
+    "image_sha256": "58b9689d0b5dc6f31106e8c329f49ddc13455e056da42ca499a02e1fde51a47c",
+    "original_bytes": 83496,
+    "original_sha256": "0b4abc680d7aa14840efcac3835d523e2bcc5d5a6adf5aebfa7187d135997bae",
+    "source_edit_span_bytes": 4
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "unstripped-journal",
+    "candidate_bytes": 90418,
+    "candidate_sha256": "fc74594f627210f357260fe479905800275f9e4e7e213570f819546ed4bebbd7",
+    "changed_source_bytes": 4,
+    "edits": [
+      {
+        "emitted_hex": "0050010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0900",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0700"
+      },
+      {
+        "emitted_hex": "e9fbee01",
+        "file_offset": 4352,
+        "kind": "DeclaredSource",
+        "original_hex": "b8050000"
+      }
+    ],
+    "generated_image_bytes": 306,
+    "growth_bytes": 6922,
+    "image_sha256": "f44c3fd97b0b3e6174e0370b0cc66f3ef308f271eed72c6ecdaa0286745cfc17",
+    "original_bytes": 83496,
+    "original_sha256": "0b4abc680d7aa14840efcac3835d523e2bcc5d5a6adf5aebfa7187d135997bae",
+    "source_edit_span_bytes": 4
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "stripped-null",
+    "candidate_bytes": 90418,
+    "candidate_sha256": "32e09fe8bd8d86e32b4b6de7c2cbf2dfe3a7787e7fdc51462a8eb2271166dd7b",
+    "changed_source_bytes": 4,
+    "edits": [
+      {
+        "emitted_hex": "0050010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0900",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0700"
+      },
+      {
+        "emitted_hex": "e9fbee01",
+        "file_offset": 4352,
+        "kind": "DeclaredSource",
+        "original_hex": "b8050000"
+      }
+    ],
+    "generated_image_bytes": 306,
+    "growth_bytes": 7994,
+    "image_sha256": "58b9689d0b5dc6f31106e8c329f49ddc13455e056da42ca499a02e1fde51a47c",
+    "original_bytes": 82424,
+    "original_sha256": "b923e0e4452a200ce60349f60a093acb050dd8d27d4d0b3138b0d99a762fe162",
+    "source_edit_span_bytes": 4
+  },
+  {
+    "artifact_qualification_complete": false,
+    "candidate": "stripped-journal",
+    "candidate_bytes": 90418,
+    "candidate_sha256": "f142b29faf82b98ed94a01d3936b3c75ea43e06e248bda0498a8d657c273ff67",
+    "changed_source_bytes": 4,
+    "edits": [
+      {
+        "emitted_hex": "0050010000000000",
+        "file_offset": 32,
+        "kind": "ProgramHeaderOffset",
+        "original_hex": "4000000000000000"
+      },
+      {
+        "emitted_hex": "0900",
+        "file_offset": 56,
+        "kind": "ProgramHeaderCount",
+        "original_hex": "0700"
+      },
+      {
+        "emitted_hex": "e9fbee01",
+        "file_offset": 4352,
+        "kind": "DeclaredSource",
+        "original_hex": "b8050000"
+      }
+    ],
+    "generated_image_bytes": 306,
+    "growth_bytes": 7994,
+    "image_sha256": "f44c3fd97b0b3e6174e0370b0cc66f3ef308f271eed72c6ecdaa0286745cfc17",
+    "original_bytes": 82424,
+    "original_sha256": "b923e0e4452a200ce60349f60a093acb050dd8d27d4d0b3138b0d99a762fe162",
+    "source_edit_span_bytes": 4
+  }
+]
