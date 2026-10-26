@@ -12,7 +12,7 @@ use std::collections::BTreeMap;
 use std::fs::{self, OpenOptions};
 use std::io::{self, Read, Write};
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
-use std::os::unix::fs::{OpenOptionsExt, PermissionsExt};
+use std::os::unix::fs::{FileExt, OpenOptionsExt, PermissionsExt};
 use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
@@ -203,6 +203,70 @@ fn spin_fork_program() -> Vec<u8> {
     syscall(&mut code, libc::SYS_fork as u64);
     code.extend_from_slice(&[0xeb, 0xfe]);
     code
+}
+// This marker belongs only to the repeated-interrupt fixture. It is outside
+// the unchanged DATA[0..64] and STACK[0..32] snapshot regions.
+const INTERRUPT_MARKER: u64 = DATA + 64;
+const INTERRUPT_READY: u32 = 0x51a7c0de;
+fn interrupt_spin_fork_program() -> (Vec<u8>, u64, u64) {
+    let mut code = seed();
+    syscall(&mut code, libc::SYS_fork as u64);
+    let return_pc = ENTRY + code.len() as u64;
+    // MOV dword ptr [absolute disp32], imm32 changes no GPR or flags. Its
+    // retired store certifies actual user execution after the fork return.
+    code.extend_from_slice(&[0xc7, 0x04, 0x25]);
+    code.extend_from_slice(&(INTERRUPT_MARKER as u32).to_le_bytes());
+    code.extend_from_slice(&INTERRUPT_READY.to_le_bytes());
+    let loop_pc = ENTRY + code.len() as u64;
+    assert_eq!(loop_pc, return_pc + 11);
+    code.extend_from_slice(&[0xeb, 0xfe]);
+    (code, return_pc, loop_pc)
+}
+fn interrupt_time_left(until: Instant) -> Duration {
+    until
+        .checked_duration_since(Instant::now())
+        .filter(|left| !left.is_zero())
+        .expect("original user-execution checkpoint deadline expired")
+}
+fn interrupt_memory(pid: i32, handle: &OwnedFd, until: Instant) -> fs::File {
+    assert!(Instant::now() < until);
+    assert_eq!(poll_bits(handle), 0, "original incarnation is not live");
+    // Open while this exact pinned task is held. The descriptor retains this
+    // mm; later reads do not resolve a numeric PID or a replacement address space.
+    let memory = fs::File::open(format!("/proc/{pid}/mem")).unwrap();
+    assert_eq!(poll_bits(handle), 0, "original incarnation changed at open");
+    assert!(Instant::now() < until);
+    memory
+}
+fn interrupt_marker(memory: &fs::File, handle: &OwnedFd, until: Instant) -> u32 {
+    assert!(Instant::now() < until);
+    assert_eq!(poll_bits(handle), 0, "original incarnation is not live");
+    let mut bytes = [0_u8; 4];
+    assert_eq!(memory.read_at(&mut bytes, INTERRUPT_MARKER).unwrap(), 4);
+    assert_eq!(poll_bits(handle), 0, "original incarnation changed at read");
+    assert!(Instant::now() < until);
+    let value = u32::from_le_bytes(bytes);
+    assert!(
+        value == 0 || value == INTERRUPT_READY,
+        "unexpected marker value"
+    );
+    value
+}
+fn await_interrupt_markers(
+    parent: (&fs::File, &OwnedFd),
+    child: (&fs::File, &OwnedFd),
+    until: Instant,
+) {
+    loop {
+        let parent_ready = interrupt_marker(parent.0, parent.1, until);
+        let child_ready = interrupt_marker(child.0, child.1, until);
+        if parent_ready == INTERRUPT_READY && child_ready == INTERRUPT_READY {
+            return;
+        }
+        // Scheduling courtesy only: exact observed application stores, never
+        // elapsed time, register polling, or a repeated interrupt, end the wait.
+        std::thread::yield_now();
+    }
 }
 fn pin(pid: i32) -> OwnedFd {
     let fd = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) };
@@ -1331,7 +1395,8 @@ fn fork_options_keep_default_and_other_lifecycle_refusals_before_execution() {
 #[test]
 fn per_task_tokens_interrupts_and_parent_death_keep_two_owned_incarnations() {
     let _serial = FILE_FORK.lock().unwrap();
-    let fixture = Fixture::new(spin_fork_program());
+    let (code, return_pc, loop_pc) = interrupt_spin_fork_program();
+    let fixture = Fixture::new(code);
     let mut session = fixture.launch();
     let parent = session.pid();
     let parent_handle = pin(parent);
@@ -1398,33 +1463,90 @@ fn per_task_tokens_interrupts_and_parent_death_keep_two_owned_incarnations() {
         snapshot(&mut session, &child_return_ready, &fixture.code),
         child_before
     );
+    assert_eq!(parent_before.registers.rip, return_pc);
+    assert_eq!(child_before.registers.rip, return_pc);
+    assert_eq!(
+        session
+            .read_memory(parent_exit.stop_token().unwrap(), INTERRUPT_MARKER, 4)
+            .unwrap(),
+        [0; 4]
+    );
+    assert_eq!(
+        session
+            .read_memory(
+                child_return_ready.stop_token().unwrap(),
+                INTERRUPT_MARKER,
+                4
+            )
+            .unwrap(),
+        [0; 4]
+    );
+    // Both mm-bound descriptors are opened while their original tasks are held.
+    // The one deadline covers releases, actual user-store observation, and the
+    // first two interrupts; no successful read or phase transition renews it.
+    let until = Instant::now().checked_add(TIMEOUT).unwrap();
+    let parent_memory = interrupt_memory(parent, &parent_handle, until);
+    let child_memory = interrupt_memory(pair.child, &pair.handle, until);
+    assert_eq!(interrupt_marker(&parent_memory, &parent_handle, until), 0);
+    assert_eq!(interrupt_marker(&child_memory, &pair.handle, until), 0);
+    assert!(Instant::now() < until);
     release(&mut session, &parent_exit);
+    assert!(Instant::now() < until);
     release(&mut session, &child_return_ready);
+    await_interrupt_markers(
+        (&parent_memory, &parent_handle),
+        (&child_memory, &pair.handle),
+        until,
+    );
     let child_stop = session
-        .interrupt_task(pair.newborn.task.unwrap().task, TIMEOUT)
+        .interrupt_task(pair.newborn.task.unwrap().task, interrupt_time_left(until))
         .unwrap();
     assert_eq!(child_stop.task, pair.newborn.task);
     assert_eq!(child_stop.kind, DynamicEventKind::Interrupted);
     let child_held = snapshot(&mut session, &child_stop, &fixture.code);
-    assert_eq!(child_held.registers.rip, child_before.registers.rip);
+    assert_eq!(child_held.registers.rip, loop_pc);
+    assert_eq!(child_held.registers.orig_rax, u64::MAX);
+    let mut expected_child = child_before.clone();
+    expected_child.registers.rip = loop_pc;
+    expected_child.registers.orig_rax = u64::MAX;
+    assert_eq!(child_held, expected_child);
+    assert_eq!(
+        session
+            .read_memory(child_stop.stop_token().unwrap(), INTERRUPT_MARKER, 4)
+            .unwrap(),
+        INTERRUPT_READY.to_le_bytes()
+    );
     assert_eq!(child_held.registers.rsp, STACK);
     assert_eq!(child_held.registers.rax, 0);
     assert_eq!(child_held.xstate, child_before.xstate);
     assert_eq!(child_held.stack, child_before.stack);
     assert_eq!(child_held.data, child_before.data);
     let parent_stop = session
-        .interrupt_task(entry.task.unwrap().task, TIMEOUT)
+        .interrupt_task(entry.task.unwrap().task, interrupt_time_left(until))
         .unwrap();
     assert_eq!(parent_stop.task, entry.task);
+    assert_eq!(parent_stop.kind, DynamicEventKind::Interrupted);
     let parent_held = snapshot(&mut session, &parent_stop, &fixture.code);
-    assert_eq!(parent_held.registers.rip, parent_before.registers.rip);
+    assert!(Instant::now() < until);
+    assert_eq!(parent_held.registers.rip, loop_pc);
+    assert_eq!(parent_held.registers.orig_rax, u64::MAX);
+    let mut expected_parent = parent_before.clone();
+    expected_parent.registers.rip = loop_pc;
+    expected_parent.registers.orig_rax = u64::MAX;
+    assert_eq!(parent_held, expected_parent);
+    assert_eq!(
+        session
+            .read_memory(parent_stop.stop_token().unwrap(), INTERRUPT_MARKER, 4)
+            .unwrap(),
+        INTERRUPT_READY.to_le_bytes()
+    );
     assert_eq!(parent_held.registers.rsp, STACK);
     assert_eq!(parent_held.registers.rax, pair.child as u64);
     assert_eq!(parent_held.xstate, parent_before.xstate);
     assert_eq!(parent_held.stack, parent_before.stack);
     assert_eq!(parent_held.data, parent_before.data);
-    // Full snapshots are compared at the same authenticated interrupt phase;
-    // syscall orig_rax bookkeeping is not a fabricated user register invariant.
+    // Both first stops are now authenticated user-origin loop interrupts. The
+    // second pair must preserve every Snapshot field, including orig_rax.
     release(&mut session, &child_stop);
     release(&mut session, &parent_stop);
     let child_again = session
@@ -1448,6 +1570,20 @@ fn per_task_tokens_interrupts_and_parent_death_keep_two_owned_incarnations() {
         snapshot(&mut session, &parent_again, &fixture.code),
         parent_held
     );
+    assert_eq!(
+        session
+            .read_memory(child_again.stop_token().unwrap(), INTERRUPT_MARKER, 4)
+            .unwrap(),
+        INTERRUPT_READY.to_le_bytes()
+    );
+    assert_eq!(
+        session
+            .read_memory(parent_again.stop_token().unwrap(), INTERRUPT_MARKER, 4)
+            .unwrap(),
+        INTERRUPT_READY.to_le_bytes()
+    );
+    drop(parent_memory);
+    drop(child_memory);
     // Kill the real parent before it ever waits. The session broker must adopt
     // and physically reap the child; tracer terminal alone cannot satisfy this.
     signal(&parent_handle, libc::SIGKILL);

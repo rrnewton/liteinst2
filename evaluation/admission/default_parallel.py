@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Four bounded default-parallel launch-unit runs; not the six-command protocol."""
+"""Four bounded default-parallel runs of a closed cohort; not qualification."""
 
 import argparse
 import datetime as dt
@@ -19,6 +19,8 @@ from run import (ROOT, HERE, GIT, ENV, LOCATION_VARIABLES, cargo_configuration,
 
 UNIT = "unit/liteinst_launch/lib"
 ARGV = ("cargo", "test", "-p", "liteinst-launch", "--lib")
+FORK = "test/dynamic_fork"
+FORK_ARGV = ("cargo", "test", "-p", "liteinst-launch", "--test", "dynamic_fork")
 IDS = ("default_parallel_1", "default_parallel_2", "default_parallel_3", "default_parallel_4")
 TIMEOUT = 180
 LOG_LIMIT = 8 * 1024 * 1024
@@ -39,27 +41,34 @@ def affinity_witness(cpus):
     return frozenset(cpus)
 
 
-def expected_unit(corpus):
+def cohort_scope(cohort):
+    require(cohort in ("unit", "fork"), "invalid_default_parallel_cohort")
+    return (UNIT, ARGV) if cohort == "unit" else (FORK, FORK_ARGV)
+
+
+def expected_unit(corpus, cohort="unit"):
+    harness, _ = cohort_scope(cohort)
     require(type(corpus.get("schema_version")) is int and corpus["schema_version"] == 1,
             "unknown_corpus_schema")
     values = corpus["harness_test_counts"]
-    expected = values["workspace_tests"][UNIT]
-    require(expected == values["serial_launch"][UNIT], "launch_unit_corpus_differs")
+    expected = values["workspace_tests"][harness]
+    require(expected == values["serial_launch"][harness], "launch_unit_corpus_differs")
     require(isinstance(expected, dict) and set(expected) == {"tests", "ignored"}
             and all(type(value) is int for value in expected.values())
             and expected["tests"] > 0 and 0 <= expected["ignored"] <= expected["tests"],
             "invalid_launch_unit_corpus")
-    return {UNIT: dict(expected)}
+    return {harness: dict(expected)}
 
 
-def authenticated_corpus(data, source):
+def authenticated_corpus(data, source, cohort="unit"):
     require(sha(data) == source["source_sha256"].get("evaluation/admission/corpus.json"),
             "default_parallel_corpus_source_mismatch")
-    return expected_unit(json.loads(data))
+    return expected_unit(json.loads(data), cohort)
 
 
-def commands():
-    return [{"id": name, "argv": list(ARGV), "timeout_seconds": TIMEOUT,
+def commands(cohort="unit"):
+    _, argv = cohort_scope(cohort)
+    return [{"id": name, "argv": list(argv), "timeout_seconds": TIMEOUT,
              "environment_delta": {}, "status": "not_run"} for name in IDS]
 
 
@@ -81,6 +90,7 @@ def observe(command, output, expected):
 
 
 def qualify(record):
+    harness, argv = cohort_scope(record.get("cohort", "unit"))
     complete = (record.get("source_unchanged") is True
                 and record.get("configuration_unchanged") is True
                 and record.get("toolchain_unchanged") is True
@@ -94,7 +104,7 @@ def qualify(record):
     complete &= len(runs) == len(IDS)
     for index, command in enumerate(runs):
         complete &= (index < len(IDS) and command.get("id") == IDS[index]
-                     and command.get("argv") == list(ARGV)
+                     and command.get("argv") == list(argv)
                      and command.get("timeout_seconds") == TIMEOUT
                      and command.get("environment_delta") == {}
                      and command.get("status") == "passed"
@@ -106,7 +116,7 @@ def qualify(record):
                      and len(command.get("harnesses", [])) == 1)
         for row in command.get("harnesses", []):
             outer = row.get("outer") or {}
-            complete &= (row.get("id") == UNIT and row.get("status") == "complete"
+            complete &= (row.get("id") == harness and row.get("status") == "complete"
                          and outer.get("result") == "ok" and outer.get("failed") == 0
                          and outer.get("filtered") == 0 and outer.get("measured") == 0
                          and outer.get("ignored") == row.get("expected_ignored")
@@ -164,10 +174,12 @@ def execute(record, env, private, expected, publish, stable):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--expect-revision", required=True)
+    parser.add_argument("--cohort", choices=("unit", "fork"), default="unit")
     args = parser.parse_args()
     require(re.fullmatch(r"[a-f0-9]{40}", args.expect_revision), "invalid_expected_revision")
     stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%dT%H%M%S.%fZ")
-    run_id = stamp + "-default-parallel-" + args.expect_revision[:12]
+    suffix = "-fork" if args.cohort == "fork" else ""
+    run_id = stamp + "-default-parallel" + suffix + "-" + args.expect_revision[:12]
     private = ROOT / "target/evaluation/admission" / run_id
     private.mkdir(parents=True, exist_ok=False)
     temporary = private / "tmp"
@@ -181,6 +193,7 @@ def main():
     record = {"schema_version": 1, "experiment": "admission-default-parallel",
         "run_id": run_id, "qualification_protocol": False,
         "claim_targets": [4], "complete_claims_established": [],
+        "cohort": args.cohort,
         "source": None, "source_unchanged": None, "configuration": None,
         "configuration_unchanged": None, "toolchain": None, "toolchain_unchanged": None,
         "hardware": None, "hardware_unchanged": None,
@@ -188,11 +201,11 @@ def main():
         "test_parallelism": "libtest_default_without_thread_override",
         "runner_sha256": sha(Path(__file__).read_bytes()), "corpus_sha256": None,
         "reproduce": ["python3", "evaluation/admission/default_parallel.py",
-                      "--expect-revision", args.expect_revision],
+                      "--expect-revision", args.expect_revision, "--cohort", args.cohort],
         "reproduction_requires_inherited_affinity_cpus": 8,
         "environment": public_env, "inherited_location_variables": list(LOCATION_VARIABLES),
         "log_limit_bytes_per_command": LOG_LIMIT, "performance_claim": None,
-        "preemption_clock": "not_evaluated", "status": "preflight", "commands": commands()}
+        "preemption_clock": "not_evaluated", "status": "preflight", "commands": commands(args.cohort)}
     write_result(public, record)
     print(public.relative_to(ROOT), flush=True)
     try:
@@ -206,7 +219,7 @@ def main():
                   git("ls-files", "--others", "--exclude-standard").decode().splitlines())
         corpus_data = (HERE / "corpus.json").read_bytes()
         record["corpus_sha256"] = sha(corpus_data)
-        expected = authenticated_corpus(corpus_data, record["source"])
+        expected = authenticated_corpus(corpus_data, record["source"], args.cohort)
         record["configuration"] = cargo_configuration(env)
         record["hardware"] = hardware()
         require(record["hardware"]["affinity_cpu_count"] == 8, "default_parallel_hardware_affinity_differs")
