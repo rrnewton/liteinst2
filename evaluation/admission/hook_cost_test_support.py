@@ -72,7 +72,8 @@ def correctness_input():
         "serial_launch": {"one": {"tests": 1, "ignored": 0}}},
         "native_cases": [{"test": "raw"}], "dynamic_admission_fixtures": ["dynamic"],
         "dynamic_matrix_cases": [{"case_id": "matrix"}], "native_validation_fixtures": [{"test": "named"}]}
-    hardware = {"affinity_cpu_count": 2, "effective_uid_is_root": False, "effective_capabilities": 0}
+    hardware = {"affinity_cpu_count": 16, "logical_cpus_visible": 16,
+                "effective_uid_is_root": False, "effective_capabilities": 0}
     tools = {"cargo": {"version": "cargo 1.85", "launcher_sha256": "3" * 64, "executable_sha256": "4" * 64},
              "rustc": {"version": "rustc 1.85", "launcher_sha256": "3" * 64, "executable_sha256": "5" * 64},
              "git": {"argv0": "/usr/bin/git", "version": "git version 2.0", "executable_sha256": "6" * 64},
@@ -84,7 +85,7 @@ def correctness_input():
         "source_unchanged": True, "configuration_unchanged": True,
         "source": source | {"tracked_clean": True, "head_sources_match": True},
         "corpus_sha256": "8" * 64, "runner_sha256": "1" * 64, "configuration": [],
-        "hardware": hardware | {"affinity_cpu_count": 16}, "toolchain": previous_tools,
+        "hardware": copy.deepcopy(hardware), "toolchain": previous_tools,
         "environment": PUBLIC_ENV, "inherited_location_variables": list(run.LOCATION_VARIABLES),
         "log_limit_bytes_per_command": 8 * 1024 * 1024, "commands": []}
     for name, argv, deadline in run.COMMANDS:
@@ -105,3 +106,12 @@ def correctness_input():
         record["commands"][-1][field] = [{key: value, "qualified_run": True, "command_succeeded": True,
                                          "status": "complete", "test_result": "ok"}]
     return record, source, corpus, "8" * 64, [], hardware, tools
+
+
+def placement_input():
+    """Closed synthetic proof fields, not a claim of native cgroup observation."""
+    return {"affinity": [2, 4], "effective_cpuset": [2, 4], "hard_cpuset": "cgroup_v2_effective",
+            "reserved_logical_cpus": 2, "selected_physical_cores": 2,
+            "physical_core_exclusivity_claimed": False,
+            "topology": [{"cpu": n, "package": 0, "core": n, "thread_siblings": [n],
+                          "governor": {"status": "interface_absent", "value": None}} for n in (2, 4)]}

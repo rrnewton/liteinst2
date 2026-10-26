@@ -21,8 +21,10 @@ def completion_inputs():
     source = {"revision": "a" * 40}
     record = {"run_id": "test", "source": source, "configuration": [], "toolchain": {},
               "source_unchanged": True, "configuration_unchanged": True, "allocator_unchanged": True,
-              "toolchain_unchanged": True, "qualified": False, "hardware": {"affinity_cpu_count": 16},
+              "toolchain_unchanged": True, "qualified": False,
+              "hardware": {"affinity_cpu_count": 16, "logical_cpus_visible": 16},
               "correctness": {"qualified_correctness": True}, "executed_binary": {"sha256": "b" * 64}}
+    record["correctness"]["hardware"] = copy.deepcopy(record["hardware"])
     command = {"exit_code": 0, "termination": None, "cleanup_complete": True,
                "reaped_descendants": 0, "status": "passed", "seconds": 1.0, "start_utc": "2026-10-26T01:02:03.000000+00:00",
                "child_discovery_strategy": "proc_children", "private_log_sha256": "a" * 64}
@@ -30,7 +32,7 @@ def completion_inputs():
              "qualified": False, "source": source, "configuration": [], "toolchain": {}, "environment": PUBLIC_ENV,
              "log_limit_bytes_per_command": LOG_LIMIT, "source_unchanged": True, "configuration_unchanged": True,
              "placement_unchanged": True, "hardware_unchanged": True, "toolchain_unchanged": True,
-             "executable_unchanged": True, "hardware": {"affinity_cpu_count": 2},
+             "executable_unchanged": True, "hardware": {"affinity_cpu_count": 2, "logical_cpus_visible": 16},
              "correctness": record["correctness"], "executable": record["executed_binary"],
              "inherited_location_variables": list(run.LOCATION_VARIABLES),
              "claim_scope": "finite_scripted_synchronous_completion_cost", "performance_pass_threshold": None,
@@ -232,6 +234,41 @@ class HookCostOuterTests(unittest.TestCase):
             self.assertEqual(record["status"], "failed")
             self.assertIsNone(record["reproduce"])
             self.assertNotIn("/private", files[0].read_text())
+
+    def test_scoped_count_promotion_preserves_all_actual_hardware_observations(self):
+        for logical, label in ((16, "unchanged"), (2, "equals_hard_placement")):
+            record, inner, command, cpus, catalog = completion_inputs()
+            inner["hardware"]["logical_cpus_visible"] = logical
+            prior = copy.deepcopy(record["correctness"]["hardware"])
+            outer = copy.deepcopy(record["hardware"])
+            observed = copy.deepcopy(inner["hardware"])
+            invoke.finalize(record, inner, command, cpus, catalog)
+            self.assertTrue(record["qualified"])
+            self.assertEqual(record["hardware"], outer)
+            self.assertEqual(record["correctness"]["hardware"], prior)
+            self.assertEqual(inner["hardware"], observed)
+            self.assertEqual(record["collection"]["hardware"], observed)
+            self.assertIsNot(record["collection"]["hardware"], inner["hardware"])
+            self.assertEqual(record["collection"]["hardware_comparison"], {
+                "mode": "scoped_exact_placement", "logical_count_relation": label,
+                "reference_counts": outer, "observed_counts": observed, "placement_cpu_count": 2})
+
+    def test_count_relation_cannot_replace_assignment_or_prior_identity(self):
+        mutations = [
+            (lambda r, i, a: i["hardware"].update(logical_cpus_visible=3), "hardware_visible_count_not_bound"),
+            (lambda r, i, a: i["hardware"].update(affinity_cpu_count=3), "hardware_affinity_placement_differs"),
+            (lambda r, i, a: i["hardware"].update(microcode="changed"), "correctness_hardware_differs"),
+            (lambda r, i, a: r["correctness"]["hardware"].update(logical_cpus_visible=17), "unscoped_hardware_counts_differ"),
+            (lambda r, i, a: a.update(cpus=[2, 5]), "invalid_inner_placement"),
+        ]
+        for mutate, error in mutations:
+            record, inner, command, cpus, catalog = completion_inputs()
+            inner["hardware"]["logical_cpus_visible"] = 2
+            mutate(record, inner, cpus)
+            with self.subTest(error=error), self.assertRaisesRegex(InvalidEvidence, error):
+                invoke.finalize(record, inner, command, cpus, catalog)
+            self.assertFalse(record["qualified"])
+            self.assertFalse(any(row["qualified"] for row in record["collection"]["evidence"]["completions"]))
 
 
 if __name__ == "__main__":

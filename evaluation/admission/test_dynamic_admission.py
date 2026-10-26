@@ -308,7 +308,7 @@ class DynamicRecorderIntegrationTests(unittest.TestCase):
         self.assertEqual(len(declared["native_cases"]), 50)
         for cohort in declared["harness_test_counts"].values():
             self.assertEqual(cohort["test/dynamic_admission"], {"tests": 15, "ignored": 0})
-        self.assertEqual(declared["recorder_tests"], 192)
+        self.assertEqual(declared["recorder_tests"], 200)
 
     def test_six_commands_and_existing_deadlines_are_not_extended(self):
         self.assertEqual(run.COMMANDS, [

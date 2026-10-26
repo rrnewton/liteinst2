@@ -20,7 +20,7 @@ from parsing import InvalidEvidence
 from processes import run_command
 from hook_cost import BINARY, BUILD, BUILD_TIMEOUT, MEASURE_TIMEOUT, clean_command, public_error
 from hook_cost_proof import (HEX, LOG_LIMIT, PUBLIC_ENV, REVISION, correctness_prerequisite,
-                             executable_identity, require, sha, source_identity,
+                             atom_observation, executable_identity, hardware_relation, public_placement, require, sha, source_identity,
                              strict_json, toolchain)
 from hook_cost_schema import load_inventory, parse_capture, qualify
 from hook_cost_summary import partial_csv, publish_csv
@@ -236,44 +236,6 @@ def harvest(private, record, inventory):
     return inner
 
 
-def atom_observation(value):
-    require(type(value) is dict and set(value) == {"status", "value"}, "invalid_optional_observation")
-    require(value["status"] in ("observed", "interface_absent", "unreadable"), "invalid_optional_status")
-    if value["status"] == "observed":
-        require(type(value["value"]) is str and re.fullmatch(r"[A-Za-z0-9_.+-]{1,80}", value["value"]),
-                "invalid_optional_atom")
-    else:
-        require(value["value"] is None, "unexpected_optional_value")
-    return copy.deepcopy(value)
-
-
-def public_placement(value, cpus):
-    keys = {"affinity", "effective_cpuset", "topology", "hard_cpuset", "reserved_logical_cpus",
-            "selected_physical_cores", "physical_core_exclusivity_claimed"}
-    require(type(value) is dict and set(value) == keys, "invalid_inner_placement")
-    require(all(type(value[k]) is list and all(type(n) is int for n in value[k])
-                for k in ("affinity", "effective_cpuset")), "invalid_inner_cpu_types")
-    require(value["affinity"] == cpus and value["effective_cpuset"] == cpus
-            and value["hard_cpuset"] == "cgroup_v2_effective"
-            and type(value["reserved_logical_cpus"]) is int and value["reserved_logical_cpus"] == 2
-            and type(value["selected_physical_cores"]) is int and value["selected_physical_cores"] == 2
-            and value["physical_core_exclusivity_claimed"] is False, "invalid_inner_placement")
-    require(type(value["topology"]) is list and len(value["topology"]) == 2, "invalid_inner_topology")
-    for row, cpu in zip(value["topology"], cpus):
-        require(type(row) is dict and set(row) == {"cpu", "package", "core", "thread_siblings", "governor"},
-                "invalid_inner_topology")
-        require(type(row["cpu"]) is int and row["cpu"] == cpu
-                and all(type(row[k]) is int and 0 <= row[k] < 100000000 for k in ("package", "core")),
-                "invalid_inner_topology")
-        siblings = row["thread_siblings"]
-        require(type(siblings) is list and 0 < len(siblings) <= 4096
-                and all(type(n) is int and 0 <= n <= 1048575 for n in siblings)
-                and siblings == sorted(set(siblings)) and cpu in siblings, "invalid_inner_siblings")
-        atom_observation(row["governor"])
-    require(len({(r["package"], r["core"]) for r in value["topology"]}) == 2, "inner_cpus_share_core")
-    return copy.deepcopy(value)
-
-
 def public_clock(value):
     require(type(value) is dict and set(value) == {"implementation", "resolution_seconds", "monotonic",
             "adjustable", "clocksource", "calibration_subtracted"}, "invalid_inner_clock")
@@ -327,8 +289,9 @@ def finalize(record, inner, allocator_command, observed_assignment, inventory):
         require(inner.get(key) is True, "inner_identity_changed")
     placement = public_placement(inner.get("placement"), observed_assignment["cpus"])
     clock = public_clock(inner.get("clock"))
-    require(inner.get("hardware") == record["hardware"] | {"affinity_cpu_count": 2}, "inner_hardware_differs")
+    hardware_comparison = hardware_relation(record["hardware"], inner.get("hardware"), placement)
     require(inner.get("correctness") == record["correctness"], "inner_correctness_differs")
+    hardware_relation(record["correctness"].get("hardware"), record["hardware"])
     require(inner.get("executable") == record["executed_binary"], "outer_executable_changed")
     expected_commands = [("release_build", BUILD, BUILD_TIMEOUT),
                          ("measurement", [BINARY] + inventory["argv"], MEASURE_TIMEOUT)]
@@ -354,7 +317,8 @@ def finalize(record, inner, allocator_command, observed_assignment, inventory):
     public = {"schema_version": 1, "experiment": "b2-hook-cost", "run_id": record["run_id"],
         "status": "qualified_by_outer", "qualified": True, "evidence": copy.deepcopy(record["capture_evidence"]),
         "evidence_origin": "independently_reparsed_private_capture", "commands": commands,
-        "placement": placement, "clock": clock, "hardware": record["hardware"] | {"affinity_cpu_count": 2},
+        "placement": placement, "clock": clock, "hardware": copy.deepcopy(inner["hardware"]),
+        "hardware_comparison": hardware_comparison,
         "source": record["source"], "configuration": record["configuration"], "toolchain": record["toolchain"],
         "correctness": record["correctness"], "executable": record["executed_binary"],
         "environment": PUBLIC_ENV, "inherited_location_variables": list(run.LOCATION_VARIABLES),

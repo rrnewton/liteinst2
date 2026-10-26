@@ -94,6 +94,21 @@ siblings refuses before build or measurement. Other SMT siblings are not
 claimed reserved, and whole-physical-core exclusivity is not claimed. There is
 no unpinned fallback, private hardcoded CPU pool or automatic retry.
 
+The prior correctness receipt and outer recorder must have exactly matching
+hardware observations, including both positive integer CPU counts. Inside the
+verified hard scope, `affinity_cpu_count` must equal its two assigned CPUs.
+`logical_cpus_visible` is an `os.cpu_count()` observation, not a physical CPU
+identity: it must either retain the exact prior/outer value or equal that same
+two-CPU placement count. No other count change, missing value, Boolean or zero
+qualifies. The prior counts must also be at least the scoped count. Every
+non-count field, including CPU model, ISA, microcode, kernel, privileges and
+ptrace policy, remains exactly equal. Outer finalization checks this relation
+again after matching allocator assignment, effective cpuset and distinct-core
+topology. The receipt retains the prior, outer and actual inner hardware values
+separately and records the closed count-relation witness; it never normalizes
+the inner observations. Within the inner measurement process, before/after hardware equality is
+still exact.
+
 The allocator runs `systemd-run --scope` synchronously as the command's parent,
 not detached service mode. The unchanged `processes.py` supervisor therefore
 retains its real descendant wait domain even across sessions. Its existing
@@ -155,8 +170,8 @@ specifications and a closed status/termination vocabulary; arbitrary staging
 fields and exception strings remain private. If a CSV rename fails midway,
 surviving CSVs are explicitly listed as partial and unqualified in the failed
 JSON, even if their already-written rows had passed measurement checks. No
-measurement is retried. The recorder adds 73 synthetic
-Python methods (192 total recorder methods). They test evidence contracts and
+measurement is retried. The recorder adds 81 synthetic
+Python methods (200 total recorder methods). They test evidence contracts and
 failure accounting, and add no native measurement sessions or correctness
 fixtures to the declared 65-pair inventory.
 

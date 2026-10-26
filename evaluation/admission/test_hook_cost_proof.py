@@ -4,8 +4,8 @@ import tempfile
 import unittest
 
 from parsing import InvalidEvidence
-from hook_cost_proof import cpu_list, strict_json, validate_correctness, replay_correctness, sha
-from hook_cost_test_support import correctness_input
+from hook_cost_proof import cpu_list, hardware_relation, strict_json, validate_correctness, replay_correctness, sha
+from hook_cost_test_support import correctness_input, placement_input
 
 
 class HookCostPrerequisiteTests(unittest.TestCase):
@@ -20,7 +20,9 @@ class HookCostPrerequisiteTests(unittest.TestCase):
             self.check(mutate)
 
     def test_exact_prior_contract_allows_changed_reserved_affinity(self):
-        self.assertEqual(self.check(), "a" * 40)
+        args = list(correctness_input())
+        args[5]["affinity_cpu_count"] = 2
+        self.assertEqual(validate_correctness(*args, scoped_placement=placement_input()), "a" * 40)
 
     def test_prior_actual_compiler_hash_is_not_invented(self):
         args = list(correctness_input())
@@ -108,6 +110,88 @@ class HookCostPrerequisiteTests(unittest.TestCase):
                 command["private_log_sha256"] = sha(data)
             with self.assertRaisesRegex(InvalidEvidence, "correctness_capture_replay_failed"):
                 replay_correctness(record, corpus, Path(temporary))
+
+    def test_unscoped_prior_counts_must_remain_exact(self):
+        self.assertEqual(self.check(), "a" * 40)
+        for key in ("affinity_cpu_count", "logical_cpus_visible"):
+            args = list(correctness_input())
+            args[5][key] = 2
+            with self.subTest(key=key), self.assertRaisesRegex(InvalidEvidence, "unscoped_hardware_counts_differ"):
+                validate_correctness(*args)
+
+    def test_scoped_count_relations_retain_actual_observations(self):
+        for logical, label in ((16, "unchanged"), (2, "equals_hard_placement")):
+            args = list(correctness_input())
+            args[5].update(affinity_cpu_count=2, logical_cpus_visible=logical)
+            prior, observed, placed = args[0]["hardware"], args[5], placement_input()
+            saved = copy.deepcopy((prior, observed, placed))
+            self.assertEqual(validate_correctness(*args, scoped_placement=placed), "a" * 40)
+            proof = hardware_relation(prior, observed, placed)
+            self.assertEqual(proof, {"mode": "scoped_exact_placement", "logical_count_relation": label,
+                "reference_counts": {"affinity_cpu_count": 16, "logical_cpus_visible": 16},
+                "observed_counts": {"affinity_cpu_count": 2, "logical_cpus_visible": logical},
+                "placement_cpu_count": 2})
+            self.assertEqual((prior, observed, placed), saved)
+
+    def test_invalid_or_unbound_count_observations_refuse(self):
+        for side in ("prior", "observed"):
+            for key in ("affinity_cpu_count", "logical_cpus_visible"):
+                for value in (None, 0, True, -1):
+                    args = list(correctness_input())
+                    args[5].update(affinity_cpu_count=2, logical_cpus_visible=2)
+                    target = args[0]["hardware"] if side == "prior" else args[5]
+                    if value is None:
+                        del target[key]
+                    else:
+                        target[key] = value
+                    with self.subTest(side=side, key=key, value=value), \
+                         self.assertRaisesRegex(InvalidEvidence, "hardware_count_missing_or_invalid"):
+                        validate_correctness(*args, scoped_placement=placement_input())
+        for key, error in (("affinity_cpu_count", "hardware_affinity_placement_differs"),
+                           ("logical_cpus_visible", "hardware_visible_count_not_bound")):
+            args = list(correctness_input())
+            args[5].update(affinity_cpu_count=2, logical_cpus_visible=2)
+            args[5][key] = 3
+            with self.subTest(key=key), self.assertRaisesRegex(InvalidEvidence, error):
+                validate_correctness(*args, scoped_placement=placement_input())
+
+    def test_scoped_counts_require_complete_matching_placement(self):
+        mutations = [lambda p: p.pop("effective_cpuset"),
+                     lambda p: p.update(effective_cpuset=[2, 5]),
+                     lambda p: p.update(affinity=[2, 2], effective_cpuset=[2, 2]),
+                     lambda p: p.update(affinity=[2, 4, 6], effective_cpuset=[2, 4, 6]),
+                     lambda p: p.update(hard_cpuset="affinity_only"),
+                     lambda p: p.update(reserved_logical_cpus=True),
+                     lambda p: p["topology"][1].update(core=2),
+                     lambda p: p["topology"][1].update(cpu=5)]
+        for mutate in mutations:
+            args = list(correctness_input())
+            args[5].update(affinity_cpu_count=2, logical_cpus_visible=2)
+            placed = placement_input()
+            mutate(placed)
+            with self.assertRaises(InvalidEvidence):
+                validate_correctness(*args, scoped_placement=placed)
+
+    def test_scoped_count_relation_never_exempts_other_hardware_fields(self):
+        for key, before, after in (("model_name", "CPU A", "CPU B"),
+                ("isa_flags", ["sse"], ["sse", "avx"]), ("microcode", "0x1", "0x2"),
+                ("kernel_release_sha256", "a" * 64, "b" * 64),
+                ("effective_uid_is_root", False, True), ("effective_capabilities", 0, 1),
+                ("ptrace_scope_status", "observed", "interface_absent"), ("ptrace_scope", 0, 1)):
+            args = list(correctness_input())
+            args[0]["hardware"][key] = before
+            args[5].update(affinity_cpu_count=2, logical_cpus_visible=2)
+            args[5][key] = after
+            with self.subTest(key=key), self.assertRaisesRegex(InvalidEvidence, "correctness_hardware_differs"):
+                validate_correctness(*args, scoped_placement=placement_input())
+
+    def test_scoped_relation_cannot_expand_a_smaller_baseline(self):
+        for key in ("affinity_cpu_count", "logical_cpus_visible"):
+            args = list(correctness_input())
+            args[0]["hardware"][key] = 1
+            args[5].update(affinity_cpu_count=2, logical_cpus_visible=2)
+            with self.subTest(key=key), self.assertRaisesRegex(InvalidEvidence, "hardware_count_scope_expands"):
+                validate_correctness(*args, scoped_placement=placement_input())
 
 
 if __name__ == "__main__":

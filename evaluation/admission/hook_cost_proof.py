@@ -183,6 +183,47 @@ def placement():
             "selected_physical_cores": 2, "physical_core_exclusivity_claimed": False}
 
 
+def atom_observation(value):
+    require(type(value) is dict and set(value) == {"status", "value"}, "invalid_optional_observation")
+    require(value["status"] in ("observed", "interface_absent", "unreadable"), "invalid_optional_status")
+    if value["status"] == "observed":
+        require(type(value["value"]) is str and re.fullmatch(r"[A-Za-z0-9_.+-]{1,80}", value["value"]),
+                "invalid_optional_atom")
+    else:
+        require(value["value"] is None, "unexpected_optional_value")
+    return copy.deepcopy(value)
+
+
+def public_placement(value, cpus):
+    require(type(cpus) is list and len(cpus) == 2
+            and all(type(cpu) is int and 0 <= cpu <= 1048575 for cpu in cpus)
+            and cpus == sorted(set(cpus)), "invalid_placement_cpu_list")
+    keys = {"affinity", "effective_cpuset", "topology", "hard_cpuset", "reserved_logical_cpus",
+            "selected_physical_cores", "physical_core_exclusivity_claimed"}
+    require(type(value) is dict and set(value) == keys, "invalid_inner_placement")
+    require(all(type(value[k]) is list and all(type(n) is int for n in value[k])
+                for k in ("affinity", "effective_cpuset")), "invalid_inner_cpu_types")
+    require(value["affinity"] == cpus and value["effective_cpuset"] == cpus
+            and value["hard_cpuset"] == "cgroup_v2_effective"
+            and type(value["reserved_logical_cpus"]) is int and value["reserved_logical_cpus"] == 2
+            and type(value["selected_physical_cores"]) is int and value["selected_physical_cores"] == 2
+            and value["physical_core_exclusivity_claimed"] is False, "invalid_inner_placement")
+    require(type(value["topology"]) is list and len(value["topology"]) == 2, "invalid_inner_topology")
+    for row, cpu in zip(value["topology"], cpus):
+        require(type(row) is dict and set(row) == {"cpu", "package", "core", "thread_siblings", "governor"},
+                "invalid_inner_topology")
+        require(type(row["cpu"]) is int and row["cpu"] == cpu
+                and all(type(row[k]) is int and 0 <= row[k] < 100000000 for k in ("package", "core")),
+                "invalid_inner_topology")
+        siblings = row["thread_siblings"]
+        require(type(siblings) is list and 0 < len(siblings) <= 4096
+                and all(type(n) is int and 0 <= n <= 1048575 for n in siblings)
+                and siblings == sorted(set(siblings)) and cpu in siblings, "invalid_inner_siblings")
+        atom_observation(row["governor"])
+    require(len({(r["package"], r["core"]) for r in value["topology"]}) == 2, "inner_cpus_share_core")
+    return copy.deepcopy(value)
+
+
 def clock_metadata():
     info = time.get_clock_info("monotonic")
     require(info.monotonic and not info.adjustable, "monotonic_clock_required")
@@ -224,7 +265,40 @@ def toolchain(env):
     return result
 
 
-def validate_correctness(record, source, corpus, corpus_digest, configuration, hardware, tools):
+def hardware_relation(reference, observed, scoped_placement=None):
+    """Bind count observations to placement without rewriting hardware facts."""
+    require(type(reference) is dict and type(observed) is dict, "hardware_observation_missing")
+    fields = ("affinity_cpu_count", "logical_cpus_visible")
+    for hardware in (reference, observed):
+        for key in fields:
+            require(type(hardware.get(key)) is int and hardware[key] > 0,
+                    "hardware_count_missing_or_invalid")
+    require({k: v for k, v in reference.items() if k not in fields}
+            == {k: v for k, v in observed.items() if k not in fields}, "correctness_hardware_differs")
+    before = {key: reference[key] for key in fields}
+    after = {key: observed[key] for key in fields}
+    if scoped_placement is None:
+        require(before == after, "unscoped_hardware_counts_differ")
+        return {"mode": "unscoped_exact", "reference_counts": before, "observed_counts": after,
+                "logical_count_relation": "unchanged", "placement_cpu_count": None}
+    # This parser validates the proof's closed shape and exact topology. Its
+    # native observations come from placement(); outer promotion additionally
+    # binds these same CPU IDs to the allocator's actual assignment.
+    require(type(scoped_placement) is dict, "invalid_inner_placement")
+    placed = public_placement(scoped_placement, scoped_placement.get("affinity"))
+    count = len(placed["affinity"])
+    require(all(reference[key] >= count for key in fields), "hardware_count_scope_expands")
+    require(observed["affinity_cpu_count"] == count, "hardware_affinity_placement_differs")
+    require(observed["logical_cpus_visible"] in (reference["logical_cpus_visible"], count),
+            "hardware_visible_count_not_bound")
+    relation = ("unchanged" if observed["logical_cpus_visible"] == reference["logical_cpus_visible"]
+                else "equals_hard_placement")
+    return {"mode": "scoped_exact_placement", "reference_counts": before, "observed_counts": after,
+            "logical_count_relation": relation, "placement_cpu_count": count}
+
+
+def validate_correctness(record, source, corpus, corpus_digest, configuration, hardware, tools,
+                         *, scoped_placement=None):
     """Validate a pinned prior receipt; do not reinterpret it as performance."""
     require(type(record) is dict and type(record.get("schema_version")) is int
             and record["schema_version"] == 1
@@ -247,15 +321,7 @@ def validate_correctness(record, source, corpus, corpus_digest, configuration, h
     require(type(record.get("log_limit_bytes_per_command")) is int
             and record["log_limit_bytes_per_command"] == LOG_LIMIT,
             "correctness_capture_limit_differs")
-    prior_hardware = dict(record.get("hardware", {}))
-    current_hardware = dict(hardware)
-    # Correctness need not use the later reserved affinity. All recorded CPU,
-    # kernel, privilege and policy observations must otherwise match exactly.
-    for observation in (prior_hardware, current_hardware):
-        require(type(observation.get("affinity_cpu_count")) is int
-                and observation["affinity_cpu_count"] > 0, "correctness_affinity_missing")
-        observation.pop("affinity_cpu_count")
-    require(prior_hardware == current_hardware, "correctness_hardware_differs")
+    hardware_relation(record.get("hardware"), hardware, scoped_placement)
     prior_tools = record.get("toolchain", {})
     require(type(prior_tools) is dict and set(prior_tools) == set(PRIOR_TOOL_FIELDS),
             "correctness_toolchain_missing")
@@ -320,7 +386,8 @@ def validate_correctness(record, source, corpus, corpus_digest, configuration, h
     return before["revision"]
 
 
-def correctness_prerequisite(path, digest, source, corpus, configuration, hardware, tools):
+def correctness_prerequisite(path, digest, source, corpus, configuration, hardware, tools,
+                            *, scoped_placement=None):
     path = Path(path)
     require(path.parent == HERE / "results" and not path.is_symlink(), "invalid_correctness_receipt_path")
     require(HEX.fullmatch(digest), "invalid_correctness_receipt_digest")
@@ -329,7 +396,7 @@ def correctness_prerequisite(path, digest, source, corpus, configuration, hardwa
     require(len(data) <= 16 * 1024 * 1024 and sha(data) == digest, "correctness_receipt_digest_differs")
     record = strict_json(data)
     revision = validate_correctness(record, source, corpus, sha((HERE / "corpus.json").read_bytes()),
-                                    configuration, hardware, tools)
+                                    configuration, hardware, tools, scoped_placement=scoped_placement)
     require(record.get("run_id") == path.stem and re.fullmatch(r"[0-9]{8}T[0-9]{6}\.[0-9]{6}Z-[0-9a-f]{12}", path.stem),
             "correctness_run_identity")
     captures = replay_correctness(record, corpus, ROOT / "target/evaluation/admission" / path.stem)
@@ -338,6 +405,7 @@ def correctness_prerequisite(path, digest, source, corpus, configuration, hardwa
     return {"receipt": path.name, "sha256": digest, "revision": revision,
             "policy": "same_source_blobs_modes_and_content_receipt_only_descendant_allowed",
             "qualified_correctness": True, "performance_evidence": False,
+            "hardware": copy.deepcopy(record["hardware"]),
             "private_capture_sha256": captures, "evidence_replayed_with_unchanged_correctness_parser": True,
             "prior_actual_compiler_hashes_recorded": False}
 

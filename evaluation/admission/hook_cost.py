@@ -81,7 +81,8 @@ def collect(args):
         record["toolchain"] = tools
         corpus = strict_json((HERE / "corpus.json").read_bytes())
         record["correctness"] = correctness_prerequisite(HERE / "results" / args.correctness_receipt,
-            args.correctness_sha256, source, corpus, configuration, hardware, tools)
+            args.correctness_sha256, source, corpus, configuration, hardware, tools,
+            scoped_placement=record["placement"])
         inventory_digest = source["source_sha256"]["evaluation/admission/hook_cost_inventory.json"]
         inventory = load_inventory(HERE / "hook_cost_inventory.json", expected_sha256=inventory_digest)
         record["inventory_sha256"] = inventory_digest
