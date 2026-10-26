@@ -116,9 +116,11 @@ impl SingleThreadPageGate {
             &stop,
         )?;
         for guard in plan.guards().values() {
-            if !self.covered_guards.contains_key(&guard.address()) {
+            if let std::collections::btree_map::Entry::Vacant(entry) =
+                self.covered_guards.entry(guard.address())
+            {
                 stop.write_memory_checked(guard.address(), &guard.original_bytes()[..1], &[0xcc])?;
-                self.covered_guards.insert(guard.address(), guard.clone());
+                entry.insert(guard.clone());
                 match guard.role() {
                     TrapGuardRole::Selected(site) => {
                         self.sites.insert(site.address, site);
