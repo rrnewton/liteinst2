@@ -1,5 +1,14 @@
 {
   "baseline_revision": "79356323c4b38aa344655909392779adecd495cc",
+  "dynamic_admission_fixtures": [
+    "literal_first_cpuid_preserves_complete_state_and_native_memory",
+    "interpreter_and_executable_literal_first_instructions_are_both_gated",
+    "clone_return_at_page_boundary_gates_each_first_instruction_once",
+    "default_rdpid_requires_explicit_coverage_and_keeps_all_registers",
+    "forbidden_native_mapping_syscall_closes_before_any_kernel_effect",
+    "provider_panic_cancels_actual_owner_and_physically_reaps",
+    "blocked_provider_observes_owner_cleanup_before_returning_a_decision"
+  ],
   "harness_test_counts": {
     "serial_launch": {
       "test/checkpoint": {
@@ -13,6 +22,10 @@
       "test/concurrent_gate": {
         "ignored": 0,
         "tests": 10
+      },
+      "test/dynamic_admission": {
+        "ignored": 0,
+        "tests": 7
       },
       "test/dynamic_control": {
         "ignored": 0,
@@ -88,7 +101,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 52
+        "tests": 99
       }
     },
     "workspace_tests": {
@@ -155,6 +168,10 @@
       "test/core_bridge": {
         "ignored": 0,
         "tests": 3
+      },
+      "test/dynamic_admission": {
+        "ignored": 0,
+        "tests": 7
       },
       "test/dynamic_control": {
         "ignored": 0,
@@ -378,7 +395,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 52
+        "tests": 99
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,
@@ -892,6 +909,6 @@
       "test": "covered_rdpid_r15"
     }
   ],
-  "recorder_tests": 53,
+  "recorder_tests": 71,
   "schema_version": 1
 }

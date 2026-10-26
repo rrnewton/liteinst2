@@ -87,7 +87,8 @@ equivalence is inferred from matching this protocol.
 
 ## Evidence accounting
 
-`corpus.json` declares the expected outer harness cohort and 50 native cases.
+`corpus.json` declares the expected outer harness cohort, 50 static native cases
+and a separate seven-fixture dynamic admission cohort.
 Update it explicitly when adding/removing tests, and review denominator changes.
 The parser requires exactly one final unfiltered outer summary matching each
 declared cohort. Nested child summaries are separate observations and never
@@ -149,6 +150,35 @@ its end-to-end deadline; an additive control requires its exact response-timeout
 error while withholding the real owner's reply. Both deadlines begin before
 enqueueing. Native expiry, expired dispatch and response expiry retain distinct
 error labels; the fixture accepts only native expiry. See `native-thread.md`.
+
+The dynamic admission increment adds 54 outer tests: 14 pending-plan puzzles,
+17 resume-census bookkeeping tests, 16 client/owner protocol tests and seven
+native integration fixtures. The expected launcher unit cohort is 99. Workspace
+expectations are 1200 outer tests in 75 harnesses (1196 possible passes and four
+existing ignores); serial launch expects 362 tests in 23 harnesses. Recorder
+regressions increase from 53 to 71. These are source-derived expected cohorts,
+not reported execution results. The separately drafted six-test dynamic matrix
+is not included in this catalog.
+
+The serial command additionally exports `dynamic_admission_fixtures`: exactly
+one row for each declared fixture, requiring its announced harness and explicit
+terminal `ok`. The existing aggregate harness parser remains independently
+required. Expected-panic diagnostics are not success evidence without that
+terminal result. Rows contain only the fixture name, observation status,
+test result, command success and final run qualification. Partial and failed
+observations remain unqualified; source/config drift, another failed command or
+a recorder exception disqualifies both fixture rows and native samples.
+
+The seven rows establish only their exact-source fixture assertions. They are
+not seven selected-class samples or per-instruction completion counters, and
+are never added to the separate 50-case `native_cases` denominator. This cohort
+covers first CPUID entry, interpreter entry, native clone return boundaries,
+scripted default-policy RDPID coverage, mapping-policy refusal and provider
+panic/timeout cleanup. It does not establish native execution of every selected
+class through dynamic admission, a complete B3/B4 exit gate, or performance.
+The existing revision/tree/source-manifest, command, hardware and log-digest
+fields bind these observations without publishing raw output or host paths.
+No command, deadline, ignore allowance or descendant-cleanup rule changes.
 
 The new scripted random matrix forces 192 invocations covering both classes,
 all 16 GPR destinations, 16/32/64-bit widths and both carry outcomes. Native

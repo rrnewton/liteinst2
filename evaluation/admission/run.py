@@ -19,6 +19,7 @@ HERE = Path(__file__).resolve().parent
 GIT = "/usr/bin/git"
 from parsing import InvalidEvidence, parse_harnesses, native_receipts, native_block
 from processes import run_command
+from dynamic_admission import fixture_results
 
 ENV = {"CARGO_INCREMENTAL": "0", "CARGO_BUILD_JOBS": "4",
        "CARGO_NET_OFFLINE": "true", "RUST_TEST_THREADS": "4",
@@ -222,6 +223,13 @@ def command_evidence(command, output, corpus):
             command["native_cases"] = error.partial or []
             command["native_parse_error"] = str(error)
             command["evidence_status"] = "incomplete"
+        try:
+            command["dynamic_admission_fixtures"] = fixture_results(
+                output, corpus["dynamic_admission_fixtures"], command["status"] == "passed")
+        except InvalidEvidence as error:
+            command["dynamic_admission_fixtures"] = error.partial or []
+            command["dynamic_parse_error"] = str(error)
+            command["evidence_status"] = "incomplete"
     if command["evidence_status"] != "complete" and command["status"] == "passed":
         command["status"] = "invalid_evidence"
 
@@ -232,8 +240,9 @@ def qualify(record):
               and all(c["status"] == "passed" for c in record["commands"]))
     record["status"] = "passed" if passed else "failed"
     for command in record["commands"]:
-        for row in command.get("native_cases", []):
-            row["qualified_run"] = passed and row.get("command_succeeded", False)
+        for field in ("native_cases", "dynamic_admission_fixtures"):
+            for row in command.get(field, []):
+                row["qualified_run"] = passed and row.get("command_succeeded", False)
 
 
 def preflight(source, expected, untracked):
@@ -332,8 +341,9 @@ def main():
         record["status"] = ("refused" if record["status"] == "preflight" else
                             "interrupted" if isinstance(error, KeyboardInterrupt) else "recorder_error")
         for command in record["commands"]:
-            for row in command.get("native_cases", []):
-                row["qualified_run"] = False
+            for field in ("native_cases", "dynamic_admission_fixtures"):
+                for row in command.get(field, []):
+                    row["qualified_run"] = False
     finally:
         write_result(public, record)
     return 0 if record["status"] == "passed" else 1
