@@ -137,6 +137,37 @@ fn model(input: &SelectedInput, result: SelectedResult) -> Result<CompletedInstr
     // No opcode-specific rewrite, integer truncation or flag masking is added.
     Ok(input.complete(result)?)
 }
+/// Scripted CPU semantics with exact current sealed orig_rax provenance.
+/// The legacy MAX-only model remains unchanged and is used for that branch.
+pub(in crate::linux::remote::dynamic::owner::admission) fn model_with_lineage(
+    input: &SelectedInput,
+    result: SelectedResult,
+    lineage: &super::super::runtime_native::ControlLineage,
+    stop: &AdmissionStop,
+) -> Result<CompletedInstruction, GateError> {
+    if matches!(input.instruction().operation(), Operation::Syscall { .. }) {
+        return Err(refused(
+            "runtime selected syscall transport is not qualified",
+        ));
+    }
+    lineage.require_orig_rax(stop, input.registers().orig_rax)?;
+    if input.registers().orig_rax == u64::MAX {
+        return model(input, result);
+    }
+    let registers = input.registers();
+    if registers.cs != 0x33
+        || registers.eflags & (0x100 | 0x10000) != 0
+        || registers.eflags & 2 == 0
+        || registers.eflags & !FLAGS != 0
+    {
+        return Err(refused("runtime selected native64 control flags differ"));
+    }
+    let completed = input.complete(result)?;
+    if completed.after.orig_rax != registers.orig_rax {
+        return Err(refused("runtime selected modeled orig_rax differs"));
+    }
+    Ok(completed)
+}
 fn budget(window_bytes: usize, history_growth: usize) -> Result<BudgetCharge, GateError> {
     if window_bytes == 0 || window_bytes > MAP_BYTES || history_growth > 1 {
         return Err(refused("runtime selected reservation geometry differs"));
@@ -161,6 +192,18 @@ fn budget(window_bytes: usize, history_growth: usize) -> Result<BudgetCharge, Ga
     // Authentication has bounded transient storage; reservation is retained
     // without misreporting this unused peak as newly retained payload.
     payload = add(payload, CapturedRuntimeRead::temporary_bytes())?;
+    payload = add(
+        payload,
+        super::super::runtime_native::ControlProfile::temporary_bytes()?,
+    )?;
+    payload = add(payload, size_of::<native::NativeSelectedProof>())?;
+    payload = add(
+        payload,
+        add(
+            size_of::<super::super::runtime_native::ControlLineage>(),
+            size_of::<super::super::runtime_native::ControlLineage>(),
+        )?,
+    )?;
     payload = add(payload, size_of::<CompletedInstruction>() + 15)?;
     let prepared = PreparedRuntimeSelected::reservation_charge().map_err(census_error)?;
     Ok(BudgetCharge {
@@ -603,7 +646,11 @@ impl RuntimeOwner {
                 }));
             }
             ProviderDecision::Complete(result) => {
-                let completed = model(input, result)?;
+                let lineage = self
+                    .control_lineage
+                    .as_ref()
+                    .ok_or_else(|| refused("runtime selected control lineage missing"))?;
+                let completed = model_with_lineage(input, result, lineage, &attempt.stop)?;
                 let modeled_bytes = completed.instruction.retained_capacity();
                 if modeled_bytes > 15 {
                     return Err(refused(

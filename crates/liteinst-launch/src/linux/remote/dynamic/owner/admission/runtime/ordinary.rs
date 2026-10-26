@@ -98,6 +98,14 @@ fn root_bytes(window: usize) -> Result<usize, GateError> {
             size_of::<SourceObserver<'_, '_>>(),
         )?,
     )?;
+    let temporary = add(
+        temporary,
+        runtime_native::ControlProfile::temporary_bytes()?,
+    )?;
+    let temporary = add(
+        temporary,
+        add(size_of::<ControlLineage>(), size_of::<ControlLineage>())?,
+    )?;
     add(add(header, payload)?, temporary)
 }
 

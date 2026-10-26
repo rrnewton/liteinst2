@@ -9,6 +9,7 @@ use crate::linux::remote::dynamic::owner::bootstrap::{
 };
 use crate::linux::remote::dynamic::owner::trusted;
 
+const BEFORE: usize = 4; // distinct pre-apply read; never overwritten after an effect
 const APPLIED: usize = 0;
 const INJECTED: usize = 1;
 const TRAP: usize = 2;
@@ -28,7 +29,7 @@ pub(super) struct NativeEffectRecord {
 }
 
 pub(super) struct PreparedNativeSelected {
-    states: [StateSlot; 4],
+    states: [StateSlot; 5],
     profiles: [ControlProfile; 3],
     maps: [MapBuffer; 2],
     membership: Vec<u8>,
@@ -46,8 +47,17 @@ pub(super) struct PreparedNativeSelected {
 pub(in crate::linux::remote::dynamic::owner::admission) struct NativeSelectedProof {
     before: AdmissionStop,
     after: AdmissionStop,
+    before_orig_rax: u64,
+    after_orig_rax: u64,
 }
 impl NativeSelectedProof {
+    pub(in crate::linux::remote::dynamic::owner::admission) fn before_orig_rax(&self) -> u64 {
+        self.before_orig_rax
+    }
+    pub(in crate::linux::remote::dynamic::owner::admission) fn after_orig_rax(&self) -> u64 {
+        self.after_orig_rax
+    }
+
     pub(in crate::linux::remote::dynamic::owner::admission) fn before(&self) -> &AdmissionStop {
         &self.before
     }
@@ -58,11 +68,12 @@ impl NativeSelectedProof {
 
 impl PreparedNativeSelected {
     pub(super) fn payload_bound() -> usize {
-        4 * MAX_XSTATE + 3 * MAP_BYTES
+        5 * MAX_XSTATE + 3 * MAP_BYTES
     }
     pub(super) fn allocate() -> Result<Self, GateError> {
         Ok(Self {
             states: [
+                StateSlot::allocate()?,
                 StateSlot::allocate()?,
                 StateSlot::allocate()?,
                 StateSlot::allocate()?,
@@ -134,7 +145,7 @@ impl PreparedNativeSelected {
         // Independently bind the sealed native receipt to the exact selected
         // semantics before any effect. This <=15-byte temporary is reserved.
         // It is never labeled an observed kernel completion.
-        let expected = model(input, result)?;
+        let expected = model_with_lineage(input, result, lineage, stop)?;
         if input.registers() != &before.registers
             || expected != *completed
             || expected.instruction.retained_capacity() > 15
@@ -184,10 +195,19 @@ impl PreparedNativeSelected {
         )?;
         self.profiles[1].capture(owner, until)?;
         lineage.authenticate(stop, &self.profiles[1])?;
-        // Source/native full before-state was independently reread immediately
-        // before entry. Recheck again into dedicated retained MAX storage.
-        // APPLIED is not reused: the actual application is followed directly by
-        // its first readback; the source reader owns the preceding observation.
+        // Independent actual full-state read immediately before the first
+        // mutation. Its initialized request prefixes and MAX storage remain
+        // retained even if validation fails; APPLIED is never reused for it.
+        self.states[BEFORE].capture(owner, until)?;
+        require_state(
+            self.states[BEFORE].initialized_state(),
+            input.registers(),
+            before,
+        )?;
+        lineage.require_orig_rax(
+            stop,
+            self.states[BEFORE].initialized_state().registers.orig_rax,
+        )?;
         native.require_admission_stop(stop)?;
         bootstrap::physical(owner, until)?;
         self.write_registers(owner, NativeEffect::Apply, 0, after, until)?;
@@ -290,6 +310,8 @@ impl PreparedNativeSelected {
         Ok(NativeSelectedProof {
             before: stop.clone(),
             after: restored.clone(),
+            before_orig_rax: self.states[BEFORE].initialized_state().registers.orig_rax,
+            after_orig_rax: self.states[RESTORED].initialized_state().registers.orig_rax,
         })
     }
     fn write_registers(
@@ -382,4 +404,7 @@ fn request_ok(result: Request, operation: &'static str) -> Result<(), LaunchErro
 }
 
 #[cfg(test)]
-mod native_tests;
+pub(in crate::linux::remote::dynamic::owner::admission::runtime) mod native_tests;
+
+#[cfg(test)]
+mod control_tests;

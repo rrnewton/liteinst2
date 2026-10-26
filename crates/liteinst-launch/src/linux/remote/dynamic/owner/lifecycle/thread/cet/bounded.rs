@@ -56,6 +56,37 @@ pub(in crate::linux::remote::dynamic::owner) struct BoundedCet {
     pub(in crate::linux::remote::dynamic::owner) complete: bool,
     proof: Option<DisabledProof>,
 }
+impl BoundedCet {
+    /// Conservative named source-value peak of the unchanged bounded adapter.
+    /// The retained status arrays/query records already belong to Self. This
+    /// is neither a compiler stack-layout nor a process-RSS assertion.
+    pub(in crate::linux::remote::dynamic::owner) fn temporary_bytes() -> Result<usize, LaunchError>
+    {
+        let terms = [
+            (1usize, size_of::<BoundedProbe<'_>>()),
+            (3, size_of::<WordRead>()),
+            (1, size_of::<RegsetRead<RegisterSnapshot>>()),
+            (1, size_of::<RegsetRead<u64>>()),
+            (2, size_of::<RegisterSnapshot>()),
+            (1, size_of::<libc::user_regs_struct>()),
+            (1, size_of::<libc::iovec>()),
+            (1, size_of::<libc::statfs>()),
+            (1, size_of::<Option<CetQuery>>()),
+            (1, size_of::<OwnedFd>()),
+            (1, size_of::<DisabledProof>()),
+            (2, size_of::<Request>()),
+            (3, size_of::<Result<(), LaunchError>>()),
+        ];
+        terms.into_iter().try_fold(0usize, |total, (count, bytes)| {
+            count
+                .checked_mul(bytes)
+                .and_then(|bytes| total.checked_add(bytes))
+                .ok_or(LaunchError::Invalid(
+                    "bounded CET temporary storage overflows",
+                ))
+        })
+    }
+}
 struct BoundedProbe<'a> {
     tid: i32,
     owner: &'a Owner,

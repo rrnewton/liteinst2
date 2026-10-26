@@ -55,6 +55,29 @@ pub(super) fn require_state(state: &TaskStateSnapshot) -> Result<(), LaunchError
     }
     Ok(())
 }
+/// Only the exact current sealed lineage may explain a non-MAX original
+/// syscall number before an ordinary instruction. The trace validator below
+/// remains strict and cannot use this predicate.
+pub(super) fn require_lineage_state(
+    lineage: &ControlLineage,
+    stop: &AdmissionStop,
+    state: &TaskStateSnapshot,
+) -> Result<(), LaunchError> {
+    lineage.require_orig_rax(stop, state.registers.orig_rax)?;
+    if state.registers.orig_rax == u64::MAX {
+        return require_state(state);
+    }
+    if state.registers.cs != 0x33
+        || state.registers.eflags & (0x100 | 0x10000) != 0
+        || state.registers.eflags & 2 == 0
+        || !(512..MAX_XSTATE).contains(&state.xstate.len())
+    {
+        return Err(LaunchError::Invalid(
+            "owned instruction native state profile differs",
+        ));
+    }
+    Ok(())
+}
 fn same_observation(state: &TaskStateSnapshot, observed: &ObservedStop) -> bool {
     state.registers == observed.registers
         && state.xstate == observed.xstate
@@ -507,6 +530,51 @@ pub(super) fn control_unchanged(
     }
     Ok(())
 }
+/// Exact kernel-return-to-#DB transition; no normalized copy is compared.
+/// MAX-to-MAX keeps the unchanged original full control predicate.
+pub(super) fn control_after_step(
+    lineage: &ControlLineage,
+    stop: &AdmissionStop,
+    before: &TaskStateSnapshot,
+    after: &TaskStateSnapshot,
+) -> Result<(), LaunchError> {
+    require_lineage_state(lineage, stop, before)?;
+    require_state(after)?;
+    if before.registers.orig_rax == u64::MAX {
+        return control_unchanged(before, after);
+    }
+    let left = before.registers;
+    let right = after.registers;
+    let arithmetic = 1 | (1 << 2) | (1 << 4) | (1 << 6) | (1 << 7) | (1 << 11);
+    if before.xstate != after.xstate
+        || before.mask != after.mask
+        || (
+            left.cs,
+            left.ss,
+            left.ds,
+            left.es,
+            left.fs,
+            left.gs,
+            left.fs_base,
+            left.gs_base,
+        ) != (
+            right.cs,
+            right.ss,
+            right.ds,
+            right.es,
+            right.fs,
+            right.gs,
+            right.fs_base,
+            right.gs_base,
+        )
+        || left.eflags & !arithmetic != right.eflags & !arithmetic
+    {
+        return Err(LaunchError::Invalid(
+            "owned ordinary changed non-arithmetic control state",
+        ));
+    }
+    Ok(())
+}
 pub(super) fn execute(
     owner: &mut Owner,
     native: &mut NativeLifecycle,
@@ -545,7 +613,7 @@ pub(super) fn execute(
     }
     ready(owner, native, binding, p, stop, false)?;
     p.states[BEFORE].capture(owner, p.until)?;
-    require_state(&p.states[BEFORE].state)?;
+    require_lineage_state(binding.lineage(), stop, &p.states[BEFORE].state)?;
     if !same_observation(&p.states[BEFORE].state, binding.before()) {
         return Err(LaunchError::Invalid(
             "owned instruction logical state differs",
@@ -696,7 +764,12 @@ pub(super) fn execute(
         &p.states[STEP].state,
         &p.debug[3],
     )?;
-    control_unchanged(&p.states[BEFORE].state, &p.states[STEP].state)?;
+    control_after_step(
+        binding.lineage(),
+        stop,
+        &p.states[BEFORE].state,
+        &p.states[STEP].state,
+    )?;
     binding
         .geometry()
         .verify_open(p.maps[BASELINE_MAP].bytes(), p.maps[STEP_MAP].bytes())
