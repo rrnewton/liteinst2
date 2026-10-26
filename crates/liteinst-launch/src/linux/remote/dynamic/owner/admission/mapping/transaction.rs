@@ -301,7 +301,7 @@ impl AdmissionOwner {
         {
             return Err(refused("mapping effect intersects an active continuation"));
         }
-        let prepared = owner.kernel_journal.prepare(KernelAttemptBinding {
+        let prepared = owner.kernel_journal.prepare_mapping(KernelAttemptBinding {
             pending: pending.token.clone(),
             original_stop: pending.stop.clone(),
             input: pending.input.clone(),
@@ -578,9 +578,10 @@ impl AdmissionOwner {
             None
         };
         if let Some(request) = &request {
-            let bytes = transitions::mapping_request_storage_bytes(request, false)?
-                .checked_add(size_of::<DynamicSourceRequest>())
-                .ok_or_else(|| refused("mapping request copy size overflows"))?;
+            // PendingMapping already includes the internal request header. The
+            // helper's one header accounts for the boxed client reply; its Arc
+            // allocations are shared, and the source payload was charged above.
+            let bytes = transitions::mapping_request_storage_bytes(request, false)?;
             self.census
                 .account_external(
                     reservation,

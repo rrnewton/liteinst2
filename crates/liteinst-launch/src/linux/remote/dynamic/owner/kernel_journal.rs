@@ -606,6 +606,12 @@ impl Drop for JournalUnwind {
     }
 }
 
+#[derive(Clone, Copy)]
+enum InvocationProfile {
+    Ordinary,
+    Mapping,
+}
+
 impl KernelJournalWriter {
     pub(in crate::linux::remote::dynamic) fn new(session: u64) -> Self {
         Self {
@@ -670,29 +676,46 @@ impl KernelJournalWriter {
         &mut self,
         binding: KernelAttemptBinding,
     ) -> Result<PreparedKernelAttempt, LaunchError> {
+        self.prepare_profile(binding, InvocationProfile::Ordinary)
+    }
+    pub(super) fn prepare_mapping(
+        &mut self,
+        binding: KernelAttemptBinding,
+    ) -> Result<PreparedKernelAttempt, LaunchError> {
+        self.prepare_profile(binding, InvocationProfile::Mapping)
+    }
+    fn prepare_profile(
+        &mut self,
+        binding: KernelAttemptBinding,
+        profile: InvocationProfile,
+    ) -> Result<PreparedKernelAttempt, LaunchError> {
         let number = binding.input.registers().rax;
-        // This finite list bounds journal observations; it grants no execution
-        // permission. The admission caller separately authenticates its native
-        // policy, including exact opt-in signal setup inputs, before preparing
-        // evidence and before any original release.
+        // These disjoint finite lists bound observations, not execution. The
+        // caller authenticates its native policy before preparing evidence and
+        // original release. Mapping opt-in must not widen ordinary preparation.
+        let permitted = match profile {
+            InvocationProfile::Ordinary => matches!(
+                number as libc::c_long,
+                libc::SYS_getpid
+                    | libc::SYS_gettid
+                    | libc::SYS_exit
+                    | libc::SYS_exit_group
+                    | libc::SYS_clone
+                    | libc::SYS_rt_sigaction
+                    | libc::SYS_sigaltstack
+            ),
+            InvocationProfile::Mapping => matches!(
+                number as libc::c_long,
+                libc::SYS_mmap | libc::SYS_mprotect | libc::SYS_munmap
+            ),
+        };
         if !matches!(
             binding.input.instruction().operation(),
             Operation::Syscall {
                 abi: SyscallAbi::LinuxX64
             }
-        ) || !matches!(
-            number as libc::c_long,
-            libc::SYS_getpid
-                | libc::SYS_gettid
-                | libc::SYS_exit
-                | libc::SYS_exit_group
-                | libc::SYS_clone
-                | libc::SYS_rt_sigaction
-                | libc::SYS_sigaltstack
-                | libc::SYS_mmap
-                | libc::SYS_mprotect
-                | libc::SYS_munmap
-        ) || number > i32::MAX as u64
+        ) || !permitted
+            || number > i32::MAX as u64
             || number & 0x4000_0000 != 0
             || binding.pending.invocation == 0
             || binding.pending.stop.session == 0

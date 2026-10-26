@@ -269,7 +269,10 @@ fn actual_capture_bytes_and_full_reply_get_fresh_identity_with_exact_current_pro
         super::super::super::transitions::mapping_request_storage_bytes(&request, false).unwrap();
     let with_payload =
         super::super::super::transitions::mapping_request_storage_bytes(&request, true).unwrap();
-    assert_eq!(with_payload - metadata, request.images()[0].bytes().len());
+    assert_eq!(
+        with_payload - metadata,
+        request.images()[0].bytes().len() + 2 * std::mem::size_of::<usize>()
+    );
     let reply_bytes =
         super::super::super::transitions::mapping_reply_storage_bytes(&facts).unwrap();
     assert!(reply_bytes >= PAGE as usize * 64);

@@ -20,7 +20,7 @@ fn prepared_mapping() -> (KernelJournalWriter, KernelAttemptHandle) {
     binding.input = SelectedInput::new(binding.input.instruction().clone(), registers).unwrap();
     binding.before.registers = registers;
     let mut writer = KernelJournalWriter::new(id().session);
-    let prepared = writer.prepare(binding).unwrap();
+    let prepared = writer.prepare_mapping(binding).unwrap();
     let handle = writer.attach(prepared).unwrap();
     (writer, handle)
 }
@@ -42,6 +42,31 @@ fn refusal(result: Result<(), LaunchError>, expected: &'static str) {
 fn mapping_archive_is_additive_and_charged_before_release() {
     let binding = super::super::tests::binding();
     let mut legacy = KernelJournalWriter::new(id().session);
+    let initial = legacy.reader().snapshot();
+    for number in [libc::SYS_mmap, libc::SYS_mprotect, libc::SYS_munmap] {
+        let mut native = binding.clone();
+        let mut registers = *native.input.registers();
+        registers.rax = number as u64;
+        native.input = SelectedInput::new(native.input.instruction().clone(), registers).unwrap();
+        native.before.registers = registers;
+        assert!(matches!(
+            legacy.prepare(native.clone()),
+            Err(LaunchError::Invalid(
+                "kernel journal binding is not an exact finite invocation"
+            ))
+        ));
+        assert_eq!(legacy.reader().snapshot(), initial);
+        let prepared = legacy.prepare_mapping(native).unwrap();
+        assert_eq!(legacy.reader().snapshot(), initial);
+        drop(prepared);
+    }
+    assert!(matches!(
+        legacy.prepare_mapping(binding.clone()),
+        Err(LaunchError::Invalid(
+            "kernel journal binding is not an exact finite invocation"
+        ))
+    ));
+    assert_eq!(legacy.reader().snapshot(), initial);
     let prepared = legacy.prepare(binding.clone()).unwrap();
     let handle = legacy.attach(prepared).unwrap();
     let old = legacy.reader().snapshot();
@@ -59,7 +84,7 @@ fn mapping_archive_is_additive_and_charged_before_release() {
     native.input = SelectedInput::new(native.input.instruction().clone(), registers).unwrap();
     native.before.registers = registers;
     let mut writer = KernelJournalWriter::new(id().session);
-    let prepared = writer.prepare(native).unwrap();
+    let prepared = writer.prepare_mapping(native).unwrap();
     let charge = prepared.retained_bytes();
     let handle = writer.attach(prepared).unwrap();
     let before = writer.reader().snapshot();
@@ -100,7 +125,8 @@ fn mapping_capture_retains_exact_failed_prefix_and_shared_storage() {
     assert_eq!(row.status, MappingCaptureStatus::InProgress);
     assert_eq!(row.bytes(), None);
 
-    let bytes = buffer(b"actual partial maps");
+    let prefix = b"actual partial maps";
+    let bytes = buffer(prefix);
     let expected = MappingCaptureStatus::Failed {
         phase: MappingCapturePhase::Read,
         errno: Some(libc::EIO),
@@ -110,7 +136,7 @@ fn mapping_capture_retains_exact_failed_prefix_and_shared_storage() {
         .commit(
             MappingCaptureSlot::FirstWait,
             Arc::clone(&bytes),
-            18,
+            prefix.len(),
             expected,
         )
         .unwrap();
@@ -118,13 +144,14 @@ fn mapping_capture_retains_exact_failed_prefix_and_shared_storage() {
     let snapshot = reader.snapshot();
     let row = &snapshot.attempts[0].mapping.as_ref().unwrap().records[2];
     assert_eq!(row.status, expected);
+    assert_eq!(row.initialized_len, prefix.len());
     assert_eq!(row.bytes(), Some(&b"actual partial maps"[..]));
     assert_eq!(
         row.initialized_storage().unwrap().len(),
         MAPPING_CAPTURE_BYTES
     );
     assert!(
-        row.initialized_storage().unwrap()[18..]
+        row.initialized_storage().unwrap()[prefix.len()..]
             .iter()
             .all(|byte| *byte == 0)
     );
@@ -332,11 +359,40 @@ fn mapping_attachment_rejects_foreign_duplicate_and_post_release_without_mutatio
         "mapping archive is foreign, used or incomplete",
     );
     assert_eq!(other.reader().snapshot(), before_other);
-    let token = super::super::tests::binding().original_stop.token;
+    let binding = {
+        let archive = other.lock();
+        archive.attempts[other_handle.index].binding.clone()
+    };
+    // A fresh model registry deliberately has a different task incarnation,
+    // even when its numeric TID/session/sequence happen to match this attempt.
+    let foreign_token = super::super::tests::binding().original_stop.token;
+    assert_ne!(foreign_token.task, binding.original_stop.token.task);
+    refusal(
+        other.release_attempt(other_handle, KernelReleasePhase::Original, &foreign_token),
+        "kernel journal release has no exact preceding phase",
+    );
+    assert_eq!(other.reader().snapshot(), before_other);
+    other
+        .check_invocation(
+            other_handle,
+            &binding.original_stop,
+            &binding.input,
+            &binding.before,
+            binding.until,
+        )
+        .unwrap();
+    let token = binding.original_stop.token;
     other
         .release_attempt(other_handle, KernelReleasePhase::Original, &token)
         .unwrap();
     let released = other.reader().snapshot();
+    assert_eq!(
+        released.attempts[0].facts.as_slice(),
+        &[KernelJournalFact::ReleaseAttempt {
+            phase: KernelReleasePhase::Original,
+            stop: (&token).into(),
+        }]
+    );
     refusal(
         other.attach_mapping(
             other_handle,
