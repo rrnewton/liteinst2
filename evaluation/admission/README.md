@@ -49,6 +49,9 @@ the full qualification protocol or establish a complete claim.
 
 The [original anonymous mapping result](mapping-lifecycle-7022e137.md) records
 the finite original-syscall and runtime-source lifecycle qualification.
+The [admitted-exec recipe](admitted-exec.md) describes the next connected
+replacement experiment and its exact first-user/retained-history obligations.
+Its source inventory is separate from a completed qualification receipt.
 
 ## Public result format
 

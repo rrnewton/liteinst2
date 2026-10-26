@@ -19,6 +19,53 @@ pub(in crate::linux::remote::dynamic) struct MmMembership {
 }
 
 impl NativeLifecycle {
+    /// Read-only preflight for the separate admitted-exec transport. Existing
+    /// ordinary selected and public lifecycle policies are not widened.
+    pub(in crate::linux::remote::dynamic::owner) fn require_admission_exec_profile(
+        &self,
+        owner: &Owner,
+        stop: &AdmissionStop,
+    ) -> Result<(), LaunchError> {
+        self.require_admission_stop(stop)?;
+        let membership = self.check_admission_mm(owner, stop.identity.task)?;
+        if self.exec_policy != DynamicExecPolicy::ExecveOnce
+            || self.exec_successes != 0
+            || self.options.creation != DynamicCreationPolicy::Refuse
+            || self.options.max_tasks != 1
+            || self.tasks.len() != 1
+            || !self.events.is_empty()
+            || owner.signal_journal.is_some()
+            || owner.anchor_receipt.is_some()
+            || stop.token.session != owner.session
+            || stop.token.tid != owner.pid
+            || stop.token.task != Some(stop.identity.task)
+            || stop.signal.is_some()
+            || !matches!(
+                stop.phase,
+                AdmissionPhase::EntryReady | AdmissionPhase::Restored
+            )
+            || self.admission_interrupt_credit(owner.pid)? != 0
+            || membership.address_space != stop.identity.address_space
+            || membership.process != stop.identity.process
+            || membership.generation != stop.identity.generation
+            || membership.tgid != owner.pid
+            || membership.tids.len() != 1
+            || !membership.tids.contains(&owner.pid)
+            || membership.candidate.tasks.as_slice() != [stop.identity.task]
+            || owner.owned.len() != 1
+            || !owner.owned.contains(&owner.pid)
+            || owner.pin_kinds.get(&owner.pid) != Some(&PinKind::Process)
+            || owner.handles.get(&owner.pid).is_none_or(broker::hup)
+            || owner.reaped.contains(&owner.pid)
+            || owner.tracer_terminal.contains_key(&owner.pid)
+        {
+            return Err(LaunchError::Invalid(
+                "admitted exec requires the settled singleton ExecveOnce profile",
+            ));
+        }
+        Ok(())
+    }
+
     pub(in crate::linux::remote::dynamic) fn admission_snapshot(&self) -> RegistrySnapshot {
         self.registry.snapshot()
     }

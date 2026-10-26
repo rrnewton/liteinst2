@@ -5943,6 +5943,10 @@
         "ignored": 0,
         "tests": 6
       },
+      "test/b3_exec_admission": {
+        "ignored": 0,
+        "tests": 5
+      },
       "test/b3_mapping_admission": {
         "ignored": 0,
         "tests": 5
@@ -6041,7 +6045,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 278
+        "tests": 345
       }
     },
     "workspace_tests": {
@@ -6080,6 +6084,10 @@
       "test/b2_mode_reference": {
         "ignored": 0,
         "tests": 6
+      },
+      "test/b3_exec_admission": {
+        "ignored": 0,
+        "tests": 5
       },
       "test/b3_mapping_admission": {
         "ignored": 0,
@@ -6379,7 +6387,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 278
+        "tests": 345
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -7111,8 +7119,48 @@
       "cohort": "b3_mapping",
       "harness": "test/b3_mapping_admission",
       "test": "full_native_mapping_comparator_rejects_each_state_source_and_map_corruption"
+    },
+    {
+      "cohort": "b3_exec",
+      "harness": "test/b3_exec_admission",
+      "test": "original_exec_replacement_matches_raw_replay_and_native_full_state"
+    },
+    {
+      "cohort": "b3_exec",
+      "harness": "test/b3_exec_admission",
+      "test": "stale_exec_source_reply_preserves_actual_replacement_without_commit"
+    },
+    {
+      "cohort": "b3_exec",
+      "harness": "test/b3_exec_admission",
+      "test": "resolver_panic_after_actual_exec_keeps_original_failure_and_cleanup"
+    },
+    {
+      "cohort": "b3_exec",
+      "harness": "test/b3_exec_admission",
+      "test": "blocked_exec_resolver_uses_original_deadline_and_owner_cleanup"
+    },
+    {
+      "cohort": "b3_exec",
+      "harness": "test/b3_exec_admission",
+      "test": "exec_full_comparator_rejects_each_state_input_map_and_identity_corruption"
+    },
+    {
+      "cohort": "b3_exec_private",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_first_user_and_retired_history_are_exact"
+    },
+    {
+      "cohort": "b3_exec_private",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_source_reply_refusal_keeps_new_mm_held"
+    },
+    {
+      "cohort": "b3_exec_private",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::exec::tests::native::admitted_exec_native_errno_exit_never_mints_replacement"
     }
   ],
-  "recorder_tests": 230,
+  "recorder_tests": 237,
   "schema_version": 1
 }

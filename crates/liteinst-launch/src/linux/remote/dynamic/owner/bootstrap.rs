@@ -7,6 +7,11 @@ use super::*;
 use crate::lifecycle::TaskId;
 use crate::publication::PublicationStop;
 
+mod replaced;
+pub(in crate::linux::remote::dynamic::owner) use replaced::{
+    BootstrapEffect, ExecBootstrapReady, ReplacedBootstrapObservation, bootstrap_replaced_admission,
+};
+
 pub(in crate::linux::remote::dynamic) struct BootstrapEvidence {
     pub(in crate::linux::remote::dynamic) exec_event: TaskStateSnapshot,
     pub(in crate::linux::remote::dynamic) exec_exit: TaskStateSnapshot,
@@ -109,10 +114,13 @@ impl Owner {
             let result = bootstrap_inner(
                 self,
                 &mut native,
-                exit_token,
-                exec_event,
-                exec_exit,
-                expected_mappings,
+                BootstrapRequest {
+                    exit: exit_token,
+                    exec_event,
+                    exec_exit,
+                    expected_mappings,
+                    observation: None,
+                },
                 until,
             );
             self.lifecycle = Some(native);
@@ -131,7 +139,9 @@ impl Owner {
     }
 }
 
-fn original_executables(maps: Vec<MemoryMapping>) -> Vec<MemoryMapping> {
+pub(in crate::linux::remote::dynamic::owner) fn original_executables(
+    maps: Vec<MemoryMapping>,
+) -> Vec<MemoryMapping> {
     maps.into_iter()
         .filter(|m| {
             m.permissions.as_bytes().get(2) == Some(&b'x')
@@ -140,15 +150,52 @@ fn original_executables(maps: Vec<MemoryMapping>) -> Vec<MemoryMapping> {
         .collect()
 }
 
+struct BootstrapRequest<'a> {
+    exit: &'a DynamicStop,
+    exec_event: TaskStateSnapshot,
+    exec_exit: TaskStateSnapshot,
+    expected_mappings: &'a [MemoryMapping],
+    observation: Option<&'a mut dyn ReplacedBootstrapObservation>,
+}
+
+fn before_effect(
+    observation: &mut Option<&mut dyn ReplacedBootstrapObservation>,
+    owner: &Owner,
+    effect: BootstrapEffect,
+    until: Instant,
+) -> Result<(), LaunchError> {
+    if let Some(observer) = observation.as_deref_mut() {
+        owner.time_left(until, "replacement bootstrap effect")?;
+        observer.before_effect(effect)?;
+        owner.time_left(until, "replacement bootstrap effect")?;
+    }
+    Ok(())
+}
+
+fn effect_complete(
+    observation: &mut Option<&mut dyn ReplacedBootstrapObservation>,
+    effect: BootstrapEffect,
+    result: Option<u64>,
+) -> Result<(), LaunchError> {
+    if let Some(observer) = observation.as_deref_mut() {
+        observer.effect_complete(effect, result)?;
+    }
+    Ok(())
+}
+
 fn bootstrap_inner(
     owner: &mut Owner,
     native: &mut lifecycle::NativeLifecycle,
-    exit: &DynamicStop,
-    exec_event: TaskStateSnapshot,
-    exec_exit: TaskStateSnapshot,
-    expected_mappings: &[MemoryMapping],
+    request: BootstrapRequest<'_>,
     until: Instant,
 ) -> Result<BootstrapMm, LaunchError> {
+    let BootstrapRequest {
+        exit,
+        exec_event,
+        exec_exit,
+        expected_mappings,
+        mut observation,
+    } = request;
     let tid = owner.pid;
     let size = page_size()?;
     if size != 4096 {
@@ -196,14 +243,29 @@ fn bootstrap_inner(
         .ok_or(LaunchError::Invalid("bootstrap envelope overflow"))?
         & !7;
     let original = read_memory(tid, envelope, (envelope_end - envelope) as usize)?;
+    before_effect(&mut observation, owner, BootstrapEffect::PatchEntry, until)?;
     poke_bytes(tid, pc, &[0xcc])?;
     if read_memory(tid, pc, 1)? != [0xcc] {
         return Err(LaunchError::Invalid("bootstrap entry INT3 did not verify"));
     }
+    effect_complete(&mut observation, BootstrapEffect::PatchEntry, None)?;
+    before_effect(
+        &mut observation,
+        owner,
+        BootstrapEffect::FirstUserResume,
+        until,
+    )?;
     native.begin_admission_return_bridge(exit)?;
     ptrace(libc::PTRACE_CONT, tid, 0, 0)?;
     owner.released(tid);
+    effect_complete(&mut observation, BootstrapEffect::FirstUserResume, None)?;
     let (observed, status) = owner.wait_raw(until, "admission first-user INT3")?;
+    if let Some(observer) = observation.as_deref_mut() {
+        observer.raw(owner, observed, status)?;
+        #[cfg(test)]
+        owner.exec_oracle_first_user(observed, status, exit, until)?;
+        owner.time_left(until, "replacement first-user raw observation")?;
+    }
     if observed != tid
         || !libc::WIFSTOPPED(status)
         || libc::WSTOPSIG(status) != libc::SIGTRAP
@@ -229,8 +291,17 @@ fn bootstrap_inner(
             "admission first-user state did not authenticate",
         ));
     }
+    if let Some(observer) = observation.as_deref_mut() {
+        observer.entry_trap(&entry_trap)?;
+    }
     // Preserve the actual user-return XSTATE, including deferred initial PKRU.
     // Never replace it with the earlier EXEC/EXIT extended-state image.
+    before_effect(
+        &mut observation,
+        owner,
+        BootstrapEffect::RestoreEntry,
+        until,
+    )?;
     poke_bytes(tid, envelope, &original)?;
     // The real user boundary has cleared orig_rax. Preserve that observed
     // metadata along with its initialized XSTATE; undo only the owned INT3 RIP.
@@ -243,11 +314,18 @@ fn bootstrap_inner(
         return Err(LaunchError::Invalid("entry restoration did not verify"));
     }
     let entry = native.finish_admission_execution(tid, pc, AdmissionPhase::EntryReady)?;
+    effect_complete(&mut observation, BootstrapEffect::RestoreEntry, None)?;
+    if let Some(observer) = observation.as_deref_mut() {
+        observer.restored_entry(&entry, &restored_entry)?;
+    }
     let root = entry.identity.task;
+    before_effect(&mut observation, owner, BootstrapEffect::WriteStub, until)?;
     poke_bytes(tid, pc, &STUB)?;
     if read_memory(tid, pc, STUB.len())? != STUB {
         return Err(LaunchError::Invalid("bootstrap syscall stub differs"));
     }
+    effect_complete(&mut observation, BootstrapEffect::WriteStub, None)?;
+    before_effect(&mut observation, owner, BootstrapEffect::MapIsland, until)?;
     let address = syscall_result(
         bootstrap_call(
             owner,
@@ -267,6 +345,7 @@ fn bootstrap_inner(
         )?,
         "admission bootstrap mmap",
     )?;
+    effect_complete(&mut observation, BootstrapEffect::MapIsland, Some(address))?;
     let island_end = address
         .checked_add(size as u64)
         .ok_or(LaunchError::Invalid("island address overflow"))?;
@@ -280,7 +359,15 @@ fn bootstrap_inner(
             "bootstrap returned invalid island range",
         ));
     }
+    let write_island = BootstrapEffect::WriteIsland { address };
+    before_effect(&mut observation, owner, write_island, until)?;
     poke_bytes(tid, address, &island_code())?;
+    effect_complete(&mut observation, write_island, None)?;
+    let protect_island = BootstrapEffect::ProtectIsland {
+        address,
+        length: size,
+    };
+    before_effect(&mut observation, owner, protect_island, until)?;
     syscall_result(
         bootstrap_call(
             owner,
@@ -300,13 +387,31 @@ fn bootstrap_inner(
         )?,
         "admission bootstrap RX",
     )?;
+    effect_complete(&mut observation, protect_island, None)?;
+    before_effect(
+        &mut observation,
+        owner,
+        BootstrapEffect::QueryMembarrier,
+        until,
+    )?;
     let supported = syscall_result(
         bootstrap_call(owner, native, root, pc, libc::SYS_membarrier, [0; 6], until)?,
         "admission membarrier query",
     )?;
+    effect_complete(
+        &mut observation,
+        BootstrapEffect::QueryMembarrier,
+        Some(supported),
+    )?;
     if supported & (SYNC_CORE | REGISTER_SYNC_CORE) != SYNC_CORE | REGISTER_SYNC_CORE {
         return Err(LaunchError::Invalid("admission target lacks sync-core"));
     }
+    before_effect(
+        &mut observation,
+        owner,
+        BootstrapEffect::RegisterMembarrier,
+        until,
+    )?;
     syscall_result(
         bootstrap_call(
             owner,
@@ -318,6 +423,13 @@ fn bootstrap_inner(
             until,
         )?,
         "admission register sync-core",
+    )?;
+    effect_complete(&mut observation, BootstrapEffect::RegisterMembarrier, None)?;
+    before_effect(
+        &mut observation,
+        owner,
+        BootstrapEffect::BootstrapSync,
+        until,
     )?;
     syscall_result(
         bootstrap_call(
@@ -331,6 +443,13 @@ fn bootstrap_inner(
         )?,
         "admission bootstrap sync-core",
     )?;
+    effect_complete(&mut observation, BootstrapEffect::BootstrapSync, None)?;
+    before_effect(
+        &mut observation,
+        owner,
+        BootstrapEffect::RestoreOriginal,
+        until,
+    )?;
     poke_bytes(tid, envelope, &original)?;
     restored_entry.restore(tid)?;
     if read_memory(tid, envelope, original.len())? != original {
@@ -338,6 +457,7 @@ fn bootstrap_inner(
             "bootstrap original bytes did not restore",
         ));
     }
+    effect_complete(&mut observation, BootstrapEffect::RestoreOriginal, None)?;
     let mut island = TrustedIsland {
         address_space: entry.identity.address_space,
         generation: entry.identity.generation,
@@ -347,16 +467,40 @@ fn bootstrap_inner(
     island.verify(tid)?;
     let (mut mappings, stop) = {
         let mut held = HeldMmStop::acquire(owner, native, &mut island, root, until)?;
+        before_effect(
+            &mut observation,
+            held.owner,
+            BootstrapEffect::QuarantineSyncBefore,
+            until,
+        )?;
         held.sync_core(remaining(until)?)?;
+        effect_complete(
+            &mut observation,
+            BootstrapEffect::QuarantineSyncBefore,
+            None,
+        )?;
         for mapping in &originals {
+            let effect = BootstrapEffect::Quarantine {
+                start: mapping.start,
+                length: (mapping.end - mapping.start) as usize,
+            };
+            before_effect(&mut observation, held.owner, effect, until)?;
             held.mprotect(
                 mapping.start,
                 (mapping.end - mapping.start) as usize,
                 super_protection(mapping)? & !libc::PROT_EXEC,
                 remaining(until)?,
             )?;
+            effect_complete(&mut observation, effect, None)?;
         }
+        before_effect(
+            &mut observation,
+            held.owner,
+            BootstrapEffect::QuarantineSyncAfter,
+            until,
+        )?;
         held.sync_core(remaining(until)?)?;
+        effect_complete(&mut observation, BootstrapEffect::QuarantineSyncAfter, None)?;
         if TaskStateSnapshot::read(tid)? != restored_entry
             || held.read_memory(envelope, original.len())? != original
         {

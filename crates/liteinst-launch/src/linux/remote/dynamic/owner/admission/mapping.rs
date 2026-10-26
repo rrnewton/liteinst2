@@ -23,7 +23,7 @@ use std::ops::Range;
 use std::os::fd::AsRawFd;
 use std::sync::Arc;
 
-mod maps;
+pub(super) mod maps;
 mod profile;
 mod proof;
 mod staging;

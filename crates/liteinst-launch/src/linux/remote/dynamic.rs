@@ -28,6 +28,11 @@ pub use signal::*;
 mod broker;
 mod launch;
 mod owner;
+pub use owner::exec_journal::{
+    ExecAttemptSnapshot, ExecBootstrapEffect, ExecJournalFact, ExecJournalStage, ExecMapsRecord,
+    ExecMapsStatus, ExecOriginalInput, ExecProgressReader, ExecProgressSnapshot, ExecRawRecord,
+    ExecReadOutcome, ExecReleasePhase, ExecValidatedPhase, ExecXstateQuery,
+};
 pub use owner::kernel_journal::{
     KernelAttemptId, KernelAttemptSnapshot, KernelCaptureStatus, KernelCapturedState,
     KernelFailureKind, KernelJournalFact, KernelJournalFailure, KernelJournalStage, KernelPinKind,

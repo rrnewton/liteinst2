@@ -9,6 +9,10 @@
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::sync::Arc;
+mod exec;
+pub(super) use exec::{
+    ExecCensusBinding, ExecCensusIdentity, PreparedExecCensus, RetiredCensus, exec_initial_charge,
+};
 mod signal;
 pub(super) use signal::{FrameFacts, SignalReturnWitness};
 use std::sync::atomic::{AtomicU64, Ordering};

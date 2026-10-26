@@ -97,6 +97,7 @@ pub(in super::super) fn request(expected: &PendingToken, until: Instant) -> Dyna
         token: PendingSourceToken {
             id,
             original: expected.clone(),
+            transition: SourceTransitionBinding::Mapping,
             capture_stop: DynamicStop {
                 sequence: 9,
                 ..expected.stop.clone()

@@ -246,6 +246,22 @@ impl AdmissionOwner {
         until: Instant,
     ) -> Result<AdmissionReply, GateError> {
         self.authenticate_pending(owner, &token, until)?;
+        if self.exec.is_some()
+            && self
+                .pending
+                .as_ref()
+                .is_some_and(|pending| exec::is_exec(&pending.input))
+        {
+            match decision {
+                ProviderDecision::Native => return self.complete_exec(owner, until),
+                ProviderDecision::Complete(_) => {
+                    return Err(GateError::Refused(
+                        "exec replacement requires its actual original native syscall",
+                    ));
+                }
+                ProviderDecision::Fault(_) => {}
+            }
+        }
         if self.signals.is_some()
             && self.pending.as_ref().is_some_and(|pending| {
                 matches!(

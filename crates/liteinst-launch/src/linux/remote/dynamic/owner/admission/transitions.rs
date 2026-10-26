@@ -1092,6 +1092,21 @@ impl AdmissionOwner {
         self.reserve_transition_with_prefix(owner, successors, rebind, plans, 0)
     }
 
+    /// Exec restores/settles the old singleton before one irreversible native
+    /// replacement. The future new-mm envelope is additive to these exact old
+    /// refreshes; no same-mm successor or publication is fabricated here.
+    pub(super) fn reserve_exec_transition(
+        &mut self,
+        owner: &Owner,
+        prefix: BudgetCharge,
+    ) -> Result<Reservation, GateError> {
+        let prefix = combine(
+            prefix,
+            refresh_charge_with_payload(StatePayload::maximum(), 2)?,
+        )?;
+        self.reserve_transition_with_charge(owner, 0, false, 0, prefix)
+    }
+
     pub(super) fn reserve_transition_with_prefix(
         &mut self,
         owner: &Owner,

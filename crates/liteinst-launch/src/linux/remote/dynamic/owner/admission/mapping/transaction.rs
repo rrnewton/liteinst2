@@ -548,6 +548,7 @@ impl AdmissionOwner {
                 token: PendingSourceToken {
                     id,
                     original: record.original.clone(),
+                    transition: super::super::super::super::admission::source::SourceTransitionBinding::Mapping,
                     capture_stop: current.token.clone(),
                     task: current.identity,
                     candidate_epoch: current

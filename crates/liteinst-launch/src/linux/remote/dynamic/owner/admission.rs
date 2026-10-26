@@ -2,7 +2,10 @@
 //!
 //! This owns the raw lifecycle dispatcher after pristine EXEC bootstrap. Public
 //! raw-session requests cannot bypass its source, census or release interlock.
-use super::super::admission::{AdmissionReply, AdmissionRequest, PendingToken, ProviderInput};
+use super::super::admission::{
+    AdmissionReply, AdmissionRequest, ExecSourceBinding, PendingSourceToken, PendingToken,
+    ProviderInput, SourceTransitionBinding,
+};
 use super::bootstrap::BootstrapEvidence;
 use super::lifecycle::NativeLifecycle;
 use super::publication::HeldMmStop;
@@ -17,6 +20,9 @@ mod census;
 mod completion;
 mod domain;
 mod drive;
+mod exec;
+#[cfg(test)]
+pub(in crate::linux::remote::dynamic::owner) use exec::oracle::ExecOracle;
 mod mapping;
 mod routes;
 mod signals;
@@ -44,6 +50,7 @@ pub(super) struct AdmissionOwner {
     pending: Option<PendingInvocation>,
     signals: Option<signals::SignalTransaction>,
     mapping: Option<mapping::MappingState>,
+    exec: Option<exec::ExecState>,
     next_execution: u64,
     metrics: DynamicAdmissionMetrics,
     closed: bool,
@@ -67,6 +74,12 @@ struct PendingInvocation {
     before: ObservedStop,
     input: SelectedInput,
     until: Instant,
+}
+
+struct AdmissionProfiles {
+    signal: Option<(DynamicSignalProfile, super::super::signal::SignalBudget)>,
+    mapping: Option<DynamicMappingProfile>,
+    exec: Option<DynamicExecProfile>,
 }
 
 fn control_remaining(until: Instant) -> Result<Duration, LaunchError> {
@@ -113,13 +126,27 @@ impl Owner {
         until: Instant,
     ) -> Result<AdmissionReply, GateError> {
         let _journal_unwind = self.kernel_journal.panic_scope();
+        let _exec_unwind = self
+            .exec_journal
+            .as_ref()
+            .map(|journal| journal.panic_scope());
         if let Some(mut admission) = self.admission.take() {
-            // A panic keeps all kernel pins/wait ownership in Owner. The outer
-            // owner catch-unwind enters physical cleanup; no handle escapes.
-            let result = admission.execute(self, request, until);
+            // Restore custody of the complete live and retired admission
+            // history even when execution unwinds. The outer owner handler
+            // still receives the original panic and owns physical cleanup.
+            let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                admission.execute(self, request, until)
+            }));
             self.admission = Some(admission);
+            let result = match outcome {
+                Ok(result) => result,
+                Err(payload) => std::panic::resume_unwind(payload),
+            };
             if let Err(error) = &result {
                 self.kernel_journal.fail_gate(error);
+                if let Some(journal) = &self.exec_journal {
+                    journal.fail_gate(error);
+                }
                 if let Some(journal) = &self.signal_journal {
                     match error {
                         GateError::Control(error) => journal.fail_error(error),
@@ -131,42 +158,70 @@ impl Owner {
             }
             return result;
         }
-        let (initial, facts, options, signal, mapping) = match request {
+        let (initial, facts, options, signal, mapping, exec) = match request {
             AdmissionRequest::Start {
                 initial,
                 facts,
                 options,
-            } => (initial, facts, options, None, None),
+            } => (initial, facts, options, None, None, None),
             AdmissionRequest::StartSignals {
                 initial,
                 facts,
                 options,
                 profile,
                 budget,
-            } => (initial, facts, options, Some((profile, budget)), None),
+            } => (initial, facts, options, Some((profile, budget)), None, None),
             AdmissionRequest::StartMappings {
                 initial,
                 facts,
                 options,
                 profile,
-            } => (initial, facts, options, None, Some(profile)),
+            } => (initial, facts, options, None, Some(profile), None),
+            AdmissionRequest::StartExec {
+                initial,
+                facts,
+                options,
+                profile,
+            } => (initial, facts, options, None, None, Some(profile)),
             _ => return Err(GateError::Refused("dynamic admission is not initialized")),
         };
         let signal_enabled = signal.is_some();
         let mapping_enabled = mapping.is_some();
-        let (admission, ready) =
-            AdmissionOwner::start(self, initial, facts, options, signal, mapping, until)
-                .inspect_err(|error| {
-                    if let Some(journal) = &self.signal_journal {
-                        match error {
-                            GateError::Control(error) => journal.fail_error(error),
-                            _ => journal
-                                .fail(super::signal_journal::SignalJournalFailure::InvalidState),
-                        }
-                    }
-                })?;
+        let exec_enabled = exec.is_some();
+        let (admission, ready) = AdmissionOwner::start(
+            self,
+            initial,
+            facts,
+            options,
+            AdmissionProfiles {
+                signal,
+                mapping,
+                exec,
+            },
+            until,
+        )
+        .inspect_err(|error| {
+            if let Some(journal) = &self.exec_journal {
+                journal.fail_gate(error);
+            }
+            if let Some(journal) = &self.signal_journal {
+                match error {
+                    GateError::Control(error) => journal.fail_error(error),
+                    _ => journal.fail(super::signal_journal::SignalJournalFailure::InvalidState),
+                }
+            }
+        })?;
         self.admission = Some(admission);
-        Ok(if mapping_enabled {
+        Ok(if exec_enabled {
+            AdmissionReply::ReadyExec(
+                ready,
+                self.kernel_journal.reader(),
+                self.exec_journal
+                    .as_ref()
+                    .expect("exec startup archive")
+                    .reader(),
+            )
+        } else if mapping_enabled {
             AdmissionReply::ReadyMappings(ready, self.kernel_journal.reader())
         } else if signal_enabled {
             AdmissionReply::ReadySignals(ready, self.kernel_journal.reader())
@@ -182,12 +237,55 @@ impl AdmissionOwner {
         initial: DynamicStop,
         facts: Vec<ImageFacts>,
         options: DynamicAdmissionOptions,
-        signal: Option<(DynamicSignalProfile, super::super::signal::SignalBudget)>,
-        mapping: Option<DynamicMappingProfile>,
+        profiles: AdmissionProfiles,
         until: Instant,
     ) -> Result<(Self, DynamicAdmissionState), GateError> {
+        let AdmissionProfiles {
+            signal,
+            mapping,
+            exec,
+        } = profiles;
         options.validate()?;
         crate::gate::domain::validate_image_count(&facts)?;
+        let exec = if let Some(profile) = exec {
+            profile.validate(&options)?;
+            if signal.is_some()
+                || mapping.is_some()
+                || owner.exec_policy != DynamicExecPolicy::ExecveOnce
+                || owner.exec_journal.is_some()
+            {
+                return Err(GateError::Refused(
+                    "exec startup requires its exclusive native profile",
+                ));
+            }
+            owner.exec_journal = Some(super::exec_journal::ExecJournalWriter::new(owner.session));
+            Some(exec::ExecState::new(profile, options.clone()))
+        } else {
+            if owner.exec_policy != DynamicExecPolicy::Refuse || owner.exec_journal.is_some() {
+                return Err(GateError::Refused(
+                    "ordinary admission has an exec-only native profile",
+                ));
+            }
+            None
+        };
+        let exec_bound = exec.as_ref().map_or(0, |_| {
+            std::mem::size_of::<exec::ExecState>()
+                + owner
+                    .exec_journal
+                    .as_ref()
+                    .expect("exec startup archive")
+                    .allocated_bytes()
+        });
+        // The complete inline storage remains reserved at startup. Its retired
+        // census header is debited by commit_exec_mm when the history moves;
+        // charging it here as well would report the same retained bytes twice.
+        let exec_bytes = if exec.is_some() {
+            exec_bound
+                .checked_sub(std::mem::size_of::<census::RetiredCensus>())
+                .ok_or(GateError::Refused("exec embedded census header differs"))?
+        } else {
+            0
+        };
         if let Some(profile) = &mapping {
             profile.validate(&options, &facts)?;
             if signal.is_some() {
@@ -257,6 +355,7 @@ impl AdmissionOwner {
             .and_then(|value| value.checked_add(64 * 1024))
             .and_then(|value| value.checked_add(mapping_catalog_bytes))
             .and_then(|value| value.checked_add(mapping_bytes))
+            .and_then(|value| value.checked_add(exec_bound))
             .and_then(|value| {
                 value.checked_add(signal.as_ref().map_or(0, |(_, budget)| budget.bytes))
             })
@@ -368,6 +467,7 @@ impl AdmissionOwner {
             })
             .and_then(|value| value.checked_add(domain.resource_basis_bytes()))
             .and_then(|value| value.checked_add(retained_mapping_bytes))
+            .and_then(|value| value.checked_add(exec_bytes))
             .and_then(|value| value.checked_add(boot.evidence.exec_event.xstate.len()))
             .and_then(|value| value.checked_add(boot.evidence.exec_exit.xstate.len()))
             .and_then(|value| value.checked_add(boot.evidence.entry_trap.xstate.len()))
@@ -452,6 +552,7 @@ impl AdmissionOwner {
                 pending: None,
                 signals,
                 mapping,
+                exec,
                 next_execution: 1,
                 metrics,
                 closed: false,
@@ -461,10 +562,15 @@ impl AdmissionOwner {
     }
 
     pub(super) fn provider_expired(&self, now: Instant) -> bool {
-        self.mapping
+        self.exec
             .as_ref()
-            .and_then(|mapping| mapping.pending_until())
+            .and_then(|exec| exec.pending_until())
             .is_some_and(|until| now >= until)
+            || self
+                .mapping
+                .as_ref()
+                .and_then(|mapping| mapping.pending_until())
+                .is_some_and(|until| now >= until)
             || self
                 .pending
                 .as_ref()
@@ -486,6 +592,13 @@ impl AdmissionOwner {
         if self.closed || self.provider_expired(Instant::now()) {
             return Err(GateError::Refused(
                 "dynamic admission owner is closed or expired",
+            ));
+        }
+        if self.exec.as_ref().is_some_and(|exec| exec.has_pending())
+            && !matches!(request, AdmissionRequest::ResolveSources { .. })
+        {
+            return Err(GateError::Refused(
+                "exec source acquisition remains pending",
             ));
         }
         if self
@@ -522,13 +635,19 @@ impl AdmissionOwner {
         match request {
             AdmissionRequest::Start { .. }
             | AdmissionRequest::StartSignals { .. }
+            | AdmissionRequest::StartExec { .. }
             | AdmissionRequest::StartMappings { .. } => Err(GateError::Refused(
                 "dynamic admission cannot restart an existing domain",
             )),
             AdmissionRequest::Advance => self.advance(owner, until),
-            AdmissionRequest::ResolveSources { token, facts } => {
-                self.resolve_mapping_sources(owner, token, facts, until)
-            }
+            AdmissionRequest::ResolveSources { token, facts } => match &token.transition {
+                SourceTransitionBinding::Mapping => {
+                    self.resolve_mapping_sources(owner, token, facts, until)
+                }
+                SourceTransitionBinding::Exec(_) => {
+                    self.resolve_exec_sources(owner, token, facts, until)
+                }
+            },
             AdmissionRequest::DeliverSignal(token) => self.deliver_signal(owner, token, until),
             AdmissionRequest::Complete { token, decision } => {
                 self.complete(owner, token, decision, until)
@@ -558,6 +677,9 @@ impl AdmissionOwner {
                     + self.bootstrap.entry_trap.xstate.len()
                     + self.bootstrap.restored_entry.xstate.len();
                 self.metrics.oracle = self.domain.oracle.metrics();
+                if let Some(exec) = &self.exec {
+                    exec.add_retired_metrics(&self.census, &mut self.metrics)?;
+                }
                 Ok(AdmissionReply::Metrics(self.metrics.clone()))
             }
         }

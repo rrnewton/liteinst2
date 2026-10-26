@@ -3,6 +3,8 @@
 use super::super::super::mapping::ReplacementCommit;
 use super::super::ReplacementIdentity;
 use super::*;
+#[cfg(test)]
+mod exec_oracle;
 
 pub(in super::super) struct SourceCatalog {
     owner: SourceBinding,

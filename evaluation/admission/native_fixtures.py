@@ -16,6 +16,20 @@ UNIT = "unit/liteinst_launch/lib"
 REFERENCE = "test/b2_mode_reference"
 SIGNAL_REFERENCE = "test/b3_signal_admission"
 MAPPING_REFERENCE = "test/b3_mapping_admission"
+EXEC_REFERENCE = "test/b3_exec_admission"
+EXEC_TESTS = frozenset((
+    "original_exec_replacement_matches_raw_replay_and_native_full_state",
+    "stale_exec_source_reply_preserves_actual_replacement_without_commit",
+    "resolver_panic_after_actual_exec_keeps_original_failure_and_cleanup",
+    "blocked_exec_resolver_uses_original_deadline_and_owner_cleanup",
+    "exec_full_comparator_rejects_each_state_input_map_and_identity_corruption",
+))
+EXEC_PRIVATE_PREFIX = "linux::remote::dynamic::owner::admission::exec::tests::native::"
+EXEC_PRIVATE_TESTS = frozenset(EXEC_PRIVATE_PREFIX + name for name in (
+    "admitted_exec_native_first_user_and_retired_history_are_exact",
+    "admitted_exec_native_source_reply_refusal_keeps_new_mm_held",
+    "admitted_exec_native_errno_exit_never_mints_replacement",
+))
 MAPPING_TESTS = frozenset((
     'original_rw_rx_rw_rx_unmap_matches_raw_full_state_and_two_runtime_sources',
     'stale_capture_reply_after_real_second_rx_preserves_partial_kernel_history',
@@ -45,6 +59,12 @@ def catalog(fixtures):
         require(row["test"] not in MAPPING_TESTS
                 or (row["cohort"] == "b3_mapping" and row["harness"] == MAPPING_REFERENCE),
                 "invalid_native_fixture_scope")
+        require(row["test"] not in EXEC_TESTS
+                or (row["cohort"] == "b3_exec" and row["harness"] == EXEC_REFERENCE),
+                "invalid_native_fixture_scope")
+        require(not row["test"].startswith(EXEC_PRIVATE_PREFIX)
+                or (row["cohort"] == "b3_exec_private" and row["harness"] == UNIT
+                    and row["test"] in EXEC_PRIVATE_TESTS), "invalid_native_fixture_scope")
         require((row["cohort"] == "kernel_journal" and row["harness"] == UNIT
                  and row["test"].startswith(PREFIXES))
                 or (row["cohort"] == "b2_reference" and row["harness"] == REFERENCE
@@ -56,7 +76,11 @@ def catalog(fixtures):
                 or (row["cohort"] == "b3_source_census" and row["harness"] == UNIT
                     and row["test"] == SOURCE_CENSUS_TEST)
                 or (row["cohort"] == "b3_mapping" and row["harness"] == MAPPING_REFERENCE
-                    and row["test"] in MAPPING_TESTS), "invalid_native_fixture_scope")
+                    and row["test"] in MAPPING_TESTS)
+                or (row["cohort"] == "b3_exec" and row["harness"] == EXEC_REFERENCE
+                    and row["test"] in EXEC_TESTS)
+                or (row["cohort"] == "b3_exec_private" and row["harness"] == UNIT
+                    and row["test"] in EXEC_PRIVATE_TESTS), "invalid_native_fixture_scope")
         key = (row["harness"], row["test"])
         require(key not in identities, "duplicate_native_fixture_catalog")
         identities[key] = row
@@ -121,7 +145,8 @@ def fixture_outcomes(output, fixtures, successful_command):
                 require(key not in seen_tests, "duplicate_native_fixture_test")
                 require(start[1] not in known_names or key in expected,
                         "native_fixture_wrong_harness")
-                require(key in expected or (current == UNIT and not start[1].startswith(PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX))),
+                require(key in expected or (current == UNIT and not start[1].startswith(
+                    PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX, EXEC_PRIVATE_PREFIX))),
                         "native_fixture_cohort_differs")
                 seen_tests.add(key)
                 active = key

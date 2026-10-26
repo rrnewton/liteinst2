@@ -5,6 +5,7 @@ use std::collections::{BTreeMap, BTreeSet};
 mod tests;
 
 mod admission;
+pub(super) mod exec_journal;
 pub(super) mod kernel_journal;
 pub(super) mod signal_journal;
 mod signal_return;
@@ -49,8 +50,11 @@ pub(super) struct Owner {
     lifecycle: Option<lifecycle::NativeLifecycle>,
     admission: Option<admission::AdmissionOwner>,
     kernel_journal: kernel_journal::KernelJournalWriter,
+    exec_journal: Option<exec_journal::ExecJournalWriter>,
     #[cfg(test)]
     journal_fault: Option<JournalFault>,
+    #[cfg(test)]
+    exec_oracle: Option<Box<dyn admission::ExecOracle>>,
     session: u64,
     sequence: u64,
     state: State,
@@ -132,6 +136,9 @@ pub(super) fn run(start: TracerStart) {
     let failure = match result {
         Ok(Ok(())) => None,
         Ok(Err(error)) => {
+            if let Some(journal) = &owner.exec_journal {
+                journal.fail_error(&error);
+            }
             if let Some(journal) = &owner.signal_journal {
                 journal.fail_error(&error);
             }
@@ -143,6 +150,9 @@ pub(super) fn run(start: TracerStart) {
             Some(error)
         }
         Err(_) => {
+            if let Some(journal) = &owner.exec_journal {
+                journal.fail_panic();
+            }
             if let Some(journal) = &owner.signal_journal {
                 journal.fail(signal_journal::SignalJournalFailure::CaughtPanic);
             }
@@ -184,8 +194,11 @@ impl Owner {
             lifecycle: None,
             admission: None,
             kernel_journal: kernel_journal::KernelJournalWriter::new(session),
+            exec_journal: None,
             #[cfg(test)]
             journal_fault: None,
+            #[cfg(test)]
+            exec_oracle: None,
             session,
             sequence: 0,
             state: State::Startup,
@@ -951,6 +964,9 @@ impl Owner {
         });
     }
     fn cleanup(&mut self) -> Result<DynamicCleanup, LaunchError> {
+        if let Some(journal) = &self.exec_journal {
+            journal.begin_cleanup();
+        }
         self.kernel_journal.close(
             kernel_journal::KernelWriterStatus::Closing,
             Some(kernel_journal::KernelFailureKind::Cancelled),
@@ -959,6 +975,9 @@ impl Owner {
             journal.close(None);
         }
         let result = self.cleanup_inner();
+        if let Some(journal) = &self.exec_journal {
+            journal.finish_cleanup(result.is_ok());
+        }
         if let Some(journal) = &self.signal_journal {
             journal.close(Some(result.is_ok()));
         }

@@ -12,8 +12,11 @@ use liteinst_admission::returns::CallReturnLedger;
 use liteinst_admission::scan::{Candidate, Policy, Snapshot};
 use std::collections::{BTreeMap, BTreeSet};
 
+#[cfg(test)]
+mod exec_oracle;
 mod replacement;
 mod resource;
+
 pub(super) use replacement::{ReplacementIdentity, StagedReplacement};
 #[cfg(test)]
 mod tests;
@@ -113,6 +116,17 @@ impl Domain {
 
     pub(super) fn resource_basis_bytes(&self) -> usize {
         self.resource_basis.retained_bytes()
+    }
+
+    /// The catalog and current binding headers are already embedded in Domain.
+    /// Callers charging the whole Domain retain only this additional payload.
+    pub(super) fn resource_payload_bytes(&self) -> Result<usize, GateError> {
+        self.resource_basis_bytes()
+            .checked_sub(std::mem::size_of::<SourceCatalog>())
+            .and_then(|bytes| bytes.checked_sub(std::mem::size_of::<SourceBinding>()))
+            .ok_or(GateError::Refused(
+                "dynamic resource embedded headers differ",
+            ))
     }
 
     pub(super) fn image(&self, pc: u64) -> Result<&Image, GateError> {
