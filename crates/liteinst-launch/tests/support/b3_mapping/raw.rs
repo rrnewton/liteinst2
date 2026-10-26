@@ -321,7 +321,7 @@ impl Raw {
                 if matches!(site.kind, Kind::CpuA | Kind::CpuB) {
                     self.checkpoint(site.pc + 2, 0x49, until);
                     let after = self.frame();
-                    let host = unsafe { std::arch::x86_64::__cpuid_count(0, 0) };
+                    let host = std::arch::x86_64::__cpuid_count(0, 0);
                     let mut expected = before.architecture.registers;
                     expected.rax = u64::from(host.eax);
                     expected.rbx = u64::from(host.ebx);
