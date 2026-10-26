@@ -104,6 +104,9 @@ fn initial_runtime_coalescence_one_short_capacity_keeps_pristine_exec() {
                         // Keep this profile valid while setting the total to one short.
                         if capture_bound {
                             options.capture.max_window_bytes = 8192;
+                            // Exact W + both pair captures for the successful
+                            // preflight. The actual attempt is still one short.
+                            options.capture.max_total_capture_bytes = 20480;
                         }
                         let mut prospective = support::allocate(&options, until);
                         let first = prospective.startup.charged();
