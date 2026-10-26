@@ -19,6 +19,9 @@ use std::path::{Path, PathBuf};
 #[path = "elf_exec_tactics.rs"]
 pub mod tactics;
 
+#[path = "e9_common_app.rs"]
+pub mod common_app;
+
 #[path = "elf_exec_provider.rs"]
 mod provider;
 

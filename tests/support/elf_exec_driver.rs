@@ -7,6 +7,10 @@
 mod oracle;
 
 fn main() {
+    if std::env::args_os().nth(1).as_deref() == Some(std::ffi::OsStr::new("observe-common-app")) {
+        oracle::elf_exec_oracle::common_app::main();
+        return;
+    }
     if std::env::args_os().nth(1).as_deref() == Some(std::ffi::OsStr::new("run-tactics")) {
         oracle::elf_exec_oracle::tactics::main();
         return;
