@@ -1,7 +1,7 @@
 //! Real initial startup only. No original instruction is executed by the
 //! admitted lane, and no Partial source observation is treated as a permit.
 use super::super::super::tests::{Fixture, Harness, pin, reaped};
-use super::super::runtime_capture::{CaptureFailureKind, CaptureStage};
+use super::super::runtime_capture::{CaptureFailure, CaptureFailureKind, CaptureStage};
 use super::*;
 use crate::linux::remote::dynamic::{Request, Response};
 use liteinst_admission::entries::{Completeness, EntryProvenance};
@@ -853,6 +853,14 @@ fn initial_runtime_unwind_retains_native_bootstrap_until_physical_cleanup() {
             assert!(runtime.sources.original_complete());
             assert!(!runtime.sources.capture_complete() && !runtime.sources.recheck_complete());
             assert!(runtime.sources.current_binding().is_none());
+            assert_eq!(
+                runtime.sources.failure(),
+                Some(CaptureFailure {
+                    stage: CaptureStage::Original,
+                    window: None,
+                    kind: CaptureFailureKind::Aborted,
+                })
+            );
             let stop = runtime
                 .bootstrap
                 .as_ref()
@@ -906,6 +914,14 @@ fn initial_runtime_unwind_retains_native_bootstrap_until_physical_cleanup() {
             );
             assert_eq!(runtime.sources.original_maps().0, original_maps.as_slice());
             assert_eq!(&runtime.startup.charged(), first_charge);
+            assert_eq!(
+                runtime.sources.failure(),
+                Some(CaptureFailure {
+                    stage: CaptureStage::Original,
+                    window: None,
+                    kind: CaptureFailureKind::Aborted,
+                })
+            );
         },
     );
 }

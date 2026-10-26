@@ -7,8 +7,22 @@ use std::os::fd::{FromRawFd, OwnedFd};
 
 #[derive(Clone, Copy)]
 pub(in crate::linux::remote::dynamic::owner) struct CetQuery {
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Retained CET request evidence is inspected by native controls"
+        )
+    )]
     pub(in crate::linux::remote::dynamic::owner) request: Request,
     pub(in crate::linux::remote::dynamic::owner) bytes: [u8; REGISTER_BYTES],
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Retained CET request evidence is inspected by native controls"
+        )
+    )]
     pub(in crate::linux::remote::dynamic::owner) requested_pointer: usize,
     pub(in crate::linux::remote::dynamic::owner) returned_pointer: usize,
     pub(in crate::linux::remote::dynamic::owner) returned_length: usize,
@@ -35,21 +49,12 @@ impl Default for CetStatus {
         }
     }
 }
+#[derive(Default)]
 pub(in crate::linux::remote::dynamic::owner) struct BoundedCet {
     pub(in crate::linux::remote::dynamic::owner) queries: [Option<CetQuery>; 7],
     pub(in crate::linux::remote::dynamic::owner) status: [CetStatus; 2],
     pub(in crate::linux::remote::dynamic::owner) complete: bool,
     proof: Option<DisabledProof>,
-}
-impl Default for BoundedCet {
-    fn default() -> Self {
-        Self {
-            queries: [None; 7],
-            status: [CetStatus::default(), CetStatus::default()],
-            complete: false,
-            proof: None,
-        }
-    }
 }
 struct BoundedProbe<'a> {
     tid: i32,

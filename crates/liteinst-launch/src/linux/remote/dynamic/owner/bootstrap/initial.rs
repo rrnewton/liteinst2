@@ -61,6 +61,8 @@ pub(in crate::linux::remote::dynamic::owner) enum InitialBootstrapPhase {
     Restored,
     Quarantine,
     Complete,
+    // Data-only movement control; runtime retains completed bootstrap in place.
+    #[cfg(test)]
     Transferred,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -142,6 +144,7 @@ impl InitialBootstrapProgress {
             }
         }
     }
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner) fn effects(
         &self,
     ) -> &[Option<InitialBootstrapEffectRecord>] {
@@ -219,16 +222,11 @@ impl InitialBootstrapProgress {
 /// Borrowed diagnostic substrates only. Successful state buffers move into
 /// completed().evidence; the per-query outcome slots remain here. Neither
 /// view can mutate or release the native owner.
+#[cfg(test)]
 pub(in crate::linux::remote::dynamic::owner) struct InitialBootstrapDiagnostics<'a> {
     pub(in crate::linux::remote::dynamic::owner) states: &'a [StateSlot; 6],
     pub(in crate::linux::remote::dynamic::owner) exit_maps: &'a MapBuffer,
     pub(in crate::linux::remote::dynamic::owner) current_maps: &'a MapBuffer,
-    pub(in crate::linux::remote::dynamic::owner) syscall: &'a SyscallObservation,
-    pub(in crate::linux::remote::dynamic::owner) first_signal: &'a SignalObservation,
-    pub(in crate::linux::remote::dynamic::owner) runner_signal: &'a SignalObservation,
-    pub(in crate::linux::remote::dynamic::owner) memory: &'a MemoryObservation,
-    pub(in crate::linux::remote::dynamic::owner) original_bytes: &'a [u8],
-    pub(in crate::linux::remote::dynamic::owner) exit_stop: Option<&'a DynamicStop>,
 }
 
 impl Owner {

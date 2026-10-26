@@ -271,11 +271,15 @@ impl<'a> SourceInventory<'a> {
 }
 
 pub(in crate::linux::remote::dynamic::owner::admission) struct SourceVmaView<'a> {
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) original: MapEntry<'a>,
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) quarantined: MapEntry<'a>,
     pub(in crate::linux::remote::dynamic::owner::admission) lower_original: Option<MapEntry<'a>>,
     pub(in crate::linux::remote::dynamic::owner::admission) upper_original: Option<MapEntry<'a>>,
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) lower_quarantined: Option<MapEntry<'a>>,
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) upper_quarantined: Option<MapEntry<'a>>,
 }
 impl SourceVma {
@@ -314,11 +318,15 @@ impl SourceVma {
                 .filter(|m| m.start == self.end)
         };
         Ok(SourceVmaView {
+            #[cfg(test)]
             original: a,
+            #[cfg(test)]
             quarantined: b,
             lower_original: lower(old, self.original_index),
             upper_original: upper(old, self.original_index),
+            #[cfg(test)]
             lower_quarantined: lower(new, self.current_index),
+            #[cfg(test)]
             upper_quarantined: upper(new, self.current_index),
         })
     }

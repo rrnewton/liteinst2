@@ -99,12 +99,8 @@ fn accept_word(
         result,
         errno,
     });
-    if result == -1 && errno.is_some() {
-        return Err(io_error(
-            "PTRACE_PEEKDATA",
-            std::io::Error::from_raw_os_error(errno.unwrap()),
-        )
-        .into());
+    if let (-1, Some(errno)) = (result, errno) {
+        return Err(io_error("PTRACE_PEEKDATA", std::io::Error::from_raw_os_error(errno)).into());
     }
     let offset = (cursor - aligned) as usize;
     let count = ((end - cursor) as usize).min(size_of::<u64>() - offset);

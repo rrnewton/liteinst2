@@ -105,6 +105,7 @@ pub(super) struct InstructionProgress {
     effects_len: usize,
 }
 impl InstructionProgress {
+    #[cfg(test)]
     pub(super) fn effects(&self) -> &[Option<InstructionEffectRecord>] {
         &self.effects[..self.effects_len]
     }
@@ -241,9 +242,11 @@ impl PreparedInstructionAttempt {
                     ))
             })
     }
+    #[cfg(test)]
     pub(super) fn progress(&self) -> &InstructionProgress {
         &self.progress
     }
+    #[cfg(test)]
     pub(super) fn diagnostics(&self) -> InstructionDiagnostics<'_> {
         InstructionDiagnostics {
             states: &self.states,
@@ -254,12 +257,13 @@ impl PreparedInstructionAttempt {
             memory: &self.peek,
         }
     }
+    #[cfg(test)]
     pub(super) fn completed(&self) -> Option<InstructionCompletionView<'_>> {
         (self.progress.nx_closed && self.progress.first_failure.is_none())
             .then_some(InstructionCompletionView { attempt: self })
     }
     pub(super) fn take_completed(&mut self) -> Result<OwnedInstructionCompletion<'_>, LaunchError> {
-        if self.claimed || self.completed().is_none() {
+        if self.claimed || !(self.progress.nx_closed && self.progress.first_failure.is_none()) {
             return Err(LaunchError::Invalid(
                 "owned instruction completion unavailable",
             ));
@@ -268,6 +272,7 @@ impl PreparedInstructionAttempt {
         Ok(OwnedInstructionCompletion { attempt: self })
     }
 }
+#[cfg(test)]
 pub(super) struct InstructionDiagnostics<'a> {
     pub(super) states: &'a [StateSlot; STATES],
     pub(super) maps: &'a [MapBuffer; 5],
@@ -276,9 +281,11 @@ pub(super) struct InstructionDiagnostics<'a> {
     pub(super) profile: &'a ControlProfile,
     pub(super) memory: &'a MemoryObservation,
 }
+#[cfg(test)]
 pub(super) struct InstructionCompletionView<'a> {
     attempt: &'a PreparedInstructionAttempt,
 }
+#[cfg(test)]
 impl InstructionCompletionView<'_> {
     pub(super) fn final_stop(&self) -> &AdmissionStop {
         self.attempt.stops[6]

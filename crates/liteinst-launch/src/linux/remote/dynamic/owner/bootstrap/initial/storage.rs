@@ -233,9 +233,11 @@ impl PreparedInitialBootstrap {
         }
         Ok(bytes)
     }
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner) fn progress(&self) -> &InitialBootstrapProgress {
         &self.progress
     }
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner) fn diagnostics(
         &self,
     ) -> InitialBootstrapDiagnostics<'_> {
@@ -243,12 +245,6 @@ impl PreparedInitialBootstrap {
             states: &self.states,
             exit_maps: &self.exit_maps,
             current_maps: &self.current_maps,
-            syscall: &self.syscall,
-            first_signal: &self.first_signal,
-            runner_signal: &self.runner_signal,
-            memory: &self.peek,
-            original_bytes: &self.original_bytes[..self.original_len],
-            exit_stop: self.exit_stop.as_ref(),
         }
     }
     pub(in crate::linux::remote::dynamic::owner) fn completed(&self) -> Option<&BootstrapMm> {
@@ -256,11 +252,6 @@ impl PreparedInitialBootstrap {
             && self.progress.first_failure.is_none())
         .then_some(self.ready.as_ref())
         .flatten()
-    }
-    pub(in crate::linux::remote::dynamic::owner) fn take_completed(
-        &mut self,
-    ) -> Result<BootstrapMm, LaunchError> {
-        transfer(&mut self.progress, &mut self.ready)
     }
     pub(super) fn validate_plan(&self, original_raw: &[u8]) -> Result<(), LaunchError> {
         if self.progress.phase != InitialBootstrapPhase::Allocated
@@ -344,8 +335,9 @@ pub(super) fn state_bytes() -> Result<Vec<u8>, LaunchError> {
     Ok(bytes)
 }
 
-/// Pure ownership movement; only the connected finish path creates a native
-/// BootstrapMm. The generic parameter permits a data-only ownership control.
+/// Preserved data-only ownership control. Runtime installation borrows the
+/// completed BootstrapMm in place; this test helper is not native evidence.
+#[cfg(test)]
 pub(super) fn transfer<T>(
     progress: &mut InitialBootstrapProgress,
     ready: &mut Option<T>,

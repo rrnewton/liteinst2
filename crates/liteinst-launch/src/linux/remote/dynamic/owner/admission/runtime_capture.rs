@@ -337,14 +337,9 @@ impl PreparedInitialSources {
         )
     }
 
-    pub(super) fn stage(&self) -> CaptureStage {
-        self.storage.stage()
-    }
+    #[cfg(test)]
     pub(super) fn failure(&self) -> Option<CaptureFailure> {
         self.storage.failure()
-    }
-    pub(super) fn until(&self) -> Instant {
-        self.storage.until()
     }
     pub(super) fn original_complete(&self) -> bool {
         self.storage.original_complete
@@ -364,12 +359,11 @@ impl PreparedInitialSources {
     pub(super) fn original_maps(&self) -> (&[u8], &SourceReadProgress) {
         self.storage.original_maps()
     }
+    #[cfg(test)]
     pub(super) fn quarantine_maps(&self) -> (&[u8], &SourceReadProgress) {
         self.storage.quarantine_maps()
     }
-    pub(super) fn last_maps_check(&self) -> Option<(&[u8], &SourceReadProgress)> {
-        self.storage.last_maps_check()
-    }
+    #[cfg(test)]
     pub(super) fn window_progress(
         &self,
         index: usize,
@@ -379,15 +373,10 @@ impl PreparedInitialSources {
     pub(super) fn window(&self, index: usize) -> Option<WindowView<'_>> {
         self.storage.window(index)
     }
-    pub(super) fn last_window_check(&self) -> Option<(usize, &[u8], &SourceReadProgress)> {
-        self.storage.last_window_check()
-    }
-    pub(super) fn map_checks(&self) -> &[SourceReadProgress; 3] {
-        self.storage.map_checks()
-    }
     pub(super) fn window_count(&self) -> usize {
         self.storage.window_count()
     }
+    #[cfg(test)]
     pub(super) fn vmas(&self) -> &[SourceVma] {
         self.storage.vmas()
     }
@@ -523,14 +512,9 @@ impl InitialSourceStorage {
         Ok(bytes)
     }
 
-    pub(super) fn stage(&self) -> CaptureStage {
-        self.stage
-    }
+    #[cfg(test)]
     pub(super) fn failure(&self) -> Option<CaptureFailure> {
         self.failure
-    }
-    pub(super) fn until(&self) -> Instant {
-        self.until
     }
     pub(super) fn current_binding(&self) -> Option<&CurrentBinding> {
         self.current.as_ref()
@@ -549,15 +533,13 @@ impl InitialSourceStorage {
     pub(super) fn original_maps(&self) -> (&[u8], &SourceReadProgress) {
         (&self.original_maps, &self.original_read)
     }
+    #[cfg(test)]
     pub(super) fn quarantine_maps(&self) -> (&[u8], &SourceReadProgress) {
         (&self.quarantine_maps, &self.quarantine_read)
     }
-    pub(super) fn last_maps_check(&self) -> Option<(&[u8], &SourceReadProgress)> {
-        self.last_map_check
-            .map(|index| (self.check_maps.as_slice(), &self.map_checks[index]))
-    }
     /// Includes initialized unobserved suffix. Progress distinguishes that
     /// substrate from bytes actually copied before a short/error/unwind.
+    #[cfg(test)]
     pub(super) fn window_progress(
         &self,
         index: usize,
@@ -586,21 +568,10 @@ impl InitialSourceStorage {
             entries: &slot.entries,
         })
     }
-    pub(super) fn last_window_check(&self) -> Option<(usize, &[u8], &SourceReadProgress)> {
-        self.last_window_check.map(|index| {
-            (
-                index,
-                self.byte_scratch.as_slice(),
-                &self.windows[index].recheck,
-            )
-        })
-    }
-    pub(super) fn map_checks(&self) -> &[SourceReadProgress; 3] {
-        &self.map_checks
-    }
     pub(super) fn window_count(&self) -> usize {
         self.planned
     }
+    #[cfg(test)]
     pub(super) fn vmas(&self) -> &[SourceVma] {
         &self.rows
     }

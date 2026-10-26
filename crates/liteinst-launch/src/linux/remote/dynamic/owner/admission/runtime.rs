@@ -457,7 +457,7 @@ fn initial_maps_prefix<'a>(
         || progress.requested_bytes != bytes.len()
         || progress.copied_bytes == 0
         || progress.copied_bytes > bytes.len()
-        || progress.filesystem_type != Some(libc::PROC_SUPER_MAGIC as i64)
+        || progress.filesystem_type != Some(libc::PROC_SUPER_MAGIC)
         || progress.last_request.is_none_or(|request| {
             request.result != 0 || request.errno.is_some() || request.count == 0
         })

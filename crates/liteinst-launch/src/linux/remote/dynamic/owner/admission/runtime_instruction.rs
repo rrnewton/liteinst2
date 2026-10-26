@@ -34,7 +34,21 @@ const ORDINARY_FLAGS: u64 = 1
 /// A caller's description, deliberately not a native debug-state certificate.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) enum DebugDisposition {
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Negative descriptive profile input exercised by the classifier controls"
+        )
+    )]
     Unknown,
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Negative descriptive profile input exercised by the classifier controls"
+        )
+    )]
     Present,
     Absent,
 }
@@ -115,6 +129,13 @@ impl<'a> InstructionCandidate<'a> {
     pub(super) fn registers(&self) -> &'a RegisterSnapshot {
         self.registers
     }
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Diagnostic view of the retained descriptive input; native authority checks its own controls"
+        )
+    )]
     pub(super) fn debug(&self) -> DebugDisposition {
         self.debug
     }

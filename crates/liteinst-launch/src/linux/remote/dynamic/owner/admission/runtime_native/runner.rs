@@ -423,7 +423,7 @@ fn private_call(
     ready(owner, native, binding, p, &restored, false)?;
     // Every actual protection operation receives an exact full-range map
     // readback; sync calls preserve the same phase-specific projection too.
-    if ordinal < 1 || ordinal >= 5 {
+    if !(1..5).contains(&ordinal) {
         verify_closed(p.maps[BASELINE_MAP].bytes(), p.maps[WORK_MAP].bytes()).map_err(mapped)?;
     } else {
         binding

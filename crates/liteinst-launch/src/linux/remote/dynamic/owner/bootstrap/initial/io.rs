@@ -285,7 +285,21 @@ impl SignalObservation {
 
 #[derive(Clone, Copy, Debug)]
 pub(in crate::linux::remote::dynamic::owner) struct MemoryObservation {
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Retained memory request evidence is inspected by native controls"
+        )
+    )]
     pub(in crate::linux::remote::dynamic::owner) address: u64,
+    #[cfg_attr(
+        not(test),
+        expect(
+            dead_code,
+            reason = "Retained memory request evidence is inspected by native controls"
+        )
+    )]
     pub(in crate::linux::remote::dynamic::owner) requested: usize,
     pub(in crate::linux::remote::dynamic::owner) copied: usize,
     pub(in crate::linux::remote::dynamic::owner) last_word: [u8; 8],

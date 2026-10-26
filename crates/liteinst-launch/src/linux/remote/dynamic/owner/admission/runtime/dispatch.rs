@@ -44,6 +44,9 @@ impl Owner {
                 // request is private and contains no caller resume capability.
                 unsafe { runtime.initialize(self, &initial) }
             }));
+            if outcome.is_err() {
+                runtime.sources.record_aborted();
+            }
             self.runtime = Some(runtime);
             return match outcome {
                 Ok(Ok(ready)) => Ok(AdmissionReply::RuntimeReady(
