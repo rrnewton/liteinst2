@@ -128,8 +128,10 @@ pub enum HoldReason {
     Exec,
     /// Authenticated initial exec syscall exit, before the kernel user return.
     ExecSyscallExit,
-    /// Automatic ptrace stop before a newborn task can execute.
+    /// Automatic newborn stop before its pending creation syscall-exit phase.
     Newborn,
+    /// Authenticated automatic newborn stop after exit tracing and before user return.
+    NewbornReturnReady,
     /// An active controller interruption, not an application signal delivery.
     Interrupt,
     /// Kernel syscall entry.
@@ -901,7 +903,9 @@ impl LifecycleRegistry {
         })
     }
 
-    /// Authenticates the first stopped state of a registered newborn incarnation.
+    /// Authenticates a newborn stop before its pending creation syscall-exit phase.
+    /// The caller must establish this phase; a later automatic return-to-user
+    /// stop uses [`Self::observe_newborn_return_ready`] instead.
     pub fn observe_newborn_stop(
         &mut self,
         task: TaskId,
@@ -914,6 +918,31 @@ impl LifecycleRegistry {
                 return Err(LifecycleError::WrongState);
             }
             state.hold(task, sequence, pc, HoldReason::Newborn);
+            Ok(())
+        })
+    }
+
+    /// Authenticates a registered newborn's automatic stop after the kernel's
+    /// creation syscall-exit tracing phase, but before its first user return.
+    /// The caller must establish that kernel phase independently; this method
+    /// does not claim a syscall-exit event or a first-user register snapshot.
+    /// The next syscall stop must be a new entry, not a fabricated creation exit.
+    pub fn observe_newborn_return_ready(
+        &mut self,
+        task: TaskId,
+        sequence: u64,
+        pc: u64,
+    ) -> Result<(), LifecycleError> {
+        self.transaction(|state| {
+            let record = state.task(task)?;
+            if record.state != TaskState::Newborn {
+                return Err(LifecycleError::WrongState);
+            }
+            if sequence != 1 {
+                return Err(LifecycleError::Stale);
+            }
+            state.hold(task, sequence, pc, HoldReason::NewbornReturnReady);
+            state.tasks.get_mut(&task).unwrap().syscall_open = false;
             Ok(())
         })
     }

@@ -20,7 +20,7 @@
       },
       "test/dynamic_fork": {
         "ignored": 0,
-        "tests": 6
+        "tests": 7
       },
       "test/dynamic_signals": {
         "ignored": 0,
@@ -32,7 +32,7 @@
       },
       "test/lifecycle_exec_exit": {
         "ignored": 0,
-        "tests": 7
+        "tests": 11
       },
       "test/native_int80": {
         "ignored": 0,
@@ -142,7 +142,7 @@
       },
       "test/dynamic_fork": {
         "ignored": 0,
-        "tests": 6
+        "tests": 7
       },
       "test/dynamic_signals": {
         "ignored": 0,
@@ -190,7 +190,7 @@
       },
       "test/lifecycle_exec_exit": {
         "ignored": 0,
-        "tests": 7
+        "tests": 11
       },
       "test/mandatory_prefix_oracle": {
         "ignored": 0,

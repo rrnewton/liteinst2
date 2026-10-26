@@ -30,6 +30,7 @@ const ORACLE_ROLE: &str = "LITEINST_FORK_NATIVE_ORACLE";
 const ORACLE_IMAGE: &str = "LITEINST_FORK_NATIVE_IMAGE";
 const ORACLE_RECORD: &str = "LITEINST_FORK_NATIVE_RECORD";
 const ORACLE_TEST: &str = "fork_returns_cow_wait_and_terminal_match_independent_native_state";
+const FIRST_USER_TEST: &str = "child_first_original_ud2_matches_independent_native_full_state";
 static NEXT: AtomicUsize = AtomicUsize::new(0);
 static FILE_FORK: Mutex<()> = Mutex::new(());
 
@@ -187,6 +188,13 @@ fn fork_program(second_fork: bool) -> Vec<u8> {
     write_marker(&mut code, 0x33334444);
     mov(&mut code, 7, 23);
     syscall(&mut code, libc::SYS_exit as u64);
+    code.extend_from_slice(&[0x0f, 0x0b]);
+    code
+}
+fn first_user_fault_program() -> Vec<u8> {
+    let mut code = seed();
+    syscall(&mut code, libc::SYS_fork as u64);
+    // This is the first original user instruction after the child's fork return.
     code.extend_from_slice(&[0x0f, 0x0b]);
     code
 }
@@ -378,6 +386,20 @@ fn create(session: &mut DynamicSession, entry: &DynamicEvent) -> Pair {
     let handle = pin(newborn.tid);
     let records = session.lifecycle_snapshot().unwrap().unwrap();
     assert_eq!(records.tasks().count(), 2);
+    assert_eq!(
+        records
+            .tasks()
+            .find(|record| record.id == child.task)
+            .unwrap()
+            .state,
+        TaskState::Held {
+            pc: session
+                .read_registers(newborn.stop_token().unwrap())
+                .unwrap()
+                .rip,
+            reason: liteinst_launch::lifecycle::HoldReason::NewbornReturnReady,
+        }
+    );
     assert!(
         records
             .tasks()
@@ -419,13 +441,14 @@ fn observed(fixture: &Fixture, second_fork: bool) -> Run {
     let pair = create(&mut session, &fork_entry);
     let parent_exit = returned(&mut session, &pair.created, i64::from(pair.child));
     phases.push(snapshot(&mut session, &parent_exit, &fixture.code));
-    let child_exit = returned(&mut session, &pair.newborn, 0);
-    phases.push(snapshot(&mut session, &child_exit, &fixture.code));
+    // This is the actual automatic return-ready checkpoint, not a syscall EXIT.
+    let child_return_ready = pair.newborn.clone();
+    phases.push(snapshot(&mut session, &child_return_ready, &fixture.code));
     release(&mut session, &parent_exit);
     let wait_entry = next_entry(&mut session, libc::SYS_wait4 as u64);
     assert_eq!(wait_entry.tid, parent);
     phases.push(snapshot(&mut session, &wait_entry, &fixture.code));
-    release(&mut session, &child_exit);
+    release(&mut session, &child_return_ready);
     let exit_entry = next_entry(&mut session, libc::SYS_exit as u64);
     assert_eq!(exit_entry.tid, pair.child);
     phases.push(snapshot(&mut session, &exit_entry, &fixture.code));
@@ -511,6 +534,8 @@ fn observed(fixture: &Fixture, second_fork: bool) -> Run {
 // native child-PID values are substituted, at their exact ABI output/argument
 // fields. All flags, kernel orig_rax, other GPRs, XSTATE, stack and data are exact.
 fn comparable(run: &Run) -> Vec<Snapshot> {
+    // Entry, actual parent EXIT, automatic child return-ready, parent wait
+    // ENTRY, child exit ENTRY, parent wait EXIT, and original parent UD2 fault.
     assert_eq!(run.phases.len(), 7);
     assert_eq!(run.phases[0].registers.orig_rax, libc::SYS_fork as u64);
     assert_eq!(run.phases[1].registers.rax, run.child as u64);
@@ -859,8 +884,8 @@ fn raw_run(path: &Path, code: &[u8]) -> Run {
         libc::SYS_fork as u64,
     );
     phases.push(raw_snapshot(parent, code));
-    raw.resume(child, libc::PTRACE_SYSCALL, 0);
-    raw.syscall_stop(child, libc::PTRACE_SYSCALL_INFO_EXIT, libc::SYS_fork as u64);
+    // TRACEME's original SIGSTOP is also in the late return-to-user path.
+    // Preserve it as the automatic checkpoint; no child fork EXIT is invented.
     phases.push(raw_snapshot(child, code));
     raw.resume(parent, libc::PTRACE_SYSCALL, 0);
     raw.syscall_stop(
@@ -960,6 +985,10 @@ fn registers(w: [u64; 27]) -> RegisterSnapshot {
     }
 }
 fn save(path: &Path, run: &Run) {
+    assert_eq!(run.phases.len(), 7);
+    save_counted(path, run, 7);
+}
+fn save_counted(path: &Path, run: &Run, count: usize) {
     let mut file = OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -968,7 +997,7 @@ fn save(path: &Path, run: &Run) {
         .unwrap();
     file.write_all(b"LIFORK01").unwrap();
     file.write_all(&run.child.to_le_bytes()).unwrap();
-    assert_eq!(run.phases.len(), 7);
+    assert_eq!(run.phases.len(), count);
     for phase in &run.phases {
         for word in words(phase.registers).into_iter().chain([phase.mask]) {
             file.write_all(&word.to_le_bytes()).unwrap();
@@ -981,6 +1010,9 @@ fn save(path: &Path, run: &Run) {
     }
 }
 fn load(path: &Path) -> Run {
+    load_counted(path, 7)
+}
+fn load_counted(path: &Path, count: usize) -> Run {
     let mut file = fs::File::open(path).unwrap();
     let mut magic = [0; 8];
     file.read_exact(&mut magic).unwrap();
@@ -990,7 +1022,7 @@ fn load(path: &Path) -> Run {
     let child = i32::from_le_bytes(id);
     assert!(child > 0);
     let mut phases = Vec::new();
-    for _ in 0..7 {
+    for _ in 0..count {
         let mut w = [0; 28];
         for word in &mut w {
             let mut bytes = [0; 8];
@@ -1042,8 +1074,11 @@ impl Drop for Isolated {
     }
 }
 fn isolated(fixture: &Fixture, role: &str, record: &Path, witness: &str) {
+    isolated_test(fixture, role, record, witness, ORACLE_TEST);
+}
+fn isolated_test(fixture: &Fixture, role: &str, record: &Path, witness: &str, test: &str) {
     let child = Command::new(std::env::current_exe().unwrap())
-        .args(["--exact", ORACLE_TEST, "--test-threads=1", "--nocapture"])
+        .args(["--exact", test, "--test-threads=1", "--nocapture"])
         .env(ORACLE_ROLE, role)
         .env("RUST_BACKTRACE", "0")
         .env(ORACLE_IMAGE, &fixture.path)
@@ -1305,10 +1340,11 @@ fn per_task_tokens_interrupts_and_parent_death_keep_two_owned_incarnations() {
     let entry = next_entry(&mut session, libc::SYS_fork as u64);
     let pair = create(&mut session, &entry);
     let parent_exit = returned(&mut session, &pair.created, i64::from(pair.child));
-    let child_exit = returned(&mut session, &pair.newborn, 0);
+    // This is the actual automatic return-ready checkpoint, not a syscall EXIT.
+    let child_return_ready = pair.newborn.clone();
     let old = pair.created.stop_token().unwrap().clone();
     let parent_before = snapshot(&mut session, &parent_exit, &fixture.code);
-    let child_before = snapshot(&mut session, &child_exit, &fixture.code);
+    let child_before = snapshot(&mut session, &child_return_ready, &fixture.code);
     let mut other = fixture.launch();
     let other_pid = other.pid();
     let other_handle = pin(other_pid);
@@ -1337,7 +1373,10 @@ fn per_task_tokens_interrupts_and_parent_death_keep_two_owned_incarnations() {
     );
     assert!(
         other
-            .resume(child_exit.stop_token().unwrap(), DynamicResume::Continue)
+            .resume(
+                child_return_ready.stop_token().unwrap(),
+                DynamicResume::Continue
+            )
             .is_err()
     );
     assert!(
@@ -1356,11 +1395,11 @@ fn per_task_tokens_interrupts_and_parent_death_keep_two_owned_incarnations() {
         parent_before
     );
     assert_eq!(
-        snapshot(&mut session, &child_exit, &fixture.code),
+        snapshot(&mut session, &child_return_ready, &fixture.code),
         child_before
     );
     release(&mut session, &parent_exit);
-    release(&mut session, &child_exit);
+    release(&mut session, &child_return_ready);
     let child_stop = session
         .interrupt_task(pair.newborn.task.unwrap().task, TIMEOUT)
         .unwrap();
@@ -1434,9 +1473,10 @@ fn running_fork_pair_deadline_closes_and_physically_reaps_both() {
     let entry = next_entry(&mut session, libc::SYS_fork as u64);
     let pair = create(&mut session, &entry);
     let parent_exit = returned(&mut session, &pair.created, i64::from(pair.child));
-    let child_exit = returned(&mut session, &pair.newborn, 0);
+    // This is the actual automatic return-ready checkpoint, not a syscall EXIT.
+    let child_return_ready = pair.newborn.clone();
     release(&mut session, &parent_exit);
-    release(&mut session, &child_exit);
+    release(&mut session, &child_return_ready);
     assert!(matches!(
         session.next_event(Duration::from_millis(20)),
         Err(LaunchError::Timeout(_))
@@ -1498,4 +1538,189 @@ fn failed_native_fork_retries_do_not_invent_child_records() {
         matches!(terminal.kind,DynamicEventKind::SignalDelivery(ref signal) if signal.signal()==libc::SIGILL && signal.code()==2)
     );
     finish(session, &[(pid, handle)]);
+}
+
+fn observed_first_user(fixture: &Fixture) -> Run {
+    let mut session = fixture.launch();
+    let parent = session.pid();
+    let parent_handle = pin(parent);
+    let initial = initialize(&mut session);
+    release(&mut session, &initial);
+    let entry = next_entry(&mut session, libc::SYS_fork as u64);
+    let mut phases = vec![snapshot(&mut session, &entry, &fixture.code)];
+    let pair = create(&mut session, &entry);
+    let parent_exit = returned(&mut session, &pair.created, i64::from(pair.child));
+    phases.push(snapshot(&mut session, &parent_exit, &fixture.code));
+    phases.push(snapshot(&mut session, &pair.newborn, &fixture.code));
+    release(&mut session, &pair.newborn);
+    let fault = session.next_event(TIMEOUT).unwrap();
+    assert_eq!(fault.task, pair.newborn.task);
+    let DynamicEventKind::SignalDelivery(ref info) = fault.kind else {
+        panic!("first original child instruction must fault: {fault:?}")
+    };
+    assert_eq!(info.signal(), libc::SIGILL);
+    assert_eq!(info.code(), 2);
+    assert_eq!(
+        info.fault_address(),
+        Some(ENTRY + fixture.code.len() as u64 - 2)
+    );
+    phases.push(snapshot(&mut session, &fault, &fixture.code));
+    assert_eq!(
+        snapshot(&mut session, &parent_exit, &fixture.code),
+        phases[1]
+    );
+    assert!(
+        session
+            .read_registers(pair.newborn.stop_token().unwrap())
+            .is_err()
+    );
+    finish(
+        session,
+        &[(parent, parent_handle), (pair.child, pair.handle)],
+    );
+    Run {
+        child: pair.child,
+        phases,
+    }
+}
+
+fn raw_first_user(path: &Path, code: &[u8]) -> Run {
+    let mut raw = Raw::launch(path);
+    let parent = raw.parent.id() as i32;
+    raw.resume(parent, libc::PTRACE_SYSCALL, 0);
+    raw.syscall_stop(
+        parent,
+        libc::PTRACE_SYSCALL_INFO_ENTRY,
+        libc::SYS_fork as u64,
+    );
+    let mut phases = vec![raw_snapshot(parent, code)];
+    raw.resume(parent, libc::PTRACE_SYSCALL, 0);
+    let mut child = None;
+    let mut born = None;
+    while child.is_none() || born.is_none() {
+        let (tid, status) = raw.wait();
+        assert!(libc::WIFSTOPPED(status));
+        if tid == parent {
+            assert_eq!(libc::WSTOPSIG(status), libc::SIGTRAP);
+            assert_eq!(status >> 16, libc::PTRACE_EVENT_FORK);
+            let mut value = 0_u64;
+            trace(
+                parent,
+                libc::PTRACE_GETEVENTMSG,
+                0,
+                (&raw mut value) as usize,
+            );
+            let value = i32::try_from(value).unwrap();
+            assert!(value > 0);
+            raw.pins.entry(value).or_insert_with(|| pin(value));
+            assert!(child.replace(value).is_none());
+        } else {
+            assert_eq!(libc::WSTOPSIG(status), libc::SIGSTOP);
+            assert_eq!(status >> 16, 0);
+            assert!(born.replace(tid).is_none());
+        }
+    }
+    let child = child.unwrap();
+    assert_eq!(born, Some(child));
+    raw.resume(parent, libc::PTRACE_SYSCALL, 0);
+    raw.syscall_stop(
+        parent,
+        libc::PTRACE_SYSCALL_INFO_EXIT,
+        libc::SYS_fork as u64,
+    );
+    phases.push(raw_snapshot(parent, code));
+    phases.push(raw_snapshot(child, code));
+    raw.resume(child, libc::PTRACE_SYSCALL, 0);
+    let (tid, status) = raw.wait();
+    assert_eq!(tid, child);
+    assert!(libc::WIFSTOPPED(status));
+    assert_eq!(libc::WSTOPSIG(status), libc::SIGILL);
+    assert_eq!(status >> 16, 0);
+    let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+    trace(child, libc::PTRACE_GETSIGINFO, 0, (&raw mut info) as usize);
+    assert_eq!(info.si_signo, libc::SIGILL);
+    assert_eq!(info.si_code, 2);
+    assert_eq!(
+        unsafe { info.si_addr() } as u64,
+        ENTRY + code.len() as u64 - 2
+    );
+    phases.push(raw_snapshot(child, code));
+    assert_eq!(raw_snapshot(parent, code), phases[1]);
+    assert!(
+        raw.cleanup(),
+        "first-user oracle foreground cleanup deadline"
+    );
+    Run { child, phases }
+}
+
+fn first_user_comparable(run: &Run, code: &[u8]) -> Vec<Snapshot> {
+    assert_eq!(run.phases.len(), 4);
+    let entry = &run.phases[0];
+    assert_eq!(entry.registers.orig_rax, libc::SYS_fork as u64);
+    assert_eq!(entry.registers.eflags, FLAGS);
+    assert_eq!(entry.registers.rip, ENTRY + code.len() as u64 - 2);
+    let mut parent_return = entry.clone();
+    parent_return.registers.rax = run.child as u64;
+    assert_eq!(run.phases[1], parent_return);
+    let mut child_return_ready = entry.clone();
+    child_return_ready.registers.rax = 0;
+    assert_eq!(run.phases[2], child_return_ready);
+    // These are the native UD2 exception effects. Keep both RF and orig_rax in
+    // the full-state comparison rather than masking fault-entry bookkeeping.
+    let mut fault = child_return_ready;
+    fault.registers.orig_rax = u64::MAX;
+    fault.registers.eflags |= 1 << 16;
+    assert_eq!(run.phases[3], fault);
+    let mut output = run.phases.clone();
+    // Only the actual, independently asserted parent PID result differs by run.
+    output[1].registers.rax = 1;
+    output
+}
+
+#[test]
+fn child_first_original_ud2_matches_independent_native_full_state() {
+    if let Some(role) = std::env::var_os(ORACLE_ROLE) {
+        assert_eq!(role, "first-user");
+        let path = PathBuf::from(std::env::var_os(ORACLE_IMAGE).unwrap());
+        let record = PathBuf::from(std::env::var_os(ORACLE_RECORD).unwrap());
+        let run = raw_first_user(&path, &first_user_fault_program());
+        save_counted(&record, &run, 4);
+        println!("FORK_FIRST_USER_NATIVE_PHYSICAL_CLEANUP_COMPLETE");
+        return;
+    }
+    let _serial = FILE_FORK.lock().unwrap();
+    let fixture = Fixture::new(first_user_fault_program());
+    let record = fixture.directory.join("native-first-user.bin");
+    isolated_test(
+        &fixture,
+        "first-user",
+        &record,
+        "FORK_FIRST_USER_NATIVE_PHYSICAL_CLEANUP_COMPLETE",
+        FIRST_USER_TEST,
+    );
+    let original = load_counted(&record, 4);
+    let actual = observed_first_user(&fixture);
+    let expected = first_user_comparable(&original, &fixture.code);
+    let actual = first_user_comparable(&actual, &fixture.code);
+    assert_eq!(actual, expected);
+    for corruption in 0..10 {
+        let mut corrupted = expected.clone();
+        match corruption {
+            0 => corrupted[3].registers.rax ^= 1,
+            1 => corrupted[3].registers.r15 ^= 1,
+            2 => corrupted[3].registers.eflags ^= 1 << 16,
+            3 => corrupted[3].registers.orig_rax ^= 1,
+            4 => corrupted[3].registers.rip += 1,
+            5 => corrupted[3].registers.rsp ^= 8,
+            6 => corrupted[3].xstate[0] ^= 1,
+            7 => corrupted[3].stack[0] ^= 1,
+            8 => corrupted[3].data[0] ^= 1,
+            9 => corrupted[3].mask ^= 1,
+            _ => unreachable!(),
+        }
+        assert_ne!(
+            actual, corrupted,
+            "first-user comparator accepted corruption {corruption}"
+        );
+    }
 }

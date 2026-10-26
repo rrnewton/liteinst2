@@ -7,6 +7,7 @@ use std::os::unix::fs::PermissionsExt;
 
 const TIMEOUT: Duration = Duration::from_secs(3);
 const CODE: &[u8] = &[0xb8, 57, 0, 0, 0, 0x0f, 0x05, 0xeb, 0xfe];
+const FAULT_CODE: &[u8] = &[0xb8, 57, 0, 0, 0, 0x0f, 0x05, 0x0f, 0x0b];
 static NEXT_FIXTURE: AtomicU64 = AtomicU64::new(0);
 
 struct Fixture {
@@ -15,6 +16,9 @@ struct Fixture {
 }
 impl Fixture {
     fn new() -> Self {
+        Self::with_code(CODE)
+    }
+    fn with_code(code: &[u8]) -> Self {
         let _file = crate::TEST_FILE_FORK.lock().unwrap();
         let directory = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("test-tmp")
@@ -45,7 +49,7 @@ impl Fixture {
         ] {
             bytes[at..at + 8].copy_from_slice(&value.to_le_bytes());
         }
-        bytes[4096..4096 + CODE.len()].copy_from_slice(CODE);
+        bytes[4096..4096 + code.len()].copy_from_slice(code);
         let mut file = OpenOptions::new()
             .write(true)
             .create_new(true)
@@ -155,7 +159,7 @@ struct Stops {
     parent: (i32, i32),
     child: (i32, i32),
 }
-fn collect(harness: &mut Harness, entry: &DynamicEvent) -> Stops {
+fn collect(harness: &mut Harness, entry: &DynamicEvent, code: &[u8]) -> Stops {
     harness.resume(entry);
     let until = Instant::now() + TIMEOUT;
     let mut parent = None;
@@ -191,18 +195,19 @@ fn collect(harness: &mut Harness, entry: &DynamicEvent) -> Stops {
         assert!(harness.owner().owned.contains(&tid));
         assert!(harness.owner().stopped.contains_key(&tid));
         assert!(harness.owner().handles.contains_key(&tid));
-        assert_eq!(read_memory(tid, 0x401000, CODE.len()).unwrap(), CODE);
+        assert_eq!(read_memory(tid, 0x401000, code.len()).unwrap(), code);
     }
     Stops { parent, child }
 }
 fn force_order(child_first: bool) {
-    let fixture = Fixture::new();
+    let fixture = Fixture::with_code(FAULT_CODE);
     let mut harness = Harness::new();
     let entry = harness.entry(&fixture);
     let before = read_registers(entry.tid).unwrap();
     let extended = xstate(entry.tid).unwrap();
     let mask = launch::task_mask(entry.tid).unwrap();
-    let stops = collect(&mut harness, &entry);
+    let stack = read_memory(entry.tid, before.rsp, 32).unwrap();
+    let stops = collect(&mut harness, &entry, FAULT_CODE);
     let mut lifecycle = harness.owner().lifecycle.take().unwrap();
     if !child_first {
         // A real request races the already-held, not-yet-interpreted FORK
@@ -290,18 +295,46 @@ fn force_order(child_first: bool) {
     expected = before;
     expected.rax = stops.child.0 as u64;
     assert_eq!(read_registers(entry.tid).unwrap(), expected);
-    harness.resume(&newborn);
-    let returned = harness.next();
+    let child_id = newborn.task.unwrap().task;
     assert_eq!(
-        returned.kind,
-        DynamicEventKind::SyscallExit {
-            result: 0,
-            is_error: false
+        harness
+            .owner()
+            .lifecycle
+            .as_ref()
+            .unwrap()
+            .registry
+            .task(child_id)
+            .unwrap()
+            .state,
+        crate::lifecycle::TaskState::Held {
+            pc: before.rip,
+            reason: HoldReason::NewbornReturnReady,
         }
     );
+    harness.resume(&newborn);
+    // The first original user instruction is UD2. A real signal-delivery stop,
+    // not an invented child fork EXIT, proves the kernel completed user return.
+    let fault = harness.next();
+    assert_eq!(fault.task, newborn.task);
+    let DynamicEventKind::SignalDelivery(ref signal) = fault.kind else {
+        panic!("first original UD2 must fault: {fault:?}")
+    };
+    assert_eq!(signal.signal(), libc::SIGILL);
+    assert_eq!(signal.code(), 2);
+    assert_eq!(signal.fault_address(), Some(before.rip));
     expected = before;
     expected.rax = 0;
+    expected.orig_rax = u64::MAX; // Native exception-entry metadata.
+    expected.eflags |= 1 << 16; // Architectural fault RF, never masked away.
     assert_eq!(read_registers(stops.child.0).unwrap(), expected);
+    assert_eq!(xstate(stops.child.0).unwrap(), extended);
+    assert_eq!(launch::task_mask(stops.child.0).unwrap(), mask);
+    assert_eq!(read_memory(stops.child.0, before.rsp, 32).unwrap(), stack);
+    assert_eq!(
+        read_memory(stops.child.0, 0x401000, FAULT_CODE.len()).unwrap(),
+        FAULT_CODE
+    );
+    assert_eq!(read_registers(entry.tid).unwrap().rax, stops.child.0 as u64);
     harness.finish(&[stops.parent.0, stops.child.0]);
 }
 #[test]
@@ -339,7 +372,7 @@ fn late_fork_payload_cannot_reacquire_a_consumed_terminal_incarnation() {
     let fixture = Fixture::new();
     let mut harness = Harness::new();
     let entry = harness.entry(&fixture);
-    let stops = collect(&mut harness, &entry);
+    let stops = collect(&mut harness, &entry, CODE);
     let child = stops.child.0;
     let handle = &harness.owner().handles[&child];
     assert_eq!(

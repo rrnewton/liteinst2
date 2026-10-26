@@ -401,3 +401,202 @@ fn terminal_tasks_processes_and_mms_still_consume_lifetime_limits() {
         assert_eq!(r.snapshot().address_spaces().count(), 2);
     }
 }
+
+// The two dedicated newborn methods describe different authenticated kernel
+// phases. A late automatic stop must not invent a second syscall-exit event.
+fn newborn_before_observation() -> (LifecycleRegistry, TaskId, TaskId, CreationTicket) {
+    let mut r = LifecycleRegistry::new_after_exec_syscall_exit(Limits::default(), 100, PC).unwrap();
+    let parent = r.root_task();
+    enter(&mut r, parent);
+    let ticket = r.prepare_creation(parent, CreationRequest::Fork).unwrap();
+    resume(&mut r, parent);
+    let child = r
+        .observe_creation(
+            ticket,
+            next(&r, parent),
+            CreationEvent {
+                kind: CreationEventKind::Fork,
+                child_tid: 101,
+                child_tgid: 101,
+                parent_visible_tid: 101,
+                parent_pc: PC + 2,
+            },
+        )
+        .unwrap();
+    assert_eq!(r.task(child).unwrap().state, TaskState::Newborn);
+    (r, parent, child, ticket)
+}
+
+#[test]
+fn newborn_return_ready_has_its_own_phase_and_preserves_creation_identity() {
+    let (mut r, parent, child, ticket) = newborn_before_observation();
+    let before = r.task(child).unwrap().clone();
+    assert_eq!(before.sequence, 0);
+    assert_eq!(
+        before.origin,
+        TaskOrigin::Created {
+            parent,
+            request: CreationRequest::Fork
+        }
+    );
+    r.observe_newborn_return_ready(child, 1, PC + 2).unwrap();
+    let after = r.task(child).unwrap();
+    assert_eq!(after.id, before.id);
+    assert_eq!(after.tid, before.tid);
+    assert_eq!(after.process, before.process);
+    assert_eq!(after.address_space, before.address_space);
+    assert_eq!(after.origin, before.origin);
+    assert_eq!(after.sequence, 1);
+    assert_eq!(
+        after.state,
+        TaskState::Held {
+            pc: PC + 2,
+            reason: HoldReason::NewbornReturnReady
+        }
+    );
+    let mm = r.address_space(after.address_space).unwrap();
+    assert_eq!(mm.generation, 0);
+    assert_eq!(
+        mm.origin,
+        AddressSpaceOrigin::Fork {
+            parent: r.task(parent).unwrap().address_space,
+            generation: 0
+        }
+    );
+    assert_eq!(r.task_for_tid(101), Some(child));
+    assert_eq!(r.snapshot().tasks().count(), 2);
+    assert_eq!(r.snapshot().address_spaces().count(), 2);
+
+    // The child phase does not consume or synthesize its parent's real exit.
+    resume(&mut r, parent);
+    r.observe_creation_exit(ticket, next(&r, parent), PC + 2, 101)
+        .unwrap();
+    assert_eq!(
+        r.task(parent).unwrap().state,
+        TaskState::Held {
+            pc: PC + 2,
+            reason: HoldReason::SyscallExit
+        }
+    );
+    assert_eq!(
+        r.task(child).unwrap().state,
+        TaskState::Held {
+            pc: PC + 2,
+            reason: HoldReason::NewbornReturnReady
+        }
+    );
+}
+
+#[test]
+fn late_newborn_rejects_fabricated_exit_and_accepts_the_next_real_syscall_entry() {
+    let (mut r, _, child, _) = newborn_before_observation();
+    r.observe_newborn_return_ready(child, 1, PC + 2).unwrap();
+    let origin = r.task(child).unwrap().origin;
+    resume(&mut r, child);
+    unchanged(&mut r, LifecycleError::EventMismatch, |r| {
+        r.observe_stop(child, 2, PC + 2, HoldReason::SyscallExit)
+    });
+    unchanged(&mut r, LifecycleError::Stale, |r| {
+        r.observe_stop(child, 3, PC + 4, HoldReason::SyscallEntry)
+    });
+    r.observe_stop(child, 2, PC + 4, HoldReason::SyscallEntry)
+        .unwrap();
+    resume(&mut r, child);
+    unchanged(&mut r, LifecycleError::EventMismatch, |r| {
+        r.observe_stop(child, 3, PC + 4, HoldReason::SyscallEntry)
+    });
+    r.observe_stop(child, 3, PC + 4, HoldReason::SyscallExit)
+        .unwrap();
+    assert_eq!(r.task(child).unwrap().sequence, 3);
+    assert_eq!(r.task(child).unwrap().origin, origin);
+    assert_eq!(
+        r.task(child).unwrap().state,
+        TaskState::Held {
+            pc: PC + 4,
+            reason: HoldReason::SyscallExit
+        }
+    );
+
+    // Preserve the existing, explicitly earlier newborn phase and its required
+    // EXIT. Supporting a later stop must not silently reinterpret this API.
+    let (mut earlier, _, early_child, _) = newborn_before_observation();
+    earlier
+        .observe_newborn_stop(early_child, 1, PC + 2)
+        .unwrap();
+    assert_eq!(
+        earlier.task(early_child).unwrap().state,
+        TaskState::Held {
+            pc: PC + 2,
+            reason: HoldReason::Newborn
+        }
+    );
+    resume(&mut earlier, early_child);
+    unchanged(&mut earlier, LifecycleError::EventMismatch, |r| {
+        r.observe_stop(early_child, 2, PC + 4, HoldReason::SyscallEntry)
+    });
+    earlier
+        .observe_stop(early_child, 2, PC + 2, HoldReason::SyscallExit)
+        .unwrap();
+    resume(&mut earlier, early_child);
+    earlier
+        .observe_stop(early_child, 3, PC + 4, HoldReason::SyscallEntry)
+        .unwrap();
+}
+
+#[test]
+fn newborn_return_ready_rejects_stale_foreign_and_duplicate_transitions_atomically() {
+    let (mut r, parent, child, _) = newborn_before_observation();
+    for sequence in [0, 2, u64::MAX] {
+        unchanged(&mut r, LifecycleError::Stale, |r| {
+            r.observe_newborn_return_ready(child, sequence, PC + 2)
+        });
+    }
+    unchanged(&mut r, LifecycleError::WrongState, |r| {
+        r.observe_newborn_return_ready(parent, next(r, parent), PC + 2)
+    });
+    let (_, _, foreign, _) = newborn_before_observation();
+    unchanged(&mut r, LifecycleError::UnknownIdentity, |r| {
+        r.observe_newborn_return_ready(foreign, 1, PC + 2)
+    });
+    r.observe_newborn_return_ready(child, 1, PC + 2).unwrap();
+    unchanged(&mut r, LifecycleError::WrongState, |r| {
+        r.observe_newborn_return_ready(child, 2, PC + 2)
+    });
+    unchanged(&mut r, LifecycleError::WrongState, |r| {
+        r.observe_newborn_stop(child, 2, PC + 2)
+    });
+
+    let (mut earlier, _, child, _) = newborn_before_observation();
+    earlier.observe_newborn_stop(child, 1, PC + 2).unwrap();
+    unchanged(&mut earlier, LifecycleError::WrongState, |r| {
+        r.observe_newborn_return_ready(child, 2, PC + 2)
+    });
+}
+
+#[test]
+fn ordinary_stop_cannot_fabricate_newborn_return_ready() {
+    let (mut r, parent, child, ticket) = newborn_before_observation();
+    r.observe_newborn_return_ready(child, 1, PC + 2).unwrap();
+    resume(&mut r, child);
+    unchanged(&mut r, LifecycleError::EventMismatch, |r| {
+        r.observe_stop(child, 2, PC + 2, HoldReason::NewbornReturnReady)
+    });
+    r.observe_stop(child, 2, PC + 2, HoldReason::Interrupt)
+        .unwrap();
+    assert_eq!(r.task(child).unwrap().sequence, 2);
+
+    resume(&mut r, parent);
+    r.observe_creation_exit(ticket, next(&r, parent), PC + 2, 101)
+        .unwrap();
+    resume(&mut r, parent);
+    unchanged(&mut r, LifecycleError::EventMismatch, |r| {
+        r.observe_stop(
+            parent,
+            next(r, parent),
+            PC + 2,
+            HoldReason::NewbornReturnReady,
+        )
+    });
+    r.observe_stop(parent, next(&r, parent), PC + 4, HoldReason::SyscallEntry)
+        .unwrap();
+}

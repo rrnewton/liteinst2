@@ -224,7 +224,9 @@ pub enum DynamicEventKind {
         /// Stopped child identity; its automatic stop has already authenticated.
         child: DynamicTask,
     },
-    /// Original automatic stop before the child may return to user code.
+    /// Original automatic stop after the child has passed creation syscall-exit
+    /// tracing, but before it may return to user code. Resuming it does not
+    /// produce a child fork syscall-exit event. This is not first-user state.
     Newborn {
         /// Creator's retained task identity.
         parent: DynamicTask,

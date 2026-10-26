@@ -112,8 +112,10 @@ cohorts, not results; each run must satisfy them independently.
 The current corpus additionally covers live oracle reuse, native controller
 ownership and signals, physical-reaping failures, and the explicit INT80
 profile, plus the bounded opt-in native fork lifecycle. The fork increment adds
-18 outer tests: six public native fixtures, five private native event-order and
-refusal fixtures, and seven pure registry regressions. Its independent native
+23 outer tests: seven public native fixtures, five private native event-order
+and refusal fixtures, and eleven pure registry regressions. These include
+an explicit newborn return-ready phase and an independent first-user fault
+oracle; a child fork syscall-exit event is not invented. Its independent native
 oracle runs in a separate natural-parent reaping domain; the outer fixture
 checks each positive-oracle and intentional-unwind subprocess's one-test
 summary and cleanup witness without adding it to outer totals. Exact current harness denominators are declared in `corpus.json` and

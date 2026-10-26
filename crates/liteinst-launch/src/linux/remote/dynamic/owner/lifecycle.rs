@@ -21,7 +21,7 @@ struct Task {
 }
 
 struct ForkReturn {
-    ticket: Option<CreationTicket>,
+    ticket: CreationTicket,
     registers: RegisterSnapshot,
     xstate: Vec<u8>,
 }
@@ -528,21 +528,12 @@ impl NativeLifecycle {
                     {
                         return Err(LaunchError::Invalid("native fork return state differs"));
                     }
-                    if let Some(ticket) = returned.ticket {
-                        recorded(self.registry.observe_creation_exit(
-                            ticket,
-                            sequence,
-                            registers.rip,
-                            exit.sval,
-                        ))?;
-                    } else {
-                        recorded(self.registry.observe_stop(
-                            id,
-                            sequence,
-                            registers.rip,
-                            HoldReason::SyscallExit,
-                        ))?;
-                    }
+                    recorded(self.registry.observe_creation_exit(
+                        returned.ticket,
+                        sequence,
+                        registers.rip,
+                        exit.sval,
+                    ))?;
                 } else if self
                     .pending
                     .as_ref()
@@ -703,7 +694,7 @@ impl NativeLifecycle {
         ))?;
         recorded(
             self.registry
-                .observe_newborn_stop(child, 1, child_registers.rip),
+                .observe_newborn_return_ready(child, 1, child_registers.rip),
         )?;
         let record = recorded(self.registry.task(child))?;
         let child_identity = DynamicTask {
@@ -718,18 +709,18 @@ impl NativeLifecycle {
                 identity: child_identity,
                 state: State::Startup,
                 interrupt_stops_remaining: 0,
-                syscall_open: true,
-                fork_return: Some(ForkReturn {
-                    ticket: None,
-                    registers: child_registers,
-                    xstate: pending.xstate.clone(),
-                }),
+                // copy_process cleared SYSCALL_TRACE. The automatic stop is in
+                // the later return-to-user signal/job-control loop, after this
+                // child's one-time syscall-exit tracing decision. PTRACE_SYSCALL
+                // here can observe its next entry, not a fork-exit event.
+                syscall_open: false,
+                fork_return: None,
             },
         );
         let mut parent_return = pending.entry;
         parent_return.rax = tid as u64;
         self.tasks.get_mut(&parent_tid).unwrap().fork_return = Some(ForkReturn {
-            ticket: Some(pending.ticket),
+            ticket: pending.ticket,
             registers: parent_return,
             xstate: pending.xstate,
         });
