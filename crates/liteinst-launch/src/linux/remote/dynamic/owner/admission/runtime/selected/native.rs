@@ -79,7 +79,11 @@ impl PreparedNativeSelected {
                 StateSlot::allocate()?,
                 StateSlot::allocate()?,
             ],
-            profiles: std::array::from_fn(|_| ControlProfile::default()),
+            profiles: [
+                ControlProfile::default(),
+                ControlProfile::default(),
+                ControlProfile::default(),
+            ],
             maps: [MapBuffer::allocate()?, MapBuffer::allocate()?],
             membership: bytes(MAP_BYTES)?,
             peek: [MemoryObservation::default(); 2],
