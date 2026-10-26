@@ -188,12 +188,11 @@ fn bootstrap_inner(
     // Preserve the actual user-return XSTATE, including deferred initial PKRU.
     // Never replace it with the earlier EXEC/EXIT extended-state image.
     poke_bytes(tid, envelope, &original)?;
-    set_registers(tid, &exec_exit.registers)?;
-    let restored_entry = TaskStateSnapshot {
-        registers: exec_exit.registers,
-        xstate: entry_trap.xstate.clone(),
-        mask: entry_trap.mask,
-    };
+    // The real user boundary has cleared orig_rax. Preserve that observed
+    // metadata along with its initialized XSTATE; undo only the owned INT3 RIP.
+    let mut restored_entry = entry_trap.clone();
+    restored_entry.registers.rip = pc;
+    restored_entry.restore(tid)?;
     if TaskStateSnapshot::read(tid)? != restored_entry
         || read_memory(tid, envelope, original.len())? != original
     {

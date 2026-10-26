@@ -372,18 +372,44 @@ fn entry_evidence(
         ));
     }
     let (first_image, expected) = if executable.interpreter.is_some() {
-        if base == 0 {
-            return Err(LaunchError::Invalid("seized interpreter base is absent"));
-        }
-        let interpreter = Elf::header(&read_memory(pid, base, 64)?)?;
-        if interpreter.kind != 3 {
-            return Err(LaunchError::Invalid("seized interpreter is not ET_DYN"));
-        }
-        (
-            FirstImage::Interpreter,
+        let expected = if base == 0 {
+            // Linux reports zero load bias for an ET_EXEC interpreter. Support
+            // the bounded case whose ELF header and first instruction occupy
+            // the same immutable first load mapping. Read the loaded header;
+            // descriptive pathnames do not authenticate its source identity.
+            let mapping = mappings
+                .iter()
+                .find(|mapping| {
+                    mapping.contains_executable(registers.rip)
+                        && mapping.file_offset == 0
+                        && mapping.permissions == "r-xp"
+                        && mapping
+                            .end
+                            .checked_sub(mapping.start)
+                            .is_some_and(|len| len >= 64)
+                })
+                .ok_or(LaunchError::Invalid(
+                    "seized fixed interpreter header is not mapped",
+                ))?;
+            let interpreter = Elf::header(&read_memory(pid, mapping.start, 64)?)?;
+            if interpreter.kind != 2
+                || interpreter.entry != registers.rip
+                || interpreter.entry == entry
+            {
+                return Err(LaunchError::Invalid(
+                    "seized fixed interpreter entry differs",
+                ));
+            }
+            interpreter.entry
+        } else {
+            let interpreter = Elf::header(&read_memory(pid, base, 64)?)?;
+            if interpreter.kind != 3 {
+                return Err(LaunchError::Invalid("seized interpreter is not ET_DYN"));
+            }
             base.checked_add(interpreter.entry)
-                .ok_or(LaunchError::Invalid("seized interpreter entry overflow"))?,
-        )
+                .ok_or(LaunchError::Invalid("seized interpreter entry overflow"))?
+        };
+        (FirstImage::Interpreter, expected)
     } else {
         if base != 0 {
             return Err(LaunchError::Invalid("unexpected seized interpreter base"));

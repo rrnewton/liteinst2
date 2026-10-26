@@ -211,8 +211,8 @@ fn launch<P: InstructionProvider>(
     // SAFETY: the private ELF images contain exactly the declared instruction
     // heads and immutable RX segments. There are no aliases, code reads, signal
     // frames, external writers or unqualified control transfers in these puzzles.
-    let _file_fork = FILE_FORK.lock().unwrap();
-    unsafe {
+    let file_fork = FILE_FORK.lock().unwrap();
+    let result = unsafe {
         DynamicAdmissionSession::launch(
             &LaunchCommand::new(path),
             facts,
@@ -220,8 +220,9 @@ fn launch<P: InstructionProvider>(
             provider,
             TIMEOUT,
         )
-    }
-    .unwrap()
+    };
+    drop(file_fork);
+    result.unwrap()
 }
 fn completion<P: InstructionProvider>(
     session: &mut DynamicAdmissionSession<P>,

@@ -156,7 +156,7 @@ pub struct EntryEvidence {
     pub first_image: FirstImage,
     /// Kernel AT_ENTRY, the main executable's entry.
     pub executable_entry: u64,
-    /// Kernel AT_BASE; zero for a program without an interpreter.
+    /// Kernel AT_BASE; zero without an interpreter or for a fixed ET_EXEC interpreter.
     pub interpreter_base: u64,
     /// Initial RIP, checked against the owning ELF entry.
     pub initial_instruction: u64,
