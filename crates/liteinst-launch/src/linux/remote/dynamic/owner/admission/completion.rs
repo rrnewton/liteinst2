@@ -15,6 +15,10 @@ use crate::selected::{CompletedInstruction, Operation, SyscallAbi};
 use crate::trap_coverage::{TrapGuard, TrapGuardRole};
 
 #[cfg(test)]
+mod journal_dispatch_tests;
+#[cfg(test)]
+mod journal_native_budget_tests;
+#[cfg(test)]
 mod journal_tests;
 
 /// Append-only evidence of a single already-used execution identity. Retaining

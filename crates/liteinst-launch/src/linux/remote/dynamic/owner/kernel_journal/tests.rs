@@ -1,6 +1,8 @@
 //! Synthetic journal transactions only. These tests manufacture model input,
 //! not native stops, ptrace ownership, syscall results or cleanup evidence.
 use super::*;
+
+pub(in crate::linux::remote::dynamic::owner) mod native;
 use crate::lifecycle::{
     CreationEvent, CreationEventKind, CreationRequest, HoldReason, LifecycleRegistry, Limits,
 };
