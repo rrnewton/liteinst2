@@ -1,0 +1,22 @@
+{
+  "files": {
+    "evaluation/native-two-returns-94a1fd3.md": {
+      "bytes": 4337,
+      "sha256": "bc637ae14bdee87cecf088df3f13f3c8c3021ca19dc6898dd4269899b3fc6d8f"
+    },
+    "evaluation/results/native-two-returns-94a1fd3/commands.csv": {
+      "bytes": 4631,
+      "sha256": "4168d1cda7a711e53bea9765c2a7056fe42ec361329e6ebb2ba0c2d02e5b251a"
+    },
+    "evaluation/results/native-two-returns-94a1fd3/native-cases.csv": {
+      "bytes": 13679,
+      "sha256": "dde6c2b4330e7f6c6b8d3ed805ac7e2974c798d2fe216d96eb26df93b232b026"
+    },
+    "evaluation/results/native-two-returns-94a1fd3/summary.json": {
+      "bytes": 43623,
+      "sha256": "2cb8864f354e0a03d4bbbcec57f3f47a255d1fcdd134e85ff22501da48654664"
+    }
+  },
+  "schema": 1,
+  "scope": "Four public data/Markdown files; this index excludes itself."
+}
