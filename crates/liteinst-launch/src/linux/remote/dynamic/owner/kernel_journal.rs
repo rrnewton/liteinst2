@@ -657,6 +657,10 @@ impl KernelJournalWriter {
         binding: KernelAttemptBinding,
     ) -> Result<PreparedKernelAttempt, LaunchError> {
         let number = binding.input.registers().rax;
+        // This finite list bounds journal observations; it grants no execution
+        // permission. The admission caller separately authenticates its native
+        // policy, including exact opt-in signal setup inputs, before preparing
+        // evidence and before any original release.
         if !matches!(
             binding.input.instruction().operation(),
             Operation::Syscall {
@@ -669,6 +673,8 @@ impl KernelJournalWriter {
                 | libc::SYS_exit
                 | libc::SYS_exit_group
                 | libc::SYS_clone
+                | libc::SYS_rt_sigaction
+                | libc::SYS_sigaltstack
         ) || number > i32::MAX as u64
             || number & 0x4000_0000 != 0
             || binding.pending.invocation == 0

@@ -158,11 +158,11 @@ matrix fixtures and one CALL-return fixture. The expected launcher unit cohort
 was 109 before the kernel journal increment. The journal adds twelve pure tests,
 fifteen native fault/oracle/capacity tests and two native forced-dispatch tests;
 the B2 finite comparator adds six integration tests. Expected launcher unit
-count before the signal increment is 138. The signal increment adds 55 pure
+count before the signal increment is 138. The signal increment adds 56 pure
 frame/census/profile/journal/extent/sizing controls, eight native reset controls
-and five native integration fixtures. Expected launcher unit count is 201.
-Workspace expectations are 1321 outer tests in 77 harnesses (1317 possible passes
-and four existing ignores); serial launch expects 483 tests in 25 harnesses.
+and five native integration fixtures. Expected launcher unit count is 202.
+Workspace expectations are 1322 outer tests in 77 harnesses (1318 possible passes
+and four existing ignores); serial launch expects 484 tests in 25 harnesses.
 The recorder catalog expects 208 controls, including eight additive signal/reset
 cohort checks. These are source-derived expected cohorts, not reported execution
 results.

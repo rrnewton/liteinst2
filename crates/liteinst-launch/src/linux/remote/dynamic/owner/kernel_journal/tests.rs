@@ -729,3 +729,96 @@ fn first_failure_is_preserved_across_closing_and_failed_cleanup() {
         KernelJournalFact::TransportComplete { .. } | KernelJournalFact::AdmissionComplete { .. }
     )));
 }
+
+#[test]
+fn signal_setup_journal_bindings_remain_finite_exact_and_unpublished() {
+    let registry = registry();
+    let mut writer = KernelJournalWriter::new(SESSION);
+    let before = writer.reader().snapshot();
+    for number in [libc::SYS_rt_sigaction, libc::SYS_sigaltstack] {
+        // These are consistent model bindings, not native setup permission.
+        // Profile, input-memory and default-policy checks belong to the caller.
+        let input = binding_from(&registry, number as u64);
+        let prepared = writer.prepare(input.clone()).unwrap();
+        assert_eq!(prepared.attempt.binding.pending, input.pending);
+        assert_eq!(prepared.attempt.binding.original_stop, input.original_stop);
+        assert_eq!(prepared.attempt.binding.input, input.input);
+        assert_eq!(prepared.attempt.binding.before, input.before);
+        assert_eq!(prepared.attempt.binding.until, input.until);
+        assert_eq!(prepared.attempt.length, 0);
+        assert!(prepared.retained_bytes() >= 8 * MAX_XSTATE);
+        assert_eq!(writer.reader().snapshot(), before);
+        drop(prepared);
+
+        for fault in 0..7 {
+            let mut corrupted = input.clone();
+            match fault {
+                0 => corrupted.before.registers.rax ^= 1,
+                1 => corrupted.before.registers.r15 ^= 1,
+                2 => corrupted.pending.stop.sequence += 1,
+                3 => corrupted.pending.stop.session += 1,
+                4 => corrupted.pending.epoch += 1,
+                5 => corrupted.pending.invocation = 0,
+                _ => corrupted.before.xstate.truncate(511),
+            }
+            assert!(matches!(
+                writer.prepare(corrupted),
+                Err(LaunchError::Invalid(
+                    "kernel journal binding is not an exact finite invocation"
+                ))
+            ));
+            assert_eq!(writer.reader().snapshot(), before);
+        }
+
+        let mut aliases = SyscallAliases::new();
+        aliases.declare(PC, SyscallAbi::LinuxI386Int80).unwrap();
+        let mut wrong_abi = input.clone();
+        wrong_abi.input = SelectedInput::new(
+            decode(PC, &[0xcd, 0x80], &aliases).unwrap(),
+            wrong_abi.before.registers,
+        )
+        .unwrap();
+        assert!(matches!(
+            writer.prepare(wrong_abi),
+            Err(LaunchError::Invalid(
+                "kernel journal binding is not an exact finite invocation"
+            ))
+        ));
+        assert_eq!(writer.reader().snapshot(), before);
+
+        let mut not_syscall = input;
+        not_syscall.input = SelectedInput::new(
+            decode(PC, &[0x0f, 0xa2], &SyscallAliases::default()).unwrap(),
+            not_syscall.before.registers,
+        )
+        .unwrap();
+        assert!(matches!(
+            writer.prepare(not_syscall),
+            Err(LaunchError::Invalid(
+                "kernel journal binding is not an exact finite invocation"
+            ))
+        ));
+        assert_eq!(writer.reader().snapshot(), before);
+    }
+    // Memory writers, mask changes and the separate sigreturn transport remain
+    // outside this observation list, as do x32 and oversized request numbers.
+    for number in [
+        libc::SYS_mmap as u64,
+        libc::SYS_mprotect as u64,
+        libc::SYS_rt_sigprocmask as u64,
+        libc::SYS_rt_sigreturn as u64,
+        0x4000_0000 | libc::SYS_rt_sigaction as u64,
+        0x4000_0000 | libc::SYS_sigaltstack as u64,
+        0x2000_0000,
+        i32::MAX as u64 + 1,
+        u64::MAX,
+    ] {
+        assert!(matches!(
+            writer.prepare(binding_from(&registry, number)),
+            Err(LaunchError::Invalid(
+                "kernel journal binding is not an exact finite invocation"
+            ))
+        ));
+        assert_eq!(writer.reader().snapshot(), before);
+    }
+}

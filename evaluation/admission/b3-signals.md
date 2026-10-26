@@ -90,6 +90,8 @@ The first failure remains separate from physical cleanup. Internally, one
 bounded record groups each raw stop with its information and state observations;
 public snapshots expand the same complete facts in their original order.
 The fixed record, state and frame limits remain 64, 16 and 32.
+A separate pure kernel-journal control checks exact setup-call bindings and
+unsupported syscall rejection without granting execution authority.
 
 Signal sessions authenticate the native XSTATE export extent using a successful
 maximum-size request at an owned bootstrap stop. Linux initializes the regset
@@ -100,6 +102,9 @@ reservations under the existing 64 MiB lifetime limit. All raw failure buffers
 remain reserved at 64 KiB, unused reservations are not refunded, and complete
 state comparisons stay exact. The reservation is not an allocator-capacity or
 resident-memory measurement.
+Two pure extent controls check certificate geometry and identity binding; eight
+pure reservation controls preserve the original formulas at the maximum extent,
+exact metadata and operation counts, all six budget limits and no refunds.
 
 Run the same complete validation protocol from the exact clean source revision:
 
