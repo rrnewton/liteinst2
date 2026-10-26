@@ -216,6 +216,8 @@ The [finite signal comparison](b3-signals.md) requires ordinary and alternate
 stacks, a genuine edited return, independently established nonzero inherited
 exception metadata and a strict corruption control. The separate reset cohort
 requires physical helper cleanup before any application is released.
+The [recorded signal result](b3-signals-e4d1322.md) binds the complete successful
+protocol to source `e4d13229` and retains the seven earlier failed attempts.
 
 The seven original named fixtures cover first CPUID entry, interpreter entry,
 native clone return boundaries, scripted default-policy RDPID coverage,
