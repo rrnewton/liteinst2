@@ -669,3 +669,5 @@ fn leader_pre_exit_remains_owned_until_worker_finishes_without_broker_worker_rea
     );
     h.finish(&[parent.tid, born.tid]);
 }
+
+mod deadline;

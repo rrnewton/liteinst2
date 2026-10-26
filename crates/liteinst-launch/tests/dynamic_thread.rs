@@ -1422,14 +1422,18 @@ fn syscall_free_thread_pair_deadline_closes_and_physically_reaps_both() {
     release(&mut s, &parent);
     release(&mut s, &worker);
     let start = Instant::now();
-    let result = s.next_event(Duration::from_millis(100));
+    let result = s.next_event_with_response_timeout(Duration::from_millis(100), TIMEOUT);
+    let elapsed = start.elapsed();
+    let closed = s.next_event(TIMEOUT);
+    // Preserve physical ownership even when one of the observations fails its
+    // assertion. The native event deadline and outer response bound are distinct.
+    finish(s, &handles);
     assert!(
         matches!(result, Err(LaunchError::Timeout("native lifecycle event"))),
         "unexpected thread deadline result: {result:?}"
     );
-    assert!(start.elapsed() < TIMEOUT);
-    assert!(s.next_event(TIMEOUT).is_err());
-    finish(s, &handles);
+    assert!(elapsed < TIMEOUT);
+    assert!(closed.is_err());
 }
 #[test]
 fn stale_foreign_and_wrong_task_tokens_do_not_release_held_siblings() {

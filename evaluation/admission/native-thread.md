@@ -106,10 +106,11 @@ overhead, not application or instrumentation performance.
 
 The existing parser, command deadlines, old tests, ignores, comparators and
 zero-adoptee gates remain required. Failed attempts stay failed in the tracked
-results. The corpus declares 33 added outer cases: twelve public native cases, five
-private native cases, eight private CET-certificate control/refusal cases, five
-pure shared-mm cases and three pure Exiting-phase cases. Four captured single-test raw-oracle/control invocations add no outer
-or parser-nested passes. The independent original-state oracle compares six
+results. The corpus declares 39 added outer cases: twelve public native cases, five
+private native cases, eight private CET-certificate control/refusal cases, six
+private deadline controls, five pure shared-mm cases and three pure Exiting-phase
+cases. Four captured single-test raw-oracle/control invocations add no outer or
+parser-nested passes. The independent original-state oracle compares six
 clone/first-user checkpoints; the shared-state oracle compares eight. Each
 snapshot includes all 27 general-register fields, flags/orig_rax, full XSTATE,
 signal mask, two initialized 32-byte stack windows, 512 bytes of data and
@@ -125,6 +126,35 @@ EAGAIN clone returns; each preserves full captured state except AX, retains
 one task/mm, then reaches the original UD2. A leader-first oracle separately
 checks the original event payload and actual shared group terminal status.
 These cases do not infer support for ordinary pthread or nonzero CET state.
+
+The one-budget `next_event(timeout)` API retains its end-to-end deadline. Its
+owner and response deadlines are equal, so an owner expiry and the caller's
+response expiry can race; the original fixture incorrectly required only the
+owner's label. The failed receipts retain that exact failure. The additive
+`next_event_with_response_timeout(event_timeout, response_timeout)` API gives
+both deadlines one start before enqueueing. Queue delay counts against the
+native event budget, and the response budget is a total duration, not additional
+time after event expiry. Both budgets must be positive and at most 30 seconds;
+the response budget must be at least the event budget. Invalid pairs do not
+enqueue, cancel, release tasks or change the registry.
+
+The public syscall-free deadline fixture now explicitly requests its existing
+100 ms native event budget and three-second observation bound through this
+API. This changes that fixture's response contract; it does not change the
+one-budget API. The exact `native lifecycle event` assertion remains required.
+An expired dispatch remains `dynamic command`, and response expiry remains
+`dynamic tracer response`; neither is accepted as native expiry. Scheduler
+starvation can therefore still fail the fixture. Full physical cleanup runs
+before outcome assertions, including on an unexpected result. Six additive
+private tests check common-start construction and validation, invalid budgets
+with two held native tasks and unchanged state, direct native-owner expiry,
+public split-budget expiry, the original 100 ms response deadline with a
+withheld real-owner reply, and delayed dispatch retaining the original command
+deadline. The response-expiry control keeps both tasks held and authenticates
+the owner's immediate `dynamic wait requires a released task` refusal before
+withholding delivery; it makes no native-wait-expiry claim. Test channel
+synchronization is bounded; the real tracer retains
+exclusive kernel ownership and the existing physical-cleanup requirements.
 
 This increment supplies bounded lifecycle prerequisites for claims 1 and 2,
 and systematic validation under claim 4 after full qualification. It grants no

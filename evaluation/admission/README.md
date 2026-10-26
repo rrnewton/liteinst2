@@ -132,10 +132,10 @@ and first-user phases remain distinct. Failed exec refuses continuation,
 including the independently observed post-point-of-no-return case. The original
 workspace, serial, telemetry, cleanup and recorder gates remain unchanged.
 
-The bounded native thread increment adds 33 outer tests: twelve public native
+The bounded native thread increment adds 39 outer tests: twelve public native
 cases, five private actual-order/refusal/exit cases, eight private CET-certificate
-control/refusal cases, five pure shared-mm cases and three pure Exiting-phase
-cases. Four captured single-test oracle/control
+control/refusal cases, six private deadline controls, five pure shared-mm cases
+and three pure Exiting-phase cases. Four captured single-test oracle/control
 invocations cover first-user state, shared writes and alternate-stack effects,
 leader-first exit statuses and output-pressure unwind. Each requires one exact
 summary and physical-cleanup witness, without adding outer or parser-nested
@@ -143,6 +143,12 @@ passes. Actual failed-clone retries preserve state and do not invent tasks.
 The explicit Exiting notification retains worker control without promising a
 terminal wait or physical process removal. All prior tests, ignores, native
 telemetry counts, deadlines and zero-adoptee gates remain required.
+The deadline fixture now requests a 100 ms native event deadline and an
+explicit three-second total response bound. The existing one-budget API retains
+its end-to-end deadline; an additive control requires its exact response-timeout
+error while withholding the real owner's reply. Both deadlines begin before
+enqueueing. Native expiry, expired dispatch and response expiry retain distinct
+error labels; the fixture accepts only native expiry. See `native-thread.md`.
 
 The new scripted random matrix forces 192 invocations covering both classes,
 all 16 GPR destinations, 16/32/64-bit widths and both carry outcomes. Native

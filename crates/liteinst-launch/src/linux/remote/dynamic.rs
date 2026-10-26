@@ -433,6 +433,34 @@ pub struct DynamicSession {
     operation_timeout: Duration,
 }
 
+fn command_deadlines(
+    event_timeout: Duration,
+    response_timeout: Duration,
+) -> Result<(Instant, Instant), LaunchError> {
+    let start = Instant::now();
+    if event_timeout.is_zero()
+        || event_timeout > MAX_LAUNCH_TIMEOUT
+        || response_timeout.is_zero()
+        || response_timeout > MAX_LAUNCH_TIMEOUT
+    {
+        return Err(LaunchError::Invalid(
+            "operation timeout must be in (0, 30 seconds]",
+        ));
+    }
+    if response_timeout < event_timeout {
+        return Err(LaunchError::Invalid(
+            "response timeout must not precede event timeout",
+        ));
+    }
+    let until = start
+        .checked_add(event_timeout)
+        .ok_or(LaunchError::Invalid("dynamic event deadline overflow"))?;
+    let response_until = start
+        .checked_add(response_timeout)
+        .ok_or(LaunchError::Invalid("dynamic response deadline overflow"))?;
+    Ok((until, response_until))
+}
+
 impl DynamicSession {
     /// Launches a seized native ELF and stops at its actual exec event.
     /// A failed or timed-out launch can leave cleanup running on its dedicated
@@ -450,8 +478,9 @@ impl DynamicSession {
     /// ThreadClone instead permits exactly flags 0x10f00, a nonzero child stack
     /// with 128 readable/writable bytes below it, and zero TLS/TID arguments.
     /// It requires TF clear, a singleton leader in the tracer's PID namespace,
-    /// PIDFD_THREAD support, and successful per-task shadow-stack/WRSS status equal to zero.
-    /// Any unavailable status interface refuses; CPU feature inference is unused.
+    /// PIDFD_THREAD support, and either an exact zero shadow-stack/WRSS status
+    /// or the controlled native-ABI absence certificate. An unavailable
+    /// interface alone is insufficient; CPU feature inference is unused.
     /// Exact parent/child XSTATE must agree before either original task resumes;
     /// unsupported inheritance (including dynamic state) closes the session.
     /// No other clone, exec, vfork, mapping invalidation or publication is qualified.
@@ -567,10 +596,19 @@ impl DynamicSession {
     }
 
     fn call(&mut self, request: Request, timeout: Duration) -> Result<Response, LaunchError> {
+        self.call_with_response_timeout(request, timeout, timeout)
+    }
+
+    fn call_with_response_timeout(
+        &mut self,
+        request: Request,
+        event_timeout: Duration,
+        response_timeout: Duration,
+    ) -> Result<Response, LaunchError> {
         if self.cancel.load(Ordering::Acquire) {
             return Err(LaunchError::Invalid("dynamic session is closing"));
         }
-        let until = deadline(timeout)?;
+        let (until, response_until) = command_deadlines(event_timeout, response_timeout)?;
         let (reply, response) = channel();
         self.commands
             .send(Command {
@@ -579,7 +617,7 @@ impl DynamicSession {
                 reply,
             })
             .map_err(|_| LaunchError::Invalid("dynamic tracer is closed"))?;
-        match response.recv_timeout(until.saturating_duration_since(Instant::now())) {
+        match response.recv_timeout(response_until.saturating_duration_since(Instant::now())) {
             Ok(result) => result,
             Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                 self.cancel.store(true, Ordering::Release);
@@ -594,6 +632,27 @@ impl DynamicSession {
     /// Waits for the next kernel event without resuming any stopped task.
     pub fn next_event(&mut self, timeout: Duration) -> Result<DynamicEvent, LaunchError> {
         match self.call(Request::Wait, timeout)? {
+            Response::Event(event) => Ok(event),
+            _ => unreachable!(),
+        }
+    }
+
+    /// Waits with separate event and response deadlines from the same start.
+    /// Both durations must be in (0, MAX_LAUNCH_TIMEOUT], and response_timeout
+    /// must be at least event_timeout. Invalid budgets never queue a command.
+    /// The event deadline includes dispatch time; an already expired command
+    /// retains its command-timeout error. The response deadline is the total
+    /// client wait, not an extra duration after the event deadline. A longer
+    /// response budget lets the owner deliver its event-expiry error; it does
+    /// not extend native event collection or guarantee scheduling latency.
+    /// Any timeout retains the existing cancellation and cleanup ownership.
+    /// next_event(timeout) continues using one equal deadline for both waits.
+    pub fn next_event_with_response_timeout(
+        &mut self,
+        event_timeout: Duration,
+        response_timeout: Duration,
+    ) -> Result<DynamicEvent, LaunchError> {
+        match self.call_with_response_timeout(Request::Wait, event_timeout, response_timeout)? {
             Response::Event(event) => Ok(event),
             _ => unreachable!(),
         }
