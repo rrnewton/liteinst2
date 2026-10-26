@@ -218,3 +218,5 @@ The [exact-revision native record at `74aaf19a`](frontend-native-74aaf19a-actual
 The separate [renderer controls](frontend-native-exact-revision-controls.md) record four accepted cases and seven expected refusals, with no native execution.
 
 The [two-return native leaf record at `94a1fd3`](native-two-returns-94a1fd3.md) adds both ordinary return paths while retaining all four original modes. Its exact-revision workspace run passed 1,050 tests with four unchanged ignores; eight native modes passed 456 full-state comparisons. The [finite recipe](native-two-returns/README.md) reproduces the campaign. These are bounded claim 4 results, with full A2–A5 still open.
+
+The [grouped successor-chain result at `7520688`](chain-grouping-7520688.md) records 108 full-state comparisons and four virtual pages sharing one sealed backing page, with collision rollback and writable-upgrade refusals. The required workspace run passed 1,056 tests with four unchanged ignores. The [recipe](chain-grouping/README.md) runs the unchanged gates once; the result supports one bounded slice of claim 4.

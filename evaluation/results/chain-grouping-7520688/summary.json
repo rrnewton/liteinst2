@@ -1,0 +1,177 @@
+{
+  "schema": "liteinst2-chain-grouping-result-v1",
+  "status": "passed",
+  "tested_revision": "752068868f78279d2953082ceb4d54efe510d0d4",
+  "reported_scope": "one fixed depth-two B2 grouped successor chain plus the four unchanged required workspace gates",
+  "reported_scope_complete": true,
+  "full_a2_qualified": false,
+  "source": {
+    "tracked_files": 1068,
+    "before_sha256": "76b772f427480b2d8c5d552ccea55fd1469c9db5f102a896e47e55e466af08ec",
+    "after_sha256": "76b772f427480b2d8c5d552ccea55fd1469c9db5f102a896e47e55e466af08ec",
+    "tracked_diff_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "before_after_equal": true
+  },
+  "recipe": {
+    "path": "evaluation/chain-grouping/reproduce.py",
+    "sha256": "d0e2c04abf6b22771fc6b7061083896f467623fb3b5d35f6d38a1f594628b52c",
+    "required_runner_path": "evaluation/required-gates.py",
+    "required_runner_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b"
+  },
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host",
+    "observation": {
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+      "architecture": "x86_64",
+      "logical_cpus": 316,
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "libc": [
+        "glibc",
+        "2.34"
+      ]
+    },
+    "record_sha256": "5398b85e62db96ac1e588c3213d07ad15ddfdd4302be7831115ca44c2d2c1d33",
+    "scope": "one observation before the dispatcher; no continuous hardware attestation"
+  },
+  "tool_observations": {
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)\n",
+    "gcc_version": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "record_sha256": "04fb2b2563c029fb28c63a9a44bc679d14fa71f6b79713c24529d65dbd78c130",
+    "scope": "recorded version output; no complete compiler or runtime dependency-owner closure"
+  },
+  "coordinates": {
+    "${REPO}": "clean canonical checkout of tested_revision",
+    "${RAW}": "fresh absent absolute directory strictly below REPO/ignored, with an existing canonical parent",
+    "${RAW_REL}": "RAW relative to REPO; used only in recorded gate log coordinates",
+    "${PYTHON}": "absolute Python interpreter path; recorded interpreter was /usr/bin/python3.9",
+    "${RUST_TOOLCHAIN}": "canonical installed Rust 1.97.1 toolchain directory containing bin/",
+    "${USER_HOME}": "canonical existing user home directory",
+    "${CARGO_HOME}": "canonical existing Cargo home with the locked offline dependencies"
+  },
+  "recorded_dispatch": {
+    "revision": "752068868f78279d2953082ceb4d54efe510d0d4",
+    "argv": [
+      "${PYTHON}",
+      "-B",
+      "${REPO}/evaluation/required-gates.py",
+      "--repo",
+      "${REPO}",
+      "--output",
+      "${RAW}/gates"
+    ],
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "HOME": "${USER_HOME}",
+      "RUSTC": "${RUST_TOOLCHAIN}/bin/rustc",
+      "RUSTDOC": "${RUST_TOOLCHAIN}/bin/rustdoc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUST_TEST_THREADS": "4",
+      "LC_ALL": "C",
+      "PATH": "${RUST_TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "LITEINST_CHAIN_MAIN_THREAD_CAPTURES": "${RAW}/captures"
+    },
+    "start_utc": "2026-10-26T06:43:57.340022+00:00",
+    "runner_sha256": "d0e2c04abf6b22771fc6b7061083896f467623fb3b5d35f6d38a1f594628b52c",
+    "required_runner_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b"
+  },
+  "gate_environment": {
+    "base": "recorded_dispatch.env",
+    "overrides": {
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "RUST_TEST_THREADS": "4",
+      "CARGO_NET_OFFLINE": "true",
+      "TMPDIR": "${RAW}/gates"
+    },
+    "derivation": "exact checked-in required-gates.py: copy the complete recorded dispatcher environment and apply these six overrides; per-gate environments were not separately serialized"
+  },
+  "commands_file": "commands.csv",
+  "command_count": 4,
+  "workspace_test_accounting": {
+    "outer_groups": 63,
+    "passed": 1056,
+    "failed": 0,
+    "ignored": 4,
+    "filtered_out": 0,
+    "nested_one_test_summaries_passed_separately": 5,
+    "guard_child_starts_without_separate_terminal_credit": 2,
+    "denominator_note": "nested summaries and guard starts are not added to the outer test total",
+    "declared_outer_cases": 1060,
+    "old_case_identities_retained_including_ignores": 1054,
+    "new_contract_tests": [
+      "every_bundle_limit_remains_binding_with_grouped_backing",
+      "every_grouping_limit_remains_binding_at_each_composed_suffix",
+      "exact_four_virtual_pages_share_one_backing_page_without_plan_changes",
+      "grouped_suffix_backtracking_preserves_trials_failures_and_global_cutoff",
+      "ordinary_chain_still_refuses_one_page_of_backing_before_search"
+    ],
+    "new_native_test": "native_grouped_eviction_chain_all_original_entries",
+    "retained_rapid_profiler_models": 98,
+    "retained_native_calibrations": 26,
+    "retained_compile_fail_doc_subjects": 10,
+    "docs_evidence": "subjects/results in the required log; full diagnostic bodies were not captured"
+  },
+  "case_file": "case.json",
+  "case_raw_summary_sha256": "e4e5156e2a6b8f0a06741e86145e3ecc536b9a184dd1a6fc2812569793d7bea9",
+  "case_evidence": {
+    "state_comparisons": "108 successful unchanged NativeOracle full-state assertions; individual machine snapshots were not serialized",
+    "traces": "12 original, 12 installed and 12 retired traces; these are trace counts, not cohort-child counts",
+    "transactions": "one late allocation collision refused before source writes; four writable permission upgrades refused; exact shared RX page/owner and PC ownership assertions passed",
+    "serialization_boundary": "Full state, hook, alias-page byte, seal-syscall and intermediate rollback observations are successful source assertions; their individual values were not separately serialized. Saved process maps and the post-assertion summary corroborate the stated geometry and completion."
+  },
+  "bounds": {
+    "required_gate_wall_seconds": [
+      180,
+      180,
+      360,
+      180
+    ],
+    "cargo_jobs": 4,
+    "rust_test_threads": 4,
+    "incremental": false,
+    "cohort_cpu_seconds": 20,
+    "cohort_wall_seconds": 30,
+    "owned_cleanup_seconds": 2,
+    "cohort_rlimit_fsize_bytes": 16777216,
+    "native_trace_wall_seconds": 15,
+    "native_trace_step_limit": 20000,
+    "file_limit_note": "RLIMIT_FSIZE is a per-file size bound, not an aggregate output limit"
+  },
+  "dispatcher_result": {
+    "exit": 0,
+    "stdout_sha256": "2410279c964d86cb0afe74ddc225dd6962a00868927745d8b3297ab660d23d37",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "raw_record_hashes": {
+    "command": "0f5e4dd85a92db42db00ddf9dadf156833f24ab988e6d9ae1700d085b748bc95",
+    "gates": "0a8b9eacb05c85e063d023c3b88b264a90d0a299109267b40ddb2be4330d6ce1",
+    "result": "32c0bce0a363108309a528fc4343f262bcfa1284b54f4aab92976130e99d62e6",
+    "grouped_result": "39e8b5a3828dbf448b6e71030ba9ca26542f14842ff2df7418d27193e5612ba5"
+  },
+  "independent_actual_review": {
+    "decision": "approve",
+    "binding_sha256": "57cf40b3cf9385dfc4500d9afc74f7eb32153abb86bb6fa3ec296fe4a07c3ea1",
+    "review_sha256": "e5dc9b167c75e2308639ab2657e51facaf90864a5811ab5a0f92a601004ec86e",
+    "checks_sha256": "6404141473917aa1d6fd747025158d2bdd3a314a23f7373e8e9783dec43b554a",
+    "source_review_sha256": "26e9db709da57db99dffcddfc3abb33c85df2ee3a9ee96914bbc1f707d6fa1c1",
+    "native_subcheck_sha256": "7790dbc2322cf59799742d857163b8136f9f592e789a0dead62f5eb53fb9a6c7",
+    "scope": "required commands, exact committed source, saved isolation/maps/summary and successful unchanged source assertions; no full artifact or tool closure"
+  },
+  "authorship": "The public-packet author also authored the grouped native fixture; an independent reviewer checks the actual campaign.",
+  "limits": [
+    "one authored geometry and its two existing state seeds; no exhaustive grouping claim",
+    "no full A2, CET, Intel-host, or claims 1\u20133 qualification",
+    "elapsed command times are operational diagnostics, not performance measurements",
+    "no additional native execution or artifact/tool closure inferred from this publication",
+    "earlier results remain separate and unchanged"
+  ]
+}

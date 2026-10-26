@@ -1,0 +1,23 @@
+{
+  "schema": "liteinst2-public-file-index-v1",
+  "path_root": "repository",
+  "excludes": "this files.json index; the enclosing private manifest binds all five public files",
+  "files": {
+    "evaluation/chain-grouping-7520688.md": {
+      "sha256": "345cab1a9ec47f3703f039c91f88f8d0aeeb20ac5fa3a0b3b9f9a354c8857875",
+      "bytes": 3319
+    },
+    "evaluation/results/chain-grouping-7520688/case.json": {
+      "sha256": "e4e5156e2a6b8f0a06741e86145e3ecc536b9a184dd1a6fc2812569793d7bea9",
+      "bytes": 809
+    },
+    "evaluation/results/chain-grouping-7520688/commands.csv": {
+      "sha256": "9c94db112923be30e09b6e42ddcf741e17da6deec5567d3ebd23dda2f83225d5",
+      "bytes": 1246
+    },
+    "evaluation/results/chain-grouping-7520688/summary.json": {
+      "sha256": "8a91ebc1a7a28e4030f5bf5d505eb5a2f81db64878b9db8526db549aaea6aacf",
+      "bytes": 8700
+    }
+  }
+}

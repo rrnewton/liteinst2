@@ -113,8 +113,9 @@ all declared original entries, and transaction failures. See
 parity gate passes with exact bytes, maps, contracts and diagnostics; the
 integrated workspace passes its required checks. Additive native fixtures now
 cover a short conditional backedge and a readable/protected-page load anchor;
-see `evidence/a2-chain-branches-faults-20261025.md`. Native qualification of
-grouped chains and broader branch/memory families remain open.
+see `evidence/a2-chain-branches-faults-20261025.md`. The grouped-chain
+increment below adds one required composition; broader branch/memory families
+retain their existing unqualified status.
 
 `eviction_chain::plan_successor_chain_grouped` and its detailed variant opt the
 same bounded search into the existing sealed grouped-bundle transaction. Both
@@ -126,6 +127,16 @@ that exact member order. Addresses, emitted bytes, source overlays, locks and
 entry/PC maps remain unchanged. The ordinary chain APIs retain private backing
 and their existing checks. This API addition does not itself qualify any native
 execution, broader chain family or full A2 claim.
+
+The [grouped-chain validation](evaluation/chain-grouping-7520688.md) executes
+the existing depth-two B2 chain at every one of its six declared heads under
+both state seeds, before publication, installed and retired. It requires four
+virtual pages (16 KiB) backed by one sealed 4 KiB page, 108 full-state
+comparisons, four rejected writable upgrades and rollback after a late alias
+collision. Both backing budgets accept exactly 4 KiB and reject 4,095 bytes;
+virtual resource limits remain binding. These checks combine planner
+tests, executed native assertions and mapping observations; they are not
+resident-memory or performance measurements.
 
 `neighbor::plan_neighbor` forces T3. A selected 2–4-byte instruction receives
 EB rel8 to a private relay at V+5 inside a whole 10–15-byte victim at V. The
@@ -215,12 +226,13 @@ logical-PC lookup is checked separately. See
 `evidence/a2-boundary-signals-20261025.md` for the exact native inventory and the
 remaining asynchronous-delivery and unwind limits.
 
-The full A2 exit gate remains open. Required gaps include broader exception
-and generated-unwind support, active CET and Intel evidence, broader chain
-qualification/grouping, arbitrary asynchronous signal delivery and generated
-unwind qualification. Existing unsupported refusals and finite AMD results do not
-substitute for those required fixtures. Generalized puns retain first priority
-for install-once clients; ordinary relocation precedes T1. Concurrent toggle
-visibility remains A4 work.
+The full A2 exit gate remains open. Enabled IBT/shadow-stack positive fixtures
+and an Intel cross-check of the supported subset still require qualification;
+unsupported refusals and AMD results do not substitute for those executions.
+The finite puzzle and campaign gate does not assert exhaustive search or support
+for arbitrary asynchronous signals, exceptions or unwind formats. Existing
+signal, landing and generated-backtrace evidence retains its exact scoped
+contracts. Generalized puns retain first priority for install-once clients;
+ordinary relocation precedes T1. Concurrent toggle visibility remains A4 work.
 
 `publish_with_unwind` provides scoped `BacktraceOnly` support for two authored frame profiles, with process-lifetime ownership of retained CFI metadata. The [consumer evidence and reproduction index](evaluation/consumer-public.md) records the qualified native witnesses, ordinary-planner parity, failed fresh-reproduction prerequisites and their separate source epochs. Full A2 remains open; this does not establish general CFI coverage, arbitrary asynchronous unwinding or general unwind support.
