@@ -247,46 +247,5 @@ pub(super) fn authenticate_bootstrap(
     boot: &BootstrapMm,
     until: Instant,
 ) -> Result<(), GateError> {
-    owner.time_left(until, "exec held bootstrap authentication")?;
-    native.require_admission_stop(&boot.stop)?;
-    let task = boot.stop.identity;
-    let members = native.check_admission_mm(owner, task.task)?;
-    if owner.lifecycle.is_some()
-        || owner.owned.len() != 1
-        || !owner.owned.contains(&owner.pid)
-        || boot.stop.token.tid != owner.pid
-        || boot.stop.token.session != owner.session
-        || owner.pin_kinds.get(&owner.pid) != Some(&PinKind::Process)
-        || owner.handles.get(&owner.pid).is_none_or(broker::hup)
-        || owner.reaped.contains(&owner.pid)
-        || owner.tracer_terminal.contains_key(&owner.pid)
-        || !native.admission_events_empty()
-        || native.admission_interrupt_credit(owner.pid)? != 0
-        || !matches!(
-            boot.stop.phase,
-            AdmissionPhase::EntryReady | AdmissionPhase::Restored
-        )
-        || boot.stop.signal.is_some()
-        || task.generation != 0
-        || members.address_space != task.address_space
-        || members.process != task.process
-        || members.generation != 0
-        || members.tgid != owner.pid
-        || members.tids.len() != 1
-        || !members.tids.contains(&owner.pid)
-        || members.candidate.tasks.as_slice() != [task.task]
-        || boot.island.address_space != task.address_space
-        || boot.island.generation != 0
-        || owner
-            .stopped
-            .get(&owner.pid)
-            .is_none_or(|status| !libc::WIFSTOPPED(*status))
-    {
-        return Err(refused(
-            "exec bootstrap no longer owns the exact held singleton",
-        ));
-    }
-    boot.island.verify(owner.pid)?;
-    owner.time_left(until, "exec held bootstrap authentication")?;
-    Ok(())
+    super::super::source_identity::authenticate_bootstrap(owner, native, boot, until)
 }

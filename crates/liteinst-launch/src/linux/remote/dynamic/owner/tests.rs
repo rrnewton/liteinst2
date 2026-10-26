@@ -43,13 +43,16 @@ impl Drop for IsolatedChild {
     }
 }
 
-struct Fixture {
+pub(super) struct Fixture {
     directory: PathBuf,
     path: PathBuf,
 }
 
 impl Fixture {
-    fn new(fork: bool) -> Self {
+    pub(super) fn command(&self) -> LaunchCommand {
+        LaunchCommand::new(&self.path)
+    }
+    pub(super) fn new(fork: bool) -> Self {
         Self::code(if fork {
             // SYS_fork; both branches remain in original user-space loops.
             &[0xb8, 57, 0, 0, 0, 0x0f, 0x05, 0xeb, 0xfe]
@@ -57,7 +60,7 @@ impl Fixture {
             &[0xeb, 0xfe]
         })
     }
-    fn code(code: &[u8]) -> Self {
+    pub(super) fn code(code: &[u8]) -> Self {
         let _guard = crate::TEST_FILE_FORK.lock().unwrap();
         let directory = Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("test-tmp")
@@ -107,22 +110,22 @@ impl Drop for Fixture {
     }
 }
 
-struct Harness {
+pub(super) struct Harness {
     owner: Option<Owner>,
     mask: Option<launch::BlockedSignals>,
 }
 
 impl Harness {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self {
             owner: Some(Owner::new(0, Arc::new(AtomicBool::new(false)))),
             mask: Some(launch::BlockedSignals::new().unwrap()),
         }
     }
-    fn owner(&mut self) -> &mut Owner {
+    pub(super) fn owner(&mut self) -> &mut Owner {
         self.owner.as_mut().unwrap()
     }
-    fn launch(&mut self, fixture: &Fixture) -> Result<Ready, LaunchError> {
+    pub(super) fn launch(&mut self, fixture: &Fixture) -> Result<Ready, LaunchError> {
         let inherited = self.mask.as_ref().unwrap().original();
         let _guard = crate::TEST_FILE_FORK.lock().unwrap();
         launch::start(
@@ -132,7 +135,7 @@ impl Harness {
             Instant::now() + TIMEOUT,
         )
     }
-    fn finish(mut self) -> DynamicCleanup {
+    pub(super) fn finish(mut self) -> DynamicCleanup {
         let result = self.owner().cleanup();
         self.owner.take();
         self.mask.take().unwrap().restore().unwrap();
@@ -152,7 +155,7 @@ impl Drop for Harness {
     }
 }
 
-fn pin(pid: libc::pid_t) -> OwnedFd {
+pub(super) fn pin(pid: libc::pid_t) -> OwnedFd {
     // SAFETY: the fixture is exclusively owned and has not been reaped.
     let raw = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) };
     assert!(raw >= 0, "pidfd_open: {}", io::Error::last_os_error());
@@ -193,7 +196,7 @@ fn tracer_retired(handle: &OwnedFd) {
     );
 }
 
-fn reaped(handle: &OwnedFd) {
+pub(super) fn reaped(handle: &OwnedFd) {
     tracer_retired(handle);
     assert!(
         broker::hup(handle),

@@ -17,6 +17,14 @@ use crate::selected::{ProviderDecision, SelectedInput};
 use std::collections::VecDeque;
 
 mod census;
+mod runtime;
+mod runtime_capture;
+mod runtime_instruction;
+mod runtime_native;
+mod source_identity;
+pub(in crate::linux::remote::dynamic::owner) use mapping::maps::{MapEntry, ParsedMaps};
+pub(in crate::linux::remote::dynamic::owner) use runtime::RuntimeOwner;
+pub(in crate::linux::remote::dynamic::owner) use source_identity::require_initial_task_identity;
 mod completion;
 mod domain;
 mod drive;
@@ -134,6 +142,9 @@ impl Owner {
             .exec_journal
             .as_ref()
             .map(|journal| journal.panic_scope());
+        if self.runtime.is_some() || matches!(&request, AdmissionRequest::StartRuntime { .. }) {
+            return self.execute_runtime(request, until);
+        }
         if let Some(mut admission) = self.admission.take() {
             // Restore custody of the complete live and retired admission
             // history even when execution unwinds. The outer owner handler
@@ -637,6 +648,11 @@ impl AdmissionOwner {
             ));
         }
         match request {
+            AdmissionRequest::StartRuntime { .. } | AdmissionRequest::CompleteRuntime { .. } => {
+                Err(GateError::Refused(
+                    "runtime command reached legacy admission custody",
+                ))
+            }
             AdmissionRequest::Start { .. }
             | AdmissionRequest::StartSignals { .. }
             | AdmissionRequest::StartExec { .. }

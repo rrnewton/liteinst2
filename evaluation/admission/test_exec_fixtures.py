@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 import unittest
 
+from test_runtime_inventory import before_runtime
+
 import native_fixtures as fixtures
 from parsing import InvalidEvidence
 import run
@@ -381,6 +383,7 @@ class ExecFixtureTests(unittest.TestCase):
             total += count
         self.assertEqual(total, UNIT_INCREMENT)
         declared = json.loads((root / "evaluation/admission/corpus.json").read_text())
+        declared = before_runtime(declared)
         self.assertEqual(declared["native_validation_fixtures"][42:50], ROWS + PRIVATE_ROWS)
         self.assertEqual(declared["native_validation_fixtures"][50:], FAILURE_ROWS)
         self.assertEqual(len(fixtures.catalog(declared["native_validation_fixtures"])), 56)

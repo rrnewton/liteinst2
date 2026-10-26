@@ -15,6 +15,12 @@ pub(super) use exec::{
 };
 #[cfg(test)]
 mod panic_custody;
+mod runtime;
+pub(super) use runtime::{InitialRuntimeReservation, initial_runtime_origin_charge};
+mod ordinary;
+pub(super) use ordinary::{OrdinaryCensusResult, PreparedOrdinaryCensus, ordinary_census_charge};
+mod selected_runtime;
+pub(super) use selected_runtime::PreparedRuntimeSelected;
 mod signal;
 pub(super) use signal::{FrameFacts, SignalReturnWitness};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -265,6 +271,11 @@ pub(super) enum StopPhase {
     SelectedComplete {
         invocation: ExecutionId,
     },
+    /// One genuine owned trace completion, inserted only by the consumed
+    /// ordinary seal adapter. Generic current-origin insertion stays closed.
+    OwnedOrdinaryComplete {
+        execution: ExecutionId,
+    },
 }
 
 /// Full original observation. A raw INT3 RIP may be logical_pc + 1; the input
@@ -303,6 +314,16 @@ impl ObservedStop {
             return Err(CensusError::InvalidObservation);
         }
         match self.phase {
+            StopPhase::OwnedOrdinaryComplete { execution }
+                if execution.session != session
+                    || execution.serial == 0
+                    || self.signal.as_ref().map(DynamicSignalInfo::signal)
+                        != Some(libc::SIGTRAP)
+                    || self.signal.as_ref().map(DynamicSignalInfo::code)
+                        != Some(libc::TRAP_TRACE) =>
+            {
+                return Err(CensusError::InvalidObservation);
+            }
             StopPhase::OriginalSignal if self.signal.is_none() => {
                 return Err(CensusError::InvalidObservation);
             }
@@ -472,6 +493,8 @@ enum Consumption {
         execution: ExecutionId,
         first_instruction: Vec<u8>,
     },
+    /// Exactly one preallocated immutable record; actual authority was consumed.
+    OwnedOrdinary(Box<[ordinary::OrdinaryEvidence]>),
     KernelClone(Box<CompletedKernel>),
     Signal(Box<signal::SignalConsumption>),
 }
@@ -620,6 +643,9 @@ impl OwnerConsumption {
                 first_instruction, ..
             } => first_instruction.len(),
             Consumption::Signal(signal) => signal.retained_bytes(),
+            Consumption::OwnedOrdinary(records) => {
+                records.len() * std::mem::size_of::<ordinary::OrdinaryEvidence>()
+            }
             Consumption::KernelClone(kernel) => {
                 kernel.before.retained_bytes()
                     + kernel.entry.retained_bytes()

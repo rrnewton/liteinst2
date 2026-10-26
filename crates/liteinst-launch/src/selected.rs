@@ -360,6 +360,10 @@ impl DecodedSelected {
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
     }
+    /// Actual private encoding allocation retained by bounded owner adapters.
+    pub(crate) fn retained_capacity(&self) -> usize {
+        self.bytes.capacity()
+    }
     /// Decoded class, operand and ABI information.
     pub const fn operation(&self) -> Operation {
         self.operation

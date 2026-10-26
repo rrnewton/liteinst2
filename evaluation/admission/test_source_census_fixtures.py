@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 import unittest
 
+from test_runtime_inventory import before_runtime
+
 import native_fixtures as fixtures
 from parsing import InvalidEvidence
 import run
@@ -193,6 +195,7 @@ class SourceCensusFixtureTests(unittest.TestCase):
 
     def test_real_catalog_keeps_exact_old36_and_requires_single_new_native_identity(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_runtime(declared)
         all_rows = declared["native_validation_fixtures"]
         self.assertEqual(len(all_rows), 56)
         rows = all_rows[:37]

@@ -7,6 +7,8 @@ from pathlib import Path
 import re
 import unittest
 
+from test_runtime_inventory import before_runtime
+
 import native_fixtures as fixtures
 from parsing import InvalidEvidence
 import run
@@ -189,6 +191,7 @@ class MappingFixtureTests(unittest.TestCase):
     def test_real_catalog_pins_old37_exact_five_source_names_and_both_harness_denominators(self):
         path = Path(__file__).with_name("corpus.json")
         declared = json.loads(path.read_text())
+        declared = before_runtime(declared)
         rows = declared["native_validation_fixtures"]
         self.assertEqual(len(rows), 56)
         old = json.dumps(rows[:37], sort_keys=True, separators=(",", ":"), ensure_ascii=True).encode()

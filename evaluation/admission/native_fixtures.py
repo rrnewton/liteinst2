@@ -56,6 +56,34 @@ PREFIXES = (
     "linux::remote::dynamic::owner::admission::completion::journal_native_budget_tests::",
 )
 
+# Closed runtime native modules. Pure runtime tests remain ordinary unit rows.
+RUNTIME_COHORTS = (('b3_runtime_startup',
+  'linux::remote::dynamic::owner::admission::runtime::native_tests::',
+  ('initial_runtime_startup_preserves_real_boundary_state_sources_and_nx',
+   'initial_runtime_owner_refuses_raw_bypass_and_repeated_start',
+   'initial_runtime_expired_original_deadline_keeps_pristine_exec',
+   'initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec',
+   'initial_runtime_source_window_refusal_retains_completed_bootstrap',
+   'initial_runtime_unwind_retains_native_bootstrap_until_physical_cleanup')),
+ ('b3_runtime_ordinary',
+  'linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::',
+  ('runtime_ordinary_literal_moves_and_add_preserve_exact_checkpoints',
+   'runtime_ordinary_single_step_stops_before_same_page_marker',
+   'runtime_ordinary_conditional_branch_preserves_complete_state',
+   'runtime_ordinary_same_pc_loop_consumes_distinct_origin',
+   'runtime_ordinary_nop_matches_independent_raw_single_step')),
+ ('b3_runtime_selected',
+  'linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::',
+  ('runtime_selected_cpu_and_ordinary_keep_exact_control_lineage',
+   'runtime_selected_native_refuses_without_ordinary_fallback',
+   'runtime_selected_syscall_refuses_without_ordinary_fallback',
+   'runtime_ordinary_memory_and_stack_refuse_before_effects',
+   'runtime_actual_dr7_refuses_before_original_release')))
+RUNTIME_ROWS = tuple({"cohort": cohort, "harness": UNIT, "test": prefix + name}
+                     for cohort, prefix, names in RUNTIME_COHORTS for name in names)
+RUNTIME_IDENTITIES = {row["test"]: row for row in RUNTIME_ROWS}
+RUNTIME_NATIVE_ROOTS = tuple(prefix.removesuffix("::") for _, prefix, _ in RUNTIME_COHORTS)
+
 
 def catalog(fixtures):
     require(type(fixtures) is list, "invalid_native_fixture_catalog")
@@ -65,6 +93,8 @@ def catalog(fixtures):
                 "invalid_native_fixture_catalog")
         require(all(type(value) is str for value in row.values())
                 and NAME.fullmatch(row["test"]), "invalid_native_fixture_catalog")
+        require(not row["test"].startswith(RUNTIME_NATIVE_ROOTS)
+                or row == RUNTIME_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
         require(row["test"] not in MAPPING_TESTS
                 or (row["cohort"] == "b3_mapping" and row["harness"] == MAPPING_REFERENCE),
                 "invalid_native_fixture_scope")
@@ -93,7 +123,8 @@ def catalog(fixtures):
                 or (row["cohort"] == "b3_exec_private" and row["harness"] == UNIT
                     and row["test"] in EXEC_PRIVATE_TESTS)
                 or (row["cohort"] == "b3_exec_failure" and row["harness"] == UNIT
-                    and row["test"] in EXEC_FAILURE_TESTS), "invalid_native_fixture_scope")
+                    and row["test"] in EXEC_FAILURE_TESTS)
+                or row == RUNTIME_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
         key = (row["harness"], row["test"])
         require(key not in identities, "duplicate_native_fixture_catalog")
         identities[key] = row
@@ -159,7 +190,8 @@ def fixture_outcomes(output, fixtures, successful_command):
                 require(start[1] not in known_names or key in expected,
                         "native_fixture_wrong_harness")
                 require(key in expected or (current == UNIT and not start[1].startswith(
-                    PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX, EXEC_PRIVATE_PREFIX))),
+                    PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX, EXEC_PRIVATE_PREFIX)
+                    + RUNTIME_NATIVE_ROOTS)),
                         "native_fixture_cohort_differs")
                 seen_tests.add(key)
                 active = key

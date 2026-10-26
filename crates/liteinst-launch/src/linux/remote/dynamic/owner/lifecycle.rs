@@ -920,3 +920,5 @@ fn same_pid_namespace(tid: libc::pid_t) -> Result<(), LaunchError> {
 pub(super) fn anchor_shadow_stack_disabled(tid: i32) -> Result<(), LaunchError> {
     thread::shadow_stack_disabled(tid)
 }
+
+pub(in crate::linux::remote::dynamic::owner) use thread::{BoundedCet, certify_bounded_cet};

@@ -7,6 +7,11 @@ use super::*;
 use crate::lifecycle::TaskId;
 use crate::publication::PublicationStop;
 
+mod initial;
+pub(in crate::linux::remote::dynamic::owner) use initial::{
+    InitialBootstrapShape, PreparedInitialBootstrap,
+};
+
 mod replaced;
 pub(in crate::linux::remote::dynamic::owner) use replaced::{
     BootstrapEffect, ExecBootstrapReady, ReplacedBootstrapObservation, bootstrap_replaced_admission,
@@ -564,3 +569,8 @@ fn bootstrap_call(
     trusted::execute(owner, native, &stop, (pc, &STUB), registers, false, until)
         .map(|(value, _)| value)
 }
+
+pub(in crate::linux::remote::dynamic::owner) use initial::{
+    MapBuffer, MemoryObservation, Request, SignalObservation, StateSlot, island_code_fixed,
+    physical, raw_held, verify_memory,
+};

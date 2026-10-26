@@ -305,6 +305,9 @@ pub(super) fn disabled(tid: libc::pid_t) -> Result<DisabledProof, LaunchError> {
     certify(&mut NativeProbe { tid })
 }
 
+mod bounded;
+pub(in crate::linux::remote::dynamic::owner) use bounded::{BoundedCet, certify_bounded_cet};
+
 #[cfg(test)]
 mod tests {
     use super::*;

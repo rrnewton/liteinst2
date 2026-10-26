@@ -11,6 +11,9 @@ use crate::selected::{FaultedInstruction, InstructionProvider, ProviderDecision,
 use crate::trap_coverage::TrapCoverageBudget;
 use liteinst_admission::oracle_chain::CacheLimits;
 
+mod runtime_session;
+pub use runtime_session::{DynamicRuntimeCaptureLimits, DynamicRuntimeOptions};
+pub(super) use runtime_session::{RuntimePendingToken, RuntimeProviderInput};
 mod signal_session;
 pub use signal_session::DynamicSignalSession;
 pub(super) mod source;
@@ -267,6 +270,14 @@ pub(super) struct ProviderInput {
 }
 
 pub(super) enum AdmissionRequest {
+    StartRuntime {
+        initial: DynamicStop,
+        options: DynamicRuntimeOptions,
+    },
+    CompleteRuntime {
+        token: RuntimePendingToken,
+        decision: ProviderDecision,
+    },
     Start {
         initial: DynamicStop,
         facts: Vec<ImageFacts>,
@@ -311,6 +322,8 @@ pub(super) enum AdmissionRequest {
 }
 
 pub(super) enum AdmissionReply {
+    RuntimeReady(DynamicAdmissionState, KernelProgressReader),
+    RuntimeProvider(Box<RuntimeProviderInput>),
     Ready(DynamicAdmissionState, KernelProgressReader),
     ReadySignals(DynamicAdmissionState, KernelProgressReader),
     ReadyMappings(DynamicAdmissionState, KernelProgressReader),
@@ -494,6 +507,9 @@ impl<P: InstructionProvider> DynamicAdmissionSession<P> {
         response_until: Instant,
     ) -> Result<DynamicAdmissionEvent, GateError> {
         let event = match reply {
+            AdmissionReply::RuntimeProvider(input) => {
+                self.finish_runtime_provider(input, until, response_until)?
+            }
             AdmissionReply::Event(event) => event,
             AdmissionReply::Provider(input) => {
                 // recv_timeout may take an already queued reply after this

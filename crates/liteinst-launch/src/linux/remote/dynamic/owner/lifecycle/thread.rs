@@ -177,3 +177,5 @@ impl NativeLifecycle {
         })
     }
 }
+
+pub(in crate::linux::remote::dynamic::owner) use cet::{BoundedCet, certify_bounded_cet};

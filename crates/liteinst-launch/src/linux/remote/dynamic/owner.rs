@@ -49,6 +49,9 @@ pub(super) struct Owner {
     exec_policy: DynamicExecPolicy,
     lifecycle: Option<lifecycle::NativeLifecycle>,
     admission: Option<admission::AdmissionOwner>,
+    runtime: Option<admission::RuntimeOwner>,
+    #[cfg(test)]
+    runtime_panic_after_bootstrap: bool,
     kernel_journal: kernel_journal::KernelJournalWriter,
     exec_journal: Option<exec_journal::ExecJournalWriter>,
     #[cfg(test)]
@@ -197,6 +200,9 @@ impl Owner {
             exec_policy: DynamicExecPolicy::Refuse,
             lifecycle: None,
             admission: None,
+            runtime: None,
+            #[cfg(test)]
+            runtime_panic_after_bootstrap: false,
             kernel_journal: kernel_journal::KernelJournalWriter::new(session),
             exec_journal: None,
             #[cfg(test)]
@@ -588,6 +594,10 @@ impl Owner {
                 .admission
                 .as_ref()
                 .is_some_and(|admission| admission.provider_expired(Instant::now()))
+                || self
+                    .runtime
+                    .as_ref()
+                    .is_some_and(|runtime| runtime.provider_expired(Instant::now()))
             {
                 self.closing = true;
                 self.cancel.store(true, Ordering::Release);
@@ -624,7 +634,7 @@ impl Owner {
             }
             request => request,
         };
-        if self.admission.is_some() {
+        if self.admission.is_some() || self.runtime.is_some() {
             return Err(LaunchError::Invalid(
                 "raw dynamic requests cannot bypass admission ownership",
             ));

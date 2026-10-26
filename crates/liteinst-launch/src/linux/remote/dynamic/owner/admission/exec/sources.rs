@@ -11,15 +11,15 @@ use crate::linux::remote::dynamic::admission::{
 };
 use crate::linux::{EntryEvidence, FirstImage};
 use std::alloc::Layout;
-use std::fs::{File, OpenOptions};
-use std::io::Read;
-use std::os::fd::{AsRawFd, FromRawFd};
-use std::os::unix::fs::OpenOptionsExt;
 use std::sync::Arc;
 
-const MAP_BYTES: usize = 64 * 1024;
-const MAP_ROWS: usize = 512;
-const PAGE: u64 = 4096;
+use super::super::source_identity::{
+    FileIdentity, HeldSourceRead, ImageRole, MAP_BYTES, PAGE, SourceGeometry, SourceInventory,
+    SourceVma as SourceRow, descriptor_fields, exact_nx, line_span, parse, row_matches,
+    same_descriptor,
+};
+#[cfg(test)]
+use super::super::source_identity::{MAP_ROWS, fixed_vsyscall};
 
 mod backing;
 #[cfg(test)]
@@ -31,32 +31,6 @@ pub(super) struct ExecSourceContext<'a> {
     pub(super) journal: &'a ExecJournalWriter,
     pub(super) attempt: ExecAttemptHandle,
     pub(super) until: Instant,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct FileIdentity {
-    major: u32,
-    minor: u32,
-    inode: u64,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-enum ImageRole {
-    Executable,
-    Interpreter,
-}
-
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-struct SourceRow {
-    original_index: usize,
-    current_index: usize,
-    original_span: (usize, usize),
-    current_span: (usize, usize),
-    start: u64,
-    end: u64,
-    offset: u64,
-    file: FileIdentity,
-    role: ImageRole,
 }
 
 struct Geometry<'a> {
@@ -240,9 +214,9 @@ impl PreparedExecSources {
         {
             return Err(refused("exec source request identity differs"));
         }
-        current(context, boot)?;
+        let read = HeldSourceRead::acquire(context.owner, context.native, boot, context.until)?;
         // This scratch is not borrowed by the journal or source parser here.
-        let object = backing::observe(context, &mut self.maps)?;
+        let object = backing::observe(&read, &mut self.maps)?;
         let executable = object.vma;
         let entry = match &transition.exec_event().kind {
             DynamicEventKind::ExecReplaced { previous, evidence }
@@ -278,7 +252,7 @@ impl PreparedExecSources {
             Ok::<_, GateError>(view.exit_ordinal)
         })??;
         // No native read or allocation happens inside the journal closure.
-        let len = read_maps_into(context, &mut self.maps)?;
+        let len = read.read_maps_into(&mut self.maps)?;
         context.journal.with_source_maps(context.attempt, |view| {
             bind_view(
                 &view,
@@ -344,7 +318,7 @@ impl PreparedExecSources {
                     .transpose()?,
             });
         }
-        let len = read_maps_into(context, &mut self.maps)?;
+        let len = read.read_maps_into(&mut self.maps)?;
         context.journal.with_source_maps(context.attempt, |view| {
             bind_view(
                 &view,
@@ -359,10 +333,10 @@ impl PreparedExecSources {
             Ok::<_, GateError>(())
         })??;
         // All child-map borrows above have ended; the probe wipes/reuses scratch.
-        if backing::observe(context, &mut self.maps)? != object {
+        if backing::observe(&read, &mut self.maps)? != object {
             return Err(refused("exec executable object changed during capture"));
         }
-        current(context, boot)?;
+        read.reauthenticate()?;
         Ok(CapturedExecSources {
             profile: self.profile.clone(),
             attempt: context.attempt.id(),
@@ -431,8 +405,8 @@ impl CapturedExecSources {
         {
             return Err(refused("exec source receipt no longer binds the capture"));
         }
-        current(context, boot)?;
-        if backing::observe(context, &mut scratch.maps)?
+        let read = HeldSourceRead::acquire(context.owner, context.native, boot, context.until)?;
+        if backing::observe(&read, &mut scratch.maps)?
             != (backing::ExecutableIdentity {
                 opened: self.opened,
                 vma: self.executable,
@@ -440,7 +414,7 @@ impl CapturedExecSources {
         {
             return Err(refused("exec source executable object identity differs"));
         }
-        let len = read_maps_into(context, &mut scratch.maps)?;
+        let len = read.read_maps_into(&mut scratch.maps)?;
         context.journal.with_source_maps(context.attempt, |view| {
             bind_view(&view, self.previous, self.current, &self.exit, &self.stop)?;
             if view.exit_ordinal != self.exit_ordinal
@@ -504,7 +478,7 @@ impl CapturedExecSources {
                 .owner
                 .time_left(context.until, "exec source callback byte recheck")?;
         }
-        let len = read_maps_into(context, &mut scratch.maps)?;
+        let len = read.read_maps_into(&mut scratch.maps)?;
         context.journal.with_source_maps(context.attempt, |view| {
             bind_view(&view, self.previous, self.current, &self.exit, &self.stop)?;
             if view.exit_ordinal != self.exit_ordinal
@@ -514,7 +488,7 @@ impl CapturedExecSources {
             }
             Ok::<_, GateError>(())
         })??;
-        if backing::observe(context, &mut scratch.maps)?
+        if backing::observe(&read, &mut scratch.maps)?
             != (backing::ExecutableIdentity {
                 opened: self.opened,
                 vma: self.executable,
@@ -524,7 +498,7 @@ impl CapturedExecSources {
                 "exec source executable object changed during recheck",
             ));
         }
-        current(context, boot)
+        read.reauthenticate()
     }
 }
 
@@ -543,105 +517,6 @@ fn image_payload(image: &DynamicSourceImage) -> Result<usize, GateError> {
         bytes = checked_add(bytes, map.pathname.as_ref().map_or(0, String::capacity))?;
     }
     Ok(bytes)
-}
-
-fn current(context: &ExecSourceContext<'_>, boot: &BootstrapMm) -> Result<(), GateError> {
-    super::seal::authenticate_bootstrap(context.owner, context.native, boot, context.until)?;
-    if TaskStateSnapshot::read(context.owner.pid)? != boot.evidence.restored_entry {
-        return Err(refused(
-            "exec source acquisition changed complete bootstrap state",
-        ));
-    }
-    context
-        .owner
-        .time_left(context.until, "exec source current-state authentication")?;
-    Ok(())
-}
-
-fn proc_directory(context: &ExecSourceContext<'_>) -> Result<File, GateError> {
-    context
-        .owner
-        .time_left(context.until, "exec source proc directory")?;
-    let file = OpenOptions::new()
-        .read(true)
-        .custom_flags(libc::O_DIRECTORY | libc::O_CLOEXEC | libc::O_NOFOLLOW)
-        .open(format!("/proc/{}", context.owner.pid))
-        .map_err(|error| io_error("open exec source proc directory", error))?;
-    let mut raw = std::mem::MaybeUninit::<libc::statfs>::zeroed();
-    // SAFETY: the owned descriptor and initialized native statfs output live
-    // through the synchronous read-only kernel request.
-    if unsafe { libc::fstatfs(file.as_raw_fd(), raw.as_mut_ptr()) } != 0 {
-        return Err(system("stat exec source proc filesystem").into());
-    }
-    // SAFETY: successful fstatfs initialized the output.
-    if unsafe { raw.assume_init() }.f_type != libc::PROC_SUPER_MAGIC as libc::__fsword_t {
-        return Err(refused("exec source directory is not procfs"));
-    }
-    context
-        .owner
-        .time_left(context.until, "exec source proc directory")?;
-    Ok(file)
-}
-
-fn read_maps_into(context: &ExecSourceContext<'_>, storage: &mut [u8]) -> Result<usize, GateError> {
-    if storage.len() != MAP_BYTES {
-        return Err(refused("exec source maps scratch differs"));
-    }
-    storage.fill(0);
-    let directory = proc_directory(context)?;
-    // SAFETY: fixed component; owned directory and resulting fd remain local.
-    let fd = unsafe {
-        libc::openat(
-            directory.as_raw_fd(),
-            c"maps".as_ptr(),
-            libc::O_RDONLY | libc::O_CLOEXEC | libc::O_NOFOLLOW,
-        )
-    };
-    if fd < 0 {
-        return Err(system("open current exec source maps").into());
-    }
-    // SAFETY: this successful descriptor has no other owner.
-    let mut file = unsafe { File::from_raw_fd(fd) };
-    let mut length = 0;
-    loop {
-        context
-            .owner
-            .time_left(context.until, "read current exec source maps")?;
-        if length == storage.len() {
-            let mut extra = [0_u8; 1];
-            if file
-                .read(&mut extra)
-                .map_err(|e| io_error("read exec source maps bound", e))?
-                != 0
-            {
-                return Err(refused("exec source maps exceed fixed capture bound"));
-            }
-            break;
-        }
-        let count = file
-            .read(&mut storage[length..])
-            .map_err(|e| io_error("read current exec source maps", e))?;
-        context
-            .owner
-            .time_left(context.until, "read current exec source maps")?;
-        if count == 0 {
-            break;
-        }
-        length += count;
-    }
-    context
-        .owner
-        .time_left(context.until, "read current exec source maps")?;
-    parse(&storage[..length])?;
-    Ok(length)
-}
-
-fn parse(raw: &[u8]) -> Result<ParsedMaps<'_>, GateError> {
-    if raw.len() > MAP_BYTES {
-        return Err(refused("exec source maps exceed fixed capture bound"));
-    }
-    ParsedMaps::parse(raw, MAP_ROWS)
-        .map_err(|_| refused("exec source maps are malformed or excessive"))
 }
 
 fn bind_view(
@@ -669,32 +544,6 @@ fn bind_view(
     Ok(())
 }
 
-fn file_identity(row: MapEntry<'_>) -> FileIdentity {
-    FileIdentity {
-        major: row.device_major,
-        minor: row.device_minor,
-        inode: row.inode,
-    }
-}
-fn row_matches(row: &SourceRow, map: MapEntry<'_>) -> bool {
-    row.start == map.start
-        && row.end == map.end
-        && row.offset == map.file_offset
-        && row.file == file_identity(map)
-}
-fn line_span(raw: &[u8], line: &[u8]) -> (usize, usize) {
-    // Both slices come from the same fully validated immutable ParsedMaps.
-    (line.as_ptr() as usize - raw.as_ptr() as usize, line.len())
-}
-fn descriptor_fields(row: MapEntry<'_>, map: &MemoryMapping) -> bool {
-    row.start == map.start
-        && row.end == map.end
-        && row.file_offset == map.file_offset
-        && row.pathname == map.pathname.as_ref().map(|path| path.as_bytes())
-}
-fn same_descriptor(row: MapEntry<'_>, map: &MemoryMapping) -> bool {
-    descriptor_fields(row, map) && row.permissions.bytes().as_slice() == map.permissions.as_bytes()
-}
 fn image_matches(
     image: &DynamicSourceImage,
     row: &SourceRow,
@@ -731,43 +580,6 @@ fn image_matches(
         && neighbor(lower, image.lower_neighbor.as_ref())
         && neighbor(upper, image.upper_neighbor.as_ref())
 }
-fn fixed_vsyscall(row: MapEntry<'_>) -> bool {
-    row.start == 0xffff_ffff_ff60_0000
-        && row.end == 0xffff_ffff_ff60_1000
-        && row.permissions.bytes() == *b"--xp"
-        && row.file_offset == 0
-        && row.device_major == 0
-        && row.device_minor == 0
-        && row.inode == 0
-        && row.pathname == Some(b"[vsyscall]".as_slice())
-}
-fn exact_nx(old: MapEntry<'_>, new: MapEntry<'_>) -> bool {
-    if old.permissions.bytes() != *b"r-xp"
-        || new.permissions.bytes() != *b"r--p"
-        || old.raw_line.len() != new.raw_line.len()
-    {
-        return false;
-    }
-    let Some(start) = old.raw_line.iter().position(|b| *b == b' ') else {
-        return false;
-    };
-    let Some(skip) = old.raw_line[start..].iter().position(|b| *b != b' ') else {
-        return false;
-    };
-    let column = start + skip + 2;
-    old.raw_line
-        .iter()
-        .zip(new.raw_line)
-        .enumerate()
-        .all(|(index, (a, b))| {
-            if index == column {
-                *a == b'x' && *b == b'-'
-            } else {
-                a == b
-            }
-        })
-}
-
 fn derive_rows(
     old: ParsedMaps<'_>,
     new: ParsedMaps<'_>,
@@ -778,129 +590,20 @@ fn derive_rows(
     if !output.is_empty() || output.capacity() < geometry.profile.max_capture_images {
         return Err(refused("exec source geometry storage differs"));
     }
-    if new.entries().len()
-        != old
-            .entries()
-            .len()
-            .checked_add(1)
-            .ok_or_else(|| refused("exec source map count overflows"))?
-        || geometry.current.len() != new.entries().len()
-        || !new
-            .entries()
-            .zip(geometry.current)
-            .all(|(row, map)| same_descriptor(row, map))
-    {
-        return Err(refused("exec source final bootstrap inventory differs"));
-    }
-    let island = new
-        .entries()
-        .find(|m| m.start == geometry.island.start && m.end == geometry.island.end)
-        .ok_or_else(|| refused("exec source trusted island mapping is absent"))?;
-    if island.permissions.bytes() != *b"r-xp"
-        || island.file_offset != 0
-        || island.device_major != 0
-        || island.device_minor != 0
-        || island.inode != 0
-        || island.pathname.is_some()
-        || old
-            .entries()
-            .any(|m| m.start < island.end && island.start < m.end)
-    {
-        return Err(refused("exec source trusted island mapping differs"));
-    }
-    let mut executable_index = 0;
-    for prior in old.entries() {
-        let current = new
-            .entries()
-            .find(|m| m.start == prior.start && m.end == prior.end)
-            .ok_or_else(|| refused("exec quarantine changed whole VMA geometry"))?;
-        if prior.permissions.bytes()[2] == b'x' && !fixed_vsyscall(prior) {
-            if !exact_nx(prior, current)
-                || geometry
-                    .originals
-                    .get(executable_index)
-                    .is_none_or(|m| !same_descriptor(prior, m))
-            {
-                return Err(refused(
-                    "exec quarantine changed executable descriptor identity",
-                ));
-            }
-            executable_index += 1;
-        } else if prior.raw_line != current.raw_line {
-            return Err(refused("exec quarantine changed an unaffected mapping"));
-        }
-    }
-    if executable_index != geometry.originals.len() {
-        return Err(refused("exec original executable inventory is incomplete"));
-    }
-    let main = old
-        .entries()
-        .find(|row| {
-            row.start <= geometry.entry.executable_entry
-                && geometry.entry.executable_entry < row.end
-        })
-        .ok_or_else(|| refused("exec main entry mapping is absent"))?;
-    if main.permissions.bytes() != *b"r-xp"
-        || main.inode == 0
-        || file_identity(main) != geometry.executable
-    {
-        return Err(refused(
-            "exec main entry is not the actual executable object",
-        ));
-    }
-    let interpreter = match geometry.entry.first_image {
-        FirstImage::Executable => {
-            if geometry.entry.interpreter.is_some()
-                || geometry.entry.interpreter_base != 0
-                || geometry.entry.initial_instruction != geometry.entry.executable_entry
-            {
-                return Err(refused("exec main-only entry facts differ"));
-            }
-            None
-        }
-        FirstImage::Interpreter => {
-            if geometry.entry.interpreter.is_none() {
-                return Err(refused("exec interpreter fact is absent"));
-            }
-            let initial = old
-                .entries()
-                .find(|row| {
-                    row.start <= geometry.entry.initial_instruction
-                        && geometry.entry.initial_instruction < row.end
-                })
-                .ok_or_else(|| refused("exec interpreter entry mapping is absent"))?;
-            let base = geometry.entry.interpreter_base;
-            let header = if base == 0 {
-                initial
-            } else {
-                old.entries()
-                    .find(|row| row.start <= base && base < row.end)
-                    .ok_or_else(|| refused("exec interpreter header mapping is absent"))?
-            };
-            if initial.permissions.bytes() != *b"r-xp"
-                || initial.inode == 0
-                || file_identity(initial) == geometry.executable
-                || file_identity(header) != file_identity(initial)
-                || header.file_offset != 0
-                || (base != 0 && header.start != base)
-                || header.end - header.start < 64
-                || (base == 0
-                    && geometry.entry.initial_instruction == geometry.entry.executable_entry)
-            {
-                return Err(refused("exec interpreter backing identity differs"));
-            }
-            Some(file_identity(initial))
-        }
-    };
+    let inventory = SourceInventory::new(
+        old,
+        new,
+        &SourceGeometry {
+            originals: geometry.originals,
+            current: geometry.current,
+            island: geometry.island,
+            entry: geometry.entry,
+            executable: geometry.executable,
+        },
+    )?;
     let mut total = 0_usize;
     for (index, row) in old.entries().enumerate() {
-        let role = if file_identity(row) == geometry.executable {
-            Some(ImageRole::Executable)
-        } else if Some(file_identity(row)) == interpreter {
-            Some(ImageRole::Interpreter)
-        } else {
-            None
-        };
+        let role = inventory.role(row);
         if row.permissions.bytes()[2] != b'x' || role.is_none() {
             continue;
         }
@@ -919,38 +622,7 @@ fn derive_rows(
                 "exec whole source VMA exceeds its declared profile",
             ));
         }
-        let file_end = row
-            .file_offset
-            .checked_add(row.end - row.start)
-            .ok_or_else(|| refused("exec source backing interval overflows"))?;
-        for (other_index, other) in old.entries().enumerate() {
-            if other_index == index || file_identity(other) != file_identity(row) {
-                continue;
-            }
-            let other_end = other
-                .file_offset
-                .checked_add(other.end - other.start)
-                .ok_or_else(|| refused("exec alias backing interval overflows"))?;
-            if row.file_offset < other_end && other.file_offset < file_end {
-                return Err(refused("exec source has a visible file-offset alias"));
-            }
-        }
-        let (current_index, current) = new
-            .entries()
-            .enumerate()
-            .find(|(_, m)| m.start == row.start && m.end == row.end)
-            .ok_or_else(|| refused("exec source quarantine row is absent"))?;
-        output.push(SourceRow {
-            original_index: index,
-            current_index,
-            original_span: line_span(old.raw(), row.raw_line),
-            current_span: line_span(new.raw(), current.raw_line),
-            start: row.start,
-            end: row.end,
-            offset: row.file_offset,
-            file: file_identity(row),
-            role: role.ok_or_else(|| refused("exec source role is absent"))?,
-        });
+        output.push(inventory.source(index)?);
     }
     if output.is_empty() {
         return Err(refused("exec source set is empty"));

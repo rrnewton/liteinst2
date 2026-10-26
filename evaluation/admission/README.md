@@ -59,6 +59,44 @@ The [admitted-exec recipe](admitted-exec.md) describes the next connected
 replacement experiment and its exact first-user/retained-history obligations.
 Its source inventory is separate from a completed qualification receipt.
 
+## Bounded runtime source inventory
+
+The [actual-PC runtime profile](actual-pc-runtime.md) defines the mechanism and
+its remaining limits. The current increment adds 133 launcher unit tests: 117 pure controls,
+six native startup controls, five ordinary-instruction native controls and five
+selected-instruction native controls. Expected totals are 488 launcher units,
+1864 workspace tests in the same 89 harnesses (1860 possible passes and four
+unchanged ignores), and 780 serial launch tests in the same 27 harnesses.
+The recorder expects 265 Python controls. These are source-derived expectations;
+this inventory makes no execution or qualification claim.
+
+The serial `native_validation_fixtures` catalog retains its original 56 rows in
+order and adds exactly 16 names under the separate `b3_runtime_startup`,
+`b3_runtime_ordinary` and `b3_runtime_selected` cohorts. The parser requires each
+full Rust identity in the launcher unit harness and its explicit terminal `ok`.
+Unknown names in any of the three closed native modules refuse. The workspace
+command independently requires the complete outer unit count; its saved output
+can be audited for the same names. Neither command may substitute a partial or
+failed run for the full cohort. The original 50 static native cases, 15 dynamic
+fixture outcomes, 388 matrix invocations and ordinary-main cleanup helper
+(one target, three controls, four trajectories) retain their separate counts.
+
+The new fixtures target bounded singleton startup from actual held EXEC,
+owner-captured Partial source windows, exact first-user state and NX closure,
+and actual-PC dispatch with complete checkpoint comparisons. Ordinary native
+coverage is limited to the declared register/immediate, nonaccessing and direct
+branch trajectories. Selected completion covers the six CPU classes through
+scripted provider decisions; native/SYSCALL decisions refuse in this adapter.
+Memory/stack effects and actual enabled DR7 have explicit refusal controls.
+The per-fixture subcases and corruption mutations do not increase outer test
+counts or add static instruction telemetry.
+
+Use the unchanged six-command recipe above at the final exact source revision.
+A completed run must satisfy the existing source/configuration, deadline,
+output, privilege and physical-cleanup gates. This finite runtime increment
+does not establish arbitrary ELF/application support, complete mapping or
+lifecycle handling, full B3 or B4, a claim 3 preemption clock, or performance.
+
 ## Public result format
 
 Each invocation creates an append-only run identity under `results/`. Its JSON
@@ -207,7 +245,8 @@ The schema rejects extra fields, malformed or duplicate keys, wrong contexts and
 unknown identities. No raw addresses, output values or private diagnostics are
 exported.
 
-`native_validation_fixtures` separately retains 37 exact named outcomes: the
+At the retained-source checkpoint, `native_validation_fixtures` retained 37
+exact named outcomes: the
 seventeen native journal/capacity/dispatch cases under their declared unit-module
 prefixes, six B2 reference integration cases, eight native reset controls and
 five signal integration cases, plus the original-EXEC/EXIT source-census refusal
