@@ -72,6 +72,19 @@ impl ResumeCensus {
                     (before.token.session, before.token.tid, before.phase)
                 );
                 assert!(after.token.sequence > before.token.sequence);
+                assert_eq!(after.token.task, before.token.task);
+                assert_eq!(after.signal, before.signal);
+                assert!(exact_refresh(before, after));
+                // Detached data-only corruptions use the same full comparator;
+                // neither altered description can reach a native/census owner.
+                assert_eq!(after.token.task, Some(after.task.task));
+                assert!(after.signal.is_none());
+                let mut changed = after.clone();
+                changed.token.task = None;
+                assert!(!exact_refresh(before, &changed));
+                let mut changed = after.clone();
+                changed.signal = Some(DynamicSignalInfo { raw: [0; 128] });
+                assert!(!exact_refresh(before, &changed));
                 retained.current = after.clone();
             }
             assert_eq!(actual.state.origins, expected);
@@ -135,4 +148,12 @@ impl ResumeCensus {
             );
         })
     }
+}
+
+// This finite private restoration changes only the actual stop sequence.
+// Full Eq also binds token.task and every byte of optional signal metadata.
+fn exact_refresh(before: &ObservedStop, after: &ObservedStop) -> bool {
+    let mut expected = before.clone();
+    expected.token.sequence = after.token.sequence;
+    after.token.sequence > before.token.sequence && expected == *after
 }

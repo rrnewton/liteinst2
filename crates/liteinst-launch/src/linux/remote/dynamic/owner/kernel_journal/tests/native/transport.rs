@@ -121,6 +121,7 @@ fn caller_response_expiry_keeps_actual_exit_prefix_after_owner_error_and_cleanup
                     before_cleanup,
                     held,
                     admission_retained,
+                    panic_custody_verified: false,
                     pins,
                     cleanup,
                 }));

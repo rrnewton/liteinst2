@@ -22,7 +22,7 @@ mod domain;
 mod drive;
 mod exec;
 #[cfg(test)]
-pub(in crate::linux::remote::dynamic::owner) use exec::oracle::ExecOracle;
+pub(in crate::linux::remote::dynamic::owner) use exec::oracle::{ExecFault, ExecOracle};
 mod mapping;
 #[cfg(test)]
 mod panic_custody;
