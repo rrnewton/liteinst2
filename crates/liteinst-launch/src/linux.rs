@@ -333,7 +333,6 @@ impl ExecCheckpoint {
             }
         }
         drop(error_write);
-        drop(fork_guard);
         let mut child = ChildOwner {
             pid,
             reaped: false,
@@ -769,6 +768,7 @@ mod tests {
                 libc::_exit(126);
             }
         }
+        drop(fork_guard);
         let mut child = ChildOwner {
             pid,
             reaped: false,
