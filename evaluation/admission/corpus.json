@@ -26,6 +26,10 @@
         "ignored": 0,
         "tests": 16
       },
+      "test/native_int80": {
+        "ignored": 0,
+        "tests": 6
+      },
       "test/native_selected": {
         "ignored": 0,
         "tests": 50
@@ -48,7 +52,7 @@
       },
       "test/selected_semantics": {
         "ignored": 0,
-        "tests": 14
+        "tests": 17
       },
       "test/trap_coverage": {
         "ignored": 0,
@@ -56,7 +60,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 15
+        "tests": 19
       }
     },
     "workspace_tests": {
@@ -180,6 +184,10 @@
         "ignored": 0,
         "tests": 15
       },
+      "test/native_int80": {
+        "ignored": 0,
+        "tests": 6
+      },
       "test/native_selected": {
         "ignored": 0,
         "tests": 50
@@ -266,7 +274,7 @@
       },
       "test/selected_semantics": {
         "ignored": 0,
-        "tests": 14
+        "tests": 17
       },
       "test/sigtrap_origin": {
         "ignored": 0,
@@ -314,7 +322,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 15
+        "tests": 19
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,

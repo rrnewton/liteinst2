@@ -131,6 +131,11 @@ nonzero command, timeout or invalid record disqualifies the run. Previously
 completed command observations remain in the failed result, and commands not
 attempted are explicitly `not_run`.
 
+[Native controller ownership](native-control.md) records the physical-reaping
+argument and the private helper's observable parent relationship.
+[INT80 evidence](int80.md) records the separate finite getpid/gettid profile,
+raw native oracle and exact distinction between native and scripted bookkeeping.
+
 ## Claim mapping
 
 These identifiers match the owner's candidate claims; they are evaluation

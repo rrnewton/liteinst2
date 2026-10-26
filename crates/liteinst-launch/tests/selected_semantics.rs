@@ -62,12 +62,129 @@ fn registers() -> RegisterSnapshot {
     }
 }
 
+fn int80_input(bytes: &[u8], number: u64) -> SelectedInput {
+    let mut aliases = SyscallAliases::new();
+    aliases.declare(PC, SyscallAbi::LinuxI386Int80).unwrap();
+    let mut before = registers();
+    before.rax = number;
+    before.eflags &= !RF;
+    SelectedInput::new(decode(PC, bytes, &aliases).unwrap(), before).unwrap()
+}
+
 fn input(bytes: &[u8]) -> SelectedInput {
     SelectedInput::new(
         decode(PC, bytes, &SyscallAliases::new()).unwrap(),
         registers(),
     )
     .unwrap()
+}
+
+#[test]
+fn int80_getid_script_preserves_every_other_register_flag_and_kernel_field() {
+    for bytes in [&[0xcd, 0x80][..], &[0x66, 0xcd, 0x80], &[0x48, 0xcd, 0x80]] {
+        for number in [20, 224] {
+            let input = int80_input(bytes, 0xa1b2_c3d4_0000_0000 | number);
+            for value in [1, 17, i32::MAX as u32] {
+                let result = SelectedResult::Syscall(SyscallResult::LinuxI386Int80GetId { value });
+                let completed = input.complete(result).unwrap();
+                let mut expected = *input.registers();
+                expected.rax = u64::from(value);
+                expected.rip += bytes.len() as u64;
+                assert_eq!(completed.before, *input.registers());
+                assert_eq!(completed.after, expected);
+                assert_eq!(input.native_result(&expected).unwrap(), result);
+                assert_eq!(
+                    input.validate_native_completion(&expected).unwrap(),
+                    completed
+                );
+                let mut actual_kernel_metadata = expected;
+                actual_kernel_metadata.orig_rax = number;
+                assert_eq!(
+                    input.validate_native_completion(&actual_kernel_metadata),
+                    Err(SemanticsError::NativeStateMismatch)
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn int80_getid_script_rejects_unqualified_numbers_flags_values_and_other_abis() {
+    let result = SelectedResult::Syscall(SyscallResult::LinuxI386Int80GetId { value: 12 });
+    for number in [0, 1, 2, 4, 11, 39, 186, u32::MAX as u64] {
+        assert_eq!(
+            int80_input(&[0xcd, 0x80], 0xa1b2_c3d4_0000_0000 | number).complete(result),
+            Err(SemanticsError::UnsupportedScriptedSyscall)
+        );
+    }
+    let good = int80_input(&[0xcd, 0x80], 20);
+    for flags in [RF, 0x100, 0x40000, 0x4000, 0x3000] {
+        let mut before = *good.registers();
+        before.eflags |= flags;
+        let changed = SelectedInput::new(good.instruction().clone(), before).unwrap();
+        assert_eq!(
+            changed.complete(result),
+            Err(SemanticsError::UnqualifiedSyscallFlags)
+        );
+    }
+    for value in [0, 1_u32 << 31, u32::MAX] {
+        assert_eq!(
+            good.complete(SelectedResult::Syscall(
+                SyscallResult::LinuxI386Int80GetId { value }
+            )),
+            Err(SemanticsError::InvalidProcessIdentifier)
+        );
+    }
+    assert_eq!(
+        input(&[0x0f, 0x05]).complete(result),
+        Err(SemanticsError::UnqualifiedSyscallCompletion)
+    );
+    let mut aliases = SyscallAliases::new();
+    aliases
+        .declare(
+            PC,
+            SyscallAbi::DeclaredSysenter(
+                SysenterConvention::new(
+                    1,
+                    Gpr::Rax,
+                    [Gpr::Rbx, Gpr::Rcx, Gpr::Rdx, Gpr::Rsi, Gpr::Rdi, Gpr::Rbp],
+                    OperandWidth::Bits32,
+                )
+                .unwrap(),
+            ),
+        )
+        .unwrap();
+    let sysenter =
+        SelectedInput::new(decode(PC, &[0x0f, 0x34], &aliases).unwrap(), registers()).unwrap();
+    assert_eq!(
+        sysenter.complete(result),
+        Err(SemanticsError::UnqualifiedSyscallCompletion)
+    );
+    assert_eq!(
+        good.complete(SelectedResult::Syscall(SyscallResult::LinuxX64GetId {
+            value: 12
+        })),
+        Err(SemanticsError::UnqualifiedSyscallCompletion)
+    );
+}
+
+#[test]
+fn invalid_int80_completion_does_not_consume_a_matching_script_row() {
+    let input = int80_input(&[0xcd, 0x80], 20);
+    for result in [
+        SyscallResult::LinuxI386Int80GetId { value: 0 },
+        SyscallResult::LinuxX64GetId { value: 17 },
+    ] {
+        let mut provider = ScriptedProvider::new([ScriptEntry {
+            input: input.clone(),
+            decision: ProviderDecision::Complete(SelectedResult::Syscall(result)),
+        }]);
+        for _ in 0..2 {
+            assert!(provider.decide(&input).is_err());
+            assert_eq!(provider.consumed(), 0);
+            assert_eq!(provider.remaining(), 1);
+        }
+    }
 }
 
 // Architectural encoding order, written independently of production Gpr helpers.

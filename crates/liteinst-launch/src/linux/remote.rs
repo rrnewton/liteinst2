@@ -14,6 +14,8 @@ pub use group::*;
 mod dynamic;
 pub use dynamic::*;
 
+mod int80;
+
 const STUB: [u8; 3] = [0x0f, 0x05, 0xcc];
 // Each entry is one exact native MOV to [RDI], then its own terminating INT3.
 const STORE_STUBS: [(usize, &[u8]); 4] = [
@@ -74,7 +76,8 @@ pub enum ProcessEvent {
     },
 }
 
-/// Actual kernel result of one authenticated native SYSCALL instruction.
+/// Actual kernel result of one authenticated syscall instruction profile.
+/// The explicit methods distinguish native SYSCALL from Linux i386 INT80 getid.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct NativeSyscallCompletion {
     /// Complete registers at the syscall-exit stop, including its original
@@ -89,7 +92,8 @@ pub struct NativeSyscallCompletion {
     pub is_error: bool,
 }
 
-/// Result of executing a selected native SYSCALL without debugger trap flags.
+/// Result of executing an explicitly qualified syscall profile without debugger
+/// trap flags: native SYSCALL or long-mode Linux i386 INT80 getid.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum NativeSyscallOutcome {
     /// The syscall returned and an actual private INT3 established a safe

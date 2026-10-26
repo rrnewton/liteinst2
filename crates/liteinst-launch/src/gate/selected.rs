@@ -8,7 +8,7 @@
 use super::{GateError, GateEvent, GateMetrics, ImageFacts, SingleThreadPageGate, remaining};
 use crate::selected::{
     FaultedInstruction, InstructionProvider, Operation, ProviderDecision, SelectedInput,
-    SemanticsError, SyscallAbi, SyscallAliases, decode,
+    SelectedResult, SemanticsError, SyscallAbi, SyscallAliases, SyscallResult, decode,
 };
 use crate::{ExecCheckpoint, NativeSyscallOutcome, ProcessEvent, RegisterSnapshot, SignalStop};
 use liteinst_admission::scan::{Policy, SiteClass};
@@ -110,7 +110,8 @@ pub struct SelectedMetrics {
 /// stops and a private return bridge, never SINGLESTEP. Scripted completion
 /// changes only the stopped full register file, including a genuine RSP result.
 /// The pure semantics module limits successful syscall emulation to its frozen
-/// side-effect-free getpid/gettid profile. Aliases have no native return support.
+/// side-effect-free getpid/gettid profiles. Declared INT80 uses its separate
+/// i386 execution owner; SYSENTER has no qualified successful return.
 pub struct SelectedPageGate<P: InstructionProvider> {
     inner: SingleThreadPageGate,
     provider: P,
@@ -397,8 +398,23 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
         deadline: Instant,
     ) -> Result<SelectedEvent, GateError> {
         let operation = input.instruction().operation();
-        if matches!(operation, Operation::Syscall { abi } if abi != SyscallAbi::LinuxX64) {
-            return Err(SemanticsError::UnqualifiedSyscallCompletion.into());
+        if let Operation::Syscall { abi } = operation {
+            match abi {
+                SyscallAbi::LinuxX64 => {}
+                SyscallAbi::LinuxI386Int80 => {
+                    // Refuse unsupported requests/flags before restoring any
+                    // original source bytes. The native owner authenticates
+                    // this exact identity again against the kernel result.
+                    input.complete(SelectedResult::Syscall(
+                        SyscallResult::LinuxI386Int80GetId {
+                            value: self.pid() as u32,
+                        },
+                    ))?;
+                }
+                SyscallAbi::DeclaredSysenter(_) => {
+                    return Err(SemanticsError::UnqualifiedSyscallCompletion.into());
+                }
+            }
         }
         self.authenticate_trap(&input)?;
         let pc = input.instruction().logical_pc();
@@ -422,12 +438,23 @@ impl<P: InstructionProvider> SelectedPageGate<P> {
             super::coverage::failure::Phase::SelectedRestored,
             &stop,
         )?;
-        let (after, xstate) = if matches!(operation, Operation::Syscall { .. }) {
-            match stop.execute_native_syscall(
-                pc,
-                input.instruction().bytes(),
-                remaining(deadline)?,
-            )? {
+        let (after, xstate) = if let Operation::Syscall { abi } = operation {
+            let outcome = match abi {
+                SyscallAbi::LinuxX64 => stop.execute_native_syscall(
+                    pc,
+                    input.instruction().bytes(),
+                    remaining(deadline)?,
+                ),
+                SyscallAbi::LinuxI386Int80 => stop.execute_linux_int80_getid(
+                    pc,
+                    input.instruction().bytes(),
+                    remaining(deadline)?,
+                ),
+                SyscallAbi::DeclaredSysenter(_) => {
+                    return Err(SemanticsError::UnqualifiedSyscallCompletion.into());
+                }
+            }?;
+            match outcome {
                 NativeSyscallOutcome::Completed(completed) => {
                     (completed.registers, completed.xstate)
                 }
