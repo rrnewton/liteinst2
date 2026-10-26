@@ -9,6 +9,7 @@ import unittest
 from test_runtime_inventory import before_runtime
 
 import native_fixtures as fixtures
+from test_runtime_kernel_inventory import before_kernel
 from parsing import InvalidEvidence
 import run
 from test_dynamic_admission import corpus, fixture_block, native_block, summary
@@ -195,6 +196,7 @@ class SourceCensusFixtureTests(unittest.TestCase):
 
     def test_real_catalog_keeps_exact_old36_and_requires_single_new_native_identity(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_kernel(declared)
         declared = before_runtime(declared)
         all_rows = declared["native_validation_fixtures"]
         self.assertEqual(len(all_rows), 56)

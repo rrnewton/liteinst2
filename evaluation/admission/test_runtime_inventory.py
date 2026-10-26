@@ -8,6 +8,7 @@ import re
 import unittest
 
 import native_fixtures as fixtures
+from test_runtime_kernel_inventory import before_kernel, before_kernel_source
 from parsing import InvalidEvidence, require
 from test_wait_custody_fixtures import before_wait_custody
 
@@ -262,6 +263,7 @@ class RuntimeInventoryTests(unittest.TestCase):
         for path, expected in RUST_METHODS.items():
             text = (root / path).read_text()
             names = re.findall(r"#\[test\]\s*fn\s+([A-Za-z0-9_]+)\s*\(", text)
+            names = before_kernel_source(path, names)
             self.assertEqual(names, list(expected), path)
             self.assertEqual(len(names), len(set(names)), path)
             self.assertNotRegex(text, r"#\[ignore(?:\]|\()")
@@ -285,6 +287,7 @@ class RuntimeInventoryTests(unittest.TestCase):
 
     def test_current_catalog_preserves_every_old_row_helper_and_collection_exactly(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_kernel(declared)
         original = copy.deepcopy(declared)
         previous = before_runtime(declared)
         self.assertEqual(declared, original)
@@ -317,6 +320,7 @@ class RuntimeInventoryTests(unittest.TestCase):
 
     def test_projection_refuses_missing_relabelled_unknown_and_changed_history(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_kernel(declared)
         for index in range(18):
             for change in ("missing", "duplicate", "cohort", "harness", "name", "extra"):
                 changed = copy.deepcopy(declared)

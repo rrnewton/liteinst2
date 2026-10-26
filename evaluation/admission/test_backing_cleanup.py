@@ -9,6 +9,7 @@ from pathlib import Path
 import sys
 import tempfile
 import unittest
+from test_runtime_kernel_inventory import before_kernel
 
 from test_runtime_inventory import before_runtime
 from unittest.mock import patch
@@ -111,6 +112,7 @@ class BackingCleanupTests(unittest.TestCase):
 
     def test_real_inventory_preserves_old_denominators_and_named_collections(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_kernel(declared)
         declared = before_runtime(declared)
         cleanup.require_inventory(declared)
         self.assertEqual(declared["backing_cleanup_harnesses"], corpus()["backing_cleanup_harnesses"])

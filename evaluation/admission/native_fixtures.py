@@ -102,6 +102,20 @@ WAIT_CUSTODY_ROW = {"cohort": "b3_wait_custody", "harness": UNIT,
                     + "::actual_listen_withdrawal_preserves_pinned_wait_and_cleanup"}
 
 
+# Closed opt-in kernel cohort; established runtime rows remain unchanged.
+RUNTIME_KERNEL_ROOT = 'linux::remote::dynamic::owner::admission::runtime::kernel::native_tests'
+RUNTIME_KERNEL_NAMES = ('runtime_kernel_public_getpid_selected_ordinary_exit_preserves_lineage',
+ 'runtime_kernel_gettid_exit_group_retains_real_terminal',
+ 'runtime_kernel_cross_page_syscall_preserves_exact_fetch',
+ 'runtime_kernel_default_native_and_cpu_refusals_keep_current_state',
+ 'runtime_kernel_fault_and_unsupported_syscalls_never_release',
+ 'runtime_kernel_stale_reply_keeps_physical_custody')
+RUNTIME_KERNEL_ROWS = tuple({"cohort": "b3_runtime_kernel", "harness": UNIT,
+                             "test": RUNTIME_KERNEL_ROOT + "::" + name}
+                            for name in RUNTIME_KERNEL_NAMES)
+RUNTIME_KERNEL_IDENTITIES = {row["test"]: row for row in RUNTIME_KERNEL_ROWS}
+
+
 def catalog(fixtures):
     require(type(fixtures) is list, "invalid_native_fixture_catalog")
     identities = {}
@@ -110,6 +124,9 @@ def catalog(fixtures):
                 "invalid_native_fixture_catalog")
         require(all(type(value) is str for value in row.values())
                 and NAME.fullmatch(row["test"]), "invalid_native_fixture_catalog")
+        require(not row["test"].startswith(RUNTIME_KERNEL_ROOT)
+                or row == RUNTIME_KERNEL_IDENTITIES.get(row["test"]),
+                "invalid_native_fixture_scope")
         require(not row["test"].startswith(WAIT_CUSTODY_ROOT)
                 or row == WAIT_CUSTODY_ROW, "invalid_native_fixture_scope")
         require(not row["test"].startswith(RUNTIME_NATIVE_ROOTS)
@@ -144,7 +161,8 @@ def catalog(fixtures):
                 or (row["cohort"] == "b3_exec_failure" and row["harness"] == UNIT
                     and row["test"] in EXEC_FAILURE_TESTS)
                 or row == RUNTIME_IDENTITIES.get(row["test"])
-                or row == WAIT_CUSTODY_ROW, "invalid_native_fixture_scope")
+                or row == WAIT_CUSTODY_ROW
+                or row == RUNTIME_KERNEL_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
         key = (row["harness"], row["test"])
         require(key not in identities, "duplicate_native_fixture_catalog")
         identities[key] = row
@@ -211,7 +229,7 @@ def fixture_outcomes(output, fixtures, successful_command):
                         "native_fixture_wrong_harness")
                 require(key in expected or (current == UNIT and not start[1].startswith(
                     PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX, EXEC_PRIVATE_PREFIX)
-                    + RUNTIME_NATIVE_ROOTS + (WAIT_CUSTODY_ROOT,))),
+                    + RUNTIME_NATIVE_ROOTS + (WAIT_CUSTODY_ROOT, RUNTIME_KERNEL_ROOT))),
                         "native_fixture_cohort_differs")
                 seen_tests.add(key)
                 active = key

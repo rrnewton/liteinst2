@@ -10,6 +10,7 @@ import unittest
 from test_runtime_inventory import before_runtime
 
 import native_fixtures as fixtures
+from test_runtime_kernel_inventory import before_kernel
 from parsing import InvalidEvidence
 import run
 from test_dynamic_admission import corpus, fixture_block, native_block, summary
@@ -191,6 +192,7 @@ class MappingFixtureTests(unittest.TestCase):
     def test_real_catalog_pins_old37_exact_five_source_names_and_both_harness_denominators(self):
         path = Path(__file__).with_name("corpus.json")
         declared = json.loads(path.read_text())
+        declared = before_kernel(declared)
         declared = before_runtime(declared)
         rows = declared["native_validation_fixtures"]
         self.assertEqual(len(rows), 56)

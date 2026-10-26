@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import unittest
+from test_runtime_kernel_inventory import before_kernel
 
 from test_runtime_inventory import before_runtime
 
@@ -55,6 +56,7 @@ class CoreMergeInventoryTests(unittest.TestCase):
 
     def test_catalog_preserves_all_old_harnesses_and_native_collection_identities(self):
         corpus = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        corpus = before_kernel(corpus)
         corpus = before_runtime(corpus)
         workspace = copy.deepcopy(corpus["harness_test_counts"]["workspace_tests"])
         # Remove only the separately pinned additive exec inventory before

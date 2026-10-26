@@ -62,14 +62,17 @@ Its source inventory is separate from a completed qualification receipt.
 ## Bounded runtime source inventory
 
 The [actual-PC runtime profile](actual-pc-runtime.md) defines the mechanism and
-its remaining limits. The current inventory adds 138 launcher unit tests: 120 pure controls,
+its remaining limits. The established runtime inventory adds 138 launcher unit tests: 120 pure controls,
 six native startup controls, six ordinary-instruction native controls and six
 selected-instruction native controls. The two cross-page controls are a separate
 addition to the previous 136-test runtime inventory. The separate wait-custody
-control adds one launcher unit without changing this runtime inventory. Expected totals are 494 launcher units, 1870 workspace tests
-in the same 89 harnesses (1866 possible passes and four unchanged ignores), and
-786 serial launch tests in the same 27 harnesses.
-The recorder expects 273 Python controls. These are source-derived expectations;
+control adds one launcher unit without changing this baseline runtime inventory.
+The opt-in original-site kernel addition contributes 64 pure controls and six
+native fixture identities, separately checked against all 138 existing runtime
+identities. Expected totals are 564 launcher units, 1940 workspace tests in the
+same 89 harnesses (1936 possible passes and four unchanged ignores), and 856
+serial launch tests in the same 27 harnesses.
+The recorder expects 284 Python controls. These are source-derived expectations;
 this inventory makes no execution or qualification claim.
 Three of the pure controls check the isolated child's exact result, completion
 receipt and parent-bound role. The original 16 runtime native identities remain
@@ -85,11 +88,16 @@ The previous 72 names remain an exact ordered prefix; the ordinary and selected
 `b3_wait_custody` cohort appends exactly
 `linux::remote::dynamic::owner::tests::wait_withdrawal::actual_listen_withdrawal_preserves_pinned_wait_and_cleanup`
 as row 75. Its closed module rejects every unlisted identity, and the full
-74-row prefix remains exact. The two cross-page controls
+74-row prefix remains exact. The six exact `b3_runtime_kernel` identities append
+as rows 76–81, preserving the entire 75-row prefix. Their separate closed module
+requires the launcher unit harness and rejects unknown or relabelled identities.
+The new inventory projection reconstructs the complete pre-kernel corpus before
+any historical control reads it; unknown rows and changed source-method
+identities cannot be hidden by that projection. The two cross-page controls
 use one complete 8192-byte private source VMA. Ordinary MOV crosses the page
 boundary through a real two-page fetch; selected CPUID crosses the source
 boundary with a scripted completion while both original pages remain NX.
-Unknown names in any of the three closed native modules refuse. The workspace
+Unknown names in these closed native modules refuse. The workspace
 command independently requires the complete outer unit count; its saved output
 can be audited for the same names. Neither command may substitute a partial or
 failed run for the full cohort. The original 50 static native cases, 15 dynamic
@@ -101,7 +109,17 @@ owner-captured Partial source windows, exact first-user state and NX closure,
 and actual-PC dispatch with complete checkpoint comparisons. Ordinary native
 coverage is limited to the declared register/immediate, nonaccessing and direct
 branch trajectories. Selected completion covers the six CPU classes through
-scripted provider decisions; native/SYSCALL decisions refuse in this adapter.
+scripted provider decisions. The default profile continues to refuse native
+SYSCALL completion. The explicit `IdentityAndTermination` profile admits only
+original-site native64 `getpid`, `gettid`, `exit` and `exit_group` under the held
+singleton, source, control, namespace, full-state and unchanged lifetime-budget
+contracts. Returning operations retain real ENTRY/EXIT and close the original
+fetch pages before a new current origin; terminal operations retain real
+pre-exit/terminal and physical cleanup evidence without an invented EXIT, NX
+closure or successor. The six fixture identities cover return/control lineage,
+terminal custody, cross-page fetch, default-policy refusal, provider faults and
+unsupported calls, and stale replies. They are source inventory, not evidence
+that those trajectories have executed or that ordinary applications qualify.
 Memory/stack effects and actual enabled DR7 have explicit refusal controls.
 The per-fixture subcases and corruption mutations do not increase outer test
 counts or add static instruction telemetry.

@@ -6,6 +6,7 @@ from pathlib import Path
 import unittest
 
 import native_fixtures as fixtures
+from test_runtime_kernel_inventory import before_kernel
 from parsing import InvalidEvidence
 import run
 from test_dynamic_admission import corpus, fixture_block, native_block, summary
@@ -176,6 +177,7 @@ class RuntimeFixtureTests(unittest.TestCase):
 
     def test_complete_old_and_new_catalog_keeps_all72_names_and_missing_old_refusals(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_kernel(declared)
         before_runtime(declared)
         rows = declared["native_validation_fixtures"]
         self.assertEqual(rows[56:74], ROWS)

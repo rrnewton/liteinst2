@@ -6085,7 +6085,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 494
+        "tests": 564
       }
     },
     "workspace_tests": {
@@ -6427,7 +6427,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 494
+        "tests": 564
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -7324,8 +7324,38 @@
       "cohort": "b3_wait_custody",
       "harness": "unit/liteinst_launch/lib",
       "test": "linux::remote::dynamic::owner::tests::wait_withdrawal::actual_listen_withdrawal_preserves_pinned_wait_and_cleanup"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_public_getpid_selected_ordinary_exit_preserves_lineage"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_gettid_exit_group_retains_real_terminal"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_cross_page_syscall_preserves_exact_fetch"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_default_native_and_cpu_refusals_keep_current_state"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_fault_and_unsupported_syscalls_never_release"
+    },
+    {
+      "cohort": "b3_runtime_kernel",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::kernel::native_tests::runtime_kernel_stale_reply_keeps_physical_custody"
     }
   ],
-  "recorder_tests": 273,
+  "recorder_tests": 284,
   "schema_version": 1
 }

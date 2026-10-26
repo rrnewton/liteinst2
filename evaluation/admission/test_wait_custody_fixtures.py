@@ -8,6 +8,7 @@ import re
 import unittest
 
 import native_fixtures as fixtures
+from test_runtime_kernel_inventory import before_kernel
 from parsing import InvalidEvidence, require
 
 
@@ -92,6 +93,7 @@ class WaitCustodyFixtureTests(unittest.TestCase):
                          ["actual_listen_withdrawal_preserves_pinned_wait_and_cleanup"])
         self.assertNotRegex(source, r"#\[ignore(?:\]|\()")
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_kernel(declared)
         original = copy.deepcopy(declared)
         previous = before_wait_custody(declared)
         self.assertEqual(declared, original)
@@ -121,6 +123,7 @@ class WaitCustodyFixtureTests(unittest.TestCase):
 
     def test_wait_custody_projection_rejects_every_changed_new_row_or_historical_inventory(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_kernel(declared)
         for change in ("missing", "duplicate", "position", "cohort", "harness", "test", "extra"):
             changed = copy.deepcopy(declared)
             rows = changed["native_validation_fixtures"]
@@ -234,6 +237,7 @@ class WaitCustodyFixtureTests(unittest.TestCase):
         from test_source_census_fixtures import named_capture
 
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_kernel(declared)
         previous = before_wait_custody(declared)
         rows = declared["native_validation_fixtures"]
         self.assertEqual(rows[:74], previous["native_validation_fixtures"])

@@ -10,6 +10,7 @@ import unittest
 from test_runtime_inventory import before_runtime
 
 import native_fixtures as fixtures
+from test_runtime_kernel_inventory import before_kernel
 from parsing import InvalidEvidence
 import run
 from test_dynamic_admission import corpus, fixture_block, native_block, summary
@@ -293,6 +294,7 @@ class ExecFixtureTests(unittest.TestCase):
     def test_five_declared_public_outcomes_match_exact_source_names_and_denominators(self):
         path = Path(__file__).with_name("corpus.json")
         declared = json.loads(path.read_text())
+        declared = before_kernel(declared)
         self.assertEqual([row for row in declared["native_validation_fixtures"]
                           if row["cohort"] == "b3_exec"], ROWS)
         source = path.parents[2] / "crates/liteinst-launch/tests/b3_exec_admission.rs"
@@ -383,6 +385,7 @@ class ExecFixtureTests(unittest.TestCase):
             total += count
         self.assertEqual(total, UNIT_INCREMENT)
         declared = json.loads((root / "evaluation/admission/corpus.json").read_text())
+        declared = before_kernel(declared)
         declared = before_runtime(declared)
         self.assertEqual(declared["native_validation_fixtures"][42:50], ROWS + PRIVATE_ROWS)
         self.assertEqual(declared["native_validation_fixtures"][50:], FAILURE_ROWS)

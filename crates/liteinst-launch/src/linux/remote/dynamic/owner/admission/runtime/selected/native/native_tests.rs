@@ -498,7 +498,9 @@ fn check_pending(
     );
     assert_no_selected_effects(attempt);
 }
-fn assert_no_selected_effects(attempt: &RuntimeSelectedAttempt) {
+pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn assert_no_selected_effects(
+    attempt: &RuntimeSelectedAttempt,
+) {
     assert!(attempt.native.effects.iter().all(Option::is_none));
     assert!(
         attempt.native.wait.is_none()
