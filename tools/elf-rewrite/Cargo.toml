@@ -18,3 +18,11 @@ path = "src/main.rs"
 [dependencies]
 li2core = { package = "liteinst2", path = "../.." }
 formats = { package = "liteinst-artifact", path = "../../crates/liteinst-artifact" }
+
+[dev-dependencies]
+iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "block_encoder", "code_asm", "instr_info"] }
+
+[[example]]
+name = "common_sites"
+path = "examples/common_sites.rs"
+test = true
