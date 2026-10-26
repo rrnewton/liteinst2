@@ -21,13 +21,14 @@ independent admission from the saved Cargo, source and archive evidence.
 | Prepare originals | [Preparation](PREPARATION.md) | Both original ELFs, all eight datasets, full outputs/journals and exact refusals |
 | Build and inventory | [Build](BUILD.md) | Four unchanged workspace gates, archived products, target observation and eight complete static inventories |
 | Observe originals | [Observation](OBSERVE.md) | Both originals and all eight datasets; complete static-head coverage and ordered jump/heap streams, followed by independent capture-content audit |
+| Audit original captures | [Saved-content audit](AUDIT.md) | All 16 observations, complete PC/event streams, store replay, guarded pages and mapping owners; actual audit execution and independent review precede caller admission |
 | Produce artifacts | [Production](PRODUCTION.md) | All 74 planned stages, complete core selections and both pinned E9 reference lanes; null before journal |
 | Run candidates | [Ordinary execution](RUN-CANDIDATES.md) | All 192 rows; each eligible artifact's complete output and ordered journal, retaining production failures and independent artifact prerequisites |
 
-The build, observation, production and candidate-run recipes are source-reviewed
-and have not been run for this compiled corpus. A static selection retains every
-verified head and every
-selected site, including sites with zero dynamic visits. An emitted candidate,
+The build, observation, capture-audit, production and candidate-run recipes are
+source-reviewed and have not been run for this compiled corpus. A static
+selection retains every verified head and every selected site, including sites
+with zero dynamic visits. An emitted candidate,
 or a zero exit from a structural comparator, does not establish application
 behavior or architectural equivalence. Ordinary rewritten outputs, complete
 ordered hook journals, full state, faults, loader behavior and unwind require
