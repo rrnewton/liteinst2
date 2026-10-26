@@ -635,8 +635,10 @@ impl Candidate {
             ),
             b"LI2TOOL-CANDIDATE-UNREADY-V1\0"
         );
-        let text = std::fs::read_to_string(directory.join("plan-ledger.tsv")).unwrap();
-        assert!(text.len() <= 65536 && text.starts_with("LI2LEDGER\t1\n"));
+        let plan_text = std::fs::read_to_string(directory.join("plan-ledger.tsv")).unwrap();
+        assert!(plan_text.len() <= 65536 && plan_text.starts_with("LI2LEDGER\t1\n"));
+        let text = std::fs::read_to_string(directory.join("ledger.tsv")).unwrap();
+        assert!(text.len() <= 65536 && text.starts_with(&plan_text));
         let rows: Vec<Vec<_>> = text.lines().map(|l| l.split('\t').collect()).collect();
         assert_eq!(
             one_row(&rows, "qualification_complete"),
