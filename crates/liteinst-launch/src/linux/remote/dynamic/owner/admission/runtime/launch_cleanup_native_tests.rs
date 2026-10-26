@@ -538,10 +538,7 @@ fn run(scenario: Scenario) {
 #[test]
 fn runtime_launch_alias_refusal_retains_pending_cleanup_and_physical_custody() {
     isolation::run(
-        concat!(
-            module_path!(),
-            "::runtime_launch_alias_refusal_retains_pending_cleanup_and_physical_custody"
-        ),
+        "linux::remote::dynamic::owner::admission::runtime::launch_cleanup_native_tests::runtime_launch_alias_refusal_retains_pending_cleanup_and_physical_custody",
         || run(Scenario::Alias),
     );
 }
@@ -549,10 +546,7 @@ fn runtime_launch_alias_refusal_retains_pending_cleanup_and_physical_custody() {
 #[test]
 fn runtime_launch_pre_ready_failure_preserves_original_error_and_cleanup() {
     isolation::run(
-        concat!(
-            module_path!(),
-            "::runtime_launch_pre_ready_failure_preserves_original_error_and_cleanup"
-        ),
+        "linux::remote::dynamic::owner::admission::runtime::launch_cleanup_native_tests::runtime_launch_pre_ready_failure_preserves_original_error_and_cleanup",
         || run(Scenario::BeforeReady),
     );
 }
