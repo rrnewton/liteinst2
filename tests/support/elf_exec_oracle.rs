@@ -974,15 +974,18 @@ fn hook(
     );
     assert!(address >= STACK && address + state.len() <= registers.rdi);
     let image = child.memory(address, state.len() as usize);
-    // The descriptor covers precisely the production preservation mask. The
-    // full original NT_X86_XSTATE representation is still compared at every
-    // restored application boundary by the unchanged assert_state.
-    assert_eq!(
-        canonical_xstate(&image),
-        canonical_xstate(&seeded[..state.len() as usize])
-    );
     write_new(&directory.join("hook-context.bin"), &context);
     write_new(&directory.join("hook-saved-xstate.bin"), &image);
+    // Compare the architectural image extent, not its allocation padding.
+    // The full allocation is captured, and the full original NT_X86_XSTATE
+    // representation is still compared at every restored application boundary
+    // by the unchanged assert_state.
+    let image_len = state.image_len() as usize;
+    assert!(seeded.len() >= image_len);
+    assert_eq!(
+        canonical_xstate(&image[..image_len]),
+        canonical_xstate(&seeded[..image_len])
+    );
     write_new(
         &directory.join("hook-call.tsv"),
         format!(
