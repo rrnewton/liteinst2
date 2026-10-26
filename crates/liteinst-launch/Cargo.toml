@@ -17,8 +17,7 @@ iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "d
 dev-exec-backing-cleanup = []
 
 [dev-dependencies]
-# Keep the feature-enabling edge distinct from the unit crate self alias.
-liteinst-launch-dev = { package = "liteinst-launch", version = "=0.1.0", path = ".", features = ["dev-exec-backing-cleanup"] }
+liteinst-launch = { version = "=0.1.0", path = ".", features = ["dev-exec-backing-cleanup"] }
 
 [[test]]
 name = "exec_backing_cleanup"

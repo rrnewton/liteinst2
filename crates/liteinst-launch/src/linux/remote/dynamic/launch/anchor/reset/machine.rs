@@ -14,10 +14,12 @@ std::arch::global_asm!(
     fault = const std::mem::offset_of!(Context, test_fault),
     test_enabled = const cfg!(test) as usize,
     reaper = sym reaper,
+    entry = sym liteinst_anchor_reset_spawn,
 );
 unsafe extern "C" {
     // Assembly receives an address and uses the offset_of! constants above;
     // nested Rust-only payloads are not passed or interpreted as C values.
+    #[cfg_attr(test, link_name = "unit_liteinst_anchor_reset_spawn")]
     fn liteinst_anchor_reset_spawn(context: *mut libc::c_void, descriptor: *mut i32) -> i64;
 }
 pub(super) unsafe fn spawn(context: *mut Context, descriptor: *mut i32) -> i64 {
