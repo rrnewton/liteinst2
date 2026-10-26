@@ -4,11 +4,17 @@ use std::collections::{BTreeMap, BTreeSet};
 #[cfg(test)]
 mod tests;
 
+mod admission;
+pub(crate) mod bootstrap;
 mod lifecycle;
+pub(crate) mod publication;
+pub(crate) mod selected;
+pub(crate) mod trusted;
 
 enum State {
     Startup,
     Held(Box<DynamicEvent>),
+    AdmissionHeld(Box<trusted::AdmissionStop>),
     Running,
     Listening,
     Exiting,
@@ -24,11 +30,14 @@ enum PinKind {
 }
 
 pub(super) struct Owner {
+    // Ptrace wait-domain ownership is tied to the original tracer thread.
+    _thread: std::marker::PhantomData<std::rc::Rc<()>>,
     pub(super) pid: libc::pid_t,
     pub(super) initial_exec: Option<RegisterSnapshot>,
     lifecycle_options: Option<DynamicLifecycleOptions>,
     exec_policy: DynamicExecPolicy,
     lifecycle: Option<lifecycle::NativeLifecycle>,
+    admission: Option<admission::AdmissionOwner>,
     session: u64,
     sequence: u64,
     state: State,
@@ -112,11 +121,13 @@ pub(super) fn run(start: TracerStart) {
 impl Owner {
     fn new(session: u64, cancel: Arc<AtomicBool>) -> Self {
         Self {
+            _thread: std::marker::PhantomData,
             pid: 0,
             initial_exec: None,
             lifecycle_options: None,
             exec_policy: DynamicExecPolicy::Refuse,
             lifecycle: None,
+            admission: None,
             session,
             sequence: 0,
             state: State::Startup,
@@ -447,6 +458,15 @@ impl Owner {
     }
     fn serve(&mut self, commands: Receiver<Command>) -> Result<(), LaunchError> {
         while !self.cancel.load(Ordering::Acquire) && !self.closing {
+            if self
+                .admission
+                .as_ref()
+                .is_some_and(|admission| admission.provider_expired(Instant::now()))
+            {
+                self.closing = true;
+                self.cancel.store(true, Ordering::Release);
+                break;
+            }
             let command = match commands.recv_timeout(Duration::from_millis(1)) {
                 Ok(command) => command,
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => continue,
@@ -467,6 +487,22 @@ impl Owner {
     }
     fn execute(&mut self, request: Request, until: Instant) -> Result<Response, LaunchError> {
         self.time_left(until, "dynamic command")?;
+        let request = match request {
+            Request::Admission(request) => {
+                let result = self.execute_admission(*request, until);
+                if result.is_err() {
+                    self.closing = true;
+                    self.cancel.store(true, Ordering::Release);
+                }
+                return Ok(Response::Admission(Box::new(result)));
+            }
+            request => request,
+        };
+        if self.admission.is_some() {
+            return Err(LaunchError::Invalid(
+                "raw dynamic requests cannot bypass admission ownership",
+            ));
+        }
         if let Some(mut lifecycle) = self.lifecycle.take() {
             // A panic still leaves all native wait/pidfd ownership in Owner;
             // the catch-unwind path proceeds directly to physical cleanup.
@@ -475,6 +511,9 @@ impl Owner {
             return result;
         }
         match request {
+            Request::Admission(_) => Err(LaunchError::Invalid(
+                "admission request escaped its owner dispatcher",
+            )),
             Request::LifecycleSnapshot => Ok(Response::LifecycleSnapshot(None)),
             Request::InterruptTask(_) => {
                 Err(LaunchError::Invalid("dynamic lifecycle is not initialized"))

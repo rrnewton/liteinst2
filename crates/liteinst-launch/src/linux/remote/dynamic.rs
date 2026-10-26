@@ -14,6 +14,10 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
 
+mod admission;
+pub use admission::*;
+use admission::{AdmissionReply, AdmissionRequest};
+
 mod broker;
 mod launch;
 mod owner;
@@ -353,6 +357,7 @@ pub struct DynamicCleanup {
 }
 
 enum Request {
+    Admission(Box<AdmissionRequest>),
     Wait,
     Interrupt,
     InterruptTask(crate::lifecycle::TaskId),
@@ -366,6 +371,7 @@ enum Request {
     PanicForCleanupTest,
 }
 enum Response {
+    Admission(Box<Result<AdmissionReply, crate::gate::GateError>>),
     Unit,
     Event(DynamicEvent),
     Registers(RegisterSnapshot),
@@ -527,6 +533,18 @@ impl DynamicSession {
         exec: DynamicExecPolicy,
     ) -> Result<Self, LaunchError> {
         let until = deadline(timeout)?;
+        Self::launch_options_until(command, timeout, lifecycle, exec, until)
+    }
+
+    // Admission already owns an absolute construction budget. Legacy entry
+    // points pass the same Instant previously used by this unchanged body.
+    fn launch_options_until(
+        command: &LaunchCommand,
+        timeout: Duration,
+        lifecycle: Option<DynamicLifecycleOptions>,
+        exec: DynamicExecPolicy,
+        until: Instant,
+    ) -> Result<Self, LaunchError> {
         let session = NEXT_SESSION
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |id| id.checked_add(1))
             .map_err(|_| LaunchError::Invalid("dynamic session identity exhausted"))?;

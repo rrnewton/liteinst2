@@ -1,8 +1,11 @@
 //! Opt-in bounded native fork/thread/exec ownership. This module authenticates kernel events; the
-//! pure registry only retains their identities and obligations. No code bytes,
-//! executable permissions, publication leases or instrumentation are involved.
+//! pure registry only retains their identities and obligations. The ordinary
+//! lifecycle dispatcher changes no code bytes or executable permissions. Its
+//! private admission child adds distinct owner-authenticated phase transitions;
+//! real publication remains in the separate whole-mm native guard.
 use super::*;
 
+pub(crate) mod admission;
 mod exec;
 mod thread;
 use exec::ExecPending;
@@ -49,7 +52,7 @@ struct ForkPending {
     newborn: Option<(libc::pid_t, RegisterSnapshot)>,
 }
 
-pub(super) struct NativeLifecycle {
+pub(in crate::linux::remote::dynamic) struct NativeLifecycle {
     session: u64,
     options: DynamicLifecycleOptions,
     exec_policy: DynamicExecPolicy,
@@ -157,6 +160,9 @@ impl NativeLifecycle {
         until: Instant,
     ) -> Result<Response, LaunchError> {
         match request {
+            Request::Admission(_) => Err(LaunchError::Invalid(
+                "admission request escaped its dedicated owner dispatcher",
+            )),
             #[cfg(test)]
             Request::PanicForCleanupTest => panic!("injected dynamic tracer unwind"),
             Request::LifecycleSnapshot => {
