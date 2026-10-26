@@ -1,6 +1,7 @@
 #!/usr/local/bin/python3
 """Run the finite static emitter comparison; never execute generated images."""
 import argparse
+import errno
 import hashlib
 import json
 import math
@@ -53,6 +54,20 @@ def identity(path):
     assert fields(before) == fields(after) == fields(resolved.stat())
     return {"exists": True, "resolved": str(resolved), "lstat": fields(link),
             "stat": fields(after), "sha256": value.hexdigest()}
+
+
+def config_identity(path):
+    # A denied metadata lookup is an observation, not proof of absence.
+    # Once lookup succeeds, the original opened-file identity stays strict.
+    path = Path(path)
+    try:
+        path.exists()
+    except PermissionError as error:
+        assert error.errno in (errno.EPERM, errno.EACCES)
+        return {"observation": "READ_DENIED", "operation": "metadata_lookup",
+                "errno": error.errno, "path": str(path), "exists": None,
+                "content_sha256": None}
+    return identity(path)
 
 
 def file_map(directory):
@@ -116,9 +131,17 @@ def main():
         configs.update(owner / ".cargo" / name for name in ("config", "config.toml"))
     selected += sorted(configs)
     source = {n: {"sha256": digest(repo / n), "mode": stat.S_IMODE((repo / n).stat().st_mode)} for n in names}
-    tools = {str(p): identity(p) for p in selected}
+    tools = {str(p): config_identity(p) if p in configs else identity(p) for p in selected}
     save(raw / "source.json", {"revision": revision, "files": source})
     save(raw / "tools-and-configs.json", tools)
+    denied_configs = sorted(str(p) for p in configs
+                            if tools[str(p)].get("observation") == "READ_DENIED")
+    save(raw / "configuration-observation-scope.json", {
+        "lookup_paths": sorted(str(p) for p in configs),
+        "denied_lookup_paths": denied_configs,
+        "denied_means_absent": False, "denied_contents_observed": False,
+        "actual_cargo_consumption_attested": False,
+        "scope": "Selected configuration observations are compared exactly before and after each stage; denied paths have no content identity."})
     cpu = Path("/proc/cpuinfo").read_text()
     save(raw / "hardware.json", {"cpu_model": next(x.split(":", 1)[1].strip() for x in cpu.splitlines() if x.startswith("model name")),
                                 "architecture": platform.machine(), "logical_cpus": os.cpu_count(),
@@ -137,7 +160,7 @@ def main():
         assert not git("diff", "HEAD", "--")
         assert [n for n in git("ls-files", "-z").decode().split("\0") if n] == names
         current_source = {n: {"sha256": digest(repo / n), "mode": stat.S_IMODE((repo / n).stat().st_mode)} for n in names}
-        current_tools = {str(p): identity(p) for p in selected}
+        current_tools = {str(p): config_identity(p) if p in configs else identity(p) for p in selected}
         assert current_source == source and current_tools == tools
         for path, expected in archived.items():
             assert digest(path) == expected, path
@@ -422,7 +445,10 @@ def main():
         save(raw / "complete.json", {"status": "EXACT_STATIC_PARITY", "old_revision": BASE, "candidate_revision": revision,
              "materials_sha256": MATERIALS, "commands": results, "comparisons": comparisons,
              "generated_code_executed": False, "native_qualification": False,
-             "selected_tool_closure_only": True, "files_index_sha256": digest(raw / "files.json")})
+             "selected_tool_closure_only": True, "files_index_sha256": digest(raw / "files.json"),
+             "denied_configuration_paths": denied_configs,
+             "configuration_observation_scope_sha256": digest(raw / "configuration-observation-scope.json"),
+             "actual_cargo_config_consumption_attested": False})
         print("PASS static emitter parity: 28 historical, 58 extended, 21 current cases; no generated execution")
     except BaseException as error:
         save(raw / "failed-incomplete.json", {"status": "FAILED_OR_STOPPED_NO_RETRY", "candidate_revision": revision,
