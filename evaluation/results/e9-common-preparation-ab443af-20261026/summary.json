@@ -1,0 +1,41 @@
+{
+  "collection": {
+    "input_index_sha256": "d2aea8bb79a7af5c0a9574c7bf3997ca7679b1a4b65f85aa4edc341ec741b4b9",
+    "source_path": "evaluation/e9-common-app/collect_preparation.py",
+    "source_sha256": "4a34d2cda72f83b3af269fe964f2e06151a1ae6d32450813feb0f0d98af84a65",
+    "tested_revision": "eac76746ceddc3a3193057dc967dda1d3f893cfb"
+  },
+  "committed_git_blobs_equal": true,
+  "completed_success": 24,
+  "full_A3": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ],
+    "logical_cpus": 316
+  },
+  "limitations": [
+    "Original dynamic-loader application outputs and zero journals only.",
+    "No rewritten application, complete instruction inventory, selected-site comparison, recording-hook or architectural-state qualification.",
+    "Compiler depfile, link map and readelf/nm outputs are retained metadata, not a complete compiler/configuration/dependency closure.",
+    "Tool record is the recipe-selected four-tool hash observation; no retrospective current-owner refresh.",
+    "Symbol/file slices are decoded ELF metadata, not independent instruction/dataflow classification."
+  ],
+  "ordinary_original_runs": 16,
+  "parent_closure_scope": "Saved launch record plus explicit caller confirmation; collector does not observe live processes.",
+  "qualification_complete": false,
+  "required_refusal": 6,
+  "rewriting_runs": 0,
+  "saved_source_before_after_equal": true,
+  "schema": 1,
+  "source_files": 1204,
+  "stages": 30,
+  "status": "COMPLETE_ORIGINAL_PREPARATION",
+  "tested_revision": "ab443afc2f4d9b62a9d04d56c4ca78a10e48ec05",
+  "timing_scope": "Operational diagnostics only; no performance comparison or aggregate timing claim."
+}
