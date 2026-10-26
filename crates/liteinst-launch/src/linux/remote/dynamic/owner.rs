@@ -8,7 +8,7 @@ mod lifecycle;
 
 enum State {
     Startup,
-    Held(DynamicEvent),
+    Held(Box<DynamicEvent>),
     Running,
     Listening,
     Terminal,
@@ -381,7 +381,7 @@ impl Owner {
                 task: None,
             }),
         };
-        self.state = State::Held(event.clone());
+        self.state = State::Held(Box::new(event.clone()));
         Ok(event)
     }
     fn require_stop(&self, token: &DynamicStop) -> Result<&DynamicEvent, LaunchError> {

@@ -93,7 +93,7 @@ impl NativeLifecycle {
             pid,
             Task {
                 identity,
-                state: State::Held(event.clone()),
+                state: State::Held(Box::new(event.clone())),
                 interrupt_stops_remaining: 0,
                 syscall_open: false,
                 fork_return: None,
@@ -202,7 +202,7 @@ impl NativeLifecycle {
                 task: Some(task.identity.task),
             }),
         };
-        task.state = State::Held(event.clone());
+        task.state = State::Held(Box::new(event.clone()));
         Ok(event)
     }
 
