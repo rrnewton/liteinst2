@@ -862,6 +862,14 @@ fn derive_rows(
         || main.inode == 0
         || file_identity(main) != geometry.executable
     {
+        #[cfg(test)]
+        eprintln!(
+            "exec backing mismatch: map={:?}, executable={:?}, permissions={:?}, entry={:#x}",
+            file_identity(main),
+            geometry.executable,
+            main.permissions.bytes(),
+            geometry.entry.executable_entry,
+        );
         return Err(refused(
             "exec main entry is not the actual executable object",
         ));
