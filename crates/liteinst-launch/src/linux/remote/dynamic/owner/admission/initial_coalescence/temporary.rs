@@ -31,7 +31,7 @@ impl InitialMapPlan {
             + 8 * size_of::<[u8; 4]>()
             + 32 * size_of::<usize>()
             + 16 * size_of::<u64>()
-            + 8 * size_of::<u32>()
+            + size_of::<[u32; 8]>()
             + 8 * size_of::<Result<MapEntry<'_>, MapParseError>>();
         // PairRows includes both private Columns records. The extra complete
         // PairRows slots cover by-value calls, temporary columns and results
@@ -50,7 +50,7 @@ impl InitialMapPlan {
             + 4 * size_of::<Enumerate<MapEntries<'_>>>()
             + 8 * size_of::<MapEntry<'_>>()
             + 24 * size_of::<usize>()
-            + 8 * size_of::<u64>()
+            + size_of::<[u64; 8]>()
             + 4 * size_of::<(u32, u32, u64)>()
             + 4 * size_of::<Result<Option<InitialMapPlan>, LaunchError>>();
         // verify_transition can retain one projection while verifying another;
