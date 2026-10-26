@@ -62,13 +62,16 @@ Its source inventory is separate from a completed qualification receipt.
 ## Bounded runtime source inventory
 
 The [actual-PC runtime profile](actual-pc-runtime.md) defines the mechanism and
-its remaining limits. The current increment adds 133 launcher unit tests: 117 pure controls,
+its remaining limits. The current increment adds 136 launcher unit tests: 120 pure controls,
 six native startup controls, five ordinary-instruction native controls and five
-selected-instruction native controls. Expected totals are 488 launcher units,
-1864 workspace tests in the same 89 harnesses (1860 possible passes and four
-unchanged ignores), and 780 serial launch tests in the same 27 harnesses.
+selected-instruction native controls. Expected totals are 491 launcher units,
+1867 workspace tests in the same 89 harnesses (1863 possible passes and four
+unchanged ignores), and 783 serial launch tests in the same 27 harnesses.
 The recorder expects 265 Python controls. These are source-derived expectations;
 this inventory makes no execution or qualification claim.
+Three of the pure controls check the isolated child's exact result, completion
+receipt and parent-bound role. The 16 runtime native identities are unchanged;
+child execution does not add another outer case or instruction sample.
 
 The serial `native_validation_fixtures` catalog retains its original 56 rows in
 order and adds exactly 16 names under the separate `b3_runtime_startup`,

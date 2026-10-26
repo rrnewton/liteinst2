@@ -68,6 +68,17 @@ names belong to the strict recorder catalog; missing, ignored, failed, unknown
 or wrong-harness outcomes cannot qualify. Counts and results are supplied only
 by the committed corpus and the exact-revision run receipt.
 
+Each runtime native test executes its complete body in a separate exact-filter
+test process. This prevents unrelated parallel tests from changing the tracer's
+map table during source reauthentication; the outer suite keeps its normal
+parallel scheduling. The real public client/provider and owner threads remain.
+Success requires both the exact one-test result and a parent-bound receipt
+written after every original assertion and cleanup check. Child output and
+process lifetime are bounded; uncertain cleanup aborts validation. Original
+operation deadlines, complete map comparisons and outer recorder gates remain
+unchanged. This fixture boundary does not make production map reads atomic or
+establish the precise subtype of an earlier map-parse refusal.
+
 The intended evidence supports claims 1, 2 and 4 within this finite profile:
 page confinement and closure, first-instruction selected interception and
 explicit tactic controls. This adds no in-place pun publication, performance

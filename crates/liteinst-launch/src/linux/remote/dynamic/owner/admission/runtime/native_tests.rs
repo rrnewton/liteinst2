@@ -587,340 +587,380 @@ fn raw_first_user(fixture: &Fixture) -> TaskStateSnapshot {
 
 #[test]
 fn initial_runtime_startup_preserves_real_boundary_state_sources_and_nx() {
-    let fixture = Fixture::code(CODE);
-    let raw = raw_first_user(&fixture);
-    with_owner(&fixture, |owner, initial, until, before| {
-        let ready = ready(start(
-            owner,
-            initial,
-            DynamicRuntimeOptions::default(),
-            until,
-        ));
-        check_ready(owner, before, &ready, until);
-        let first = &owner
-            .runtime
-            .as_ref()
-            .unwrap()
-            .bootstrap
-            .as_ref()
-            .unwrap()
-            .completed()
-            .unwrap()
-            .evidence
-            .entry_trap;
-        // Stack addresses belong to different real processes. Each lane's
-        // complete GPR relation is checked above; no address/flag masking is
-        // applied. Kernel first-user XSTATE and inherited mask compare exactly.
-        assert_eq!(first.xstate, raw.xstate);
-        assert_eq!(first.mask, raw.mask);
-    });
-}
-
-#[test]
-fn initial_runtime_owner_refuses_raw_bypass_and_repeated_start() {
-    let fixture = Fixture::code(CODE);
-    with_owner(&fixture, |owner, initial, until, before| {
-        let ready = ready(start(
-            owner,
-            initial,
-            DynamicRuntimeOptions::default(),
-            until,
-        ));
-        check_ready(owner, before, &ready, until);
-        let held = state(owner.pid);
-        let map = maps(owner.pid);
-        let runtime = owner.runtime.as_ref().unwrap();
-        let charged = runtime.census.as_ref().unwrap().charged();
-        let origin = runtime.initial_origin;
-        let binding = runtime.sources.current_binding().unwrap().clone();
-        let identities = (0..runtime.sources.window_count())
-            .map(|index| runtime.sources.window(index).unwrap().id)
-            .collect::<Vec<_>>();
-        let registry = runtime.native.as_ref().unwrap().admission_snapshot();
-        assert!(matches!(
-            owner.execute(
-                Request::Resume(initial.clone(), DynamicResume::Continue),
-                until
-            ),
-            Err(LaunchError::Invalid(
-                "raw dynamic requests cannot bypass admission ownership"
-            ))
-        ));
-        assert_eq!(state(owner.pid), held);
-        assert_eq!(maps(owner.pid), map);
-        assert!(matches!(
-            start(owner, initial, DynamicRuntimeOptions::default(), until),
-            Err(GateError::Refused("runtime startup cannot be repeated"))
-        ));
-        assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
-        assert_eq!(state(owner.pid), held);
-        assert_eq!(maps(owner.pid), map);
-        let runtime = owner.runtime.as_ref().unwrap();
-        assert_eq!(runtime.census.as_ref().unwrap().charged(), charged);
-        assert_eq!(runtime.initial_origin, origin);
-        assert_eq!(runtime.sources.current_binding(), Some(&binding));
-        assert_eq!(
-            (0..runtime.sources.window_count())
-                .map(|index| runtime.sources.window(index).unwrap().id)
-                .collect::<Vec<_>>(),
-            identities
-        );
-        assert_eq!(
-            runtime.native.as_ref().unwrap().admission_snapshot(),
-            registry
-        );
-        check_ready(owner, before, &ready, until);
-    });
-}
-
-#[test]
-fn initial_runtime_expired_original_deadline_keeps_pristine_exec() {
-    let fixture = Fixture::code(CODE);
-    with_owner(&fixture, |owner, initial, until, before| {
-        // Keep the actual EXEC held until the SAME deadline established before
-        // launch expires. No substitute timestamp or renewed budget is passed.
-        while Instant::now() < until {
-            std::thread::sleep(Duration::from_millis(1));
-        }
-        assert!(matches!(
-            start(owner, initial, DynamicRuntimeOptions::default(), until),
-            Err(GateError::Control(LaunchError::Timeout("dynamic command")))
-        ));
-        assert!(owner.runtime.is_none() && owner.lifecycle.is_none());
-        before.unchanged(owner.pid);
-        owner.require_stop(initial).unwrap();
-    });
-}
-
-#[test]
-fn initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec() {
-    let fixture = Fixture::code(CODE);
-    with_owner(&fixture, |owner, initial, until, before| {
-        let mut options = DynamicRuntimeOptions::default();
-        let allocated = RuntimeOwner::allocate(
-            RuntimeStartOptions {
-                capture: InitialCaptureProfile {
-                    max_vmas: options.capture.max_vmas,
-                    max_windows: options.capture.max_windows,
-                    max_window_bytes: options.capture.max_window_bytes,
-                    max_total_capture_bytes: options.capture.max_total_capture_bytes,
-                },
-                limits: options.limits,
-            },
-            until,
-        )
-        .unwrap();
-        let first_charge = allocated.startup.charged();
-        drop(allocated);
-        let shape = InitialBootstrapShape::from_original(&before.maps).unwrap();
-        let bootstrap = shape
-            .reservation_bytes()
-            .unwrap()
-            .checked_sub(size_of::<PreparedInitialBootstrap>())
-            .unwrap();
-        assert!(bootstrap > 0);
-        let exact = first_charge
-            .source_fact_bytes
-            .checked_add(bootstrap)
-            .unwrap();
-        options.limits.source_fact_bytes = exact.checked_sub(1).unwrap();
-        assert!(options.limits.source_fact_bytes >= first_charge.source_fact_bytes);
-        assert!(matches!(
-            start(owner, initial, options, until),
-            Err(GateError::Refused(
-                "dynamic continuation lifetime capacity exhausted"
-            ))
-        ));
-        before.unchanged(owner.pid);
-        owner.require_stop(initial).unwrap();
-        let runtime = owner.runtime.as_ref().unwrap();
-        assert_eq!(runtime.stage, RuntimeStage::BootstrapAllocation);
-        assert_eq!(runtime.startup.charged(), first_charge);
-        assert!(
-            runtime.bootstrap.is_none() && runtime.native.is_none() && runtime.census.is_none()
-        );
-        assert!(
-            !runtime.ready_issued && runtime.initial_origin.is_none() && runtime.pages.is_empty()
-        );
-        let (storage, progress) = runtime.sources.original_maps();
-        assert_eq!(initial_maps_prefix(storage, progress).unwrap(), before.maps);
-        assert!(runtime.sources.original_complete());
-        assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
-    });
-}
-
-#[test]
-fn initial_runtime_source_window_refusal_retains_completed_bootstrap() {
-    let fixture = Fixture::code(CODE);
-    with_owner_cleanup(
-        &fixture,
-        |owner, initial, until, before| {
-            let mut options = DynamicRuntimeOptions::default();
-            // Actual main VMA was independently proved to be 8192 bytes. With
-            // dependency context this 8192-byte source buffer covers one 4096-byte
-            // target page, so a second target is necessary, without host guessing.
-            options.capture.max_windows = 1;
-            options.capture.max_window_bytes = 8192;
-            options.capture.max_total_capture_bytes = 8192;
-            assert!(matches!(
-                start(owner, initial, options, until),
-                Err(GateError::Refused(
-                    "initial runtime window count exceeds its bound"
-                ))
-            ));
-            check_bootstrap(owner, before);
-            let runtime = owner.runtime.as_ref().unwrap();
-            assert_eq!(runtime.stage, RuntimeStage::RuntimeCapture);
-            assert!(
-                !runtime.ready_issued
-                    && runtime.census.is_none()
-                    && runtime.initial_origin.is_none()
-            );
-            assert_eq!(
-                runtime.sources.failure().unwrap().stage,
-                CaptureStage::Geometry
-            );
-            assert_eq!(
-                runtime.sources.failure().unwrap().kind,
-                CaptureFailureKind::Refused("initial runtime window count exceeds its bound")
-            );
-            assert_eq!(runtime.sources.window_count(), 1);
-            assert!(!runtime.sources.capture_complete() && !runtime.sources.recheck_complete());
-            assert!(runtime.sources.window(0).is_none());
-            let (storage, capture, recheck) = runtime.sources.window_progress(0).unwrap();
-            assert!(storage.iter().all(|byte| *byte == 0));
-            assert!(!capture.started && !capture.attempted && !capture.complete);
-            assert!(!recheck.started && !recheck.attempted && !recheck.complete);
-            assert_eq!(
-                runtime.sources.current_xstate().unwrap(),
-                state(owner.pid).xstate
-            );
-            assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
-            (
-                runtime.sources.failure(),
-                runtime.sources.current_binding().unwrap().clone(),
-                runtime.sources.current_xstate().unwrap().to_vec(),
-                runtime.sources.original_maps().0.to_vec(),
-                runtime.sources.quarantine_maps().0.to_vec(),
-                runtime.startup.charged(),
-            )
-        },
-        |owner, (failure, binding, xstate, original, quarantine, charge)| {
-            let runtime = owner.runtime.as_ref().unwrap();
-            assert_eq!(&runtime.sources.failure(), failure);
-            assert_eq!(runtime.sources.current_binding(), Some(binding));
-            assert_eq!(runtime.sources.current_xstate().unwrap(), xstate);
-            assert_eq!(runtime.sources.original_maps().0, original.as_slice());
-            assert_eq!(runtime.sources.quarantine_maps().0, quarantine.as_slice());
-            assert_eq!(&runtime.startup.charged(), charge);
-            let boot = runtime.bootstrap.as_ref().unwrap().completed().unwrap();
-            assert_eq!(boot.stop, binding.stop);
-            assert_eq!(boot.evidence.restored_entry.registers, binding.registers);
-            assert_eq!(boot.evidence.restored_entry.xstate, *xstate);
-            assert_eq!(boot.evidence.restored_entry.mask, binding.signal_mask);
-        },
-    );
-}
-
-#[test]
-fn initial_runtime_unwind_retains_native_bootstrap_until_physical_cleanup() {
-    let fixture = Fixture::code(CODE);
-    with_owner_cleanup(
-        &fixture,
-        |owner, initial, until, before| {
-            owner.runtime_panic_after_bootstrap = true;
-            let outcome = catch_unwind(AssertUnwindSafe(|| {
-                let _ = start(owner, initial, DynamicRuntimeOptions::default(), until);
-            }));
-            let payload = outcome.unwrap_err();
-            let message = payload
-                .downcast_ref::<&str>()
-                .copied()
-                .or_else(|| payload.downcast_ref::<String>().map(String::as_str));
-            assert_eq!(
-                message,
-                Some("injected runtime unwind after actual bootstrap custody transfer")
-            );
-            assert!(!owner.runtime_panic_after_bootstrap);
-            check_bootstrap(owner, before);
-            let runtime = owner.runtime.as_ref().unwrap();
-            assert_eq!(runtime.stage, RuntimeStage::Bootstrap);
-            assert!(
-                !runtime.ready_issued
-                    && runtime.census.is_none()
-                    && runtime.initial_origin.is_none()
-            );
-            assert!(runtime.sources.original_complete());
-            assert!(!runtime.sources.capture_complete() && !runtime.sources.recheck_complete());
-            assert!(runtime.sources.current_binding().is_none());
-            assert_eq!(
-                runtime.sources.failure(),
-                Some(CaptureFailure {
-                    stage: CaptureStage::Original,
-                    window: None,
-                    kind: CaptureFailureKind::Aborted,
-                })
-            );
-            let stop = runtime
-                .bootstrap
-                .as_ref()
-                .unwrap()
-                .completed()
-                .unwrap()
-                .stop
-                .clone();
-            let retained = runtime
-                .bootstrap
-                .as_ref()
-                .unwrap()
-                .completed()
-                .unwrap()
-                .evidence
-                .restored_entry
-                .clone();
-            let registry = runtime.native.as_ref().unwrap().admission_snapshot();
-            let original_maps = runtime.sources.original_maps().0.to_vec();
-            let first_charge = runtime.startup.charged();
-            (stop, retained, registry, original_maps, first_charge)
-        },
-        |owner, (stop, retained, registry, original_maps, first_charge)| {
-            // Physical cleanup does not turn history into a new callable stop.
-            // These are exact retained values; no post-reap ptrace query occurs.
-            let runtime = owner.runtime.as_ref().unwrap();
-            assert_eq!(
-                &runtime
-                    .bootstrap
+    crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
+        "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_startup_preserves_real_boundary_state_sources_and_nx",
+        || {
+            let fixture = Fixture::code(CODE);
+            let raw = raw_first_user(&fixture);
+            with_owner(&fixture, |owner, initial, until, before| {
+                let ready = ready(start(
+                    owner,
+                    initial,
+                    DynamicRuntimeOptions::default(),
+                    until,
+                ));
+                check_ready(owner, before, &ready, until);
+                let first = &owner
+                    .runtime
                     .as_ref()
                     .unwrap()
-                    .completed()
-                    .unwrap()
-                    .stop,
-                stop
-            );
-            assert_eq!(
-                &runtime
                     .bootstrap
                     .as_ref()
                     .unwrap()
                     .completed()
                     .unwrap()
                     .evidence
-                    .restored_entry,
-                retained
+                    .entry_trap;
+                // Stack addresses belong to different real processes. Each lane's
+                // complete GPR relation is checked above; no address/flag masking is
+                // applied. Kernel first-user XSTATE and inherited mask compare exactly.
+                assert_eq!(first.xstate, raw.xstate);
+                assert_eq!(first.mask, raw.mask);
+            });
+        },
+    );
+}
+
+#[test]
+fn initial_runtime_owner_refuses_raw_bypass_and_repeated_start() {
+    crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
+        "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_owner_refuses_raw_bypass_and_repeated_start",
+        || {
+            let fixture = Fixture::code(CODE);
+            with_owner(&fixture, |owner, initial, until, before| {
+                let ready = ready(start(
+                    owner,
+                    initial,
+                    DynamicRuntimeOptions::default(),
+                    until,
+                ));
+                check_ready(owner, before, &ready, until);
+                let held = state(owner.pid);
+                let map = maps(owner.pid);
+                let runtime = owner.runtime.as_ref().unwrap();
+                let charged = runtime.census.as_ref().unwrap().charged();
+                let origin = runtime.initial_origin;
+                let binding = runtime.sources.current_binding().unwrap().clone();
+                let identities = (0..runtime.sources.window_count())
+                    .map(|index| runtime.sources.window(index).unwrap().id)
+                    .collect::<Vec<_>>();
+                let registry = runtime.native.as_ref().unwrap().admission_snapshot();
+                assert!(matches!(
+                    owner.execute(
+                        Request::Resume(initial.clone(), DynamicResume::Continue),
+                        until
+                    ),
+                    Err(LaunchError::Invalid(
+                        "raw dynamic requests cannot bypass admission ownership"
+                    ))
+                ));
+                assert_eq!(state(owner.pid), held);
+                assert_eq!(maps(owner.pid), map);
+                assert!(matches!(
+                    start(owner, initial, DynamicRuntimeOptions::default(), until),
+                    Err(GateError::Refused("runtime startup cannot be repeated"))
+                ));
+                assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
+                assert_eq!(state(owner.pid), held);
+                assert_eq!(maps(owner.pid), map);
+                let runtime = owner.runtime.as_ref().unwrap();
+                assert_eq!(runtime.census.as_ref().unwrap().charged(), charged);
+                assert_eq!(runtime.initial_origin, origin);
+                assert_eq!(runtime.sources.current_binding(), Some(&binding));
+                assert_eq!(
+                    (0..runtime.sources.window_count())
+                        .map(|index| runtime.sources.window(index).unwrap().id)
+                        .collect::<Vec<_>>(),
+                    identities
+                );
+                assert_eq!(
+                    runtime.native.as_ref().unwrap().admission_snapshot(),
+                    registry
+                );
+                check_ready(owner, before, &ready, until);
+            });
+        },
+    );
+}
+
+#[test]
+fn initial_runtime_expired_original_deadline_keeps_pristine_exec() {
+    crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
+        "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_expired_original_deadline_keeps_pristine_exec",
+        || {
+            let fixture = Fixture::code(CODE);
+            with_owner(&fixture, |owner, initial, until, before| {
+                // Keep the actual EXEC held until the SAME deadline established before
+                // launch expires. No substitute timestamp or renewed budget is passed.
+                while Instant::now() < until {
+                    std::thread::sleep(Duration::from_millis(1));
+                }
+                assert!(matches!(
+                    start(owner, initial, DynamicRuntimeOptions::default(), until),
+                    Err(GateError::Control(LaunchError::Timeout("dynamic command")))
+                ));
+                assert!(owner.runtime.is_none() && owner.lifecycle.is_none());
+                before.unchanged(owner.pid);
+                owner.require_stop(initial).unwrap();
+            });
+        },
+    );
+}
+
+#[test]
+fn initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec() {
+    crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
+        "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec",
+        || {
+            let fixture = Fixture::code(CODE);
+            with_owner(&fixture, |owner, initial, until, before| {
+                let mut options = DynamicRuntimeOptions::default();
+                let allocated = RuntimeOwner::allocate(
+                    RuntimeStartOptions {
+                        capture: InitialCaptureProfile {
+                            max_vmas: options.capture.max_vmas,
+                            max_windows: options.capture.max_windows,
+                            max_window_bytes: options.capture.max_window_bytes,
+                            max_total_capture_bytes: options.capture.max_total_capture_bytes,
+                        },
+                        limits: options.limits,
+                    },
+                    until,
+                )
+                .unwrap();
+                let first_charge = allocated.startup.charged();
+                drop(allocated);
+                let shape = InitialBootstrapShape::from_original(&before.maps).unwrap();
+                let bootstrap = shape
+                    .reservation_bytes()
+                    .unwrap()
+                    .checked_sub(size_of::<PreparedInitialBootstrap>())
+                    .unwrap();
+                assert!(bootstrap > 0);
+                let exact = first_charge
+                    .source_fact_bytes
+                    .checked_add(bootstrap)
+                    .unwrap();
+                options.limits.source_fact_bytes = exact.checked_sub(1).unwrap();
+                assert!(options.limits.source_fact_bytes >= first_charge.source_fact_bytes);
+                assert!(matches!(
+                    start(owner, initial, options, until),
+                    Err(GateError::Refused(
+                        "dynamic continuation lifetime capacity exhausted"
+                    ))
+                ));
+                before.unchanged(owner.pid);
+                owner.require_stop(initial).unwrap();
+                let runtime = owner.runtime.as_ref().unwrap();
+                assert_eq!(runtime.stage, RuntimeStage::BootstrapAllocation);
+                assert_eq!(runtime.startup.charged(), first_charge);
+                assert!(
+                    runtime.bootstrap.is_none()
+                        && runtime.native.is_none()
+                        && runtime.census.is_none()
+                );
+                assert!(
+                    !runtime.ready_issued
+                        && runtime.initial_origin.is_none()
+                        && runtime.pages.is_empty()
+                );
+                let (storage, progress) = runtime.sources.original_maps();
+                assert_eq!(initial_maps_prefix(storage, progress).unwrap(), before.maps);
+                assert!(runtime.sources.original_complete());
+                assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
+            });
+        },
+    );
+}
+
+#[test]
+fn initial_runtime_source_window_refusal_retains_completed_bootstrap() {
+    crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
+        "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_source_window_refusal_retains_completed_bootstrap",
+        || {
+            let fixture = Fixture::code(CODE);
+            with_owner_cleanup(
+                &fixture,
+                |owner, initial, until, before| {
+                    let mut options = DynamicRuntimeOptions::default();
+                    // Actual main VMA was independently proved to be 8192 bytes. With
+                    // dependency context this 8192-byte source buffer covers one 4096-byte
+                    // target page, so a second target is necessary, without host guessing.
+                    options.capture.max_windows = 1;
+                    options.capture.max_window_bytes = 8192;
+                    options.capture.max_total_capture_bytes = 8192;
+                    assert!(matches!(
+                        start(owner, initial, options, until),
+                        Err(GateError::Refused(
+                            "initial runtime window count exceeds its bound"
+                        ))
+                    ));
+                    check_bootstrap(owner, before);
+                    let runtime = owner.runtime.as_ref().unwrap();
+                    assert_eq!(runtime.stage, RuntimeStage::RuntimeCapture);
+                    assert!(
+                        !runtime.ready_issued
+                            && runtime.census.is_none()
+                            && runtime.initial_origin.is_none()
+                    );
+                    assert_eq!(
+                        runtime.sources.failure().unwrap().stage,
+                        CaptureStage::Geometry
+                    );
+                    assert_eq!(
+                        runtime.sources.failure().unwrap().kind,
+                        CaptureFailureKind::Refused(
+                            "initial runtime window count exceeds its bound"
+                        )
+                    );
+                    assert_eq!(runtime.sources.window_count(), 1);
+                    assert!(
+                        !runtime.sources.capture_complete() && !runtime.sources.recheck_complete()
+                    );
+                    assert!(runtime.sources.window(0).is_none());
+                    let (storage, capture, recheck) = runtime.sources.window_progress(0).unwrap();
+                    assert!(storage.iter().all(|byte| *byte == 0));
+                    assert!(!capture.started && !capture.attempted && !capture.complete);
+                    assert!(!recheck.started && !recheck.attempted && !recheck.complete);
+                    assert_eq!(
+                        runtime.sources.current_xstate().unwrap(),
+                        state(owner.pid).xstate
+                    );
+                    assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
+                    (
+                        runtime.sources.failure(),
+                        runtime.sources.current_binding().unwrap().clone(),
+                        runtime.sources.current_xstate().unwrap().to_vec(),
+                        runtime.sources.original_maps().0.to_vec(),
+                        runtime.sources.quarantine_maps().0.to_vec(),
+                        runtime.startup.charged(),
+                    )
+                },
+                |owner, (failure, binding, xstate, original, quarantine, charge)| {
+                    let runtime = owner.runtime.as_ref().unwrap();
+                    assert_eq!(&runtime.sources.failure(), failure);
+                    assert_eq!(runtime.sources.current_binding(), Some(binding));
+                    assert_eq!(runtime.sources.current_xstate().unwrap(), xstate);
+                    assert_eq!(runtime.sources.original_maps().0, original.as_slice());
+                    assert_eq!(runtime.sources.quarantine_maps().0, quarantine.as_slice());
+                    assert_eq!(&runtime.startup.charged(), charge);
+                    let boot = runtime.bootstrap.as_ref().unwrap().completed().unwrap();
+                    assert_eq!(boot.stop, binding.stop);
+                    assert_eq!(boot.evidence.restored_entry.registers, binding.registers);
+                    assert_eq!(boot.evidence.restored_entry.xstate, *xstate);
+                    assert_eq!(boot.evidence.restored_entry.mask, binding.signal_mask);
+                },
             );
-            assert_eq!(
-                &runtime.native.as_ref().unwrap().admission_snapshot(),
-                registry
-            );
-            assert_eq!(runtime.sources.original_maps().0, original_maps.as_slice());
-            assert_eq!(&runtime.startup.charged(), first_charge);
-            assert_eq!(
-                runtime.sources.failure(),
-                Some(CaptureFailure {
-                    stage: CaptureStage::Original,
-                    window: None,
-                    kind: CaptureFailureKind::Aborted,
-                })
+        },
+    );
+}
+
+#[test]
+fn initial_runtime_unwind_retains_native_bootstrap_until_physical_cleanup() {
+    crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
+        "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_unwind_retains_native_bootstrap_until_physical_cleanup",
+        || {
+            let fixture = Fixture::code(CODE);
+            with_owner_cleanup(
+                &fixture,
+                |owner, initial, until, before| {
+                    owner.runtime_panic_after_bootstrap = true;
+                    let outcome = catch_unwind(AssertUnwindSafe(|| {
+                        let _ = start(owner, initial, DynamicRuntimeOptions::default(), until);
+                    }));
+                    let payload = outcome.unwrap_err();
+                    let message = payload
+                        .downcast_ref::<&str>()
+                        .copied()
+                        .or_else(|| payload.downcast_ref::<String>().map(String::as_str));
+                    assert_eq!(
+                        message,
+                        Some("injected runtime unwind after actual bootstrap custody transfer")
+                    );
+                    assert!(!owner.runtime_panic_after_bootstrap);
+                    check_bootstrap(owner, before);
+                    let runtime = owner.runtime.as_ref().unwrap();
+                    assert_eq!(runtime.stage, RuntimeStage::Bootstrap);
+                    assert!(
+                        !runtime.ready_issued
+                            && runtime.census.is_none()
+                            && runtime.initial_origin.is_none()
+                    );
+                    assert!(runtime.sources.original_complete());
+                    assert!(
+                        !runtime.sources.capture_complete() && !runtime.sources.recheck_complete()
+                    );
+                    assert!(runtime.sources.current_binding().is_none());
+                    assert_eq!(
+                        runtime.sources.failure(),
+                        Some(CaptureFailure {
+                            stage: CaptureStage::Original,
+                            window: None,
+                            kind: CaptureFailureKind::Aborted,
+                        })
+                    );
+                    let stop = runtime
+                        .bootstrap
+                        .as_ref()
+                        .unwrap()
+                        .completed()
+                        .unwrap()
+                        .stop
+                        .clone();
+                    let retained = runtime
+                        .bootstrap
+                        .as_ref()
+                        .unwrap()
+                        .completed()
+                        .unwrap()
+                        .evidence
+                        .restored_entry
+                        .clone();
+                    let registry = runtime.native.as_ref().unwrap().admission_snapshot();
+                    let original_maps = runtime.sources.original_maps().0.to_vec();
+                    let first_charge = runtime.startup.charged();
+                    (stop, retained, registry, original_maps, first_charge)
+                },
+                |owner, (stop, retained, registry, original_maps, first_charge)| {
+                    // Physical cleanup does not turn history into a new callable stop.
+                    // These are exact retained values; no post-reap ptrace query occurs.
+                    let runtime = owner.runtime.as_ref().unwrap();
+                    assert_eq!(
+                        &runtime
+                            .bootstrap
+                            .as_ref()
+                            .unwrap()
+                            .completed()
+                            .unwrap()
+                            .stop,
+                        stop
+                    );
+                    assert_eq!(
+                        &runtime
+                            .bootstrap
+                            .as_ref()
+                            .unwrap()
+                            .completed()
+                            .unwrap()
+                            .evidence
+                            .restored_entry,
+                        retained
+                    );
+                    assert_eq!(
+                        &runtime.native.as_ref().unwrap().admission_snapshot(),
+                        registry
+                    );
+                    assert_eq!(runtime.sources.original_maps().0, original_maps.as_slice());
+                    assert_eq!(&runtime.startup.charged(), first_charge);
+                    assert_eq!(
+                        runtime.sources.failure(),
+                        Some(CaptureFailure {
+                            stage: CaptureStage::Original,
+                            window: None,
+                            kind: CaptureFailureKind::Aborted,
+                        })
+                    );
+                },
             );
         },
     );

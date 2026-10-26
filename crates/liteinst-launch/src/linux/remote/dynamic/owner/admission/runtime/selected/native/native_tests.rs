@@ -710,176 +710,181 @@ fn finish(
 
 #[test]
 fn runtime_selected_cpu_and_ordinary_keep_exact_control_lineage() {
-    // Every selected class is the actual first original opcode in its own lane.
-    // No feature-dependent native CPU opcode is executed by the scripted bridge.
-    let cases: &[(&[u8], SelectedResult)] = &[
-        (&[0x0f, 0xa2], SCRIPT),
-        (
-            &[0x0f, 0x31],
-            SelectedResult::Rdtsc {
-                counter: 0x1234_5678_9abc_def0,
-            },
-        ),
-        (
-            &[0x0f, 0x01, 0xf9],
-            SelectedResult::Rdtscp {
-                counter: 0x1234_5678_9abc_def0,
-                auxiliary: 0xcafe_babe,
-            },
-        ),
-        (
-            &[0x48, 0x0f, 0xc7, 0xf0],
-            SelectedResult::Rdrand {
-                value: 0xfedc_ba98_7654_3210,
-                carry: true,
-            },
-        ),
-        (
-            &[0x41, 0x0f, 0xc7, 0xf9],
-            SelectedResult::Rdseed {
-                value: 0x89ab_cdef,
-                carry: true,
-            },
-        ),
-        (
-            &[0xf3, 0x41, 0x0f, 0xc7, 0xfa],
-            SelectedResult::Rdpid {
-                auxiliary: 0x8765_4321,
-            },
-        ),
-    ];
-    for (index, &(encoding, result)) in cases.iter().enumerate() {
-        let mut code = encoding.to_vec();
-        code.extend_from_slice(&[0x49, 0xbc]);
-        code.extend_from_slice(&MARK12.to_le_bytes());
-        code.extend_from_slice(&[0xeb, 0xfe]);
-        with_owner(&code, |owner, app, memory, until| {
-            let before = current(owner, app, memory);
-            assert_ne!(before.actual.registers.r12, MARK12);
-            let input = pending(owner, until);
-            check_pending(owner, &before, &input, encoding, until);
-            same_current(&before, &current(owner, app, memory));
-            let mut expected = before.actual.clone();
-            expected.registers.rip += encoding.len() as u64;
-            match index {
-                0 => expected = cpuid_expected(&before.actual),
-                1 => {
-                    expected.registers.rax = 0x9abc_def0;
-                    expected.registers.rdx = 0x1234_5678;
-                }
-                2 => {
-                    expected.registers.rax = 0x9abc_def0;
-                    expected.registers.rdx = 0x1234_5678;
-                    expected.registers.rcx = 0xcafe_babe;
-                }
-                3 => {
-                    expected.registers.rax = 0xfedc_ba98_7654_3210;
-                    expected.registers.eflags = (expected.registers.eflags & !0x8d5) | 1;
-                }
-                4 => {
-                    expected.registers.r9 = 0x89ab_cdef;
-                    expected.registers.eflags = (expected.registers.eflags & !0x8d5) | 1;
-                }
-                5 => expected.registers.r10 = 0x8765_4321,
-                _ => unreachable!(),
+    crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
+        "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_cpu_and_ordinary_keep_exact_control_lineage",
+        || {
+            // Every selected class is the actual first original opcode in its own lane.
+            // No feature-dependent native CPU opcode is executed by the scripted bridge.
+            let cases: &[(&[u8], SelectedResult)] = &[
+                (&[0x0f, 0xa2], SCRIPT),
+                (
+                    &[0x0f, 0x31],
+                    SelectedResult::Rdtsc {
+                        counter: 0x1234_5678_9abc_def0,
+                    },
+                ),
+                (
+                    &[0x0f, 0x01, 0xf9],
+                    SelectedResult::Rdtscp {
+                        counter: 0x1234_5678_9abc_def0,
+                        auxiliary: 0xcafe_babe,
+                    },
+                ),
+                (
+                    &[0x48, 0x0f, 0xc7, 0xf0],
+                    SelectedResult::Rdrand {
+                        value: 0xfedc_ba98_7654_3210,
+                        carry: true,
+                    },
+                ),
+                (
+                    &[0x41, 0x0f, 0xc7, 0xf9],
+                    SelectedResult::Rdseed {
+                        value: 0x89ab_cdef,
+                        carry: true,
+                    },
+                ),
+                (
+                    &[0xf3, 0x41, 0x0f, 0xc7, 0xfa],
+                    SelectedResult::Rdpid {
+                        auxiliary: 0x8765_4321,
+                    },
+                ),
+            ];
+            for (index, &(encoding, result)) in cases.iter().enumerate() {
+                let mut code = encoding.to_vec();
+                code.extend_from_slice(&[0x49, 0xbc]);
+                code.extend_from_slice(&MARK12.to_le_bytes());
+                code.extend_from_slice(&[0xeb, 0xfe]);
+                with_owner(&code, |owner, app, memory, until| {
+                    let before = current(owner, app, memory);
+                    assert_ne!(before.actual.registers.r12, MARK12);
+                    let input = pending(owner, until);
+                    check_pending(owner, &before, &input, encoding, until);
+                    same_current(&before, &current(owner, app, memory));
+                    let mut expected = before.actual.clone();
+                    expected.registers.rip += encoding.len() as u64;
+                    match index {
+                        0 => expected = cpuid_expected(&before.actual),
+                        1 => {
+                            expected.registers.rax = 0x9abc_def0;
+                            expected.registers.rdx = 0x1234_5678;
+                        }
+                        2 => {
+                            expected.registers.rax = 0x9abc_def0;
+                            expected.registers.rdx = 0x1234_5678;
+                            expected.registers.rcx = 0xcafe_babe;
+                        }
+                        3 => {
+                            expected.registers.rax = 0xfedc_ba98_7654_3210;
+                            expected.registers.eflags = (expected.registers.eflags & !0x8d5) | 1;
+                        }
+                        4 => {
+                            expected.registers.r9 = 0x89ab_cdef;
+                            expected.registers.eflags = (expected.registers.eflags & !0x8d5) | 1;
+                        }
+                        5 => expected.registers.r10 = 0x8765_4321,
+                        _ => unreachable!(),
+                    }
+                    finish(
+                        owner,
+                        &input,
+                        result,
+                        &before,
+                        &expected,
+                        (app, memory, until),
+                    );
+                    assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_BASE, 0]);
+                    assert!(owner.runtime.as_ref().unwrap().ordinary_attempts.is_empty());
+                    assert_eq!(
+                        read_state(owner.pid).registers.r12,
+                        before.actual.registers.r12,
+                        "the first ordinary marker must remain unexecuted"
+                    );
+                });
             }
-            finish(
-                owner,
-                &input,
-                result,
-                &before,
-                &expected,
-                (app, memory, until),
-            );
-            assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_BASE, 0]);
-            assert!(owner.runtime.as_ref().unwrap().ordinary_attempts.is_empty());
-            assert_eq!(
-                read_state(owner.pid).registers.r12,
-                before.actual.registers.r12,
-                "the first ordinary marker must remain unexecuted"
-            );
-        });
-    }
-    let mut code = vec![0x0f, 0xa2, 0x49, 0xbc];
-    code.extend_from_slice(&MARK12.to_le_bytes());
-    code.extend_from_slice(&[0x0f, 0xa2, 0x49, 0xbd]);
-    code.extend_from_slice(&MARK13.to_le_bytes());
-    code.extend_from_slice(&[0x0f, 0xa2, 0xeb, 0xfe]);
-    with_owner(&code, |owner, app, memory, until| {
-        let mut before = current(owner, app, memory);
-        assert_ne!(before.actual.registers.r12, MARK12);
-        assert_ne!(before.actual.registers.r13, MARK13);
-        for index in 0..3 {
-            let input = pending(owner, until);
-            if index != 0 {
-                let mut expected = before.actual.clone();
-                expected.registers.rip += 10;
-                if index == 1 {
-                    expected.registers.r12 = MARK12;
-                } else {
-                    expected.registers.r13 = MARK13;
+            let mut code = vec![0x0f, 0xa2, 0x49, 0xbc];
+            code.extend_from_slice(&MARK12.to_le_bytes());
+            code.extend_from_slice(&[0x0f, 0xa2, 0x49, 0xbd]);
+            code.extend_from_slice(&MARK13.to_le_bytes());
+            code.extend_from_slice(&[0x0f, 0xa2, 0xeb, 0xfe]);
+            with_owner(&code, |owner, app, memory, until| {
+                let mut before = current(owner, app, memory);
+                assert_ne!(before.actual.registers.r12, MARK12);
+                assert_ne!(before.actual.registers.r13, MARK13);
+                for index in 0..3 {
+                    let input = pending(owner, until);
+                    if index != 0 {
+                        let mut expected = before.actual.clone();
+                        expected.registers.rip += 10;
+                        if index == 1 {
+                            expected.registers.r12 = MARK12;
+                        } else {
+                            expected.registers.r13 = MARK13;
+                        }
+                        let after = current(owner, app, memory);
+                        assert_eq!(after.actual, expected);
+                        assert_ne!(after.origin, before.origin);
+                        assert_eq!(after.observed.task, before.observed.task);
+                        assert!(after.stop.token.sequence > before.stop.token.sequence);
+                        assert_eq!(
+                            &after.history[..before.history.len()],
+                            before.history.as_slice()
+                        );
+                        assert_eq!(after.history.len(), before.history.len() + 7);
+                        assert_eq!(after.used.origins, before.used.origins + 1);
+                        assert_eq!(after.used.witnesses, before.used.witnesses + 7);
+                        assert_eq!(
+                            (
+                                after.used.epochs,
+                                after.used.reports,
+                                after.used.plan_history
+                            ),
+                            (
+                                before.used.epochs,
+                                before.used.reports,
+                                before.used.plan_history
+                            )
+                        );
+                        assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_TRACE, 0]);
+                        before = after;
+                    }
+                    check_pending(owner, &before, &input, &[0x0f, 0xa2], until);
+                    let expected = cpuid_expected(&before.actual);
+                    before = finish(
+                        owner,
+                        &input,
+                        SCRIPT,
+                        &before,
+                        &expected,
+                        (app, memory, until),
+                    );
+                    assert_eq!(
+                        owner.runtime.as_ref().unwrap().ordinary_attempts.len(),
+                        index
+                    );
+                    assert_eq!(
+                        debug(owner.pid),
+                        [0, 0, 0, 0, if index == 0 { DR_BASE } else { DR_TRACE }, 0]
+                    );
                 }
-                let after = current(owner, app, memory);
-                assert_eq!(after.actual, expected);
-                assert_ne!(after.origin, before.origin);
-                assert_eq!(after.observed.task, before.observed.task);
-                assert!(after.stop.token.sequence > before.stop.token.sequence);
+                let runtime = owner.runtime.as_ref().unwrap();
+                assert_eq!(runtime.selected_attempts.len(), 3);
+                assert_eq!(runtime.metrics.selected.scripted_completions, 3);
                 assert_eq!(
-                    &after.history[..before.history.len()],
-                    before.history.as_slice()
+                    runtime
+                        .metrics
+                        .selected
+                        .callbacks
+                        .values()
+                        .copied()
+                        .sum::<usize>(),
+                    3
                 );
-                assert_eq!(after.history.len(), before.history.len() + 7);
-                assert_eq!(after.used.origins, before.used.origins + 1);
-                assert_eq!(after.used.witnesses, before.used.witnesses + 7);
-                assert_eq!(
-                    (
-                        after.used.epochs,
-                        after.used.reports,
-                        after.used.plan_history
-                    ),
-                    (
-                        before.used.epochs,
-                        before.used.reports,
-                        before.used.plan_history
-                    )
-                );
-                assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_TRACE, 0]);
-                before = after;
-            }
-            check_pending(owner, &before, &input, &[0x0f, 0xa2], until);
-            let expected = cpuid_expected(&before.actual);
-            before = finish(
-                owner,
-                &input,
-                SCRIPT,
-                &before,
-                &expected,
-                (app, memory, until),
-            );
-            assert_eq!(
-                owner.runtime.as_ref().unwrap().ordinary_attempts.len(),
-                index
-            );
-            assert_eq!(
-                debug(owner.pid),
-                [0, 0, 0, 0, if index == 0 { DR_BASE } else { DR_TRACE }, 0]
-            );
-        }
-        let runtime = owner.runtime.as_ref().unwrap();
-        assert_eq!(runtime.selected_attempts.len(), 3);
-        assert_eq!(runtime.metrics.selected.scripted_completions, 3);
-        assert_eq!(
-            runtime
-                .metrics
-                .selected
-                .callbacks
-                .values()
-                .copied()
-                .sum::<usize>(),
-            3
-        );
-    });
-    public_transport(false);
+            });
+            public_transport(false);
+        },
+    );
 }
 
 fn pending_accounting(
@@ -943,296 +948,325 @@ fn pending_accounting(
 
 #[test]
 fn runtime_selected_native_refuses_without_ordinary_fallback() {
-    with_owner(
-        &[
-            0x0f, 0xa2, 0x49, 0xbc, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0xeb, 0xfe,
-        ],
-        |owner, app, memory, until| {
-            let before = current(owner, app, memory);
-            let input = pending(owner, until);
-            check_pending(owner, &before, &input, &[0x0f, 0xa2], until);
-            let pending_state = current(owner, app, memory);
-            assert!(matches!(
-                invoke(
-                    owner,
-                    AdmissionRequest::CompleteRuntime {
-                        token: input.token.clone(),
-                        decision: ProviderDecision::Native
-                    },
-                    until
-                ),
-                Err(GateError::Refused(
-                    "runtime selected Native transport is not qualified"
-                ))
-            ));
-            let after = current(owner, app, memory);
-            same_current(&pending_state, &after);
-            assert_eq!(after.charged, pending_state.charged);
-            assert_eq!(after.used, pending_state.used);
-            let runtime = owner.runtime.as_ref().unwrap();
-            let attempt = runtime.selected_attempts.last().unwrap();
-            pending_accounting(&before, &after, attempt, Some(&input));
-            assert_eq!(attempt.token, input.token);
-            assert_eq!(attempt.until, until);
-            assert_eq!(
-                attempt.first_failure,
-                Some((
-                    SelectedPhase::SourceAfterProvider,
-                    SelectedFailure::Refused("runtime selected Native transport is not qualified")
-                ))
+    crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
+        "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_native_refuses_without_ordinary_fallback",
+        || {
+            with_owner(
+                &[
+                    0x0f, 0xa2, 0x49, 0xbc, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0xeb,
+                    0xfe,
+                ],
+                |owner, app, memory, until| {
+                    let before = current(owner, app, memory);
+                    let input = pending(owner, until);
+                    check_pending(owner, &before, &input, &[0x0f, 0xa2], until);
+                    let pending_state = current(owner, app, memory);
+                    assert!(matches!(
+                        invoke(
+                            owner,
+                            AdmissionRequest::CompleteRuntime {
+                                token: input.token.clone(),
+                                decision: ProviderDecision::Native
+                            },
+                            until
+                        ),
+                        Err(GateError::Refused(
+                            "runtime selected Native transport is not qualified"
+                        ))
+                    ));
+                    let after = current(owner, app, memory);
+                    same_current(&pending_state, &after);
+                    assert_eq!(after.charged, pending_state.charged);
+                    assert_eq!(after.used, pending_state.used);
+                    let runtime = owner.runtime.as_ref().unwrap();
+                    let attempt = runtime.selected_attempts.last().unwrap();
+                    pending_accounting(&before, &after, attempt, Some(&input));
+                    assert_eq!(attempt.token, input.token);
+                    assert_eq!(attempt.until, until);
+                    assert_eq!(
+                        attempt.first_failure,
+                        Some((
+                            SelectedPhase::SourceAfterProvider,
+                            SelectedFailure::Refused(
+                                "runtime selected Native transport is not qualified"
+                            )
+                        ))
+                    );
+                    assert!(attempt.source_progress[1].complete);
+                    assert_no_selected_effects(attempt);
+                    assert_unreleased(runtime, &[]);
+                    assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_BASE, 0]);
+                    assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
+                },
             );
-            assert!(attempt.source_progress[1].complete);
-            assert_no_selected_effects(attempt);
-            assert_unreleased(runtime, &[]);
-            assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_BASE, 0]);
-            assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
+            public_transport(true);
         },
     );
-    public_transport(true);
 }
 
 #[test]
 fn runtime_selected_syscall_refuses_without_ordinary_fallback() {
-    // The original MOV really establishes a valid getpid input. Neither Native
-    // nor a semantically valid getpid result may enter the CPU-only transport.
-    for decision in [
-        ProviderDecision::Native,
-        ProviderDecision::Complete(SelectedResult::Syscall(SyscallResult::LinuxX64GetId {
-            value: 123,
-        })),
-    ] {
-        with_owner(
-            &[
-                0xb8, 39, 0, 0, 0, 0x0f, 0x05, 0x49, 0xbc, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33,
-                0x22, 0x11, 0xeb, 0xfe,
-            ],
-            |owner, app, memory, until| {
-                let initial = current(owner, app, memory);
-                let input = pending(owner, until);
-                let before = current(owner, app, memory);
-                let mut expected = initial.actual.clone();
-                expected.registers.rax = 39;
-                expected.registers.rip += 5;
-                assert_eq!(before.actual, expected);
-                check_pending(owner, &before, &input, &[0x0f, 0x05], until);
-                assert!(matches!(
-                    input.input.instruction().operation(),
-                    Operation::Syscall { .. }
-                ));
-                let reason = match decision {
-                    ProviderDecision::Native => {
-                        "runtime selected Native transport is not qualified"
-                    }
-                    _ => "runtime selected syscall transport is not qualified",
-                };
-                assert!(
-                    matches!(invoke(owner, AdmissionRequest::CompleteRuntime { token: input.token.clone(), decision }, until),
+    crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
+        "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_selected_syscall_refuses_without_ordinary_fallback",
+        || {
+            // The original MOV really establishes a valid getpid input. Neither Native
+            // nor a semantically valid getpid result may enter the CPU-only transport.
+            for decision in [
+                ProviderDecision::Native,
+                ProviderDecision::Complete(SelectedResult::Syscall(SyscallResult::LinuxX64GetId {
+                    value: 123,
+                })),
+            ] {
+                with_owner(
+                    &[
+                        0xb8, 39, 0, 0, 0, 0x0f, 0x05, 0x49, 0xbc, 0x88, 0x77, 0x66, 0x55, 0x44,
+                        0x33, 0x22, 0x11, 0xeb, 0xfe,
+                    ],
+                    |owner, app, memory, until| {
+                        let initial = current(owner, app, memory);
+                        let input = pending(owner, until);
+                        let before = current(owner, app, memory);
+                        let mut expected = initial.actual.clone();
+                        expected.registers.rax = 39;
+                        expected.registers.rip += 5;
+                        assert_eq!(before.actual, expected);
+                        check_pending(owner, &before, &input, &[0x0f, 0x05], until);
+                        assert!(matches!(
+                            input.input.instruction().operation(),
+                            Operation::Syscall { .. }
+                        ));
+                        let reason = match decision {
+                            ProviderDecision::Native => {
+                                "runtime selected Native transport is not qualified"
+                            }
+                            _ => "runtime selected syscall transport is not qualified",
+                        };
+                        assert!(
+                            matches!(invoke(owner, AdmissionRequest::CompleteRuntime { token: input.token.clone(), decision }, until),
                 Err(GateError::Refused(actual)) if actual == reason)
+                        );
+                        let after = current(owner, app, memory);
+                        same_current(&before, &after);
+                        assert_eq!(after.charged, before.charged);
+                        assert_eq!(after.used, before.used);
+                        let runtime = owner.runtime.as_ref().unwrap();
+                        assert_eq!(runtime.ordinary_attempts.len(), 1);
+                        assert_eq!(runtime.selected_attempts.len(), 1);
+                        let attempt = &runtime.selected_attempts[0];
+                        assert_eq!(attempt.token, input.token);
+                        assert_eq!(attempt.until, until);
+                        assert_eq!(
+                            attempt.first_failure,
+                            Some((
+                                SelectedPhase::SourceAfterProvider,
+                                SelectedFailure::Refused(reason)
+                            ))
+                        );
+                        assert!(
+                            attempt.source_progress[0].complete
+                                && attempt.source_progress[1].complete
+                        );
+                        assert_no_selected_effects(attempt);
+                        assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_TRACE, 0]);
+                        assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
+                    },
                 );
-                let after = current(owner, app, memory);
-                same_current(&before, &after);
-                assert_eq!(after.charged, before.charged);
-                assert_eq!(after.used, before.used);
-                let runtime = owner.runtime.as_ref().unwrap();
-                assert_eq!(runtime.ordinary_attempts.len(), 1);
-                assert_eq!(runtime.selected_attempts.len(), 1);
-                let attempt = &runtime.selected_attempts[0];
-                assert_eq!(attempt.token, input.token);
-                assert_eq!(attempt.until, until);
-                assert_eq!(
-                    attempt.first_failure,
-                    Some((
-                        SelectedPhase::SourceAfterProvider,
-                        SelectedFailure::Refused(reason)
-                    ))
-                );
-                assert!(attempt.source_progress[0].complete && attempt.source_progress[1].complete);
-                assert_no_selected_effects(attempt);
-                assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_TRACE, 0]);
-                assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
-            },
-        );
-    }
+            }
+        },
+    );
 }
 
 #[test]
 fn runtime_ordinary_memory_and_stack_refuse_before_effects() {
-    for (encoding, reason) in [
-        (
-            &[0x48, 0x8b, 0x04, 0x24][..],
-            "runtime ordinary data-access footprint is unqualified",
-        ),
-        (
-            &[0x48, 0x89, 0x04, 0x24][..],
-            "runtime ordinary data-access footprint is unqualified",
-        ),
-        (
-            &[0x50][..],
-            "runtime ordinary stack footprint is unqualified",
-        ),
-        (
-            &[0x58][..],
-            "runtime ordinary stack footprint is unqualified",
-        ),
-        (
-            &[0xc3][..],
-            "runtime ordinary stack footprint is unqualified",
-        ),
-    ] {
-        let mut code = encoding.to_vec();
-        code.extend_from_slice(&[0x0f, 0xa2, 0xeb, 0xfe]);
-        with_owner(&code, |owner, app, memory, until| {
-            let before = current(owner, app, memory);
-            assert!(matches!(invoke(owner, AdmissionRequest::Advance, until),
-                Err(GateError::Refused(actual)) if actual == reason));
-            let after = current(owner, app, memory);
-            same_current(&before, &after);
-            assert_eq!(
+    crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
+        "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_ordinary_memory_and_stack_refuse_before_effects",
+        || {
+            for (encoding, reason) in [
                 (
-                    after.used.epochs,
-                    after.used.reports,
-                    after.used.origins,
-                    after.used.witnesses,
-                    after.used.plan_history
+                    &[0x48, 0x8b, 0x04, 0x24][..],
+                    "runtime ordinary data-access footprint is unqualified",
                 ),
                 (
-                    before.used.epochs,
-                    before.used.reports,
-                    before.used.origins,
-                    before.used.witnesses,
-                    before.used.plan_history
-                )
-            );
-            assert!(after.used.source_fact_bytes > before.used.source_fact_bytes);
-            assert!(after.charged.source_fact_bytes > before.charged.source_fact_bytes);
-            assert_eq!(after.charged.origins, before.charged.origins + 1);
-            assert_eq!(after.charged.witnesses, before.charged.witnesses + 7);
-            let runtime = owner.runtime.as_ref().unwrap();
-            assert!(runtime.selected_attempts.is_empty() && runtime.selected_pending.is_none());
-            assert_eq!(
-                runtime
-                    .metrics
-                    .selected
-                    .callbacks
-                    .values()
-                    .copied()
-                    .sum::<usize>(),
-                0
-            );
-            assert_unreleased(runtime, &[false]);
-            assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_BASE, 0]);
-            assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
-        });
-    }
+                    &[0x48, 0x89, 0x04, 0x24][..],
+                    "runtime ordinary data-access footprint is unqualified",
+                ),
+                (
+                    &[0x50][..],
+                    "runtime ordinary stack footprint is unqualified",
+                ),
+                (
+                    &[0x58][..],
+                    "runtime ordinary stack footprint is unqualified",
+                ),
+                (
+                    &[0xc3][..],
+                    "runtime ordinary stack footprint is unqualified",
+                ),
+            ] {
+                let mut code = encoding.to_vec();
+                code.extend_from_slice(&[0x0f, 0xa2, 0xeb, 0xfe]);
+                with_owner(&code, |owner, app, memory, until| {
+                    let before = current(owner, app, memory);
+                    assert!(matches!(invoke(owner, AdmissionRequest::Advance, until),
+                Err(GateError::Refused(actual)) if actual == reason));
+                    let after = current(owner, app, memory);
+                    same_current(&before, &after);
+                    assert_eq!(
+                        (
+                            after.used.epochs,
+                            after.used.reports,
+                            after.used.origins,
+                            after.used.witnesses,
+                            after.used.plan_history
+                        ),
+                        (
+                            before.used.epochs,
+                            before.used.reports,
+                            before.used.origins,
+                            before.used.witnesses,
+                            before.used.plan_history
+                        )
+                    );
+                    assert!(after.used.source_fact_bytes > before.used.source_fact_bytes);
+                    assert!(after.charged.source_fact_bytes > before.charged.source_fact_bytes);
+                    assert_eq!(after.charged.origins, before.charged.origins + 1);
+                    assert_eq!(after.charged.witnesses, before.charged.witnesses + 7);
+                    let runtime = owner.runtime.as_ref().unwrap();
+                    assert!(
+                        runtime.selected_attempts.is_empty() && runtime.selected_pending.is_none()
+                    );
+                    assert_eq!(
+                        runtime
+                            .metrics
+                            .selected
+                            .callbacks
+                            .values()
+                            .copied()
+                            .sum::<usize>(),
+                        0
+                    );
+                    assert_unreleased(runtime, &[false]);
+                    assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_BASE, 0]);
+                    assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
+                });
+            }
+        },
+    );
 }
 
 #[test]
 fn runtime_actual_dr7_refuses_before_original_release() {
-    for (encoding, selected) in [
-        (&[0x0f, 0xa2][..], true),
-        (
-            &[0x49, 0xbc, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11][..],
-            false,
-        ),
-    ] {
-        let mut code = encoding.to_vec();
-        code.extend_from_slice(&[0x0f, 0xa2, 0xeb, 0xfe]);
-        with_owner(&code, |owner, app, memory, until| {
-            let before = current(owner, app, memory);
-            live(app);
-            // Actual architectural debug state, not a classifier argument or
-            // fake profile. DR0 remains zero, so this cannot hit the code page.
-            let offset = std::mem::offset_of!(libc::user, u_debugreg) + 7 * 8;
-            assert!(Instant::now() < until);
-            ptrace(libc::PTRACE_POKEUSER, owner.pid, offset, 1).unwrap();
-            assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_BASE, 1]);
-            assert!(Instant::now() < until);
-            assert!(matches!(
-                invoke(owner, AdmissionRequest::Advance, until),
-                Err(GateError::Control(LaunchError::Invalid(
-                    "owned instruction debug profile differs"
-                )))
-            ));
-            let after = current(owner, app, memory);
-            same_current(&before, &after);
-            assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_BASE, 1]);
-            let runtime = owner.runtime.as_ref().unwrap();
-            if selected {
-                assert_unreleased(runtime, &[]);
-                assert_eq!(runtime.selected_attempts.len(), 1);
-                let attempt = &runtime.selected_attempts[0];
-                assert_eq!(
-                    attempt.first_failure,
-                    Some((
-                        SelectedPhase::SourceBefore,
-                        SelectedFailure::Invalid("owned instruction debug profile differs")
-                    ))
-                );
-                assert!(attempt.source_progress[0].complete);
-                assert_eq!(
-                    attempt.native.profiles[0].debug.values,
-                    [0, 0, 0, 0, DR_BASE, 1]
-                );
-                assert!(
-                    attempt.native.profiles[0]
-                        .debug
-                        .requests
-                        .iter()
-                        .all(|request| request.is_some_and(|request| request.errno.is_none()))
-                );
-                assert_no_selected_effects(attempt);
-                pending_accounting(&before, &after, attempt, None);
-            } else {
-                assert!(runtime.selected_attempts.is_empty());
-                assert_unreleased(runtime, &[true]);
-                assert_eq!(
-                    (
-                        after.used.epochs,
-                        after.used.reports,
-                        after.used.origins,
-                        after.used.witnesses,
-                        after.used.plan_history
-                    ),
-                    (
-                        before.used.epochs,
-                        before.used.reports,
-                        before.used.origins,
-                        before.used.witnesses,
-                        before.used.plan_history
-                    )
-                );
-                assert_eq!(
-                    (
-                        after.charged.epochs,
-                        after.charged.reports,
-                        after.charged.origins,
-                        after.charged.witnesses,
-                        after.charged.plan_history
-                    ),
-                    (
-                        before.charged.epochs,
-                        before.charged.reports,
-                        before.charged.origins + 1,
-                        before.charged.witnesses + 7,
-                        before.charged.plan_history
-                    )
-                );
-                assert!(after.used.source_fact_bytes > before.used.source_fact_bytes);
-                assert!(after.used.source_fact_bytes <= after.charged.source_fact_bytes);
+    crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
+        "linux::remote::dynamic::owner::admission::runtime::selected::native::native_tests::runtime_actual_dr7_refuses_before_original_release",
+        || {
+            for (encoding, selected) in [
+                (&[0x0f, 0xa2][..], true),
+                (
+                    &[0x49, 0xbc, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11][..],
+                    false,
+                ),
+            ] {
+                let mut code = encoding.to_vec();
+                code.extend_from_slice(&[0x0f, 0xa2, 0xeb, 0xfe]);
+                with_owner(&code, |owner, app, memory, until| {
+                    let before = current(owner, app, memory);
+                    live(app);
+                    // Actual architectural debug state, not a classifier argument or
+                    // fake profile. DR0 remains zero, so this cannot hit the code page.
+                    let offset = std::mem::offset_of!(libc::user, u_debugreg) + 7 * 8;
+                    assert!(Instant::now() < until);
+                    ptrace(libc::PTRACE_POKEUSER, owner.pid, offset, 1).unwrap();
+                    assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_BASE, 1]);
+                    assert!(Instant::now() < until);
+                    assert!(matches!(
+                        invoke(owner, AdmissionRequest::Advance, until),
+                        Err(GateError::Control(LaunchError::Invalid(
+                            "owned instruction debug profile differs"
+                        )))
+                    ));
+                    let after = current(owner, app, memory);
+                    same_current(&before, &after);
+                    assert_eq!(debug(owner.pid), [0, 0, 0, 0, DR_BASE, 1]);
+                    let runtime = owner.runtime.as_ref().unwrap();
+                    if selected {
+                        assert_unreleased(runtime, &[]);
+                        assert_eq!(runtime.selected_attempts.len(), 1);
+                        let attempt = &runtime.selected_attempts[0];
+                        assert_eq!(
+                            attempt.first_failure,
+                            Some((
+                                SelectedPhase::SourceBefore,
+                                SelectedFailure::Invalid("owned instruction debug profile differs")
+                            ))
+                        );
+                        assert!(attempt.source_progress[0].complete);
+                        assert_eq!(
+                            attempt.native.profiles[0].debug.values,
+                            [0, 0, 0, 0, DR_BASE, 1]
+                        );
+                        assert!(
+                            attempt.native.profiles[0]
+                                .debug
+                                .requests
+                                .iter()
+                                .all(|request| request
+                                    .is_some_and(|request| request.errno.is_none()))
+                        );
+                        assert_no_selected_effects(attempt);
+                        pending_accounting(&before, &after, attempt, None);
+                    } else {
+                        assert!(runtime.selected_attempts.is_empty());
+                        assert_unreleased(runtime, &[true]);
+                        assert_eq!(
+                            (
+                                after.used.epochs,
+                                after.used.reports,
+                                after.used.origins,
+                                after.used.witnesses,
+                                after.used.plan_history
+                            ),
+                            (
+                                before.used.epochs,
+                                before.used.reports,
+                                before.used.origins,
+                                before.used.witnesses,
+                                before.used.plan_history
+                            )
+                        );
+                        assert_eq!(
+                            (
+                                after.charged.epochs,
+                                after.charged.reports,
+                                after.charged.origins,
+                                after.charged.witnesses,
+                                after.charged.plan_history
+                            ),
+                            (
+                                before.charged.epochs,
+                                before.charged.reports,
+                                before.charged.origins + 1,
+                                before.charged.witnesses + 7,
+                                before.charged.plan_history
+                            )
+                        );
+                        assert!(after.used.source_fact_bytes > before.used.source_fact_bytes);
+                        assert!(after.used.source_fact_bytes <= after.charged.source_fact_bytes);
+                    }
+                    assert_eq!(
+                        runtime
+                            .metrics
+                            .selected
+                            .callbacks
+                            .values()
+                            .copied()
+                            .sum::<usize>(),
+                        0
+                    );
+                    assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
+                });
             }
-            assert_eq!(
-                runtime
-                    .metrics
-                    .selected
-                    .callbacks
-                    .values()
-                    .copied()
-                    .sum::<usize>(),
-                0
-            );
-            assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
-        });
-    }
+        },
+    );
 }
 
 struct PublicProvider {

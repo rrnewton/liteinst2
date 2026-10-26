@@ -10,6 +10,8 @@ use std::mem::size_of;
 mod dispatch;
 mod execute;
 pub(super) mod instruction;
+#[cfg(test)]
+mod isolation;
 pub(super) mod maps;
 #[cfg(test)]
 mod native_tests;

@@ -10,12 +10,14 @@ import unittest
 import native_fixtures as fixtures
 from parsing import InvalidEvidence, require
 
-UNIT_INCREMENT = 133
-PURE_INCREMENT = 117
+UNIT_INCREMENT = 136
+PURE_INCREMENT = 120
 NATIVE_INCREMENT = 16
 RECORDER_INCREMENT = 11
 OLD_CORPUS_SHA256 = "82bae1b8166db1ab4ec6de9ed117c1d8478d294cffa7d6d61793a20d53f40d39"
 OLD_NATIVE56_SHA256 = "faa3331583cc37593b7562ae294e30ea15c72a4de95337fed9aa9a5d851b71b9"
+PRE_ISOLATION_CORPUS_SHA256 = "df1b2d8526e2e49759bbdd08b32ebf596458a62bcb32011e22c86f3bbbc38505"
+OLD_RUST133_SHA256 = "f713c1f4643cf4b346f9c1cadbf2dbbbe9c0c04c0700e66d2eb3e92410358a7e"
 RUNTIME_ROWS = ({'cohort': 'b3_runtime_startup',
   'harness': 'unit/liteinst_launch/lib',
   'test': 'linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_startup_preserves_real_boundary_state_sources_and_nx'},
@@ -196,7 +198,8 @@ RUST_METHODS = {'crates/liteinst-launch/src/lifecycle/initial_source_tests.rs': 
                                                                                                              'runtime_selected_native_refuses_without_ordinary_fallback',
                                                                                                              'runtime_selected_syscall_refuses_without_ordinary_fallback',
                                                                                                              'runtime_ordinary_memory_and_stack_refuse_before_effects',
-                                                                                                             'runtime_actual_dr7_refuses_before_original_release')}
+                                                                                                             'runtime_actual_dr7_refuses_before_original_release'),
+ 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/isolation/tests.rs': ('runtime_isolation_result_requires_one_exact_successful_test', 'runtime_isolation_receipt_requires_complete_exact_body_identity', 'runtime_isolation_role_requires_exact_test_and_parent_binding')}
 
 
 def digest(value):
@@ -260,6 +263,10 @@ class RuntimeInventoryTests(unittest.TestCase):
         self.assertEqual(total - len(native), PURE_INCREMENT)
         self.assertEqual(set(native), {row["test"] for row in RUNTIME_ROWS})
         self.assertEqual(fixtures.RUNTIME_ROWS, RUNTIME_ROWS)
+        original_methods = {path: names for path, names in RUST_METHODS.items()
+                            if not path.endswith("/runtime/isolation/tests.rs")}
+        self.assertEqual(sum(map(len, original_methods.values())), 133)
+        self.assertEqual(digest(original_methods), OLD_RUST133_SHA256)
 
     def test_current_catalog_preserves_every_old_row_helper_and_collection_exactly(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
@@ -267,12 +274,16 @@ class RuntimeInventoryTests(unittest.TestCase):
         previous = before_runtime(declared)
         self.assertEqual(declared, original)
         self.assertEqual(digest(previous), OLD_CORPUS_SHA256)
+        pre_isolation = copy.deepcopy(declared)
+        for cohort in pre_isolation["harness_test_counts"].values():
+            cohort[fixtures.UNIT] = {"tests": 488, "ignored": 0}
+        self.assertEqual(digest(pre_isolation), PRE_ISOLATION_CORPUS_SHA256)
         self.assertEqual(previous["native_validation_fixtures"], declared["native_validation_fixtures"][:56])
         self.assertEqual(declared["backing_cleanup_harnesses"], previous["backing_cleanup_harnesses"])
         for field, count in (("native_cases", 50), ("dynamic_admission_fixtures", 15), ("dynamic_matrix_cases", 388)):
             self.assertEqual(declared[field], previous[field])
             self.assertEqual(len(declared[field]), count)
-        for command, harnesses, tests, ignored in (("workspace_tests", 89, 1864, 4), ("serial_launch", 27, 780, 0)):
+        for command, harnesses, tests, ignored in (("workspace_tests", 89, 1867, 4), ("serial_launch", 27, 783, 0)):
             actual = declared["harness_test_counts"][command]
             self.assertEqual(len(actual), harnesses)
             self.assertEqual(sum(row["tests"] for row in actual.values()), tests)
