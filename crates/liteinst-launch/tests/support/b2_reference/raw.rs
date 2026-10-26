@@ -2,10 +2,9 @@
 //! each is intercepted at an authenticated held PC before any resume. Ordinary
 //! instructions execute one at a time with an owned, exact TRAP_TRACE receipt.
 use super::*;
+use std::ffi::CString;
 use std::io::{self, Read};
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
-use std::os::unix::process::CommandExt;
-use std::process::{Child, Command, Stdio};
 use std::time::Instant;
 
 pub(super) struct MaskGuard(libc::sigset_t);
@@ -207,10 +206,41 @@ pub(super) fn nx(pid: i32, pin: &OwnedFd, page: u64) {
     assert_eq!(found, 1);
 }
 
+// Prepared strings, pointer arrays and the null descriptor are copied by the
+// fork-like clone. This child executes raw syscalls only: no allocation, locks,
+// formatting, unwinding, Rust destructors or libc atfork callbacks after clone.
+unsafe fn child_bootstrap(
+    path: *const libc::c_char,
+    argv: *const *const libc::c_char,
+    envp: *const *const libc::c_char,
+    null_fd: i32,
+) -> ! {
+    unsafe {
+        let stdio_ready = libc::syscall(libc::SYS_dup2, null_fd, 0) == 0
+            && libc::syscall(libc::SYS_dup2, null_fd, 1) == 1
+            && libc::syscall(libc::SYS_dup2, null_fd, 2) == 2;
+        libc::syscall(libc::SYS_close, null_fd);
+        if stdio_ready && libc::syscall(libc::SYS_ptrace, libc::PTRACE_TRACEME, 0, 0, 0) == 0 {
+            let pid = libc::syscall(libc::SYS_getpid);
+            // SIGSTOP is unmaskable. The owner installs TRACEEXEC while this
+            // exact stop holds the child, before it can enter execve. A legacy
+            // TRACEME exec SIGTRAP would be suppressed by the inherited mask.
+            if pid > 0 && libc::syscall(libc::SYS_kill, pid, libc::SIGSTOP) == 0 {
+                libc::syscall(libc::SYS_execve, path, argv, envp);
+            }
+        }
+        libc::syscall(libc::SYS_exit_group, 127);
+        loop {
+            libc::syscall(libc::SYS_exit, 127);
+        }
+    }
+}
+
 pub(super) struct Raw {
-    child: Option<Child>,
-    handle: Option<OwnedFd>,
+    pid: i32,
+    handle: OwnedFd,
     retired: bool,
+    cleaned: bool,
     _tracer_mask: TracerMask,
 }
 impl Raw {
@@ -218,44 +248,103 @@ impl Raw {
         let fork = FILE_FORK.lock().unwrap();
         let tracer_mask = TracerMask::new();
         require_waitable_children();
-        let mut command = Command::new(&fixture.path);
-        command
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null());
-        // SAFETY: async-signal-safe ptrace only after fork and before exec.
-        unsafe {
-            command.pre_exec(|| {
-                if libc::ptrace(libc::PTRACE_TRACEME, 0, 0, 0) == -1 {
-                    Err(io::Error::last_os_error())
-                } else {
-                    Ok(())
-                }
-            });
+        let path = CString::new(fixture.path.as_os_str().as_encoded_bytes()).unwrap();
+        let argv = [path.as_ptr(), std::ptr::null()];
+        let envp: [*const libc::c_char; 1] = [std::ptr::null()];
+        let null = std::fs::OpenOptions::new()
+            .read(true)
+            .write(true)
+            .open("/dev/null")
+            .unwrap();
+        // Pin a descriptor above stdio so all three dup2 calls really clear
+        // CLOEXEC, even if the launching process began with a closed std fd.
+        let null_fd = unsafe { libc::fcntl(null.as_raw_fd(), libc::F_DUPFD_CLOEXEC, 3) };
+        assert!(
+            null_fd >= 3,
+            "prepare null stdio: {}",
+            io::Error::last_os_error()
+        );
+        let null_fd = unsafe { OwnedFd::from_raw_fd(null_fd) };
+        let mut handle = -1_i32;
+        let until = Instant::now() + TIMEOUT;
+        // SAFETY: fork-like clone without shared VM/files/handlers or a child
+        // stack. CLONE_PIDFD installs the original incarnation pin atomically
+        // in the parent. No exit signal is requested, so pre-TRACEME failure
+        // remains an ordinary __WALL-waitable clone child. The child branch
+        // never returns into Rust cleanup and uses only the prepared inputs.
+        let pid = unsafe {
+            libc::syscall(
+                libc::SYS_clone,
+                libc::CLONE_PIDFD,
+                std::ptr::null::<u8>(),
+                &raw mut handle,
+                std::ptr::null::<u8>(),
+                0,
+            )
+        };
+        if pid == 0 {
+            unsafe {
+                child_bootstrap(
+                    path.as_ptr(),
+                    argv.as_ptr(),
+                    envp.as_ptr(),
+                    null_fd.as_raw_fd(),
+                )
+            }
         }
+        if pid < 0 {
+            panic!("raw clone: {}", io::Error::last_os_error());
+        }
+        // A successful CLONE_PIDFD supplies a valid descriptor. Install the
+        // owner before any fallible wait, assertion, ptrace request or unlock.
         let mut raw = Self {
-            child: Some(command.spawn().unwrap()),
-            handle: None,
+            pid: pid as i32,
+            handle: unsafe { OwnedFd::from_raw_fd(handle) },
             retired: false,
+            cleaned: false,
             _tracer_mask: tracer_mask,
         };
         drop(fork);
-        raw.handle = Some(pin(raw.pid()));
-        let status = raw.wait(Instant::now() + TIMEOUT);
-        assert!(libc::WIFSTOPPED(status));
-        assert_eq!(libc::WSTOPSIG(status), libc::SIGTRAP);
-        assert_eq!(status >> 16, 0);
-        raw.ptrace(libc::PTRACE_SETOPTIONS, 0, libc::PTRACE_O_EXITKILL as usize);
+        let status = raw.wait(until);
+        assert_eq!(status, (libc::SIGSTOP << 8) | 0x7f);
+        assert!(
+            Instant::now() < until,
+            "raw strict reference bootstrap expired"
+        );
+        raw.ptrace(
+            libc::PTRACE_SETOPTIONS,
+            0,
+            (libc::PTRACE_O_TRACEEXEC | libc::PTRACE_O_EXITKILL) as usize,
+        );
+        assert!(
+            Instant::now() < until,
+            "raw strict reference bootstrap expired"
+        );
+        raw.ptrace(libc::PTRACE_CONT, 0, 0);
+        let status = raw.wait(until);
+        assert_eq!(
+            status,
+            (libc::PTRACE_EVENT_EXEC << 16) | (libc::SIGTRAP << 8) | 0x7f
+        );
+        assert!(
+            Instant::now() < until,
+            "raw strict reference bootstrap expired"
+        );
         // The child retained the all-catchable launch mask through exec. Install
         // the exact application mask only at this authenticated held exec stop,
         // before any original setup instruction executes.
-        assert_eq!(
-            held_mask(raw.pid(), raw.handle.as_ref().unwrap()),
-            TRACER_MASK
+        assert_eq!(held_mask(raw.pid(), &raw.handle), TRACER_MASK);
+        assert!(
+            Instant::now() < until,
+            "raw strict reference bootstrap expired"
         );
         let application_mask = MASK;
         raw.ptrace(0x420b_u32, 8, (&raw const application_mask) as usize);
-        assert_eq!(held_mask(raw.pid(), raw.handle.as_ref().unwrap()), MASK);
+        assert_eq!(held_mask(raw.pid(), &raw.handle), MASK);
+        assert!(
+            Instant::now() < until,
+            "raw strict reference bootstrap expired"
+        );
         raw.patch(fixture.marker, 0x90, 0xcc);
         raw.ptrace(libc::PTRACE_CONT, 0, 0);
         let status = raw.wait(Instant::now() + TIMEOUT);
@@ -302,7 +391,7 @@ impl Raw {
         raw
     }
     pub(super) fn pid(&self) -> i32 {
-        self.child.as_ref().unwrap().id() as i32
+        self.pid
     }
     fn ptrace(&self, request: u32, address: usize, data: usize) {
         assert!(!self.retired);
@@ -399,7 +488,7 @@ impl Raw {
         State {
             registers: self.registers(),
             xstate: self.xstate(),
-            mask: held_mask(self.pid(), self.handle.as_ref().unwrap()),
+            mask: held_mask(self.pid(), &self.handle),
             data: self.memory(DATA, DATA_LEN),
         }
     }
@@ -483,45 +572,34 @@ impl Raw {
             eprintln!("raw strict reference could not prove bounded physical cleanup");
             std::process::abort();
         }
-        let handle = self.handle.take().expect("retained original pidfd");
-        drop(self.child.take());
-        reaped(&handle);
+        reaped(&self.handle);
     }
     fn cleanup(&mut self) -> bool {
-        let Some(child) = self.child.as_mut() else {
+        if self.cleaned {
             return true;
-        };
-        let pid = child.id() as i32;
+        }
         if !self.retired {
-            if let Some(fd) = &self.handle {
-                // Stable identity, including constructor/unwind failure paths.
-                unsafe {
-                    libc::syscall(
-                        libc::SYS_pidfd_send_signal,
-                        fd.as_raw_fd(),
-                        libc::SIGKILL,
-                        0,
-                        0,
-                    );
-                }
-            } else {
-                // Constructor failed before pidfd installation. SIGCHLD is
-                // non-auto-reaping, this tracer blocks every catchable signal,
-                // and no other thread waits or changes that disposition. The
-                // unreaped Child therefore still pins this numeric identity.
-                let _ = child.kill();
+            // Stable identity exists from clone, including constructor/unwind
+            // failure before TRACEME or before the first authenticated wait.
+            unsafe {
+                libc::syscall(
+                    libc::SYS_pidfd_send_signal,
+                    self.handle.as_raw_fd(),
+                    libc::SIGKILL,
+                    0,
+                    0,
+                );
             }
         }
         let until = Instant::now() + TIMEOUT;
-        let mut direct_terminal = false;
         loop {
             if !self.retired {
                 let mut status = 0;
-                let got =
-                    unsafe { libc::waitpid(pid, &raw mut status, libc::WNOHANG | libc::__WALL) };
-                if got == pid && (libc::WIFEXITED(status) || libc::WIFSIGNALED(status)) {
+                let got = unsafe {
+                    libc::waitpid(self.pid, &raw mut status, libc::WNOHANG | libc::__WALL)
+                };
+                if got == self.pid && (libc::WIFEXITED(status) || libc::WIFSIGNALED(status)) {
                     self.retired = true;
-                    direct_terminal = true;
                 } else if got == -1
                     && io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD)
                 {
@@ -529,21 +607,28 @@ impl Raw {
                 }
             }
             if self.retired {
-                if let Some(fd) = &self.handle {
-                    let mut p = libc::pollfd {
-                        fd: fd.as_raw_fd(),
-                        events: libc::POLLIN,
-                        revents: 0,
+                let mut p = libc::pollfd {
+                    fd: self.handle.as_raw_fd(),
+                    events: libc::POLLIN,
+                    revents: 0,
+                };
+                if unsafe { libc::poll(&raw mut p, 1, 0) } == 1
+                    && p.revents == libc::POLLIN | libc::POLLHUP
+                {
+                    let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+                    let got = unsafe {
+                        libc::waitid(
+                            libc::P_PIDFD,
+                            self.handle.as_raw_fd() as u32,
+                            &raw mut info,
+                            libc::WEXITED | libc::WNOHANG | libc::WNOWAIT | libc::__WALL,
+                        )
                     };
-                    if unsafe { libc::poll(&raw mut p, 1, 0) } == 1
-                        && p.revents == libc::POLLIN | libc::POLLHUP
+                    if got == -1 && io::Error::last_os_error().raw_os_error() == Some(libc::ECHILD)
                     {
+                        self.cleaned = true;
                         return true;
                     }
-                } else if direct_terminal {
-                    // Only the partial-constructor path has no pidfd. A real
-                    // consumed terminal wait by its natural parent reaped it.
-                    return true;
                 }
             }
             if Instant::now() >= until {
@@ -559,7 +644,7 @@ impl Drop for Raw {
             eprintln!("raw strict reference unwind could not prove bounded physical cleanup");
             std::process::abort();
         }
-        // Never invoke Child::wait/kill after retirement. No detached reaper.
-        drop(self.child.take());
+        // Original pidfd and tracer mask outlive physical cleanup. No numeric
+        // wait/kill after retirement, no reopened PID and no detached reaper.
     }
 }

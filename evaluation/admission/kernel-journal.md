@@ -83,8 +83,11 @@ admission completion invented.
 
 The independent raw tracer blocks all catchable signals across its exclusive
 wait domain, acquires the first pidfd atomically and pins unknown waitable tasks
-before consuming statuses. It installs the exact application mask at the held
-exec stop. Cleanup retains ownership until the wait domain is empty and retained
+before consuming statuses. Its child first makes an exact pre-exec SIGSTOP after
+TRACEME. The parent enables TRACEEXEC and requires the actual EXEC event under
+the same launch deadline; it does not depend on a maskable legacy exec SIGTRAP.
+Only at that authenticated exec stop does it install and reread the exact
+application mask. Cleanup retains ownership until the wait domain is empty and retained
 pidfds show physical removal. Native owner cases retain the existing production
 cleanup rules. A caller timeout is never a successful cleanup result.
 

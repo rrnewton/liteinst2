@@ -43,10 +43,27 @@ held state remains unchanged. Unsupported INT80/SYSENTER refuse. Corruption
 controls cover register, flag, metadata, mask, XSTATE and memory comparisons.
 
 Each lane retains ownership through assertion failure and physical cleanup.
-The raw tracer uses its original retained identity and bounded cleanup on the
-same tracer thread. If it cannot prove physical removal, the entire test command
-fails; no detached reaper or cleanup exemption makes the case pass. The normal
-evaluation protocol additionally requires zero supervisor-adopted descendants.
+The raw tracer blocks all catchable signals before its fork-like raw clone and
+retains that mask until physical cleanup. `CLONE_PIDFD` with exit signal zero
+installs its original pidfd atomically. The child performs TRACEME and an
+unmaskable pre-exec SIGSTOP; the parent requires that exact stop, enables
+TRACEEXEC and EXITKILL, then requires the exact EXEC event. Both waits share one
+original startup deadline. This avoids the legacy maskable exec SIGTRAP; an
+application SIGILL is never accepted as an exec event. Only at the authenticated
+EXEC event does the owner install and reread the exact application mask, then
+patch the unchanged setup marker. The existing marker deadline and complete
+setup-state assertions remain intact.
+
+The raw owner is installed before any fallible post-clone wait or setup. It uses
+only that retained pidfd for termination and physical-removal proof; numeric
+wait authority ends before asserting on a terminal status. Successful cleanup
+requires both pidfd POLLIN|POLLHUP and P_PIDFD/ECHILD, including unwind cleanup.
+The same tracer thread keeps a bounded cleanup deadline. If it cannot prove
+physical removal, the entire test command fails; no detached reaper or cleanup
+exemption makes the case pass. The file/launch lock, waitable-SIGCHLD precondition
+and controlled binary's prohibition on competing waiters or concurrent global
+disposition changes remain in force. The normal evaluation protocol additionally
+requires zero supervisor-adopted descendants.
 
 The six exact named outcomes are recorded separately from static native samples,
 dynamic fixture outcomes and dynamic operand telemetry. They require terminal

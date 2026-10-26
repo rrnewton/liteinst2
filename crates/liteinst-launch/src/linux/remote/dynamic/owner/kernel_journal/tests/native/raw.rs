@@ -310,13 +310,21 @@ impl Raw {
         let env: [*const libc::c_char; 1] = [std::ptr::null()];
         let mut fd = -1_i32;
         let file_guard = crate::TEST_FILE_FORK.lock().unwrap();
+        let until = Instant::now() + TIMEOUT;
         // Only async-signal-safe raw syscalls occur in the copied child branch.
         // exit_signal=0 avoids dependence on the host's SIGCHLD disposition.
         let pid = unsafe { libc::syscall(libc::SYS_clone, libc::CLONE_PIDFD, 0, &mut fd, 0, 0) };
         if pid == 0 {
             unsafe {
-                if libc::syscall(libc::SYS_ptrace, libc::PTRACE_TRACEME, 0, 0, 0) != -1 {
-                    libc::syscall(libc::SYS_execve, path.as_ptr(), argv.as_ptr(), env.as_ptr());
+                if libc::syscall(libc::SYS_ptrace, libc::PTRACE_TRACEME, 0, 0, 0) == 0 {
+                    let process = libc::syscall(libc::SYS_getpid);
+                    let task = libc::syscall(libc::SYS_gettid);
+                    if process > 0
+                        && task == process
+                        && libc::syscall(libc::SYS_tgkill, process, task, libc::SIGSTOP) == 0
+                    {
+                        libc::syscall(libc::SYS_execve, path.as_ptr(), argv.as_ptr(), env.as_ptr());
+                    }
                 }
                 loop {
                     libc::syscall(libc::SYS_exit_group, 127);
@@ -337,15 +345,39 @@ impl Raw {
             terminal: BTreeSet::new(),
             complete: false,
         };
-        let (tid, status) = raw.wait();
+        // The all-blocked inherited mask suppresses the legacy exec SIGTRAP.
+        // An unblockable pre-exec stop lets the real parent enable TRACEEXEC;
+        // its event stop is distinct from that maskable legacy signal.
+        let (tid, status) = raw.wait_until(until);
         assert_eq!(tid, parent);
-        assert_eq!(status, (libc::SIGTRAP << 8) | 0x7f);
+        assert_eq!(status, (libc::SIGSTOP << 8) | 0x7f);
+        assert!(
+            Instant::now() < until,
+            "independent original launch deadline"
+        );
         trace(
             parent,
             libc::PTRACE_SETOPTIONS,
             0,
-            (libc::PTRACE_O_TRACECLONE | libc::PTRACE_O_TRACESYSGOOD | libc::PTRACE_O_EXITKILL)
-                as usize,
+            (libc::PTRACE_O_TRACECLONE
+                | libc::PTRACE_O_TRACESYSGOOD
+                | libc::PTRACE_O_TRACEEXEC
+                | libc::PTRACE_O_EXITKILL) as usize,
+        );
+        assert!(
+            Instant::now() < until,
+            "independent original launch deadline"
+        );
+        raw.resume(parent, libc::PTRACE_CONT);
+        let (tid, status) = raw.wait_until(until);
+        assert_eq!(tid, parent);
+        assert_eq!(
+            status,
+            (libc::PTRACE_EVENT_EXEC << 16) | (libc::SIGTRAP << 8) | 0x7f
+        );
+        assert!(
+            Instant::now() < until,
+            "independent original launch deadline"
         );
         let mut inherited = 0_u64;
         trace(
@@ -368,6 +400,10 @@ impl Raw {
             (&mut inherited as *mut u64) as usize,
         );
         assert_eq!(inherited, APP_MASK);
+        assert!(
+            Instant::now() < until,
+            "independent original launch deadline"
+        );
         raw
     }
 
@@ -379,6 +415,10 @@ impl Raw {
 
     fn wait(&mut self) -> (i32, i32) {
         let until = Instant::now() + TIMEOUT;
+        self.wait_until(until)
+    }
+
+    fn wait_until(&mut self, until: Instant) -> (i32, i32) {
         loop {
             let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
             assert_eq!(
