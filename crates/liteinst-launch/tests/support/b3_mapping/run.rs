@@ -372,11 +372,100 @@ pub fn completion(
     (actual, expected)
 }
 
+fn unique_vdso(maps: &Maps) -> &Map {
+    let mut found = maps
+        .rows
+        .iter()
+        .filter(|map| map.path.as_deref() == Some("[vdso]"));
+    let original = found.next().expect("fixture map table has no vDSO");
+    assert!(
+        found.next().is_none(),
+        "fixture map table has multiple vDSOs"
+    );
+    original
+}
+
+// Change exactly the execute byte in both the parsed descriptor and its actual
+// retained line. The rest of the line, including whitespace, stays byte-exact.
+fn change_vdso_execute(map: &mut Map, executable: bool) {
+    let (old, new) = if executable {
+        ("r--p", "r-xp")
+    } else {
+        ("r-xp", "r--p")
+    };
+    assert_eq!(map.permissions, old);
+    let line = map.line.as_bytes();
+    let range_end = line.iter().position(u8::is_ascii_whitespace).unwrap();
+    let permissions = range_end
+        + line[range_end..]
+            .iter()
+            .position(|byte| !byte.is_ascii_whitespace())
+            .unwrap();
+    assert_eq!(&line[permissions..permissions + 4], old.as_bytes());
+    assert!(line[permissions + 4].is_ascii_whitespace());
+    map.permissions.replace_range(2..3, &new[2..3]);
+    map.line
+        .replace_range(permissions + 2..permissions + 3, &new[2..3]);
+}
+
+fn archive_phase_baseline(row: &raw::Observation, baseline: &Maps, phase: usize) -> Maps {
+    assert!(phase < 5);
+    assert!(baseline.target().is_none());
+    let pristine = unique_vdso(&row.before.maps);
+    assert_eq!(pristine.permissions, "r-xp");
+    assert_eq!(unique_vdso(&row.entry.as_ref().unwrap().maps), pristine);
+    assert_eq!(unique_vdso(&row.after.maps), pristine);
+    let original = unique_vdso(baseline);
+    assert_eq!(original.permissions, "r--p");
+    // The independent raw lane establishes the original executable role and
+    // backing geometry. ASLR addresses remain distinct: every expected gated
+    // address and raw-line byte comes from that lane's own fixed baseline.
+    assert_eq!(original.end - original.start, pristine.end - pristine.start);
+    assert_eq!(original.offset, pristine.offset);
+    assert_eq!(original.device, pristine.device);
+    assert_eq!(original.inode, pristine.inode);
+    assert_eq!(original.path, pristine.path);
+    let raw_lines = |maps: &Maps| {
+        maps.rows
+            .iter()
+            .flat_map(|map| map.line.bytes().chain(std::iter::once(b'\n')))
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(raw_lines(baseline), baseline.raw);
+    let mut expected = baseline.clone();
+    if matches!(phase, 1..=3) {
+        let vdso = expected
+            .rows
+            .iter_mut()
+            .find(|map| map.path.as_deref() == Some("[vdso]"))
+            .unwrap();
+        change_vdso_execute(vdso, true);
+    }
+    expected.raw = raw_lines(&expected);
+    assert_eq!(expected.raw.len(), baseline.raw.len());
+    assert_eq!(
+        expected
+            .raw
+            .iter()
+            .zip(&baseline.raw)
+            .filter(|(a, b)| a != b)
+            .count(),
+        usize::from(matches!(phase, 1..=3)),
+    );
+    expected
+}
+
+pub struct ArchiveOutside {
+    phase: usize,
+    actual: Vec<Map>,
+    expected: Vec<Map>,
+}
+
 fn archived_maps(
     attempt: &liteinst_launch::KernelAttemptSnapshot,
     row: &raw::Observation,
     baseline: &Maps,
-) {
+) -> Vec<ArchiveOutside> {
     let capture = attempt
         .mapping
         .as_ref()
@@ -390,7 +479,10 @@ fn archived_maps(
         MappingCaptureSlot::SecondWait,
         MappingCaptureSlot::Quarantined,
     ];
+    assert_eq!(capture.records.len(), slots.len());
     let mut maps = Vec::new();
+    let mut phase_baselines = Vec::new();
+    let mut outside = Vec::new();
     for (index, (record, slot)) in capture.records.iter().zip(slots).enumerate() {
         assert_eq!(record.slot, slot);
         assert_eq!(record.tid, Some(attempt.original_stop.tid));
@@ -417,7 +509,16 @@ fn archived_maps(
         // This independent fixture parser inspects the actual retained prefix,
         // never production ParsedMaps or an invented zero-filled map table.
         let parsed = Maps::parse(bytes.to_vec());
-        assert_eq!(parsed.outside(), baseline.outside());
+        let expected_baseline = archive_phase_baseline(row, baseline, index);
+        let actual_outside = parsed.outside();
+        let expected_outside = expected_baseline.outside();
+        assert_eq!(actual_outside, expected_outside);
+        outside.push(ArchiveOutside {
+            phase: index,
+            actual: actual_outside,
+            expected: expected_outside,
+        });
+        phase_baselines.push(expected_baseline);
         maps.push(parsed);
     }
     assert_eq!(
@@ -432,7 +533,7 @@ fn archived_maps(
     assert_eq!(original.permissions, "r--p");
     assert_eq!(original.offset, 0);
     for (index, observed) in maps.iter().enumerate() {
-        let mut expected = baseline
+        let mut expected = phase_baselines[index]
             .rows
             .iter()
             .filter(|map| !(map.start < BASE + SOURCE_BYTES as u64 && BASE < map.end))
@@ -471,6 +572,7 @@ fn archived_maps(
             "retained mapping capture {index} differs from exact own-lane window/effect/quarantine geometry"
         );
     }
+    outside
 }
 
 pub fn archive(
@@ -478,20 +580,30 @@ pub fn archive(
     rows: &[raw::Observation],
     completed: usize,
     baseline: &Maps,
-) {
+) -> Vec<ArchiveOutside> {
     let snapshot = reader.snapshot();
     assert!(!snapshot.archive_poisoned);
+    let pristine = unique_vdso(&rows.first().unwrap().before.maps);
+    assert_eq!(pristine.permissions, "r-xp");
+    for row in rows {
+        assert_eq!(unique_vdso(&row.before.maps), pristine);
+        if let Some(entry) = &row.entry {
+            assert_eq!(unique_vdso(&entry.maps), pristine);
+        }
+        assert_eq!(unique_vdso(&row.after.maps), pristine);
+    }
     let kernel_rows = rows
         .iter()
         .filter(|row| row.entry.is_some())
         .collect::<Vec<_>>();
     assert_eq!(snapshot.attempts.len(), kernel_rows.len());
+    let mut outside = Vec::new();
     for (index, (attempt, row)) in snapshot.attempts.iter().zip(kernel_rows).enumerate() {
         assert_eq!(
             *attempt.input.registers(),
             row.before.architecture.registers
         );
-        archived_maps(attempt, row, baseline);
+        outside.extend(archived_maps(attempt, row, baseline));
         for (slot, expected) in [
             (KernelStateSlot::Original, &row.before.architecture),
             (
@@ -588,9 +700,15 @@ pub fn archive(
             assert_eq!(failure.kind, KernelFailureKind::Cancelled);
         }
     }
+    outside
 }
 
-pub fn positive(fixture: Arc<Fixture>, rows: Arc<Vec<raw::Observation>>) -> Vec<(Frame, Expected)> {
+pub struct Observed {
+    complete: Vec<(Frame, Expected)>,
+    archive_outside: Vec<ArchiveOutside>,
+}
+
+pub fn positive(fixture: Arc<Fixture>, rows: Arc<Vec<raw::Observation>>) -> Observed {
     let mut owner = Owned::launch(Arc::clone(&fixture), Arc::clone(&rows), Mode::Correct);
     let mut observed = Vec::new();
     let (mut charged, mut retained) = (0, 0);
@@ -610,10 +728,13 @@ pub fn positive(fixture: Arc<Fixture>, rows: Arc<Vec<raw::Observation>>) -> Vec<
     assert_eq!(owner.session().provider().calls, 7);
     assert_eq!(owner.session().source_resolver().calls, 2);
     assert_eq!(owner.session().source_resolver().incarnations.len(), 2);
-    archive(&owner.archive, &rows, 5, &owner.baseline);
+    let _ = archive(&owner.archive, &rows, 5, &owner.baseline);
     owner.finish();
-    archive(&owner.archive, &rows, 5, &owner.baseline);
-    observed
+    let archive_outside = archive(&owner.archive, &rows, 5, &owner.baseline);
+    Observed {
+        complete: observed,
+        archive_outside,
+    }
 }
 
 pub fn stale(fixture: Arc<Fixture>, rows: Arc<Vec<raw::Observation>>) {
@@ -629,7 +750,7 @@ pub fn stale(fixture: Arc<Fixture>, rows: Arc<Vec<raw::Observation>>) {
     assert_eq!(owner.session().source_resolver().calls, 2);
     assert!(owner.session().is_closed());
     owner.finish();
-    archive(&owner.archive, &rows[..5], 3, &owner.baseline);
+    let _ = archive(&owner.archive, &rows[..5], 3, &owner.baseline);
 }
 
 pub fn panic(fixture: Arc<Fixture>, rows: Arc<Vec<raw::Observation>>) {
@@ -646,7 +767,7 @@ pub fn panic(fixture: Arc<Fixture>, rows: Arc<Vec<raw::Observation>>) {
     assert_eq!(owner.session().source_resolver().calls, 1);
     assert!(owner.session().is_closed());
     owner.finish();
-    archive(&owner.archive, &rows[..2], 1, &owner.baseline);
+    let _ = archive(&owner.archive, &rows[..2], 1, &owner.baseline);
 }
 
 pub fn timeout(fixture: Arc<Fixture>, rows: Arc<Vec<raw::Observation>>) {
@@ -674,7 +795,7 @@ pub fn timeout(fixture: Arc<Fixture>, rows: Arc<Vec<raw::Observation>>) {
             assert_eq!(owner.session().source_resolver().calls, 1);
             assert!(owner.session().is_closed());
             owner.finish();
-            archive(&owner.archive, &rows[..2], 1, &owner.baseline);
+            let _ = archive(&owner.archive, &rows[..2], 1, &owner.baseline);
         }));
         let _ = send.send(outcome);
     });
@@ -710,8 +831,8 @@ pub fn timeout(fixture: Arc<Fixture>, rows: Arc<Vec<raw::Observation>>) {
     }
 }
 
-pub fn corrupt(observations: &[(Frame, Expected)]) {
-    for (actual, expected) in observations {
+pub fn corrupt(observations: &Observed) {
+    for (actual, expected) in &observations.complete {
         assert!(matches_complete(actual, expected));
         for corruption in 0..8 {
             let mut bad = actual.clone();
@@ -735,6 +856,42 @@ pub fn corrupt(observations: &[(Frame, Expected)]) {
             let mut bad = actual.clone();
             bad.target.as_mut().unwrap()[0] ^= 1;
             assert!(!matches_complete(&bad, expected));
+        }
+    }
+    // These additional controls use retained actual archive rows after both
+    // native lanes have physically cleaned up. No corruption is a new sample.
+    assert_eq!(observations.archive_outside.len(), 25);
+    for observation in &observations.archive_outside {
+        assert_eq!(observation.actual, observation.expected);
+        let index = observation
+            .actual
+            .iter()
+            .position(|map| map.path.as_deref() == Some("[vdso]"))
+            .unwrap();
+        let executable = matches!(observation.phase, 1..=3);
+        assert_eq!(
+            observation.actual[index].permissions,
+            if executable { "r-xp" } else { "r--p" }
+        );
+        for corruption in 0..8 {
+            let mut bad = observation.actual.clone();
+            let vdso = &mut bad[index];
+            match corruption {
+                0 => change_vdso_execute(vdso, !executable),
+                1 => vdso.start += PAGE as u64,
+                2 => vdso.end += PAGE as u64,
+                3 => vdso.offset ^= 1,
+                4 => vdso.device.push('0'),
+                5 => vdso.inode ^= 1,
+                6 => vdso.path = Some("[vdso-corrupt]".into()),
+                7 => vdso.line.push(' '),
+                _ => unreachable!(),
+            }
+            assert_ne!(
+                bad, observation.expected,
+                "archive phase {} accepted vDSO corruption {corruption}",
+                observation.phase
+            );
         }
     }
 }

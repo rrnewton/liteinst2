@@ -41,8 +41,13 @@ independent comparator corruption. The raw tracer uses its own ptrace control,
 register and XSTATE reads, map parser and literal expected effects. It compares
 all GPRs, complete exported XSTATE, signal masks, fixed stack/data, original and
 armed code bytes, and exact owned mapping descriptors. ASLR mappings and the
-private control island have exact per-lane unchanged-descriptor checks;
-there is no cross-process address normalization. Cleanup is established by
+private control island retain exact per-lane descriptors. The archived vDSO
+has one explicit permission transition: its independently observed original RX
+role is restored for the logical window and actual ENTRY/EXIT, while the
+before-window and quarantine captures require NX. Every other vDSO descriptor
+and raw-line byte remains exact; wrong-phase permissions and changed identity
+are corruption controls. No map row is omitted and there is no cross-process
+address normalization. Cleanup is established by
 pidfd readiness and an actual no-child result, separately from logical closure.
 
 The persistent kernel journal owns five immutable map-capture slots, including
