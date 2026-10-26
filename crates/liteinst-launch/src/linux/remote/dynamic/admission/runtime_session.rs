@@ -27,6 +27,19 @@ impl Default for DynamicRuntimeCaptureLimits {
     }
 }
 
+/// Native original-site syscall choices for the initial singleton runtime.
+/// Every allowed operation still requires an explicit provider Native decision.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum RuntimeKernelProfile {
+    /// Native syscall effects remain refused.
+    #[default]
+    Refuse,
+    /// Exact native64 SYSCALL for getpid, gettid, exit and exit_group only.
+    /// PID namespace identity, full state, source and physical custody are
+    /// independently authenticated before an original instruction is released.
+    IdentityAndTermination,
+}
+
 /// Initial singleton runtime profile with owner-captured Partial entry evidence.
 /// All seven selected classes remain selected. These limits do not certify
 /// instruction-head completeness, absence of writers or executable permission.
@@ -36,6 +49,8 @@ pub struct DynamicRuntimeOptions {
     pub capture: DynamicRuntimeCaptureLimits,
     /// Existing six lifetime limits; retirement never refunds them.
     pub limits: DynamicAdmissionLimits,
+    /// Explicit finite original-site native syscall policy.
+    pub kernel: RuntimeKernelProfile,
 }
 
 /// Private wire identity. This is separate from a legacy installed-plan token;
@@ -74,8 +89,9 @@ impl<P: InstructionProvider> DynamicAdmissionSession<P> {
     /// profile covers register/immediate operations, LEA, NOP and relative
     /// branches; memory/stack operations and indirect transfers require further
     /// native footprint proof. Selected CPU operations accept typed emulation;
-    /// native syscall effects and composed lifecycle transitions are not yet
-    /// admitted by this constructor.
+    /// the optional IdentityAndTermination kernel profile admits only native64
+    /// getpid/gettid and terminal exit/exit_group under separate native proofs.
+    /// Other syscall effects and composed lifecycle transitions remain refused.
     pub unsafe fn launch_runtime(
         command: &LaunchCommand,
         options: DynamicRuntimeOptions,

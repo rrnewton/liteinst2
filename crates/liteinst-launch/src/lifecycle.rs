@@ -8,6 +8,9 @@
 //! transition here authorizes freeing mappings or forgetting a saved return.
 #![forbid(unsafe_code)]
 
+mod initial_kernel;
+pub(crate) use initial_kernel::InitialKernelPhase;
+
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 

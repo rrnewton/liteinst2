@@ -12,6 +12,7 @@ mod execute;
 pub(super) mod instruction;
 #[cfg(test)]
 mod isolation;
+pub(in crate::linux::remote::dynamic::owner) mod kernel;
 pub(super) mod maps;
 #[cfg(test)]
 mod native_tests;
@@ -24,6 +25,7 @@ mod tests;
 pub(in crate::linux::remote::dynamic::owner) struct RuntimeStartOptions {
     pub(super) capture: InitialCaptureProfile,
     pub(super) limits: DynamicAdmissionLimits,
+    pub(super) kernel: super::super::super::admission::RuntimeKernelProfile,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -37,6 +39,7 @@ pub(super) enum RuntimeStage {
     Catalog,
     Census,
     Ready,
+    Terminal,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -65,6 +68,9 @@ pub(in crate::linux::remote::dynamic::owner) struct RuntimeOwner {
     ordinary_attempts: Vec<Box<ordinary::RuntimeOrdinaryAttempt>>,
     selected_attempts: Vec<Box<selected::RuntimeSelectedAttempt>>,
     selected_pending: Option<usize>,
+    kernel_profile: super::super::super::admission::RuntimeKernelProfile,
+    kernel_attempts: Vec<Box<kernel::RuntimeKernelAttempt>>,
+    kernel_pending: Option<usize>,
     metrics: DynamicAdmissionMetrics,
     pages: Vec<RuntimePage>,
     // Initialized before any original read/effect. One is moved into the
@@ -171,6 +177,9 @@ impl RuntimeOwner {
             ordinary_attempts: Vec::new(),
             selected_attempts: Vec::new(),
             selected_pending: None,
+            kernel_profile: options.kernel,
+            kernel_attempts: Vec::new(),
+            kernel_pending: None,
             metrics: DynamicAdmissionMetrics::default(),
             pages,
             ready_capacity: ready_xstate.capacity(),

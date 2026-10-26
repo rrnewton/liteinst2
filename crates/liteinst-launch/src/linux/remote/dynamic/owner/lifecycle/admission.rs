@@ -4,8 +4,12 @@ use super::super::trusted::{
     AdmissionPhase, AdmissionStop, OwnedSignal, TrapExpectation, TrustedIsland, authenticate_trap,
 };
 use super::*;
+mod runtime_kernel;
 use crate::lifecycle::{
     AddressSpaceId, ExclusionCandidate, ProcessId, RegistrySnapshot, TaskState,
+};
+pub(in crate::linux::remote::dynamic::owner) use runtime_kernel::{
+    RuntimeKernelExitMessage, RuntimeKernelPreExit,
 };
 
 #[derive(Clone, Debug)]

@@ -12,7 +12,9 @@ use crate::trap_coverage::TrapCoverageBudget;
 use liteinst_admission::oracle_chain::CacheLimits;
 
 mod runtime_session;
-pub use runtime_session::{DynamicRuntimeCaptureLimits, DynamicRuntimeOptions};
+pub use runtime_session::{
+    DynamicRuntimeCaptureLimits, DynamicRuntimeOptions, RuntimeKernelProfile,
+};
 pub(super) use runtime_session::{RuntimePendingToken, RuntimeProviderInput};
 mod signal_session;
 pub use signal_session::DynamicSignalSession;

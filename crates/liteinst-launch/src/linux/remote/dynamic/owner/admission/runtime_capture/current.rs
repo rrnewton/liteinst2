@@ -3,7 +3,11 @@
 use super::super::census::ObservedStop;
 use super::super::source_identity::{RuntimeReadCheckpoint, RuntimeSourceRead};
 use super::*;
+mod kernel;
 use crate::linux::remote::dynamic::owner::trusted::TrustedIsland;
+pub(in crate::linux::remote::dynamic::owner::admission) use kernel::{
+    CapturedKernelRead, KernelCatalogCheckpoint,
+};
 
 pub(in crate::linux::remote::dynamic::owner::admission) struct CapturedRuntimeRead<'source, 'read> {
     reader: RuntimeSourceRead<'read>,

@@ -17,9 +17,10 @@ use crate::selected::{ProviderDecision, SelectedInput};
 use std::collections::VecDeque;
 
 mod census;
-mod runtime;
+pub(in crate::linux::remote::dynamic::owner) mod runtime;
 mod runtime_capture;
 mod runtime_instruction;
+pub(in crate::linux::remote::dynamic::owner) mod runtime_kernel_native;
 mod runtime_native;
 mod source_identity;
 pub(in crate::linux::remote::dynamic::owner) use mapping::maps::{MapEntry, ParsedMaps};
@@ -751,3 +752,7 @@ impl AdmissionOwner {
 
 #[cfg(feature = "dev-exec-backing-cleanup")]
 pub(crate) use exec::exec_backing_cleanup_main;
+
+pub(in crate::linux::remote::dynamic::owner) use census::{
+    RuntimeKernelCommitOutcome, RuntimeKernelCommitReceipt, RuntimeKernelCommitView,
+};

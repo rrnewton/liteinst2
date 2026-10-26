@@ -10,7 +10,9 @@ const QUERY_BYTES: usize = 64 * 1024;
 
 impl RuntimeOwner {
     pub(in crate::linux::remote::dynamic::owner) fn provider_expired(&self, now: Instant) -> bool {
-        self.selected_deadline().is_some_and(|until| now >= until)
+        self.selected_deadline()
+            .or_else(|| self.kernel_deadline())
+            .is_some_and(|until| now >= until)
     }
 
     pub(super) fn execute(
@@ -23,7 +25,7 @@ impl RuntimeOwner {
             return Err(GateError::Refused("runtime startup is incomplete"));
         }
         owner.time_left(until, "runtime admission command")?;
-        if self.selected_pending.is_some()
+        if (self.selected_pending.is_some() || self.kernel_pending.is_some())
             && !matches!(&request, AdmissionRequest::CompleteRuntime { .. })
         {
             return Err(GateError::Refused(
@@ -33,7 +35,11 @@ impl RuntimeOwner {
         match request {
             AdmissionRequest::Advance => self.advance(owner, until),
             AdmissionRequest::CompleteRuntime { token, decision } => {
-                self.complete_selected(owner, token, decision, until)
+                if self.kernel_pending.is_some() {
+                    self.complete_kernel(owner, token, decision, until)
+                } else {
+                    self.complete_selected(owner, token, decision, until)
+                }
             }
             AdmissionRequest::State(task) => self.query(owner, task, None, until),
             AdmissionRequest::Memory { task, address, len } => {
@@ -109,7 +115,14 @@ impl RuntimeOwner {
                 &SyscallAliases::default(),
             )
             .map_err(|_| GateError::Refused("runtime actual instruction is unqualified"))?;
-            if matches!(candidate.kind(), CandidateKind::Selected(_)) {
+            if let CandidateKind::Selected(selected) = candidate.kind() {
+                if self.kernel_profile == super::super::super::super::admission::RuntimeKernelProfile::IdentityAndTermination
+                    && selected.bytes() == [0x0f, 0x05]
+                    && matches!(selected.operation(), crate::selected::Operation::Syscall { abi: crate::selected::SyscallAbi::LinuxX64 })
+                    && kernel::RuntimeKernelOperation::from_number(before.registers.rax).is_some()
+                {
+                    return self.prepare_kernel(owner, index, until).map(AdmissionReply::RuntimeProvider);
+                }
                 return self
                     .prepare_selected(owner, index, until)
                     .map(AdmissionReply::RuntimeProvider);

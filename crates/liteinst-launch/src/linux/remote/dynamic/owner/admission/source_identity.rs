@@ -26,7 +26,10 @@ mod read;
 pub(super) use backing::ExecutableIdentity;
 pub(super) use geometry::{SourceGeometry, SourceInventory};
 pub(in crate::linux::remote::dynamic::owner) use initial::require_initial_task_identity;
-pub(super) use initial::{InitialReadScratch, RuntimeReadCheckpoint, RuntimeSourceRead};
+pub(super) use initial::{
+    InitialReadScratch, RuntimeKernelReadCheckpoint, RuntimeKernelSourceRead,
+    RuntimeReadCheckpoint, RuntimeSourceRead,
+};
 pub(super) use read::SourceReadProgress;
 #[cfg(test)]
 pub(super) use read::{SourceReadFailure, SourceReadOperation, SourceReadRequest};

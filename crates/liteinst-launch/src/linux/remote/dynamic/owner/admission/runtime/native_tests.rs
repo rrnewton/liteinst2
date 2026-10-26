@@ -724,6 +724,7 @@ fn initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec() {
                             max_total_capture_bytes: options.capture.max_total_capture_bytes,
                         },
                         limits: options.limits,
+                        kernel: options.kernel,
                     },
                     until,
                 )

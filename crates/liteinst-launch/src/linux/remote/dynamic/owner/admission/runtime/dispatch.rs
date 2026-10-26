@@ -32,6 +32,7 @@ impl Owner {
                 RuntimeStartOptions {
                     capture,
                     limits: options.limits,
+                    kernel: options.kernel,
                 },
                 until,
             )?);

@@ -23,7 +23,10 @@ use std::os::unix::ffi::{OsStrExt, OsStringExt};
 use std::time::Instant;
 
 mod current;
-pub(super) use current::{CapturedRuntimeRead, RuntimeCatalogCheckpoint, RuntimeWindowProof};
+pub(super) use current::{
+    CapturedKernelRead, CapturedRuntimeRead, KernelCatalogCheckpoint, RuntimeCatalogCheckpoint,
+    RuntimeWindowProof,
+};
 mod geometry;
 use geometry::{VmaGeometry, WindowGeometry};
 #[cfg(test)]
@@ -130,6 +133,12 @@ pub(super) struct SourceWindowId {
     index: usize,
 }
 impl SourceWindowId {
+    // Add inside SourceWindowId impl. Descriptive test data, no read/binding authority.
+    #[cfg(test)]
+    pub(super) fn synthetic_for_test(identity: CodeIdentity, index: usize) -> Self {
+        Self { identity, index }
+    }
+
     pub(super) fn identity(self) -> CodeIdentity {
         self.identity
     }

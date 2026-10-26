@@ -3,8 +3,12 @@
 use super::*;
 use std::cell::RefCell;
 mod runtime;
+mod runtime_kernel;
 pub(in crate::linux::remote::dynamic::owner::admission) use runtime::{
     RuntimeReadCheckpoint, RuntimeSourceRead,
+};
+pub(in crate::linux::remote::dynamic::owner::admission) use runtime_kernel::{
+    RuntimeKernelReadCheckpoint, RuntimeKernelSourceRead,
 };
 #[cfg(test)]
 mod tests;
