@@ -7,7 +7,5935 @@
     "default_rdpid_requires_explicit_coverage_and_keeps_all_registers",
     "forbidden_native_mapping_syscall_closes_before_any_kernel_effect",
     "provider_panic_cancels_actual_owner_and_physically_reaps",
-    "blocked_provider_observes_owner_cleanup_before_returning_a_decision"
+    "blocked_provider_observes_owner_cleanup_before_returning_a_decision",
+    "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+    "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+    "matrix::scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions",
+    "matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+    "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+    "matrix::masked_cpuid_does_not_remove_deliberate_random_callbacks",
+    "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+    "call_boundary::native_call_return_into_never_executed_nx_page_keeps_old_generation_obligation"
+  ],
+  "dynamic_matrix_cases": [
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr00-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr00-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr01-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr01-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr02-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr02-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr03-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr03-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr04-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr04-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr05-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr05-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr06-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr06-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr07-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr07-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr08-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr08-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr09-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr09-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr10-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr10-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr11-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr11-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr12-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr12-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr13-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr13-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr14-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr14-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w16-gpr15-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr15-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr00-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr00-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr01-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr01-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr02-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr02-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr03-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr03-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr04-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr04-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr05-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr05-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr06-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr06-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr07-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr07-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr08-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr08-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr09-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr09-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr10-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr10-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr11-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr11-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr12-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr12-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr13-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr13-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr14-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr14-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w32-gpr15-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr15-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr00-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr00-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr01-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr01-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr02-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr02-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr03-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr03-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr04-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr04-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr05-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr05-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr06-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr06-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr07-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr07-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr08-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr08-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr09-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr09-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr10-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr10-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr11-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr11-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr12-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr12-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr13-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr13-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr14-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr14-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdrand-w64-gpr15-scripted-cf0-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr15-scripted-cf1-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr00-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr00-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr01-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr01-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr02-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr02-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr03-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr03-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr04-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr04-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr05-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr05-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr06-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr06-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr07-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr07-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr08-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr08-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr09-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr09-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr10-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr10-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr11-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr11-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr12-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr12-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr13-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr13-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr14-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr14-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w16-gpr15-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr15-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr00-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr00-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr01-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr01-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr02-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr02-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr03-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr03-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr04-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr04-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr05-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr05-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr06-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr06-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr07-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr07-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr08-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr08-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr09-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr09-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr10-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr10-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr11-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr11-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr12-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr12-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr13-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr13-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr14-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr14-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w32-gpr15-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr15-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr00-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr00-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr01-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr01-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr02-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr02-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr03-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr03-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr04-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr04-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr05-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr05-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr06-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr06-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr07-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr07-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr08-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr08-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr09-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr09-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr10-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr10-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr11-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr11-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr12-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr12-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr13-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr13-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr14-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr14-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "seeded-rdseed-w64-gpr15-scripted-cf0-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr15-scripted-cf1-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_random_all_widths_all_gprs_and_both_carry_results",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr00-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr01-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr02-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr03-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr04-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr05-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr06-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr07-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr08-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr09-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr10-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr11-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr12-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr13-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr14-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w16-gpr15-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr00-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr01-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr02-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr03-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr04-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr05-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr06-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr07-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr08-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr09-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr10-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr11-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr12-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr13-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr14-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w32-gpr15-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr00-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr01-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr02-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr03-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr04-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr05-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr06-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr07-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr08-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr09-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr10-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr11-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr12-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr13-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr14-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdrand-w64-gpr15-native-hardware-flags0ed7",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr00-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr01-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr02-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr03-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr04-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr05-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr06-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr07-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr08-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr09-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr10-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr11-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr12-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr13-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr14-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w16-gpr15-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 16
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr00-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr01-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr02-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr03-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr04-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr05-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr06-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr07-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr08-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr09-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr10-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr11-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr12-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr13-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr14-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w32-gpr15-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr00-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr01-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr02-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr03-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr04-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr05-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr06-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr07-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr08-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr09-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr10-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr11-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr12-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr13-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr14-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "seeded-rdseed-w64-gpr15-native-hardware-flags0ed7",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_random_all_widths_all_gprs_preserve_exact_unrelated_state",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf0-subleaf0-scripted-typed-flags0202",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 514,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf1-subleaf0-scripted-typed-flags0202",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 514,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf7-subleaf0-scripted-typed-flags0202",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 514,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdtsc-scripted-typed-flags0202",
+      "class": "rdtsc",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 514,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdtscp-scripted-typed-flags0202",
+      "class": "rdtscp",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 514,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf0-subleaf0-scripted-typed-flags0ed7",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf1-subleaf0-scripted-typed-flags0ed7",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf7-subleaf0-scripted-typed-flags0ed7",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdtsc-scripted-typed-flags0ed7",
+      "class": "rdtsc",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdtscp-scripted-typed-flags0ed7",
+      "class": "rdtscp",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::scripted_cpuid_and_timestamp_outputs_have_exact_flags_and_extensions",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf0-subleaf0-native-hardware-flags0202",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 514,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf1-subleaf0-native-hardware-flags0202",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 514,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf7-subleaf0-native-hardware-flags0202",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 514,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdtsc-native-hardware-flags0202",
+      "class": "rdtsc",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 514,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdtscp-native-hardware-flags0202",
+      "class": "rdtscp",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 514,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf0-subleaf0-native-hardware-flags0ed7",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf1-subleaf0-native-hardware-flags0ed7",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-cpuid-leaf7-subleaf0-native-hardware-flags0ed7",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdtsc-native-hardware-flags0ed7",
+      "class": "rdtsc",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdtscp-native-hardware-flags0ed7",
+      "class": "rdtscp",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::native_cpuid_and_timestamps_check_defined_outputs_and_every_untouched_field",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr00-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr00-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr00-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr00-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr01-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr01-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr01-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr01-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 1,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr02-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr02-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr02-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr02-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 2,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr03-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr03-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr03-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr03-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 3,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr04-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr04-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr04-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr04-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 4,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr05-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr05-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr05-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr05-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 5,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr06-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr06-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr06-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr06-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 6,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr07-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr07-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr07-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr07-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 7,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr08-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr08-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr08-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr08-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 8,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr09-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr09-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr09-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr09-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 9,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr10-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr10-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr10-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr10-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 10,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr11-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr11-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr11-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr11-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 11,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr12-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr12-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr12-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr12-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 12,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr13-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr13-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr13-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr13-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 13,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr14-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr14-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr14-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr14-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 14,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr15-rexw0-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr15-rexw0-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr15-rexw1-native-hardware-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "seeded-rdpid-w32-gpr15-rexw1-scripted-typed-flags0ed7",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 15,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::default_policy_rdpid_all_gprs_and_rex_w_forms_use_explicit_coverage",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "masked-chain-0-cpuid-leaf1-subleaf0-scripted-typed",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::masked_cpuid_does_not_remove_deliberate_random_callbacks",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "masked-chain-1-cpuid-leaf7-subleaf0-scripted-typed",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::masked_cpuid_does_not_remove_deliberate_random_callbacks",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "masked-chain-2-rdrand-w32-gpr00-scripted-cf1",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 3799,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::masked_cpuid_does_not_remove_deliberate_random_callbacks",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0
+      ],
+      "case_id": "masked-chain-3-rdseed-w32-gpr00-scripted-cf0",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": 1539,
+      "input_flags_source": "independent_fixture_model",
+      "outer_test": "matrix::masked_cpuid_does_not_remove_deliberate_random_callbacks",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "first-cpuid-leaf0-subleaf0-native-hardware",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "first-cpuid-leaf0-subleaf0-scripted-typed",
+      "class": "cpuid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "first-rdtsc-native-hardware",
+      "class": "rdtsc",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "first-rdtsc-scripted-typed",
+      "class": "rdtsc",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "first-rdtscp-native-hardware",
+      "class": "rdtscp",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "native",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "first-rdtscp-scripted-typed",
+      "class": "rdtscp",
+      "cleanup": true,
+      "completed": 1,
+      "destination": null,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "scripted",
+      "width": 64
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "first-rdrand-w32-gpr00-native-hardware",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "first-rdrand-w32-gpr00-scripted-cf1",
+      "class": "rdrand",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        0,
+        1
+      ],
+      "case_id": "first-rdseed-w32-gpr00-native-hardware",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        1
+      ],
+      "case_id": "first-rdseed-w32-gpr00-scripted-cf1",
+      "class": "rdseed",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "scripted",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "first-rdpid-w32-gpr00-rexw0-native-hardware",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "native",
+      "width": 32
+    },
+    {
+      "actual_cf_allowed": [
+        null
+      ],
+      "case_id": "first-rdpid-w32-gpr00-rexw0-scripted-typed",
+      "class": "rdpid",
+      "cleanup": true,
+      "completed": 1,
+      "destination": 0,
+      "input_flags_expected": null,
+      "input_flags_source": "initial_checkpoint",
+      "outer_test": "matrix::literal_first_cpu_instructions_complete_once_native_and_scripted",
+      "path": "scripted",
+      "width": 32
+    }
   ],
   "harness_test_counts": {
     "serial_launch": {
@@ -25,7 +5953,7 @@
       },
       "test/dynamic_admission": {
         "ignored": 0,
-        "tests": 7
+        "tests": 15
       },
       "test/dynamic_control": {
         "ignored": 0,
@@ -171,7 +6099,7 @@
       },
       "test/dynamic_admission": {
         "ignored": 0,
-        "tests": 7
+        "tests": 15
       },
       "test/dynamic_control": {
         "ignored": 0,
@@ -909,6 +6837,6 @@
       "test": "covered_rdpid_r15"
     }
   ],
-  "recorder_tests": 71,
+  "recorder_tests": 98,
   "schema_version": 1
 }

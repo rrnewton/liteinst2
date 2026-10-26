@@ -88,7 +88,7 @@ equivalence is inferred from matching this protocol.
 ## Evidence accounting
 
 `corpus.json` declares the expected outer harness cohort, 50 static native cases
-and a separate seven-fixture dynamic admission cohort.
+and separate named dynamic admission and per-invocation matrix cohorts.
 Update it explicitly when adding/removing tests, and review denominator changes.
 The parser requires exactly one final unfiltered outer summary matching each
 declared cohort. Nested child summaries are separate observations and never
@@ -151,37 +151,63 @@ error while withholding the real owner's reply. Both deadlines begin before
 enqueueing. Native expiry, expired dispatch and response expiry retain distinct
 error labels; the fixture accepts only native expiry. See `native-thread.md`.
 
-The dynamic admission increment adds 58 outer tests: 14 pending-plan puzzles,
+The dynamic admission increment adds 66 outer tests: 14 pending-plan puzzles,
 17 resume-census bookkeeping tests, 16 client/owner protocol tests, four resource
-bound regressions and seven native integration fixtures. The expected launcher
-unit cohort is 103. Workspace expectations are 1204 outer tests in 75 harnesses
-(1200 possible passes and four existing ignores); serial launch expects 366
-tests in 23 harnesses. Recorder
-regressions increase from 53 to 71. These are source-derived expected cohorts,
-not reported execution results. The separately drafted six-test dynamic matrix
-is not included in this catalog.
+bound regressions, seven baseline native integration fixtures, seven dynamic
+matrix fixtures and one CALL-return fixture. The expected launcher unit cohort
+is 103. Workspace expectations are 1212 outer tests in 75 harnesses (1208 possible
+passes and four existing ignores); serial launch expects 374 tests in 23
+harnesses. Recorder regressions increase from 53 to 98. These are source-derived
+expected cohorts, not reported execution results.
 
-The serial command additionally exports `dynamic_admission_fixtures`: exactly
-one row for each declared fixture, requiring its announced harness and explicit
-terminal `ok`. The existing aggregate harness parser remains independently
-required. Expected-panic diagnostics are not success evidence without that
-terminal result. Rows contain only the fixture name, observation status,
-test result, command success and final run qualification. Partial and failed
-observations remain unqualified; source/config drift, another failed command or
-a recorder exception disqualifies both fixture rows and native samples.
+The serial command exports three distinct evidence collections. The existing
+`native_cases` collection retains its separate 50-case static oracle denominator.
+`dynamic_admission_fixtures` has exactly one row for each of the 15 declared
+fixtures, including the original seven in their original order. Exact Rust module
+segments identify the seven `matrix::` tests and one `call_boundary::` test; a
+matching suffix or an unregistered name is insufficient. Every named result
+requires the announced harness and an explicit terminal `ok`. The independent
+aggregate harness parser remains required. Expected-panic diagnostics do not
+supply that terminal result.
 
-The seven rows establish only their exact-source fixture assertions. They are
-not seven selected-class samples or per-instruction completion counters, and
-are never added to the separate 50-case `native_cases` denominator. This cohort
-covers first CPUID entry, interpreter entry, native clone return boundaries,
-scripted default-policy RDPID coverage, mapping-policy refusal and provider
-panic/timeout cleanup. It does not establish native execution of every selected
-class through dynamic admission, a complete B3/B4 exit gate, or performance.
-The existing revision/tree/source-manifest, command, hardware and log-digest
-fields bind these observations without publishing raw output or host paths.
-No command, deadline, ignore allowance or descendant-cleanup rule changes.
+`dynamic_matrix_cases` records 388 declared completion invocations from seven of
+those fixtures and 385 sessions. The source inventory expects 144 native and 244
+scripted invocations. These expectations are not execution results or additional
+outer tests. Each `LITEINST_EVALUATION_DYNAMIC_MATRIX ` JSON row must occur once
+under its exact owning fixture and match the declared case ID, class, width,
+destination, execution path and flag-input predicate. Seeded flags are exact;
+the 12 literal-first inputs retain their actual numeric checkpoint flags under
+the existing TF/RF-clear contract. They do not acquire an invented fixed input.
+Only random rows carry numeric actual CF; native CF is an observed zero or one,
+scripted CF must equal its declared value, and other classes require null. A
+missing row has no observed CF or completion value. Integer `completed=1`, boolean
+`cleanup=true`, the fixture's terminal `ok` and command success are all required.
+The schema rejects extra fields, malformed or duplicate keys, wrong contexts and
+unknown identities. No raw addresses, output values or private diagnostics are
+exported.
 
-The new scripted random matrix forces 192 invocations covering both classes,
+The seven original named fixtures cover first CPUID entry, interpreter entry,
+native clone return boundaries, scripted default-policy RDPID coverage,
+mapping-policy refusal and provider panic/timeout cleanup. The matrix adds the
+finite CPU instruction shapes in its exact inventory: all random widths and GPR
+destinations, scripted carry outcomes, sampled native carry outcomes, CPUID and
+timestamps, explicit default-policy RDPID coverage, a masked-CPUID chain, and 12
+literal-first native/scripted cases. Its unchanged-state baseline is the actual
+initial checkpoint where documented; it is not an independent bootstrap oracle.
+It neither forces native random CF=0 nor claims that outcome when absent. The
+CALL fixture separately checks the native return into a previously NX page and
+retention of the original generation's potential return obligation. It supplies
+one named outcome, not matrix telemetry or a new static sample.
+
+A row alone never qualifies an experiment. Partial and failed observations stay
+unqualified; source/configuration drift, another failed command, a cleanup
+failure or a recorder exception disqualifies all three collections. The existing
+revision/tree/source-manifest, command, hardware and log-digest fields bind the
+observations. No command, deadline, ignore allowance, comparator, native50 parser
+or descendant-cleanup rule changes. None of these finite cohorts establishes a
+complete B3/B4 exit gate, real-application coverage or performance.
+
+The separate static-gate scripted random matrix forces 192 invocations covering both classes,
 all 16 GPR destinations, 16/32/64-bit widths and both carry outcomes. Native
 coverage adds 14 prefixed random cases and three default-policy RDPID cases to
 the original 33. Native carry values remain observations, never forced evidence

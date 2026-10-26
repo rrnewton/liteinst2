@@ -65,7 +65,8 @@ def corpus():
     return {"harness_test_counts": {"serial_launch": {
                 "test/dynamic_admission": {"tests": 7, "ignored": 0},
                 "test/native_selected": {"tests": 50, "ignored": 0}}},
-            "native_cases": declared["native_cases"], "dynamic_admission_fixtures": FIXTURES}
+            "native_cases": declared["native_cases"], "dynamic_admission_fixtures": FIXTURES,
+            "dynamic_matrix_cases": []}
 
 
 def command(status="passed", exit_code=0):
@@ -114,7 +115,7 @@ class DynamicFixtureParsingTests(unittest.TestCase):
                 (fixture_block().replace(last, ""), "dynamic_named_cohort_differs"),
                 (fixture_block().replace(first, first + first), "dynamic_named_cohort_differs"),
                 (fixture_block().replace(FIXTURES[0], "unknown_fixture"), "dynamic_named_cohort_differs"),
-                (fixture_block().replace(FIXTURES[0], "bad::name"), "invalid_dynamic_fixture_name")]:
+                (fixture_block().replace(FIXTURES[0], "bad::name"), "dynamic_named_cohort_differs")]:
             with self.subTest(code=code), self.assertRaisesRegex(parsing.InvalidEvidence, code):
                 dynamic_admission.fixture_results(text, FIXTURES, True)
 
@@ -269,7 +270,7 @@ class DynamicRecorderIntegrationTests(unittest.TestCase):
                 return {"exit_code": 0, "termination": None, "cleanup_complete": True, "seconds": 0.01}
 
             def fail_after_rows(observed, output, expected):
-                for field in ("native_cases", "dynamic_admission_fixtures"):
+                for field in ("native_cases", "dynamic_admission_fixtures", "dynamic_matrix_cases"):
                     observed[field] = [{"command_succeeded": True, "qualified_run": True}]
                 raise RuntimeError("PRIVATE_SENTINEL")
 
@@ -294,17 +295,18 @@ class DynamicRecorderIntegrationTests(unittest.TestCase):
             self.assertEqual(record["status"], "recorder_error")
             self.assertEqual(record["error_type"], "RuntimeError")
             self.assertNotIn("PRIVATE_SENTINEL", json.dumps(record))
-            for field in ("native_cases", "dynamic_admission_fixtures"):
+            for field in ("native_cases", "dynamic_admission_fixtures", "dynamic_matrix_cases"):
                 self.assertFalse(record["commands"][0][field][0]["qualified_run"])
             self.assertTrue(all(row["status"] == "not_run" for row in record["commands"][1:]))
 
     def test_exact_catalog_keeps_seven_fixtures_separate_from_fifty_samples(self):
         declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
-        self.assertEqual(declared["dynamic_admission_fixtures"], FIXTURES)
+        self.assertEqual(declared["dynamic_admission_fixtures"][:7], FIXTURES)
+        self.assertEqual(len(declared["dynamic_admission_fixtures"]), 15)
         self.assertEqual(len(declared["native_cases"]), 50)
         for cohort in declared["harness_test_counts"].values():
-            self.assertEqual(cohort["test/dynamic_admission"], {"tests": 7, "ignored": 0})
-        self.assertEqual(declared["recorder_tests"], 71)
+            self.assertEqual(cohort["test/dynamic_admission"], {"tests": 15, "ignored": 0})
+        self.assertEqual(declared["recorder_tests"], 98)
 
     def test_six_commands_and_existing_deadlines_are_not_extended(self):
         self.assertEqual(run.COMMANDS, [

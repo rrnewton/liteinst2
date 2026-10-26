@@ -20,6 +20,7 @@ GIT = "/usr/bin/git"
 from parsing import InvalidEvidence, parse_harnesses, native_receipts, native_block
 from processes import run_command
 from dynamic_admission import fixture_results
+from dynamic_matrix import matrix_receipts
 
 ENV = {"CARGO_INCREMENTAL": "0", "CARGO_BUILD_JOBS": "4",
        "CARGO_NET_OFFLINE": "true", "RUST_TEST_THREADS": "4",
@@ -230,6 +231,14 @@ def command_evidence(command, output, corpus):
             command["dynamic_admission_fixtures"] = error.partial or []
             command["dynamic_parse_error"] = str(error)
             command["evidence_status"] = "incomplete"
+        try:
+            command["dynamic_matrix_cases"] = matrix_receipts(
+                output, corpus["dynamic_matrix_cases"], corpus["dynamic_admission_fixtures"],
+                command["status"] == "passed")
+        except InvalidEvidence as error:
+            command["dynamic_matrix_cases"] = error.partial or []
+            command["dynamic_matrix_parse_error"] = str(error)
+            command["evidence_status"] = "incomplete"
     if command["evidence_status"] != "complete" and command["status"] == "passed":
         command["status"] = "invalid_evidence"
 
@@ -240,7 +249,7 @@ def qualify(record):
               and all(c["status"] == "passed" for c in record["commands"]))
     record["status"] = "passed" if passed else "failed"
     for command in record["commands"]:
-        for field in ("native_cases", "dynamic_admission_fixtures"):
+        for field in ("native_cases", "dynamic_admission_fixtures", "dynamic_matrix_cases"):
             for row in command.get(field, []):
                 row["qualified_run"] = passed and row.get("command_succeeded", False)
 
@@ -341,7 +350,7 @@ def main():
         record["status"] = ("refused" if record["status"] == "preflight" else
                             "interrupted" if isinstance(error, KeyboardInterrupt) else "recorder_error")
         for command in record["commands"]:
-            for field in ("native_cases", "dynamic_admission_fixtures"):
+            for field in ("native_cases", "dynamic_admission_fixtures", "dynamic_matrix_cases"):
                 for row in command.get(field, []):
                     row["qualified_run"] = False
     finally:

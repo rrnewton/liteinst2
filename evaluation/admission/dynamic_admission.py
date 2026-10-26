@@ -8,10 +8,12 @@ The independent aggregate harness parser and whole-run gates remain required.
 import copy
 import re
 
-from parsing import InvalidEvidence, NAME, harness_id, require
+from parsing import InvalidEvidence, harness_id, require
 
 
 HARNESS = "test/dynamic_admission"
+# Exact Rust module segments, never a substring or arbitrary path.
+FIXTURE_NAME = re.compile(r"[A-Za-z0-9_]+(?:::[A-Za-z0-9_]+)*")
 
 
 def fixture_results(output, fixtures, successful_command):
@@ -22,7 +24,7 @@ def fixture_results(output, fixtures, successful_command):
     Results remain unqualified until the unchanged full protocol succeeds.
     """
     require(isinstance(fixtures, list) and fixtures, "invalid_dynamic_fixture_corpus")
-    require(all(isinstance(name, str) and NAME.fullmatch(name) for name in fixtures),
+    require(all(isinstance(name, str) and FIXTURE_NAME.fullmatch(name) for name in fixtures),
             "invalid_dynamic_fixture_corpus")
     require(len(set(fixtures)) == len(fixtures), "duplicate_dynamic_fixture_corpus")
     require(type(successful_command) is bool, "invalid_dynamic_command_status")
@@ -53,7 +55,7 @@ def fixture_results(output, fixtures, successful_command):
                 raise InvalidEvidence("unrecognized_harness_header")
             if not in_harness:
                 continue
-            start = re.fullmatch(r"test ([A-Za-z0-9_]+) \.\.\. (.*)", line)
+            start = re.fullmatch(r"test (" + FIXTURE_NAME.pattern + r") \.\.\. (.*)", line)
             if start:
                 require(active is None, "dynamic_fixture_missing_terminal")
                 name = start[1]
