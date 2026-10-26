@@ -81,6 +81,88 @@ def file_map(directory):
     return result
 
 
+def depfile_rules(text):
+    # Accept the finite rustc Make-style path grammar, never a substring match.
+    assert text.endswith("\n") and "\r" not in text and "\0" not in text
+    rules = []
+    for line in text.splitlines():
+        if not line.strip():
+            continue
+        words, token, index = [], "", 0
+        while index < len(line):
+            char = line[index]
+            if char == "\\":
+                index += 1
+                assert index < len(line) and line[index] in "\\ \t:#"
+                token += line[index]
+            elif char == "$":
+                index += 1
+                assert index < len(line) and line[index] == "$"
+                token += "$"
+            elif char in " \t:":
+                if token:
+                    words.append(token)
+                    token = ""
+                if char == ":":
+                    words.append(None)
+            else:
+                assert char != "#", "unexpected depfile comment"
+                token += char
+            index += 1
+        if token:
+            words.append(token)
+        assert words.count(None) == 1 and words.index(None) == 1
+        rules.append((words[0], words[2:]))
+    assert rules
+    return rules
+
+
+def bind_core_depfile(text, depfile, products, source_dir, expected, current, test):
+    # The caller supplies the exact Cargo manifest owner and a fresh, symlink-
+    # refusing whole prepared-tree hash map. This function is pure data checking.
+    source_dir = Path(source_dir)
+    assert source_dir.is_absolute() and os.path.normpath(str(source_dir)) == str(source_dir)
+    assert current == expected
+    rules = depfile_rules(text)
+    expected_targets = [str(depfile), *products]
+    assert len(set(expected_targets)) == len(expected_targets)
+    assert all(Path(name).is_absolute() for name in expected_targets)
+    assert rules[0][0] == str(depfile)
+    dependencies = rules[0][1]
+    assert dependencies and len(set(dependencies)) == len(dependencies)
+    product_rules = [(target, deps) for target, deps in rules if deps]
+    assert len(product_rules) == len(expected_targets)
+    assert {target for target, _ in product_rules} == set(expected_targets)
+    assert all(deps == dependencies for _, deps in product_rules)
+    empty_targets = [target for target, deps in rules if not deps]
+    assert len(empty_targets) == len(dependencies) and set(empty_targets) == set(dependencies)
+    sources = {}
+    for spelling in dependencies:
+        if Path(spelling).is_absolute():
+            prefix = str(source_dir) + "/"
+            assert spelling.startswith(prefix), "absolute depfile source has a foreign owner"
+            relative = spelling[len(prefix):]
+        else:
+            relative = spelling
+        components = []
+        for component in relative.split("/"):
+            if component in ("", "."):
+                continue
+            if component == "..":
+                assert components, "depfile source leaves exact package owner"
+                components.pop()
+            else:
+                components.append(component)
+        member = "/".join(components)
+        assert member in expected and member not in sources
+        assert current[member] == expected[member]
+        sources[member] = {"spelling": spelling, "sha256": expected[member]}
+    assert "src/lib.rs" in sources
+    if test:
+        assert "src/emitter_parity.rs" in sources and "src/parity/current_features.rs" in sources
+    return {"package_owner": str(source_dir), "targets": expected_targets, "sources": sources}
+
+
 def main():
     if sys.flags.optimize:
         raise SystemExit("Assertions required")
@@ -291,15 +373,12 @@ def main():
             selected_product = products[str(actual)]["copy"]
             with actual.open("rb") as stream:
                 assert stream.read(8) == b"!<arch>\n"
-        # The complete depfile is retained, and its first source rule must name
-        # this exact fresh crate. Other source dependencies are bound by the
-        # complete prepared-tree pre/post hashes, not filename similarity.
+        # Resolve rustc's relative source spellings against this authenticated
+        # Cargo manifest owner, and bind every dependency to the prepared bytes.
         deptext = depfile.read_text()
-        escaped = str(source_dir / "src/lib.rs").replace("\\", "\\\\").replace(" ", "\\ ")
-        assert escaped in deptext.splitlines()[0] and deptext.endswith("\n")
+        core_depfile = bind_core_depfile(deptext, depfile, item["filenames"], source_dir,
+                                        prepared[side]["prepared_sha256"], file_map(source_dir), test)
         depcopy = retain(depfile, archive / depfile.relative_to(target))
-        if test:
-            assert "src/emitter_parity.rs" in deptext and "src/parity/current_features.rs" in deptext
         iced = [row for row in rows if row["reason"] == "compiler-artifact" and row["target"]["name"] == "iced_x86"]
         assert len(iced) == 1 and iced[0]["target"]["kind"] == ["lib"]
         locked = tomllib.loads((source_dir / "Cargo.lock").read_text())["package"]
@@ -324,7 +403,7 @@ def main():
         iced_depcopy = retain(iced_depfile, archive / iced_depfile.relative_to(target))
         record = {"core": item, "selected_copy": selected_product, "iced": iced[0],
                   "iced_copy": products[iced_libs[0]]["copy"], "products": products,
-                  "depfile": depcopy, "iced_depfile": iced_depcopy,
+                  "depfile": depcopy, "core_depfile_binding": core_depfile, "iced_depfile": iced_depcopy,
                   "iced_manifest_identity": identity(iced_manifest)}
         save(directory / "artifacts.json", record)
         return record
