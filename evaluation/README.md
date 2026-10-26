@@ -241,3 +241,8 @@ The [E9 adapter and comparator controls](e9-sites-controls-e57a72c.md) preserve
 two separate synthetic suites at `e57a72c`, each with three accepted cases and
 24 required refusals. The reviewed replay script and actual CSV/JSON distinguish
 synthetic structural checks from producer and application execution.
+
+The [compiled-corpus reproduction sequence](e9-common-app/PIPELINE.md) links
+the fixed preparation, complete build/inventory, original observation and
+core/E9 production recipes, with their separate revisions and current execution
+limits.
