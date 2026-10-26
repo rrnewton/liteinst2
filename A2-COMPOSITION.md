@@ -113,8 +113,19 @@ all declared original entries, and transaction failures. See
 parity gate passes with exact bytes, maps, contracts and diagnostics; the
 integrated workspace passes its required checks. Additive native fixtures now
 cover a short conditional backedge and a readable/protected-page load anchor;
-see `evidence/a2-chain-branches-faults-20261025.md`. Chain grouping and broader
-branch/memory families remain open.
+see `evidence/a2-chain-branches-faults-20261025.md`. Native qualification of
+grouped chains and broader branch/memory families remain open.
+
+`eviction_chain::plan_successor_chain_grouped` and its detailed variant opt the
+same bounded search into the existing sealed grouped-bundle transaction. Both
+`BundleBudget` and `GroupingBudget` charge actual grouped backing; a chain whose
+images share one page can use a 4 KiB backing limit in both budgets. Every
+virtual mapping, page, byte and span remains charged without a sharing discount.
+Each partial suffix is checked, and backtracking recomputes its grouping from
+that exact member order. Addresses, emitted bytes, source overlays, locks and
+entry/PC maps remain unchanged. The ordinary chain APIs retain private backing
+and their existing checks. This API addition does not itself qualify any native
+execution, broader chain family or full A2 claim.
 
 `neighbor::plan_neighbor` forces T3. A selected 2–4-byte instruction receives
 EB rel8 to a private relay at V+5 inside a whole 10–15-byte victim at V. The

@@ -9,6 +9,7 @@
 use crate::bundle::{BundleBudget, PlannedBundle};
 use crate::contracts::{AddressRange, ExpectedBytes, Refusal};
 use crate::eviction::{image_allocation, instruction_member, near_redirect, qualify_victim};
+use crate::grouping::GroupingBudget;
 use crate::planner::HookSemantics;
 use crate::quiescent::{self, AllocationPolicy, InstallRequest, PlannedInstall, TacticPolicy};
 use crate::scanner::ScanResult;
@@ -204,6 +205,55 @@ pub fn plan_successor_chain_detailed(
     search: ChainSearch<'_>,
     budget: BundleBudget,
 ) -> Result<PlannedChain, ChainFailure> {
+    plan_successor_chain_inner(request, successor_allocations, search, budget, None)
+}
+
+/// Plans the same successor chain with sealed immutable backing groups.
+///
+/// Both budgets apply to every composed suffix. Sharing reduces backing bytes
+/// only; each dictated virtual mapping, page and placement remains charged.
+/// Images retain their original addresses, bytes, routes and PC maps. The
+/// ordinary entrypoints retain private backing and their original budget checks.
+/// Search order, global trial accounting and publication obligations are those
+/// of [`plan_successor_chain`]; this operation does not reserve or map anything.
+pub fn plan_successor_chain_grouped(
+    request: &InstallRequest<'_>,
+    successor_allocations: &[AllocationPolicy],
+    search: ChainSearch<'_>,
+    budget: BundleBudget,
+    grouping: GroupingBudget,
+) -> Result<PlannedChain, Refusal> {
+    plan_successor_chain_grouped_detailed(request, successor_allocations, search, budget, grouping)
+        .map_err(|failure| failure.reason)
+}
+
+/// Detailed grouped chain planner, retaining every refusal and local cutoff.
+///
+/// A grouped chain can use a one-page backing budget in both budgets when all
+/// its images fit one immutable group. Virtual limits are never discounted.
+pub fn plan_successor_chain_grouped_detailed(
+    request: &InstallRequest<'_>,
+    successor_allocations: &[AllocationPolicy],
+    search: ChainSearch<'_>,
+    budget: BundleBudget,
+    grouping: GroupingBudget,
+) -> Result<PlannedChain, ChainFailure> {
+    plan_successor_chain_inner(
+        request,
+        successor_allocations,
+        search,
+        budget,
+        Some(grouping),
+    )
+}
+
+fn plan_successor_chain_inner(
+    request: &InstallRequest<'_>,
+    successor_allocations: &[AllocationPolicy],
+    search: ChainSearch<'_>,
+    budget: BundleBudget,
+    grouping: Option<GroupingBudget>,
+) -> Result<PlannedChain, ChainFailure> {
     let mut metrics = ChainMetrics {
         discovery: ChainDiscovery {
             short_successors: Vec::new(),
@@ -224,11 +274,21 @@ pub fn plan_successor_chain_detailed(
         if successor_allocations.len() != nodes.len() - 1 {
             return Err(Refusal::InvalidPlan);
         }
-        if budget.max_steps < nodes.len()
+        if grouping.is_none() {
+            if budget.max_steps < nodes.len()
+                || budget.max_mappings < nodes.len()
+                || budget.max_virtual_bytes < nodes.len() as u64 * 4096
+                || budget.max_backing_bytes < nodes.len() as u64 * 4096
+            {
+                return Err(Refusal::AllocationUnavailable);
+            }
+        } else if budget.max_steps < nodes.len()
             || budget.max_mappings < nodes.len()
             || budget.max_virtual_bytes < nodes.len() as u64 * 4096
-            || budget.max_backing_bytes < nodes.len() as u64 * 4096
+            || budget.max_backing_bytes < 4096
         {
+            // Every image is nonempty. Sharing can reduce backing to one page,
+            // but cannot reduce the number or extent of virtual allocations.
             return Err(Refusal::AllocationUnavailable);
         }
         let mut occupied = quiescent::occupied_ranges()?;
@@ -239,6 +299,7 @@ pub fn plan_successor_chain_detailed(
             policies: successor_allocations,
             search,
             budget,
+            grouping,
             source,
             scan,
             nodes,
@@ -397,6 +458,7 @@ struct ChainPlanner<'r, 'a, 'p, 'm> {
     policies: &'p [AllocationPolicy],
     search: ChainSearch<'p>,
     budget: BundleBudget,
+    grouping: Option<GroupingBudget>,
     source: AddressRange,
     scan: ScanResult,
     nodes: Vec<OriginalNode>,
@@ -609,14 +671,28 @@ impl ChainPlanner<'_, '_, '_, '_> {
                 };
                 let mut next_members = members.clone();
                 next_members.push(member);
-                let composed = PlannedBundle::compose(
-                    vec![ExpectedBytes {
-                        address: self.source.start(),
-                        bytes: self.request.code.to_vec(),
-                    }],
-                    next_members.clone(),
-                    self.budget,
-                );
+                // Appending an image to deterministic first-fit grouping cannot
+                // reduce an existing suffix's backing or virtual consumption.
+                // Recompute from this exact suffix after every backtrack.
+                let composed = match self.grouping {
+                    Some(grouping) => PlannedBundle::compose_grouped(
+                        vec![ExpectedBytes {
+                            address: self.source.start(),
+                            bytes: self.request.code.to_vec(),
+                        }],
+                        next_members.clone(),
+                        self.budget,
+                        grouping,
+                    ),
+                    None => PlannedBundle::compose(
+                        vec![ExpectedBytes {
+                            address: self.source.start(),
+                            bytes: self.request.code.to_vec(),
+                        }],
+                        next_members.clone(),
+                        self.budget,
+                    ),
+                };
                 let composed = match composed {
                     Ok(bundle) => bundle,
                     Err(reason) => {
