@@ -31,7 +31,8 @@ authored CALL before a single register/XSAVE seed; it never redirects RIP or map
 a LOAD itself. Two heads and two seeds give eight original and sixteen rewritten
 traces, with 72 complete state comparisons, 24 application CALL/RET witnesses,
 eight hook CALL/RET witnesses and four exact recording-hook journal rows.
-The fixed trace inventory is 1,176 files, including six executable copies. Those
+The fixed trace inventory is 1,230 files, including six executable copies, their held-descriptor mount
+records and the mapping-file links at each traced phase. Those
 copies additionally run as ordinary processes and must print exactly
 `elf exec ok` plus a newline and exit successfully. Every phase must pass in
 order; failed attempts retain their logs and do not qualify later phases.

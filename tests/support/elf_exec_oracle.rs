@@ -12,8 +12,12 @@ use std::ffi::CString;
 use std::fs::{File, OpenOptions};
 use std::io::{Read, Write};
 use std::os::fd::AsRawFd;
+use std::os::unix::ffi::OsStrExt;
 use std::os::unix::fs::{MetadataExt, OpenOptionsExt};
 use std::path::{Path, PathBuf};
+
+#[path = "elf_exec_provider.rs"]
+mod provider;
 
 const ENTRY: u64 = 0x401000;
 const SUBJECT: u64 = 0x401100;
@@ -53,6 +57,14 @@ fn write_new(path: &Path, bytes: &[u8]) {
         .unwrap();
 }
 
+fn observe_provider(file: &File) -> (String, provider::Provider) {
+    let fdinfo =
+        std::fs::read_to_string(format!("/proc/self/fdinfo/{}", file.as_raw_fd())).unwrap();
+    let mountinfo = std::fs::read_to_string("/proc/self/mountinfo").unwrap();
+    let provider = provider::parse(&fdinfo, &mountinfo, file.metadata().unwrap().ino()).unwrap();
+    (fdinfo, provider)
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 struct Load {
     offset: u64,
@@ -69,6 +81,7 @@ struct Executable {
     phnum: u16,
     dev: u64,
     inode: u64,
+    provider: provider::Provider,
 }
 impl Executable {
     fn copy(input: &Path, output: &Path) -> Self {
@@ -195,6 +208,17 @@ impl Executable {
             owner, 1,
             "PHDR table must have one actual R-only LOAD owner"
         );
+        let (fdinfo, provider) = observe_provider(&file);
+        let mut record = format!(
+            "elf-exec-provider-v1\nstat_dev\t{}\nstat_inode\t{}\nstat_bytes\t{}\nfdinfo_bytes\t{}\n",
+            stat.dev(), stat.ino(), stat.len(), fdinfo.len()
+        ).into_bytes();
+        record.extend_from_slice(fdinfo.as_bytes());
+        record.extend_from_slice(
+            format!("mount_record_bytes\t{}\n", provider.mount_record.len()).as_bytes(),
+        );
+        record.extend_from_slice(provider.mount_record.as_bytes());
+        write_new(&output.with_extension("provider"), &record);
         Self {
             file,
             path: output.canonicalize().unwrap(),
@@ -204,6 +228,7 @@ impl Executable {
             phnum,
             dev: stat.dev(),
             inode: stat.ino(),
+            provider,
         }
     }
     fn slice(&self, address: u64, len: usize) -> &[u8] {
@@ -232,6 +257,17 @@ impl Executable {
             (stat.dev(), stat.ino(), stat.len()),
             (self.dev, self.inode, self.bytes.len() as u64)
         );
+        assert_eq!(
+            self.path.canonicalize().unwrap().as_os_str(),
+            self.path.as_os_str()
+        );
+        assert!(std::fs::symlink_metadata(&self.path).unwrap().is_file());
+        let path_owner = std::fs::metadata(&self.path).unwrap();
+        assert_eq!(
+            (path_owner.dev(), path_owner.ino(), path_owner.len()),
+            (self.dev, self.inode, self.bytes.len() as u64)
+        );
+        assert_eq!(observe_provider(&self.file).1, self.provider);
         assert_eq!(std::fs::read(&self.path).unwrap(), self.bytes);
     }
     fn original(&self, stripped: bool) {
@@ -279,6 +315,7 @@ impl Executable {
         }
     }
     fn maps(&self, child: &Tracee, capture: &Path, phase: &str) {
+        self.unchanged();
         let executable = std::fs::metadata(format!("/proc/{}/exe", child.pid)).unwrap();
         assert_eq!(
             (executable.dev(), executable.ino(), executable.len()),
@@ -286,6 +323,21 @@ impl Executable {
         );
         let text = std::fs::read_to_string(format!("/proc/{}/maps", child.pid)).unwrap();
         assert!(text.len() <= 65536);
+        write_new(&capture.join(format!("{phase}.maps")), text.as_bytes());
+        let (fdinfo, observed) = observe_provider(&self.file);
+        assert_eq!(observed, self.provider);
+        let child_mountinfo =
+            std::fs::read_to_string(format!("/proc/{}/mountinfo", child.pid)).unwrap();
+        assert_eq!(
+            provider::parse(&fdinfo, &child_mountinfo, self.inode).unwrap(),
+            self.provider
+        );
+        let mut witnesses = OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(capture.join(format!("{phase}.map-files")))
+            .unwrap();
+        witnesses.write_all(b"elf-exec-map-files-v1\n").unwrap();
         let mut maps = Vec::new();
         for line in text.lines() {
             let fields: Vec<_> = line.split_whitespace().collect();
@@ -302,14 +354,19 @@ impl Executable {
             );
             let inode = number(fields[4]);
             if inode != 0 {
+                let path =
+                    std::fs::read_link(format!("/proc/{}/map_files/{}", child.pid, fields[0]))
+                        .unwrap();
+                let path_bytes = path.as_os_str().as_bytes();
+                witnesses
+                    .write_all(format!("{}\t{}\n", fields[0], path_bytes.len()).as_bytes())
+                    .unwrap();
+                witnesses.write_all(path_bytes).unwrap();
+                witnesses.write_all(b"\n").unwrap();
                 assert_eq!(inode, self.inode, "no other file-backed provider");
-                assert_eq!(
-                    device,
-                    (
-                        u64::from(libc::major(self.dev)),
-                        u64::from(libc::minor(self.dev))
-                    )
-                );
+                assert_eq!(device, self.provider.device);
+                provider::map_owner(&self.provider, &self.path, self.inode, device, inode, &path)
+                    .unwrap();
             }
             assert!(
                 end <= GUARD || start >= STACK,
@@ -330,13 +387,7 @@ impl Executable {
                 assert_eq!(owners.len(), 1);
                 let row = owners[0];
                 assert_eq!(row.5, self.inode);
-                assert_eq!(
-                    row.4,
-                    (
-                        u64::from(libc::major(self.dev)),
-                        u64::from(libc::minor(self.dev))
-                    )
-                );
+                assert_eq!(row.4, self.provider.device);
                 assert_eq!(
                     row.3 + address - row.0,
                     load.offset + address - load.address
@@ -387,7 +438,7 @@ impl Executable {
             "freestanding kernel load, no interpreter"
         );
         write_new(&capture.join(format!("{phase}.auxv")), &auxv);
-        write_new(&capture.join(format!("{phase}.maps")), text.as_bytes());
+        self.unchanged();
     }
     fn immutable(&self, child: &Tracee) {
         for load in &self.loads {

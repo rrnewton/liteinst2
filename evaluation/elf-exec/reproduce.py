@@ -297,6 +297,7 @@ def main():
         save("candidate-files-after.json", after)
         capture_files = {"original-unstripped", "original-stripped", "runtime-target.tsv", "complete.tsv"}
         capture_files.update("candidate-" + str(index) for index in range(4))
+        capture_files.update(name + ".provider" for name, _ in copies)
         loaded_pages = [0x400000, 0x401000, 0x403000, 0x404000] + list(range(0x406000, 0x416000, 4096))
         trace_directories = set()
         for strip_state in range(2):
@@ -306,6 +307,7 @@ def main():
                         directory = f"strip-{strip_state}-head-{head}-seed-{seed}-{variant}"
                         trace_directories.add(directory)
                         names = {"exec.auxv", "exec.maps", "terminal.auxv", "terminal.maps",
+                                 "exec.map-files", "terminal.map-files",
                                  "startup-pcs.bin", "before-seed.tsv", "journal.bin", "complete.tsv"}
                         pages = loaded_pages + ([] if variant == "original" else [0x418000, 0x420000])
                         names.update(f"loaded-{address:x}.bin" for address in pages)
@@ -314,7 +316,7 @@ def main():
                         if variant != "original" and head == 0:
                             names.update(("hook-call.tsv", "hook-ret.tsv", "hook-context.bin", "hook-saved-xstate.bin"))
                         capture_files.update(directory + "/" + name for name in names)
-        assert len(trace_directories) == 24 and len(capture_files) == 1176
+        assert len(trace_directories) == 24 and len(capture_files) == 1230
         captures_list = list(captures.rglob("*"))
         assert all(not p.is_symlink() and (p.is_dir() or p.is_file()) for p in captures_list)
         assert {str(p.relative_to(captures)) for p in captures_list if p.is_dir()} == trace_directories
