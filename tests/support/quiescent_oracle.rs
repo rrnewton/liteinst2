@@ -1996,3 +1996,8 @@ mod calibration {
 #[allow(dead_code)]
 #[path = "process_text.rs"]
 pub mod process_text;
+
+// Additive normal-kernel-exec fixture adapter; all existing oracle bodies remain literal.
+#[allow(dead_code)]
+#[path = "elf_exec_oracle.rs"]
+pub mod elf_exec_oracle;

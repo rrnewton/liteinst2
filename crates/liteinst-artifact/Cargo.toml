@@ -1,0 +1,11 @@
+[package]
+name = "liteinst-artifact"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "BSD-2-Clause"
+description = "Bounded content metadata and sparse overlays for liteinst2"
+publish = false
+
+[dependencies]
+sha2 = "=0.10.9"

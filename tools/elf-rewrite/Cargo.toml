@@ -1,0 +1,20 @@
+[package]
+name = "liteinst-rewrite"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "BSD-2-Clause"
+description = "Standalone core-driven ELF candidate emission"
+publish = false
+
+[lib]
+name = "liteinst_rewrite"
+path = "src/lib.rs"
+
+[[bin]]
+name = "liteinst-rewrite"
+path = "src/main.rs"
+
+[dependencies]
+li2core = { package = "liteinst2", path = "../.." }
+formats = { package = "liteinst-artifact", path = "../../crates/liteinst-artifact" }
