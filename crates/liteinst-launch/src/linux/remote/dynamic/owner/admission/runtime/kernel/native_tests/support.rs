@@ -5,6 +5,7 @@ use crate::linux::remote::dynamic::owner::admission::runtime::native_tests::{
 use crate::linux::remote::dynamic::owner::tests::{Fixture, Harness, pin, reaped};
 use crate::linux::remote::dynamic::{Request as DynamicRequest, Response};
 use std::fs::File;
+use std::io::Write;
 use std::os::fd::{AsRawFd, OwnedFd};
 use std::os::unix::fs::FileExt;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
@@ -20,6 +21,23 @@ pub(super) const SCRIPT: SelectedResult = SelectedResult::Cpuid {
     edx: 0xabcd_1234,
 };
 static SESSION: AtomicU64 = AtomicU64::new(950_000);
+
+pub(super) fn failure_diagnostic(label: &str, message: &str) {
+    let bytes = message.as_bytes();
+    let _ = writeln!(
+        std::io::stderr().lock(),
+        "runtime kernel {label}: {:?}",
+        String::from_utf8_lossy(&bytes[..bytes.len().min(8192)])
+    );
+}
+pub(super) fn panic_diagnostic(label: &str, payload: &(dyn std::any::Any + Send)) {
+    let message = payload
+        .downcast_ref::<String>()
+        .map(String::as_str)
+        .or_else(|| payload.downcast_ref::<&str>().copied())
+        .unwrap_or("non-string panic payload");
+    failure_diagnostic(label, message);
+}
 
 pub(super) fn live(pin: &OwnedFd) {
     let mut event = libc::pollfd {
@@ -141,8 +159,11 @@ pub(super) fn with_owner(
             pin(harness.owner().broker.as_ref().unwrap().pid),
         )
     }));
-    let (app, broker) = pins.unwrap_or_else(|_| {
-        let _ = harness.owner().cleanup();
+    let (app, broker) = pins.unwrap_or_else(|payload| {
+        panic_diagnostic("initial pins", payload.as_ref());
+        if let Err(error) = harness.owner().cleanup() {
+            failure_diagnostic("pin cleanup", &format!("{error:?}"));
+        }
         std::process::abort()
     });
     assert_ne!(app.as_raw_fd(), broker.as_raw_fd());
@@ -191,10 +212,14 @@ pub(super) fn with_owner(
             harness.owner().kernel_journal.reader().snapshot(),
         )
     }));
-    let cleanup = harness
-        .owner()
-        .cleanup()
-        .unwrap_or_else(|_| std::process::abort());
+    if let Err(payload) = &outcome {
+        // Preserve the first assertion failure before cleanup can fail-stop.
+        panic_diagnostic("native body", payload.as_ref());
+    }
+    let cleanup = harness.owner().cleanup().unwrap_or_else(|error| {
+        failure_diagnostic("physical cleanup", &format!("{error:?}"));
+        std::process::abort()
+    });
     assert_eq!(cleanup.reaped, [launched.pid]);
     reaped(&app);
     reaped(&broker);

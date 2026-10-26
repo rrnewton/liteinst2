@@ -187,14 +187,21 @@ pub(super) fn consumer(number: u8, terminate: u8, cpu: bool) {
         archive::journal(&last.runtime_attempts[1], &expected, None, pid);
         before_cleanup = Some(last.runtime_attempts);
     }));
+    if let Err(payload) = &outcome {
+        panic_diagnostic("public body", payload.as_ref());
+    }
     let pid = session.as_ref().unwrap().pid();
     let cleanup = session
         .take()
         .unwrap()
         .terminate(TIMEOUT)
-        .unwrap_or_else(|_| std::process::abort());
+        .unwrap_or_else(|error| {
+            failure_diagnostic("public physical cleanup", &format!("{error:?}"));
+            std::process::abort()
+        });
     assert_eq!(cleanup.reaped, [pid]);
     let (Some(app), Some(broker)) = (app, broker) else {
+        failure_diagnostic("public pins", "missing application or broker pin");
         std::process::abort()
     };
     reaped(&app);
