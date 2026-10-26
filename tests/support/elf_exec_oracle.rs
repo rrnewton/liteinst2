@@ -22,6 +22,9 @@ pub mod tactics;
 #[path = "e9_common_app.rs"]
 pub mod common_app;
 
+#[path = "e9_common_image.rs"]
+pub mod common_image;
+
 #[path = "elf_exec_provider.rs"]
 mod provider;
 
