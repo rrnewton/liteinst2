@@ -86,18 +86,17 @@ contracts remain separate.
 
 ## Evidence scope
 
-This document describes a source implementation pending exact-revision native
-qualification. Qualification requires the existing complete-body process
-isolation, original operation deadlines, literal full-state comparisons and
-physical cleanup checks. The reproducible recorder retains the same six bounded
-commands; its exact-revision receipts must supply executed results. Pure controls are identified
-separately and supply no native qualification by themselves. Compiler-produced
-consumer results require a recorded compiler identity, exact command and
-artifact identity; hand-encoded puzzle fixtures are not described as compiled
-programs.
+Exact source `aa8aa54ceeab9f35c8583fa65ee452fe4bcfeaa2` passed the
+[recorded native qualification](runtime-kernel-results.md), including six new
+native controls, the fixed six bounded commands and eight default-parallel
+repetitions. The controls retain complete-body process isolation, original
+operation deadlines, literal full-state comparisons and physical cleanup checks.
+Pure controls remain identified separately and supply no native qualification
+by themselves. Compiler-produced consumer results require a recorded compiler
+identity, exact command and artifact identity; no such consumer was run in this
+revision, and hand-encoded puzzle fixtures are not described as compiled programs.
 
-The intended native evidence for this finite extension targets claims 1, 2
-and 4. The source implementation alone does not establish
+The finite native evidence targets claims 1, 2 and 4. It does not establish
 loader/TLS/I/O support, memory/stack or indirect ordinary execution, thread,
 signal or fork/exec composition, dlopen/JIT, arbitrary application coverage,
 persistent shared artifact activation, performance or claim 3's software
