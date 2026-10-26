@@ -157,7 +157,7 @@ fn pin(pid: libc::pid_t) -> OwnedFd {
     unsafe { OwnedFd::from_raw_fd(raw as i32) }
 }
 
-fn reaped(handle: &OwnedFd) {
+fn tracer_retired(handle: &OwnedFd) {
     let mut event = libc::pollfd {
         fd: handle.as_raw_fd(),
         events: libc::POLLIN,
@@ -187,6 +187,14 @@ fn reaped(handle: &OwnedFd) {
     assert_eq!(
         io::Error::last_os_error().raw_os_error(),
         Some(libc::ECHILD)
+    );
+}
+
+fn reaped(handle: &OwnedFd) {
+    tracer_retired(handle);
+    assert!(
+        broker::hup(handle),
+        "original task remains physically present"
     );
 }
 
@@ -290,7 +298,11 @@ fn late_parent_payload_cannot_reacquire_a_reaped_child_identity() {
         assert_eq!(status >> 16, libc::PTRACE_EVENT_EXIT);
         ptrace(libc::PTRACE_CONT, child, 0, 0).unwrap();
     }
-    reaped(&child_handle);
+    tracer_retired(&child_handle);
+    assert!(
+        !broker::hup(&child_handle),
+        "held real parent must still own the zombie"
+    );
     assert!(!harness.owner().owned.contains(&child));
     harness
         .owner()
@@ -303,6 +315,7 @@ fn late_parent_payload_cannot_reacquire_a_reaped_child_identity() {
     assert_eq!(cleanup.reaped.len(), 2);
     assert!(cleanup.reaped.contains(&ready.pid));
     assert!(cleanup.reaped.contains(&child));
+    reaped(&child_handle);
 }
 
 #[test]
@@ -420,16 +433,28 @@ fn bootstrap_and_seized_cleanup_survive_sigchld_autoreap_in_isolated_process() {
             assert!(pid > 0);
             let handle = harness.owner().handles[&pid].try_clone().unwrap();
             if fail_before_seize {
-                let (tid, status) = harness
+                // H is not the real parent before SEIZE. Authenticate R's
+                // actual natural-parent SIGKILL wait; never invent ptrace wait.
+                harness
                     .owner()
-                    .wait_raw(
-                        Instant::now() + TIMEOUT,
-                        "private killed bootstrap terminal",
-                    )
+                    .broker
+                    .as_mut()
+                    .unwrap()
+                    .acknowledge(false)
                     .unwrap();
-                assert_eq!(tid, pid);
-                assert!(libc::WIFSIGNALED(status));
-                assert_eq!(libc::WTERMSIG(status), libc::SIGKILL);
+                let until = Instant::now() + TIMEOUT;
+                loop {
+                    harness.owner().poll_broker().unwrap();
+                    if let Some(&status) =
+                        harness.owner().broker.as_ref().unwrap().physical.get(&pid)
+                    {
+                        assert!(libc::WIFSIGNALED(status));
+                        assert_eq!(libc::WTERMSIG(status), libc::SIGKILL);
+                        break;
+                    }
+                    assert!(Instant::now() < until, "missing physical bootstrap receipt");
+                    std::thread::sleep(Duration::from_millis(1));
+                }
             }
             assert_eq!(harness.finish().reaped, [pid]);
             reaped(&handle);
@@ -608,4 +633,153 @@ fn queued_syscall_stop_preserves_deferred_interrupt_then_job_control() {
     assert_eq!(xstate(ready.pid).unwrap(), state);
     assert_eq!(harness.finish().reaped, [ready.pid]);
     reaped(&handle);
+}
+
+#[test]
+fn helper_failure_after_application_clone_before_ready_still_drains_both() {
+    let fixture = Fixture::new(false);
+    let mut harness = Harness::new();
+    harness.owner().fail_before_ready = true;
+    assert!(matches!(
+        harness.launch(&fixture),
+        Err(LaunchError::Invalid("private reaper bootstrap failed"))
+    ));
+    assert_eq!(harness.owner().pid, 0, "no Ready identity was fabricated");
+    let helper = harness.owner().broker.as_ref().unwrap().pid;
+    let helper_handle = pin(helper);
+    // R has not received Abort and therefore retains even a dead A unreaped.
+    let app = harness
+        .owner()
+        .broker
+        .as_ref()
+        .unwrap()
+        .failure_root
+        .unwrap();
+    assert!(app > 0 && app != helper);
+    let app_handle = pin(app);
+    assert!(!broker::hup(&app_handle));
+    let result = harness.owner().cleanup();
+    assert!(
+        result.is_err(),
+        "failed bootstrap cannot produce successful cleanup qualification"
+    );
+    let physical = &harness.owner().broker.as_ref().unwrap().physical;
+    assert_eq!(physical.len(), 1);
+    assert!(libc::WIFSIGNALED(physical[&app]));
+    assert_eq!(libc::WTERMSIG(physical[&app]), libc::SIGKILL);
+    assert!(harness.owner().broker.as_ref().unwrap().done);
+    reaped(&app_handle);
+    reaped(&helper_handle);
+    harness.owner.take();
+    harness.mask.take().unwrap().restore().unwrap();
+}
+
+#[test]
+fn abort_before_seize_acknowledgement_keeps_broker_cleanup_owned() {
+    let fixture = Fixture::new(false);
+    let mut harness = Harness::new();
+    harness.owner().abort_before_seize = true;
+    assert!(matches!(
+        harness.launch(&fixture),
+        Err(LaunchError::Invalid("injected abort before SEIZE"))
+    ));
+    assert!(!harness.owner().attached);
+    let app = harness.owner().pid;
+    let app_handle = harness.owner().handles[&app].try_clone().unwrap();
+    let helper = harness.owner().broker.as_ref().unwrap().pid;
+    let helper_handle = pin(helper);
+    assert!(!broker::hup(&app_handle));
+    assert!(!broker::hup(&helper_handle));
+    // Harness Drop takes the same cancellation path without a successful
+    // attachment acknowledgement or an earlier test-generated SIGKILL.
+    drop(harness);
+    reaped(&app_handle);
+    reaped(&helper_handle);
+}
+
+#[test]
+fn helper_eof_without_done_reports_failure_after_physical_cleanup() {
+    let fixture = Fixture::new(false);
+    let mut harness = Harness::new();
+    let ready = harness.launch(&fixture).unwrap();
+    let app_handle = pin(ready.pid);
+    let helper_handle = pin(harness.owner().broker.as_ref().unwrap().pid);
+    harness
+        .owner()
+        .broker
+        .as_ref()
+        .unwrap()
+        .disconnect_for_test();
+    assert!(
+        harness.owner().cleanup().is_err(),
+        "missing Done cannot become successful cleanup"
+    );
+    assert!(!harness.owner().broker.as_ref().unwrap().done);
+    assert!(harness.owner().owned.is_empty());
+    assert!(harness.owner().tracer_terminal.contains_key(&ready.pid));
+    reaped(&app_handle);
+    reaped(&helper_handle);
+    harness.owner.take();
+    harness.mask.take().unwrap().restore().unwrap();
+}
+
+#[test]
+fn newborn_pidfd_failure_retains_wait_authority_and_drains_without_qualification() {
+    let fixture = Fixture::new(true);
+    let mut harness = Harness::new();
+    let ready = harness.launch(&fixture).unwrap();
+    let root_handle = pin(ready.pid);
+    let helper_handle = pin(harness.owner().broker.as_ref().unwrap().pid);
+    harness.owner().deny_pin_for_test = true;
+    ptrace(libc::PTRACE_CONT, ready.pid, 0, 0).unwrap();
+    let until = Instant::now() + TIMEOUT;
+    let mut child = None;
+    loop {
+        match harness
+            .owner()
+            .wait_raw(until, "private newborn pidfd failure")
+        {
+            Ok((tid, status)) => {
+                assert_eq!(tid, ready.pid);
+                assert_eq!(status >> 16, libc::PTRACE_EVENT_FORK);
+                let mut pid = 0_u64;
+                ptrace(libc::PTRACE_GETEVENTMSG, tid, 0, (&raw mut pid) as usize).unwrap();
+                child = Some(i32::try_from(pid).unwrap());
+                harness.owner().discover_event_child(tid, status);
+            }
+            Err(LaunchError::System {
+                operation: "pidfd_open dynamic process",
+                source,
+            }) => {
+                assert_eq!(source.raw_os_error(), Some(libc::EMFILE));
+                break;
+            }
+            other => panic!("unexpected allocation-failure fixture event: {other:?}"),
+        }
+    }
+    let child = child.unwrap_or_else(|| {
+        *harness
+            .owner()
+            .owned
+            .iter()
+            .find(|&&tid| tid != ready.pid)
+            .unwrap()
+    });
+    assert!(harness.owner().owned.contains(&child));
+    assert!(!harness.owner().handles.contains_key(&child));
+    // This independent fixture pin strengthens final evidence. It is never
+    // supplied to the owner whose actual allocation failure is under test.
+    let child_handle = pin(child);
+    assert!(
+        harness.owner().cleanup().is_err(),
+        "missing owner pin cannot qualify HUP cleanup"
+    );
+    assert!(harness.owner().owned.is_empty());
+    assert!(harness.owner().tracer_terminal.contains_key(&child));
+    assert!(harness.owner().broker.as_ref().unwrap().done);
+    reaped(&root_handle);
+    reaped(&child_handle);
+    reaped(&helper_handle);
+    harness.owner.take();
+    harness.mask.take().unwrap().restore().unwrap();
 }

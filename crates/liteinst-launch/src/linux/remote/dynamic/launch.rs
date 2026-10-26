@@ -151,9 +151,6 @@ pub(super) fn start(
     let parent_fd = release_parent.as_raw_fd();
     let error_fd = error_write.as_raw_fd();
     let error_reader = error_read.as_raw_fd();
-    let program_pointer = program.as_ptr();
-    let argv_pointer = argv.as_ptr();
-    let envp_pointer = envp.as_ptr();
     owner.time_left(until, "seized launch preparation")?;
     let all_blockable = !(1_u64 << (libc::SIGKILL - 1)) & !(1_u64 << (libc::SIGSTOP - 1));
     if current_mask()? != all_blockable {
@@ -161,55 +158,21 @@ pub(super) fn start(
             "dynamic tracer does not block every blockable signal",
         ));
     }
-    let mut process_fd = -1_i32;
-    // SAFETY: the raw Linux clone deliberately avoids arbitrary pthread_atfork
-    // handlers. The child calls only raw syscalls then execve/_exit; all storage
-    // and pointers are prepared, and all blockable signals remain blocked. With
-    // no CLONE_VM and a null child stack, the child has fork-equivalent storage.
-    // CLONE_PIDFD returns signalling identity atomically. Exit signal zero keeps
-    // the pre-SEIZE child waitable under __WALL even if SIGCHLD is ignored.
-    let raw_pid = unsafe {
-        libc::syscall(
-            libc::SYS_clone,
-            libc::CLONE_PIDFD,
-            std::ptr::null::<u8>(),
-            &raw mut process_fd,
-            std::ptr::null::<u8>(),
-            0,
-        )
+    let bootstrap = Bootstrap {
+        release: child_fd,
+        parent_release: parent_fd,
+        error_read: error_reader,
+        error_write: error_fd,
+        program: program.as_ptr(),
+        argv: argv.as_ptr(),
+        envp: envp.as_ptr(),
+        #[cfg(test)]
+        fail_before_ready: owner.fail_before_ready,
     };
-    if raw_pid == 0 {
-        // SAFETY: these descriptors and immutable pointers were prepared above.
-        unsafe {
-            child_bootstrap(
-                child_fd,
-                parent_fd,
-                error_reader,
-                error_fd,
-                program_pointer,
-                argv_pointer,
-                envp_pointer,
-            )
-        }
-    }
-    let fork_error = (raw_pid == -1).then(io::Error::last_os_error);
-    if raw_pid > 0 {
-        // Establish cleanup ownership before any fallible operation. This clone
-        // child remains unreaped in our __WALL domain before SEIZE as well.
-        owner.register_root(raw_pid as libc::pid_t);
-        if process_fd >= 0 {
-            // SAFETY: CLONE_PIDFD atomically returned one newly owned descriptor.
-            owner.pin_root(unsafe { OwnedFd::from_raw_fd(process_fd) });
-        }
-    }
-    if let Some(error) = fork_error {
-        return Err(io_error("raw seized launch clone", error));
-    }
-    if process_fd < 0 {
-        return Err(LaunchError::Invalid("CLONE_PIDFD returned no descriptor"));
-    }
+    owner.spawn_broker(bootstrap)?;
     drop(release_child);
     drop(error_write);
+    owner.wait_broker_ready(until)?;
     let pid = owner.pid;
     owner.time_left(until, "seize launch child")?;
     #[cfg(test)]
@@ -217,7 +180,12 @@ pub(super) fn start(
         owner.kill_bootstrap_for_test()?;
         return Err(LaunchError::Invalid("injected cancellation before SEIZE"));
     }
+    #[cfg(test)]
+    if owner.abort_before_seize {
+        return Err(LaunchError::Invalid("injected abort before SEIZE"));
+    }
     ptrace(libc::PTRACE_SEIZE, pid, 0, OPTIONS)?;
+    owner.seized()?;
     ptrace(libc::PTRACE_INTERRUPT, pid, 0, 0)?;
     let (tid, status) = owner.wait_raw(until, "initial seized interruption")?;
     if tid != pid
@@ -278,7 +246,8 @@ pub(super) fn start(
     Ok(Ready { pid, event })
 }
 
-unsafe fn child_bootstrap(
+#[derive(Clone, Copy)]
+pub(super) struct Bootstrap {
     release: i32,
     parent_release: i32,
     error_read: i32,
@@ -286,7 +255,32 @@ unsafe fn child_bootstrap(
     program: *const libc::c_char,
     argv: *const *const libc::c_char,
     envp: *const *const libc::c_char,
-) -> ! {
+    #[cfg(test)]
+    pub(super) fail_before_ready: bool,
+}
+impl Bootstrap {
+    pub(super) unsafe fn close_all(self) {
+        // SAFETY: this runs only in the raw helper's copied descriptor table.
+        unsafe {
+            libc::syscall(libc::SYS_close, self.release);
+            libc::syscall(libc::SYS_close, self.parent_release);
+            libc::syscall(libc::SYS_close, self.error_read);
+            libc::syscall(libc::SYS_close, self.error_write);
+        }
+    }
+}
+
+pub(super) unsafe fn child_bootstrap(bootstrap: Bootstrap) -> ! {
+    let Bootstrap {
+        release,
+        parent_release,
+        error_read,
+        error_write,
+        program,
+        argv,
+        envp,
+        ..
+    } = bootstrap;
     // SAFETY: only raw syscalls touch the copied post-fork state.
     unsafe {
         libc::syscall(libc::SYS_close, parent_release);

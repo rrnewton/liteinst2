@@ -22,6 +22,36 @@ and 14 explicit lifecycle/syscall-personality refusal rows. Cleanup does not
 count an issued signal as a terminal receipt, and an unconfirmed SIGKILL cannot
 authorize resuming original instructions.
 
+## Private real-parent reaper
+
+The corrected controller uses a dedicated host tracer thread and a private
+raw-syscall reaper process. The reaper is the application's real parent and
+sets its own child-subreaper flag. The host's process-wide setting is unchanged.
+This topology changes the application's observable `getppid()` result: it names
+the private reaper. It is part of this launch contract, not an assertion of
+equivalence with launching directly from the embedding process.
+
+Both clones acquire pidfds atomically with exit signal zero. The application
+copies the inherited signal dispositions, process group and session before the
+reaper resets its own SIGCHLD disposition and creates its own session. After
+that copy, the reaper closes unrelated inherited descriptors. Its post-clone
+path uses fixed storage and raw syscalls, without allocation or host callbacks.
+
+The reaper transfers the application's pidfd over a private credential-checked
+channel and retains the unreaped root identity until attachment is acknowledged
+or abandoned. The tracer peeks at waits and pins newly observed identities before
+consuming terminal statuses. Its terminal receipts retire numeric signalling
+authority; they do not themselves establish physical removal. Final cleanup
+also requires the reaper's natural-parent `ECHILD` receipt, disappearance of
+retained application identities and reaping of the private reaper itself.
+Client timeout requests cancellation while the original owner keeps draining;
+it does not authorize killing the reaper before its descendants are gone.
+
+These implementation requirements remain unqualified until a complete exact
+revision run passes. The separate fork diagnostic and strengthened public
+oracles retain the original assertions and additionally check pidfd `POLLHUP`,
+helper disappearance, host subreaper state and unrelated-child waitability.
+
 ## Kernel ownership argument
 
 The source review uses upstream Linux v7.1.3. Matching a numeric upstream

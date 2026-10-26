@@ -31,10 +31,19 @@ pub(super) struct Owner {
     handles: BTreeMap<libc::pid_t, OwnedFd>,
     reaped: Vec<libc::pid_t>,
     lost_wait: bool,
+    broker: Option<broker::Broker>,
+    attached: bool,
+    tracer_terminal: BTreeMap<libc::pid_t, i32>,
     #[cfg(test)]
     pub(super) fail_before_seize: bool,
     #[cfg(test)]
+    pub(super) fail_before_ready: bool,
+    #[cfg(test)]
+    pub(super) abort_before_seize: bool,
+    #[cfg(test)]
     deny_kill_for_test: bool,
+    #[cfg(test)]
+    deny_pin_for_test: bool,
 }
 
 pub(super) fn run(start: TracerStart) {
@@ -95,18 +104,93 @@ impl Owner {
             handles: BTreeMap::new(),
             reaped: Vec::new(),
             lost_wait: false,
+            broker: None,
+            attached: false,
+            tracer_terminal: BTreeMap::new(),
             #[cfg(test)]
             fail_before_seize: false,
             #[cfg(test)]
+            fail_before_ready: false,
+            #[cfg(test)]
+            abort_before_seize: false,
+            #[cfg(test)]
             deny_kill_for_test: false,
+            #[cfg(test)]
+            deny_pin_for_test: false,
         }
     }
-    pub(super) fn register_root(&mut self, pid: libc::pid_t) {
-        self.pid = pid;
-        self.owned.insert(pid);
+    pub(super) fn spawn_broker(&mut self, bootstrap: launch::Bootstrap) -> Result<(), LaunchError> {
+        self.broker = Some(broker::Broker::spawn(self.session, bootstrap)?);
+        Ok(())
     }
-    pub(super) fn pin_root(&mut self, handle: OwnedFd) {
-        self.handles.insert(self.pid, handle);
+    fn poll_broker(&mut self) -> Result<(), LaunchError> {
+        let Some(broker) = &mut self.broker else {
+            return Ok(());
+        };
+        let result = broker.poll();
+        if let Some((pid, handle)) = broker.root.take() {
+            if self.pid != 0 {
+                return Err(LaunchError::Invalid("duplicate application identity"));
+            }
+            self.pid = pid;
+            self.owned.insert(pid);
+            self.handles.insert(pid, handle);
+        }
+        // Before SEIZE, only the real parent can wait for A. This authentic
+        // natural-parent receipt replaces no ptrace status and grants no new
+        // numeric signalling authority.
+        if !self.attached && self.pid > 0 && broker.physical.contains_key(&self.pid) {
+            self.owned.remove(&self.pid);
+            if !self.reaped.contains(&self.pid) {
+                self.reaped.push(self.pid);
+            }
+        }
+        result
+    }
+    pub(super) fn wait_broker_ready(&mut self, until: Instant) -> Result<(), LaunchError> {
+        loop {
+            self.time_left(until, "private reaper bootstrap")?;
+            self.poll_broker()?;
+            if self.pid > 0 {
+                return Ok(());
+            }
+            std::thread::sleep(Duration::from_millis(1));
+        }
+    }
+    pub(super) fn seized(&mut self) -> Result<(), LaunchError> {
+        // Establish ptrace numeric authority before the fallible acknowledgement.
+        // R cannot reap A until it has received Seized or cleanup's Abort.
+        self.attached = true;
+        self.broker
+            .as_mut()
+            .ok_or(LaunchError::Invalid("missing private reaper"))?
+            .acknowledge(true)
+    }
+    fn wait_physical(
+        &mut self,
+        tid: libc::pid_t,
+        status: i32,
+        until: Instant,
+    ) -> Result<(), LaunchError> {
+        loop {
+            self.time_left(until, "physical application reap")?;
+            self.poll_broker()?;
+            let broker = self
+                .broker
+                .as_ref()
+                .ok_or(LaunchError::Invalid("missing physical reaper"))?;
+            if let Some(&physical_status) = broker.physical.get(&tid) {
+                if status != physical_status {
+                    return Err(LaunchError::Invalid(
+                        "physical and ptrace terminal status differ",
+                    ));
+                }
+                if self.handles.get(&tid).is_some_and(broker::hup) {
+                    return Ok(());
+                }
+            }
+            std::thread::sleep(Duration::from_millis(1));
+        }
     }
     #[cfg(test)]
     pub(super) fn kill_bootstrap_for_test(&self) -> Result<(), LaunchError> {
@@ -148,8 +232,20 @@ impl Owner {
         if self.handles.contains_key(&pid) {
             return Ok(());
         }
+        #[cfg(test)]
+        if self.deny_pin_for_test {
+            return Err(io_error(
+                "pidfd_open dynamic process",
+                io::Error::from_raw_os_error(libc::EMFILE),
+            ));
+        }
         // SAFETY: pid is an exclusively owned, unreaped process incarnation.
-        let descriptor = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) };
+        let mut descriptor = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, 0) };
+        if descriptor < 0 && io::Error::last_os_error().raw_os_error() == Some(libc::EINVAL) {
+            // Linux PIDFD_THREAD == O_EXCL pins a nonleader task as well. This
+            // is required before consuming a terminal wait, not after reuse.
+            descriptor = unsafe { libc::syscall(libc::SYS_pidfd_open, pid, libc::O_EXCL) };
+        }
         if descriptor < 0 {
             return Err(system("pidfd_open dynamic process"));
         }
@@ -164,38 +260,81 @@ impl Owner {
             self.owned.remove(&tid);
             self.stopped.remove(&tid);
             self.reaped.push(tid);
+            self.tracer_terminal.insert(tid, status);
         }
     }
     fn poll_raw(&mut self) -> Result<Option<(libc::pid_t, i32)>, LaunchError> {
+        // WNOWAIT preserves identity until the atomic pidfd has been acquired.
+        // A terminal newborn may be observed before its parent's creation event;
+        // pinning after waitpid would race the real parent's physical reap.
+        let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+        let peek = unsafe {
+            libc::waitid(
+                libc::P_ALL,
+                0,
+                &raw mut info,
+                libc::WEXITED
+                    | libc::WSTOPPED
+                    | libc::WNOHANG
+                    | libc::WNOWAIT
+                    | libc::__WALL
+                    | libc::__WNOTHREAD,
+            )
+        };
+        if peek < 0 {
+            let error = io::Error::last_os_error();
+            return if error.kind() == io::ErrorKind::Interrupted {
+                Ok(None)
+            } else {
+                Err(io_error("wait dynamic tracer domain", error))
+            };
+        }
+        let tid = unsafe { info.si_pid() };
+        if tid == 0 {
+            return Ok(None);
+        }
+        let helper = self.broker.as_ref().is_some_and(|broker| broker.pid == tid);
+        if !helper {
+            // WNOWAIT itself grants exact unreaped numeric authority. Register
+            // it before pidfd allocation, which may fail (for example EMFILE).
+            self.owned.insert(tid);
+            if let Err(error) = self.pin_process(tid) {
+                if !self.closing {
+                    return Err(error);
+                }
+                // Cleanup still consumes/kills/drains this owned incarnation,
+                // but cannot claim the missing independent HUP witness.
+                self.lost_wait = true;
+            }
+        }
         let mut status = 0;
-        // SAFETY: this dedicated tracer thread creates no unrelated children and
-        // invokes no supplied callbacks. The embedding contract also prohibits
-        // global hooks from creating children here. __WNOTHREAD excludes other
-        // host threads' children.
-        let tid = unsafe {
+        // SAFETY: exclusively owned thread wait domain; the exact WNOWAIT
+        // identity above remains held. The helper is never an application task.
+        let consumed = unsafe {
             libc::waitpid(
-                -1,
+                tid,
                 &raw mut status,
                 libc::WNOHANG | libc::__WALL | libc::__WNOTHREAD,
             )
         };
-        if tid > 0 {
-            if libc::WIFSTOPPED(status) {
-                self.owned.insert(tid);
-                self.stopped.insert(tid, status);
-            }
-            self.terminal(tid, status);
-            Ok(Some((tid, status)))
-        } else if tid == 0 {
-            Ok(None)
-        } else {
-            let error = io::Error::last_os_error();
-            if error.kind() == io::ErrorKind::Interrupted {
-                Ok(None)
-            } else {
-                Err(io_error("wait dynamic tracer domain", error))
-            }
+        if consumed != tid {
+            return Err(system("consume pinned dynamic wait"));
         }
+        if helper {
+            if libc::WIFEXITED(status) || libc::WIFSIGNALED(status) {
+                self.broker.as_mut().unwrap().terminal(status);
+                self.poll_broker()?;
+            } else {
+                return Err(LaunchError::Invalid("private reaper unexpectedly stopped"));
+            }
+            return Ok(None);
+        }
+        if libc::WIFSTOPPED(status) {
+            self.owned.insert(tid);
+            self.stopped.insert(tid, status);
+        }
+        self.terminal(tid, status);
+        Ok(Some((tid, status)))
     }
     pub(super) fn wait_raw(
         &mut self,
@@ -204,6 +343,7 @@ impl Owner {
     ) -> Result<(libc::pid_t, i32), LaunchError> {
         loop {
             self.time_left(until, operation)?;
+            self.poll_broker()?;
             if let Some(event) = self.poll_raw()? {
                 return Ok(event);
             }
@@ -357,6 +497,7 @@ impl Owner {
                     ));
                 }
                 if libc::WIFEXITED(status) || libc::WIFSIGNALED(status) {
+                    self.wait_physical(tid, status, until)?;
                     self.state = State::Terminal;
                     return Ok(DynamicEvent {
                         tid,
@@ -539,7 +680,7 @@ impl Owner {
             }
             // SAFETY: only this thread consumes these terminal waits. Numeric
             // authority is removed immediately when a terminal status is seen.
-            if unsafe { libc::syscall(libc::SYS_tkill, tid, libc::SIGKILL) } == 0 {
+            if self.attached && unsafe { libc::syscall(libc::SYS_tkill, tid, libc::SIGKILL) } == 0 {
                 confirmed.insert(tid);
             }
         }
@@ -557,12 +698,20 @@ impl Owner {
         });
     }
     fn cleanup(&mut self) -> Result<DynamicCleanup, LaunchError> {
-        if self.pid == 0 {
+        self.closing = true;
+        if self.broker.is_none() {
             return Ok(DynamicCleanup { reaped: Vec::new() });
         }
         loop {
-            // First collect queued creation payloads before a kill can replace
-            // the parent's ptrace event with a terminal status.
+            // Receive Ready before Abort: R keeps the root unreaped until the
+            // transferred pidfd has been authenticated, even during cancellation.
+            if self.poll_broker().is_err() {
+                self.lost_wait = true;
+            }
+            if self.pid > 0 || self.lost_wait {
+                self.broker.as_mut().unwrap().cancel();
+            }
+            let mut domain_empty = false;
             loop {
                 match self.poll_raw() {
                     Ok(Some((tid, status))) => {
@@ -574,19 +723,8 @@ impl Owner {
                     Err(LaunchError::System { source, .. })
                         if source.raw_os_error() == Some(libc::ECHILD) =>
                     {
-                        if !self.owned.is_empty() {
-                            self.lost_wait = true;
-                        }
-                        self.owned.clear();
-                        return if self.lost_wait {
-                            Err(LaunchError::Invalid(
-                                "dynamic terminal wait ownership was lost",
-                            ))
-                        } else {
-                            Ok(DynamicCleanup {
-                                reaped: std::mem::take(&mut self.reaped),
-                            })
-                        };
+                        domain_empty = true;
+                        break;
                     }
                     Err(_) => {
                         self.lost_wait = true;
@@ -596,6 +734,33 @@ impl Owner {
             }
             let killed = self.kill_owned();
             self.release_killed_stops(&killed);
+            let broker = self.broker.as_ref().unwrap();
+            if domain_empty {
+                match broker.finished() {
+                    Ok(true) => {
+                        let physical = self.handles.values().all(broker::hup);
+                        let statuses = broker.physical.iter().all(|(tid, status)| {
+                            self.tracer_terminal
+                                .get(tid)
+                                .map_or(!self.attached && *tid == self.pid, |observed| {
+                                    observed == status
+                                })
+                        });
+                        return if self.lost_wait || !self.owned.is_empty() || !physical || !statuses
+                        {
+                            Err(LaunchError::Invalid(
+                                "dynamic physical cleanup ownership was lost",
+                            ))
+                        } else {
+                            Ok(DynamicCleanup {
+                                reaped: std::mem::take(&mut self.reaped),
+                            })
+                        };
+                    }
+                    Err(error) => return Err(error),
+                    Ok(false) => {}
+                }
+            }
             std::thread::sleep(Duration::from_millis(1));
         }
     }

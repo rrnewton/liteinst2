@@ -10,6 +10,7 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
 
+mod broker;
 mod launch;
 mod owner;
 
@@ -152,12 +153,12 @@ pub enum DynamicEventKind {
     /// LISTEN ended at EVENT_STOP/SIGTRAP: the kernel group stop has ended.
     /// This does not infer the provenance of a pending signal or control request.
     GroupContinued,
-    /// Consumed terminal wait status, already reaped by the tracer.
+    /// Consumed terminal wait status with matching real-parent reap and pidfd HUP.
     Exited {
         /// Native exit status.
         code: i32,
     },
-    /// Consumed terminal signal status, already reaped by the tracer.
+    /// Consumed terminal signal status with matching real-parent reap and pidfd HUP.
     Signaled {
         /// Native terminating signal.
         signal: i32,
@@ -192,11 +193,13 @@ pub enum DynamicResume {
     Listen,
 }
 
-/// Completed native cleanup; this is returned only after terminal waits and
-/// an empty exclusive wait domain, never merely after issuing SIGKILL.
+/// Completed native cleanup: all tracer terminals, the real-ancestor reaper's
+/// ECHILD receipt, retained application pidfds at HUP, and the reaper's own
+/// terminal wait and HUP. Tracer ECHILD or pidfd POLLIN alone do not suffice.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct DynamicCleanup {
-    /// Every consumed terminal identity, including unexpected attached children.
+    /// Application terminal identities, including unexpected attached children.
+    /// The private real-parent helper is physically reaped but is not in this list.
     pub reaped: Vec<libc::pid_t>,
 }
 
@@ -240,9 +243,10 @@ struct TracerStart {
 
 /// A dedicated native tracer with bounded client waits and nonblocking cancel.
 ///
-/// All ptrace and wait operations run on its private tracer thread. The controller
-/// invokes no supplied client callbacks. That thread remains the cleanup owner after a client
-/// timeout; it is never replaced by a waiter with a different wait domain.
+/// All ptrace operations and ptrace waits run on its private tracer thread.
+/// Natural-parent waits run in its private raw-syscall reaper process. Neither
+/// invokes supplied client callbacks. The tracer retains cleanup coordination
+/// after a client timeout; its exclusive wait domain is never transferred.
 /// External tracing/reaping of these children is unsupported. No method grants
 /// executable-page admission or a core publication lease.
 /// The tracer inherits blocked application-handler signals across thread
@@ -251,10 +255,13 @@ struct TracerStart {
 /// handlers remain blocked. The exclusive wait-domain contract also prohibits
 /// global hooks or custom allocators from creating or reaping children on the
 /// tracer thread; it does not assert that arbitrary host code cannot run there.
-/// Its bootstrap is a signal-zero clone child
-/// with an atomic pidfd, retained for __WALL waits even under
-/// SIGCHLD=SIG_IGN/SA_NOCLDWAIT before SEIZE. After SEIZE, ptrace owns the terminal
-/// wait through exec.
+/// A private raw-syscall reaper is the application's real parent, so its PPID
+/// differs from a direct launch by the embedding host. The helper alone becomes
+/// a subreaper; the host's subreaper setting is unchanged. Both helper and app
+/// start as signal-zero clone children with atomic pidfds. The app stays
+/// unreaped until the tracer acknowledges SEIZE or abandons attachment. Ptrace
+/// terminal status and the real parent's physical reap are recorded separately;
+/// cleanup retains the helper until its descendants and the helper are gone.
 pub struct DynamicSession {
     pid: libc::pid_t,
     initial: DynamicEvent,
