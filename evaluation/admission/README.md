@@ -47,6 +47,9 @@ denominator, and an otherwise successful test with leftover descendants still
 fails. This diagnostic attributes failures; it does not replace any command in
 the full qualification protocol or establish a complete claim.
 
+The [original anonymous mapping result](mapping-lifecycle-7022e137.md) records
+the finite original-syscall and runtime-source lifecycle qualification.
+
 ## Public result format
 
 Each invocation creates an append-only run identity under `results/`. Its JSON
