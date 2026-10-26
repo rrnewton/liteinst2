@@ -247,7 +247,7 @@ def main():
             for hook in ("null", "journal"):
                 name = strip_state + "-" + hook
                 selection = subjects / (name + ".selection")
-                selected = execute("select-" + name, ["/usr/bin/python3.9", "-B", str(repo / "evaluation/elf-exec/select.py"),
+                selected = execute("select-" + name, ["/usr/bin/python3.9", "-B", str(repo / "evaluation/elf-exec/render_selection.py"),
                         str(subject), str(target_record), hook, str(selection)], runtime_env)
                 assert (selected / "stdout.txt").read_text() == (
                     "selection prepared: sites=1 heads=2 hook=" + hook + " qualification_complete=false\n")

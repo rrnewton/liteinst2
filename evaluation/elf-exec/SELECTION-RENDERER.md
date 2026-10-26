@@ -1,6 +1,6 @@
 # Fixed kernel-exec fixture selection
 
-`select.py ORIGINAL TARGET_RECORD null|journal NEW_SELECTION` prepares one
+`render_selection.py ORIGINAL TARGET_RECORD null|journal NEW_SELECTION` prepares one
 selection for `tests/fixtures/elf-exec/subject.S` and its linker script. It is
 fixture support; the generic ELF frontend accepts the full strict selection
 schema and does not embed this instruction grammar.
