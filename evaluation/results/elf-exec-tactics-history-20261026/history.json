@@ -1,0 +1,274 @@
+{
+  "artifact_qualification_complete": false,
+  "attempts": [
+    {
+      "adjacent_refusal_cases": 0,
+      "artifact_qualification_complete": false,
+      "attempt": "elf-exec-2e39169-v1",
+      "capture_files": 0,
+      "driver_full_state_comparisons": 0,
+      "failed_stages": 1,
+      "failure": "Compiler could not resolve iced_x86 in the including test crate.",
+      "failure_stage": "required/clippy",
+      "full_A3_complete": false,
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ],
+        "logical_cpus": 316
+      },
+      "native_original_traces": 0,
+      "native_rewritten_traces": 0,
+      "nested_required_gates": [
+        {
+          "exit": 0,
+          "name": "fmt",
+          "status": "PASS"
+        },
+        {
+          "exit": 101,
+          "name": "clippy",
+          "status": "FAILED"
+        },
+        {
+          "exit": null,
+          "name": "test",
+          "status": "UNRUN"
+        },
+        {
+          "exit": null,
+          "name": "check",
+          "status": "UNRUN"
+        }
+      ],
+      "observed_stages": 1,
+      "ordinary_processes": 0,
+      "outcome": "FAILED",
+      "parent_exit": 1,
+      "passed_stages": 0,
+      "recipe_stages": 27,
+      "source_before_after_equal": true,
+      "source_files": 1160,
+      "source_record_sha256": "10f58871c7f62a1a5e510a1086dc1ce1bb8b99d359677b7465b0b3a4fa969975",
+      "strict_helper_receipts": {},
+      "tested_revision": "2e39169b5b54982c6f49f06772c7331660dfc277",
+      "unrun_stages": 26,
+      "verified_candidate_artifacts": 0
+    },
+    {
+      "adjacent_refusal_cases": 0,
+      "artifact_qualification_complete": false,
+      "attempt": "elf-exec-fe75ab9-v1",
+      "capture_files": 0,
+      "driver_full_state_comparisons": 0,
+      "failed_stages": 1,
+      "failure": "Clippy rejected manual_is_multiple_of and collapsible_if in the shared helper.",
+      "failure_stage": "required/clippy",
+      "full_A3_complete": false,
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ],
+        "logical_cpus": 316
+      },
+      "native_original_traces": 0,
+      "native_rewritten_traces": 0,
+      "nested_required_gates": [
+        {
+          "exit": 0,
+          "name": "fmt",
+          "status": "PASS"
+        },
+        {
+          "exit": 101,
+          "name": "clippy",
+          "status": "FAILED"
+        },
+        {
+          "exit": null,
+          "name": "test",
+          "status": "UNRUN"
+        },
+        {
+          "exit": null,
+          "name": "check",
+          "status": "UNRUN"
+        }
+      ],
+      "observed_stages": 1,
+      "ordinary_processes": 0,
+      "outcome": "FAILED",
+      "parent_exit": 1,
+      "passed_stages": 0,
+      "recipe_stages": 27,
+      "source_before_after_equal": true,
+      "source_files": 1160,
+      "source_record_sha256": "53b620a14bdf456f138ff68432750daf1c8723630c4ba0cfab2d3df91e9dcb2a",
+      "strict_helper_receipts": {},
+      "tested_revision": "fe75ab9dfb9b639938f256b86545ed888ede498b",
+      "unrun_stages": 26,
+      "verified_candidate_artifacts": 0
+    },
+    {
+      "adjacent_refusal_cases": 0,
+      "artifact_qualification_complete": false,
+      "attempt": "elf-exec-377a649-v1",
+      "capture_files": 1230,
+      "driver_full_state_comparisons": 72,
+      "failed_stages": 0,
+      "failure": null,
+      "failure_stage": null,
+      "full_A3_complete": false,
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ],
+        "logical_cpus": 316
+      },
+      "native_original_traces": 8,
+      "native_rewritten_traces": 16,
+      "nested_required_gates": [
+        {
+          "exit": 0,
+          "name": "fmt",
+          "status": "PASS"
+        },
+        {
+          "exit": 0,
+          "name": "clippy",
+          "status": "PASS"
+        },
+        {
+          "exit": 0,
+          "name": "test",
+          "status": "PASS"
+        },
+        {
+          "exit": 0,
+          "name": "check",
+          "status": "PASS"
+        }
+      ],
+      "observed_stages": 27,
+      "ordinary_processes": 6,
+      "outcome": "PASS_FIXED_B1_CAMPAIGN",
+      "parent_exit": 0,
+      "passed_stages": 27,
+      "recipe_stages": 27,
+      "source_before_after_equal": true,
+      "source_files": 1160,
+      "source_record_sha256": "daa53c613b4e82e4777f018ec478938e7dfeb60f6189918fbe8e302482f58898",
+      "strict_helper_receipts": {
+        "assemble": "24ef75c13954a23625e751e2fc223cd1b6aca44cb13cdc550ba8f3bd8e9e7d38",
+        "codec-compile": "979092497f0efa4a844e0f0ffde4644a19f8f5de54c6a33ad1fd87ba724d31ab",
+        "comparison": "1b181cb2009b5505a393fcefada5986228d903e13bf1cf6315dfb59bae8ee285",
+        "link": "5e3293e2869efd48350f47c169c82bad38cc42af9b5f89dd40f9d084e4fe1a08",
+        "native": "8d96e2b12125950e73fa07215b7eaebae893e3386433f1a54e75bc2b5a2184fa",
+        "native-compile": "e1b4d7e65799bdd5a7f98d971109e198502a015a5c89d803aea6c86520adce69",
+        "ordinary-candidate-0": "2b8cadeafecd805415870a709d3e9f66630effb56a7e2dc5d96856dfb802f02b",
+        "ordinary-candidate-1": "780a59079d92b958bd98211e2c3b597a35a19de20cf5eb895f55fa8353db8a63",
+        "ordinary-candidate-2": "d1149cf0a7588b0fe5f1a503ef260867e49600ebbd2a89ef4648ee62f879ecc7",
+        "ordinary-candidate-3": "831afd1f6fab1cc33bcdeca0256b9851e581d8436ea3b9a57a5a4bb4547fd4f3",
+        "ordinary-original-stripped": "e422f02326425d87bfb7850492d32c2f06d9cd11cf0156d298a225dc81a219be",
+        "ordinary-original-unstripped": "d6212fec9f8410cb772fa0124c5df06c4748af35ba8b993e2ef1d0321b1976b1",
+        "prepare-stripped-journal": "d30c6f66d535137db36a48f0b6f07a90972fc2da024269a0cae88f17f8061071",
+        "prepare-stripped-null": "5b2b6d5d34225dbe0fb301c741f9a8dc1a4bd594cc2d354c43914799b26d9174",
+        "prepare-unstripped-journal": "0d234122cf0dda860a3cd21ca0b694e679f50c633bf9dea758a765fb08180859",
+        "prepare-unstripped-null": "34983f578b3c79b6ca3f80842adadf9742075e368c42ef4502c18d38ce79b171",
+        "select-stripped-journal": "3b99fa1f8397f93ef22c4f796fa50bf027097b15646bf2e42b6fa32c29a86158",
+        "select-stripped-null": "90616721f747a35f01fa2100210ef69c68d72980d38bab9e92d27e077d321a7e",
+        "select-unstripped-journal": "fe690c8f0bce0a56fa2e7cbaf22d8b6f0b8868da856e39bc5fd072d8134389da",
+        "select-unstripped-null": "1fce4d93e208804cfebd9ecf40c6c4c858692334ed0c0232f50f17b68838ed30",
+        "strip": "0328b1779f1b17c4aba0cb2dd88110de0a1fec9794ba37ffb460dbf7fcd8c483",
+        "target": "5531a7a557d4a397602da58f48509991f37268798fde6cadd0777d9f14e16c53",
+        "verify-stripped-journal": "b1d838eb55d43684ad99ffaf1809680aef24b7f3b3d2b53d48065ddef4dc1c97",
+        "verify-stripped-null": "78fa846dda058580874d1d8cfc3c893926d11c569ca32a9acd5181726169a7f3",
+        "verify-unstripped-journal": "74f5036ad16896149b2e9724b26f52b384b2b18d401d2a5bdb695ef660ed8521",
+        "verify-unstripped-null": "1b9904f23f3f87a686d6cf16e84e75deb5e56c0ec0c6858ca3c2bcb5b223f87f"
+      },
+      "tested_revision": "377a649dd8d4aedcdd5bdd7831b61d26bfbd47ba",
+      "unrun_stages": 0,
+      "verified_candidate_artifacts": 4
+    },
+    {
+      "adjacent_refusal_cases": 4,
+      "artifact_qualification_complete": false,
+      "attempt": "elf-exec-tactics-377a649-v1",
+      "capture_files": 7,
+      "driver_full_state_comparisons": 0,
+      "failed_stages": 1,
+      "failure": "Native-B2 setup expected one generated-image record but found zero, before tracing.",
+      "failure_stage": "native-B2",
+      "full_A3_complete": false,
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ],
+        "logical_cpus": 316
+      },
+      "native_original_traces": 0,
+      "native_rewritten_traces": 0,
+      "nested_required_gates": [],
+      "observed_stages": 18,
+      "ordinary_processes": 0,
+      "outcome": "FAILED",
+      "parent_exit": 1,
+      "passed_stages": 17,
+      "recipe_stages": 93,
+      "source_before_after_equal": true,
+      "source_files": 1160,
+      "source_record_sha256": "daa53c613b4e82e4777f018ec478938e7dfeb60f6189918fbe8e302482f58898",
+      "strict_helper_receipts": {
+        "assemble-B2": "f2d530338e05d51bcea15c1e9941b1df3850933e45757cd745d217a40b6bd727",
+        "codec-compile": "c339ac63bdc0819d072b4cf2c962a8ab36cecce6211c6484fc87464648fca217",
+        "controls-B2": "08d52aa23e5d5e283a23dd38936fe228ba1ac01fd8b21a4ef69ee2b59af95135",
+        "link-B2": "53408fa346384b7d642e198ae5db5b1903a3a39226762037118cf618b1c8efff",
+        "native-B2": "186b5b2a7d64530fd1b95de4042d22d714808d1340a4178331e3abf1bd50236f",
+        "prepare-B2-stripped-journal": "ae726c3e62244b06aa1635894caf2c44e9e0259b5abcf2bab2ca90bf44b9b660",
+        "prepare-B2-stripped-null": "eb0ae3a79d060692333e1b79bbf22f9499e0fdfef59590d5cff19250e4b00a72",
+        "prepare-B2-unstripped-journal": "b60916453ec8db79ac4829f16fa834dc7ebd29f70cc4238afe0f51c5dda2c80b",
+        "prepare-B2-unstripped-null": "093e8f58c3c35e5f4165bfc1263214f52ef5519ae888307fce4e529bf303410e",
+        "select-B2-stripped-journal": "4fc3c5fe033751c946e47b1a543ef15d72f22ef28520939c6d4589bc70d83905",
+        "select-B2-stripped-null": "4fc607aec061c568d6aa89f2019627a7439655010a1d87c52b65307abbdc223d",
+        "select-B2-unstripped-journal": "b709d657673e0dfc8b773edf596947864bc0c592f5e805b665a69290dbb8d9dd",
+        "select-B2-unstripped-null": "a168d2834b12f9c1560dceed66524521125444ca185b122be1c02679371ddb9c",
+        "strip-B2": "25c39364e13a298f44d3d18824b5ee8c9551975eacec883501205a8864bcbc3d",
+        "verify-B2-stripped-journal": "78610be5172a0314ef4b20850998dd9c32731f5d51e22318f8fd0a19d37be1c4",
+        "verify-B2-stripped-null": "ad97584d5bb8b106a0b4bbbb12395ccd505f6b17b1e65378c942d477fa2c6362",
+        "verify-B2-unstripped-journal": "c0f3c2d595777ef09560b559fb842a250448f67d45325fa00f9b4dc8c93fab19",
+        "verify-B2-unstripped-null": "cfe08fff896f2fc91b014cf89f235ffbacba4735aeb06ed20dc9b67ad6d65a8c"
+      },
+      "tested_revision": "377a649dd8d4aedcdd5bdd7831b61d26bfbd47ba",
+      "unrun_stages": 75,
+      "verified_candidate_artifacts": 4
+    }
+  ],
+  "collector_tested_revision": null,
+  "full_A3_complete": false,
+  "inputs_sha256": "0d9e60441582ef88bfeb4e1796c1b870a31a9708cf104c7e6fac837abde90349",
+  "native_scope": "B1's completed 72 driver comparisons belong only to its 377a649 run. Failed tactics has zero traces; verified artifacts and required refusals are not native positives.",
+  "parent_authority": "Root's separately saved closed/reaped tool observations, not invented parent receipts; original launch pending fields stay unchanged",
+  "schema": 1,
+  "summary_scope": "Historical saved-record summary; no new architectural capture audit or workload execution",
+  "timing_scope": "Per-stage operational diagnostics only; parent and nested durations overlap and are not aggregated"
+}

@@ -209,6 +209,14 @@ The [public frontend model index](frontend-public.md) joins the focused 60-model
 
 The [fresh A3 reproduction cohort](e9-common-fresh.md) now records completion of all 13 original phases in a separate private epoch. Its 40 loader runs and 144 manual body traces retain distinct scopes; the earlier pending/stopped records above remain historical, and full A3 remains open.
 
+The [normal-kernel-exec four-tactic cohort](elf-exec-tactics-e6243a8.md) adds
+B2/T1/T2/T3 at exact source `e6243a862fda2572304cccbcfe698ac9ea6212a6`:
+204 traces, 676 full-state comparisons, 18 refusals and 24 ordinary executions.
+Its independent audit covers all 11,132 captures. The B1 prerequisite and
+[development failures](elf-exec-tactics-development.md) retain separate counts
+and outcomes. Scripts and sanitized CSV/JSON support partial claim 4; full A3
+and claims 1–3 remain open.
+
 The [gate-clock native record](frontend-native-gate-clock-actual.md) covers four original native modes and their format/compile prerequisites. The [separate continuation record](frontend-native-gate-clock-continuation-actual.md) covers the remaining eleven private commands, while the [preparer record](frontend-native-gate-clock-preparer-actual.md) distinguishes nine helper outcomes, the preserved collector failure and clean source staging. The [reproduction material](frontend-native-gate-clock/README.md), [row predecessor](frontend-native-journal-row-actual.md) and [v6 history](frontend-native-v6-actual.md) retain separate source snapshots, limits and failures.
 
 These bounded leaf-frontend results supply partial evidence under heading 4, **systematic everytactic**; they do not establish complete claim 4, claims 1–3, full A5 or a software preemption clock. All private reports retain `tested_revision: null`. Public exact-revision workspace validation is a separate record; a later matching commit does not relabel these private executions.

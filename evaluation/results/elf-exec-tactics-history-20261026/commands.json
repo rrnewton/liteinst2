@@ -1,0 +1,692 @@
+[
+  {
+    "attempt": "elf-exec-2e39169-v1",
+    "closed_parent_observation": {
+      "closed_reaped": true,
+      "launch_log_sha256": "72bce97fb294753a990295a38d8a7cc97feab2ed6b8b0323a6a1526f6283cf04",
+      "parent_exit": 1,
+      "run": "elf-exec-2e39169-v1",
+      "source": "Root observation of completed exec/write_stdin tool return; not an independently generated process receipt.",
+      "source_revision": "2e39169b5b54982c6f49f06772c7331660dfc277",
+      "tool_session_id": 99747
+    },
+    "kind": "recipe-parent",
+    "launch_record": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/elf-exec/reproduce.py",
+        "--raw",
+        "${RAW_0}",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_observation": "pending",
+      "slot_bytes_before": 19464810496,
+      "source_revision": "2e39169b5b54982c6f49f06772c7331660dfc277",
+      "source_sha256": "ab041ad6611d0c8000a77b70cdaaee4ef25433c94e5c9e4ff4d46b81a14b2c36",
+      "start_utc": "2026-10-26T09:09:40.106938+00:00"
+    },
+    "status": "FAILED"
+  },
+  {
+    "argv": [
+      "cargo",
+      "fmt",
+      "--check"
+    ],
+    "attempt": "elf-exec-2e39169-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_0}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "fmt",
+    "saved_result": {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "log": "${RAW_REL_0}/required/gates/fmt.log",
+      "name": "fmt",
+      "seconds": 2.0177098331041634,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start_utc": "2026-10-26T09:09:40.389407+00:00",
+      "timeout_seconds": 180
+    },
+    "status": "PASS",
+    "timeout_seconds": 180
+  },
+  {
+    "argv": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--all-features",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "attempt": "elf-exec-2e39169-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_0}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "clippy",
+    "saved_result": {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 101,
+      "log": "${RAW_REL_0}/required/gates/clippy.log",
+      "name": "clippy",
+      "seconds": 1.2671868109609932,
+      "sha256": "b7282c2841eba353c7abf36060fa661f05ad4e4e0456b985b29b855119e421d6",
+      "start_utc": "2026-10-26T09:09:42.408631+00:00",
+      "timeout_seconds": 180
+    },
+    "status": "FAILED",
+    "timeout_seconds": 180
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "--workspace"
+    ],
+    "attempt": "elf-exec-2e39169-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_0}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "test",
+    "saved_result": null,
+    "status": "UNRUN",
+    "timeout_seconds": 360
+  },
+  {
+    "argv": [
+      "cargo",
+      "check",
+      "--workspace",
+      "--all-features",
+      "--all-targets"
+    ],
+    "attempt": "elf-exec-2e39169-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_0}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "check",
+    "saved_result": null,
+    "status": "UNRUN",
+    "timeout_seconds": 180
+  },
+  {
+    "attempt": "elf-exec-fe75ab9-v1",
+    "closed_parent_observation": {
+      "closed_reaped": true,
+      "launch_log_sha256": "72bce97fb294753a990295a38d8a7cc97feab2ed6b8b0323a6a1526f6283cf04",
+      "parent_exit": 1,
+      "run": "elf-exec-fe75ab9-v1",
+      "source": "Root observation of completed exec/write_stdin tool return; not an independently generated process receipt.",
+      "source_revision": "fe75ab9dfb9b639938f256b86545ed888ede498b",
+      "tool_session_id": 33080
+    },
+    "kind": "recipe-parent",
+    "launch_record": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/elf-exec/reproduce.py",
+        "--raw",
+        "${RAW_1}",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_observation": "pending",
+      "slot_bytes_before": 19467390976,
+      "source_revision": "fe75ab9dfb9b639938f256b86545ed888ede498b",
+      "source_sha256": "ab041ad6611d0c8000a77b70cdaaee4ef25433c94e5c9e4ff4d46b81a14b2c36",
+      "start_utc": "2026-10-26T09:12:53.135738+00:00"
+    },
+    "status": "FAILED"
+  },
+  {
+    "argv": [
+      "cargo",
+      "fmt",
+      "--check"
+    ],
+    "attempt": "elf-exec-fe75ab9-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_1}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "fmt",
+    "saved_result": {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "log": "${RAW_REL_1}/required/gates/fmt.log",
+      "name": "fmt",
+      "seconds": 1.9679911478888243,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start_utc": "2026-10-26T09:12:53.413113+00:00",
+      "timeout_seconds": 180
+    },
+    "status": "PASS",
+    "timeout_seconds": 180
+  },
+  {
+    "argv": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--all-features",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "attempt": "elf-exec-fe75ab9-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_1}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "clippy",
+    "saved_result": {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 101,
+      "log": "${RAW_REL_1}/required/gates/clippy.log",
+      "name": "clippy",
+      "seconds": 1.5177355390042067,
+      "sha256": "b3e6cd05a7601420cd6920ccadbe7e9426da00003f0b1fd7e6936d0a7c1ca2c6",
+      "start_utc": "2026-10-26T09:12:55.382711+00:00",
+      "timeout_seconds": 180
+    },
+    "status": "FAILED",
+    "timeout_seconds": 180
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "--workspace"
+    ],
+    "attempt": "elf-exec-fe75ab9-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_1}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "test",
+    "saved_result": null,
+    "status": "UNRUN",
+    "timeout_seconds": 360
+  },
+  {
+    "argv": [
+      "cargo",
+      "check",
+      "--workspace",
+      "--all-features",
+      "--all-targets"
+    ],
+    "attempt": "elf-exec-fe75ab9-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_1}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "check",
+    "saved_result": null,
+    "status": "UNRUN",
+    "timeout_seconds": 180
+  },
+  {
+    "attempt": "elf-exec-377a649-v1",
+    "closed_parent_observation": {
+      "closed_reaped": true,
+      "launch_log_sha256": "d970eb981a10280989147d9bda8f1cc19b75aabf063c88863d00763d3b200cdd",
+      "parent_exit": 0,
+      "run": "elf-exec-377a649-v1",
+      "source": "Root observation of completed exec/write_stdin tool return; not an independently generated process receipt.",
+      "source_revision": "377a649dd8d4aedcdd5bdd7831b61d26bfbd47ba",
+      "tool_session_id": 18008
+    },
+    "kind": "recipe-parent",
+    "launch_record": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/elf-exec/reproduce.py",
+        "--raw",
+        "${RAW_2}",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_observation": "pending",
+      "slot_bytes_before": 19468386304,
+      "source_revision": "377a649dd8d4aedcdd5bdd7831b61d26bfbd47ba",
+      "source_sha256": "ab041ad6611d0c8000a77b70cdaaee4ef25433c94e5c9e4ff4d46b81a14b2c36",
+      "start_utc": "2026-10-26T09:14:58.661495+00:00"
+    },
+    "status": "PASS"
+  },
+  {
+    "argv": [
+      "cargo",
+      "fmt",
+      "--check"
+    ],
+    "attempt": "elf-exec-377a649-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_2}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "fmt",
+    "saved_result": {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "log": "${RAW_REL_2}/required/gates/fmt.log",
+      "name": "fmt",
+      "seconds": 1.9813751731999218,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start_utc": "2026-10-26T09:14:58.936533+00:00",
+      "timeout_seconds": 180
+    },
+    "status": "PASS",
+    "timeout_seconds": 180
+  },
+  {
+    "argv": [
+      "cargo",
+      "clippy",
+      "--workspace",
+      "--all-targets",
+      "--all-features",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "attempt": "elf-exec-377a649-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_2}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "clippy",
+    "saved_result": {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "log": "${RAW_REL_2}/required/gates/clippy.log",
+      "name": "clippy",
+      "seconds": 10.087483559036627,
+      "sha256": "0145a3d2a2fb444add1bc5bbafe0b44c6aede0dbd6cc33d8eba55ced244757ef",
+      "start_utc": "2026-10-26T09:15:00.919585+00:00",
+      "timeout_seconds": 180
+    },
+    "status": "PASS",
+    "timeout_seconds": 180
+  },
+  {
+    "argv": [
+      "cargo",
+      "test",
+      "--workspace"
+    ],
+    "attempt": "elf-exec-377a649-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_2}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "test",
+    "saved_result": {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit": 0,
+      "log": "${RAW_REL_2}/required/gates/test.log",
+      "name": "test",
+      "seconds": 287.6181687070057,
+      "sha256": "88cf3c03132c0c749ac58cde8ebb94f33e7a56538e79dd7fc548092ce16f50b9",
+      "start_utc": "2026-10-26T09:15:11.009542+00:00",
+      "timeout_seconds": 360
+    },
+    "status": "PASS",
+    "timeout_seconds": 360
+  },
+  {
+    "argv": [
+      "cargo",
+      "check",
+      "--workspace",
+      "--all-features",
+      "--all-targets"
+    ],
+    "attempt": "elf-exec-377a649-v1",
+    "command_scope": "Original fixed command; actual execution only when saved_result is present",
+    "cwd": "${REPO}",
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "${CARGO_HOME}",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_TARGET_DIR": "${REPO}/target",
+      "HOME": "${USER_HOME}",
+      "LC_ALL": "C",
+      "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "RUSTC": "${TOOLCHAIN}/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "${RAW_2}/required/gates"
+    },
+    "kind": "nested-required-gate",
+    "name": "check",
+    "saved_result": {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "exit": 0,
+      "log": "${RAW_REL_2}/required/gates/check.log",
+      "name": "check",
+      "seconds": 3.7710559179540724,
+      "sha256": "bc2c6075e385565a9b7eed0f0607a1d5d39aa4fd620b6900996f632a02b0a0f6",
+      "start_utc": "2026-10-26T09:19:58.629871+00:00",
+      "timeout_seconds": 180
+    },
+    "status": "PASS",
+    "timeout_seconds": 180
+  },
+  {
+    "attempt": "elf-exec-tactics-377a649-v1",
+    "closed_parent_observation": {
+      "closed_reaped": true,
+      "launch_log_sha256": "1b9a16369afa9f2873558d9c94d6c9988d4347c23341a9587c19f98118c7cbae",
+      "parent_exit": 1,
+      "run": "elf-exec-tactics-377a649-v1",
+      "source": "Root observation of completed exec/write_stdin tool return; not an independently generated process receipt.",
+      "source_revision": "377a649dd8d4aedcdd5bdd7831b61d26bfbd47ba",
+      "tool_session_id": 45132
+    },
+    "kind": "recipe-parent",
+    "launch_record": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/evaluation/elf-exec/reproduce_tactics.py",
+        "--raw",
+        "${RAW_3}",
+        "--b1-raw",
+        "${RAW_2}",
+        "--b1-closed-and-reaped",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}"
+      ],
+      "b1_observation_sha256": "d2e88750f4063d6927915f30567b9aadbf18c344f4505f1a97cc49ab18e59854",
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_observation": "pending",
+      "slot_bytes_before": 19603697664,
+      "source_revision": "377a649dd8d4aedcdd5bdd7831b61d26bfbd47ba",
+      "source_sha256": "c586e7df93f69031f947bbdadfa5df1de7c12b8fb1dfc13387f5f0f6bbf912ec",
+      "start_utc": "2026-10-26T09:20:43.505621+00:00"
+    },
+    "status": "FAILED"
+  }
+]

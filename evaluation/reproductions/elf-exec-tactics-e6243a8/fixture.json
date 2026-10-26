@@ -1,0 +1,344 @@
+{
+  "B2": {
+    "actual_victim_head": null,
+    "assembler_TACTIC": 2,
+    "body_hex": "0f1f00b82a000000c3",
+    "comparisons": 120,
+    "expected_image_count": 1,
+    "heads": [
+      0,
+      3,
+      8
+    ],
+    "native_arrival_heads": [
+      4198400,
+      4198405,
+      4198411,
+      4198416,
+      4198422,
+      4198427,
+      4198431,
+      4198437,
+      4198441,
+      4198445,
+      4198449,
+      4198455,
+      4198461,
+      4198464,
+      4198528,
+      4198535,
+      4198542,
+      4198552,
+      4198559,
+      4198563,
+      4198567
+    ],
+    "paths": {
+      "0": {
+        "ZF0": [
+          0,
+          3,
+          8
+        ],
+        "ZF1": [
+          0,
+          3,
+          8
+        ]
+      },
+      "3": {
+        "ZF0": [
+          3,
+          8
+        ],
+        "ZF1": [
+          3,
+          8
+        ]
+      },
+      "8": {
+        "ZF0": [
+          8
+        ],
+        "ZF1": [
+          8
+        ]
+      }
+    },
+    "selected_address": 721064197,
+    "startup_page_sha256": "a90e084b8f51028d7f767bf32fe9e392877a72fba5f5f5b5662a904b6ca806ea",
+    "stdout": "PASS kernel-exec B2: 12 original + 24 rewritten traces; 120 full-state comparisons; 36 subject CALL/RETs; 8 hook CALL/RETs; 4 journal rows\n",
+    "subject_page_sha256": "4324a4fc2572d91e2e78ed24895c2dcecf639df9890ff601578e8e9c748b2f92",
+    "victim_address": 104993024
+  },
+  "T1": {
+    "actual_victim_head": null,
+    "assembler_TACTIC": 3,
+    "body_hex": "89c0b82a000000c3",
+    "comparisons": 120,
+    "expected_image_count": 1,
+    "heads": [
+      0,
+      2,
+      7
+    ],
+    "native_arrival_heads": [
+      4198400,
+      4198405,
+      4198411,
+      4198416,
+      4198422,
+      4198427,
+      4198431,
+      4198437,
+      4198441,
+      4198445,
+      4198449,
+      4198455,
+      4198461,
+      4198464,
+      4198528,
+      4198535,
+      4198542,
+      4198552,
+      4198559,
+      4198563,
+      4198567
+    ],
+    "paths": {
+      "0": {
+        "ZF0": [
+          0,
+          2,
+          7
+        ],
+        "ZF1": [
+          0,
+          2,
+          7
+        ]
+      },
+      "2": {
+        "ZF0": [
+          2,
+          7
+        ],
+        "ZF1": [
+          2,
+          7
+        ]
+      },
+      "7": {
+        "ZF0": [
+          7
+        ],
+        "ZF1": [
+          7
+        ]
+      }
+    },
+    "selected_address": 4340670,
+    "startup_page_sha256": "6e0f9f003cd48917c0cd1013fbff270afd1335c2da6dbe1e0e8c31209f63033e",
+    "stdout": "PASS kernel-exec T1: 12 original + 24 rewritten traces; 120 full-state comparisons; 36 subject CALL/RETs; 8 hook CALL/RETs; 4 journal rows\n",
+    "subject_page_sha256": "9c32581f990ba39f467d4bdad697c795b8ed0161b6b645a7b5cc5a314cf2b026",
+    "victim_address": 104993024
+  },
+  "T2": {
+    "actual_victim_head": 3,
+    "assembler_TACTIC": 4,
+    "body_hex": "0f1f000f1f840000000000b82a000000c3909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909048b82a00000000000000c3",
+    "comparisons": 248,
+    "expected_image_count": 2,
+    "heads": [
+      0,
+      3,
+      11,
+      16,
+      64,
+      74
+    ],
+    "native_arrival_heads": [
+      4198400,
+      4198405,
+      4198411,
+      4198416,
+      4198422,
+      4198427,
+      4198431,
+      4198437,
+      4198441,
+      4198445,
+      4198449,
+      4198455,
+      4198461,
+      4198464,
+      4198528,
+      4198535,
+      4198542,
+      4198552,
+      4198559,
+      4198563,
+      4198567
+    ],
+    "paths": {
+      "0": {
+        "ZF0": [
+          0,
+          3,
+          11,
+          16
+        ],
+        "ZF1": [
+          0,
+          3,
+          11,
+          16
+        ]
+      },
+      "11": {
+        "ZF0": [
+          11,
+          16
+        ],
+        "ZF1": [
+          11,
+          16
+        ]
+      },
+      "16": {
+        "ZF0": [
+          16
+        ],
+        "ZF1": [
+          16
+        ]
+      },
+      "3": {
+        "ZF0": [
+          3,
+          11,
+          16
+        ],
+        "ZF1": [
+          3,
+          11,
+          16
+        ]
+      },
+      "64": {
+        "ZF0": [
+          64,
+          74
+        ],
+        "ZF1": [
+          64,
+          74
+        ]
+      },
+      "74": {
+        "ZF0": [
+          74
+        ],
+        "ZF1": [
+          74
+        ]
+      }
+    },
+    "selected_address": 1462472965,
+    "startup_page_sha256": "d691a5afb82af6a161fcb8e8892e96bf46d7b38ad8bc54f310f864f5b3e4c57a",
+    "stdout": "PASS kernel-exec T2: 24 original + 48 rewritten traces; 248 full-state comparisons; 72 subject CALL/RETs; 8 hook CALL/RETs; 4 journal rows\n",
+    "subject_page_sha256": "319a4f65169f5f6cc1ce93e288150e56fb800a07a30c7efc3099b23e15d66441",
+    "victim_address": 5522782
+  },
+  "T3": {
+    "actual_victim_head": 64,
+    "assembler_TACTIC": 5,
+    "body_hex": "750190c390909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909090909048b82a00000000000000c3",
+    "comparisons": 188,
+    "expected_image_count": 2,
+    "heads": [
+      0,
+      2,
+      3,
+      64,
+      74
+    ],
+    "native_arrival_heads": [
+      4198400,
+      4198405,
+      4198411,
+      4198416,
+      4198422,
+      4198427,
+      4198431,
+      4198437,
+      4198441,
+      4198445,
+      4198449,
+      4198455,
+      4198461,
+      4198464,
+      4198528,
+      4198535,
+      4198542,
+      4198552,
+      4198559,
+      4198563,
+      4198567
+    ],
+    "paths": {
+      "0": {
+        "ZF0": [
+          0,
+          3
+        ],
+        "ZF1": [
+          0,
+          2,
+          3
+        ]
+      },
+      "2": {
+        "ZF0": [
+          2,
+          3
+        ],
+        "ZF1": [
+          2,
+          3
+        ]
+      },
+      "3": {
+        "ZF0": [
+          3
+        ],
+        "ZF1": [
+          3
+        ]
+      },
+      "64": {
+        "ZF0": [
+          64,
+          74
+        ],
+        "ZF1": [
+          64,
+          74
+        ]
+      },
+      "74": {
+        "ZF0": [
+          74
+        ],
+        "ZF1": [
+          74
+        ]
+      }
+    },
+    "selected_address": 71438592,
+    "startup_page_sha256": "206949b58a201eda0753464d1c623aca553f6e118f33822ab2b4a8ab204aab25",
+    "stdout": "PASS kernel-exec T3: 20 original + 40 rewritten traces; 188 full-state comparisons; 60 subject CALL/RETs; 8 hook CALL/RETs; 4 journal rows\n",
+    "subject_page_sha256": "d8d49e9d01d94889403e6a04f126460e5256a4b7825aff6d33806f9de5a8117a",
+    "victim_address": 104993024
+  }
+}

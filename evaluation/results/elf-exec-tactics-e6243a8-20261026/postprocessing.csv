@@ -1,0 +1,6 @@
+run,script_sha256,child_exit,root_wrapper_exit,operational_seconds
+elf-exec-tactics-audit-run-v3,806336d1d0e43087c6bfcd5eef17348372703bf10ced6ddf4216b3443f1c027c,1,1,1.1172490380704403
+elf-exec-tactics-audit-run-v4,15701346bc05e7e423b6df478ec16664367771b10f7d9a36e29708120c74c369,0,0,3.168641136959195
+elf-exec-tactics-history-run-v1,559b54bbd2326c501cf45a08b0238beffebcd43083be3411250468d15087ce8c,0,0,0.6648500158917159
+elf-exec-tactics-collect-run-v3,b36f2ae7aa95034be5223d90377ad53ad3e16f5b32ca81de21c4b55401b77532,0,1,
+elf-exec-tactics-collect-run-v3b,b36f2ae7aa95034be5223d90377ad53ad3e16f5b32ca81de21c4b55401b77532,0,0,3.669748028041795

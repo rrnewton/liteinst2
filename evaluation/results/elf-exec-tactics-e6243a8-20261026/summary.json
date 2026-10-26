@@ -1,0 +1,428 @@
+{
+  "artifact_qualification_complete": false,
+  "audit": {
+    "expected_fixture_sha256": "622db2cca51521b2e088e0003a28c164175fd249e03c0f72d2b6f65bc2f84aec",
+    "expected_producer_source_sha256": "15701346bc05e7e423b6df478ec16664367771b10f7d9a36e29708120c74c369",
+    "expected_source_pins_sha256": "2c6d667264f9ae1822397e4ea85740989101f0f44424beba88c9858438f24cab",
+    "producer_authority": "Root separately pins the actual audit invocation; its output alone does not identify its producer",
+    "sha256": "9c2fa534b86ec6bb4b300b121f3c879a913a5035ee51a452121e4b924739034e",
+    "state_scope": "The independent audit corroborates the same 676 serialized full-state comparisons; it adds no traces or comparisons to that denominator"
+  },
+  "authority": "Successful separately pinned saved-record/state audit and strict stage receipts; explicit root parent-closure authority",
+  "b1_prerequisite": {
+    "captures": 1230,
+    "full_state_comparisons": 72,
+    "hook_call_return_witnesses": 8,
+    "nested_required_gates": 4,
+    "ordinary_processes": 6,
+    "original_traces": 8,
+    "recording_journal_rows": 4,
+    "required_gate_cleanup_scope": "Original required runner limits; no strict helper/ECHILD attestation for the nested workspace gates",
+    "revision": "e6243a862fda2572304cccbcfe698ac9ea6212a6",
+    "rewritten_traces": 16,
+    "scope": "Separate same-revision prerequisite; never added to the four-tactic denominator",
+    "stages": 27,
+    "strict_helper_receipts": 26,
+    "subject_call_ret_witnesses": 24
+  },
+  "collector": {
+    "revision_scope": "Collector source publication is separate from the tested campaign checkout",
+    "source_sha256": "b36f2ae7aa95034be5223d90377ad53ad3e16f5b32ca81de21c4b55401b77532",
+    "tested_revision": null
+  },
+  "command_rows": {
+    "b1_prerequisite": 27,
+    "b1_required_nested": 4,
+    "tactics": 93,
+    "total": 124
+  },
+  "full_A3_complete": false,
+  "hardware": {
+    "b1_prerequisite": {
+      "architecture": "x86_64",
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+      "host_label": "AMD EPYC Zen 5 dev host",
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "libc": [
+        "glibc",
+        "2.34"
+      ],
+      "logical_cpus": 316,
+      "observation_scope": "Saved run observation, not continuous attestation or a benchmark"
+    },
+    "tactics": {
+      "architecture": "x86_64",
+      "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+      "host_label": "AMD EPYC Zen 5 dev host",
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "libc": [
+        "glibc",
+        "2.34"
+      ],
+      "logical_cpus": 316,
+      "observation_scope": "Saved run observation, not continuous attestation or a benchmark"
+    }
+  },
+  "limits": "Fixed ET_EXEC authored fixtures only; no PIE/DSO, arbitrary program, unwind/early-loader, E9, cross-vendor or new static-parity result",
+  "prior_failures": "Remain distinct historical failures; incomplete attempts cannot satisfy this success-only collector",
+  "schema": 1,
+  "source_files": 1160,
+  "source_record_sha256": "0e71ca8e785587b34ef25751116c3a01df893581b3125659e74283eeed73c5b2",
+  "tactics": {
+    "declared_head_offsets": {
+      "B2": [
+        0,
+        3,
+        8
+      ],
+      "T1": [
+        0,
+        2,
+        7
+      ],
+      "T2": [
+        0,
+        3,
+        11,
+        16,
+        64,
+        74
+      ],
+      "T3": [
+        0,
+        2,
+        3,
+        64,
+        74
+      ]
+    },
+    "families": [
+      {
+        "artifact_qualification_complete": false,
+        "capture_files": 1967,
+        "declared_heads": 3,
+        "family": "B2",
+        "full_state_comparisons": 120,
+        "hook_call_return_witnesses": 8,
+        "hook_variants": 2,
+        "maximum_trace_steps": 104,
+        "minimum_trace_steps": 23,
+        "ordinary_processes": 6,
+        "original_traces": 12,
+        "recording_journal_rows": 4,
+        "refusal_cases": 4,
+        "rewritten_traces": 24,
+        "seeds": 2,
+        "strip_variants": 2,
+        "subject_call_ret_witnesses": 36
+      },
+      {
+        "artifact_qualification_complete": false,
+        "capture_files": 1967,
+        "declared_heads": 3,
+        "family": "T1",
+        "full_state_comparisons": 120,
+        "hook_call_return_witnesses": 8,
+        "hook_variants": 2,
+        "maximum_trace_steps": 104,
+        "minimum_trace_steps": 23,
+        "ordinary_processes": 6,
+        "original_traces": 12,
+        "recording_journal_rows": 4,
+        "refusal_cases": 4,
+        "rewritten_traces": 24,
+        "seeds": 2,
+        "strip_variants": 2,
+        "subject_call_ret_witnesses": 36
+      },
+      {
+        "artifact_qualification_complete": false,
+        "capture_files": 3983,
+        "declared_heads": 6,
+        "family": "T2",
+        "full_state_comparisons": 248,
+        "hook_call_return_witnesses": 8,
+        "hook_variants": 2,
+        "maximum_trace_steps": 107,
+        "minimum_trace_steps": 23,
+        "ordinary_processes": 6,
+        "original_traces": 24,
+        "recording_journal_rows": 4,
+        "refusal_cases": 5,
+        "rewritten_traces": 48,
+        "seeds": 2,
+        "strip_variants": 2,
+        "subject_call_ret_witnesses": 72
+      },
+      {
+        "artifact_qualification_complete": false,
+        "capture_files": 3215,
+        "declared_heads": 5,
+        "family": "T3",
+        "full_state_comparisons": 188,
+        "hook_call_return_witnesses": 8,
+        "hook_variants": 2,
+        "maximum_trace_steps": 105,
+        "minimum_trace_steps": 23,
+        "ordinary_processes": 6,
+        "original_traces": 20,
+        "recording_journal_rows": 4,
+        "refusal_cases": 5,
+        "rewritten_traces": 40,
+        "seeds": 2,
+        "strip_variants": 2,
+        "subject_call_ret_witnesses": 60
+      }
+    ],
+    "full_state_comparisons": 676,
+    "heads": 17,
+    "hook_call_return_witnesses": 32,
+    "manual_load_mappings": 0,
+    "ordinary_processes": 24,
+    "original_traces": 68,
+    "post_seed_state_repairs": 0,
+    "recording_journal_rows": 16,
+    "refusal_cases": 18,
+    "refusal_inventory": [
+      {
+        "expected": "Refused(7) no-artifact",
+        "family": "B2",
+        "name": "unknown-entries",
+        "observed": "Refused(7) no-artifact",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "original-identity",
+        "family": "B2",
+        "name": "source-byte-tamper",
+        "observed": "original-identity",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "hook-identity",
+        "family": "B2",
+        "name": "hook-byte-tamper-rebound-original",
+        "observed": "hook-identity",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "Refused(11) no-artifact",
+        "family": "B2",
+        "name": "selected-placement-unavailable",
+        "observed": "Refused(11) no-artifact",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "Refused(7) no-artifact",
+        "family": "T1",
+        "name": "unknown-entries",
+        "observed": "Refused(7) no-artifact",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "original-identity",
+        "family": "T1",
+        "name": "source-byte-tamper",
+        "observed": "original-identity",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "hook-identity",
+        "family": "T1",
+        "name": "hook-byte-tamper-rebound-original",
+        "observed": "hook-identity",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "Refused(11) no-artifact",
+        "family": "T1",
+        "name": "selected-placement-unavailable",
+        "observed": "Refused(11) no-artifact",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "Refused(7) no-artifact",
+        "family": "T2",
+        "name": "unknown-entries",
+        "observed": "Refused(7) no-artifact",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "original-identity",
+        "family": "T2",
+        "name": "source-byte-tamper",
+        "observed": "original-identity",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "hook-identity",
+        "family": "T2",
+        "name": "hook-byte-tamper-rebound-original",
+        "observed": "hook-identity",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "Refused(11) no-artifact",
+        "family": "T2",
+        "name": "selected-placement-unavailable",
+        "observed": "Refused(11) no-artifact",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "Refused(11) no-artifact",
+        "family": "T2",
+        "name": "one-image-budget",
+        "observed": "Refused(11) no-artifact",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "Refused(7) no-artifact",
+        "family": "T3",
+        "name": "unknown-entries",
+        "observed": "Refused(7) no-artifact",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "original-identity",
+        "family": "T3",
+        "name": "source-byte-tamper",
+        "observed": "original-identity",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "hook-identity",
+        "family": "T3",
+        "name": "hook-byte-tamper-rebound-original",
+        "observed": "hook-identity",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "Refused(11) no-artifact",
+        "family": "T3",
+        "name": "selected-placement-unavailable",
+        "observed": "Refused(11) no-artifact",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      },
+      {
+        "expected": "Refused(11) no-artifact",
+        "family": "T3",
+        "name": "one-image-budget",
+        "observed": "Refused(11) no-artifact",
+        "outcome": "required-refusal",
+        "positive_native_credit": false
+      }
+    ],
+    "rewritten_traces": 136,
+    "stages": 93,
+    "strict_helper_receipts": 93,
+    "subject_call_ret_witnesses": 204,
+    "trace_deadline_seconds": 15,
+    "trace_step_limit": 20000
+  },
+  "tested_revision": "e6243a862fda2572304cccbcfe698ac9ea6212a6",
+  "timing_scope": "Operational diagnostic durations only, not benchmarks; nested rows overlap their parent; no durations are summed",
+  "tool_observation_scope": "Five saved version queries per recipe; no helper receipt, duration or full configuration closure is invented",
+  "tool_version_observations": {
+    "b1_prerequisite": {
+      "cargo": {
+        "argv": [
+          "${TACTICS_TOOLCHAIN}/bin/cargo",
+          "-V"
+        ],
+        "output": "cargo 1.97.1 (c980f4866 2026-06-30)\n",
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "gcc": {
+        "argv": [
+          "/usr/bin/gcc",
+          "--version"
+        ],
+        "output": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)\nCopyright (C) 2021 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "ld": {
+        "argv": [
+          "/usr/bin/ld",
+          "--version"
+        ],
+        "output": "GNU ld version 2.35.2-72.el9\nCopyright (C) 2020 Free Software Foundation, Inc.\nThis program is free software; you may redistribute it under the terms of\nthe GNU General Public License version 3 or (at your option) a later version.\nThis program has absolutely no warranty.\n",
+        "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+      },
+      "rustc": {
+        "argv": [
+          "${TACTICS_TOOLCHAIN}/bin/rustc",
+          "-vV"
+        ],
+        "output": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "strip": {
+        "argv": [
+          "/usr/bin/strip",
+          "--version"
+        ],
+        "output": "GNU strip version 2.35.2-72.el9\nCopyright (C) 2020 Free Software Foundation, Inc.\nThis program is free software; you may redistribute it under the terms of\nthe GNU General Public License version 3 or (at your option) any later version.\nThis program has absolutely no warranty.\n",
+        "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+      }
+    },
+    "tactics": {
+      "cargo": {
+        "argv": [
+          "${TACTICS_TOOLCHAIN}/bin/cargo",
+          "-V"
+        ],
+        "output": "cargo 1.97.1 (c980f4866 2026-06-30)\n",
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "gcc": {
+        "argv": [
+          "/usr/bin/gcc",
+          "--version"
+        ],
+        "output": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)\nCopyright (C) 2021 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.\n\n",
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "ld": {
+        "argv": [
+          "/usr/bin/ld",
+          "--version"
+        ],
+        "output": "GNU ld version 2.35.2-72.el9\nCopyright (C) 2020 Free Software Foundation, Inc.\nThis program is free software; you may redistribute it under the terms of\nthe GNU General Public License version 3 or (at your option) a later version.\nThis program has absolutely no warranty.\n",
+        "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+      },
+      "rustc": {
+        "argv": [
+          "${TACTICS_TOOLCHAIN}/bin/rustc",
+          "-vV"
+        ],
+        "output": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "strip": {
+        "argv": [
+          "/usr/bin/strip",
+          "--version"
+        ],
+        "output": "GNU strip version 2.35.2-72.el9\nCopyright (C) 2020 Free Software Foundation, Inc.\nThis program is free software; you may redistribute it under the terms of\nthe GNU General Public License version 3 or (at your option) any later version.\nThis program has absolutely no warranty.\n",
+        "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+      }
+    }
+  }
+}
