@@ -114,7 +114,7 @@ fn runtime_kernel_native_effect_capacity_is_thirty_seven_and_never_skips_pending
     // Six private calls and one bridge each reserve five actual effects;
     // original release and original ENTRY release require two additional rows.
     assert_eq!(EFFECTS, 6 * 5 + 5 + 2);
-    assert!(EFFECTS > 32);
+    const { assert!(EFFECTS > 32) };
     let mut prepared = attempt();
     for ordinal in 0..EFFECTS {
         assert!(prepared.can_begin_effect());

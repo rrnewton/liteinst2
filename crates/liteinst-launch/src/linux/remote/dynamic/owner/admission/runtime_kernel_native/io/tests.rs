@@ -71,11 +71,13 @@ fn runtime_kernel_raw_state_keeps_full_initialized_substrate_and_exact_extent() 
 
 #[test]
 fn runtime_kernel_raw_owned_trap_requires_exact_si_kernel_and_request_success() {
-    let mut raw = FixedReads::default();
-    raw.signal_request = Some(Request {
-        result: 0,
-        errno: None,
-    });
+    let mut raw = FixedReads {
+        signal_request: Some(Request {
+            result: 0,
+            errno: None,
+        }),
+        ..FixedReads::default()
+    };
     raw.signal[..4].copy_from_slice(&libc::SIGTRAP.to_ne_bytes());
     raw.signal[8..12].copy_from_slice(&libc::SI_KERNEL.to_ne_bytes());
     raw.owned_trap().unwrap();

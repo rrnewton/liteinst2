@@ -1,14 +1,16 @@
 //! Initialized response models only; no actual namespace proof is minted.
 use super::*;
 fn complete() -> NamespaceObservation {
-    let mut result = NamespaceObservation::default();
-    result.started = true;
-    result.complete = true;
     let identity = NativeNamespaceIdentity {
         device: 7,
         inode: 900,
     };
-    result.identity = Some(identity);
+    let mut result = NamespaceObservation {
+        started: true,
+        complete: true,
+        identity: Some(identity),
+        ..NamespaceObservation::default()
+    };
     for read in &mut result.reads {
         let zero = Some(Request {
             result: 0,

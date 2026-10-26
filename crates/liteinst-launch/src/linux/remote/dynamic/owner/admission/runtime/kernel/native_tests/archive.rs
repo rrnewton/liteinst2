@@ -510,8 +510,10 @@ pub(super) fn native(
             assert_eq!(actual, entry);
             syscall_info(raw, 1, &entry, identity.number(), identity.arguments());
         }
-        if returned.is_some() && ordinal == 4 {
-            assert_eq!(&actual, returned.unwrap());
+        if let Some(returned) = returned
+            && ordinal == 4
+        {
+            assert_eq!(&actual, returned);
             syscall_info(raw, 2, &actual, identity.number(), identity.arguments());
         }
         if returned.is_none() && ordinal == 4 {
