@@ -136,9 +136,11 @@ impl ResumeCensus {
             || completed.before != *input.registers()
             || completed.after.rip != input.instruction().next_pc()
             || completed.after.cs != 0x33
+            || completed.after.orig_rax != stored.current.registers.orig_rax
         {
             return Err(CensusError::InvalidConsumption);
         }
+        let provenance = self.runtime_register_provenance(origin)?;
         // Construction is descriptive. In particular the old token retained
         // here is not a fabricated successor stop; commit must replace it from
         // the real native proof and require a strictly later same-task sequence.
@@ -180,6 +182,10 @@ impl ResumeCensus {
                 current,
                 active: true,
                 frame: None,
+                runtime_kernel: provenance.map(|lineage| runtime_kernel::KernelOriginLineage {
+                    returned: lineage.returned,
+                    parent: Some(origin),
+                }),
             }),
             committed: None,
         });
@@ -247,6 +253,7 @@ impl ResumeCensus {
             return Err(CensusError::StaleObservation);
         }
         successor_matches(&evidence.before, actual)?;
+        let provenance = self.runtime_register_provenance(prepared.origin)?;
         if actual.phase
             != (StopPhase::SelectedComplete {
                 invocation: prepared.invocation,
@@ -265,6 +272,12 @@ impl ResumeCensus {
             || successor.row.created_generation != self.state.generation
             || !successor.active
             || successor.frame.is_some()
+            || successor.runtime_kernel
+                != provenance.map(|lineage| runtime_kernel::KernelOriginLineage {
+                    returned: lineage.returned,
+                    parent: Some(prepared.origin),
+                })
+            || actual.registers.orig_rax != evidence.before.registers.orig_rax
             || !prepared_successor_matches(&successor.row.initial, &evidence.before.token, actual)
             || !prepared_successor_matches(&successor.current, &evidence.before.token, actual)
         {

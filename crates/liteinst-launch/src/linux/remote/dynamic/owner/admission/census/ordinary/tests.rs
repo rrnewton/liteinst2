@@ -808,3 +808,95 @@ fn ordinary_preparation_prebinds_checked_origin_serial_before_effects() {
     case.census.state.next_serial += 1;
     case.reject(CensusError::StaleObservation);
 }
+
+#[test]
+fn ordinary_after_sealed_kernel_return_resets_only_at_actual_trace_model() {
+    let (mut census, origin) =
+        super::super::runtime_kernel::tests::synthetic_returned_for_lineage();
+    let before = census.current_observation(origin).unwrap().clone();
+    assert_eq!(before.registers.orig_rax, libc::SYS_getpid as u64);
+    let reservation = census.reserve(ordinary_census_charge().unwrap()).unwrap();
+    let mut prepared = census
+        .prepare_model(
+            reservation,
+            origin,
+            ExecutionId::from_owner(before.token.session, 2).unwrap(),
+            source(),
+            Encoding::new(before.logical_pc, &[0xeb, 0xfe]).unwrap(),
+            Instant::now() + Duration::from_secs(60),
+        )
+        .unwrap();
+    let mut actual = Fixture::new(&prepared, true);
+    for state in &mut actual.states[4..] {
+        state.registers.orig_rax = u64::MAX;
+    }
+    let old_history = census.history().to_vec();
+    let result = census
+        .commit_model(reservation, &actual.view(), &mut prepared)
+        .unwrap();
+    assert_ne!(result.current, origin);
+    assert_eq!(
+        &census.history()[..old_history.len()],
+        old_history.as_slice()
+    );
+    assert_eq!(
+        census
+            .current_observation(result.current)
+            .unwrap()
+            .registers
+            .orig_rax,
+        u64::MAX
+    );
+    assert_eq!(
+        census.runtime_register_provenance(result.current).unwrap(),
+        None
+    );
+    assert_eq!(
+        census
+            .state
+            .origins
+            .iter()
+            .find(|row| row.row.id == origin)
+            .unwrap()
+            .runtime_kernel
+            .unwrap()
+            .returned,
+        origin
+    );
+}
+
+#[test]
+fn ordinary_kernel_provenance_never_waives_trace_or_close_max_requirement() {
+    for mutation in 0..4 {
+        let (mut census, origin) =
+            super::super::runtime_kernel::tests::synthetic_returned_for_lineage();
+        let before = census.current_observation(origin).unwrap().clone();
+        let reservation = census.reserve(ordinary_census_charge().unwrap()).unwrap();
+        let mut prepared = census
+            .prepare_model(
+                reservation,
+                origin,
+                ExecutionId::from_owner(before.token.session, 2).unwrap(),
+                source(),
+                Encoding::new(before.logical_pc, &[0xeb, 0xfe]).unwrap(),
+                Instant::now() + Duration::from_secs(60),
+            )
+            .unwrap();
+        let mut actual = Fixture::new(&prepared, true);
+        for state in &mut actual.states[4..] {
+            state.registers.orig_rax = u64::MAX;
+        }
+        actual.states[4 + mutation].registers.orig_rax = libc::SYS_getpid as u64;
+        let state = census.state.clone();
+        let prepared_before = prepared.before.clone();
+        assert_eq!(
+            census
+                .commit_model(reservation, &actual.view(), &mut prepared)
+                .err(),
+            Some(CensusError::InvalidConsumption)
+        );
+        assert_eq!(census.state, state);
+        assert_eq!(prepared.before, prepared_before);
+        assert!(!prepared.committed);
+    }
+}

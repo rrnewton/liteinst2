@@ -315,6 +315,7 @@ impl ResumeCensus {
             current,
             active: true,
             frame: None,
+            runtime_kernel: None,
         });
 
         // All checks, allocation and arithmetic are complete. These moves are

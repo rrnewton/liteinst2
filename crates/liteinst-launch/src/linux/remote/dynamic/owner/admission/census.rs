@@ -21,6 +21,11 @@ mod ordinary;
 pub(super) use ordinary::{PreparedOrdinaryCensus, ordinary_census_charge};
 mod selected_runtime;
 pub(super) use selected_runtime::PreparedRuntimeSelected;
+mod runtime_kernel;
+pub(super) use runtime_kernel::{PreparedRuntimeKernelCensus, runtime_kernel_census_charge};
+pub(in crate::linux::remote::dynamic::owner) use runtime_kernel::{
+    RuntimeKernelCommitOutcome, RuntimeKernelCommitReceipt, RuntimeKernelCommitView,
+};
 mod signal;
 pub(super) use signal::{FrameFacts, SignalReturnWitness};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -182,6 +187,13 @@ pub(super) struct OriginId {
     serial: u64,
 }
 
+impl OriginId {
+    /// Historical diagnostic projection; not a constructor or native permit.
+    pub(super) fn journal_identity(self) -> (u64, u64) {
+        (self.census, self.serial)
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct Reservation {
     census: u64,
@@ -197,6 +209,11 @@ pub(super) struct ExecutionId {
 }
 
 impl ExecutionId {
+    /// Historical diagnostic projection; no execution authority is minted.
+    pub(super) fn journal_identity(self) -> (u64, u64) {
+        (self.session, self.serial)
+    }
+
     pub(super) fn from_owner(session: u64, serial: u64) -> Result<Self, CensusError> {
         if session == 0 || serial == 0 {
             return Err(CensusError::IdentityMismatch);
@@ -392,6 +409,8 @@ struct StoredOrigin {
     current: ObservedStop,
     active: bool,
     frame: Option<Arc<FrameFacts>>,
+    // Minted only by sealed runtime-kernel commit; inherited only by exact CPU completion.
+    runtime_kernel: Option<runtime_kernel::KernelOriginLineage>,
 }
 
 /// Full evidence of the one already-authorized native clone invocation.
@@ -495,6 +514,7 @@ enum Consumption {
     },
     /// Exactly one preallocated immutable record; actual authority was consumed.
     OwnedOrdinary(Box<[ordinary::OrdinaryEvidence]>),
+    RuntimeKernel(Box<[runtime_kernel::KernelEvidence]>),
     KernelClone(Box<CompletedKernel>),
     Signal(Box<signal::SignalConsumption>),
 }
@@ -646,6 +666,9 @@ impl OwnerConsumption {
             Consumption::OwnedOrdinary(records) => {
                 records.len() * std::mem::size_of::<ordinary::OrdinaryEvidence>()
             }
+            Consumption::RuntimeKernel(records) => {
+                records.iter().map(|record| record.retained_bytes()).sum()
+            }
             Consumption::KernelClone(kernel) => {
                 kernel.before.retained_bytes()
                     + kernel.entry.retained_bytes()
@@ -731,6 +754,12 @@ pub(super) enum HistoryRecord {
     Terminal {
         origin: OriginId,
         evidence: OwnerTerminal,
+    },
+    /// Actual sealed task exit, with no fabricated held successor or epoch.
+    RuntimeKernelTerminal {
+        origin: OriginId,
+        before: ObservedStop,
+        evidence: Box<[runtime_kernel::KernelEvidence]>,
     },
     SignalFrameRefreshed(Box<signal::FrameRefresh>),
     SignalFrameReturned(Box<signal::FrameReturn>),
@@ -977,6 +1006,7 @@ impl ResumeCensus {
             current: observed,
             active: true,
             frame: None,
+            runtime_kernel: None,
         });
         self.state.next_serial = next;
         self.commit_debit(token, remaining, used);

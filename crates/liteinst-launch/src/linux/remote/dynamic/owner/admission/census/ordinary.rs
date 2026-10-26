@@ -192,6 +192,18 @@ fn checkpoint_identity(before: &ObservedStop, checkpoint: NativeCheckpoint<'_>) 
         && checkpoint.stop.token.task == before.token.task
         && valid_state(checkpoint.state)
 }
+// Only the logical-before/opening family may inherit an exact sealed kernel
+// register value. STEP and closing retain the original MAX-only predicate.
+fn opening_checkpoint_identity(before: &ObservedStop, checkpoint: NativeCheckpoint<'_>) -> bool {
+    checkpoint.stop.identity == before.task
+        && checkpoint.stop.token.session == before.token.session
+        && checkpoint.stop.token.tid == before.token.tid
+        && checkpoint.stop.token.task == before.token.task
+        && checkpoint.state.registers.cs == 0x33
+        && checkpoint.state.registers.rip != 0
+        && checkpoint.state.registers.orig_rax == before.registers.orig_rax
+        && (512..MAX_XSTATE_BYTES).contains(&checkpoint.state.xstate.len())
+}
 fn validate_candidate(
     source: SourceRecord,
     candidate: &InstructionCandidate<'_>,
@@ -323,7 +335,6 @@ impl ResumeCensus {
         }
         if before.phase != StopPhase::UserCheckpoint
             || before.signal.is_some()
-            || before.registers.orig_rax != u64::MAX
             || before.task.generation != 0
             || before.logical_pc != encoding.pc
             || Instant::now() >= until
@@ -331,6 +342,7 @@ impl ResumeCensus {
         {
             return Err(CensusError::StaleObservation);
         }
+        self.runtime_register_provenance(origin)?;
         if self.state.origins.len() == self.state.origins.capacity()
             || self
                 .state
@@ -443,7 +455,8 @@ impl ResumeCensus {
         {
             return Err(CensusError::StaleObservation);
         }
-        if !checkpoint_identity(before, actual.logical)
+        self.runtime_register_provenance(expected.origin)?;
+        if !opening_checkpoint_identity(before, actual.logical)
             || actual.logical.stop.token != before.token
             || actual.logical.stop.signal.is_some()
             || !matches!(
@@ -456,7 +469,7 @@ impl ResumeCensus {
         }
         let mut sequence = before.token.sequence;
         for stop in actual.opening {
-            if !checkpoint_identity(before, stop)
+            if !opening_checkpoint_identity(before, stop)
                 || stop.stop.token.sequence <= sequence
                 || stop.stop.phase != AdmissionPhase::Restored
                 || stop.stop.signal.is_some()
@@ -630,6 +643,7 @@ impl ResumeCensus {
             current,
             active: true,
             frame: None,
+            runtime_kernel: None,
         });
         for index in 0..PRIVATE_PER_SIDE {
             let before = if index == 0 {
