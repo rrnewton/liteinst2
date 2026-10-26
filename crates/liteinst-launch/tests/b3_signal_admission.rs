@@ -211,7 +211,7 @@ fn gated(image: &Image, ready: SyncSender<raw::Ready>) -> GatedTrace {
         for call in &image.setup {
             let (done, observed) = completion(&mut session);
             assert_eq!(
-                done.selected.input.instruction().logical_pc,
+                done.selected.input.instruction().logical_pc(),
                 call.instruction
             );
             assert_eq!(done.selected.input.instruction().bytes(), [0x0f, 0x05]);
@@ -221,7 +221,7 @@ fn gated(image: &Image, ready: SyncSender<raw::Ready>) -> GatedTrace {
         }
         let (first, _) = completion(&mut session);
         assert_eq!(
-            first.selected.input.instruction().logical_pc,
+            first.selected.input.instruction().logical_pc(),
             image.pre_signal_cpuid
         );
         assert_eq!(first.selected.input.instruction().bytes(), [0x0f, 0xa2]);
@@ -258,7 +258,7 @@ fn gated(image: &Image, ready: SyncSender<raw::Ready>) -> GatedTrace {
         }
         let before = session.metrics().unwrap();
         assert!(before.fetch_faults >= 1);
-        assert!(before.guard_stops >= image.setup.len() + 1);
+        assert!(before.guard_stops > image.setup.len());
         let entry = session.deliver_signal(&pending.token).unwrap();
         assert_eq!(entry.interrupted, pending.state);
         assert_eq!(entry.signal, pending.signal);
@@ -283,7 +283,7 @@ fn gated(image: &Image, ready: SyncSender<raw::Ready>) -> GatedTrace {
         assert_eq!(actual_frame.bytes, entry.projected_frame.bytes);
         let (handler_completion, after_handler) = completion(&mut session);
         assert_eq!(
-            handler_completion.selected.input.instruction().logical_pc,
+            handler_completion.selected.input.instruction().logical_pc(),
             HANDLER
         );
         assert_eq!(
@@ -297,7 +297,7 @@ fn gated(image: &Image, ready: SyncSender<raw::Ready>) -> GatedTrace {
             panic!("expected distinct genuine signal return, not ordinary Completed: {event:?}")
         };
         assert_eq!(returned.frame, entry.projected_frame.id);
-        assert_eq!(returned.input.instruction().logical_pc, image.sigreturn);
+        assert_eq!(returned.input.instruction().logical_pc(), image.sigreturn);
         assert_eq!(
             returned.input.registers().rax,
             libc::SYS_rt_sigreturn as u64
@@ -318,7 +318,7 @@ fn gated(image: &Image, ready: SyncSender<raw::Ready>) -> GatedTrace {
             assert!(!executable(pid, &pin, LANDING));
             let faults = session.metrics().unwrap().fetch_faults;
             let result = completion(&mut session);
-            assert_eq!(result.0.selected.input.instruction().logical_pc, LANDING);
+            assert_eq!(result.0.selected.input.instruction().logical_pc(), LANDING);
             assert_eq!(result.0.selected.input.registers(), &return_state.registers);
             assert_eq!(result.0.selected.before_xstate, return_state.xstate);
             compare::cpuid(&return_state, &result.1);
@@ -341,7 +341,7 @@ fn gated(image: &Image, ready: SyncSender<raw::Ready>) -> GatedTrace {
         assert_eq!(
             callbacks
                 .iter()
-                .map(|input| input.instruction().logical_pc)
+                .map(|input| input.instruction().logical_pc())
                 .collect::<Vec<_>>(),
             expected
         );
@@ -501,7 +501,7 @@ fn compare_pair(image: &Image, raw: &raw::Trace, gated: &GatedTrace, nonzero: Op
         gated
             .callbacks
             .iter()
-            .filter(|input| input.instruction().logical_pc == image.sigreturn)
+            .filter(|input| input.instruction().logical_pc() == image.sigreturn)
             .count(),
         1
     );

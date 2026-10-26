@@ -129,7 +129,8 @@ impl PristineSignalOwner {
         assert_eq!(exec.cs, 0x33);
         assert_eq!(exec.rax, (-i64::from(libc::ENOSYS)) as u64);
         assert_eq!(owner.signal_mask(), TRACER_MASK);
-        owner.ptrace(0x420b, 8, (&raw const APP_MASK) as usize);
+        let application_mask = APP_MASK;
+        owner.ptrace(0x420b, 8, (&raw const application_mask) as usize);
         assert_eq!(owner.signal_mask(), APP_MASK);
         owner.resume(libc::PTRACE_SYSCALL, 0, until);
         owner.syscall_stop(until);

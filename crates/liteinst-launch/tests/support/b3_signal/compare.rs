@@ -110,9 +110,8 @@ pub fn frame_setup(
 pub fn cpuid(before: &State, after: &State) {
     // This literal original CPU instruction is a second independent value
     // check, not the production SelectedInput completion implementation.
-    let values = unsafe {
-        std::arch::x86_64::__cpuid_count(before.registers.rax as u32, before.registers.rcx as u32)
-    };
+    let values =
+        std::arch::x86_64::__cpuid_count(before.registers.rax as u32, before.registers.rcx as u32);
     let mut expected = before.clone();
     expected.registers.rax = u64::from(values.eax);
     expected.registers.rbx = u64::from(values.ebx);

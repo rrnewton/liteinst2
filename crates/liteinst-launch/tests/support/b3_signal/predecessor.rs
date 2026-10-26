@@ -137,8 +137,8 @@ pub fn is_inner() -> bool {
 pub fn establish() -> Metadata {
     assert!(is_inner());
     assert_eq!(SEEN.load(Ordering::SeqCst), 0);
-    let fault = unsafe { &raw const liteinst_signal_predecessor_fault };
-    let after = unsafe { &raw const liteinst_signal_predecessor_after };
+    let fault = &raw const liteinst_signal_predecessor_fault;
+    let after = &raw const liteinst_signal_predecessor_after;
     assert_eq!((after as usize) - (fault as usize), 3);
     assert_eq!(
         unsafe { std::slice::from_raw_parts(fault, 3) },
