@@ -72,7 +72,7 @@ def expected_corpus():
                 "test/dynamic_admission": {"tests": len(FIXTURES), "ignored": 0},
                 "test/native_selected": {"tests": 50, "ignored": 0}}},
             "native_cases": real["native_cases"], "dynamic_admission_fixtures": FIXTURES,
-            "dynamic_matrix_cases": CASES}
+            "dynamic_matrix_cases": CASES, "native_validation_fixtures": []}
 
 
 class MatrixParsingTests(unittest.TestCase):

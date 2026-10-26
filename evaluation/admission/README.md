@@ -155,12 +155,15 @@ The dynamic admission increment adds 72 outer tests: 14 pending-plan puzzles,
 17 resume-census bookkeeping tests, 16 client/owner protocol tests, ten resource
 bound regressions, seven baseline native integration fixtures, seven dynamic
 matrix fixtures and one CALL-return fixture. The expected launcher unit cohort
-is 109. Workspace expectations are 1218 outer tests in 75 harnesses (1214 possible
-passes and four existing ignores); serial launch expects 380 tests in 23
-harnesses. Recorder regressions increase from 53 to 98. These are source-derived
+was 109 before the kernel journal increment. The journal adds twelve pure tests,
+fifteen native fault/oracle/capacity tests and two native forced-dispatch tests;
+the B2 finite comparator adds six integration tests. Expected launcher unit
+count is 138. Workspace expectations are 1253 outer tests in 76 harnesses (1249
+possible passes and four existing ignores); serial launch expects 415 tests in
+24 harnesses. Recorder regressions increase from 98 to 119. These are source-derived
 expected cohorts, not reported execution results.
 
-The serial command exports three distinct evidence collections. The existing
+The serial command exports four distinct evidence collections. The existing
 `native_cases` collection retains its separate 50-case static oracle denominator.
 `dynamic_admission_fixtures` has exactly one row for each of the 15 declared
 fixtures, including the original seven in their original order. Exact Rust module
@@ -186,6 +189,24 @@ The schema rejects extra fields, malformed or duplicate keys, wrong contexts and
 unknown identities. No raw addresses, output values or private diagnostics are
 exported.
 
+`native_validation_fixtures` separately retains 23 exact named outcomes: the
+seventeen native journal/capacity/dispatch cases under their declared unit-module
+prefixes and six B2 reference integration cases. These are test outcomes, not
+instruction samples, event counts or performance measurements. A case requires
+its exact harness and an explicit terminal `ok` within one announced libtest run.
+Missing, duplicate, skipped, failed, misattributed or unlisted cohort names refuse.
+Other unit tests are structurally checked without exporting their diagnostics.
+The independent aggregate harness parser remains mandatory. An explicit empty
+catalog is used only by historical synthetic protocol tests, never as a default
+for a missing current catalog.
+
+The [kernel progress journal](kernel-journal.md) keeps raw and validated phases
+separate across actual failures, panic, native expiry and client response expiry.
+Its pure-model accounting tests remain separate from held-native capacity and
+full-state oracle evidence. The [finite B2 mode comparison](b2-reference.md)
+checks shared trajectories through three process lanes and a handwritten model;
+it supplies no production block backend or native selected-effect measurement.
+
 The seven original named fixtures cover first CPUID entry, interpreter entry,
 native clone return boundaries, scripted default-policy RDPID coverage,
 mapping-policy refusal and provider panic/timeout cleanup. The matrix adds the
@@ -201,7 +222,7 @@ one named outcome, not matrix telemetry or a new static sample.
 
 A row alone never qualifies an experiment. Partial and failed observations stay
 unqualified; source/configuration drift, another failed command, a cleanup
-failure or a recorder exception disqualifies all three collections. The existing
+failure or a recorder exception disqualifies all four collections. The existing
 revision/tree/source-manifest, command, hardware and log-digest fields bind the
 observations. No command, deadline, ignore allowance, comparator, native50 parser
 or descendant-cleanup rule changes. None of these finite cohorts establishes a

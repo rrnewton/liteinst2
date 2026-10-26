@@ -66,7 +66,7 @@ def corpus():
                 "test/dynamic_admission": {"tests": 7, "ignored": 0},
                 "test/native_selected": {"tests": 50, "ignored": 0}}},
             "native_cases": declared["native_cases"], "dynamic_admission_fixtures": FIXTURES,
-            "dynamic_matrix_cases": []}
+            "dynamic_matrix_cases": [], "native_validation_fixtures": []}
 
 
 def command(status="passed", exit_code=0):
@@ -270,7 +270,8 @@ class DynamicRecorderIntegrationTests(unittest.TestCase):
                 return {"exit_code": 0, "termination": None, "cleanup_complete": True, "seconds": 0.01}
 
             def fail_after_rows(observed, output, expected):
-                for field in ("native_cases", "dynamic_admission_fixtures", "dynamic_matrix_cases"):
+                for field in ("native_cases", "dynamic_admission_fixtures", "dynamic_matrix_cases",
+                              "native_validation_fixtures"):
                     observed[field] = [{"command_succeeded": True, "qualified_run": True}]
                 raise RuntimeError("PRIVATE_SENTINEL")
 
@@ -295,7 +296,8 @@ class DynamicRecorderIntegrationTests(unittest.TestCase):
             self.assertEqual(record["status"], "recorder_error")
             self.assertEqual(record["error_type"], "RuntimeError")
             self.assertNotIn("PRIVATE_SENTINEL", json.dumps(record))
-            for field in ("native_cases", "dynamic_admission_fixtures", "dynamic_matrix_cases"):
+            for field in ("native_cases", "dynamic_admission_fixtures", "dynamic_matrix_cases",
+                              "native_validation_fixtures"):
                 self.assertFalse(record["commands"][0][field][0]["qualified_run"])
             self.assertTrue(all(row["status"] == "not_run" for row in record["commands"][1:]))
 
@@ -306,7 +308,7 @@ class DynamicRecorderIntegrationTests(unittest.TestCase):
         self.assertEqual(len(declared["native_cases"]), 50)
         for cohort in declared["harness_test_counts"].values():
             self.assertEqual(cohort["test/dynamic_admission"], {"tests": 15, "ignored": 0})
-        self.assertEqual(declared["recorder_tests"], 98)
+        self.assertEqual(declared["recorder_tests"], 119)
 
     def test_six_commands_and_existing_deadlines_are_not_extended(self):
         self.assertEqual(run.COMMANDS, [

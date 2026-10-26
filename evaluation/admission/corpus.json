@@ -5939,6 +5939,10 @@
   ],
   "harness_test_counts": {
     "serial_launch": {
+      "test/b2_mode_reference": {
+        "ignored": 0,
+        "tests": 6
+      },
       "test/checkpoint": {
         "ignored": 0,
         "tests": 23
@@ -6029,7 +6033,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 109
+        "tests": 138
       }
     },
     "workspace_tests": {
@@ -6054,6 +6058,10 @@
         "tests": 40
       },
       "test/arena_fork": {
+        "ignored": 0,
+        "tests": 6
+      },
+      "test/b2_mode_reference": {
         "ignored": 0,
         "tests": 6
       },
@@ -6323,7 +6331,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 109
+        "tests": 138
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,
@@ -6837,6 +6845,123 @@
       "test": "covered_rdpid_r15"
     }
   ],
-  "recorder_tests": 98,
+  "native_validation_fixtures": [
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::native_getid_success_journals_actual_entry_exit_and_rearmed_admission"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::raw_entry_failure_retains_full_native_stop_without_entry_release"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::validated_entry_failure_precedes_original_kernel_execution"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::actual_exit_failure_precedes_any_return_bridge"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::raw_newborn_failure_retains_unjoined_native_identity_and_actual_prefix"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::parent_bridge_failure_preserves_raw_exit_and_unbridged_child"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::child_bridge_failure_preserves_both_native_return_states"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::transport_failure_does_not_become_admission_completion"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::before_rebind_failure_keeps_transport_prefix_without_completed_event"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::after_rebind_failure_keeps_original_generation_prefix_without_completed_event"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::panic_while_admission_is_taken_retains_actual_exit_and_physical_cleanup"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::native_latch_deadline_preserves_exit_prefix_without_renewal_or_completion"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::independent_full_state_comparator_rejects_register_xstate_mask_and_memory_corruption"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::kernel_journal::tests::native::transport::caller_response_expiry_keeps_actual_exit_prefix_after_owner_error_and_cleanup"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::completion::journal_native_budget_tests::actual_held_journal_prefix_capacity_refusal_precedes_attachment_and_release"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::completion::journal_dispatch_tests::collected_clone_prefix_survives_parent_first_dispatch_and_rejection"
+    },
+    {
+      "cohort": "kernel_journal",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::completion::journal_dispatch_tests::collected_clone_prefix_survives_newborn_first_dispatch_and_rejection"
+    },
+    {
+      "cohort": "b2_reference",
+      "harness": "test/b2_mode_reference",
+      "test": "masked_cpuid_random_chain_agrees_in_all_four_modes"
+    },
+    {
+      "cohort": "b2_reference",
+      "harness": "test/b2_mode_reference",
+      "test": "timestamps_processor_id_and_scripted_syscall_agree_in_all_four_modes"
+    },
+    {
+      "cohort": "b2_reference",
+      "harness": "test/b2_mode_reference",
+      "test": "prefixed_and_alternate_embedded_entries_have_exact_callback_trajectories"
+    },
+    {
+      "cohort": "b2_reference",
+      "harness": "test/b2_mode_reference",
+      "test": "cross_page_call_return_reaches_the_same_original_selected_head"
+    },
+    {
+      "cohort": "b2_reference",
+      "harness": "test/b2_mode_reference",
+      "test": "strict_embedded_refusal_is_not_relabelled_as_reference_success"
+    },
+    {
+      "cohort": "b2_reference",
+      "harness": "test/b2_mode_reference",
+      "test": "strict_reference_refuses_unknown_heads_bytes_and_scripts_without_execution"
+    }
+  ],
+  "recorder_tests": 119,
   "schema_version": 1
 }
