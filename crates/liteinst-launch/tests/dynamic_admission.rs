@@ -328,12 +328,10 @@ fn literal_first_cpuid_preserves_complete_state_and_native_memory() {
         let values = if native {
             // CPUID leaf zero's vendor/max-leaf result is stable across this
             // machine; use the independent host instruction, no production model.
-            let value = unsafe {
-                std::arch::x86_64::__cpuid_count(
-                    initial.registers.rax as u32,
-                    initial.registers.rcx as u32,
-                )
-            };
+            let value = std::arch::x86_64::__cpuid_count(
+                initial.registers.rax as u32,
+                initial.registers.rcx as u32,
+            );
             [value.eax, value.ebx, value.ecx, value.edx]
         } else {
             [1, 2, 3, 4]
