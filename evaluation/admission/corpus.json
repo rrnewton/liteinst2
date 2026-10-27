@@ -6091,7 +6091,7 @@
     "workspace_tests": {
       "doc/liteinst2": {
         "ignored": 0,
-        "tests": 0
+        "tests": 3
       },
       "doc/liteinst_admission": {
         "ignored": 0,
@@ -6111,7 +6111,7 @@
       },
       "doc/rapid_profiler": {
         "ignored": 0,
-        "tests": 10
+        "tests": 11
       },
       "test/a2_oracle": {
         "ignored": 0,
@@ -6431,7 +6431,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 213
+        "tests": 219
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6459,7 +6459,7 @@
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,
-        "tests": 106
+        "tests": 119
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,

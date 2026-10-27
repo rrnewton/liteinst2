@@ -170,11 +170,14 @@ def parse_harnesses(output, expected, exit_code):
                 # Retain the exact historical core cohorts for replay. The
                 # merged core adds 24 tests to the same unchanged ptrace-child
                 # fixture. The later five-test A3 addition retains that exact
-                # child and requires 213; historical tuples remain replayable.
+                # child and requires 213; managed controls add six and require219.
+                # The authenticated original child behavior is unchanged; all
+                # historical tuples remain replayable.
                 require(known in (("unit/liteinst2/lib", 176, 1),
                                   ("unit/liteinst2/lib", 184, 1),
                                   ("unit/liteinst2/lib", 208, 1),
-                                  ("unit/liteinst2/lib", 213, 1), ("test/stress", 7, 3))
+                                  ("unit/liteinst2/lib", 213, 1),
+                                  ("unit/liteinst2/lib", 219, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,
