@@ -263,3 +263,15 @@ optimized opt-in bridge and records every raw interval in TSC ticks under
 work; they do not isolate publisher cost. Any workload or finalization failure
 withholds timing credit for the entire cohort. The separately qualified full-state,
 publication-failure and capacity oracles remain required.
+
+Additional original-address SSE2 qualification scripts are
+`page_selected_sse2_halves.py`, `page_selected_sse2_byte_shift.py` and
+`page_selected_sse2_movd.py` under `evaluation/inprocess/`. Each takes
+`--expect-revision REVISION` and requires one reserved CPU. They exercise finite
+literal full-state effects and instruction-page splits; memory suites also
+retain genuine failed native/stepped accesses. The exact eleven-byte alignment
+NOP is covered by `page_selected_padding.py`: that previously refused exact
+form is now positively qualified, while its historical failure remains recorded.
+All other prefix restrictions and owner predicates remain. Real dynamically
+linked applications still stop at unsupported instructions, as recorded in
+the evaluation receipts.
