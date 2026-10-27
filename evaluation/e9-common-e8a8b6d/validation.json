@@ -1,0 +1,156 @@
+{
+  "allocation_regressions_passed": [
+    "dropping_staged_image_releases_its_exact_mapping",
+    "observing_control_staged_drop_unmaps_before_releasing_last_owners",
+    "native_state_covers_every_prefixed_pun_and_original_successor"
+  ],
+  "controls": {
+    "e9_null_methods": 4,
+    "execution": "PASS",
+    "reproduction_methods": 13
+  },
+  "environment": "full/invocation.json build_environment; extra TMPDIR is a fresh ignored directory",
+  "extra": [
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "0c0e86277a5cb8183bf73e17d12b8fe80d0fdafae85eeced8ca9c7dc2b57e1f6",
+        "reaped_descendants": 0,
+        "seconds": 124.10004019201733,
+        "start_utc": "2026-10-27T18:15:07.032475+00:00",
+        "termination": null
+      },
+      "name": "serial-launch",
+      "parent_wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "dba652ef02882de9484b216d1ea91f9cf17d7cf64dedeba03acabf683e0e4055",
+        "reaped_descendants": 0,
+        "seconds": 0.05795803992077708,
+        "start_utc": "2026-10-27T18:17:11.134857+00:00",
+        "termination": null
+      },
+      "name": "staged-allocation",
+      "parent_wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "1e000172cae617399e77a3470e5ae906e6376bf29aa9239c58631a10c9770d9a",
+        "reaped_descendants": 0,
+        "seconds": 1.32793714501895,
+        "start_utc": "2026-10-27T18:17:11.193367+00:00",
+        "termination": null
+      },
+      "name": "prefixed-pun",
+      "parent_wall_seconds": 180
+    }
+  ],
+  "required": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "name": "fmt",
+      "seconds": 5.524864423088729,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start_utc": "2026-10-27T17:59:21.845728+00:00",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "name": "clippy",
+      "seconds": 35.945865920046344,
+      "sha256": "194bc7df46d05db8ba5aa6863a6f7cc17e47ef2b28ad4229eba3a9e3803e3cb7",
+      "start_utc": "2026-10-27T17:59:27.373215+00:00",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit": 0,
+      "name": "test",
+      "seconds": 352.2775469850749,
+      "sha256": "0d7813c03d7b49cedd5412a8df9df7862419109bfb83f53c4caad65cf0e73c33",
+      "start_utc": "2026-10-27T18:00:03.324623+00:00",
+      "timeout_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "exit": 0,
+      "name": "check",
+      "seconds": 24.768226539017633,
+      "sha256": "e7e1d0f2e30fd93ab12babdef0c7ce7688279ff8b6dab265908558d26e485f19",
+      "start_utc": "2026-10-27T18:05:55.607670+00:00",
+      "timeout_seconds": 180
+    }
+  ],
+  "revision": "e8a8b6d447673aa7b98e00ff18df2eedf5e07d82",
+  "rust": "1.97.1",
+  "scope": "Source at the exact revision; operational durations, not performance measurements",
+  "workspace": {
+    "failed": 0,
+    "ignored": 4,
+    "passed": 2468,
+    "outer_result_blocks": 98,
+    "raw_result_blocks": 103,
+    "non_additive_nested_passes": 5,
+    "ordinary_main_harness_controls": 3,
+    "counting": "Outer named libtest passes only; nested child summaries and ordinary-main controls are not additive"
+  }
+}

@@ -1,0 +1,138 @@
+{
+  "checks": [
+    {
+      "observations": [
+        {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-O",
+            "-B",
+            "$REPO/evaluation/e9-common-e8a8b6d/run_all.py",
+            "--help"
+          ],
+          "case": "flag",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "exit_code": 1,
+          "status": "PASS",
+          "stderr_sha256": "6659156780c75635ce65fa84abf2da7ab89073ef184dccb368cf363ccb84412e",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "timeout_seconds": 5
+        },
+        {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/evaluation/e9-common-e8a8b6d/run_all.py",
+            "--help"
+          ],
+          "case": "environment",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONOPTIMIZE": "1"
+          },
+          "exit_code": 1,
+          "status": "PASS",
+          "stderr_sha256": "6659156780c75635ce65fa84abf2da7ab89073ef184dccb368cf363ccb84412e",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "timeout_seconds": 5
+        },
+        {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/evaluation/e9-common-e8a8b6d/run_all.py",
+            "--help"
+          ],
+          "case": "help",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "exit_code": 0,
+          "status": "PASS",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "87f51b27358c29e91bff2e6e8c87c07d235f374ba2ecd7be94578aded3b8f4f9",
+          "timeout_seconds": 5
+        }
+      ],
+      "script": "evaluation/e9-common-e8a8b6d/run_all.py",
+      "sha256": "79bd89789721878d86cc459291b0bbe80f5f7a9d923f54219ee8c2d1ccccf12f",
+      "subject_execution": false
+    },
+    {
+      "observations": [
+        {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-O",
+            "-B",
+            "$REPO/tools/software-preemption/verify_owned_loop.py",
+            "--help"
+          ],
+          "case": "flag",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "exit_code": 1,
+          "status": "PASS",
+          "stderr_sha256": "6659156780c75635ce65fa84abf2da7ab89073ef184dccb368cf363ccb84412e",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "timeout_seconds": 5
+        },
+        {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/software-preemption/verify_owned_loop.py",
+            "--help"
+          ],
+          "case": "environment",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONOPTIMIZE": "1"
+          },
+          "exit_code": 1,
+          "status": "PASS",
+          "stderr_sha256": "6659156780c75635ce65fa84abf2da7ab89073ef184dccb368cf363ccb84412e",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "timeout_seconds": 5
+        },
+        {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/software-preemption/verify_owned_loop.py",
+            "--help"
+          ],
+          "case": "help",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "exit_code": 0,
+          "status": "PASS",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "362f4c0fbbd991eafdfdeb921fa9a4e5c2758ce8e3c77f857b8b5bc3adad77d5",
+          "timeout_seconds": 5
+        }
+      ],
+      "script": "tools/software-preemption/verify_owned_loop.py",
+      "sha256": "96dafdda70fc5da717ef481b21b9ac0138ddc89790a0b5e1951d23238215172b",
+      "subject_execution": false
+    }
+  ],
+  "schema": 1,
+  "scope": "Python optimization refusal and help only; no corpus or candidate execution"
+}

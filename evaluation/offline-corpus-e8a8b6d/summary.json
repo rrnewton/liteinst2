@@ -1,0 +1,112 @@
+{
+  "cases_sha256": "3b6a3865c900c67b4a01f746c6639df96e34290db4259423f46940e110c3e3b7",
+  "comparison_summary_sha256": "04b6f0f953aa330200ca1249f252bf02bc7ba73489aae38c41f898c6dab97b09",
+  "comparisons": {
+    "FAILED": 0,
+    "PASS": 80,
+    "UNRUN": 0,
+    "UNSUPPORTED": 0
+  },
+  "controls": {
+    "expected_refusals": 68,
+    "legacy_gap_acceptances": 20,
+    "observations": 96,
+    "parent": {
+      "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+      "reaped_descendants": 0,
+      "seconds": 0.765346952015534,
+      "start_utc": "2026-10-27T18:18:30.275875+00:00",
+      "termination": null
+    },
+    "positive_checks": 8,
+    "receipt_sha256": "a792a530b64d3000a2efae023cb7de33bca59cf0353127448a9414c331a1095a",
+    "subject_execution": false
+  },
+  "controls_sha256": "8eb86bd0a5d3cebd2cc2c2db7f5041f4032253cac4ff838f5bf7c013c1a6a81b",
+  "csv_serialization": "cases.csv uses LF line endings; all 80 parsed rows are unchanged from source CSV",
+  "datasets_per_program": 10,
+  "full_a3": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_count": 4,
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "host_label_scope": "Owner-specified reporting label; cpu_model is freshly observed, and Zen 5 or historical same-host identity is not inferred",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ]
+  },
+  "lanes": [
+    "native",
+    "liteinst",
+    "stock-algorithm",
+    "bootstrap-patched-reference"
+  ],
+  "native_full_state": false,
+  "outer": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "894a5869930bbb5e184da2e709848603f1b10baadd42158a8943670dad10b165",
+    "reaped_descendants": 0,
+    "seconds": 52.553525396157056,
+    "start_utc": "2026-10-27T18:17:37.721339+00:00",
+    "termination": null
+  },
+  "performance_scope": "end-to-end bounded process wall time, including helper/exec/I/O; no isolated kernel or steady-state claim",
+  "phases": [
+    {
+      "id": "build-core",
+      "parent_sha256": "77daf6fce5b3ae1e1058c2462025b8fd3d3faa516c5a219fc60d4c41054447f2",
+      "receipt_sha256": "31a818647911341f5dbebd0ef93c129c763dd9f8ecaa627f76be8f1c84d39567",
+      "request_sha256": "beb0d07575ea8f1b5e0971bd44e1d1e4b1f61dfa88c91d2a6041d81ac5b668c5",
+      "seconds": 7.924474102212116,
+      "status": "PASS"
+    },
+    {
+      "id": "build-target",
+      "parent_sha256": "62b16f2be71cc62364b9fc1d353e619311b456d87e2e165950117c76041e8af1",
+      "receipt_sha256": "2001f8bb3547d9dfb6220c5a02596b7faca673286e8989d0c8033ffa205c60cb",
+      "request_sha256": "1eac5341d56823a7754b5384b68478ecc5207e39477ad5a9deff72d3fc46041c",
+      "seconds": 7.2576961510349065,
+      "status": "PASS"
+    },
+    {
+      "id": "target",
+      "parent_sha256": "76c65b8b69ecc64d02b27a0febae0ebccbddd0d4b3f0d794fa82aba7f397f70a",
+      "receipt_sha256": "9686ded560cded6d1098aab7260e4f173b38e7399b22a00d6541ac2c6a48dcaa",
+      "request_sha256": "99feceb6d090cdfa739dc695274b90de54acd485df03bb7ea260c765d818d356",
+      "seconds": 0.09148550382815301,
+      "status": "PASS"
+    },
+    {
+      "id": "compare",
+      "parent_sha256": "5ec803098441acb839cba38f8ddc380624c10c9d72e8d3f2bb30d1c15c36e9f0",
+      "receipt_sha256": "b96b472f34feb8575ce2ffe88e91f95f6b7a7a95a1f6ebcb6ccaead2843f144d",
+      "request_sha256": "e0a14a033b70bf9824a03251c0ee98a7daed71b507224978cfa909279b069b11",
+      "seconds": 31.216909445123747,
+      "status": "PASS"
+    }
+  ],
+  "profile": {
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "opt_level": "3",
+    "overflow_checks": true,
+    "test": false
+  },
+  "programs": [
+    "checksum",
+    "rle-roundtrip"
+  ],
+  "reproducer_sha256": "55f43d2a46e0dd512c2d55f048c6b1d59bc67bdce3244fde8de90874b3136811",
+  "revision": "e8a8b6d447673aa7b98e00ff18df2eedf5e07d82",
+  "schema": 1,
+  "source_cases_sha256": "3952ccf306c9550207dfbe3439024e8f2a15192f5f20cd04535c83bdb46b9e95",
+  "status": "PASS"
+}

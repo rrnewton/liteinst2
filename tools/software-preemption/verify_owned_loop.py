@@ -32,7 +32,8 @@ def save(path, value):
 
 
 def main():
-    assert not sys.flags.optimize, 'assertions required'
+    if sys.flags.optimize:
+        raise SystemExit('assertions required')
     sys.dont_write_bytecode = True
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--revision', required=True)

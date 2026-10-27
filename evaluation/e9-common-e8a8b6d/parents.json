@@ -1,0 +1,22 @@
+{
+  "e9_null": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reaped_descendants": 0,
+    "seconds": 145.7958294909913,
+    "start_utc": "2026-10-27T18:14:15.596447+00:00",
+    "termination": null
+  },
+  "full": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "reaped_descendants": 0,
+    "seconds": 878.9171395050362,
+    "start_utc": "2026-10-27T17:59:09.152103+00:00",
+    "termination": null
+  }
+}

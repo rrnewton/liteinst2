@@ -1,0 +1,88 @@
+{
+  "argv": [
+    "$PYTHON",
+    "-B",
+    "$REPRODUCER",
+    "--repo",
+    "$REPO",
+    "--tools",
+    "$TOOLS_JSON",
+    "--raw",
+    "$RAW"
+  ],
+  "build_environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_HOME": "$CARGO_HOME",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+    "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+    "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+    "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+    "CARGO_TARGET_DIR": "$REPO/target",
+    "HOME": "$USER_HOME",
+    "LC_ALL": "C",
+    "PATH": "$TOOLCHAIN:/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RUSTC": "$TOOLCHAIN/rustc",
+    "RUSTC_WORKSPACE_WRAPPER": "",
+    "RUSTC_WRAPPER": "",
+    "RUSTDOC": "$TOOLCHAIN/rustdoc",
+    "RUST_TEST_THREADS": "4"
+  },
+  "command_contexts_sha256": "3ecb1f5ddb746fc6f5994d56b6cee112b315936218e8c43042efe2cbb88a9607",
+  "cpu_count": 4,
+  "subject_limits": {
+    "compile": [
+      60,
+      90,
+      134217728
+    ],
+    "native": [
+      60,
+      90,
+      67108864
+    ],
+    "required_wall_seconds": [
+      180,
+      180,
+      360,
+      180
+    ],
+    "structural": [
+      20,
+      30,
+      16777216
+    ]
+  },
+  "tools": {
+    "cargo_home": "$CARGO_HOME",
+    "du": "$DU",
+    "e9": {
+      "abi_backend": "$E9_ABI_BACKEND",
+      "abi_loader": "$E9_ABI_LOADER",
+      "stock_backend": "$E9_STOCK_BACKEND",
+      "stock_frontend": "$E9_STOCK_FRONTEND",
+      "stock_loader": "$E9_STOCK_LOADER",
+      "transport_frontend": "$E9_TRANSPORT_FRONTEND"
+    },
+    "gcc": "$GCC",
+    "git": "$GIT",
+    "nm": "$NM",
+    "python": "$PYTHON",
+    "readelf": "$READELF",
+    "runtime_libraries": [
+      "$RUNTIME_0"
+    ],
+    "strip": "$STRIP",
+    "tar": "$TAR",
+    "timeout": "$TIMEOUT",
+    "toolchain": "$TOOLCHAIN",
+    "user_home": "$USER_HOME",
+    "zstd": "$ZSTD"
+  }
+}
