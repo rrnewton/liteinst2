@@ -39,7 +39,7 @@ def compact(command):
     for field in DETAILS:
         if field in command:
             rows = command.pop(field)
-            command[field + '_count'] = {'observed': len(rows),
+            command[field + '_count'] = {'catalog_rows': len(rows),
                                         'qualified': sum(row.get('qualified_run') is True for row in rows)}
     if 'harnesses' in command:
         rows = command.pop('harnesses')
