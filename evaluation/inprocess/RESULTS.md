@@ -184,3 +184,31 @@ The results commit adds documentation and three numeric receipts totaling 106,31
 - [Raw-fork and continuation cohort](results/20261027T153503.221425Z-fork-315b2712115f.json)
 - [Existing native regression summary](results/20261027T152247.353033Z-regressions-315b2712115f.json)
 - [Required checks](results/20261027T152326.379750Z-checks-315b2712115f.json)
+
+## Original-entry random and ID completion
+
+Source `906e92f061d501d170c256c46d93cd91df4dd988` (tree `332329e58df58e99aa119f1ea3f1225f47716f0d`) adds the opt-in [selected original-entry profile](../../tools/page-entry/selected/README.md). It completes RDRAND/RDSEED at 16/32/64 bits and RDPID at 64 bits from the original interpreter entry, preserving native random carry results and destination-width semantics. Ordinary NOP and immediate/register MOV instructions execute at their original addresses through a qualified TF step; original source syscalls use the checked lifecycle dispatcher. Application code remains NX between instructions. This profile performs no source patching and makes no performance claim (claims 2 and 4).
+
+Reproduce with one externally reserved CPU for each native runner:
+
+```sh
+python3 evaluation/inprocess/page_selected_components.py --expect-revision 906e92f061d501d170c256c46d93cd91df4dd988
+python3 evaluation/inprocess/page_selected.py --expect-revision 906e92f061d501d170c256c46d93cd91df4dd988 --library-root /usr/lib64
+python3 evaluation/inprocess/checks.py --expect-revision 906e92f061d501d170c256c46d93cd91df4dd988
+```
+
+The component cohort passes 437 commands: 112 decoder forms, two actual fatal outcomes (102/106), a freestanding seven-class/4,110-start scan, 385 provider cases, twenty native/stepped state pairs, thirteen decoder and thirteen false-candidate refusals, four process controls, and eighteen fetch cases. The provider cases include native and separately labeled scripted carry-clear results, actual corruption controls and an actual nested fault. Independent replay checks all twenty step pairs, 23 source-page opens and revocations, 100 kernel-frame observations with 2,444 FP bytes each, eighty live GPR/flags/selector observations, source/redzone/FS/GS state, and actual default-signal preparation. Full state records remain private.
+
+The connected cohort passes 55 commands covering sixteen declared outcomes, including original-entry random/ID instructions, operand-size semantics, immediate/register MOV, cross-page instructions and protected-signal queries. The actual system linker executes its initial MOV, then refuses the next CALL with exact error 632/detail 693 after one step and two NX faults. This is an expected unsupported-instruction outcome; this selected profile does not yet run real ls to completion. The preceding default loader remains a separate profile. Arbitrary instructions, selected RSP destinations, threads, general process lifecycle and application signal handling remain outside this profile; B2/B3/B4 are incomplete.
+
+Both native cohorts use Linux x86-64 on AMD EPYC 9D85, kernel 7.1.3, GCC 11.5.0 `-O2` and Rust/Cargo 1.97.1 release builds, on reserved CPUs 3 and 17 respectively. Exact tool hashes, bounds, source identities and commands are recorded. No timing is interpreted as a performance result.
+
+Independent saved-data replay authenticates every actually executed component binary, 1,269 component captures and all 110 connected captures. The later connected build overwrote the component run's bridge binary, used there only for static inspection. Its original ELF and empty-undefined-symbol observations remain captured, but its raw bytes are no longer available for independent authentication. The final connected bridge is retained and its ELF checks replay exactly. This retention limit does not apply to the executed component binaries.
+
+All four required Cargo checks pass: formatting, strict workspace/all-feature/all-target Clippy, workspace tests (2,350 passed, four previously ignored across 98 harnesses), and workspace/all-feature/all-target check. Recorder passes 330 tests. Serial passes all 1,029 tests across 27 harnesses, including 50 native cases, fifteen dynamic fixtures, 388 matrix records, 108 validation fixtures and complete backing cleanup. Workspace takes 308.288 seconds and serial 128.181 seconds within their unchanged 900/180-second bounds. Source and configuration remain unchanged. Independent replay authenticates all six saved check logs and reproduces the strict totals, native collection qualification and backing cleanup.
+
+The results commit changes documentation and three numeric receipts totaling 98,734 bytes only. Raw captures remain under target.
+
+- [Component cohort](results/20261027T164153.849695Z-page-selected-components-906e92f061d5.json)
+- [Connected controller cohort](results/20261027T164325.624061Z-page-selected-906e92f061d5.json)
+- [Required checks](results/20261027T164324.111142Z-checks-906e92f061d5.json)
