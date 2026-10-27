@@ -1,0 +1,3 @@
+case,status,epochs,originals,calls,sampled,closed,rows,events,actions,registrations,report_permit_refusals,report_ready_before_return,receipt_permit_refusal,post_return_stage,joined
+sixteen-epochs,PASS,16,16,16,16,,16,32,32,1,16,,,,true
+function-closed,PASS,,2,2,1,1,2,4,2,,,true,1,true,true
