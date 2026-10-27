@@ -101,7 +101,7 @@ fn raw_fault(program: &Program, kind: InterventionKind) -> raw::Step {
 pub(super) fn run(point: InterventionPoint, kind: InterventionKind) {
     let program = Program::call(4096, kind == InterventionKind::Ac);
     let reference = (point == InterventionPoint::AfterB).then(|| raw_fault(&program, kind));
-    support::with_owner(
+    let _ = support::with_owner(
         &program,
         true,
         |owner, initial, until, original| {

@@ -57,7 +57,7 @@ pub(super) fn mixed() {
         setup: 0,
         encoding: code[4..9].try_into().unwrap(),
     };
-    support::with_owner(
+    let _ = support::with_owner(
         &program,
         true,
         |owner, initial, until, original| {
@@ -226,7 +226,7 @@ pub(super) fn refusals() {
     ];
     for &(code, opt_in, reason) in cases {
         let program = Program::literal(4096, code);
-        support::with_owner(
+        let _ = support::with_owner(
             &program,
             true,
             |owner, initial, until, original| {
@@ -293,7 +293,7 @@ pub(super) fn refusals() {
             );
         }
         let program = Program::literal(4096, &code);
-        support::with_owner(
+        let _ = support::with_owner(
             &program,
             true,
             |owner, initial, until, original| {
@@ -357,7 +357,7 @@ pub(super) fn refusals() {
         );
     }
     let program = Program::call(4096, false);
-    support::with_owner(
+    let _ = support::with_owner(
         &program,
         true,
         |owner, initial, until, original| {
@@ -386,7 +386,7 @@ pub(super) fn late() {
         RootIntervention::RefuseClosedObserver,
     ] {
         let program = Program::call(4096, false);
-        support::with_owner(
+        let _ = support::with_owner(
             &program,
             true,
             |owner, initial, until, original| {
@@ -526,7 +526,7 @@ pub(super) fn budgets() {
             1 => options.limits.origins = startup.origins + charge.origins - 1,
             _ => options.limits.witnesses = startup.witnesses + charge.witnesses - 1,
         }
-        support::with_owner(
+        let _ = support::with_owner(
             &program,
             true,
             |owner, initial, until, original| {
@@ -578,7 +578,7 @@ pub(super) fn budgets() {
         );
     }
     for mode in 0..3 {
-        support::with_owner(
+        let _ = support::with_owner(
             &program,
             true,
             |owner, initial, until, original| {

@@ -23,6 +23,10 @@ struct AllocationSnapshot {
     length: usize,
     capacity: usize,
 }
+type StackPayloadSnapshot = (usize, Vec<AllocationSnapshot>, Option<(usize, usize)>);
+type ChargeMutation = (&'static str, fn(&mut BudgetCharge));
+type LimitMutation = (&'static str, fn(&mut Limits));
+
 fn allocation(bytes: &Vec<u8>) -> AllocationSnapshot {
     AllocationSnapshot {
         address: bytes.as_ptr() as usize,
@@ -42,7 +46,7 @@ pub(in crate::linux::remote::dynamic::owner::admission) struct StackCensusSnapsh
     history_address: usize,
     history_capacity: usize,
     origin_payloads: Vec<[AllocationSnapshot; 2]>,
-    stack_payloads: Vec<(usize, Vec<AllocationSnapshot>, Option<(usize, usize)>)>,
+    stack_payloads: Vec<StackPayloadSnapshot>,
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(in crate::linux::remote::dynamic::owner::admission) struct StackPreparationSnapshot {
@@ -553,7 +557,7 @@ impl ResumeCensus {
     ) {
         let original = self.test_stack_snapshot();
         assert_eq!(original, self.test_stack_snapshot());
-        let axes: [(&str, fn(&mut BudgetCharge)); 6] = [
+        let axes: [ChargeMutation; 6] = [
             ("epochs", |value| value.epochs ^= 1),
             ("source_fact_bytes", |value| value.source_fact_bytes ^= 1),
             ("reports", |value| value.reports ^= 1),
@@ -576,7 +580,7 @@ impl ResumeCensus {
                 assert_eq!(self.test_stack_snapshot(), original);
             }
         }
-        let limits: [(&str, fn(&mut Limits)); 6] = [
+        let limits: [LimitMutation; 6] = [
             ("epochs", |value| value.epochs ^= 1),
             ("source_fact_bytes", |value| value.source_fact_bytes ^= 1),
             ("reports", |value| value.reports ^= 1),

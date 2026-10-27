@@ -135,7 +135,7 @@ pub(super) fn run() {
                 ordinal,
                 unwind,
             };
-            support::with_owner(
+            let _ = support::with_owner(
                 &program,
                 true,
                 |owner, initial, until, original| {
@@ -226,7 +226,7 @@ pub(super) fn run() {
                     ordinal,
                     unwind,
                 };
-                support::with_owner(
+                let _ = support::with_owner(
                     &program,
                     true,
                     |owner, initial, until, original| {
@@ -337,7 +337,7 @@ pub(super) fn run() {
     // Empty-header failure retains the complete reservation; post-install
     // unwind must additionally debit the real header before cleanup.
     for installed in [false, true] {
-        support::with_owner(
+        let _ = support::with_owner(
             &program,
             true,
             |owner, initial, until, original| {

@@ -32,7 +32,7 @@ use support::Before;
 
 fn positive(program: Program) {
     let reference = raw::pair(&program);
-    support::with_owner(
+    let _ = support::with_owner(
         &program,
         true,
         |owner, initial, until, original| {
