@@ -1,0 +1,38 @@
+{
+  "assets": [
+    {
+      "asset": "build-v1.py",
+      "bytes": 19084,
+      "destinations": [
+        "ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v1/build.py"
+      ],
+      "mode": 420,
+      "sha256": "fa9de2e9e57f70a3d69575373e0585fbd2bcb86faa0f7533cc6146240af4e2fa"
+    },
+    {
+      "asset": "build-v2.py",
+      "bytes": 19114,
+      "destinations": [
+        "ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v2/build.py"
+      ],
+      "mode": 420,
+      "sha256": "390d7ce6c0782696159ae524415dc3f6d3c2ffe02fad27b3634039442e25eab5"
+    },
+    {
+      "asset": "compiler_entry.py",
+      "bytes": 4332,
+      "destinations": [
+        "ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v1/compiler_entry.py",
+        "ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v2/compiler_entry.py"
+      ],
+      "mode": 420,
+      "sha256": "70c4f0ec1cfc2f0b0b74c00199927f83e5a7cfbe4bb2d2ce2e3295e9ecea1ee0"
+    }
+  ],
+  "destinations": 4,
+  "fresh_build_caller_reference_and_runtime_admission_required": true,
+  "historical_reference_owners_exported": false,
+  "materializer_executed": false,
+  "schema": 1,
+  "tested_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a"
+}
