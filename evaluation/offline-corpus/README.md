@@ -1,4 +1,4 @@
-# Finite offline corpus expansion — source proposal, UNRUN
+# Finite offline corpus comparison
 
 This packet adds two whole programs to the existing heap-sort application:
 `checksum.S` computes the byte sum, FNV-1a checksum and input length;
@@ -33,7 +33,8 @@ manufacture entries for arbitrary compiled code.
 
 `adapter.py` requires the complete indexed LiteInst directory, every selected
 report row, exact source detours and original-relative whole-file overlay,
-image ownership, restored instruction boundaries, original branch conditions
+image ownership, the complete source-derived save/call/restore helper, exact
+logical-PC and hook-target fields, restored instruction boundaries, original branch conditions
 and destinations, and Jcc fall-through. E9 runs the unchanged public
 `tools/elf-rewrite/e9-sites.py` first, retaining its full original/RPC/site,
 loader, mapping, debug, statistic and strict-receipt checks. The added finite
@@ -52,7 +53,7 @@ this packet neither edits nor claims their authority.
 
 | Corpus | Actual programs/fixtures | Entry point and scope |
 | --- | --- | --- |
-| Full authored Rust offline/tactic corpus | Complete workspace, including all `liteinst-rewrite` targets | `cargo test --workspace`; latest strict closed inventory is 2,293 PASS and four ignored, with nested observations kept separate |
+| Full authored Rust offline/tactic corpus | Complete workspace, including all `liteinst-rewrite` targets | `cargo test --workspace`; the closed `c66ea06` inventory is 2,293 PASS and four ignored, with nested observations kept separate |
 | Authored normal-exec fixture | One MOV5/RET executable, stripped/unstripped, null/journal | `evaluation/elf-exec/reproduce.py`; complete native state and ordinary-output checks remain literal |
 | Authored tactic fixtures | Fixed assembly/placement puzzle corpus | `evaluation/elf-exec/reproduce_tactics.py`; no reduction of forced tactics or refusal controls |
 | Common application | One `heap_sort.c`; eight hook/style/stripping cells, not eight programs | Existing preparation/build/produce/original observation/192 ordinary cases/core+E9 paired recipes; carry all historical failures and unrun obligations |
@@ -88,8 +89,9 @@ tool binaries yet.
 
 Use [reproduce.py](reproduce.py) and its [argument and build contract](REPRODUCE.md) to build fresh release products, capture the current target and run the complete comparison. The manual catalog interface below documents what that wrapper constructs.
 
-Nothing in this packet has been compiled, imported as a subject, or executed.
-Root executes only after source review. The unchanged bounded command helper
+The initial comparison at `2cf9a6e` passed all 80 output cases. The stronger
+helper-prefix witness and its mutation controls require a fresh run at their own
+revision; previous results do not supply that evidence. Execute after source review. The unchanged bounded command helper
 provides strict ECHILD cleanup. The new driver records each complete request,
 helper receipt and enclosing wait, with 60 CPU/90 wall/128 MiB per assembler or
 linker stage and 20 CPU/30 wall/16 MiB per other command, plus the established
@@ -163,3 +165,33 @@ owner, substitute a debug product, and alter one output byte. Each must refuse
 at its real consuming check. No such controls or subject runs have occurred.
 The fixed source programs and new assertions are additive; all prior source,
 comparators, test identities, budgets and failures remain untouched.
+
+## Saved-artifact witness controls
+
+After `reproduce.py` completes all four phases with 80 output matches using the
+strengthened adapter, run the separately bounded pure controls against that closed
+output directory:
+
+```sh
+python3 -B evaluation/offline-corpus/controls.py \
+  --repo "$PWD" --raw "$PWD/ignored/offline-new" \
+  --out "$PWD/ignored/offline-controls-new"
+```
+
+The script checks the closed saved envelope and exact current source pins, then
+loads the historical adapter from Git commit `2cf9a6e` with a 15-second bound and
+an exact SHA check. It runs 96 saved-copy observations: eight valid positives,
+20 expected historical guard-gap acceptances, and 68 expected refusals. This
+includes both unconditional-JMP terminal-tail mutations. The source-derived
+prefix witness requires the complete save/CALL/restore sequence, exact logical
+PC and hook target, and complete terminal return. All original branch/output
+comparisons remain.
+
+These controls execute no native program, ELF, producer or compiler and never
+reopen external tool or target products. They do not renew runtime/source owner
+authority or constitute another native campaign. Raw copies and detailed
+assertion results remain under `ignored`; `results.json` contains compact source
+pins, counts and named assertion origins. The caller supplies the same bounded
+10-CPU-second/15-wall-second/16-MiB-file control envelope, with a 25-second outer
+timeout, ten-second kill grace and bounded parent cleanup. Reported expected
+historical acceptances demonstrate missing guards, not new validation passes.

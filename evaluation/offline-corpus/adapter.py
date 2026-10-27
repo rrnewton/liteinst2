@@ -90,6 +90,68 @@ def branch_bytes(head, pc):
     assert old[0] == 0xe9 and len(old) == 5 or old[0] == 0x0f and len(old) == 6
     return relative(old[:-4], pc, head['target'])
 
+def helper_target(selection):
+    # Shape mirrors render_selection.target_record and SavedExtendedStateLayout.
+    # This finite corpus already requires XSAVE64; no FXSAVE/profile fallback.
+    lines = [line for line in selection.decode('ascii').splitlines() if line.startswith('target ')]
+    assert len(lines) == 1
+    fields = lines[0].split(' ')
+    assert fields[:2] == ['target', 'xsave64'] and 3 <= len(fields) <= 11
+    assert all(part and all(v.isdigit() for v in part.split(':')) for part in fields[2:])
+    mask = int(fields[2]); components = []
+    assert mask & 3 == 3 and mask & ~0x2e7 == 0
+    avx512 = (1 << 5) | (1 << 6) | (1 << 7)
+    assert mask & avx512 == 0 or mask & (avx512 | 4) == avx512 | 4
+    seen, last, image_bytes = 3, 2, 576
+    for token in fields[3:]:
+        values = token.split(':'); assert len(values) == 3
+        feature, offset, size = map(int, values)
+        assert feature > last and feature & (feature - 1) == 0 and feature & mask
+        assert offset >= 576 and size > 0 and offset + size <= 16384
+        assert all(offset >= o + n or o >= offset + size for _, o, n in components)
+        # Same finite helper/emitter contract, including the reserved PKRU word.
+        assert feature != 512 or size == 8 and offset % 8 == 0
+        components.append((feature, offset, size)); seen |= feature; last = feature
+        image_bytes = max(image_bytes, offset + size)
+    assert seen == mask
+    allocation = (image_bytes + 63) & ~63
+    target = ['LI2TARGET\t1', 'os\tlinux', 'isa\tx86-64-legacy-evex', 'cet\tunqualified',
+              'page_bytes\t4096', 'bias_domain\t1', 'format\txsave64-standard',
+              'allocation_bytes\t' + str(allocation), 'image_bytes\t' + str(image_bytes),
+              'xcr0_mask\t' + str(mask), 'qualification_complete\tfalse']
+    target += ['component\t%d\t%d\t%d' % c for c in components]
+    return mask, components, allocation, ('\n'.join(target) + '\n').encode()
+
+def helper_prefix(entry, logical, layout):
+    # Independent expected bytes from verify_common_core::helper, not an output
+    # template or normalized sample. Literal operations are all fall-through,
+    # except this one direct CALL and its authenticated original one-byte RET.
+    mask, components, allocation, _ = layout
+    b = bytearray.fromhex('488d642480488d6424e09c5051525355565741504151415241534154415541564157488d84242001000050488d050000000048ba')
+    anchor = entry + len(b) - 2
+    b += struct.pack('<q', logical - anchor)
+    b += bytes.fromhex('4801d0504989e44883e4c04881ec') + struct.pack('<i', allocation)
+    b += bytes.fromhex('31c0')
+    for offset in range(512, 576, 8):
+        b += bytes.fromhex('48898424') + struct.pack('<i', offset)
+    if mask & 512:
+        component = [c for c in components if c[0] == 512]
+        assert len(component) == 1
+        b += bytes.fromhex('898424') + struct.pack('<i', component[0][1] + 4)
+    b += b'\xb8' + struct.pack('<I', mask & 0xffffffff)
+    b += b'\xba' + struct.pack('<I', mask >> 32) + bytes.fromhex('480fae24244989a42490000000')
+    for offset, value in ((152, allocation), (160, mask), (168, 2)):
+        b += bytes.fromhex('48b8') + struct.pack('<Q', value)
+        b += bytes.fromhex('49898424') + struct.pack('<I', offset)
+    b += bytes.fromhex('fc4c89e7e8')
+    call_operand = len(b)
+    b += struct.pack('<i', HOOK - (entry + call_operand + 4))
+    b += b'\xb8' + struct.pack('<I', mask & 0xffffffff)
+    b += b'\xba' + struct.pack('<I', mask >> 32) + bytes.fromhex('480fae2c24')
+    b += bytes.fromhex('4c89e44883c410415f415e415d415c415b415a415941585f5e5d5b5a59589d488d642420488da42480000000')
+    return bytes(b), call_operand
+
+
 def core_witness(original, selection, directory, selected):
     d = Path(directory); marker = read(d / 'COMPLETE').decode().splitlines()
     index = read(d / 'bundle-index.tsv')
@@ -119,6 +181,9 @@ def core_witness(original, selection, directory, selected):
     steps = [r for r in ledger if r[0] == 'step']
     images = [r for r in ledger if r[0] == 'image']
     assert len(steps) == len(images) == len(selected)
+    layout = helper_target(selection)
+    assert files['target.tsv'] == layout[3], 'exact admitted helper target'
+    assert owned(original, elf(original)[1], HOOK, 1)[1] == b'\xc3'
     overlay = bytearray(original)
     for sid, (head, row) in enumerate(zip(selected, rows), 1):
         assert int(row['site']) == sid and int(row['pc']) == head['pc']
@@ -141,6 +206,22 @@ def core_witness(original, selection, directory, selected):
         assert len(boundaries) == 1
         body = int(boundaries[0][3]); expected = branch_bytes(head, body)
         restored_extent = len(expected) + (5 if head['code'][0] == 0x0f else 0)
+        prefix, call_operand = helper_prefix(at, head['pc'], layout)
+        assert body == at + len(prefix), 'source-derived helper extent'
+        assert code[:len(prefix)] == prefix, 'exact source-derived save/call/restore helper prefix'
+        assert len(code) == len(prefix) + len(expected) + 5, 'whole finite helper, branch and terminal return image'
+        terminal = relative(b'\xe9', body + len(expected), head['pc'] + len(head['code']))
+        assert code[len(prefix) + len(expected):] == terminal, 'exact terminal return for both branch forms'
+        assert [r for r in ledger if r[:2] == ['route', image_id]] == [
+            ['route', image_id, str(head['pc']), str(at)]], 'exact selected entry route'
+        fields = [r for r in ledger if r[:2] == ['field', image_id]]
+        assert all(len(r) == 10 for r in fields)
+        expected_fields = [
+            ['field', image_id, '52', '8', 'Delta', '50', str(head['pc']), '1',
+             b'LogicalPc'.hex(), prefix[52:60].hex()],
+            ['field', image_id, str(call_operand), '4', 'Relative', str(call_operand + 4),
+             str(HOOK), '1', b'HookCall'.hex(), prefix[call_operand:call_operand + 4].hex()]]
+        assert [r for r in fields if r[8] in (b'LogicalPc'.hex(), b'HookCall'.hex())] == expected_fields
         assert at <= body and body + restored_extent <= at + len(code), 'whole restored branch and continuation belong to selected image'
         assert owned(candidate, segments, body, len(expected))[1] == expected, 'exact branch condition and target'
         # The taken branch and, for Jcc, the original fall-through remain exact.
@@ -150,6 +231,7 @@ def core_witness(original, selection, directory, selected):
     overlay[32:40] = candidate[32:40]; overlay[56:58] = candidate[56:58]
     assert candidate[:len(original)] == overlay, 'all nonselected original bytes including I/O/hook/data/stack'
     return dict(selected=len(selected), full_original_overlay=True, relocated_branch_bytes=True,
+                source_derived_helper_prefix=True,
                 architectural_full_state=False, qualification_complete=False)
 
 def core_refusal(original, selection, directory, selected):

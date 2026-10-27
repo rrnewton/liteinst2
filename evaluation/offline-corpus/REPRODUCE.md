@@ -1,6 +1,6 @@
-# Fresh offline comparison wrapper — source only, UNRUN
+# Fresh offline comparison reproduction
 
-Install `reproduce.py` as `evaluation/offline-corpus/reproduce.py` beside the six exact effective comparison files pinned in its `SOURCE_PINS`. The comparison source is unchanged: root's v2 lifecycle predecessor, v3 fixed-80 retention, v4 exact image-extent check, and explicit executable-versus-loader-data role correction. Commit that source before running. This proposal has not imported or executed the wrapper, built products, read current providers/products, or launched any corpus case.
+`reproduce.py` builds the release frontend and target driver, captures the current target, then executes the fixed 80-case comparison with the exact source files pinned in `SOURCE_PINS`. Run from a clean committed checkout. Raw artifacts and logs stay below `ignored/`; the complete helper-prefix witness and the separate mutation controls require their own successful run.
 
 ```sh
 python3 -B evaluation/offline-corpus/reproduce.py \
