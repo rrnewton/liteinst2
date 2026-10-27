@@ -21,12 +21,26 @@ length and has an instrumentable return block. The client calls it only with
 lengths from 1 through 64. A different compiler layout can fail these checks;
 the client does not omit a return site to accommodate it.
 
-Use `../verify_ordinary_interval.py --help` for the release-build reproducer.
-It builds a trusted shared library from `../native-interval/ordinary_checksum.c`
-and gives the client a distinct candidate copy and the original expected file.
-Its raw logs stay under `ignored/`; its result includes the revision, commands,
-tool and binary hashes, hardware description, and eight rows. The native state
-oracle is a separate qualification step, not implied by this functional check.
+Use `../verify_ordinary_interval.py --help` for the single release-build
+reproducer. It builds both executables and a trusted shared library from
+`../native-interval/ordinary_checksum.c`, supplying a distinct candidate copy
+and the independent expected file. It first requires four native state pairs
+(lengths 1 and 64 under two seeds), eight clean child exits and the distinct
+short-RET refusal, then runs the eight-call functional client. The result records
+the exact revision, commands, hardware, both binary hashes and each Cargo
+artifact's profile/cache status. Raw logs and the four native/eight functional
+CSV rows stay under `ignored/`.
+
+Native CSV totals report the live comparator, not an independent saved-state
+audit. Native state qualification covers the actual gate entry through its post-POP
+boundary: full inherited GPR/flags/XSAVE comparison, the complete data page and
+exact `[S-128, stack_end)` application-stack range. Each child then restores
+only its own saved harness context and executes the real outer return before
+normal invocation validation. This is not whole-64KiB stack qualification,
+arbitrary-function coverage or timing accuracy. The state and functional
+checks are separate required stages of the same wrapper; neither substitutes
+for the other. The combined wrapper is source-only until its own execution is
+recorded at an exact committed revision.
 
 The endpoint columns contain fenced RDTSCP observations taken after the
 application state has been saved at the entry and exit callbacks. Differences

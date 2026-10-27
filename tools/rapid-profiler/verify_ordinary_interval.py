@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Release-build and verify the fixed ordinary interval client; raw ticks only."""
+"""Release-build and verify ordinary native state pairs, then functional raw ticks."""
 import argparse
 import csv
 import hashlib
@@ -60,6 +60,28 @@ def output(data):
     return rows, '\n'.join(lines[1:-1])+'\n'
 
 
+def native_output(directory, terminal):
+    header = 'seed,length,status,children,comparisons,original_visits,original_steps,candidate_steps,value'
+    table = (directory/'ordinary-pairs.csv').read_bytes(); assert 0 < len(table) <= MIB and table.endswith(b'\n') and b'\r' not in table
+    lines = table.decode('ascii').splitlines(); assert len(lines) == 5 and lines[0] == header
+    rows = list(csv.DictReader(lines, strict=True)); assert len(rows) == 4
+    population = [(seed, length) for seed in (0x1234567887654320, 0xfedcba9801234567) for length in (1, 64)]
+    for row, (seed, length) in zip(rows, population):
+        assert set(row) == set(header.split(',')) and row['status'] == 'PASS'
+        for key in set(row)-{'status'}:
+            assert re.fullmatch(r'0|[1-9][0-9]*', row[key]); row[key] = int(row[key]); assert row[key] < 2**64
+        assert (row['seed'], row['length'], row['children']) == (seed, length, 2)
+        assert all(row[k] > 0 for k in ('comparisons', 'original_visits', 'original_steps', 'candidate_steps'))
+        assert row['original_steps'] <= 20000 and row['candidate_steps'] <= 20000
+        assert row['original_visits'] < row['comparisons'] <= min(row['original_steps'], row['candidate_steps'])
+        expected = sum(((((128+j)*37+11+seed) & 255) ^ 0x5a) for j in range(length)) ^ 0x9e3779b97f4a7c15
+        assert row['value'] == expected
+    comparisons = sum(row['comparisons'] for row in rows)
+    assert (directory/'ordinary-refusals.csv').read_bytes() == b'case,status,reason\nempty_capable_symbol,PASS,NoPatchWindow\n'
+    assert terminal == f'native-ordinary:required=4:pairs=4:children=8:comparisons={comparisons}:short-ret-refusals=1:real-outer-ret=8:complete\n'.encode('ascii')
+    return rows, table, comparisons
+
+
 def main():
     if sys.flags.optimize: raise SystemExit('assertions required')
     sys.dont_write_bytecode = True
@@ -72,7 +94,7 @@ def main():
     assert raw.is_absolute() and raw.is_relative_to(repo/'ignored') and not raw.exists()
     assert raw.parent.resolve(strict=True) == raw.parent
     raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight',
-        scope='uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim', native_state_qualification='separate prerequisite; not performed by this script')
+        scope='uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim', native_state_qualification='PENDING: gate entry through post-POP; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim')
     try:
         cpus = sorted(os.sched_getaffinity(0))[:4]; assert len(cpus) == 4
         os.sched_setaffinity(0, cpus); assert set(os.sched_getaffinity(0)) == set(cpus)
@@ -86,6 +108,8 @@ def main():
         def command(argv): return subprocess.check_output(argv, cwd=repo, env=env, timeout=15).decode('ascii')
         def git(*argv): return command([str(tools['git']), '-C', str(repo), *argv])
         names = ['Cargo.toml', 'Cargo.lock', 'tools/rapid-profiler/Cargo.toml', 'tools/rapid-profiler/ordinary-interval/main.rs',
+            'tools/rapid-profiler/native-interval/main.rs', 'tools/rapid-profiler/native-interval/ordinary.rs',
+            'tests/support/native_ordinary.rs', 'tests/support/native_interval_oracle.rs',
             'tools/rapid-profiler/native-interval/ordinary_checksum.c', 'tools/rapid-profiler/src/generation.rs',
             'tools/rapid-profiler/src/frontend.rs', 'tools/rapid-profiler/src/frontend_native/ordinary/mod.rs',
             'tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs',
@@ -111,7 +135,7 @@ def main():
         hardware = {(r['vendor_id'], *(int(r[k]) for k in ('cpu family', 'model', 'stepping'))) for r in selected}
         assert len(hardware) == 1; vendor, family, model, stepping = hardware.pop(); assert vendor in ('GenuineIntel', 'AuthenticAMD')
         result.update(sources=before, tools=tool_hashes, versions=dict(rust={k: rust[k] for k in ('release', 'commit-hash', 'host')}, cargo=cargo, gcc=gcc, git=git_version, python=list(sys.version_info[:3])),
-            hardware=dict(architecture='x86_64', vendor=vendor, family=family, model=model, stepping=stepping, build_affinity_cpus=4, native_affinity_cpus=1,
+            hardware=dict(architecture='x86_64', vendor=vendor, family=family, model=model, stepping=stepping, build_affinity_cpus=4, native_affinity_cpus=1, native_state_affinity_cpus=4,
                 owner_label='AMD EPYC Zen 5 dev host', owner_label_origin='owner-specified; not inferred from observed CPU fields'))
         spec = importlib.util.spec_from_file_location('ordinary_processes', repo/'evaluation/admission/processes.py')
         processes = importlib.util.module_from_spec(spec); spec.loader.exec_module(processes)
@@ -141,28 +165,41 @@ def main():
         with trusted.open('rb') as inp, candidate.open('xb') as out: out.write(inp.read(MIB+1))
         assert trusted.read_bytes() == candidate.read_bytes() and digest(trusted) == digest(candidate) == trusted_hash
         assert (trusted.stat().st_dev, trusted.stat().st_ino) != (candidate.stat().st_dev, candidate.stat().st_ino)
-        build_args = ['build', '--locked', '--offline', '--release', '--jobs', '4', '-p', 'rapid-profiler', '--bin', 'ordinary-interval', '--message-format=json-render-diagnostics']
+        build_args = ['build', '--locked', '--offline', '--release', '--jobs', '4', '-p', 'rapid-profiler', '--bin', 'ordinary-interval', '--bin', 'frontend-native-oracle', '--message-format=json-render-diagnostics']
         build = stage('build', [str(tools['cargo']), *build_args], 120, 180, 128*MIB)
         messages = [json.loads(line) for line in (build/'stdout.txt').read_text().splitlines()]; assert messages[-1] == dict(reason='build-finished', success=True)
-        products = [m for m in messages if m.get('reason') == 'compiler-artifact' and m['target']['name'] == 'ordinary-interval']
-        assert len(products) == 1; product = products[0]; binary = repo/'target/release/ordinary-interval'
-        assert product['executable'] == str(binary) and product['target']['kind'] == ['bin'] and product['target']['crate_types'] == ['bin'] and type(product['fresh']) is bool
-        assert product['manifest_path'] == str(repo/'tools/rapid-profiler/Cargo.toml') and product['target']['src_path'] == str(repo/'tools/rapid-profiler/ordinary-interval/main.rs')
-        profile = product['profile']; assert set(profile) == {'opt_level', 'debuginfo', 'test', 'debug_assertions', 'overflow_checks'}
-        assert type(profile['opt_level']) is str and profile['opt_level'] == '3'
-        assert type(profile['debuginfo']) is int and profile['debuginfo'] == 0 and profile['test'] is False
-        assert profile['debug_assertions'] is True and profile['overflow_checks'] is True
-        result['build'].update(cargo_fresh=product['fresh'], profile=profile); result['binary'] = digest(binary); result['dso'] = trusted_hash
+        artifacts = {}; binaries = {}
+        for name, source_name in [('ordinary-interval', 'ordinary-interval/main.rs'), ('frontend-native-oracle', 'native-interval/main.rs')]:
+            products = [m for m in messages if m.get('reason') == 'compiler-artifact' and m['target']['name'] == name]
+            assert len(products) == 1; product = products[0]; binary = repo/'target/release'/name
+            assert product['executable'] == str(binary) and product['target']['kind'] == ['bin'] and product['target']['crate_types'] == ['bin'] and type(product['fresh']) is bool
+            assert product['manifest_path'] == str(repo/'tools/rapid-profiler/Cargo.toml') and product['target']['src_path'] == str(repo/'tools/rapid-profiler'/source_name)
+            profile = product['profile']; assert set(profile) == {'opt_level', 'debuginfo', 'test', 'debug_assertions', 'overflow_checks'}
+            assert type(profile['opt_level']) is str and profile['opt_level'] == '3'
+            assert type(profile['debuginfo']) is int and profile['debuginfo'] == 0 and profile['test'] is False
+            assert profile['debug_assertions'] is True and profile['overflow_checks'] is True
+            artifacts[name] = dict(cargo_fresh=product['fresh'], profile=profile, binary=digest(binary)); binaries[name] = binary
+        result['build']['artifacts'] = artifacts; binary = binaries['ordinary-interval']
+        result['binary'] = artifacts['ordinary-interval']['binary']; result['dso'] = trusted_hash
+        oracle_output = raw/'oracle-output'
+        oracle = stage('oracle', [str(binaries['frontend-native-oracle']), 'ordinary-state', str(candidate), str(trusted), str(oracle_output)], 90, 90, MIB)
+        assert (oracle/'stderr.txt').read_bytes() == b''
+        pairs, pair_table, comparisons = native_output(oracle_output, (oracle/'stdout.txt').read_bytes())
+        (raw/'state-pairs.csv').write_bytes(pair_table)
+        result['oracle'].update(pairs=4, children=8, comparisons=comparisons, short_ret_refusals=1, real_outer_returns=8, rows=pairs)
+        result['native_state_qualification'] = 'PASS: gate entry through post-POP; full inherited GPR/flags/XSAVE/data and exact [S-128, stack_end) comparisons; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim'
+        assert {n: digest(p) for n, p in binaries.items()} == {n: a['binary'] for n, a in artifacts.items()}
         assert digest(trusted) == digest(candidate) == trusted_hash and trusted.read_bytes() == candidate.read_bytes()
         native = stage('native', [str(binary), str(candidate), str(trusted)], 20, 30, MIB)
         assert (native/'stderr.txt').read_bytes() == b''
         checked, table = output((native/'stdout.txt').read_bytes())
-        assert digest(binary) == result['binary'] and digest(trusted) == digest(candidate) == trusted_hash
+        assert {n: digest(p) for n, p in binaries.items()} == {n: a['binary'] for n, a in artifacts.items()} and digest(trusted) == digest(candidate) == trusted_hash
         assert trusted.read_bytes() == candidate.read_bytes(); save(raw/'sources-after.json', sources())
         (raw/'rows.csv').write_text(table)
         result.update(status='PASS', stage='complete', rows=checked, originals=8, calls=8, entries=8, returns=8, completed=6, unsampled=2, reports=[4, 2],
             required_short_ret_refusal=True, whole_guarded_input_bytes=96, worker_joined=True,
             commands=[['$GCC', *CFLAGS, '$REPO/tools/rapid-profiler/native-interval/ordinary_checksum.c', '-o', '$RAW/trusted.so'], ['$CARGO', *build_args],
+                ['$REPO/target/release/frontend-native-oracle', 'ordinary-state', '$RAW/candidate.so', '$RAW/trusted.so', '$RAW/oracle-output'],
                 ['$REPO/target/release/ordinary-interval', '$RAW/candidate.so', '$RAW/trusted.so']])
     except BaseException:
         (raw/'failure.txt').write_text(traceback.format_exc())

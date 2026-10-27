@@ -140,7 +140,6 @@ fn parse(bytes: &[u8], name: &str) -> Result<Parsed, SetupRefusal> {
         || u16_at(bytes, 16)? != 3
         || u16_at(bytes, 18)? != 62
         || u32_at(bytes, 20)? != 1
-        || u64_at(bytes, 24)? != 0
         || u16_at(bytes, 54)? != 56
         || !(1..=16).contains(&u16_at(bytes, 56)?)
         || name.is_empty()
@@ -148,6 +147,7 @@ fn parse(bytes: &[u8], name: &str) -> Result<Parsed, SetupRefusal> {
     {
         return Err(SetupRefusal::Format);
     }
+    let elf_entry = u64_at(bytes, 24)?;
     let phoff = usize::try_from(u64_at(bytes, 32)?).map_err(|_| SetupRefusal::Format)?;
     let phend = phoff
         .checked_add(usize::from(u16_at(bytes, 56)?) * 56)
@@ -190,7 +190,9 @@ fn parse(bytes: &[u8], name: &str) -> Result<Parsed, SetupRefusal> {
             memory_size: u64_at(bytes, p + 40)?,
         };
         if !matches!(load.flags, 4..=6)
-            || load.file_size == 0
+            // An unaligned empty interval can still have a nonempty rounded
+            // mapping extent, so it cannot be omitted from ownership below.
+            || (load.file_size == 0 && load.address % 4096 != 0)
             || load.file_size > 65536
             || load.memory_size != load.file_size
             || u64_at(bytes, p + 48)? != 4096
@@ -207,7 +209,11 @@ fn parse(bytes: &[u8], name: &str) -> Result<Parsed, SetupRefusal> {
         {
             return Err(SetupRefusal::Format);
         }
-        loads.push(load);
+        // All fields above are checked even for empty LOADs. Only a zero
+        // file/memory AND page-rounded extent contributes no mapping owner.
+        if load.file_size != 0 {
+            loads.push(load);
+        }
     }
     if loads.is_empty()
         || dynamics.len() != 1
@@ -227,6 +233,20 @@ fn parse(bytes: &[u8], name: &str) -> Result<Parsed, SetupRefusal> {
         }) {
             return Err(SetupRefusal::Format);
         }
+    }
+    // This dlopen-only profile never invokes e_entry. A nonzero value is
+    // nevertheless constrained to one real executable file interval; the
+    // selected dynamic symbol below remains the only admitted callable entry.
+    if elf_entry != 0
+        && loads
+            .iter()
+            .filter(|r| {
+                r.flags == 5 && elf_entry >= r.address && elf_entry < r.address + r.file_size
+            })
+            .count()
+            != 1
+    {
+        return Err(SetupRefusal::Format);
     }
     if relros.len() > 1 {
         return Err(SetupRefusal::Format);

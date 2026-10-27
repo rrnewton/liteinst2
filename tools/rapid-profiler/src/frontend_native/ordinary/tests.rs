@@ -272,3 +272,109 @@ fn elf_owner_symbol_and_runtime_loading_extensions_refuse() {
     assert_eq!(parse(&bad, "checksum").err(), Some(SetupRefusal::EntryExit));
     assert!(parse(&b, "other").is_err());
 }
+
+// Insert the real compiler's empty LOAD shape before the following RW LOAD.
+// Section, symbol, dynamic and nonempty LOAD bytes/addresses are unchanged.
+fn empty_load_fixture(flags: u32, address: u64) -> Vec<u8> {
+    let mut b = fixture();
+    b.copy_within(64 + 2 * 56..64 + 6 * 56, 64 + 3 * 56);
+    w16(&mut b, 56, 7);
+    ph(&mut b, 2, 1, flags, address, 0);
+    b
+}
+#[test]
+fn aligned_empty_load_has_no_file_symbol_or_mapping_ownership() {
+    for flags in [4, 5, 6] {
+        let b = empty_load_fixture(flags, 0x2000);
+        let p = parse(&b, "checksum").unwrap();
+        let loads: Vec<_> = p
+            .loads
+            .iter()
+            .map(|r| (r.offset, r.address, r.file_size, r.memory_size, r.flags))
+            .collect();
+        assert_eq!(
+            loads,
+            vec![
+                (0, 0, 4096, 4096, 4),
+                (4096, 4096, 4096, 4096, 5),
+                (8192, 8192, 4096, 4096, 6),
+            ]
+        );
+        let relro = p.relro.as_ref().unwrap();
+        assert_eq!((relro.start, relro.end, relro.owner), (8192, 12288, 2));
+        assert_eq!(p.entry, BASE);
+        assert_eq!(p.code, CODE);
+        assert_eq!(p.source, &b[4096..8192]);
+        assert_eq!(file_range(&p.loads, 0x2000, 112), Ok(0x2000));
+    }
+}
+#[test]
+fn empty_load_fields_and_real_overlaps_still_refuse() {
+    let b = empty_load_fixture(4, 0x2000);
+    let at = 64 + 2 * 56;
+    for flags in [0, 1, 2, 3, 7, 8] {
+        let mut bad = b.clone();
+        w32(&mut bad, at + 4, flags);
+        assert_eq!(parse(&bad, "checksum").err(), Some(SetupRefusal::Format));
+    }
+    for (field, value) in [
+        (48, 0),
+        (48, 8192),
+        (8, 0x2001),
+        (8, 0x4000),
+        (8, u64::MAX),
+        (16, u64::MAX),
+        (40, 1), // zero file bytes cannot create an anonymous/BSS owner
+        (32, 1), // filesz cannot exceed memsz
+    ] {
+        let mut bad = b.clone();
+        w64(&mut bad, at + field, value);
+        assert_eq!(parse(&bad, "checksum").err(), Some(SetupRefusal::Format));
+    }
+    let mut bad = b.clone();
+    // Congruent but unaligned: zero logical bytes would still round to a page.
+    w64(&mut bad, at + 8, 0x2001);
+    w64(&mut bad, at + 16, 0x2001);
+    assert_eq!(parse(&bad, "checksum").err(), Some(SetupRefusal::Format));
+    let mut bad = b.clone();
+    ph(&mut bad, 2, 1, 4, 0x2000, 1); // real byte overlaps the retained RW page
+    assert_eq!(parse(&bad, "checksum").err(), Some(SetupRefusal::Format));
+    let mut bad = b;
+    // Nonempty address arithmetic must still fail before page ownership.
+    ph(&mut bad, 2, 1, 4, 0xff8, 16);
+    w64(&mut bad, at + 16, u64::MAX - 7);
+    assert_eq!(parse(&bad, "checksum").err(), Some(SetupRefusal::Format));
+}
+#[test]
+fn elf_entry_metadata_does_not_replace_selected_symbol_authority() {
+    for elf_entry in [0, 0x1000, BASE, 0x1fff] {
+        let mut b = empty_load_fixture(4, 0x2000);
+        w64(&mut b, 24, elf_entry);
+        let p = parse(&b, "checksum").unwrap();
+        assert_eq!(p.entry, BASE);
+        assert_eq!(p.code, CODE);
+        assert_eq!(p.source, &b[4096..8192]);
+        let certificate = cfg::admit(&p.code, p.entry).unwrap();
+        assert_eq!(certificate.entry(), BASE);
+        assert_eq!(certificate.returns(), &[BASE + 23, BASE + 27]);
+    }
+}
+#[test]
+fn elf_entry_requires_one_nonempty_executable_file_interval() {
+    let b = empty_load_fixture(5, 0x3000);
+    for entry in [1, 0xfff, 0x2000, 0x3000, u64::MAX] {
+        let mut bad = b.clone();
+        w64(&mut bad, 24, entry);
+        assert_eq!(parse(&bad, "checksum").err(), Some(SetupRefusal::Format));
+    }
+    for flags in [4, 6, 7] {
+        let mut bad = b.clone();
+        w64(&mut bad, 24, 0x1000);
+        w32(&mut bad, 64 + 56 + 4, flags);
+        assert_eq!(parse(&bad, "checksum").err(), Some(SetupRefusal::Format));
+    }
+    let mut bad = b;
+    w64(&mut bad, 24, 0x1000);
+    ph(&mut bad, 2, 1, 5, 0x1000, 1); // two real RX owners must not be merged
+    assert_eq!(parse(&bad, "checksum").err(), Some(SetupRefusal::Format));
+}
