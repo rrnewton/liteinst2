@@ -157,3 +157,46 @@ pairs remain a separate mandatory extension. This controlled mapping does not
 prove normal-loader-to-body reachability, ordinary program behavior, performance,
 unwind/CET support, general A3 completion or any other roadmap milestone. All old
 fixtures, qualifications and failed attempts remain unchanged.
+
+## Explicit owned foreign-neighbor profile
+
+The legacy commands above still require `planning-profile.tsv` to be absent.
+The additive profile requires this exact final argument on **both** commands:
+
+```
+--planning-profile=owned-foreign-neighbors-v1
+```
+
+It requires the indexed whole marker `LI2PLANNING\t1\nprofile\towned-foreign-neighbors-v1\nqualification_complete\tfalse\n`.
+The producer command, profile argument, marker, complete bundle index and built
+verifier/native source must agree under a fresh caller admission. Neither a
+cross-function route nor a marker by itself selects the profile. Unknown modes,
+missing/extra marker bytes, unindexed files and incomplete selected sets refuse.
+
+The structural verifier additionally binds every current full-function read to
+its authenticated original function owner. A foreign T3 transaction requires two
+source members, separately declared original owners with complete heads and no
+saved resumes, exact original displaced instructions before either write, one
+preserved entry per member, and the requesting site's selected/victim permits.
+It checks the selected short edge to V+5 and both victim E9 operands against the
+typed image routes. For the inspected ID15/ID57 shape the auxiliary ID57 route
+restores the entire original ten-byte NOP without a helper or logical-PC field,
+and returns to its exact original continuation. ID57 remains an ordinary head;
+it does not become a requested instrumentation site. The existing image byte,
+field, continuation, owner, lock, loader and whole-candidate checks still apply.
+
+The witness version, 87-head table, all 176 cases, 352 children, 528 comparisons,
+8,636 capture names, six original CALL words, faults, flags, canonical XSAVE,
+array, full stack/scratch rules and child limits are unchanged. The extra indexed
+input flows through existing witness file rows and `bundle-inputs.tsv`; it is not
+an extra capture. The native reader independently requires the same marker bytes
+and exact marker index/witness row, then uses the unchanged state machine.
+
+This profile does **not** qualify an entry router. The existing verifier refuses
+`entry-router-required` records and router bootstrap requirements. Current 9884
+heap B1 output requests routing the original RET at 0x401844, so it still cannot
+pass this verifier. Earlier failed jump bundles and all other unmet obligations
+remain failed or unrun. Supporting separately owned T3 sources does not authorize
+such products or complete a native campaign. Producer, runner and saved-auditor
+profile/pin successors plus actual fresh build, complete production, ordinary,
+capacity and content-review admissions are required before any execution.

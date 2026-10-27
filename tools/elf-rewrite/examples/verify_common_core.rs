@@ -16,6 +16,12 @@ use std::path::{Path, PathBuf};
 #[path = "../../../tests/support/e9_common_seed.rs"]
 mod seed;
 
+#[path = "support/common_core_foreign.rs"]
+mod common_core_foreign;
+#[path = "../../../tests/support/e9_common_planning_profile.rs"]
+mod planning_profile;
+use planning_profile::PlanningProfile;
+
 const INPUT: usize = 1_048_576;
 const OUTPUT: usize = 16_777_216;
 const HOOK: u64 = 0x401960;
@@ -906,7 +912,8 @@ fn derived_permits(original: &[(u64, u64)], pcs: &[u64]) -> Vec<[Permit; 2]> {
 }
 
 fn main() {
-    let args: Vec<_> = std::env::args_os().collect();
+    let mut args: Vec<_> = std::env::args_os().collect();
+    let planning = PlanningProfile::arguments(&mut args, 7);
     assert_eq!(
         args.len(),
         7,
@@ -1224,6 +1231,11 @@ fn main() {
         assert_eq!(hash(&f.bytes), r[3]);
         assert!(files.insert(r[1].to_owned(), f).is_none());
     }
+    planning.marker(
+        files
+            .get(planning_profile::MARKER)
+            .map(|f| f.bytes.as_slice()),
+    );
     assert_eq!(files["selection.txt"].bytes, selection.bytes);
     assert_eq!(files["target.tsv"].bytes, target_input.bytes);
     let actual: BTreeSet<_> = std::fs::read_dir(directory)
@@ -1336,6 +1348,11 @@ fn main() {
         .collect::<Vec<_>>()
     );
     assert!(!r.iter().any(|x| x[0] == "entry-router-required"));
+    let foreign_pairs = if planning == PlanningProfile::OwnedForeignNeighbors {
+        common_core_foreign::pairs(&s.sites, &r, &report)
+    } else {
+        Vec::new()
+    };
     let mut overlay = original.bytes.clone();
     let mut steps = BTreeSet::new();
     let mut step_counts = BTreeMap::<u64, u64>::new();
@@ -1366,6 +1383,12 @@ fn main() {
             .collect();
         assert_eq!(live.len(), 1);
         assert_eq!(&live[0][3..], ["true", "true", "false"]);
+        if planning == PlanningProfile::OwnedForeignNeighbors {
+            common_core_foreign::check_current_read(&s.sites, &r, step, &overlay);
+            for pair in &foreign_pairs {
+                pair.before_step(&s.sites, &r, step, &overlay);
+            }
+        }
         for read in r
             .iter()
             .filter(|x| x[0] == "step-read" && x[1] == step[1] && x[2] == step[2])
@@ -1579,6 +1602,9 @@ fn main() {
         ]
         .map(str::to_owned),
     );
+    if planning == PlanningProfile::OwnedForeignNeighbors {
+        expected_names.insert(planning_profile::MARKER.to_owned());
+    }
     for site in &s.sites {
         expected_names.insert(format!("site-{}.diagnostics.txt", site.id));
     }
@@ -1820,6 +1846,9 @@ fn main() {
         files.keys().cloned().collect::<BTreeSet<_>>(),
         expected_names
     );
+    for pair in &foreign_pairs {
+        pair.images(&all_heads, &images);
+    }
     assert!(!images.is_empty());
     assert!(images.iter().map(|i| i.bytes.len()).sum::<usize>() <= 8_388_608);
     for pc in selected.keys() {

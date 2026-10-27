@@ -3,6 +3,9 @@
 //! No normal-loader, E9, recording-hook or whole-A3 qualification is inferred.
 use super::core_pages::{Page, materialize_load_pages};
 use super::*;
+#[path = "e9_common_planning_profile.rs"]
+mod planning_profile;
+use planning_profile::PlanningProfile;
 
 const MAX_INPUT: usize = 1_048_576;
 const MAX_OUTPUT: usize = 16_777_216;
@@ -73,7 +76,13 @@ struct Candidate {
     base: Vec<u8>,
 }
 impl Candidate {
-    fn read(directory: &Path, witness: &Input, original: &Input, target: &Input) -> Self {
+    fn read(
+        directory: &Path,
+        witness: &Input,
+        original: &Input,
+        target: &Input,
+        planning: PlanningProfile,
+    ) -> Self {
         assert!(directory.is_absolute());
         assert_eq!(
             directory.canonicalize().unwrap().as_os_str(),
@@ -134,6 +143,31 @@ impl Candidate {
                 .find(|i| i.path.file_name().unwrap() == name)
                 .unwrap()
         };
+        planning.marker(
+            inputs
+                .iter()
+                .find(|i| i.path.file_name().unwrap() == planning_profile::MARKER)
+                .map(|i| i.bytes.as_slice()),
+        );
+        if planning == PlanningProfile::OwnedForeignNeighbors {
+            let indexed: Vec<Vec<_>> = text(get("bundle-index.tsv"))
+                .lines()
+                .map(|line| line.split('\t').collect::<Vec<_>>())
+                .filter(|row| {
+                    row.first() == Some(&"file") && row.get(1) == Some(&planning_profile::MARKER)
+                })
+                .collect();
+            let witnessed: Vec<_> = rows[8..cursor]
+                .iter()
+                .filter(|row| row[1] == planning_profile::MARKER)
+                .cloned()
+                .collect();
+            assert_eq!(indexed.len(), 1);
+            assert_eq!(
+                indexed, witnessed,
+                "indexed marker has the exact witness size/hash binding"
+            );
+        }
         let elf = &get("candidate.elf").bytes;
         assert!(elf.len() > original.bytes.len());
         assert_eq!(&elf[..7], b"\x7fELF\x02\x01\x01");
@@ -558,7 +592,8 @@ fn pair(
 }
 
 pub fn main() {
-    let args: Vec<_> = std::env::args_os().collect();
+    let mut args: Vec<_> = std::env::args_os().collect();
+    let planning = PlanningProfile::arguments(&mut args, 8);
     assert_eq!(
         args.len(),
         8,
@@ -576,7 +611,13 @@ pub fn main() {
     let requested_target = Input::open(Path::new(&args[4]), 16384);
     assert_eq!(requested_target.bytes, target_tsv().as_bytes());
     let witness = Input::open(Path::new(&args[6]), MAX_OUTPUT);
-    let candidate = Candidate::read(Path::new(&args[5]), &witness, &original, &requested_target);
+    let candidate = Candidate::read(
+        Path::new(&args[5]),
+        &witness,
+        &original,
+        &requested_target,
+        planning,
+    );
     let inventory = admit(&original.bytes, &instructions.bytes);
     let original_view = original_pages(&original.bytes);
     let anchors = seed::Anchors::new(ARRAY, FRAME).unwrap();
