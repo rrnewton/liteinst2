@@ -17,6 +17,16 @@ import sys
 import time
 
 
+# Explicitly selected profile; legacy remains the original opt0/debug2 recipe.
+DEBUG0_BUILD_PROFILE = "dev-debug0-v1"
+DEBUG0_PROFILE = dict(opt_level="0", debuginfo=0, debug_assertions=True,
+                      overflow_checks=True, test=False)
+DEBUG0_ENV = dict(CARGO_PROFILE_DEV_DEBUG="0", CARGO_PROFILE_TEST_DEBUG="0",
+    CARGO_PROFILE_DEV_OPT_LEVEL="0", CARGO_PROFILE_TEST_OPT_LEVEL="0",
+    CARGO_PROFILE_DEV_DEBUG_ASSERTIONS="true", CARGO_PROFILE_TEST_DEBUG_ASSERTIONS="true",
+    CARGO_PROFILE_DEV_OVERFLOW_CHECKS="true", CARGO_PROFILE_TEST_OVERFLOW_CHECKS="true")
+
+
 def main():
     if sys.flags.optimize:
         raise SystemExit("Assertions required")
@@ -24,6 +34,8 @@ def main():
     for name in ("raw", "toolchain", "user-home", "cargo-home", "b1-raw"):
         parser.add_argument("--" + name, type=Path, required=True)
     parser.add_argument("--b1-closed-and-reaped", action="store_true", required=True)
+    parser.add_argument("--build-profile", choices=("legacy", DEBUG0_BUILD_PROFILE),
+                        default="legacy")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     raw = args.raw
@@ -64,6 +76,10 @@ def main():
         "RUST_TEST_THREADS": "4", "LC_ALL": "C",
         "PATH": str(tool) + ":/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1",
     }
+    if args.build_profile == DEBUG0_BUILD_PROFILE:
+        env.update(DEBUG0_ENV)
+        save("build-profile.json", dict(schema=1, build_profile=DEBUG0_BUILD_PROFILE,
+             cargo_profile=DEBUG0_PROFILE, cargo_env=DEBUG0_ENV))
     runtime_env = {"LC_ALL": "C", "PATH": "/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1"}
     tools = {}
     for name, executable, option in (
@@ -82,7 +98,7 @@ def main():
     assert b1.is_absolute() and b1.resolve(strict=True) == b1 and b1.is_dir()
     assert b1.is_relative_to(repo / "ignored")
     assert not b1.is_relative_to(raw) and not raw.is_relative_to(b1)
-    assert digest(repo / "evaluation/elf-exec/reproduce.py") == "ab041ad6611d0c8000a77b70cdaaee4ef25433c94e5c9e4ff4d46b81a14b2c36"
+    assert digest(repo / "evaluation/elf-exec/reproduce.py") == "907d30099d2febee4f534f10e1f0eb90f74df9add78b81916f40605e77bc8319"
     family = {
         "B2": {"define": 2, "heads": [0,3,8], "points": [[4,3,2],[4,3,2]], "images": 1, "comparisons": 120},
         "T1": {"define": 3, "heads": [0,2,7], "points": [[4,3,2],[4,3,2]], "images": 1, "comparisons": 120},
@@ -250,6 +266,18 @@ def main():
             assert receipt[stream + "_sha256"] == hashlib.sha256(retain(directory / (stream + ".txt"))).hexdigest()
 
     # This is a distinct prerequisite check, not a relabelled B1 execution.
+    # The new profile is explicit on both commands and the closed prerequisite.
+    # Legacy never adopts a profiled run merely because its stages exited zero.
+    if args.build_profile == "legacy":
+        assert not (b1 / "build-profile.json").exists()
+        assert not (b1 / "build-profile.json").is_symlink()
+    else:
+        prior_profile = prior_json("build-profile.json")
+        assert prior_profile == dict(schema=1, build_profile=DEBUG0_BUILD_PROFILE,
+             cargo_profile=DEBUG0_PROFILE, cargo_env=DEBUG0_ENV)
+        assert type(prior_profile["schema"]) is int
+        assert all(type(prior_profile["cargo_profile"][k]) is type(v)
+                   for k, v in DEBUG0_PROFILE.items())
     old_source = prior_json("source.json")
     assert old_source == prior_json("source-after.json") == {"revision":revision,"files":sources}
     old_stages = ["required","comparison","native-compile","codec-compile","target","assemble","link","strip"]
@@ -265,6 +293,8 @@ def main():
         assert type(row["exit"]) is int and row["exit"] == 0 and not row.get("parent_timeout",False)
         assert row == dict(prior_json(row["name"] + "/command.json"), exit=0,elapsed_seconds=row["elapsed_seconds"])
         assert math.isfinite(row["elapsed_seconds"]) and row["elapsed_seconds"] >= 0
+        if row["name"] in ("required", "native-compile", "codec-compile"):
+            assert row["env"] == dict(env, TMPDIR=str(b1 / row["name"] / "tmp"))
         if row["name"] != "required":
             prior_receipt(row)
     gates = prior_json("required/gates/commands.json")
@@ -299,6 +329,12 @@ def main():
     assert set(binaries) == {"elf-exec-oracle","liteinst-rewrite","verify_elf_exec"}
     for name,row in binaries.items():
         assert hashlib.sha256(retain(b1 / "artifacts" / name)).hexdigest() == row["sha256"]
+        expected_profile = (dict(opt_level="0", debuginfo=2, debug_assertions=True,
+                                 overflow_checks=True, test=False)
+                            if args.build_profile == "legacy" else DEBUG0_PROFILE)
+        assert row["artifact"]["profile"] == expected_profile
+        assert all(type(row["artifact"]["profile"][k]) is type(v)
+                   for k, v in expected_profile.items())
     for name in ("original-unstripped","original-stripped","candidate-0","candidate-1","candidate-2","candidate-3"):
         assert retain(b1 / ("ordinary-"+name) / "stdout.txt") == b"elf exec ok\n"
         assert retain(b1 / ("ordinary-"+name) / "stderr.txt") == b""
@@ -403,7 +439,11 @@ def main():
             item = selected[0]
             assert item["manifest_path"] == str(repo/"tools/elf-rewrite/Cargo.toml")
             assert item["target"]["kind"] == ["example"] and item["target"]["crate_types"] == ["bin"]
-            assert item["profile"] == {"opt_level":"0","debuginfo":2,"debug_assertions":True,"overflow_checks":True,"test":False}
+            if args.build_profile == "legacy":
+                assert item["profile"] == {"opt_level":"0","debuginfo":2,"debug_assertions":True,"overflow_checks":True,"test":False}
+            else:
+                assert item["profile"] == DEBUG0_PROFILE
+                assert all(type(item["profile"][k]) is type(v) for k, v in DEBUG0_PROFILE.items())
             assert item["features"] == [] and type(item["fresh"]) is bool
             assert item["filenames"] == [str(repo/"target/debug/examples"/name)]
             assert item["executable"] == item["filenames"][0]

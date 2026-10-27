@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Five fixed, caller-admitted software-preemption commands; never builds a binary."""
+"""Fixed caller-admitted preemption profiles (legacy five, inline six); never builds."""
 import argparse
 import csv
 import hashlib
@@ -63,14 +63,24 @@ def main():
     ap.add_argument('--binding', type=Path, required=True)
     ap.add_argument('--binding-sha256', required=True)
     ap.add_argument('--raw', type=Path, required=True)
+    ap.add_argument('--profile', choices=('full-callback-v1', 'inline-clock-v1'), default='full-callback-v1')
     a = ap.parse_args()
     original, binding_owner = read(a.binding, 16*MIB)
     assert sha(original) == a.binding_sha256
     b = json.loads(original)
-    assert b.keys() == {'schema', 'authority', 'revision', 'repo', 'caller_sha256', 'binary',
-                        'binary_owner', 'sources', 'tools', 'affinity', 'build'}
+    inline = a.profile == 'inline-clock-v1'
+    if inline:
+        assert b.keys() == {'schema', 'authority', 'revision', 'repo', 'caller_sha256', 'binary',
+                            'binary_owner', 'sources', 'tools', 'affinity', 'build', 'profile'}
+        assert b['profile'] == a.profile
+    else:
+        assert b.keys() == {'schema', 'authority', 'revision', 'repo', 'caller_sha256', 'binary',
+                            'binary_owner', 'sources', 'tools', 'affinity', 'build'}
     assert type(b['schema']) is int and b['schema'] == 1
-    assert b['authority'] == 'ROOT_REVIEWED_PREEMPT_RELEASE_BINARY'
+    if inline:
+        assert b['authority'] == 'ROOT_REVIEWED_INLINE_CLOCK_RELEASE_BINARY'
+    else:
+        assert b['authority'] == 'ROOT_REVIEWED_PREEMPT_RELEASE_BINARY'
     assert type(b['revision']) is str and re.fullmatch('[0-9a-f]{40}', b['revision'])
     repo, raw = Path(b['repo']), a.raw
     assert repo.is_absolute() and repo.resolve(strict=True) == repo
@@ -135,6 +145,8 @@ def main():
         libc=platform.libc_ver(), affinity=sorted(os.sched_getaffinity(0)),
         cpu_model=next(x.split(':',1)[1].strip() for x in Path('/proc/cpuinfo').read_text().splitlines() if x.startswith('model name'))))
     rows = [dict(id='qualify', status='UNRUN')] + [dict(id=name, status='UNRUN') for name in CASES]
+    if inline:
+        rows.insert(0, dict(id='gates', status='UNRUN'))
     metrics = []
     try:
         for row in rows:
@@ -144,6 +156,10 @@ def main():
             try:
                 assert watched() == before
                 argv = [str(binary), 'qualify', str(work/'output')] if row['id']=='qualify' else [str(binary), 'bench', row['id'], str(work/'output')]
+                if inline:
+                    argv = [str(binary), 'inline-gates', str(work/'output')] if row['id']=='gates' else (
+                        [str(binary), 'inline-qualify', str(work/'output')] if row['id']=='qualify' else
+                        [str(binary), 'inline-bench', row['id'], str(work/'output')])
                 case_env = dict(env, TMPDIR=str(work/'tmp'))
                 request = dict(argv=argv, cwd=str(repo), env=case_env, stdout=str(work/'stdout.txt'),
                     stderr=str(work/'stderr.txt'), cpu_seconds=60, wall_seconds=90, file_bytes=MIB)
@@ -185,15 +201,36 @@ def main():
                 assert read(work/'stderr.txt')[0] == read(work/'helper.stderr')[0] == b''
                 assert json.loads(read(work/'helper.stdout')[0]) == dict(exit=0,wall_timeout=False,absence_proof='ECHILD',descendants=0,success=True)
                 terminal = 'preemption:qualify:96-stop-cells:16-native:16-counter:512-setcc:48-exact-repeats\n' if row['id']=='qualify' else 'preemption:benchmark:'+row['id']+':27-rows:2-warmups:7-measured:equal-work\n'
+                if inline:
+                    terminal = ('preemption:inline-gates:28-pairs:56-children:28-full-state-prefixes\n'
+                        if row['id']=='gates' else terminal.replace('preemption:', 'preemption:inline-', 1))
                 assert read(work/'stdout.txt', MIB)[0] == terminal.encode()
                 output = work/'output'
                 names = {'qualification.csv','stops.csv','summary.json'} if row['id']=='qualify' else {'measurements.csv'}
+                if row['id']=='gates':
+                    assert inline
+                    names = {'gate-controls.csv','summary.json'}
                 assert {p.name for p in output.iterdir()} == names
                 assert all(p.is_file() and not p.is_symlink() for p in output.iterdir())
                 save(work, 'output-files.json', {name:read(output/name,MIB)[1] for name in sorted(names)})
-                if row['id']=='qualify':
+                if row['id']=='gates':
                     summary = json.loads(read(output/'summary.json')[0])
-                    assert summary['status']=='PASS' and summary['scope']=='finite-before-taken-backedge'
+                    assert summary == dict(status='PASS', profile='inline-clock-v1', pairs=28, children=56,
+                        comparisons=28, stack_bytes=65536, scope='new-gate-prefix-only')
+                    gates = list(csv.DictReader(io.StringIO(read(output/'gate-controls.csv')[0].decode())))
+                    expected = [(case, str(taken).lower(), str(remaining), str(seed))
+                        for case in CASES for taken in ((True,) if case=='direct-jmp' else (False,True))
+                        for remaining in (1,2) for seed in (7,42)]
+                    assert [(r['case'],r['taken'],r['remaining'],r['seed']) for r in gates] == expected
+                    assert len(gates)==28 and all(r['status']=='PASS' and 1<=int(r['steps'])<=20000 for r in gates)
+                    assert all(r['boundary']==('zero-before-save' if r['taken']=='true' and r['remaining']=='1'
+                        else 'fast-before-original-branch') for r in gates)
+                elif row['id']=='qualify':
+                    summary = json.loads(read(output/'summary.json')[0])
+                    if inline:
+                        assert summary['status']=='PASS' and summary['scope']=='inline-clock-v1-before-taken-backedge'
+                    else:
+                        assert summary['status']=='PASS' and summary['scope']=='finite-before-taken-backedge'
                     assert [summary[x] for x in ('stop_cells','native_cells','counter_cells','condition_controls','deterministic_repeats')] == [96,16,16,512,48]
                     assert summary['parked_checks'] == 256
                     assert len(list(csv.DictReader(io.StringIO(read(output/'qualification.csv')[0].decode())))) == 96

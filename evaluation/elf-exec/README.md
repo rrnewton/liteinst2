@@ -42,3 +42,39 @@ no dynamic loader, PIE/DSO, unwind, CET, SIGILL-router or arbitrary-program
 qualification here. All emitted products retain `qualification_complete=false`;
 the explicit runtime requirements are not discharged generically by this check.
 The source recipes are prospective until accompanied by exact-revision results.
+
+For constrained disk space, pass `--build-profile dev-debug0-v1` to both
+`reproduce.py` and `reproduce_tactics.py`. This explicit profile disables debug
+information, retains optimization level 0, debug assertions and overflow checks,
+and authenticates the exact Cargo artifact profiles. The default `legacy`
+profile keeps its original debug information. A tactics run requires its closed
+B1 prerequisite to use the same profile. Neither profile supplies performance
+measurements.
+
+The complete sequence runs the 27 B1 stages, then the 93 additional tactic
+stages after the first parent has exited and all descendants have been reaped:
+
+```sh
+python3.9 -B evaluation/elf-exec/reproduce.py \
+  --raw "$PWD/ignored/elf-b1-RUN" --build-profile dev-debug0-v1 \
+  --toolchain "$TOOLCHAIN" --user-home "$USER_HOME" --cargo-home "$CARGO_CACHE"
+python3.9 -B evaluation/elf-exec/reproduce_tactics.py \
+  --raw "$PWD/ignored/elf-tactics-RUN" --build-profile dev-debug0-v1 \
+  --b1-raw "$PWD/ignored/elf-b1-RUN" --b1-closed-and-reaped \
+  --toolchain "$TOOLCHAIN" --user-home "$USER_HOME" --cargo-home "$CARGO_CACHE"
+```
+
+The full sequence requires 748 state comparisons across 76 original and 152
+rewritten traces, plus 30 ordinary process executions. It covers B1, B2, T1, T2
+and T3 with stripped/unstripped files and null/recording hooks. The complete
+explicit debug0 run passed at `f454ba1`; its [results and exact receipt](../elf-exec-f454ba1/README.md)
+retain all 120 stage outcomes and 748 live state comparisons.
+
+Pure controls for the profile admission guards accept two complete records and
+require 28 malformed or mismatched records to be rejected. They extract the
+literal guards without executing either recipe or any subject:
+
+```sh
+python3.9 -B evaluation/elf-exec/profile_controls.py --repo "$PWD" \
+  --sources "$PWD/evaluation/elf-exec" --out "$PWD/ignored/elf-profile-controls-RUN"
+```

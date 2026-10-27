@@ -18,6 +18,7 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     for key in ('repo', 'raw', 'toolchain', 'user-home', 'cargo-home'):
         ap.add_argument('--' + key, type=Path, required=True)
+    ap.add_argument('--profile', choices=('full-callback-v1', 'inline-clock-v1'), default='full-callback-v1')
     args = ap.parse_args()
     repo, raw = args.repo, args.raw
     for path in (repo, args.toolchain, args.user_home, args.cargo_home):
@@ -135,11 +136,20 @@ def main():
         tools={name:dict(path=str(path), owner=owner(path)) for name,path in
             [('python',python),('timeout',timeout),('git',git),('helper',helper)]},
         build=dict(command=build_command, closed=build_closed, files={str(p):owner(p) for p in evidence}))
+    if args.profile == 'inline-clock-v1':
+        binding['authority'] = 'ROOT_REVIEWED_INLINE_CLOCK_RELEASE_BINARY'
+        binding['profile'] = args.profile
     save(raw, 'binding.json', binding)
     call = [str(python), '-B', str(repo/'tools/software-preemption/run.py'),
         '--binding', str(raw/'binding.json'), '--binding-sha256', owner(raw/'binding.json')['sha256'],
         '--raw', str(raw/'experiment')]
-    launch(raw/'experiment-parent', call, env, 650)
+    if args.profile == 'inline-clock-v1':
+        call += ['--profile', 'inline-clock-v1']
+        # Six fixed commands: 6 * 115 seconds + the same 75-second caller allowance.
+        # This changes only the whole-experiment parent, never a child/resource cap.
+        launch(raw/'experiment-parent', call, env, 765)
+    else:
+        launch(raw/'experiment-parent', call, env, 650)
     summary = json.loads(read(raw/'experiment/summary.json')[0])
     assert summary['status'] == 'PASS' and sources() == before
     print(json.dumps(summary, sort_keys=True), flush=True)

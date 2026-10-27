@@ -420,9 +420,62 @@ pub fn plan_coalesced_detailed(
     plan_coalesced_core(&PlanningRequest::live(request), actions)
 }
 
+/// Plan the finite authored inline-clock profile with unchanged allocation caps.
+/// No upstream/window expansion, pun fallback, artifact profile or replacement.
+pub fn plan_backedge_clock_detailed(
+    request: &InstallRequest<'_>,
+    action: &crate::backedge_clock::BackedgeClockAction,
+) -> Result<PlannedInstall, PlanningFailure> {
+    let valid = request.identity == action.identity
+        && request.base_address == action.base
+        && request.code == action.source.as_slice()
+        && request.logical_pc == action.logical_pc
+        && request.semantics == HookSemantics::Observe
+        && request.search.tactics == TacticPolicy::RelocationOnly
+        && request.search.max_upstream_bytes == 0
+        && request.search.max_sites == 1
+        && request.search.max_displaced_bytes == 15
+        && request.allocation.max_candidates == 256
+        && request.allocation.max_mappings == 1
+        && request.allocation.max_mapped_bytes == 8192
+        && request.function
+            == AddressRange::new(action.base, action.source.len()).map_err(|reason| {
+                PlanningFailure {
+                    reason,
+                    attempts: Vec::new(),
+                    search: SearchEvidence::default(),
+                }
+            })?
+        && request.block.start() == action.logical_pc
+        && request.block.len() == if action.condition.is_some() { 6 } else { 5 };
+    if !valid {
+        return Err(PlanningFailure {
+            reason: Refusal::InvalidPlan,
+            attempts: Vec::new(),
+            search: SearchEvidence::default(),
+        });
+    }
+    plan_coalesced_flavor(
+        &PlanningRequest::live(request),
+        &[crate::controls::ControlledAction {
+            logical_pc: action.logical_pc,
+            control: action.control.clone(),
+        }],
+        Some(action),
+    )
+}
+
 fn plan_coalesced_core(
     request: &PlanningRequest<'_>,
     actions: &[crate::controls::ControlledAction],
+) -> Result<PlannedInstall, PlanningFailure> {
+    plan_coalesced_flavor(request, actions, None)
+}
+
+fn plan_coalesced_flavor(
+    request: &PlanningRequest<'_>,
+    actions: &[crate::controls::ControlledAction],
+    clock: Option<&crate::backedge_clock::BackedgeClockAction>,
 ) -> Result<PlannedInstall, PlanningFailure> {
     let mut attempts = Vec::new();
     let mut search_evidence = SearchEvidence::default();
@@ -458,7 +511,10 @@ fn plan_coalesced_core(
             search_evidence.known_limit_hit(id, 1);
             return Err(Refusal::NoPatchWindow);
         }
-        let occupied = request.emission.occupied()?;
+        let mut occupied = request.emission.occupied()?;
+        if let Some(clock) = clock {
+            occupied.push(clock.clock.range());
+        }
         let mut candidates: Vec<_> = scan
             .instructions()
             .iter()
@@ -491,7 +547,7 @@ fn plan_coalesced_core(
                 source,
                 physical,
                 &occupied,
-                Some(actions),
+                (Some(actions), clock),
                 &mut search_evidence,
             ) {
                 Ok(mut plan) => {
@@ -954,7 +1010,7 @@ fn plan_at(
         source,
         physical,
         occupied,
-        None,
+        (None, None),
         search_evidence,
     )
 }
@@ -965,7 +1021,10 @@ fn plan_at_with_controls(
     source: AddressRange,
     physical: u64,
     occupied: &[AddressRange],
-    controls: Option<&[crate::controls::ControlledAction]>,
+    (controls, clock): (
+        Option<&[crate::controls::ControlledAction]>,
+        Option<&crate::backedge_clock::BackedgeClockAction>,
+    ),
     search_evidence: &mut SearchEvidence,
 ) -> Result<PlannedInstall, Refusal> {
     let scope = SearchScope {
@@ -1055,9 +1114,12 @@ fn plan_at_with_controls(
     request
         .require_original(displaced)
         .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
-    let trampoline = match controls {
-        Some(actions) => TrampolinePlan::from_controlled_actions(scan, physical, end, actions),
-        None => request.emission.window(
+    let trampoline = match (clock, controls) {
+        (Some(action), _) => TrampolinePlan::from_backedge_clock(scan, physical, end, action),
+        (None, Some(actions)) => {
+            TrampolinePlan::from_controlled_actions(scan, physical, end, actions)
+        }
+        (None, None) => request.emission.window(
             scan,
             physical,
             request.logical_pc,
