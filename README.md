@@ -240,9 +240,11 @@ interpreter bridge to run the original dynamic linker and application under an
 in-process NX gate. Its explicit sealed dependency namespace supports real
 mapping, relocation and TLS initialization. This backend uses kernel traps for
 CPUID, timestamps and syscalls, with `source_patches=0`; the owned-region library
-above supplies actual source patches. The launcher currently requires a
-singleton process and refuses unsupported signal, process and mapping
-operations. Its documented identity and loader-search restrictions apply.
+above supplies actual source patches. An opt-in raw-fork profile rearms the
+child's gate before resuming its original signal frame and forwards bounded
+wait4 calls with their actual results. Each process remains single-threaded;
+unsupported signal, process and mapping operations refuse. Its documented
+identity and loader-search restrictions apply.
 
 [liteinst-launch](crates/liteinst-launch/README.md) captures an ELF process at
 its exec stop before the executable/interpreter's first instruction. Its

@@ -29,6 +29,11 @@ int li2_lifecycle_dispatch(long n,const long args[6],long *result);
 void li2_lifecycle_before_other(long n,const long args[6]);
 void li2_lifecycle_abort(void);
 void li2_lifecycle_snapshot(struct li2_lifecycle_counts *out);
+/* Actual fork boundary: no active materialization, every retained live page
+   agrees with this process mm, and every source still has its sealed owner. */
+struct li2_fork_range { uintptr_t first,end; };
+void li2_lifecycle_fork_capture(const struct li2_fork_range *,size_t);
+void li2_lifecycle_fork_verify(void);
 #endif
 /* Bridge-authenticated initial images are registered before SUD activation. */
 struct image;

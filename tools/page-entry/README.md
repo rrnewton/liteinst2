@@ -119,8 +119,8 @@ this profile. Forwarded syscalls execute through the private gateway.
 
 The finite syscall profile permits ordinary file/directory/data/identity/time
 queries, real TLS/tid-address/robust-list/rseq setup, and the reviewed mapping
-lifecycle. It refuses thread/process creation, exec, network operations,
-unknown syscalls, protected mapping mutation and externally writable executable
+lifecycle. The default profile refuses thread/process creation, exec, network
+operations, unknown syscalls, protected mapping mutation and externally writable executable
 objects. Signal mask and alternate-stack operations, including queries, refuse;
 the handler's temporary state is not substituted for interrupted application
 state. Signal action changes and reserved-signal queries also refuse. Other
@@ -135,3 +135,52 @@ signatures or an external trust root. Cooperative code must not bypass the
 private syscall gateway, overwrite runtime storage or alter unsupported control
 state. This is not an adversarial sandbox, filesystem-transparent loader,
 arbitrary-application launcher or complete B2/B3/B4 implementation.
+
+## Opt-in raw fork and wait
+
+`carrier.py exec-fork` adds a closed process-creation profile to the same sealed
+namespace runtime. It accepts one actual raw `SYS_fork` attempt from the original
+singleton parent and at most eight `wait4` calls for that actual child, with
+options zero or `WNOHANG`. Original syscall arguments and kernel results are
+preserved. A failed wait can already have reaped the child: `EFAULT` is neither
+retried nor treated as proof that no effect occurred. Ordinary `exec-loader`
+continues to refuse fork. libc `fork`/atfork, clone, vfork, child forks, threads,
+exec and general asynchronous signal handling are outside this profile.
+
+The child initially runs inside the copied private signal frame. Before it
+returns to the original application PC/RSP, the runtime checks the actual child
+identity, inherited protected mappings and sealed owners, signal/alternate-stack
+state and CPUID/TSC configuration, registers sync-core and re-arms Syscall User
+Dispatch. Parent success remains the actual child PID even if child setup fails;
+that child reports its failure and exits 125. Parent and child retain their own
+COW copies of the mapping history and cumulative counters. Identical inherited
+history is not counted as fresh execution in both processes.
+
+The caller must provide `--report-parent FD --report-child FD`: distinct actual
+blocking write-only FIFO owners, inherited across exec and retained through
+process exit. These report owners are protected against close and flag changes.
+The optional `--child-failure 1..4` fixture control explicitly stops before a
+child setup phase; it is not an injected kernel return or permission to execute
+an incompletely restored child. The evaluator provisions and supervises these
+resources:
+
+```sh
+python3 evaluation/inprocess/fork.py --expect-revision "$(git rev-parse HEAD)"
+```
+
+The 39-command cohort preserves the nine semantic native/gated pairs, child
+setup failures and default refusal. Separate assembly observations compare full
+parent/child GPRs, flags, original RSP/redzone, FS/GS and qualified architectural
+XSTATE against each process's actual pre-fork state. Real R12/redzone corruption
+variants must be rejected; supplied-record mutations are separate controls.
+Actual XINUSE and XSTATE_BV values are reported without asserting bitmap equality.
+Supervisor controls exercise timeout, SIGINT, an exited leader with a live
+child, malformed reports and real close/reap errors. Expected control failures
+remain failed command rows; unknown cleanup stops further ordinary commands.
+
+This cohort uses one CPU, 5 CPU seconds and 512 MiB address space per command,
+15 seconds wall time and one 2-second cleanup bound. Its 16 MiB per-file bound
+covers sealed dependency preparation; accepted stdout/stderr remain at most
+64 KiB, runtime reports 4 KiB, and each continuation record exactly 135,936 bytes.
+These are explicit fork-cohort bounds. The existing first-entry, ABI and other
+profiles keep their own commands, limits and qualification requirements.

@@ -111,7 +111,7 @@ def execute(carrier, argv):
     os.execve(fd, argv or [str(carrier)], os.environ.copy())
 
 
-def execute_loader(carrier, original, roots, directory, argv):
+def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0):
     # This separate command intentionally supplies a private namespace and a
     # closed environment. The original fixture's make/exec path is unchanged.
     import namespace
@@ -136,6 +136,18 @@ def execute_loader(carrier, original, roots, directory, argv):
         env = {"PATH": "/usr/bin:/bin", "LANG": "C", "LC_ALL": "C", "TZ": "UTC",
                "LD_LIBRARY_PATH": str(directory), "LD_BIND_NOW": "1",
                "LI2_DEPENDENCY_FDS": ",".join(str(item) for item in fds)}
+        if fork_fds is not None:
+            if len(fork_fds) != 2 or fork_fds[0] == fork_fds[1] or any(item <= 2 for item in fork_fds):
+                raise ValueError("distinct fork report descriptors")
+            for item in fork_fds:
+                if not stat.S_ISFIFO(os.fstat(item).st_mode):
+                    raise ValueError("fork report descriptor is not a pipe")
+            env["LI2_RAW_FORK"] = "1"
+            env["LI2_FORK_REPORT_FDS"] = ",".join(str(item) for item in fork_fds)
+            if child_failure:
+                if child_failure not in (1, 2, 3, 4):
+                    raise ValueError("child failure step")
+                env["LI2_FORK_CHILD_FAILURE"] = str(child_failure)
         # Preparation is reproducible and retained even if exec fails. This is
         # not an execution receipt and cannot claim the linker used these files.
         (directory / "launch.json").write_text(json.dumps({
@@ -167,11 +179,23 @@ def main():
     loader.add_argument("carrier", type=Path)
     loader.add_argument("original", type=Path)
     loader.add_argument("argv", nargs=argparse.REMAINDER)
+    fork = sub.add_parser("exec-fork", help="one raw fork; distinct report pipes")
+    fork.add_argument("--library-root", action="append", type=Path, required=True)
+    fork.add_argument("--namespace", type=Path, required=True)
+    fork.add_argument("--report-parent", type=int, required=True)
+    fork.add_argument("--report-child", type=int, required=True)
+    fork.add_argument("--child-failure", type=int, choices=(0, 1, 2, 3, 4), default=0)
+    fork.add_argument("carrier", type=Path)
+    fork.add_argument("original", type=Path)
+    fork.add_argument("argv", nargs=argparse.REMAINDER)
     args = parser.parse_args()
     if args.mode == "make":
         make(args.original, args.bridge, args.output)
     elif args.mode == "exec":
         execute(args.carrier, args.argv)
+    elif args.mode == "exec-fork":
+        execute_loader(args.carrier, args.original, args.library_root, args.namespace, args.argv,
+                       (args.report_parent, args.report_child), args.child_failure)
     else:
         execute_loader(args.carrier, args.original, args.library_root, args.namespace, args.argv)
 

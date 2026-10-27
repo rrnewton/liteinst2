@@ -607,3 +607,52 @@ void li2_lifecycle_verify_kernel_code(uintptr_t first,size_t bytes) {
     if (!bytes || first>UINTPTR_MAX-bytes || !r || r->first!=first || r->end!=first+bytes ||
         !r->private || r->prot!=(PROT_READ|PROT_EXEC) || r->inode || r->major || r->minor || r->offset) DIE(190,0);
 }
+
+static struct map_row fork_protected[MAP_ROWS];
+static size_t fork_protected_used;
+static unsigned fork_protected_complete;
+
+void li2_lifecycle_fork_verify(void) {
+    if (!active || tx.guard || (tx.phase!=REVOKED && tx.phase!=ADMITTED)) DIE(191,tx.phase);
+    for (size_t i=0;i<object_count;i++) {
+        const struct object *o=&objects[i]; struct stat st;
+        long seals=RAW(SYS_fcntl,o->retained_fd,F_GET_SEALS,0,0,0,0);
+        if (seals<0 || (seals&SEALS)!=SEALS || RAW(SYS_fstat,o->retained_fd,&st,0,0,0,0) ||
+            st.st_dev!=o->stat.st_dev || st.st_ino!=o->stat.st_ino || st.st_size!=o->stat.st_size ||
+            st.st_mode!=o->stat.st_mode) DIE(192,i);
+    }
+    read_maps(); size_t live=0;
+    for (size_t i=0;i<used;i++) {
+        const struct owned_page *p=&records[i]; if (!p->live) continue; ++live;
+        const struct map_row *r=mapping(p->address); verify_page(p,r);
+        if (r->prot!=p->actual || p->actual!=(p->admitted?p->logical:(p->logical&~PROT_EXEC))) DIE(193,i);
+        if (p->backing==SEALED && (p->logical&PROT_EXEC))
+            alias_check(p->object,p->offset,PAGE,p->logical,p->address,p->address+PAGE);
+    }
+    if (live!=counts.live_pages || used!=counts.retained_records || generation!=counts.generations) DIE(194,0);
+    if (fork_protected_complete) for (size_t i=0;i<fork_protected_used;i++) {
+        const struct map_row *old=&fork_protected[i],*r=mapping(old->first);
+        if (!r || r->end<old->end || r->prot!=old->prot || r->private!=old->private ||
+            r->major!=old->major || r->minor!=old->minor || r->inode!=old->inode) DIE(195,i);
+        if (r->inode && (r->offset>UINT64_MAX-(old->first-r->first) ||
+            r->offset+old->first-r->first!=old->offset)) DIE(195,i);
+    }
+}
+
+void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
+    if (fork_protected_complete || fork_protected_used || !n || n>128) DIE(196,0);
+    li2_lifecycle_fork_verify();
+    for (size_t i=0;i<n;i++) {
+        uintptr_t at=ranges[i].first,end=ranges[i].end;
+        if (at>=end || ((at|end)&(PAGE-1))) DIE(196,i);
+        while (at<end) {
+            const struct map_row *r=mapping(at);
+            if (!r || !r->private || fork_protected_used==MAP_ROWS) DIE(197,i);
+            struct map_row *out=&fork_protected[fork_protected_used++]; *out=*r;
+            out->first=at; out->end=r->end<end?r->end:end;
+            if (r->inode) { if (r->offset>UINT64_MAX-(at-r->first)) DIE(197,i); out->offset=r->offset+at-r->first; }
+            at=out->end;
+        }
+    }
+    fork_protected_complete=1;
+}

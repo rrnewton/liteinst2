@@ -7,9 +7,8 @@
 
 #define RANGES 128
 #define ALT_BYTES (512UL*1024)
-struct range { uintptr_t first,end; };
 struct action { void (*handler)(int,siginfo_t *,void *); unsigned long flags; void (*restorer)(void); uint64_t mask; };
-static struct range protected[RANGES];
+static struct li2_fork_range protected[RANGES];
 static size_t protected_count,dependency_count;
 static struct image original_main,original_interpreter;
 static volatile sig_atomic_t handling,reported;
@@ -23,6 +22,8 @@ static uintptr_t vdso_first,vdso_end;
 static unsigned long vdso_selected;
 static void fail(unsigned,long) __attribute__((noreturn));
 
+#include "fork_profile.h"
+
 struct writer { char bytes[2048]; size_t used; };
 static void text(struct writer *w,const char *s) {
     while (*s) { if (w->used==sizeof(w->bytes)) li2_fail("loader report overflow"); w->bytes[w->used++]=*s++; }
@@ -35,6 +36,7 @@ static void field(struct writer *w,const char *name,uint64_t n) { text(w,name); 
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
     reported=1;
+    if(fork_profile.enabled) { fork_report(status,code,detail); return; }
     struct writer w={.used=0}; struct li2_lifecycle_counts lc; li2_lifecycle_snapshot(&lc);
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"sealed_dependency_namespace_first_entry\",\"source_patches\":0");
     field(&w,",\"status\":",status); field(&w,",\"failure_code\":",code);
@@ -64,7 +66,7 @@ static void fail(unsigned code,long detail) {
 static void checked(int yes,unsigned code,long detail) { if(!yes) fail(code,detail); }
 static void protect(uintptr_t first,size_t bytes) {
     checked(bytes && first<=UINTPTR_MAX-bytes && protected_count<RANGES,201,0);
-    protected[protected_count++]=(struct range){first,first+bytes};
+    protected[protected_count++]=(struct li2_fork_range){first,first+bytes};
 }
 static int intersects(uintptr_t first,size_t bytes) {
     if (!bytes || first>UINTPTR_MAX-bytes) return 1;
@@ -104,6 +106,8 @@ static void register_vdso(void) {
     }
     checked(loads==1,245,0);li2_lifecycle_verify_kernel_code(vdso_first,vdso_end-vdso_first);protect(vdso_first,vdso_end-vdso_first);
 }
+#include "fork_profile.inc"
+
 static int ordinary(long n) {
     switch(n) {
     case SYS_read: case SYS_write: case SYS_readv: case SYS_writev:
@@ -122,7 +126,8 @@ static int ordinary(long n) {
     default: return 0;
     }
 }
-static void dispatch(siginfo_t *si,greg_t *g) {
+static void dispatch(siginfo_t *si,ucontext_t *context) {
+    greg_t *g=context->uc_mcontext.gregs;
     uintptr_t pc=(uintptr_t)g[REG_RIP]; long n=si->si_syscall;
     checked(si->si_code==2 && si->si_arch==AUDIT_ARCH_X86_64 && (uintptr_t)si->si_call_addr==pc &&
         pc>=2 && known_code(pc-2,2) && *(const uint16_t *)(pc-2)==0x050f &&
@@ -132,9 +137,10 @@ static void dispatch(siginfo_t *si,greg_t *g) {
     if(n==SYS_exit || n==SYS_exit_group) {
         ++forwarded; report((unsigned)a[0],0,0); (void)raw(n,a[0],a[1],a[2],a[3],a[4],a[5]); fail(203,n);
     }
-    checked(n!=SYS_close || (unsigned int)a[0]!=(unsigned int)report_fd,204,n);
+    checked(n!=SYS_close || ((unsigned int)a[0]!=(unsigned int)report_fd && !fork_reserved_fd(a[0])),204,n);
+    checked(n!=SYS_fcntl || a[1]==F_GETFD || a[1]==F_GETFL || !fork_sink_alias(a[0]),274,n);
     li2_lifecycle_before_other(n,a);
-    if(!li2_lifecycle_dispatch(n,a,&result)) {
+    if(!fork_dispatch(n,a,context,&result) && !li2_lifecycle_dispatch(n,a,&result)) {
         if(n==SYS_arch_prctl) checked(a[0]==ARCH_SET_FS || a[0]==ARCH_SET_GS || a[0]==ARCH_GET_FS || a[0]==ARCH_GET_GS || a[0]==0x3001 || a[0]==ARCH_SHSTK_STATUS,205,a[0]);
         /* Queries execute in our handler context. Do not expose its blocked
            mask, SS_ONSTACK state or reserved private signal dispositions. */
@@ -194,7 +200,7 @@ static void fault(siginfo_t *si,greg_t *g) {
 static void handler(int sig,siginfo_t *si,void *ptr) {
     checked(!handling && si && ptr,218,sig); handling=1;
     greg_t *g=((ucontext_t *)ptr)->uc_mcontext.gregs;
-    if(sig==SIGSYS) dispatch(si,g); else if(sig==SIGSEGV) fault(si,g); else fail(219,sig);
+    if(sig==SIGSYS) dispatch(si,ptr); else if(sig==SIGSEGV) fault(si,g); else fail(219,sig);
     handling=0;
 }
 static size_t parse_fds(int fds[32]) {
@@ -217,6 +223,7 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     checked(minimum && minimum<ALT_BYTES-16384,226,0); original_main=*main;original_interpreter=*interp;
     checked(raw(SYS_getpid,0,0,0,0,0,0)==raw(SYS_gettid,0,0,0,0,0,0),227,0);
     long fd=raw(SYS_fcntl,2,F_DUPFD_CLOEXEC,100,0,0,0);checked(fd>=0,228,fd);report_fd=(int)fd;
+    fork_configure();
     protect_image(bridge_runtime_image(),1);protect_image(main,0);protect_image(interp,0);
     unsigned long cet=0;long result=raw(SYS_arch_prctl,0x5005,(long)&cet,0,0,0,0);
     checked((!result && !cet)||result==-22||result==-38,229,result);
@@ -225,12 +232,13 @@ void runtime_arm(const struct image *main,const struct image *interp,size_t mini
     for(int sig=1;sig<=64;sig++) { if(sig==SIGKILL || sig==SIGSTOP)continue;checked(!raw(SYS_rt_sigaction,sig,0,(long)&old,8,0,0) && (uintptr_t)old.handler<=1 && ((sig!=SIGSEGV && sig!=SIGSYS) || !old.handler),231,sig); }
     size_t total=ALT_BYTES+2*PAGE;void *area=memory(total,PROT_NONE);protect((uintptr_t)area,total);
     checked(!raw(SYS_mprotect,(long)area+PAGE,ALT_BYTES,PROT_READ|PROT_WRITE,0,0,0),232,0);
-    stack_t stack={.ss_sp=(char *)area+PAGE,.ss_size=ALT_BYTES};checked(!raw(SYS_sigaltstack,(long)&stack,0,0,0,0,0),233,0);
+    stack_t stack={.ss_sp=(char *)area+PAGE,.ss_size=ALT_BYTES}; fork_gate_stack=stack;checked(!raw(SYS_sigaltstack,(long)&stack,0,0,0,0,0),233,0);
     int fds[32];dependency_count=parse_fds(fds);
     const struct li2_lifecycle_hooks hooks={raw,fail,intersects};li2_lifecycle_initialize(fds,dependency_count,&hooks);
     li2_lifecycle_register_initial(main);li2_lifecycle_register_initial(interp);register_vdso();
     checked(li2_lifecycle_known_code(main->entry,1) && li2_lifecycle_known_code(interp->entry,1),234,0);
     struct action action={handler,SA_SIGINFO|SA_ONSTACK|SA_NODEFER|0x04000000UL,li2_restorer,UINT64_MAX&~(1ULL<<(SIGSEGV-1))&~(1ULL<<(SIGSYS-1))};
+    fork_gate_action=action;
     checked(!raw(SYS_rt_sigaction,SIGSEGV,(long)&action,0,8,0,0) && !raw(SYS_rt_sigaction,SIGSYS,(long)&action,0,8,0,0),235,0);
     checked(raw(SYS_arch_prctl,ARCH_GET_CPUID,0,0,0,0,0)==1,236,0);int tsc=0;
     checked(!raw(SYS_prctl,PR_GET_TSC,(long)&tsc,0,0,0,0) && tsc==PR_TSC_ENABLE,237,0);

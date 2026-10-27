@@ -33,3 +33,27 @@ cc -nostdlib -pie -Wl,-e,_start,-z,noexecstack,--build-id=none \
   "$source_dir/fixture-main.S" -o "$output_dir/fixture-main"
 python3 "$source_dir/carrier.py" make "$output_dir/fixture-main" \
   "$output_dir/bridge-fixture.so" "$output_dir/fixture-carrier"
+
+# Opt-in raw-fork fixtures. Existing loader/ABI/default-refusal products remain.
+cc -std=gnu11 -O2 -g -fno-builtin -fno-stack-protector -fno-tree-vectorize \
+  -Wall -Wextra -Werror -fPIE -pie -Wl,-z,noexecstack,-z,now \
+  "$source_dir/fork_probe.c" -o "$output_dir/fork-probe"
+python3 "$source_dir/carrier.py" make "$output_dir/fork-probe" \
+  "$output_dir/bridge-loader.so" "$output_dir/fork-carrier"
+
+cc -std=gnu11 -O2 -g -fno-builtin -fno-stack-protector -fno-tree-vectorize \
+  -mgeneral-regs-only -Wall -Wextra -Werror -fPIE -pie -Wl,-z,noexecstack,-z,now \
+  "$source_dir/continuation_probe.c" "$source_dir/continuation.S" -o "$output_dir/continuation-probe"
+python3 "$source_dir/carrier.py" make "$output_dir/continuation-probe" \
+  "$output_dir/bridge-loader.so" "$output_dir/continuation-carrier"
+for kind in gpr redzone; do
+  case "$kind" in gpr) variant=1 ;; redzone) variant=2 ;; esac
+  cc -std=gnu11 -O2 -g -fno-builtin -fno-stack-protector -fno-tree-vectorize \
+    -mgeneral-regs-only -Wall -Wextra -Werror -fPIE -pie -Wl,-z,noexecstack,-z,now \
+    -DCONTINUATION_NEGATIVE="$variant" "$source_dir/continuation_probe.c" "$source_dir/continuation.S" \
+    -o "$output_dir/continuation-$kind-probe"
+  python3 "$source_dir/carrier.py" make "$output_dir/continuation-$kind-probe" \
+    "$output_dir/bridge-loader.so" "$output_dir/continuation-$kind-carrier"
+done
+cc -std=gnu11 -O2 -g -Wall -Wextra -Werror \
+  "$source_dir/supervisor_probe.c" -o "$output_dir/supervisor-probe"
