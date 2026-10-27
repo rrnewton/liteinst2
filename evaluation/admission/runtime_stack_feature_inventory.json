@@ -378,6 +378,36 @@
       "scope": "default"
     },
     {
+      "name": "linux::remote::dynamic::owner::admission::census::consumer_descriptors::consumer_oracle::consumer_descriptor_allocation_errors_retain_each_prefix",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/consumer_descriptors/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::consumer_descriptors::consumer_oracle::consumer_descriptor_allocation_unwinds_retain_each_prefix",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/consumer_descriptors/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::consumer_descriptors::consumer_oracle::consumer_descriptor_exact_preallocation_preserves_owned_prefix",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/consumer_descriptors/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::consumer_descriptors::consumer_oracle::consumer_descriptor_future_reserves_keep_exact_backings",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/consumer_descriptors/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::consumer_descriptors::consumer_oracle::consumer_descriptor_retention_rejects_changed_headers_and_owners",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/consumer_descriptors/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::consumer_descriptors::consumer_oracle::consumer_descriptor_wrong_identity_token_and_reuse_refuse",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/consumer_descriptors/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
       "name": "linux::remote::dynamic::owner::admission::census::exec::tests::exec_commit_checks_current_remaining_capacity_and_preserves_failure_state",
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/exec/tests.rs",
       "scope": "default"
@@ -2305,6 +2335,16 @@
     {
       "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::raw::tests::consumer_raw_syscall_model_requires_real_extent_architecture_and_arguments",
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::storage::descriptor_tests::consumer_descriptor_plan_counts_actual_reserve_frontiers",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/storage/descriptor_tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::storage::descriptor_tests::consumer_descriptor_q_settles_partial_preallocation_without_refund",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/storage/descriptor_tests.rs",
       "scope": "feature_pure"
     },
     {
@@ -4379,8 +4419,25 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census.rs",
-      "sha256": "8501e500ea611283263013c76688886ef2bc3a2aa71ce1455214f7920477f52e",
+      "sha256": "ad2038032eb0fd8f655c2ba9f4b3ac201b0627451651a305d1a29923e0313b82",
       "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/consumer_descriptors.rs",
+      "sha256": "6a23e1382f49f5629803751303baf20b7b73be3b916deac470dfd1c406cfc891",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/consumer_descriptors/tests.rs",
+      "sha256": "af725ea1119f2ddef1c1cf465569306bd8994597b5ef855db275d571122add94",
+      "test_functions": [
+        "consumer_descriptor_allocation_errors_retain_each_prefix",
+        "consumer_descriptor_allocation_unwinds_retain_each_prefix",
+        "consumer_descriptor_exact_preallocation_preserves_owned_prefix",
+        "consumer_descriptor_future_reserves_keep_exact_backings",
+        "consumer_descriptor_retention_rejects_changed_headers_and_owners",
+        "consumer_descriptor_wrong_identity_token_and_reuse_refuse"
+      ]
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/exec.rs",
@@ -5573,7 +5630,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle.rs",
-      "sha256": "937954fff5150c853e8c208dee7edf074a208fa5d97c04b41c5d7204ba92b7cf",
+      "sha256": "d68e20639ca6aaacf07f591514836fbe0757c124e2d216975ec077e0ebf25ffd",
       "test_functions": []
     },
     {
@@ -5630,7 +5687,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/custody.rs",
-      "sha256": "37e0a1d6d5670c820a22178a17d7b531bcc3b3b7776acee5a2cacb785c32225b",
+      "sha256": "91adb35b2b4614d50d9dc8d49a8e1a1d131be97b5c1c055991a80f237ffd383e",
       "test_functions": [
         "consumer_oracle_custody_preserves_error_before_cleanup_unwind",
         "consumer_oracle_custody_refuses_reuse_and_never_completes_missing_work",
@@ -5706,7 +5763,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/output.rs",
-      "sha256": "9a149f660c7d79a047aca9291583e322c29e2ece4aefc7ba63a1d48d8fcb9997",
+      "sha256": "de9261607d08a88bdcc44843dbc43b213f08357a6a46164ccb1ae402b5d3ec61",
       "test_functions": [
         "consumer_oracle_output_closed_null_and_integer_projection",
         "consumer_oracle_output_failed_measurement_keeps_actual_finish",
@@ -5773,13 +5830,21 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/storage.rs",
-      "sha256": "82986b1413e80a3cadb82cd62bdde282eeeb93ea9142475cfca6440c3ef86c9e",
+      "sha256": "fefe1cc7fc88932596d7cb8740269d43c95dfd3ccb79e57e1900c0e186d5935d",
       "test_functions": [
         "consumer_oracle_q_checks_all_six_axes_actual_bytes_and_token_identity",
         "consumer_oracle_q_finishes_actual_token_before_next_reservation_without_refund",
         "consumer_oracle_q_finishes_even_when_actual_debit_exceeds_reserved_capacity",
         "consumer_oracle_q_preserves_primary_unwind_through_measurement_failure_and_finish",
         "consumer_oracle_q_settles_every_supplied_installed_prefix_without_completing_it"
+      ]
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/storage/descriptor_tests.rs",
+      "sha256": "41fd86505f7befc298d8065a80ff63adfef23d50d27bc0754df002cc1c0166bb",
+      "test_functions": [
+        "consumer_descriptor_plan_counts_actual_reserve_frontiers",
+        "consumer_descriptor_q_settles_partial_preallocation_without_refund"
       ]
     },
     {
