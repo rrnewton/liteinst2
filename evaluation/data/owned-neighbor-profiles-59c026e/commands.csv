@@ -1,0 +1,3 @@
+phase,status,passed,failed,skipped,seconds,unittest_seconds
+production,PASS_SYNTHETIC_CONTROLS,10,0,0,0.21824089903384447,0.032
+ordinary,PASS_SYNTHETIC_CONTROLS,11,0,0,3.2452942330855876,3.05

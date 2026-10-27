@@ -1,0 +1,158 @@
+{
+  "${REPO}/evaluation/e9-common-app/test_candidate_profile.py": {
+    "bytes": 17608,
+    "sha256": "85574aab13c1c8fe7a72a3a4ae5ac374efbc1af527846a0bebf8e6fc24df1e3a"
+  },
+  "${REPO}/evaluation/e9-common-app/test_production_profile.py": {
+    "bytes": 7152,
+    "sha256": "6427c579bff011e69d3c56c39d26e21d75a8bfa37f40ead36f2f2790a7f5fd1c"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-integration-v1/validate.py": {
+    "bytes": 5985,
+    "sha256": "e347afd9326c1d6e232ce4ce72b3abd2217b6a3bba8d19046192189b496bae3d"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary-launch/closed.json": {
+    "bytes": 296,
+    "sha256": "946c0dd6b4451165dcd5ab1500a206695d9d66294afee79fbddc0207857a7f0f"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary-launch/command.json": {
+    "bytes": 858,
+    "sha256": "e6039d0b558882d2a05ad151c3edb8d97eb477f7686473b069ee075373f3187b"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary-launch/started.json": {
+    "bytes": 21,
+    "sha256": "8e07502f403179f457081c86bd91f639ced008e5b5dfb958405b0e476a64f9c5"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary-launch/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary-launch/stdout.txt": {
+    "bytes": 347,
+    "sha256": "6d76defe140eab196db567756a283d6707f11a71c3dd6fe9724cc692ad90708a"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/closed.json": {
+    "bytes": 296,
+    "sha256": "f9f5f238a10aeddbff28ed26694378a8b6f34cce837fc1069638e4fb2cdb327e"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/command.json": {
+    "bytes": 1454,
+    "sha256": "1018d321048a0f30e1aa48819a28536e440ebac0fae0b91e0b6caa16e7f4f903"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/hardware.json": {
+    "bytes": 223,
+    "sha256": "7b8045a29f005210d4b6fc65d270ce4eccae560df23150cc471e8fb3ab1fbf80"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/helper.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/helper.stdout": {
+    "bytes": 97,
+    "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/inputs-after.json": {
+    "bytes": 779338,
+    "sha256": "2626892ba527fa67ee6affe875eb123cd158276754a06ad4ee6d5e2c7ddd920a"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/inputs-before.json": {
+    "bytes": 779338,
+    "sha256": "2626892ba527fa67ee6affe875eb123cd158276754a06ad4ee6d5e2c7ddd920a"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/receipt.json": {
+    "bytes": 588,
+    "sha256": "9320338379228a8f6176ea9a8557ad0a8353b8beaf2f8d8c347dd41ace528526"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/request.json": {
+    "bytes": 917,
+    "sha256": "75ec0baa94f4fd79479212f4968bb6cfadb4092866debd89fa8ea42b6062b889"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/started.json": {
+    "bytes": 21,
+    "sha256": "3e6f6e241fd8886e723707df47437d7ee9c8eb2b7849dfd059d5d3737f34bf55"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/stderr.txt": {
+    "bytes": 1243,
+    "sha256": "3ce18cbfc8b3cb1516c8690c6bd662c52850ce7b5d524d99f58859f4c578a6bc"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/stdout.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/summary.json": {
+    "bytes": 369,
+    "sha256": "452caa70dacedceea64c1f1d913e5c03b9e2e3742342a3f67395c9697bfcaef3"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production-launch/closed.json": {
+    "bytes": 296,
+    "sha256": "ef80b23a2df073e0572e0fde4ad197eeb3167f03f3208778fae2b391f20b7214"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production-launch/command.json": {
+    "bytes": 862,
+    "sha256": "a8375ec8a3e1363621961a495dc658f8395e13f0934f1027368b6ae36b6137b9"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production-launch/started.json": {
+    "bytes": 21,
+    "sha256": "0d7fe85e10b7ae248f1840a9ab1e8dd9c0481d22f1f2d497044aadcfee917dd3"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production-launch/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production-launch/stdout.txt": {
+    "bytes": 349,
+    "sha256": "e0909af07a3c7f88ef3b31abf7ded071f7a8097f1bc3dab7a82882daa8d92f07"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/closed.json": {
+    "bytes": 298,
+    "sha256": "0f9c5390e2a23ad4795b76d3db9aebbfe2609ac2cba152472b56c0faaff09edc"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/command.json": {
+    "bytes": 1460,
+    "sha256": "98579d1f10caa8d6ced9dabb981ed861075ec72124d4210acb30cf1b74cb90bd"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/hardware.json": {
+    "bytes": 223,
+    "sha256": "7b8045a29f005210d4b6fc65d270ce4eccae560df23150cc471e8fb3ab1fbf80"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/helper.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/helper.stdout": {
+    "bytes": 97,
+    "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/inputs-after.json": {
+    "bytes": 779338,
+    "sha256": "2626892ba527fa67ee6affe875eb123cd158276754a06ad4ee6d5e2c7ddd920a"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/inputs-before.json": {
+    "bytes": 779338,
+    "sha256": "2626892ba527fa67ee6affe875eb123cd158276754a06ad4ee6d5e2c7ddd920a"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/receipt.json": {
+    "bytes": 589,
+    "sha256": "0a99bfbf492f891eae908487983883db95247ff790f3dea19da33565ddc552b7"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/request.json": {
+    "bytes": 924,
+    "sha256": "809a0fe4ee4709afc85573f91300c0212395e9dad78b161f80c29b94a2e9b0b6"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/started.json": {
+    "bytes": 21,
+    "sha256": "ac9673e525f80dcf847868626b03b3245cfb2c9a3ed04a11b66f202336fc4600"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/stderr.txt": {
+    "bytes": 1033,
+    "sha256": "b0de0a4b62b4d854bf16087d146ed308bbe4709677ac4e98296a5c154f997bea"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/stdout.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/summary.json": {
+    "bytes": 371,
+    "sha256": "ca0406593297b0a5baeed015d1c7dd0c6e0b135d36cb6bdcc05a1c0aa33d6921"
+  }
+}

@@ -1,0 +1,300 @@
+[
+  {
+    "context": {
+      "inner": {
+        "closed": {
+          "exit": 0,
+          "parent_error": null,
+          "parent_wait_returned": true,
+          "pid": 1591625,
+          "seconds": 0.26557759079150856,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+        },
+        "command": {
+          "affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/request.json",
+            "--receipt",
+            "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/receipt.json"
+          ],
+          "caller_sha256": "e347afd9326c1d6e232ce4ce72b3abd2217b6a3bba8d19046192189b496bae3d",
+          "control_sha256": "6427c579bff011e69d3c56c39d26e21d75a8bfa37f40ead36f2f2790a7f5fd1c",
+          "cwd": "${REPO}",
+          "env": {
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/tmp"
+          },
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "parent_timeout_seconds": 40,
+          "planned_test_methods": 10,
+          "request_sha256": "809a0fe4ee4709afc85573f91300c0212395e9dad78b161f80c29b94a2e9b0b6",
+          "source_revision": "59c026e4da35b25dae2e270a5a63aa1b9e8cd41b"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.21824089903384447,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "809a0fe4ee4709afc85573f91300c0212395e9dad78b161f80c29b94a2e9b0b6",
+          "stderr_sha256": "b0de0a4b62b4d854bf16087d146ed308bbe4709677ac4e98296a5c154f997bea",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/evaluation/e9-common-app/test_production_profile.py",
+            "-v"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "${REPO}",
+          "env": {
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/tmp"
+          },
+          "file_bytes": 1048576,
+          "stderr": "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/stderr.txt",
+          "stdout": "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production/stdout.txt",
+          "wall_seconds": 15
+        },
+        "started": {
+          "pid": 1591625
+        },
+        "summary": {
+          "actual_production": false,
+          "native_execution": false,
+          "ordinary_application_execution": false,
+          "phase": "production",
+          "planned_test_methods": 10,
+          "qualification_complete": false,
+          "scope": "synthetic saved-record admission controls only",
+          "source_tools_equal": true,
+          "status": "PASS",
+          "tested_revision": "59c026e4da35b25dae2e270a5a63aa1b9e8cd41b"
+        }
+      },
+      "outer": {
+        "closed": {
+          "exit": 0,
+          "parent_error": null,
+          "parent_wait_returned": true,
+          "pid": 1590623,
+          "seconds": 0.965996237937361,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "e0909af07a3c7f88ef3b31abf7ded071f7a8097f1bc3dab7a82882daa8d92f07"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/ignored/a3/owned-neighbor-profiles-integration-v1/validate.py",
+            "--repo",
+            "${REPO}",
+            "--output",
+            "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/production",
+            "--phase",
+            "production"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1"
+          },
+          "parent_timeout_seconds": 70,
+          "source_revision": "59c026e4da35b25dae2e270a5a63aa1b9e8cd41b",
+          "source_sha256": "e347afd9326c1d6e232ce4ce72b3abd2217b6a3bba8d19046192189b496bae3d"
+        },
+        "started": {
+          "pid": 1590623
+        }
+      }
+    },
+    "failed": 0,
+    "passed": 10,
+    "phase": "production",
+    "seconds": 0.21824089903384447,
+    "skipped": 0,
+    "status": "PASS_SYNTHETIC_CONTROLS",
+    "unittest_seconds": 0.032
+  },
+  {
+    "context": {
+      "inner": {
+        "closed": {
+          "exit": 0,
+          "parent_error": null,
+          "parent_wait_returned": true,
+          "pid": 1594910,
+          "seconds": 3.321552841924131,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+        },
+        "command": {
+          "affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/request.json",
+            "--receipt",
+            "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/receipt.json"
+          ],
+          "caller_sha256": "e347afd9326c1d6e232ce4ce72b3abd2217b6a3bba8d19046192189b496bae3d",
+          "control_sha256": "85574aab13c1c8fe7a72a3a4ae5ac374efbc1af527846a0bebf8e6fc24df1e3a",
+          "cwd": "${REPO}",
+          "env": {
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/tmp"
+          },
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "parent_timeout_seconds": 40,
+          "planned_test_methods": 11,
+          "request_sha256": "75ec0baa94f4fd79479212f4968bb6cfadb4092866debd89fa8ea42b6062b889",
+          "source_revision": "59c026e4da35b25dae2e270a5a63aa1b9e8cd41b"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 3.2452942330855876,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "75ec0baa94f4fd79479212f4968bb6cfadb4092866debd89fa8ea42b6062b889",
+          "stderr_sha256": "3ce18cbfc8b3cb1516c8690c6bd662c52850ce7b5d524d99f58859f4c578a6bc",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/evaluation/e9-common-app/test_candidate_profile.py",
+            "-v"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "${REPO}",
+          "env": {
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/tmp"
+          },
+          "file_bytes": 1048576,
+          "stderr": "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/stderr.txt",
+          "stdout": "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary/stdout.txt",
+          "wall_seconds": 15
+        },
+        "started": {
+          "pid": 1594910
+        },
+        "summary": {
+          "actual_production": false,
+          "native_execution": false,
+          "ordinary_application_execution": false,
+          "phase": "ordinary",
+          "planned_test_methods": 11,
+          "qualification_complete": false,
+          "scope": "synthetic saved-record admission controls only",
+          "source_tools_equal": true,
+          "status": "PASS",
+          "tested_revision": "59c026e4da35b25dae2e270a5a63aa1b9e8cd41b"
+        }
+      },
+      "outer": {
+        "closed": {
+          "exit": 0,
+          "parent_error": null,
+          "parent_wait_returned": true,
+          "pid": 1593510,
+          "seconds": 4.023520714137703,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "6d76defe140eab196db567756a283d6707f11a71c3dd6fe9724cc692ad90708a"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/ignored/a3/owned-neighbor-profiles-integration-v1/validate.py",
+            "--repo",
+            "${REPO}",
+            "--output",
+            "${REPO}/ignored/a3/owned-neighbor-profiles-validation-v1/ordinary",
+            "--phase",
+            "ordinary"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1"
+          },
+          "parent_timeout_seconds": 70,
+          "source_revision": "59c026e4da35b25dae2e270a5a63aa1b9e8cd41b",
+          "source_sha256": "e347afd9326c1d6e232ce4ce72b3abd2217b6a3bba8d19046192189b496bae3d"
+        },
+        "started": {
+          "pid": 1593510
+        }
+      }
+    },
+    "failed": 0,
+    "passed": 11,
+    "phase": "ordinary",
+    "seconds": 3.2452942330855876,
+    "skipped": 0,
+    "status": "PASS_SYNTHETIC_CONTROLS",
+    "unittest_seconds": 3.05
+  }
+]

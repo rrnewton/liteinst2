@@ -1,0 +1,91 @@
+{
+  "actual_production": false,
+  "collector_sha256": "b00190a9e877625ad97f57b682bc93d389ec27fefb55b44921b0406606b5dbeb",
+  "driver_sha256": "e347afd9326c1d6e232ce4ce72b3abd2217b6a3bba8d19046192189b496bae3d",
+  "durations_are_operational_not_performance": true,
+  "failed": 0,
+  "full_a3": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ]
+  },
+  "native_execution": false,
+  "ordinary_application_execution": false,
+  "passed_test_methods": 21,
+  "phases": [
+    {
+      "failed": 0,
+      "passed": 10,
+      "phase": "production",
+      "seconds": 0.21824089903384447,
+      "skipped": 0,
+      "status": "PASS_SYNTHETIC_CONTROLS",
+      "unittest_seconds": 0.032
+    },
+    {
+      "failed": 0,
+      "passed": 11,
+      "phase": "ordinary",
+      "seconds": 3.2452942330855876,
+      "skipped": 0,
+      "status": "PASS_SYNTHETIC_CONTROLS",
+      "unittest_seconds": 3.05
+    }
+  ],
+  "qualification_complete": false,
+  "scope": "synthetic saved-record profile admission controls only",
+  "skipped": 0,
+  "tested_revision": "59c026e4da35b25dae2e270a5a63aa1b9e8cd41b",
+  "tools": {
+    "helper": {
+      "bytes": 7710,
+      "lookup_stat": [
+        48,
+        4443037567,
+        33188,
+        7710,
+        1792956542437003136,
+        1792956542437003136
+      ],
+      "path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "resolved": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "stat": [
+        48,
+        4443037567,
+        33188,
+        7710,
+        1792956542437003136,
+        1792956542437003136
+      ]
+    },
+    "python": {
+      "bytes": 15448,
+      "lookup_stat": [
+        33,
+        22574889,
+        33261,
+        15448,
+        1786714180000000000,
+        1787700294617247170
+      ],
+      "path": "/usr/bin/python3.9",
+      "resolved": "/usr/bin/python3.9",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "stat": [
+        33,
+        22574889,
+        33261,
+        15448,
+        1786714180000000000,
+        1787700294617247170
+      ]
+    }
+  }
+}
