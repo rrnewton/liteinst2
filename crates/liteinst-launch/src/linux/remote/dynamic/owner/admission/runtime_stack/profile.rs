@@ -12,6 +12,8 @@ pub(in crate::linux::remote::dynamic::owner::admission) struct ProfileInput<'a> 
     pub(in crate::linux::remote::dynamic::owner::admission) baseline_maps: &'a [u8],
 }
 #[derive(Debug)]
+// Retention controls own and compare every descriptive field after cleanup.
+#[cfg_attr(test, derive(Clone, Eq, PartialEq))]
 pub(in crate::linux::remote::dynamic::owner::admission) struct ProfileDescription {
     pub(in crate::linux::remote::dynamic::owner::admission) stack: StackDescriptor,
     pub(in crate::linux::remote::dynamic::owner::admission) metadata: StackMetadata,

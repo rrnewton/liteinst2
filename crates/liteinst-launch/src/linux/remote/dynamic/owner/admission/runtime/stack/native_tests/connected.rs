@@ -103,7 +103,7 @@ pub(super) fn mixed() {
                     stack_before: &stack_before,
                     ordinal: 0,
                     call: true,
-                    next: next,
+                    next,
                 },
                 until,
             );

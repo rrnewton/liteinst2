@@ -4,6 +4,9 @@ use crate::linux::remote::dynamic::owner::admission::runtime_stack_native::{
     InterventionKind, InterventionPoint,
 };
 
+// Linux x86 UAPI siginfo code for a protection-key access violation.
+const SEGV_PKUERR: i32 = 4;
+
 fn raw_intervene(owner: &Owner, until: Instant, kind: InterventionKind) -> TaskStateSnapshot {
     support::held(owner, until);
     let before = support::observe_state(owner, until);
@@ -81,7 +84,7 @@ fn raw_fault(program: &Program, kind: InterventionKind) -> raw::Step {
                 observed.signal.2,
                 match kind {
                     InterventionKind::Ac => libc::BUS_ADRALN,
-                    InterventionKind::PkruKeyZeroDeny => libc::SEGV_PKUERR,
+                    InterventionKind::PkruKeyZeroDeny => SEGV_PKUERR,
                 }
             );
             if kind == InterventionKind::PkruKeyZeroDeny {

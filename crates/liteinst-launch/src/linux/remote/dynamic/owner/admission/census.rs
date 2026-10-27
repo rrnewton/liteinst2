@@ -25,11 +25,9 @@ pub(super) use runtime_stack::{
 };
 pub(super) mod stack_calls;
 #[cfg(test)]
-pub(super) use runtime_stack::native_oracle::{
-    StackCensusSnapshot, StackChainInput, StackPreparationSnapshot,
-};
+pub(super) use runtime_stack::native_oracle::StackChainInput;
 #[cfg(test)]
-pub(super) use stack_calls::native_oracle::{CallLedgerRowSnapshot, CallLedgerSnapshot};
+pub(super) use stack_calls::native_oracle::CallLedgerRowSnapshot;
 mod selected_runtime;
 pub(super) use selected_runtime::PreparedRuntimeSelected;
 mod runtime_kernel;
