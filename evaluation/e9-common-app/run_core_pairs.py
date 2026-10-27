@@ -25,9 +25,43 @@ PROFILE_SOURCE_BINDING_SHA = None
 # None refuses this scope before any compiler evidence can be admitted.
 CANONICAL_PRODUCER_SHA = None
 CANONICAL_EPOCH_RELATIVE = None
+RECORDING_CANONICAL_PRODUCER_SHA = None
+RECORDING_CANONICAL_EPOCH_RELATIVE = None
 CANONICAL_ENTRY_SHA = '70c4f0ec1cfc2f0b0b74c00199927f83e5a7cfbe4bb2d2ce2e3295e9ecea1ee0'
 CANONICAL_MEMBERS = {'src/common_core_foreign.rs': 'tools/elf-rewrite/examples/support/common_core_foreign.rs', 'src/common_core_router.rs': 'tools/elf-rewrite/examples/support/common_core_router.rs', 'src/e9_common_planning_profile.rs': 'tests/support/e9_common_planning_profile.rs', 'src/e9_common_router_contract.rs': 'tests/support/e9_common_router_contract.rs', 'src/e9_common_seed.instructions.tsv': 'tests/support/e9_common_seed.instructions.tsv', 'src/e9_common_seed.rs': 'tests/support/e9_common_seed.rs', 'src/verify_common_core.rs': 'tools/elf-rewrite/examples/verify_common_core.rs'}
 CANONICAL_REWRITES = ((b'#[path = "../../../tests/support/e9_common_seed.rs"]', b'#[path = "e9_common_seed.rs"]'), (b'#[path = "support/common_core_foreign.rs"]', b'#[path = "common_core_foreign.rs"]'), (b'#[path = "../../../tests/support/e9_common_planning_profile.rs"]', b'#[path = "e9_common_planning_profile.rs"]'), (b'#[path = "support/common_core_router.rs"]', b'#[path = "common_core_router.rs"]'), (b'#[path = "../../../tests/support/e9_common_router_contract.rs"]', b'#[path = "e9_common_router_contract.rs"]'))
+RECORDING_PROFILE = 'bounded-journal-v1'
+RECORDING_SOURCE = 'tests/support/e9_common_recording.rs'
+RECORDING_SOURCE_PIN = {'sha256': 'd0419f184093a5c1ef658028c7a8a2869dea8c849a5da44cd1f191c3b5085bc7', 'bytes': 15513}
+RECORDING_REWRITE = (b'#[path = "../../../tests/support/e9_common_recording.rs"]', b'#[path = "e9_common_recording.rs"]')
+
+def recording_identity(profile, *records):
+    assert type(profile) is str and profile in ('legacy', RECORDING_PROFILE)
+    assert records
+    if profile == 'legacy':
+        assert all('recording_profile' not in row for row in records)
+        return False
+    assert all(row['recording_profile'] == RECORDING_PROFILE and type(row['recording_profile']) is str for row in records)
+    return True
+
+def recording_members(profile, legacy):
+    assert type(profile) is str and profile in ('legacy', RECORDING_PROFILE)
+    assert len(legacy) == 7 and 'src/e9_common_recording.rs' not in legacy
+    if profile == 'legacy':
+        return legacy
+    members = dict(legacy, **{'src/e9_common_recording.rs': RECORDING_SOURCE})
+    assert len(members) == 8
+    return members
+
+def recording_source(data, legacy_transform):
+    # Apply all five original exact rewrites, then the one explicit new member.
+    derived = legacy_transform(data)
+    old, new = RECORDING_REWRITE
+    assert derived.count(old) == 1 and new not in derived
+    out = derived.replace(old, new)
+    assert out.count(new) == 1 and out.replace(new, old) == derived
+    return out
+
 PLANNING = ('legacy', 'owned-foreign-neighbors-v1')
 ROUTERS = ('absent', 'linux-x86-64-private-altstack-v1')
 PLANNING_MARKER = 'planning-profile.tsv'
@@ -90,12 +124,21 @@ def profile_arguments(profiles):
 
 
 def profile_envelope(inputs, profiles):
-    assert profile_arguments(profiles), 'this is the explicit opt-in schema only'
+    assert VERIFIER_CAPABILITY!="legacy" or RECORDING or profile_arguments(profiles), 'this is the explicit opt-in schema only'
     old = {'schema', 'repo', 'source_epoch', 'preparation', 'build_admission',
            'observation_content_admission', 'production_admission', 'verifier_admission',
            'cell_admission', 'prior_cells', 'obligations', 'runtime_admission',
            'capacity_admission', 'tools', 'files'}
-    assert inputs.keys() == old | {'profiles', 'source_binding'}
+    if VERIFIER_CAPABILITY!='legacy':
+        extra={'verifier_capability'}|({'recording_profile'} if RECORDING else set())
+        assert inputs.keys()==old|{'profiles','source_binding'}|extra
+        verifier_capability_fields(VERIFIER_CAPABILITY,RECORDING,inputs)
+    else:
+        if RECORDING:
+            assert inputs.keys() == old | {'profiles', 'source_binding', 'recording_profile'}
+            assert inputs['recording_profile'] == RECORDING_PROFILE
+        else:
+            assert inputs.keys() == old | {'profiles', 'source_binding'}
     assert inputs['profiles'] == profiles, 'caller/CLI profile mismatch'
     assert type(inputs['source_binding']) is str and inputs['source_binding'] in inputs['files']
 
@@ -458,10 +501,16 @@ def canonical_source(data):
     return data
 
 
-def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, tools):
-    if CANONICAL_PRODUCER_SHA is None or CANONICAL_EPOCH_RELATIVE is None:
+def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, tools, recording='legacy'):
+    recording_profile = recording
+    recording = recording_identity(recording_profile, admission)
+    members = recording_members(recording_profile, CANONICAL_MEMBERS)
+    source_count = 8 if recording else 7
+    producer_sha = RECORDING_CANONICAL_PRODUCER_SHA if recording else CANONICAL_PRODUCER_SHA
+    epoch_relative = RECORDING_CANONICAL_EPOCH_RELATIVE if recording else CANONICAL_EPOCH_RELATIVE
+    if producer_sha is None or epoch_relative is None:
         raise SystemExit('canonical verifier admission awaits a reviewed final producer source pin')
-    assert re.fullmatch('[0-9a-f]{64}', CANONICAL_PRODUCER_SHA)
+    assert re.fullmatch('[0-9a-f]{64}', producer_sha)
     c.build_input_profile(admission, build_root, bound)
     debug0 = admission['scope'] == 'direct-rustc-canonical-input-epoch-dev-debug0-v1'
     build_summary = c.loads(bound(str(build_root / 'summary.json')))
@@ -473,7 +522,11 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
         assert c.same_build_profile(admission, build_summary) is None
         c.admitted(admission, 'CALLER_ADMITTED_COMMON_CORE_VERIFIER',
                    'direct-rustc-canonical-input-epoch', REVISION, bound)
-    if not debug0:
+    if recording:
+        expected_keys=set(['authority', 'compiler_directory', 'entry_source', 'evidence_files', 'producer_caller', 'producer_launch', 'producer_references', 'producer_source', 'review_binding', 'review_references', 'schema', 'scope', 'source_revision', 'verifier'])|{'recording_profile'}
+        if debug0: expected_keys.add('build_profile')
+        assert set(admission)==expected_keys
+    elif not debug0:
         assert set(admission) == {'schema', 'authority', 'scope', 'source_revision', 'verifier',
             'compiler_directory', 'producer_source', 'entry_source', 'producer_caller',
             'producer_references', 'producer_launch', 'review_binding', 'review_references', 'evidence_files'}
@@ -481,7 +534,7 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
         assert set(admission) == {'schema', 'authority', 'scope', 'source_revision', 'verifier',
             'compiler_directory', 'producer_source', 'entry_source', 'producer_caller',
             'producer_references', 'producer_launch', 'review_binding', 'review_references', 'evidence_files', 'build_profile'}
-    epoch = canonical_epoch(repo, CANONICAL_EPOCH_RELATIVE)
+    epoch = canonical_epoch(repo, epoch_relative)
     assert epoch.resolve(strict=True) == epoch
     compiler = c.path(admission['compiler_directory']); raw = canonical_epoch_member(epoch, compiler.parent)
     canonical_epoch_member(epoch, build_root)
@@ -489,15 +542,16 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
     assert raw.resolve(strict=True) == raw and not raw.is_relative_to(repo / 'target')
     producer = c.path(admission['producer_source']); entry_source = c.path(admission['entry_source'])
     assert entry_source == producer.parent / 'compiler_entry.py'
-    assert c.sha(bound(str(producer))) == CANONICAL_PRODUCER_SHA
+    assert c.sha(bound(str(producer))) == producer_sha
     assert c.sha(bound(str(entry_source))) == CANONICAL_ENTRY_SHA
     assert admission['producer_references'] == str(producer.parent / 'references.json')
     review_path = c.path(admission['review_binding']); review = c.loads(bound(str(review_path)))
     assert review['verdict'] == 'CLOSED_DIRECT_RUSTC_VERIFIER_PRODUCTION_METADATA_AND_ROOT_BYTE_CHECK_VERIFIED'
     assert review['revision'] == REVISION and review['findings'] == []
     c.same_build_profile(admission, review)
+    recording_identity(recording_profile, review)
     assert review['epoch_root'] == str(epoch) and review['build_directory'] == str(build_root)
-    assert review['producer_sha256'] == CANONICAL_PRODUCER_SHA and review['entry_sha256'] == CANONICAL_ENTRY_SHA
+    assert review['producer_sha256'] == producer_sha and review['entry_sha256'] == CANONICAL_ENTRY_SHA
     assert review['consumer_admission_created'] is False and review['qualification_complete'] is False
     assert review['existing_cargo_admission_compatible'] is False
     assert review['prior_four_archive_attempts'] == review['prior_canonical_v1'] == 'FAILED_UNCHANGED'
@@ -536,7 +590,12 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
         return evidence(p)
     complete = c.loads(record('complete.json'))
     c.same_build_profile(admission, complete)
-    if not debug0:
+    recording_identity(recording_profile, complete)
+    if recording:
+        expected_keys=set(['application_or_verifier_executions', 'archive_status', 'compiler_status', 'dependency_archive_records', 'dependency_copies', 'direct_source_dependencies', 'existing_cargo_admission_compatible', 'prior_four_archive_attempts', 'products', 'qualification_complete', 'revision', 'schema', 'source_transform', 'status'])|{'recording_profile'}
+        if debug0: expected_keys.add('build_profile')
+        assert set(complete)==expected_keys
+    elif not debug0:
         assert set(complete) == {'schema', 'revision', 'status', 'compiler_status', 'archive_status',
             'dependency_archive_records', 'dependency_copies', 'direct_source_dependencies', 'source_transform',
             'products', 'application_or_verifier_executions', 'prior_four_archive_attempts',
@@ -564,7 +623,12 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
     caller_bytes = evidence(admission['producer_caller']); caller = c.loads(caller_bytes)
     assert record('caller.json') == caller_bytes
     c.same_build_profile(admission, caller)
-    if not debug0:
+    recording_identity(recording_profile, caller)
+    if recording:
+        expected_keys=set(['authority', 'capacity_record', 'entry_sha256', 'linker', 'producer_sha256', 'raw', 'references_sha256', 'revision', 'schema'])|{'recording_profile'}
+        if debug0: expected_keys.add('build_profile')
+        assert set(caller)==expected_keys
+    elif not debug0:
         assert set(caller) == {'schema', 'authority', 'revision', 'raw', 'producer_sha256', 'entry_sha256',
                                'references_sha256', 'linker', 'capacity_record'}
     else:
@@ -573,14 +637,14 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
     assert type(caller['schema']) is int and caller['schema'] == 1
     assert caller['authority'] == 'ROOT_AUTHORIZED_DIRECT_RUSTC_VERIFIER_PRODUCTION'
     assert caller['revision'] == REVISION and caller['raw'] == str(raw)
-    assert caller['producer_sha256'] == CANONICAL_PRODUCER_SHA and caller['entry_sha256'] == CANONICAL_ENTRY_SHA
+    assert caller['producer_sha256'] == producer_sha and caller['entry_sha256'] == CANONICAL_ENTRY_SHA
     producer_refs_bytes = evidence(admission['producer_references'])
     assert c.sha(producer_refs_bytes) == caller['references_sha256']
     producer_refs = c.loads(producer_refs_bytes)
     for name, row in producer_refs.items():
         rel = Path(name); assert not rel.is_absolute() and '..' not in rel.parts and str(rel) == name
         fact(repo / rel, row)
-    assert set(CANONICAL_MEMBERS.values()) <= set(producer_refs)
+    assert set(members.values()) <= set(producer_refs)
     for name in ('linker', 'capacity_record'):
         row = caller[name]; assert set(row) == {'path', 'sha256', 'bytes', 'stat'}
         assert not c.path(row['path']).is_relative_to(raw)
@@ -628,23 +692,25 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
         externs[alias] = 'deps/' + libs[0]
     assert deps['externs'] == externs
     transforms = c.loads(record('source-transform.json'))
-    assert transforms == complete['source_transform'] and set(transforms) == set(CANONICAL_MEMBERS)
+    assert transforms == complete['source_transform'] and set(transforms) == set(members)
     private_files = {}
-    for relative, member in CANONICAL_MEMBERS.items():
+    for relative, member in members.items():
         original = bound(str(repo / member)); source = tracked['files'][member]
         owner = dict(sha256=source['sha256'], bytes=source['bytes'], stat=tracked['owners'][member]['stat'])
         fact(repo / member, owner)
-        compiled = canonical_source(original) if relative == 'src/verify_common_core.rs' else original
+        if recording and member == RECORDING_SOURCE:
+            assert {k: owner[k] for k in ('sha256','bytes')} == RECORDING_SOURCE_PIN
+        compiled = (recording_source(original, canonical_source) if recording else canonical_source(original)) if relative == 'src/verify_common_core.rs' else original
         path = str(raw / 'inputs' / relative); assert record('inputs/' + relative) == compiled
         expected = dict(original_member=member, original_owner=owner, original_mode=source['mode'],
-                        compiled=index[path], transformation='five-path-literals' if relative == 'src/verify_common_core.rs' else 'byte-identical')
+                        compiled=index[path], transformation=('six-path-literals' if recording else 'five-path-literals') if relative == 'src/verify_common_core.rs' else 'byte-identical')
         assert transforms[relative] == expected
         private_files[relative] = index[path]
     private_files.update({'deps/' + name: row['copy'] for name, row in expected_copies.items()})
     assert len({tuple(row['stat'][:2]) for row in private_files.values()}) == len(private_files)
     assert all(stat.S_ISREG(row['stat'][2]) and stat.S_IMODE(row['stat'][2]) == 0o444 for row in private_files.values())
     original_inodes = {tuple(row['stat'][:2]) for row in originals.values()}
-    original_inodes |= {tuple(tracked['owners'][name]['stat'][:2]) for name in CANONICAL_MEMBERS.values()}
+    original_inodes |= {tuple(tracked['owners'][name]['stat'][:2]) for name in members.values()}
     assert not original_inodes & {tuple(row['stat'][:2]) for row in private_files.values()}
     assert record('private-before.json') == record('private-after.json')
     private = c.loads(record('private-before.json'))
@@ -693,7 +759,7 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
     assert c.loads(record('compile/command.json')) == command
     result = c.loads(record('compile/result.json')); started = c.loads(record('compile/started.json'))
     assert type(result['pid']) is int and result['pid'] > 0
-    assert started == dict(pid=result['pid'], source=CANONICAL_PRODUCER_SHA, command_sha256=c.sha(record('compile/command.json')))
+    assert started == dict(pid=result['pid'], source=producer_sha, command_sha256=c.sha(record('compile/command.json')))
     assert type(result['elapsed_seconds']) in (int, float) and 0 <= result['elapsed_seconds'] <= 115
     assert result == dict(command, pid=result['pid'], exit=0, parent_wait_returned=True, parent_timeout=False, elapsed_seconds=result['elapsed_seconds'])
     assert c.receipt(compiler, request)['exit'] == 0
@@ -703,6 +769,7 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
     launch = c.path(admission['producer_launch']); assert not launch.is_relative_to(raw)
     producer_request = dict(argv=[tools['helper_python'], '-B', str(producer), '--caller', admission['producer_caller'], '--caller-sha256', c.sha(caller_bytes)],
         cwd=str(repo), env=c.ENV, stdout=str(launch / 'stdout.txt'), stderr=str(launch / 'stderr.txt'), cpu_seconds=120, wall_seconds=180, file_bytes=128 * MIB)
+    if recording: producer_request['argv'].append('--recording-profile='+RECORDING_PROFILE)
     assert c.loads(evidence(launch / 'request.json')) == producer_request
     assert c.receipt(launch, producer_request)['exit'] == 0
     producer_command_bytes = evidence(launch / 'command.json'); producer_command = c.loads(producer_command_bytes)
@@ -770,11 +837,11 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
     rules = verifier_depfile_rules(record('archive/verify_common_core.d').decode())
     nonempty = [(target, values) for target, values in rules if values]; empty = [target for target, values in rules if not values]
     assert len(nonempty) == 2 and {target for target, values in nonempty} == {str(raw / 'output' / name) for name in expected_products}
-    for target, values in nonempty: assert len(values) == len(set(values)) == 7 and set(values) == set(CANONICAL_MEMBERS)
-    assert len(empty) == len(set(empty)) == 7 and set(empty) == set(CANONICAL_MEMBERS)
+    for target, values in nonempty: assert len(values) == len(set(values)) == source_count and set(values) == set(members)
+    assert len(empty) == len(set(empty)) == source_count and set(empty) == set(members)
     assert complete['dependency_archive_records'] == review['dependency_archives'] == len(originals)
     assert complete['dependency_copies'] == review['dependency_copies'] == len(expected_copies)
-    assert complete['direct_source_dependencies'] == review['private_source_copies'] == 7
+    assert complete['direct_source_dependencies'] == review['private_source_copies'] == source_count
     assert review['source_files'] == len(tracked['files']) and review['private_leaf_rows'] == len(private_files)
     assert review['archive_products'] == complete['products'] and review['application_or_verifier_executions'] == 0
     assert review['compiler_exit'] == review['producer_exit'] == 0
@@ -791,6 +858,7 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
     assert join['root_executed_byte_verification'] is True and join['synthetic_helper_receipt_created'] is False
     assert checks['status'] == 'PASS_CURRENT_BYTES_AND_SAVED_OWNER_CHECKS' and checks['revision'] == REVISION
     c.same_build_profile(admission, checks)
+    recording_identity(recording_profile, checks)
     assert checks['original_dependency_products'] == len(originals) and checks['copied_libraries'] == len(expected_copies)
     assert checks['private_leaves'] == len(private_files) and checks['raw_files'] == len(index) and checks['source_files'] == len(tracked['files'])
     assert checks['source_transform'] == 'whole_inverse' and checks['application_or_verifier_executions'] == 0
@@ -808,7 +876,12 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
     return product['path']
 
 
-def admitted_verifier_product(c, admission, tracked, repo, bound, build_root, tools):
+def admitted_verifier_product(c, admission, tracked, repo, bound, build_root, tools, recording='legacy'):
+    recording_profile = recording
+    recording = recording_identity(recording_profile, admission)
+    if recording:
+        assert admission['scope'] in ('direct-rustc-canonical-input-epoch', 'direct-rustc-canonical-input-epoch-dev-debug0-v1')
+        return canonical_verifier_product(c, admission, tracked, repo, bound, build_root, tools, recording_profile)
     c.build_input_profile(admission, build_root, bound)
     summary = c.loads(bound(str(build_root / 'summary.json')))
     if 'build_profile' in summary:
@@ -876,7 +949,7 @@ def production(c, admission, tracked, products, inv, originals, selected, bound,
     return root, bundle, summary, rows
 
 
-def ordinary(c, admission, tracked, repo, producer, artifacts, selected, datasets, bound):
+def ordinary(c, admission, tracked, repo, producer, artifacts, selected, datasets, bound, streams=None):
     c.admitted(admission, 'CALLER_ADMITTED_COMMON_ORDINARY_CONTENT',
                'closed-192-case-output-and-journal-records', tracked['revision'], bound)
     assert admission['parent_closed_reaped'] is True and admission['parent_observation'] in admission['evidence_files']
@@ -920,27 +993,87 @@ def ordinary(c, admission, tracked, repo, producer, artifacts, selected, dataset
         receipt = c.receipt(run, request)
         assert receipt['exit'] == 0 and row['receipt_sha256'] == c.sha(bound(str(run / 'receipt.json')))
         assert bound(str(run / 'stdout.txt')) == dataset['expected_stdout'].encode() and not bound(str(run / 'stderr.txt'))
-        assert bound(str(run / 'journal.bin')) == c.journal(b'')
-        assert row['journal_bytes'] == 131144 and row['journal_sha256'] == c.sha(c.journal(b''))
-        assert row['expected_record_count'] == 0 and row['expected_pc_stream_sha256'] == c.sha(b'')
+        if RECORDING:
+            key = selected.removesuffix('-core'); variant = key.rsplit('-',1)[1]
+            style = 'heap-write' if '-heap-write-' in key else 'jump-site'
+            pcs = streams[(variant,dataset['name'],style)]
+            assert len(pcs) % 8 == 0 and len(pcs)//8 <= 16384
+            assert bound(str(run / 'journal.bin')) == c.journal(pcs)
+            assert row['journal_bytes'] == 131144 and row['journal_sha256'] == c.sha(c.journal(pcs))
+            assert row['expected_record_count'] == len(pcs)//8 and row['expected_pc_stream_sha256'] == c.sha(pcs)
+            assert row['original_pc_stream_sha256'] == c.sha(pcs) and row['original_pc_stream_count'] == len(pcs)//8
+        else:
+            assert bound(str(run / 'journal.bin')) == c.journal(b'')
+            assert row['journal_bytes'] == 131144 and row['journal_sha256'] == c.sha(c.journal(b''))
+            assert row['expected_record_count'] == 0 and row['expected_pc_stream_sha256'] == c.sha(b'')
     return root, summary, rows
 
 
+# A distinct explicit mode. Final source activation is still mandatory.
+RECORDING = False
+RECORDING_PROFILE = 'bounded-journal-v1'
+RECORDING_FLAG = '--recording-profile=' + RECORDING_PROFILE
+RECORDING_HELPER_SHA = '3d3290740ca465adb7827efdf921d1b2f74942ca078956f818c92371e3397a23'
+RECORDING_SOURCES = ('tests/support/e9_common_recording.rs',
+                     'tests/support/e9_common_recording_native.rs',
+                     'evaluation/e9-common-app/recording_pairs.py')
+recording = None
+
+
+def load_recording(path, read_bytes):
+    global recording
+    b = read_bytes(path)
+    assert hashlib.sha256(b).hexdigest() == RECORDING_HELPER_SHA
+    recording = SimpleNamespace(**runpy.run_path(str(path), run_name='bounded_recording_contract'))
+    assert recording.PROFILE == RECORDING_PROFILE
+
+
+VERIFIER_CAPABILITY = 'legacy'
+
+
+def verifier_capability_fields(capability, record, *records):
+    assert capability in ('legacy', RECORDING_PROFILE) and type(record) is bool
+    assert not record or capability == RECORDING_PROFILE
+    for row in records:
+        if capability == 'legacy':
+            assert 'verifier_capability' not in row
+        else:
+            assert row['verifier_capability'] == capability
+        if record:
+            assert row['recording_profile'] == RECORDING_PROFILE
+        else:
+            assert 'recording_profile' not in row
+    return capability != 'legacy'
+
+
 def main():
-    global REVISION, SUPPORT_SHA
+    global REVISION, SUPPORT_SHA, RECORDING, ORDER, PROFILE_SOURCES, VERIFY_OUT, PAIR_OUT, COMPLETE, DENOMINATORS, VERIFIER_CAPABILITY
     if sys.flags.optimize:
         raise SystemExit('optimized Python is unsupported; assertions are required')
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--inputs', type=Path, required=True)
     parser.add_argument('--inputs-sha256', required=True)
-    parser.add_argument('--cell', choices=ORDER, required=True)
+    parser.add_argument('--cell', choices=ORDER + tuple(k.replace('null-', 'journal-', 1) for k in ORDER), required=True)
+    parser.add_argument('--recording-profile', choices=[RECORDING_PROFILE])
+    parser.add_argument('--verifier-capability', choices=['legacy',RECORDING_PROFILE],default='legacy')
     parser.add_argument('--raw', type=Path, required=True)
     parser.add_argument('--planning-profile', choices=PLANNING, default='legacy')
     parser.add_argument('--entry-router', choices=ROUTERS, default='absent')
     args = parser.parse_args()
+    RECORDING = args.recording_profile is not None
+    VERIFIER_CAPABILITY=args.verifier_capability
+    capable=verifier_capability_fields(VERIFIER_CAPABILITY,RECORDING)
+    if capable: PROFILE_SOURCES=PROFILE_SOURCES+RECORDING_SOURCES
+    if RECORDING:
+        ORDER = tuple(k.replace('null-', 'journal-', 1) for k in ORDER)
+        DENOMINATORS=dict(DENOMINATORS,core_null=704)
+        VERIFY_OUT = b'core recording witness complete: heads=87 normal=174 faults=2 execution=false qualification_complete=false\n'
+        PAIR_OUT = b'core recording pairs complete: heads=87 normal=174 faults=2 comparisons=528 qualification_complete=false\n'
+        COMPLETE = b'LI2COMMONCORERECORDINGPAIRS\t1\nheads\t87\nnormal_pairs\t174\nfault_pairs\t2\nchildren\t352\ncomparisons\t528\nfiles\t8636\nrecording_profile\tbounded-journal-v1\nnormal_loader_validation\tfalse\nqualification_complete\tfalse\n'
+    assert args.cell in ORDER
     profiles = dict(planning_profile=args.planning_profile, entry_router=args.entry_router)
-    extra_arguments = profile_arguments(profiles)
-    profiled = bool(extra_arguments)
+    extra_arguments = profile_arguments(profiles) + ([RECORDING_FLAG] if RECORDING else [])
+    profiled = capable or bool(extra_arguments)
     ib, io = read(args.inputs)
     assert hashlib.sha256(ib).hexdigest() == args.inputs_sha256
     bootstrap = json.loads(ib); repo = Path(bootstrap['repo'])
@@ -976,6 +1109,8 @@ def main():
     for p in inputs['files']:
         bound(p)
     bound(str(script)); assert c.sha(bound(str(support))) == SUPPORT_SHA
+    if RECORDING:
+        load_recording(repo / 'evaluation/e9-common-app/recording_pairs.py', lambda p: bound(str(p)))
     tools = inputs['tools']
     assert tools.keys() == {'python', 'helper_python', 'timeout', 'git'} and tools['git'] == '/usr/bin/git'
     assert str(Path(sys.executable).resolve(strict=True)) == tools['python']
@@ -1010,7 +1145,7 @@ def main():
     inv = c.inventories(cells, originals, products['common_sites'], bound)
     datasets = c.loads(bound(str(repo / 'evaluation/e9-common-app/datasets.json')))['datasets']
     assert [d['name'] for d in datasets] == list(c.DATASETS) and [d['id'] for d in datasets] == list(range(8))
-    observation, _ = c.observed_streams(c.loads(bound(inputs['observation_content_admission'])), tracked, build_root, cells, inv, datasets, bound)
+    observation, streams = c.observed_streams(c.loads(bound(inputs['observation_content_admission'])), tracked, build_root, cells, inv, datasets, bound)
     producer, bundle, production_summary, production_rows = production(c, c.loads(bound(inputs['production_admission'])), tracked, products, inv, originals, args.cell, bound, args.planning_profile, profiled)
     c.same_build_profile(build, production_summary, c.loads(bound(inputs['production_admission'])))
     ordinary_root = None
@@ -1021,7 +1156,7 @@ def main():
         o = inputs['obligations']['ordinary']; assert o['record'] is not None
         ordinary_admission = c.loads(bound(o['record']))
         ordinary_root, ordinary_summary, ordinary_rows = ordinary(c, ordinary_admission, tracked, repo,
-            inputs['production_admission'], artifacts, args.cell + '-core', datasets, bound)
+            inputs['production_admission'], artifacts, args.cell + '-core', datasets, bound, streams)
         ordinary_inputs = c.loads(bound(str(ordinary_root / 'inputs.json')))
         c.planning_profile(ordinary_inputs, args.planning_profile)
         if args.planning_profile == 'legacy':
@@ -1034,12 +1169,21 @@ def main():
         ordinary_status = 'CLOSED_REVIEWED' if ordinary_summary['ordinary_cases_complete'] else 'FAILED'
         assert o == dict(denominator=192, status=ordinary_status, record=inputs['obligations']['ordinary']['record'])
     verifier_info = c.loads(bound(inputs['verifier_admission']))
-    verifier = admitted_verifier_product(c, verifier_info, tracked, repo, bound, build_root, tools)
+    if capable:
+        verifier = admitted_verifier_product(c, verifier_info, tracked, repo, bound, build_root, tools, recording=VERIFIER_CAPABILITY)
+        assert verifier_info['recording_profile']==VERIFIER_CAPABILITY
+    else:
+        verifier = admitted_verifier_product(c, verifier_info, tracked, repo, bound, build_root, tools)
     driver = products['elf-exec-oracle']
     for p in (driver, verifier):
         assert c.path(p).stat().st_mode & 0o111
     cell = c.loads(bound(inputs['cell_admission']))
-    c.admitted(cell, 'CALLER_ADMITTED_CORE_NULL_PAIR_INPUTS', 'one-complete-core-null-artifact', REVISION, bound)
+    if RECORDING:
+        c.admitted(cell, 'CALLER_ADMITTED_CORE_RECORDING_PAIR_INPUTS', 'one-complete-core-recording-artifact', REVISION, bound)
+        assert cell['recording_profile'] == verifier_info['recording_profile'] == RECORDING_PROFILE
+    else:
+        c.admitted(cell, 'CALLER_ADMITTED_CORE_NULL_PAIR_INPUTS', 'one-complete-core-null-artifact', REVISION, bound)
+    verifier_capability_fields(VERIFIER_CAPABILITY,RECORDING,cell)
     assert cell['cell'] == args.cell and cell['eligible'] is True and cell['bundle'] == str(bundle)
     if profiled:
         assert cell['profiles'] == profiles and cell['source_binding_sha256'] == PROFILE_SOURCE_BINDING_SHA
@@ -1071,6 +1215,9 @@ def main():
             assert a['profiles'] == summary['profiles'] == profiles
             assert a['source_binding_sha256'] == summary['source_binding_sha256'] == PROFILE_SOURCE_BINDING_SHA
         c.same_build_profile(build, a, summary)
+        verifier_capability_fields(VERIFIER_CAPABILITY,RECORDING,a,summary)
+        if RECORDING:
+            assert a['recording_profile'] == summary['recording_profile'] == RECORDING_PROFILE
         assert a['capture_index_sha256'] == c.sha(bound(a['capture_index']))
         prior.append(a)
     assert inputs['obligations'].keys() == DENOMINATORS.keys()
@@ -1112,6 +1259,9 @@ def main():
     def resource(w):
         disk = 880 * (256575 + 65536) + 880 * MIB + 529 * g + 64 * MIB + 512 * MIB
         memory = 2 * (b + max(f, w, len(originals[variant])) + w + 4 * g + 32 * MIB + 237568 + g)
+        if RECORDING:
+            disk += recording.TRACE_RESERVE
+            memory += recording.TRACE_LIVE
         if args.entry_router != 'absent':
             # Additional reservation, not a larger file/CPU/wall limit. See RESOURCE.md.
             disk += 176 * MIB
@@ -1122,6 +1272,7 @@ def main():
         return dict(added_page_bytes=g, bundle_bytes=b, largest_member_bytes=f, witness_bytes=w,
                     required_growth_bytes=disk, live_payload_allowance_bytes=memory,
                     allocation_reserve_bytes=512 * MIB, rss_enforced=False, arbitrary_failure_disk_guarantee=False,
+                    **(dict(recording_trace_reserve_bytes=recording.TRACE_RESERVE, recording_live_reserve_bytes=recording.TRACE_LIVE) if RECORDING else {}),
                     **(dict(router_trace_reserve_bytes=176 * MIB, router_live_reserve_bytes=2 * (143360 + MIB))
                        if args.entry_router != 'absent' else {}))
     estimate = resource(16 * MIB)
@@ -1153,6 +1304,8 @@ def main():
     if profiled:
         c.write(raw / 'profiles.json', dict(profiles=profiles, source_binding_sha256=PROFILE_SOURCE_BINDING_SHA))
         c.write(raw / 'ordinary-status.json', dict(summary=ordinary_summary, cases=ordinary_rows))
+    if RECORDING:
+        c.write(raw / 'recording-profile.json', dict(profile=RECORDING_PROFILE,cell=args.cell,mandatory_pairs=2112,core_null_pairs=704))
     c.write(raw / 'stage-inventory.json', ['verify', 'replay'])
     c.write(raw / 'expected-captures.tsv', ('\n'.join(capture_names()) + '\n').encode())
     c.write(raw / 'cell-plan.json', [dict(cell=k, cases=176, status='PRIOR_REVIEW_ADMITTED' if i < ORDER.index(args.cell) else 'UNRUN') for i, k in enumerate(ORDER)])
@@ -1209,7 +1362,10 @@ def main():
             if i == 0:
                 wb = read(witness)[0]; wr = [x.split('\t') for x in wb.decode().splitlines()]
                 assert len(wb) <= 16 * MIB and wb.endswith(b'\n') and len(wr) <= 40000
-                assert wr[:2] == [['LI2COMMONCORE', '1'], ['scope', 'STRUCTURAL_CORE_NULL_WITNESSES_ONLY']]
+                if RECORDING:
+                    assert wr[:2] == [['LI2COMMONCORE', '1'], ['scope', 'STRUCTURAL_CORE_RECORDING_WITNESSES_ONLY']]
+                else:
+                    assert wr[:2] == [['LI2COMMONCORE', '1'], ['scope', 'STRUCTURAL_CORE_NULL_WITNESSES_ONLY']]
                 assert wr[2:8] == [[k, v] for k, v in [('original_sha256', c.sha(originals[variant])), ('instructions_sha256', c.sha(bound(instructions))),
                     ('target_sha256', c.sha(tb)), ('selection_sha256', c.sha(bound(directory + '/selection.txt'))), ('candidate_sha256', c.sha(candidate)), ('qualification_complete', 'false')]]
                 files = [r for r in wr if r[0] == 'file']
@@ -1276,7 +1432,7 @@ def main():
             production_successful=production_summary['successful'], qualification_complete=False, full_a3=False,
             normal_loader_validation=False, E9_pairs='MANDATORY_SEPARATE', recording_pairs='MANDATORY_SEPARATE',
             ordinary_cases=192, parent_closure='Separate caller observation required', operational_timings_not_performance=True,
-            **(dict(profiles=profiles, source_binding_sha256=PROFILE_SOURCE_BINDING_SHA) if profiled else {}), **build_extra))
+            **(dict(profiles=profiles, source_binding_sha256=PROFILE_SOURCE_BINDING_SHA) if profiled else {}), **build_extra, **(dict(recording_profile=RECORDING_PROFILE) if RECORDING else {}), **(dict(verifier_capability=VERIFIER_CAPABILITY) if capable else {})))
         index = {}
         for directory_name, dirs, files in os.walk(raw, followlinks=False):
             assert all(not (Path(directory_name) / n).is_symlink() for n in dirs + files)

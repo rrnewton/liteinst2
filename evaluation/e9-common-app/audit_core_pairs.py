@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Offline saved-content audit of one complete caller-admitted core-null artifact."""
+import runpy
+from types import SimpleNamespace
 import argparse
 import hashlib
 import json
@@ -174,7 +176,7 @@ def profile_activation(saved, envelope, profiles, old_pins):
         raise SystemExit('profile activation requires final reviewed source/build and runner pins')
     assert all(type(d) is str and re.fullmatch('[0-9a-f]{64}', d)
                for d in (PROFILE_SOURCE_BINDING_SHA, PROFILE_RUNNER_SHA))
-    assert profile_arguments(profiles) and envelope['profiles'] == profiles
+    assert (VERIFIER_CAPABILITY!='legacy' or RECORDING or profile_arguments(profiles)) and envelope['profiles'] == profiles
     b = saved.read(envelope['source_binding']); assert sha(b) == PROFILE_SOURCE_BINDING_SHA
     epoch = loads(b)
     assert set(epoch) == {'schema', 'revision', 'prepared_revision', 'sources'}
@@ -196,6 +198,10 @@ def profile_activation(saved, envelope, profiles, old_pins):
 def profile_records(saved, envelope, inputs, source, summary, profile):
     profiles = profile['profiles']
     assert inputs['profiles'] == profiles and inputs['source_binding'] == envelope['source_binding']
+    verifier_capability_fields(VERIFIER_CAPABILITY,RECORDING,inputs,summary)
+    if RECORDING:
+        assert inputs['recording_profile']==summary['recording_profile']==envelope['recording_profile']==RECORDING_PROFILE
+        assert saved.json(Path(envelope['run'])/'recording-profile.json')==dict(profile=RECORDING_PROFILE,cell=summary['cell'],mandatory_pairs=2112,core_null_pairs=704)
     assert saved.pins[inputs['source_binding']] == inputs['files'][inputs['source_binding']]
     expected = dict(profiles=profiles, source_binding_sha256=PROFILE_SOURCE_BINDING_SHA)
     assert saved.json(Path(envelope['run'])/'profiles.json') == expected
@@ -207,6 +213,9 @@ def profile_records(saved, envelope, inputs, source, summary, profile):
     # and profile join, not an assertion that prior attempts all succeeded.
     for path in inputs['prior_cells']:
         prior = saved.json(path)
+        verifier_capability_fields(VERIFIER_CAPABILITY,RECORDING,prior)
+        if RECORDING:
+            assert prior['recording_profile']==RECORDING_PROFILE
         assert all(prior[k] == v for k, v in expected.items())
         if prior['summary'] is not None:
             prior_summary = saved.json(prior['summary'])
@@ -852,8 +861,11 @@ def case(saved,captures,i,heads,witness,components,original_base,candidate_base,
     ob=state(saved,d/'original','before',h['pc'],h['pc'],spec,components,original_base,None,[])
     oa=state(saved,d/'original','after',pc,pc,spec,components,original_base,None,[])
     cb=state(saved,d/'candidate','before',h['pc'],h['pc'],spec,components,candidate_base,generated,added)
-    cr=state(saved,d/'candidate','restored',w['body'],h['pc'],spec,components,candidate_base,generated,added)
-    ca=state(saved,d/'candidate','after',finish,pc,spec,components,candidate_base,generated,added)
+    after_base=candidate_base
+    if RECORDING:
+        after_base=recording.journal_after(candidate_base,w['journal_at'],h['pc'] if any(p==recording.CORE_HOOK for p,_,_ in w['walk']) else None)
+    cr=state(saved,d/'candidate','restored',w['body'],h['pc'],spec,components,after_base,generated,added)
+    ca=state(saved,d/'candidate','after',finish,pc,spec,components,after_base,generated,added)
     for reg,value in spec['registers'].items():
         mask=MASK ^ DEBUG if reg=='eflags' else MASK
         assert ob['r'][reg]&mask==value&mask
@@ -868,19 +880,29 @@ def case(saved,captures,i,heads,witness,components,original_base,candidate_base,
     assert oa['data']==spec['after_data'] and oa['stack']==spec['after_stack'] and oa['r']['rsp']==spec['rsp']
     compare(ob,cb); compare(ob,cr); compare(oa,ca)
     scratch=None
-    if any(n==HOOK for _,n,_ in w['walk']):
+    if any(n==(recording.CORE_HOOK if RECORDING else HOOK) for _,n,_ in w['walk']):
         s=spec['registers']['rsp']; scratch=(((s-304)&~63)-2496-8,s-128)
     outside(cr['stack'],ob['stack'],scratch); outside(ca['stack'],oa['stack'],scratch)
     if fault:
         compare(ob,oa); compare(cr,ca)
     trace=[['phase','before_pc','after_pc','bytes']]+[['prefix',p,n,b.hex()] for p,n,b in w['walk']]+[['original',w['body'],finish,w['bytes'].hex()]]
-    if not router:
-        assert saved.read(d/'candidate/trace.tsv')==tsv(trace) and len(w['walk'])+1<=20000
+    if RECORDING:
+        trace_bytes,extra_steps=recording.core_trace(saved.read(d/'candidate/trace.tsv'),w['walk'],h['pc'])
+        if not router:
+            assert trace_bytes==tsv(trace)
+            steps=len(w['walk'])+1+extra_steps
+        else:
+            steps=router_trace(trace_bytes,router,w['walk'],w['trap'],w['body'],finish,w['bytes'],cb,components,
+                               [saved.read(d/'candidate'/(s+'.maps')) for s in ('before','restored','after')],added)+extra_steps
+        assert steps<=20000
     else:
-        steps=router_trace(saved.read(d/'candidate/trace.tsv'),router,w['walk'],w['trap'],w['body'],finish,w['bytes'],cb,components,
-                           [saved.read(d/'candidate'/(s+'.maps')) for s in ('before','restored','after')],added)
+        if not router:
+            assert saved.read(d/'candidate/trace.tsv')==tsv(trace) and len(w['walk'])+1<=20000
+        else:
+            steps=router_trace(saved.read(d/'candidate/trace.tsv'),router,w['walk'],w['trap'],w['body'],finish,w['bytes'],cb,components,
+                               [saved.read(d/'candidate'/(s+'.maps')) for s in ('before','restored','after')],added)
     assert saved.read(d/'original/complete.tsv')==tsv([('LI2ORIGINALREFERENCE',1),('case',i),('steps',1),('normal',str(not fault).lower()),('fault',spec['fault_text']),('reaped_echild','true'),('paired_replay','UNIMPLEMENTED_UNRUN'),('qualification_complete','false')])
-    if not router:
+    if not router and not RECORDING:
         assert saved.read(d/'candidate/complete.tsv')==tsv([('LI2COREPAIRCHILD',1),('case',i),('steps',len(w['walk'])+1),('physical_completion',finish),('logical_completion',pc),('fault',spec['fault_text']),('comparisons',3),('reaped_echild','true'),('qualification_complete','false')])
     else:
         assert saved.read(d/'candidate/complete.tsv')==tsv([('LI2COREPAIRCHILD',1),('case',i),('steps',steps),('physical_completion',finish),('logical_completion',pc),('fault',spec['fault_text']),('comparisons',3),('reaped_echild','true'),('qualification_complete','false')])
@@ -969,10 +991,14 @@ def audit(saved,envelope,heads,pins,report,profile=None):
         assert row['status']==('PASS_STRUCTURAL_WITNESS' if i==0 else 'PASS_COMMAND_AND_CAPTURE_SCHEMA')
         requests.append(q)
     if profile is not None:
-        suffix=profile_arguments(profile['profiles'])
-        for q in requests:
-            assert q['argv'][-len(suffix):]==suffix
-        requests=[dict(q,argv=q['argv'][:-len(suffix)]) for q in requests]
+        suffix=profile_arguments(profile['profiles'])+([RECORDING_FLAG] if RECORDING else [])
+        if suffix:
+            for q in requests:
+                assert q['argv'][-len(suffix):]==suffix
+            requests=[dict(q,argv=q['argv'][:-len(suffix)]) for q in requests]
+        else:
+            assert VERIFIER_CAPABILITY==RECORDING_PROFILE and not RECORDING
+            assert profile['profiles']==dict(planning_profile='legacy',entry_router='absent')
     v,r=(q['argv'] for q in requests);assert len(v)==7 and len(r)==8 and r[1]=='replay-common-core'
     assert v[1:4]==r[2:5] and v[5:]==r[5:7] and r[7]==str(cap) and r[6]==str(run/'core-witness.tsv')
     cell=saved.json(inputs['cell_admission']);verifier=saved.json(inputs['verifier_admission']);runtime=saved.json(inputs['runtime_admission'])
@@ -988,9 +1014,15 @@ def audit(saved,envelope,heads,pins,report,profile=None):
     if profile is None:
         assert cell['authority']=='CALLER_ADMITTED_CORE_NULL_PAIR_INPUTS' and cell['source_revision']==REVISION and cell['eligible'] is True
     else:
-        assert cell['authority']=='CALLER_ADMITTED_CORE_NULL_PAIR_INPUTS' and cell['source_revision']==profile['epoch']['revision'] and cell['eligible'] is True
+        if RECORDING:
+            assert cell['authority']=='CALLER_ADMITTED_CORE_RECORDING_PAIR_INPUTS' and cell['scope']=='one-complete-core-recording-artifact' and cell['source_revision']==profile['epoch']['revision'] and cell['eligible'] is True
+            assert cell['recording_profile']==verifier['recording_profile']==RECORDING_PROFILE
+        else:
+            assert cell['authority']=='CALLER_ADMITTED_CORE_NULL_PAIR_INPUTS' and cell['source_revision']==profile['epoch']['revision'] and cell['eligible'] is True
     assert cell['cell']==summary['cell'] and cell['bundle']==r[5] and cell['original']==r[2] and cell['inventory']==v[4] and cell['target']==r[4]
     assert r[3]==v[4]+'/instructions.tsv'
+    verifier_capability_fields(VERIFIER_CAPABILITY,RECORDING,cell)
+    if VERIFIER_CAPABILITY!='legacy': assert verifier['recording_profile']==VERIFIER_CAPABILITY
     assert cell['driver_sha256']==sha(saved.read(r[0])) and cell['verifier_sha256']==sha(saved.read(v[0]))
     if profile is None:
         assert verifier['authority']=='CALLER_ADMITTED_COMMON_CORE_VERIFIER' and verifier['source_revision']==REVISION and verifier['verifier']==v[0]
@@ -1002,19 +1034,56 @@ def audit(saved,envelope,heads,pins,report,profile=None):
     report['recorded_obligations']=inputs['obligations']
     report['recorded_production_status']=saved.json(run/'production-status.json')
     report['recorded_prior_cells']=saved.json(run/'prior-cells.json')
+    if RECORDING:
+        denominators=dict(original=16,production=74,ordinary=192,core_null=704,E9_null=1408,recording_pairs=2112)
+        assert set(inputs['obligations'])==set(denominators)
+        for name,count in denominators.items():
+            item=inputs['obligations'][name]
+            assert set(item)=={'denominator','status','record'} and item['denominator']==count
+            assert item['status'] in ('UNRUN','FAILED','PARTIAL','CLOSED_REVIEWED')
+            if item['record'] is None: assert item['status']=='UNRUN'
+            else: saved.read(item['record'])
+        ordinary=saved.json(inputs['obligations']['ordinary']['record'])
+        assert ordinary['authority']=='CALLER_ADMITTED_COMMON_ORDINARY_CONTENT' and ordinary['source_revision']==source['revision']
+        assert ordinary['scope']=='closed-192-case-output-and-journal-records' and ordinary['parent_closed_reaped'] is True
+        observation=saved.json(inputs['observation_content_admission'])
+        assert observation['authority']=='CALLER_ADMITTED_ORIGINAL_OBSERVATION_CONTENT_AUDIT' and observation['source_revision']==source['revision']
+        assert observation['parent_closed_reaped'] is True and observation['architectural_equivalence_claim'] is False
+        root=Path(ordinary['directory']);rows=saved.json(root/'results.json');old_summary=saved.json(root/'summary.json')
+        assert saved.json(run/'ordinary-status.json')==dict(summary=old_summary,cases=rows)
+        assert len(rows)==192 and old_summary['planned_cases']==192 and old_summary['artifact_cells']==24 and old_summary['datasets_per_artifact']==8
+        assert all(row['status'] in ('PASS_ORDINARY_OUTPUT_AND_JOURNAL','FAILED','UNRUN') for row in rows)
+        datasets=saved.json(saved.repo/'evaluation/e9-common-app/datasets.json')['datasets']
+        assert [d['name'] for d in datasets]==['empty','singleton','pair-reverse','equal-17','sorted-17','reverse-17','duplicates-17','mixed-64']
+        selected=[row for row in rows if row['artifact']==summary['cell']+'-core']
+        assert [row['dataset'] for row in selected]==[d['name'] for d in datasets]
+        for row,dataset in zip(selected,datasets):
+            assert row['status']=='PASS_ORDINARY_OUTPUT_AND_JOURNAL' and row['strict_closure'] is True and row['exit']==0
+            stage=root/row['name'];request=saved.json(stage/'request.json');receipt(saved,stage,request)
+            assert row['receipt_sha256']==sha(saved.read(stage/'receipt.json'))
+            assert saved.read(stage/'stdout.txt')==dataset['expected_stdout'].encode() and not saved.read(stage/'stderr.txt')
+            recording.ordinary_journal(saved.read,saved.json,observation,row,stage,summary['cell'].rsplit('-',1)[1],'heap-write' if '-heap-write-' in summary['cell'] else 'jump-site')
+
     for n,p in [('original.elf',r[2]),('instructions.tsv',r[3]),('runtime-target.tsv',r[4]),('core-witness.tsv',r[6])]:
         assert saved.read(cap/n)==saved.read(p)
     variant=summary['cell'].rsplit('-',1)[1]; original=saved.read(cap/'original.elf')
     assert sha(original)==ORIGINALS[0 if variant=='unstripped' else 1]
     instructions=saved.read(cap/'instructions.tsv'); assert sha(instructions)==pins['tests/support/e9_common_seed.instructions.tsv']
     rows=tab(instructions);assert len(rows)==88 and len(rows[0])==14
-    _,opages,original_base=image(original);assert len(opages)==37 and saved.read(cap/'original-pages.bin')==original_base
+    _,opages,original_base=image(original);assert len(opages)==37
+    journal_at=None
+    if RECORDING:
+        original_base,journal_at=recording.journal_seed(original_base,LO,LOADS[3][1],LOADS[3][1]+LOADS[3][3])
+    assert saved.read(cap/'original-pages.bin')==original_base
     for h,row in zip(heads,rows[1:]):
         assert int(row[1],0)==h['pc'] and int(row[2])==h['length'] and row[5]==h['bytes']
         assert original[h['file_offset']:h['file_offset']+h['length']]==at(opages,h['pc'],h['length'])==bytes.fromhex(h['bytes'])
     components=target(saved.read(cap/'runtime-target.tsv')); bundle=Path(r[5]); wb=saved.read(cap/'core-witness.tsv'); wr=tab(wb)
     assert len(wb)<=16*MIB and len(wr)<=40000
-    assert wr[:2]==[['LI2COMMONCORE','1'],['scope','STRUCTURAL_CORE_NULL_WITNESSES_ONLY']]
+    if RECORDING:
+        assert wr[:2]==[['LI2COMMONCORE','1'],['scope','STRUCTURAL_CORE_RECORDING_WITNESSES_ONLY']]
+    else:
+        assert wr[:2]==[['LI2COMMONCORE','1'],['scope','STRUCTURAL_CORE_NULL_WITNESSES_ONLY']]
     candidate=saved.read(bundle/'candidate.elf')
     assert cell['candidate_sha256']==sha(candidate) and cell['target_sha256']==sha(saved.read(cap/'runtime-target.tsv'))
     assert results[0]['witness_sha256']==sha(wb) and results[1]['capture_index_sha256']==sha(saved.read(run/'capture-files.json'))
@@ -1036,6 +1105,9 @@ def audit(saved,envelope,heads,pins,report,profile=None):
     assert saved.read(bundle/'target.tsv')==saved.read(cap/'runtime-target.tsv')
     assert saved.read(bundle/'ledger.tsv').startswith(saved.read(bundle/'plan-ledger.tsv'))
     cloads,cpages,candidate_base=image(candidate);declared=[]
+    if RECORDING:
+        candidate_base,candidate_journal=recording.journal_seed(candidate_base,LO,LOADS[3][1],LOADS[3][1]+LOADS[3][3])
+        assert candidate_journal==journal_at
     while wr[cursor][0]=='load':
         row=wr[cursor];assert len(row)==6;declared.append(tuple(map(num,row[1:])));cursor+=1
     assert declared==cloads
@@ -1048,6 +1120,9 @@ def audit(saved,envelope,heads,pins,report,profile=None):
     generated=b''.join(cpages[p][1] for p,_ in added)
     resource=saved.json(run/'resource-actual.json')
     assert resource['added_page_bytes']==len(generated) and resource['witness_bytes']==len(wb)
+    if RECORDING:
+        assert resource['recording_trace_reserve_bytes']==recording.TRACE_RESERVE
+        assert resource['recording_live_reserve_bytes']==recording.TRACE_LIVE
     if profile is not None and profile['profiles']['entry_router']!=ROUTERS[0]:
         assert resource['router_trace_reserve_bytes']==176*MIB
         assert resource['router_live_reserve_bytes']==2*(143360+MIB)
@@ -1064,9 +1139,16 @@ def audit(saved,envelope,heads,pins,report,profile=None):
                 nxt=num(row[3]);b=bytes.fromhex(row[4]);assert 1<=len(b)<=15 and at(cpages,pc,len(b))==b
                 walks.append((pc,nxt,b));pc=nxt;cursor+=1;assert len(walks)<20000
         else:
-            while wr[cursor][0]=='walk' or (profile['profiles']['entry_router']!=ROUTERS[0] and wr[cursor][0]=='trap'):
+            while wr[cursor][0]=='walk' or (RECORDING and wr[cursor][0]=='record-hook') or (profile['profiles']['entry_router']!=ROUTERS[0] and wr[cursor][0]=='trap'):
                 row=wr[cursor]; assert len(row)==5 and row[1:3]==[str(h['pc']),str(pc)]
-                nxt=num(row[3]);b=bytes.fromhex(row[4]);assert 1<=len(b)<=15 and at(cpages,pc,len(b))==b
+                nxt=num(row[3]);b=bytes.fromhex(row[4])
+                if RECORDING and row[0]=='record-hook':
+                    assert pc==recording.CORE_HOOK and len(b)==recording.CORE_HOOK_BYTES
+                    assert at(cpages,pc,len(b))==at(opages,pc,len(b))==b
+                    assert walks and walks[-1][1]==pc and walks[-1][2][:1]==b'\xe8'
+                    assert len(walks[-1][2])==5 and nxt==walks[-1][0]+5
+                else:
+                    assert 1<=len(b)<=15 and at(cpages,pc,len(b))==b
                 if row[0]=='trap':
                     assert pc==h['pc'] and not walks and not trap
                     matches=[q for q in router if q['pc']==pc]; assert len(matches)==1
@@ -1076,7 +1158,9 @@ def audit(saved,envelope,heads,pins,report,profile=None):
         assert pc==body
         if h['flow']=='Call':
             assert body==h['pc'] and not walks and code==bytes.fromhex(h['bytes']) and dest==h['target']
-        witness.append(dict(body=body,target=dest,bytes=code,walk=walks,trap=trap))
+        if RECORDING:
+            assert sum(p==recording.CORE_HOOK for p,_,_ in walks)<=1
+        witness.append(dict(body=body,target=dest,bytes=code,walk=walks,trap=trap,journal_at=journal_at))
     assert wr[cursor:]==[['complete','87','174','2','E9_UNIMPLEMENTED_UNRUN']]
     assert used_routes=={q['pc'] for q in router}
     owners=kv(saved.read(cap/'input-owners.tsv'));assert owners.pop('whole_hash_and_structural_witness_admission')=='CALLER_REQUIRED'
@@ -1104,21 +1188,84 @@ def audit(saved,envelope,heads,pins,report,profile=None):
         report.update(cell=summary['cell'],candidate_sha256=sha(candidate),witness_sha256=sha(wb),generated_page_bytes=len(generated),source_revision=profile['epoch']['revision'],
                       profiles=profile['profiles'],source_binding_sha256=PROFILE_SOURCE_BINDING_SHA,router_routes=len(router),
                       saved_router_evidence='Complete v3 ordered stop/register/frame/FP/table/code observations; live ptrace causality remains source-attested')
+    if RECORDING:
+        report['recording_profile']=RECORDING_PROFILE
+        report['mandatory_recording_pairs']=2112
+        report['source_attested_not_independently_saved']=LIVE_ONLY+['Callback ISA decoding, intermediate RSP/argument/return-word checks are live source assertions; saved exact callback bytes/path and complete journal/state/stack are independently checked.']
     report['completed']=report['completed_cases']==176 and report['comparisons']==528
     report['status']='PASS_SAVED_CONTENT' if report['completed'] else 'CONTENT_FAILURE'
 
 
+# A distinct explicit mode. Final source activation is still mandatory.
+RECORDING = False
+RECORDING_PROFILE = 'bounded-journal-v1'
+RECORDING_FLAG = '--recording-profile=' + RECORDING_PROFILE
+RECORDING_HELPER_SHA = '3d3290740ca465adb7827efdf921d1b2f74942ca078956f818c92371e3397a23'
+RECORDING_SOURCES = ('tests/support/e9_common_recording.rs',
+                     'tests/support/e9_common_recording_native.rs',
+                     'evaluation/e9-common-app/recording_pairs.py')
+recording = None
+
+
+def load_recording(path, read_bytes):
+    global recording
+    b = read_bytes(path)
+    assert hashlib.sha256(b).hexdigest() == RECORDING_HELPER_SHA
+    recording = SimpleNamespace(**runpy.run_path(str(path), run_name='bounded_recording_contract'))
+    assert recording.PROFILE == RECORDING_PROFILE
+
+
+VERIFIER_CAPABILITY = 'legacy'
+
+
+def verifier_capability_fields(capability, record, *records):
+    assert capability in ('legacy', RECORDING_PROFILE) and type(record) is bool
+    assert not record or capability == RECORDING_PROFILE
+    for row in records:
+        if capability == 'legacy':
+            assert 'verifier_capability' not in row
+        else:
+            assert row['verifier_capability'] == capability
+        if record:
+            assert row['recording_profile'] == RECORDING_PROFILE
+        else:
+            assert 'recording_profile' not in row
+    return capability != 'legacy'
+
+
 def main():
+    global RECORDING, CELLS, PROFILE_SOURCES, VERIFY_OUT, PAIR_OUT, COMPLETE, VERIFIER_CAPABILITY
     if sys.flags.optimize:
         raise SystemExit('optimized Python is unsupported; assertions are required')
     ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('--inputs',required=True);ap.add_argument('--inputs-sha256',required=True);ap.add_argument('--raw',required=True)
     ap.add_argument('--planning-profile',choices=PLANNING,default='legacy');ap.add_argument('--entry-router',choices=ROUTERS,default='absent')
+    ap.add_argument('--recording-profile',choices=[RECORDING_PROFILE])
+    ap.add_argument('--verifier-capability',choices=['legacy',RECORDING_PROFILE],default='legacy')
     args=ap.parse_args();ib,io=read_file(args.inputs);assert sha(ib)==args.inputs_sha256 and re.fullmatch('[0-9a-f]{64}',args.inputs_sha256)
-    profiles=dict(planning_profile=args.planning_profile,entry_router=args.entry_router);profiled=bool(profile_arguments(profiles))
+    RECORDING=args.recording_profile is not None
+    VERIFIER_CAPABILITY=args.verifier_capability
+    capable=verifier_capability_fields(VERIFIER_CAPABILITY,RECORDING)
+    if capable: PROFILE_SOURCES=PROFILE_SOURCES+RECORDING_SOURCES
+    if RECORDING:
+        CELLS=tuple(k.replace('null-','journal-',1) for k in CELLS)
+        VERIFY_OUT=b'core recording witness complete: heads=87 normal=174 faults=2 execution=false qualification_complete=false\n'
+        PAIR_OUT=b'core recording pairs complete: heads=87 normal=174 faults=2 comparisons=528 qualification_complete=false\n'
+        COMPLETE=b'LI2COMMONCORERECORDINGPAIRS\t1\nheads\t87\nnormal_pairs\t174\nfault_pairs\t2\nchildren\t352\ncomparisons\t528\nfiles\t8636\nrecording_profile\tbounded-journal-v1\nnormal_loader_validation\tfalse\nqualification_complete\tfalse\n'
+    profiles=dict(planning_profile=args.planning_profile,entry_router=args.entry_router);profiled=capable or RECORDING or bool(profile_arguments(profiles))
     if not profiled:
         envelope=loads(ib);assert set(envelope)=={'schema','authority','repo','run','files','sources','evidence'} and type(envelope['schema']) is int and envelope['schema']==1
     else:
-        envelope=loads(ib); assert set(envelope)=={'schema','authority','repo','run','files','sources','evidence','profiles','source_binding'} and type(envelope['schema']) is int and envelope['schema']==1
+        if capable:
+            envelope=loads(ib)
+            assert set(envelope)=={'schema','authority','repo','run','files','sources','evidence','profiles','source_binding','verifier_capability'}|({'recording_profile'} if RECORDING else set())
+            assert type(envelope['schema']) is int and envelope['schema']==1
+            verifier_capability_fields(VERIFIER_CAPABILITY,RECORDING,envelope)
+        else:
+            if RECORDING:
+                envelope=loads(ib); assert set(envelope)=={'schema','authority','repo','run','files','sources','evidence','profiles','source_binding','recording_profile'} and type(envelope['schema']) is int and envelope['schema']==1
+                assert envelope['recording_profile']==RECORDING_PROFILE
+            else:
+                envelope=loads(ib); assert set(envelope)=={'schema','authority','repo','run','files','sources','evidence','profiles','source_binding'} and type(envelope['schema']) is int and envelope['schema']==1
     saved=Saved(envelope['files'],envelope['repo']);out=Path(args.raw);run=Path(envelope['run'])
     assert out.is_absolute() and out.parent.resolve(strict=True)==out.parent and not out.exists() and out.is_relative_to(saved.repo/'ignored')
     assert '..' not in out.parts and not out.is_relative_to(run) and not run.is_relative_to(out)
@@ -1127,6 +1274,8 @@ def main():
     assert len(heads)==87 and descriptor['source_sha256']==pins['tests/support/e9_common_seed.rs'] and descriptor['instructions_sha256']==pins['tests/support/e9_common_seed.instructions.tsv']
     assert len({h['pc'] for h in heads})==87 and sum(h['memory']['kind']!='None' for h in heads)==32
     profile=profile_activation(saved,envelope,profiles,pins) if profiled else None
+    if RECORDING:
+        load_recording(saved.repo/'evaluation/e9-common-app/recording_pairs.py',saved.read)
     if profile is not None:
         pins=profile['pins']
     out.mkdir(mode=0o700)
@@ -1155,7 +1304,7 @@ def main():
         return sha(b)
     read_sha=write('read-inputs.json',dict(envelope=io,files=saved.seen,script=so,support={n:o for n,(_,o) in support.items()}))
     audit_sha=write('audit.json',report)
-    write('binding.json',dict(schema=1,status=report['status'],completed=report['completed'],auditor_sha256=sha(sb),inputs_sha256=sha(ib),read_inputs_sha256=read_sha,audit_sha256=audit_sha,scope='One caller-admitted complete core-null artifact: saved content only; independent actual review remains separate.',qualification_complete=False))
+    write('binding.json',dict(schema=1,status=report['status'],completed=report['completed'],auditor_sha256=sha(sb),inputs_sha256=sha(ib),read_inputs_sha256=read_sha,audit_sha256=audit_sha,scope=('One caller-admitted complete core-recording artifact, 176 of 2112 required pairs; saved content only.' if RECORDING else 'One caller-admitted complete core-null artifact: saved content only; independent actual review remains separate.'),qualification_complete=False))
     print(json.dumps(dict(status=report['status'],completed=report['completed'],audit_sha256=audit_sha),sort_keys=True))
     return 0 if report['completed'] else 1
 
