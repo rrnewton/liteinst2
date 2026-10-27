@@ -1,6 +1,7 @@
 //! Controlled core-null pairs. Structural witness/hash authority is external;
 //! every consumed byte, route, state, memory owner and completion is checked here.
 //! No normal-loader, E9, recording-hook or whole-A3 qualification is inferred.
+use super::core_pages::{Page, materialize_load_pages};
 use super::*;
 
 const MAX_INPUT: usize = 1_048_576;
@@ -64,12 +65,6 @@ struct Head {
     target: u64,
     bytes: Vec<u8>,
     walk: Vec<Walk>,
-}
-#[derive(Clone)]
-struct Page {
-    address: u64,
-    flags: u32,
-    bytes: Vec<u8>,
 }
 struct Candidate {
     inputs: Vec<Input>,
@@ -180,49 +175,7 @@ impl Candidate {
             cursor += 1;
         }
         assert_eq!(loads, declared);
-        assert_eq!(&loads[..4], &LOADS);
-        assert!(loads.len() <= 261);
-        let mut pages = Vec::new();
-        let mut seen = BTreeSet::new();
-        let mut base = vec![0; (IMAGE_END - IMAGE_START) as usize];
-        for &(offset, address, fs, ms, flags) in &loads {
-            assert!(
-                matches!(flags, 4..=6)
-                    && fs <= ms
-                    && offset.checked_add(fs).unwrap() <= elf.len() as u64
-            );
-            assert_eq!(offset % 4096, address % 4096);
-            let lo = address & !4095;
-            let hi = page_end(address.checked_add(ms).unwrap());
-            assert!(hi <= 1 << 47);
-            for page in (lo..hi).step_by(PAGE) {
-                assert!(seen.insert(page));
-                let mut data = vec![0; PAGE];
-                let at = (offset & !4095) + page - lo;
-                if page < page_end(address + fs) {
-                    let n = PAGE.min(elf.len().saturating_sub(at as usize));
-                    data[..n].copy_from_slice(&elf[at as usize..at as usize + n]);
-                }
-                if ms > fs && page + 4096 > address + fs {
-                    let at = (address + fs).saturating_sub(page) as usize;
-                    data[at..].fill(0);
-                }
-                if page < IMAGE_END {
-                    assert!(page >= IMAGE_START);
-                    let at = (page - IMAGE_START) as usize;
-                    base[at..at + PAGE].copy_from_slice(&data);
-                } else {
-                    assert!(flags != 6);
-                    pages.push(Page {
-                        address: page,
-                        flags,
-                        bytes: data,
-                    });
-                }
-            }
-        }
-        assert!(pages.len() <= 2048);
-        assert!(seen.last().unwrap() + 4096 - seen.first().unwrap() <= 1_073_741_824);
+        let (base, pages) = materialize_load_pages(elf, loads);
         let mut heads = Vec::new();
         for src in seed::HEADS {
             let r = &rows[cursor];

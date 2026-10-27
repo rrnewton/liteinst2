@@ -12,18 +12,17 @@ mod seed;
 #[path = "e9_common_core.rs"]
 pub mod core_pair;
 
-const IMAGE_START: u64 = 0x400000;
-const IMAGE_END: u64 = 0x425000;
+#[path = "e9_common_e9.rs"]
+pub mod e9_pair;
+
+#[path = "e9_common_core_pages.rs"]
+mod core_pages;
+use core_pages::{IMAGE_END, IMAGE_START, LOADS};
+
 const ARRAY: u64 = 0x6000_0000_0000;
 const FRAME: u64 = 0x6000_0010_0008;
 const STACK_START: u64 = FRAME - 32776;
 const STACK_STOP: u64 = FRAME + 32760;
-const LOADS: [(u64, u64, u64, u64, u32); 4] = [
-    (0, 0x400000, 0x8b0, 0x8b0, 4),
-    (0x1000, 0x401000, 0xa51, 0xa51, 5),
-    (0x2000, 0x402000, 0xe1c, 0xe1c, 4),
-    (0x3e00, 0x403e00, 0x20358, 0x20390, 6),
-];
 
 fn identity(m: &std::fs::Metadata) -> [i128; 8] {
     [

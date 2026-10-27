@@ -332,7 +332,8 @@ def capture_schema(directory, dataset, inv, owners):
 
 
 def main():
-    assert not sys.flags.optimize, 'assertions required'
+    if sys.flags.optimize:
+        raise SystemExit('optimized Python is unsupported; assertions are required')
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--inputs', type=Path, required=True)
     parser.add_argument('--inputs-sha256', required=True)

@@ -438,6 +438,473 @@ fn ledger_shape(rows: &[Vec<&str>]) {
     );
 }
 
+// Finite policy admission for the two already authenticated original ELFs.
+// This reader does not call common_sites, any planner, or a producer allocator.
+const SLOT: u64 = 65536;
+const DOMAIN: (u64, u64) = (65536, 65536 + 1_073_741_824);
+const CARRIER: (u64, u64) = (0x2000_0000, 0x2000_8000);
+const ENTRY_OPCODES: [u8; 14] = [
+    0x06, 0x07, 0x0e, 0x16, 0x17, 0x1e, 0x1f, 0x27, 0x2f, 0x37, 0x3f, 0x60, 0x61, 0xce,
+];
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PlacementProfile {
+    FixedV1,
+    OriginalDerivedV1,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct Permit {
+    range: (u64, u64),
+    preferred: u64,
+}
+fn disjoint(a: (u64, u64), b: (u64, u64)) -> bool {
+    a.1 <= b.0 || b.1 <= a.0
+}
+fn policy_number(s: &str) -> u64 {
+    if let Some(hex) = s.strip_prefix("0x") {
+        u64::from_str_radix(hex, 16).unwrap()
+    } else {
+        n(s)
+    }
+}
+fn policy_profile(
+    policy: &[u8],
+    original: &[u8],
+    compact_target: &[u8],
+    provenance: &str,
+    elf: &Elf64<'_>,
+) -> PlacementProfile {
+    assert!(policy.len() <= 65536);
+    assert!(policy.is_ascii() && policy.ends_with(b"\n") && !policy.contains(&b'\r'));
+    let r: Vec<Vec<_>> = std::str::from_utf8(policy)
+        .unwrap()
+        .lines()
+        .map(|l| {
+            let row: Vec<_> = l.split(' ').collect();
+            assert!(row.iter().all(|s| !s.is_empty()));
+            row
+        })
+        .collect();
+    let profile = match r[0].as_slice() {
+        ["LI2COMMON", "1"] => PlacementProfile::FixedV1,
+        ["LI2COMMON", "2"] => PlacementProfile::OriginalDerivedV1,
+        _ => panic!("exact fixed-v1 or original-derived-v1 policy required"),
+    };
+    let derived = usize::from(profile == PlacementProfile::OriginalDerivedV1);
+    assert_eq!(r.len(), 16 + derived);
+    for (at, tag, expected) in [
+        (1, "original", hash(original)),
+        (2, "target", hash(compact_target)),
+        (3, "provenance", provenance.to_owned()),
+    ] {
+        assert_eq!(r[at], [tag, expected.as_str()]);
+    }
+    // These exact owner coordinates come from the frozen preparation, not the
+    // candidate or its policy. Whole original identity was checked by main.
+    assert_eq!(r[4].len(), 5);
+    assert_eq!(r[4][0], "text");
+    assert_eq!(
+        r[4][1..4]
+            .iter()
+            .map(|s| policy_number(s))
+            .collect::<Vec<_>>(),
+        [0x401100, 0x1100, 0x943]
+    );
+    assert_eq!(file_at(elf, 0x401100, 0x943), 0x1100);
+    assert_eq!(
+        r[4][4],
+        hash(elf.executable_bytes(ElfVaddr(0x401100), 0x943).unwrap())
+    );
+    for (index, (source, name)) in seed::ORIGINAL_RANGES
+        .iter()
+        .zip(["li2_array_store", "li2_sift_down", "li2_heap_sort"])
+        .enumerate()
+    {
+        let row = &r[5 + index];
+        assert_eq!(row.len(), 5);
+        assert_eq!(&row[..2], ["function", name]);
+        assert_eq!(
+            (policy_number(row[2]), policy_number(row[3])),
+            (source.pc, source.bytes.len() as u64)
+        );
+        assert_eq!(
+            file_at(elf, source.pc, source.bytes.len()) as u64,
+            source.file_offset
+        );
+        let bytes = elf
+            .executable_bytes(ElfVaddr(source.pc), source.bytes.len() as u64)
+            .unwrap();
+        assert_eq!(bytes, source.bytes);
+        assert_eq!(row[4], hash(bytes));
+    }
+    for (index, id, pc, len) in [(8, "2", HOOK, 1), (9, "3", 0x401970, 211)] {
+        let row = &r[index];
+        assert_eq!(row.len(), 5);
+        assert_eq!(&row[..2], ["hook", id]);
+        assert_eq!((policy_number(row[2]), policy_number(row[3])), (pc, len));
+        assert_eq!(
+            row[4],
+            hash(elf.executable_bytes(ElfVaddr(pc), len).unwrap())
+        );
+    }
+    assert_eq!(r[10].len(), 2);
+    assert_eq!(r[10][0], "carrier");
+    assert_eq!(policy_number(r[10][1]), CARRIER.0);
+    if derived == 1 {
+        assert_eq!(r[11].len(), 4);
+        assert_eq!(&r[11][..2], ["placement", "original-derived-v1"]);
+        assert_eq!(
+            (policy_number(r[11][2]), policy_number(r[11][3])),
+            (DOMAIN.0, DOMAIN.1 - DOMAIN.0)
+        );
+    }
+    for (index, role, base) in [(11, "selected", 0x1000_0000), (12, "victim", 0x1800_0000)] {
+        let row = &r[index + derived];
+        assert_eq!(row.len(), if derived == 0 { 6 } else { 4 });
+        assert_eq!(&row[..2], ["arena", role]);
+        let values: Vec<_> = row[2..].iter().map(|s| policy_number(s)).collect();
+        if derived == 0 {
+            assert_eq!(values, [base, SLOT, SLOT, 65536]);
+        } else {
+            assert_eq!(values, [SLOT, 65536]);
+        }
+    }
+    assert_eq!(r[13 + derived].len(), 10);
+    assert_eq!(r[13 + derived][0], "limits");
+    assert_eq!(
+        r[13 + derived][1..]
+            .iter()
+            .map(|s| policy_number(s))
+            .collect::<Vec<_>>(),
+        [
+            1_048_576,
+            64,
+            256,
+            8_388_608,
+            2048,
+            16_777_216,
+            12_582_912,
+            512,
+            1_073_741_824
+        ]
+    );
+    assert_eq!(r[14 + derived].len(), 6);
+    assert_eq!(r[14 + derived][0], "search");
+    assert_eq!(
+        r[14 + derived][1..]
+            .iter()
+            .map(|s| policy_number(s))
+            .collect::<Vec<_>>(),
+        [64, 256, 64, 256, 4096]
+    );
+    assert_eq!(r[15 + derived], ["END"]);
+    profile
+}
+
+fn original_load_ranges(elf: &Elf64<'_>) -> Vec<(u64, u64)> {
+    let mut ranges = Vec::new();
+    for h in elf.segments(SegmentType::Load) {
+        assert!(h.memory_size > 0);
+        let range = (
+            h.vaddr.0 & !4095,
+            end(h.vaddr.0.checked_add(h.memory_size).unwrap()),
+        );
+        assert!(range.0 < range.1 && range.1 <= 1 << 47);
+        assert!(ranges.iter().all(|&prior| disjoint(prior, range)));
+        ranges.push(range);
+    }
+    // The two fixed whole-original identities have exactly these four owners.
+    assert_eq!(
+        ranges,
+        [
+            (0x400000, 0x401000),
+            (0x401000, 0x402000),
+            (0x402000, 0x403000),
+            (0x403000, IMAGE_END)
+        ]
+    );
+    assert_eq!(ranges.iter().map(|&(a, b)| (b - a) / 4096).sum::<u64>(), 37);
+    assert!(ranges.iter().all(|&r| disjoint(r, CARRIER)));
+    ranges
+}
+
+// Independent ceiling construction: keep each possible higher prefix, raise
+// exactly one byte, and fill the lower bytes with their permitted minima.
+// There are four pivot choices, not a scan through the allocation domain.
+#[derive(Clone)]
+struct Displacement {
+    next: u64,
+    digits: [Vec<u8>; 4],
+}
+impl Displacement {
+    fn plain(next: u64) -> Self {
+        Self {
+            next,
+            digits: std::array::from_fn(|_| (0..=255).collect()),
+        }
+    }
+    fn ceiling(&self, lower: u32) -> Option<u32> {
+        if self.digits.iter().any(Vec::is_empty) {
+            return None;
+        }
+        let bytes = lower.to_le_bytes();
+        if (0..4).all(|i| self.digits[i].contains(&bytes[i])) {
+            return Some(lower);
+        }
+        let mut best = None;
+        for pivot in 0..4 {
+            if !(pivot + 1..4).all(|i| self.digits[i].contains(&bytes[i])) {
+                continue;
+            }
+            let Some(raised) = self.digits[pivot]
+                .iter()
+                .copied()
+                .find(|&b| b > bytes[pivot])
+            else {
+                continue;
+            };
+            let mut candidate = bytes;
+            candidate[pivot] = raised;
+            for (i, b) in candidate.iter_mut().enumerate().take(pivot) {
+                *b = self.digits[i][0];
+            }
+            let value = u32::from_le_bytes(candidate);
+            best = Some(best.map_or(value, |old: u32| old.min(value)));
+        }
+        best
+    }
+    fn first(&self, interval: (u64, u64)) -> Option<u64> {
+        if interval.0 >= interval.1 {
+            return None;
+        }
+        let low = (i128::from(interval.0) - i128::from(self.next)).max(i128::from(i32::MIN));
+        let high = (i128::from(interval.1 - 1) - i128::from(self.next)).min(i128::from(i32::MAX));
+        if low > high {
+            return None;
+        }
+        for (a, b) in [(low, high.min(-1)), (low.max(0), high)] {
+            if a > b {
+                continue;
+            }
+            let value = self.ceiling(a as i32 as u32);
+            if let Some(value) = value.filter(|&v| v <= b as i32 as u32) {
+                return u64::try_from(i128::from(self.next) + i128::from(value as i32)).ok();
+            }
+        }
+        None
+    }
+}
+fn original_block(head: &seed::Head) -> (u64, u64) {
+    let function = seed::ORIGINAL_RANGES
+        .iter()
+        .find(|r| r.function == head.function)
+        .unwrap();
+    let stop = function.pc + function.bytes.len() as u64;
+    let mut cuts = BTreeSet::from([function.pc, stop]);
+    for h in seed::HEADS.iter().filter(|h| h.function == head.function) {
+        if h.flow != seed::Flow::Next && h.pc + u64::from(h.length) < stop {
+            cuts.insert(h.pc + u64::from(h.length));
+        }
+        match h.flow {
+            seed::Flow::Jb(t)
+            | seed::Flow::Jae(t)
+            | seed::Flow::Jbe(t)
+            | seed::Flow::Jne(t)
+            | seed::Flow::Jump(t) => {
+                cuts.insert(t);
+            }
+            _ => {}
+        }
+    }
+    let cuts: Vec<_> = cuts.into_iter().collect();
+    let pair = cuts
+        .windows(2)
+        .find(|v| v[0] <= head.pc && head.pc < v[1])
+        .unwrap();
+    (pair[0], pair[1])
+}
+fn pun_displacement(head: &seed::Head, prefixes: usize) -> Option<Displacement> {
+    let pc = head.pc;
+    let len = usize::from(head.length);
+    let function = seed::ORIGINAL_RANGES
+        .iter()
+        .find(|r| r.function == head.function)
+        .unwrap();
+    let block = original_block(head);
+    let stop = pc.checked_add(len as u64)?;
+    let next = pc.checked_add(5 + prefixes as u64)?;
+    let store_len = len.next_power_of_two() as u64;
+    let store = pc.min((pc | 63).checked_sub(store_len - 1)?);
+    if !(1..=4).contains(&len)
+        || prefixes >= len
+        || stop > block.1
+        || next > function.pc + function.bytes.len() as u64
+        || pc / 64 != (stop - 1) / 64
+        || store < function.pc
+        || store.checked_add(store_len)? > function.pc + function.bytes.len() as u64
+    {
+        return None;
+    }
+    let offset = (pc - function.pc) as usize;
+    let free = len - prefixes - 1;
+    let suffix = function.bytes.get(offset + len..offset + 5 + prefixes)?;
+    let mut raw = [0; 4];
+    raw[free..].copy_from_slice(suffix);
+    // The producer/core require the complete pun window to be representable
+    // before clipping it to the caller's declared domain.
+    let low = u64::try_from(i128::from(next) + i128::from(i32::from_le_bytes(raw))).ok()?;
+    low.checked_add(1_u64 << (free * 8))?;
+    let mut rule = Displacement::plain(next);
+    for (digit, byte) in rule.digits.iter_mut().zip(raw).skip(free) {
+        *digit = vec![byte];
+    }
+    Some(rule)
+}
+fn original_displacements(head: &seed::Head) -> Vec<Displacement> {
+    let mut rules: Vec<_> = pun_displacement(head, 0).into_iter().collect();
+    let block = original_block(head);
+    let function_heads: Vec<_> = seed::HEADS
+        .iter()
+        .filter(|h| h.function == head.function)
+        .collect();
+    let mut physical: Vec<_> = function_heads
+        .iter()
+        .copied()
+        .filter(|h| block.0 <= h.pc && h.pc < block.1 && h.pc <= head.pc && head.pc - h.pc <= 64)
+        .collect();
+    physical.sort_by_key(|h| (h.pc != head.pc, h.pc % 64 > 56, head.pc - h.pc));
+    for physical in physical.into_iter().take(64) {
+        let needed = (physical.pc + 5).max(head.pc + u64::from(head.length));
+        let window: Vec<_> = function_heads
+            .iter()
+            .copied()
+            .filter(|h| physical.pc <= h.pc && h.pc < needed && h.pc < block.1)
+            .collect();
+        let stop = window
+            .last()
+            .map_or(physical.pc, |h| h.pc + u64::from(h.length));
+        if stop < needed
+            || stop > block.1
+            || stop - physical.pc > 256
+            || window.iter().any(|h| {
+                matches!(h.flow, seed::Flow::Call(_))
+                    || (h.flow != seed::Flow::Next && h.pc + u64::from(h.length) != stop)
+            })
+        {
+            continue;
+        }
+        let mut rule = Displacement::plain(physical.pc + 5);
+        for h in &function_heads {
+            if physical.pc < h.pc && h.pc < rule.next {
+                rule.digits[(h.pc - physical.pc - 1) as usize] = ENTRY_OPCODES.to_vec();
+            }
+        }
+        rules.push(rule);
+    }
+    for prefixes in 1..usize::from(head.length).min(4) {
+        rules.extend(pun_displacement(head, prefixes));
+    }
+    rules
+}
+fn vacant_permit(
+    occupied: &[(u64, u64)],
+    rule: &Displacement,
+    reach: (u64, u64),
+) -> Option<Permit> {
+    let mut obstacles = occupied.to_vec();
+    obstacles.sort_unstable();
+    obstacles.push((DOMAIN.1, DOMAIN.1));
+    let mut left = DOMAIN.0;
+    for (a, b) in obstacles {
+        if a > left && a - left >= SLOT {
+            // Last preferred byte is in the last page whose entire 64KiB
+            // reservation fits. The preferred PC need not be the page base.
+            let last_page = a - SLOT;
+            if let Some(pc) = rule.first((left.max(reach.0), (last_page + 4096).min(reach.1))) {
+                let start = pc & !4095;
+                return Some(Permit {
+                    range: (start, start + SLOT),
+                    preferred: pc,
+                });
+            }
+        }
+        left = left.max(b);
+    }
+    None
+}
+fn common_reach(heads: impl Iterator<Item = u64>) -> (u64, u64) {
+    let (mut low, mut high) = (0_i128, 1_i128 << 47);
+    for pc in heads {
+        let next = i128::from(pc.checked_add(5).unwrap());
+        low = low.max(next + i128::from(i32::MIN));
+        high = high.min(next + i128::from(i32::MAX) + 1);
+    }
+    assert!(low < high);
+    (u64::try_from(low).unwrap(), u64::try_from(high).unwrap())
+}
+fn derived_permits(original: &[(u64, u64)], pcs: &[u64]) -> Vec<[Permit; 2]> {
+    assert!(!pcs.is_empty() && pcs.len() <= 64 && pcs.windows(2).all(|v| v[0] < v[1]));
+    let mut occupied = original.to_vec();
+    occupied.push(CARRIER);
+    assert!(
+        occupied
+            .iter()
+            .all(|&(a, b)| DOMAIN.0 <= a && a < b && b <= DOMAIN.1)
+    );
+    let blank = Permit {
+        range: (0, 0),
+        preferred: 0,
+    };
+    let mut permits = vec![[blank; 2]; pcs.len()];
+    let mut pending = Vec::new();
+    for (i, &pc) in pcs.iter().enumerate() {
+        let h = seed::HEADS.iter().find(|h| h.pc == pc).unwrap();
+        let found = original_displacements(h)
+            .iter()
+            .find_map(|rule| vacant_permit(&occupied, rule, DOMAIN));
+        if let Some(permit) = found {
+            occupied.push(permit.range);
+            permits[i][0] = permit;
+        } else {
+            pending.push(i);
+        }
+    }
+    // Neutral placement never claims that B2/B1/T1 or a compound tactic fits.
+    // In particular ID15 stays selected even when its original patterns miss.
+    for i in pending {
+        let pc = pcs[i];
+        let permit = vacant_permit(
+            &occupied,
+            &Displacement::plain(pc + 5),
+            common_reach([pc].into_iter()),
+        )
+        .expect("complete neutral selected slot required");
+        occupied.push(permit.range);
+        permits[i][0] = permit;
+    }
+    for (i, &pc) in pcs.iter().enumerate() {
+        let h = seed::HEADS.iter().find(|h| h.pc == pc).unwrap();
+        let reach = common_reach(
+            seed::HEADS
+                .iter()
+                .filter(|v| v.function == h.function)
+                .map(|v| v.pc),
+        );
+        let permit = vacant_permit(&occupied, &Displacement::plain(pc + 5), reach)
+            .expect("complete neutral victim slot required");
+        occupied.push(permit.range);
+        permits[i][1] = permit;
+    }
+    for (index, &range) in occupied.iter().enumerate() {
+        assert!(
+            occupied[..index]
+                .iter()
+                .all(|&prior| disjoint(prior, range))
+        );
+    }
+    permits
+}
+
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
     assert_eq!(
@@ -585,6 +1052,22 @@ fn main() {
         })
         .collect();
     let _ = seed::authenticate(&instructions.bytes, &ranges).unwrap();
+    let source_elf = Elf64::parse(
+        &original.bytes,
+        ParseLimits {
+            max_program_headers: 512,
+        },
+    )
+    .unwrap();
+    source_elf.check_load_page_congruence(4096).unwrap();
+    let original_ranges = original_load_ranges(&source_elf);
+    let profile = policy_profile(
+        &inventory_inputs["policy.txt"].bytes,
+        &original.bytes,
+        compact.as_bytes(),
+        provenance[0],
+        &source_elf,
+    );
     let selected: BTreeMap<_, _> = s.sites.iter().map(|x| (x.pc, x)).collect();
     assert_eq!(selected.len(), s.sites.len());
     let jump: BTreeSet<_> = seed::HEADS
@@ -613,10 +1096,19 @@ fn main() {
             "heap-write"
         }
     );
+    let derived = if profile == PlacementProfile::OriginalDerivedV1 {
+        Some(derived_permits(
+            &original_ranges,
+            &s.sites.iter().map(|x| x.pc).collect::<Vec<_>>(),
+        ))
+    } else {
+        None
+    };
     for (index, x) in s.sites.iter().enumerate() {
         let ordinal = seed::HEADS.iter().position(|h| h.pc == x.pc).unwrap();
         let head = &seed::HEADS[ordinal];
         assert_eq!(x.id, ordinal as u64 + 1);
+        assert_eq!((x.block.start(), x.block.end()), original_block(head));
         assert_eq!(x.length, head.length);
         assert_eq!(x.hook, 2);
         assert_eq!(x.completeness, EntryCompleteness::Complete);
@@ -671,21 +1163,36 @@ fn main() {
                 .map(|h| (h.pc, false))
                 .collect::<Vec<_>>()
         );
-        for (base, a) in [
-            (0x10000000_u64, &x.selected_allocation),
-            (0x18000000, &x.victim_allocation),
-        ] {
-            let address = base + index as u64 * 65536;
-            assert_eq!(a.ranges.len(), 1);
-            assert_eq!(
-                (a.ranges[0].start(), a.ranges[0].end()),
-                (address, address + 65536)
-            );
-            assert_eq!(a.preferred_address, Some(address));
-            assert_eq!(
-                (a.max_candidates, a.max_mappings, a.max_mapped_bytes),
-                (65536, 1, 65536)
-            );
+        if let Some(permits) = &derived {
+            for (a, expected) in [&x.selected_allocation, &x.victim_allocation]
+                .into_iter()
+                .zip(permits[index])
+            {
+                assert_eq!(a.ranges.len(), 1);
+                assert_eq!((a.ranges[0].start(), a.ranges[0].end()), expected.range);
+                assert_eq!(a.preferred_address, Some(expected.preferred));
+                assert_eq!(
+                    (a.max_candidates, a.max_mappings, a.max_mapped_bytes),
+                    (65536, 1, 65536)
+                );
+            }
+        } else {
+            for (base, a) in [
+                (0x10000000_u64, &x.selected_allocation),
+                (0x18000000, &x.victim_allocation),
+            ] {
+                let address = base + index as u64 * 65536;
+                assert_eq!(a.ranges.len(), 1);
+                assert_eq!(
+                    (a.ranges[0].start(), a.ranges[0].end()),
+                    (address, address + 65536)
+                );
+                assert_eq!(a.preferred_address, Some(address));
+                assert_eq!(
+                    (a.max_candidates, a.max_mappings, a.max_mapped_bytes),
+                    (65536, 1, 65536)
+                );
+            }
         }
     }
     let complete = Bound::read(&directory.join("COMPLETE"), 1024, false);
@@ -901,7 +1408,12 @@ fn main() {
         {
             let (lo, hi, align) = (n(a[3]), n(a[4]), n(a[5]));
             assert!(lo < hi && align.is_power_of_two() && lo % align == 0 && hi <= 1 << 47);
-            assert!(lo >= IMAGE_END);
+            assert!(
+                original_ranges
+                    .iter()
+                    .all(|&range| disjoint(range, (lo, hi)))
+            );
+            assert!(disjoint(CARRIER, (lo, hi)));
             assert!(allocations.iter().all(|&(_, a, b)| hi <= a || b <= lo));
             let site = s.sites.iter().find(|x| x.id == n(step[1])).unwrap();
             assert!(
@@ -1417,6 +1929,7 @@ fn main() {
     let mut pages = BTreeSet::new();
     let mut added = 0;
     let mut carrier_count = 0;
+    let mut original_loads_seen = BTreeSet::new();
     for load in elf.segments(SegmentType::Load) {
         assert!(matches!(load.flags.0, 4..=6));
         let lo = load.vaddr.0 & !4095;
@@ -1425,13 +1938,18 @@ fn main() {
         for page in (lo..hi).step_by(4096) {
             assert!(pages.insert(page));
         }
-        if lo < IMAGE_END {
-            let same = old
-                .segments(SegmentType::Load)
-                .filter(|x| x.vaddr == load.vaddr)
-                .collect::<Vec<_>>();
+        let same = old
+            .segments(SegmentType::Load)
+            .filter(|x| x.vaddr == load.vaddr)
+            .collect::<Vec<_>>();
+        if !same.is_empty() {
             assert_eq!(same.len(), 1);
             let x = same[0];
+            assert!(original_loads_seen.insert(x.index));
+            assert_eq!(
+                (load.raw_type, load.physical_address),
+                (x.raw_type, x.physical_address)
+            );
             assert_eq!(
                 (
                     load.offset,
@@ -1443,13 +1961,28 @@ fn main() {
                 (x.offset, x.file_size, x.memory_size, x.flags, x.alignment)
             );
         } else {
+            assert!(
+                lo < hi
+                    && original_ranges
+                        .iter()
+                        .all(|&range| disjoint(range, (lo, hi)))
+            );
             added += (hi - lo) / 4096;
             if lo == s.carrier_pc {
                 assert_eq!(load.flags.0, 4);
+                assert!(CARRIER.0 == lo && hi <= CARRIER.1);
                 carrier_count += 1;
             } else {
                 assert_eq!(load.flags.0, 5);
-                assert!(images.iter().any(|i| i.address & !4095 == lo));
+                assert!(disjoint(CARRIER, (lo, hi)));
+                assert_eq!(images.iter().filter(|i| i.address & !4095 == lo).count(), 1);
+                assert_eq!(
+                    allocations
+                        .iter()
+                        .filter(|&&(_, a, b)| a <= lo && hi <= b)
+                        .count(),
+                    1
+                );
             }
         }
         writeln!(
@@ -1459,6 +1992,12 @@ fn main() {
         )
         .unwrap();
     }
+    assert_eq!(
+        original_loads_seen,
+        old.segments(SegmentType::Load)
+            .map(|x| x.index)
+            .collect::<BTreeSet<_>>()
+    );
     assert_eq!(carrier_count, 1);
     assert!(added <= 2048);
     assert_eq!(n(one(&r, "new_load_pages")[1]), added);
@@ -1569,4 +2108,250 @@ fn main() {
     println!(
         "core null witness complete: heads=87 normal=174 faults=2 execution=false qualification_complete=false"
     );
+}
+
+#[cfg(test)]
+mod placement_tests {
+    use super::*;
+
+    // Synthetic metadata fixture only. This is not either admitted application
+    // and cannot pass main's whole-original identity gate.
+    fn policy_fixture(derived: bool) -> (Vec<u8>, Vec<u8>) {
+        let mut b = vec![0; 0x24190];
+        b[..7].copy_from_slice(b"\x7fELF\x02\x01\x01");
+        b[16..18].copy_from_slice(&2_u16.to_le_bytes());
+        b[18..20].copy_from_slice(&62_u16.to_le_bytes());
+        b[20..24].copy_from_slice(&1_u32.to_le_bytes());
+        b[24..32].copy_from_slice(&0x401840_u64.to_le_bytes());
+        b[32..40].copy_from_slice(&64_u64.to_le_bytes());
+        b[52..54].copy_from_slice(&64_u16.to_le_bytes());
+        b[54..56].copy_from_slice(&56_u16.to_le_bytes());
+        b[56..58].copy_from_slice(&4_u16.to_le_bytes());
+        for (index, (offset, pc, fs, ms, flags)) in [
+            (0_u64, 0x400000_u64, 0x8b0_u64, 0x8b0_u64, 4_u32),
+            (0x1000, 0x401000, 0xa51, 0xa51, 5),
+            (0x2000, 0x402000, 0xe1c, 0xe1c, 4),
+            (0x3e00, 0x403e00, 0x20358, 0x20390, 6),
+        ]
+        .into_iter()
+        .enumerate()
+        {
+            let at = 64 + index * 56;
+            b[at..at + 4].copy_from_slice(&1_u32.to_le_bytes());
+            b[at + 4..at + 8].copy_from_slice(&flags.to_le_bytes());
+            for (i, value) in [offset, pc, pc, fs, ms, 4096].into_iter().enumerate() {
+                b[at + 8 + i * 8..at + 16 + i * 8].copy_from_slice(&value.to_le_bytes());
+            }
+        }
+        b[0x1100..0x1a43].fill(0x90);
+        for r in seed::ORIGINAL_RANGES {
+            b[r.file_offset as usize..r.file_offset as usize + r.bytes.len()]
+                .copy_from_slice(r.bytes);
+        }
+        b[0x1960] = 0xc3;
+        let mut p = format!(
+            "LI2COMMON {}\noriginal {}\ntarget {}\nprovenance {}\ntext 0x401100 4352 2371 {}\n",
+            if derived { 2 } else { 1 },
+            hash(&b),
+            hash(b"target fxsave64\n"),
+            "a".repeat(64),
+            hash(&b[0x1100..0x1a43])
+        );
+        for (r, name) in
+            seed::ORIGINAL_RANGES
+                .iter()
+                .zip(["li2_array_store", "li2_sift_down", "li2_heap_sort"])
+        {
+            writeln!(
+                p,
+                "function {name} {} {} {}",
+                r.pc,
+                r.bytes.len(),
+                hash(r.bytes)
+            )
+            .unwrap();
+        }
+        writeln!(
+            p,
+            "hook 2 {HOOK} 1 {}\nhook 3 4200816 211 {}\ncarrier 0x20000000",
+            hash(&[0xc3]),
+            hash(&b[0x1970..0x1a43])
+        )
+        .unwrap();
+        p.push_str(if derived {
+            "placement original-derived-v1 65536 1073741824\narena selected 65536 65536\narena victim 65536 65536\n"
+        } else {
+            "arena selected 0x10000000 65536 65536 65536\narena victim 0x18000000 65536 65536 65536\n"
+        });
+        p.push_str("limits 1048576 64 256 8388608 2048 16777216 12582912 512 1073741824\nsearch 64 256 64 256 4096\nEND\n");
+        (b, p.into_bytes())
+    }
+
+    #[test]
+    fn complete_policy_versions_preserve_caps_and_authenticate_original_owners() {
+        for derived in [false, true] {
+            let (original, policy) = policy_fixture(derived);
+            let elf = Elf64::parse(
+                &original,
+                ParseLimits {
+                    max_program_headers: 512,
+                },
+            )
+            .unwrap();
+            let provenance = "a".repeat(64);
+            let verify =
+                |p: &[u8]| policy_profile(p, &original, b"target fxsave64\n", &provenance, &elf);
+            assert_eq!(
+                verify(&policy),
+                if derived {
+                    PlacementProfile::OriginalDerivedV1
+                } else {
+                    PlacementProfile::FixedV1
+                }
+            );
+            let policy = String::from_utf8(policy).unwrap();
+            // Leading zeroes keep the offset's numeric value unchanged, so
+            // these records isolate the exact byte bound from other fields.
+            let boundary = policy.replacen(
+                "text 0x401100 4352 ",
+                &format!("text 0x401100 {}4352 ", "0".repeat(65536 - policy.len())),
+                1,
+            );
+            assert_eq!(boundary.len(), 65536);
+            assert_eq!(verify(boundary.as_bytes()), verify(policy.as_bytes()));
+            let over_bound = boundary.replacen("text 0x401100 ", "text 0x401100 0", 1);
+            assert_eq!(over_bound.len(), 65537);
+            let mut bad = vec![
+                policy.replace("original ", "unexpected "),
+                policy.replace(&hash(&original), &"0".repeat(64)),
+                policy.replace(&hash(b"target fxsave64\n"), &"0".repeat(64)),
+                policy.replace("text 0x401100 4352 2371", "text 0x401100 4353 2371"),
+                policy.replace("hook 3 4200816 211", "hook 3 4200817 211"),
+                policy.replace("search 64 256 64 256 4096", "search 65 256 64 256 4096"),
+                policy.replace("END\n", "END\nextra\n"),
+            ];
+            if derived {
+                bad.extend([
+                    policy.replace("original-derived-v1", "unbounded"),
+                    policy.replace("65536 1073741824", "65537 1073741824"),
+                    policy.replace("arena selected 65536 65536", "arena selected 65536 65537"),
+                    policy.replace("arena victim 65536 65536", "arena victim 131072 65536"),
+                ]);
+            } else {
+                bad.push(policy.replace("arena selected 0x10000000", "arena selected 0x10010000"));
+            }
+            bad.extend([
+                policy.replacen("LI2COMMON ", "LI2COMMON\t", 1),
+                policy.replacen("LI2COMMON ", "LI2COMMON  ", 1),
+                format!(" {policy}"),
+                policy.replacen('\n', " \n", 1),
+                policy.replace('\n', "\r\n"),
+                policy.strip_suffix('\n').unwrap().to_owned(),
+                over_bound,
+            ]);
+            for candidate in bad {
+                assert_ne!(candidate, policy);
+                assert!(std::panic::catch_unwind(|| verify(candidate.as_bytes())).is_err());
+            }
+        }
+    }
+
+    #[test]
+    fn four_pivot_ceiling_matches_bounded_bruteforce_and_signed_edges() {
+        for choices in [vec![6, 7, 0xce], vec![0, 127, 255], vec![255]] {
+            let mut rule = Displacement::plain(0x8000_0000);
+            rule.digits[0] = choices;
+            rule.digits[1] = vec![0, 1, 3, 127, 255];
+            rule.digits[2] = vec![0];
+            rule.digits[3] = vec![0];
+            for lower in (0..65536_u32).step_by(251) {
+                let expected = (lower..65536).find(|v| {
+                    v.to_le_bytes()
+                        .iter()
+                        .enumerate()
+                        .all(|(i, b)| rule.digits[i].contains(b))
+                });
+                assert_eq!(rule.ceiling(lower), expected);
+            }
+        }
+        let plain = Displacement::plain(0x8000_0000);
+        assert_eq!(plain.first((0, 1)), Some(0));
+        assert_eq!(plain.first((0xffff_ffff, 0x1_0000_0000)), Some(0xffff_ffff));
+        assert_eq!(plain.first((0x1_0000_0000, 0x1_0000_0001)), None);
+        let all_entries = Displacement {
+            next: 0x4000_0000,
+            digits: std::array::from_fn(|_| ENTRY_OPCODES.to_vec()),
+        };
+        assert_eq!(all_entries.first((0, 0x8000_0000)), Some(0x0e06_0606));
+    }
+
+    #[test]
+    fn original_blocks_all_sites_and_heap_permit_have_independent_expected_coordinates() {
+        let (original, _) = policy_fixture(true);
+        let elf = Elf64::parse(
+            &original,
+            ParseLimits {
+                max_program_headers: 512,
+            },
+        )
+        .unwrap();
+        let owners = original_load_ranges(&elf);
+        let table = rows(seed::EXPECTED_INSTRUCTIONS);
+        assert_eq!(table.len(), 88);
+        assert_eq!((seed::HEAD_COUNT, seed::CASE_COUNT), (87, 176));
+        for (h, row) in seed::HEADS.iter().zip(table.into_iter().skip(1)) {
+            assert_eq!(
+                original_block(h),
+                (policy_number(row[9]), policy_number(row[10]))
+            );
+        }
+        let heap = derived_permits(&owners, &[0x401840]);
+        assert_eq!(
+            heap,
+            [[
+                Permit {
+                    range: (0x0640_1000, 0x0641_1000),
+                    preferred: 0x0640_1845
+                },
+                Permit {
+                    range: (0x10000, 0x20000),
+                    preferred: 0x10000
+                },
+            ]]
+        );
+        let pcs = [
+            0x40186a, 0x40186c, 0x401889, 0x4018a6, 0x4018b4, 0x4018c4, 0x4018d4, 0x401905,
+            0x401946,
+        ];
+        assert_eq!(
+            seed::HEADS
+                .iter()
+                .filter(|h| matches!(
+                    h.flow,
+                    seed::Flow::Jb(_)
+                        | seed::Flow::Jae(_)
+                        | seed::Flow::Jbe(_)
+                        | seed::Flow::Jne(_)
+                        | seed::Flow::Jump(_)
+                ))
+                .map(|h| h.pc)
+                .collect::<Vec<_>>(),
+            pcs
+        );
+        let result = derived_permits(&owners, &pcs);
+        assert_eq!(result.len(), 9);
+        let unplaceable = seed::HEADS.iter().find(|h| h.pc == 0x40186c).unwrap();
+        let rules = original_displacements(unplaceable);
+        assert_eq!(rules.len(), 1);
+        assert!(rules.iter().all(|r| r.first(DOMAIN).is_none()));
+        // Its neutral slot remains a required input; this does not assert a
+        // successful tactic/candidate or remove the independent ID15 refusal.
+        for pair in result {
+            for permit in pair {
+                assert_eq!(permit.range.1 - permit.range.0, SLOT);
+                assert!(permit.range.0 <= permit.preferred && permit.preferred < permit.range.1);
+                assert!(owners.iter().all(|&r| disjoint(r, permit.range)));
+            }
+        }
+    }
 }
