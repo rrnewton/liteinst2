@@ -361,6 +361,7 @@ fn overlapping_later_original_window_refuses_complete_selection_and_keeps_first_
                 "resumes 1 ",
                 "search 1 ",
                 "allocation 1 ",
+                "hook 7 ",
             ]
             .iter()
             .any(|prefix| line.starts_with(prefix))
@@ -375,13 +376,51 @@ fn overlapping_later_original_window_refuses_complete_selection_and_keeps_first_
         standalone.files()["image-0000.bin"]
     );
     let prior_ledger = std::str::from_utf8(&standalone.files()["plan-ledger.tsv"]).unwrap();
-    let without_selection = |text: &str| {
-        text.lines()
-            .filter(|line| !line.starts_with("selection_sha256\t"))
-            .map(str::to_owned)
-            .collect::<Vec<_>>()
-    };
-    assert_eq!(without_selection(ledger), without_selection(prior_ledger));
+    // The control has one fewer declared hook and its corresponding source
+    // dependency. Account for exactly those input differences, then compare
+    // every byte of the retained core ledger, including the first plan.
+    let mut expected_core = ledger.to_owned();
+    for (from, to) in [
+        (
+            format!(
+                "selection_sha256\t{}\n",
+                hex(&ContentId::of(manifest.as_bytes()).0)
+            ),
+            format!(
+                "selection_sha256\t{}\n",
+                hex(&ContentId::of(first_only.as_bytes()).0)
+            ),
+        ),
+        (
+            format!("hook\t7\t{HOOK}\t1\t{}\n", hex(&ContentId::of(&[0xc3]).0)),
+            String::new(),
+        ),
+        (
+            format!(
+                "original-file-dependency\t{}\t{}\n",
+                HOOK - BASE,
+                HOOK - BASE + 1
+            ),
+            String::new(),
+        ),
+    ] {
+        assert_eq!(expected_core.matches(&from).count(), 1);
+        expected_core = expected_core.replacen(&from, &to, 1);
+    }
+    // A complete control additionally has a carrier ledger; the refused
+    // two-site product must have no such extension or executable candidate.
+    assert!(!ledger.contains("CARRIER-EXTENSION"));
+    assert_eq!(expected_core, prior_ledger);
+    assert_eq!(
+        product.files()["ledger.tsv"],
+        product.files()["plan-ledger.tsv"]
+    );
+    let complete_ledger = std::str::from_utf8(&standalone.files()["ledger.tsv"]).unwrap();
+    let (prior_core, carrier) = complete_ledger
+        .split_once("CARRIER-EXTENSION\t1\n")
+        .unwrap();
+    assert!(carrier.starts_with("candidate_sha256\t"));
+    assert_eq!(prior_ledger, prior_core);
 }
 
 #[test]
