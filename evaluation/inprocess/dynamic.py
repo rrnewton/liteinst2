@@ -17,7 +17,8 @@ import time
 from run import Refusal, file_digest, hardware, invalid_constant, output, pairs, require
 
 SOURCE_FILES = tuple('tools/page-mode/' + name for name in
-                     ('preload.c', 'gateway.S', 'probe_api.h', 'probe.c', 'build.sh', 'README.md'))
+                     ('preload.c', 'gateway.S', 'probe_api.h', 'probe.c', 'build.sh', 'README.md',
+                      'lifecycle.c', 'lifecycle.h', 'lifecycle_probe.c', 'lifecycle_dso.c', 'LIFECYCLE.md'))
 METRIC_KEYS = {'version', 'scope', 'source_patches', 'status', 'failure_code', 'failure_detail_abs',
                'gated_pages', 'main_pages', 'nx_faults', 'nx_service_ns_total', 'nx_service_ns_max',
                'cpuid_traps', 'rdtsc_traps', 'rdtscp_traps', 'selfcheck_cpuid', 'selfcheck_rdtsc',
@@ -33,7 +34,7 @@ BOUNDS = {'cpu_seconds': 3, 'address_space_bytes': 256 * 1024**2,
           'capture_file_bytes': 1024**2, 'wall_seconds': 10}
 
 
-def invoke(argv, environment, cwd, private, label, cpu, build=False):
+def invoke(argv, environment, cwd, private, label, cpu, build=False, pass_fds=()):
     stdout = private / (label + '.stdout')
     stderr = private / (label + '.stderr')
     seconds = 60 if build else BOUNDS['wall_seconds']
@@ -86,7 +87,7 @@ def invoke(argv, environment, cwd, private, label, cpu, build=False):
     try:
         with stdout.open('xb') as out, stderr.open('xb') as err:
             process = subprocess.Popen(argv, env=environment, cwd=cwd, stdout=out, stderr=err,
-                                       start_new_session=True, preexec_fn=limits)
+                                       start_new_session=True, preexec_fn=limits, pass_fds=pass_fds)
             pidfd = os.pidfd_open(process.pid)
             # Event-driven exit readiness avoids timed-wait polling in measurements.
             if exited(seconds):

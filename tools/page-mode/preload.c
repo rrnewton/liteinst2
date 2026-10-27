@@ -8,6 +8,7 @@
 #include <stddef.h>
 #include <stdatomic.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <sys/auxv.h>
 #include <sys/mman.h>
 #include <sys/syscall.h>
@@ -15,6 +16,7 @@
 #include <time.h>
 #include <unistd.h>
 #include "probe_api.h"
+#include "lifecycle.h"
 
 #define PAGE 4096UL
 #define MAX_RANGES 256
@@ -64,6 +66,11 @@ void li2_dynamic_snapshot(struct li2_dynamic_counters *out) {
     out->forwarded_syscalls = atomic_load_explicit(&forwarded, memory_order_relaxed);
 }
 
+__attribute__((visibility("default")))
+void li2_dynamic_lifecycle_snapshot(struct li2_lifecycle_counts *out) { li2_lifecycle_snapshot(out); }
+__attribute__((visibility("default")))
+int li2_dynamic_lifecycle_page(uintptr_t address,struct li2_lifecycle_page_view *out) { return li2_lifecycle_query(address,out); }
+
 static void activate(void) __attribute__((constructor));
 static void fail(unsigned code, long detail) __attribute__((noreturn));
 
@@ -78,7 +85,7 @@ static uint64_t now(void) {
     return (uint64_t)t.tv_sec * 1000000000ULL + (uint64_t)t.tv_nsec;
 }
 
-struct writer { char bytes[2048]; size_t used; };
+struct writer { char bytes[4096]; size_t used; };
 static void put(struct writer *out, char value) {
     if (out->used == sizeof(out->bytes)) {
         const char failure[] = "LI2_DYNAMIC report_overflow\n";
@@ -136,11 +143,32 @@ static void report(int status, unsigned reason, long detail) {
         field(&line, ",\"active_ns\":", ended - started_ns);
     else
         text(&line, ",\"active_ns\":null");
+    if (li2_lifecycle_enabled()) {
+        struct li2_lifecycle_counts lc;
+        li2_lifecycle_snapshot(&lc);
+        field(&line, ",\"lifecycle_transactions\":", lc.transactions);
+        field(&line, ",\"lifecycle_mappings\":", lc.mappings);
+        field(&line, ",\"lifecycle_generations\":", lc.generations);
+        field(&line, ",\"lifecycle_retired\":", lc.retired);
+        field(&line, ",\"lifecycle_admissions\":", lc.admissions);
+        field(&line, ",\"lifecycle_kernel_errors\":", lc.kernel_errors);
+        field(&line, ",\"lifecycle_partial_errors\":", lc.partial_errors);
+        field(&line, ",\"lifecycle_materialized\":", lc.materialized);
+        field(&line, ",\"lifecycle_sync_core\":", lc.sync_core);
+        field(&line, ",\"lifecycle_live_pages\":", lc.live_pages);
+        field(&line, ",\"lifecycle_records\":", lc.retained_records);
+        field(&line, ",\"lifecycle_last_operation\":", lc.last_operation);
+        field(&line, ",\"lifecycle_last_syscall\":", lc.last_syscall);
+        field(&line, ",\"lifecycle_last_errno\":", lc.last_result_negative ? lc.last_result_abs : 0);
+        field(&line, ",\"lifecycle_last_result_negative\":", lc.last_result_negative);
+        field(&line, ",\"lifecycle_last_phase\":", lc.last_phase);
+    }
     text(&line, "}\n");
     (void)raw(SYS_write, report_fd, (long)line.bytes, line.used, 0, 0, 0);
 }
 
 static void fail(unsigned code, long detail) {
+    li2_lifecycle_abort();
     report(125, code, detail);
     (void)raw(SYS_exit_group, 125, 0, 0, 0, 0, 0);
     __builtin_trap();
@@ -153,7 +181,7 @@ static int covers(const struct range *r, uintptr_t first, size_t bytes) {
 static int known_code(uintptr_t first, size_t bytes) {
     for (size_t i = 0; i < executable_count; ++i)
         if (covers(&executable[i], first, bytes)) return 1;
-    return 0;
+    return li2_lifecycle_known_code(first, bytes);
 }
 
 static int intersects(uintptr_t first, size_t bytes) {
@@ -268,6 +296,18 @@ static void dispatch(siginfo_t *info, ucontext_t *uc) {
         fail(21, n);
     }
     if (n == SYS_close && a == report_fd) fail(31, n);
+    long arguments[6] = {a,b,c,d,e,f}, lifecycle_result;
+    li2_lifecycle_before_other(n, arguments);
+    if (li2_lifecycle_dispatch(n, arguments, &lifecycle_result)) {
+        if (n == SYS_mmap) ++mmap_calls;
+        if (n == SYS_mprotect) ++mprotect_calls;
+        if (n == SYS_munmap) ++munmap_calls;
+        ++forwarded;
+        g[REG_RAX] = lifecycle_result;
+        g[REG_RCX] = (greg_t)next;
+        g[REG_R11] = g[REG_EFL];
+        return;
+    }
     if (n == SYS_mmap) {
         if ((c & PROT_EXEC) || (d & (MAP_FIXED | MAP_FIXED_NOREPLACE))) fail(22, n);
         ++mmap_calls;
@@ -311,6 +351,13 @@ static void fault(siginfo_t *info, ucontext_t *uc) {
             long result = raw(SYS_mprotect, page, PAGE, PROT_READ | PROT_EXEC, 0, 0, 0);
             if (result != 0) fail(42, result);
             pages[i].admitted = 1;
+            ++nx_faults;
+            uint64_t elapsed = now() - begin;
+            nx_total_ns += elapsed;
+            if (elapsed > nx_max_ns) nx_max_ns = elapsed;
+            return;
+        }
+        if (li2_lifecycle_admit(pc, address)) {
             ++nx_faults;
             uint64_t elapsed = now() - begin;
             nx_total_ns += elapsed;
@@ -399,6 +446,22 @@ static void activate(void) {
     if (raw(SYS_arch_prctl, ARCH_GET_CPUID, 0, 0, 0, 0, 0) != 1) fail(76, 0);
     int tsc_mode = 0;
     if (raw(SYS_prctl, PR_GET_TSC, (long)&tsc_mode, 0, 0, 0, 0) != 0 || tsc_mode != PR_TSC_ENABLE) fail(77, 0);
+    const char *lifecycle_fd = getenv("LI2_LIFECYCLE_FD");
+    if (lifecycle_fd) {
+        unsigned fd = 0;
+        if (!*lifecycle_fd) fail(84, 0);
+        for (const char *p = lifecycle_fd; *p; ++p) {
+            if (*p < '0' || *p > '9' || fd > 100000) fail(84, 0);
+            fd = fd * 10 + (unsigned)(*p - '0');
+        }
+        const struct li2_lifecycle_hooks callbacks = {raw, fail, intersects};
+        li2_lifecycle_initialize((int)fd, &callbacks);
+        const char *fault_control = getenv("LI2_LIFECYCLE_FAIL_AFTER_MPROTECT");
+        if (fault_control) {
+            if (fault_control[0] != '1' || fault_control[1]) fail(85, 0);
+            li2_lifecycle_fault_control(1);
+        }
+    }
     uint32_t native_a = 0, native_b, native_c = 0, native_d;
     __asm__ volatile("cpuid" : "+a"(native_a), "=b"(native_b), "+c"(native_c), "=d"(native_d) :: "memory");
     long native_pid = raw(SYS_getpid, 0, 0, 0, 0, 0, 0);
