@@ -25,7 +25,7 @@ and its output names remain unchanged. A caller can explicitly use
 and the existing sealed-namespace `exec-loader` command with that carrier.
 
 Canonical NOP and register/immediate MOV retain their original typed owner.
-A separate owner executes a closed set of 544 decoder instruction codes at
+A separate owner executes a closed set of 564 decoder instruction codes at
 their original addresses: integer arithmetic and memory access, stack operations,
 near branches/CALL/RET, integer shifts/rotates, multiply/divide, conditional
 results, bit operations/exchanges, and selected SSE2 data operations. The CPU supplies the
@@ -276,7 +276,7 @@ All other prefix restrictions and owner predicates remain. Real dynamically
 linked applications still stop at unsupported instructions, as recorded in
 the evaluation receipts.
 
-The register build shares physical `/proc/self/maps` rows only within one
+Both selected builds share physical `/proc/self/maps` rows only within one
 uninterrupted handler phase. Each query retains its ownership, seals,
 permissions and source-byte checks. Execution, application syscalls, unwhitelisted raw calls,
 nested events and failures invalidate the rows; later handlers acquire fresh rows.
@@ -286,3 +286,17 @@ CPU. The connected and first/hit measurement scripts exercise the production
 bridge separately. Exact revisions, commands and numeric results are recorded
 in `evaluation/inprocess/RESULTS.md`; finite timing results do not establish
 real-program completion.
+
+Canonical RDSSPQ r64 uses a separate observed-state entry. Two adjacent actual
+RDSSPQ reads must preserve distinct destination seeds before either source page
+opens. The status syscall remains diagnostic; errors do not grant permission.
+The original strict query entry remains available and retains its own refusal
+controls. Run `page_selected_rdssp_observed.py --expect-revision REVISION` on
+one reserved CPU for all 16 destinations, full native/TF state, and five failed
+pre-open controls. This qualifies only observed disabled shadow stacks, not
+enabled-CET execution or general CET support.
+
+`page_selected_sse2_movq.py` qualifies nine canonical MOVQ r64/m64 encodings,
+including the observed loader transfer, with full-state and genuine fault
+comparisons. The earlier MOVD suite explicitly retains and positively checks
+the two newly admitted neighbors; its other refusal cases remain.
