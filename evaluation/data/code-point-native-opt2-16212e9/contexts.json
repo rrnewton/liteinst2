@@ -1,0 +1,979 @@
+[
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${OPT2_ACTIVATION}/run.py",
+        "--binding",
+        "${OPT2_ACTIVATION}/binding.json",
+        "--binding-sha256",
+        "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+        "--raw",
+        "${OPT2_RAW}"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "bound_scope": "Whole fixed campaign including metadata reads; all per-case bounds unchanged",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_source_sha256": "9f915ded95b459546ac47cb51aca7b69a60ee7bad1713c8a36925cca95e6abdf",
+      "parent_timeout_seconds": 1200,
+      "revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e"
+    },
+    "id": "opt2/campaign"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "bytes-real-lifecycle",
+        "0",
+        "0",
+        "${OPT2_RAW}/bytes-0-seed-0/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-0-seed-0/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-0-seed-0/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-0-seed-0/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-0-seed-0/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-0-seed-0/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-0-seed-0/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-0-seed-0/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "bcf9ec7a5ff727b9d65258e60908838d97a513de33777111c735dc4c7e6bdab0"
+    },
+    "id": "opt2/bytes-0-seed-0/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "bytes-real-lifecycle",
+        "0",
+        "1",
+        "${OPT2_RAW}/bytes-0-seed-1/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-0-seed-1/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-0-seed-1/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-0-seed-1/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-0-seed-1/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-0-seed-1/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-0-seed-1/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-0-seed-1/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "7a09a73c89004d71947f2b48ca2bef2c313195f0964466adc15e8606935d42e8"
+    },
+    "id": "opt2/bytes-0-seed-1/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "bytes-real-lifecycle",
+        "1",
+        "0",
+        "${OPT2_RAW}/bytes-1-seed-0/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-1-seed-0/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-1-seed-0/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-1-seed-0/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-1-seed-0/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-1-seed-0/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-1-seed-0/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-1-seed-0/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "8983f4a99d1ee588e62d300fc1620545b48ad90414299d127703b4ccfc936726"
+    },
+    "id": "opt2/bytes-1-seed-0/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "bytes-real-lifecycle",
+        "1",
+        "1",
+        "${OPT2_RAW}/bytes-1-seed-1/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-1-seed-1/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-1-seed-1/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-1-seed-1/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-1-seed-1/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-1-seed-1/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-1-seed-1/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-1-seed-1/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "744c266c26871795583a70e8e60bc48c4f03d5a3f443c388ae6c2fc148b9412f"
+    },
+    "id": "opt2/bytes-1-seed-1/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "bytes-real-lifecycle",
+        "2",
+        "0",
+        "${OPT2_RAW}/bytes-2-seed-0/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-2-seed-0/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-2-seed-0/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-2-seed-0/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-2-seed-0/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-2-seed-0/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-2-seed-0/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-2-seed-0/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "493a304b6d93fa331e541b79c4d61d3dccc5996f660e8d62925edcf2b1cdf0c9"
+    },
+    "id": "opt2/bytes-2-seed-0/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "bytes-real-lifecycle",
+        "2",
+        "1",
+        "${OPT2_RAW}/bytes-2-seed-1/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-2-seed-1/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-2-seed-1/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-2-seed-1/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-2-seed-1/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-2-seed-1/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-2-seed-1/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-2-seed-1/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "ff053cdca3eb55b1cdac59d00ddf45f68b5b51109d61dd03e2146730dd7ebd17"
+    },
+    "id": "opt2/bytes-2-seed-1/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "bytes-real-lifecycle",
+        "3",
+        "0",
+        "${OPT2_RAW}/bytes-3-seed-0/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-3-seed-0/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-3-seed-0/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-3-seed-0/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-3-seed-0/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-3-seed-0/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-3-seed-0/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-3-seed-0/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "c80222104cd3be100bd631a215ad6bd67737f57248131076f74cf49c67ae5bad"
+    },
+    "id": "opt2/bytes-3-seed-0/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "bytes-real-lifecycle",
+        "3",
+        "1",
+        "${OPT2_RAW}/bytes-3-seed-1/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-3-seed-1/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-3-seed-1/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-3-seed-1/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-3-seed-1/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-3-seed-1/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-3-seed-1/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-3-seed-1/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "ef4af4d6284c87a1ce63ec8e041a05d39cb5ce4a1c91dd30fa2466b027a9968b"
+    },
+    "id": "opt2/bytes-3-seed-1/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "bytes-real-lifecycle",
+        "old-reservation",
+        "0",
+        "${OPT2_RAW}/bytes-old-reservation-seed-0/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-old-reservation-seed-0/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-old-reservation-seed-0/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-old-reservation-seed-0/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-old-reservation-seed-0/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-old-reservation-seed-0/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-old-reservation-seed-0/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-old-reservation-seed-0/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "2122251a85a91cc149fbeb3729f9e40a9659ede44b68b639a2c50972f73edf25"
+    },
+    "id": "opt2/bytes-old-reservation-seed-0/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "bytes-real-lifecycle",
+        "old-reservation",
+        "1",
+        "${OPT2_RAW}/bytes-old-reservation-seed-1/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-old-reservation-seed-1/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-old-reservation-seed-1/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-old-reservation-seed-1/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-old-reservation-seed-1/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-old-reservation-seed-1/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-old-reservation-seed-1/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-old-reservation-seed-1/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "43495e8867d1338535e017559bc95944f4d4bdeb6e7d40288010dbae01658b9d"
+    },
+    "id": "opt2/bytes-old-reservation-seed-1/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "byte-owner-refusals",
+        "wrong-owner",
+        "0",
+        "${OPT2_RAW}/bytes-refuse-wrong-owner/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-refuse-wrong-owner/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-refuse-wrong-owner/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-refuse-wrong-owner/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-refuse-wrong-owner/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-refuse-wrong-owner/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-refuse-wrong-owner/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-refuse-wrong-owner/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "1b894ac2820bc58279bddf3968a58db359faa4b131e26e19cabe186cc04a8ea8"
+    },
+    "id": "opt2/bytes-refuse-wrong-owner/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "byte-owner-refusals",
+        "inactive",
+        "0",
+        "${OPT2_RAW}/bytes-refuse-inactive/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-refuse-inactive/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-refuse-inactive/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-refuse-inactive/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-refuse-inactive/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-refuse-inactive/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-refuse-inactive/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-refuse-inactive/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "32c223ac78f4874e9a8300bc873a533be2cbaa02f2b1b3094d6c3dc1c28a8734"
+    },
+    "id": "opt2/bytes-refuse-inactive/parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "${REPO}/target/debug/frontend-native-point",
+        "bytes-real-sync-refusal",
+        "membarrier",
+        "0",
+        "${OPT2_RAW}/bytes-refuse-membarrier/output"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-refuse-membarrier/tmp"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${OPT2_RAW}/bytes-refuse-membarrier/stderr.txt",
+      "stdout": "${OPT2_RAW}/bytes-refuse-membarrier/stdout.txt",
+      "wall_seconds": 30
+    },
+    "id": "opt2/bytes-refuse-membarrier/native"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${OPT2_RAW}/bytes-refuse-membarrier/request.json",
+        "--receipt",
+        "${OPT2_RAW}/bytes-refuse-membarrier/receipt.json"
+      ],
+      "binding_sha256": "849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2",
+      "caller_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1",
+        "TMPDIR": "${OPT2_RAW}/bytes-refuse-membarrier/tmp"
+      },
+      "parent_failure_cleanup_seconds": 10,
+      "parent_timeout_seconds": 55,
+      "request_sha256": "f3191ff6802eca28e576ca5fd045a9e25086276610923b3cf14b76a04f8c3786"
+    },
+    "id": "opt2/bytes-refuse-membarrier/parent"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "cargo",
+        "build",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "frontend-native-point",
+        "--message-format=json"
+      ],
+      "caller_sha256": "67cc6d06f28a319bf6bddc1e0504fdada7468b25198d6198438f7d243d9166dd",
+      "cwd": "${REPO}",
+      "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OPT_LEVEL": "2",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "LITEINST_EVALUATION": "1",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "",
+        "RUSTFLAGS": "",
+        "TMPDIR": "${OPT2_BUILD}/tmp"
+      },
+      "max_log_bytes": 8388608,
+      "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+      "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+      "timeout_seconds": 180
+    },
+    "id": "opt2/build"
+  },
+  {
+    "context": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/ignored/a4/code-point-opt2-source-v1/validate.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${OPT2_BUILD}",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--phase",
+        "native-build"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_cleanup_seconds": 10,
+      "parent_source_sha256": "576fa940fe75db9e52b7b7dfff44738ac303490038613c1e1d58581ab8db8b6e",
+      "parent_timeout_seconds": 240,
+      "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+      "source_sha256": "67cc6d06f28a319bf6bddc1e0504fdada7468b25198d6198438f7d243d9166dd"
+    },
+    "id": "opt2/build-parent"
+  },
+  {
+    "context": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/ignored/a4/code-point-opt2-runtime-successor-proposal-v1/payload/construct.py"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONNOUSERSITE": "1"
+      },
+      "manifest_sha256": "3c9c7b2af0546c0da3cd1dcd0bf8ab71689b03886d20bea847e8fc66726eb566",
+      "parent_cleanup_seconds": 10,
+      "parent_timeout_seconds": 90,
+      "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+      "source_sha256": "1fd436bc498e4fcf9316795fd29f54e3821316ee0533c724aa9299b64721d0e8",
+      "whole_source_inverses_verified": true
+    },
+    "id": "opt2/construct"
+  }
+]

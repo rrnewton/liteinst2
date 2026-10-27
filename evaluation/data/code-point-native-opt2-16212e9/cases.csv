@@ -1,0 +1,14 @@
+attempt,revision,case,status,attempted,planned_children,planned_comparisons,completed_case_children,source_attested_live_comparisons,native_exit,helper_absence,seconds,command_context,parent_context,qualification_complete
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-0-seed-0,PASS,True,8,15,8,15,0,ECHILD,0.6605143309570849,opt2/bytes-0-seed-0/native,opt2/bytes-0-seed-0/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-0-seed-1,PASS,True,8,15,8,15,0,ECHILD,0.6622094451449811,opt2/bytes-0-seed-1/native,opt2/bytes-0-seed-1/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-1-seed-0,PASS,True,8,15,8,15,0,ECHILD,0.6626876730006188,opt2/bytes-1-seed-0/native,opt2/bytes-1-seed-0/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-1-seed-1,PASS,True,8,15,8,15,0,ECHILD,0.6639503969345242,opt2/bytes-1-seed-1/native,opt2/bytes-1-seed-1/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-2-seed-0,PASS,True,8,15,8,15,0,ECHILD,0.726694812066853,opt2/bytes-2-seed-0/native,opt2/bytes-2-seed-0/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-2-seed-1,PASS,True,8,15,8,15,0,ECHILD,0.7102657661307603,opt2/bytes-2-seed-1/native,opt2/bytes-2-seed-1/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-3-seed-0,PASS,True,8,15,8,15,0,ECHILD,0.20998580800369382,opt2/bytes-3-seed-0/native,opt2/bytes-3-seed-0/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-3-seed-1,PASS,True,8,15,8,15,0,ECHILD,0.21301342104561627,opt2/bytes-3-seed-1/native,opt2/bytes-3-seed-1/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-old-reservation-seed-0,PASS,True,4,5,4,5,0,ECHILD,1.3703769019339234,opt2/bytes-old-reservation-seed-0/native,opt2/bytes-old-reservation-seed-0/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-old-reservation-seed-1,PASS,True,4,5,4,5,0,ECHILD,1.3682970108930022,opt2/bytes-old-reservation-seed-1/native,opt2/bytes-old-reservation-seed-1/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-refuse-wrong-owner,PASS,True,1,0,1,0,0,ECHILD,0.14573417115025222,opt2/bytes-refuse-wrong-owner/native,opt2/bytes-refuse-wrong-owner/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-refuse-inactive,PASS,True,1,0,1,0,0,ECHILD,0.13321853894740343,opt2/bytes-refuse-inactive/native,opt2/bytes-refuse-inactive/parent,False
+opt2,16212e9ab00a18ce003a305f7265bce8633e1c0e,bytes-refuse-membarrier,PASS,True,1,0,1,0,0,ECHILD,0.10525086591951549,opt2/bytes-refuse-membarrier/native,opt2/bytes-refuse-membarrier/parent,False

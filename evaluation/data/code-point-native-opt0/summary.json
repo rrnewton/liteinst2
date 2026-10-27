@@ -1,0 +1,1225 @@
+{
+  "attempts": [
+    {
+      "attempt": "v1",
+      "build_context": "v1/build",
+      "build_parent_context": "v1/build-parent",
+      "campaign_context": "v1/campaign",
+      "campaign_parent_seconds": 3.523399654077366,
+      "cases": {
+        "attempted": 1,
+        "failed": 1,
+        "passed": 0,
+        "planned": 13,
+        "unrun": 12
+      },
+      "closed_prefix_extra": {
+        "completed_children": 1,
+        "source_attested_live_comparisons": 0
+      },
+      "compiler_tools": {
+        "cargo": {
+          "bytes": 42839824,
+          "lookup_stat": [
+            48,
+            2168708,
+            33261,
+            42839824,
+            1785313166764622552,
+            1785313166866070163
+          ],
+          "path": "${TOOLCHAIN}/bin/cargo",
+          "resolved": "${TOOLCHAIN}/bin/cargo",
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+          "stat": [
+            48,
+            2168708,
+            33261,
+            42839824,
+            1785313166764622552,
+            1785313166866070163
+          ]
+        },
+        "rustc": {
+          "bytes": 645000,
+          "lookup_stat": [
+            48,
+            2691961,
+            33261,
+            645000,
+            1785313199899758217,
+            1785313205039357744
+          ],
+          "path": "${TOOLCHAIN}/bin/rustc",
+          "resolved": "${TOOLCHAIN}/bin/rustc",
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+          "stat": [
+            48,
+            2691961,
+            33261,
+            645000,
+            1785313199899758217,
+            1785313205039357744
+          ]
+        },
+        "rustdoc": {
+          "bytes": 13680928,
+          "lookup_stat": [
+            48,
+            2691931,
+            33261,
+            13680928,
+            1785313199896926336,
+            1785313205039391975
+          ],
+          "path": "${TOOLCHAIN}/bin/rustdoc",
+          "resolved": "${TOOLCHAIN}/bin/rustdoc",
+          "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+          "stat": [
+            48,
+            2691931,
+            33261,
+            13680928,
+            1785313199896926336,
+            1785313205039391975
+          ]
+        }
+      },
+      "configuration_observation_sha256": "391687d34314dd3aa6aa3febb52f69634688ed5a8ff80043e86b10d022356a63",
+      "construction_context": "v1/construct",
+      "constructor_direct_parent_recorded": false,
+      "failure": "fixture required private RX but the allocator provides shared RX; rejected",
+      "hardware": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ]
+      },
+      "independent_saved_state_audit": false,
+      "product": {
+        "bytes": 4507808,
+        "lookup_stat": [
+          48,
+          4659653893,
+          33261,
+          4507808,
+          1793096347710564637,
+          1793096347726564634
+        ],
+        "path": "${REPO}/target/debug/frontend-native-point",
+        "resolved": "${REPO}/target/debug/frontend-native-point",
+        "sha256": "beed74693e28818ef84b7fa508b85e57cb1cc5e92e87cd8487ee00f24953233f",
+        "stat": [
+          48,
+          4659653893,
+          33261,
+          4507808,
+          1793096347710564637,
+          1793096347726564634
+        ]
+      },
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "0",
+        "overflow_checks": true,
+        "test": false
+      },
+      "qualification_complete": false,
+      "raw_summary_sha256": "12b3a3694cc083ed269998b9d535d19eade0fee4fb1271efdbd421b49b58b3a1",
+      "review_sha256": "683005bfb3ef5dcf157703ba5913ac6b649548484090c8ce044095091641ae3d",
+      "revision": "dd94a43b7986509f70635896ab759659fbd81ba4",
+      "selected_runtime_owners": {
+        "driver_interpreter": {
+          "bytes": 939216,
+          "lookup_stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ],
+          "path": "/lib64/ld-linux-x86-64.so.2",
+          "resolved": "/usr/lib64/ld-linux-x86-64.so.2",
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ]
+        },
+        "libc": {
+          "bytes": 2553784,
+          "lookup_stat": [
+            33,
+            73572743,
+            33261,
+            2553784,
+            1790592712000000000,
+            1792761591058034858
+          ],
+          "path": "/lib64/libc.so.6",
+          "resolved": "/usr/lib64/libc.so.6",
+          "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+          "stat": [
+            33,
+            73572743,
+            33261,
+            2553784,
+            1790592712000000000,
+            1792761591058034858
+          ]
+        },
+        "loader_cache": {
+          "bytes": 29499,
+          "lookup_stat": [
+            33,
+            127666222,
+            33188,
+            29499,
+            1793096879424593584,
+            1793096879424593584
+          ],
+          "path": "/etc/ld.so.cache",
+          "resolved": "/etc/ld.so.cache",
+          "sha256": "e84f89705a0c808ca0c840a74c521ee96a2ddd86936465b256b794ea9bc6b4ad",
+          "stat": [
+            33,
+            127666222,
+            33188,
+            29499,
+            1793096879424593584,
+            1793096879424593584
+          ]
+        },
+        "python_interpreter": {
+          "bytes": 939216,
+          "lookup_stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ],
+          "path": "/lib64/ld-linux-x86-64.so.2",
+          "resolved": "/usr/lib64/ld-linux-x86-64.so.2",
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ]
+        }
+      },
+      "selected_runtime_scope": "selected-host owners only; no complete loader/process mapping closure",
+      "source_attested_live_comparisons_in_passing_cases": 0,
+      "source_files": 2189,
+      "source_map_sha256": "5998e7375559abcff6e5e682645c1ef467ab6931075187e9a233816b4662e57f",
+      "source_materials": {
+        "tests/support/native_interval_oracle.rs": {
+          "bytes": 79860,
+          "mode": "100644",
+          "sha256": "0b72e9ce64c71b839f15c097668fcfb95d2880442ec53cffe4ea73b70b580112",
+          "stat": [
+            48,
+            4500155067,
+            33188,
+            79860,
+            1793096025000688481,
+            1793096025000688481
+          ]
+        },
+        "tests/support/native_point.rs": {
+          "bytes": 8883,
+          "mode": "100644",
+          "sha256": "550e9c9ffbf262d8c3b2eee7ab991bb1b72591746da58e8b47efb912e9edc479",
+          "stat": [
+            48,
+            4658961440,
+            33188,
+            8883,
+            1793096025003688480,
+            1793096025003688480
+          ]
+        },
+        "tools/rapid-profiler/Cargo.toml": {
+          "bytes": 586,
+          "mode": "100644",
+          "sha256": "263e2cf2ba4841754ae6bf143fe0879d7ccb7156901273faa2cc38cc3f35eca4",
+          "stat": [
+            48,
+            4374367211,
+            33188,
+            586,
+            1793096011463557869,
+            1793096011463557869
+          ]
+        },
+        "tools/rapid-profiler/native-point/main.rs": {
+          "bytes": 34171,
+          "mode": "100644",
+          "sha256": "9d22a0371965105739d376153e1fab5975b83820d82c10fc020c72174530b2c5",
+          "stat": [
+            48,
+            4658961442,
+            33188,
+            34171,
+            1793096025015440600,
+            1793096025015440600
+          ]
+        }
+      },
+      "status": "FAILED",
+      "tools": {
+        "du": {
+          "bytes": 152832,
+          "lookup_stat": [
+            33,
+            100554,
+            33261,
+            152832,
+            1781095363000000000,
+            1786585984949331657
+          ],
+          "path": "/usr/bin/du",
+          "resolved": "/usr/bin/du",
+          "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f",
+          "stat": [
+            33,
+            100554,
+            33261,
+            152832,
+            1781095363000000000,
+            1786585984949331657
+          ]
+        },
+        "git": {
+          "bytes": 4397400,
+          "lookup_stat": [
+            33,
+            459602,
+            33261,
+            4397400,
+            1767977060000000000,
+            1786587492795029005
+          ],
+          "path": "/usr/bin/git",
+          "resolved": "/usr/bin/git",
+          "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240",
+          "stat": [
+            33,
+            459602,
+            33261,
+            4397400,
+            1767977060000000000,
+            1786587492795029005
+          ]
+        },
+        "helper": {
+          "bytes": 7710,
+          "lookup_stat": [
+            48,
+            4443037567,
+            33188,
+            7710,
+            1792956542437003136,
+            1792956542437003136
+          ],
+          "path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "resolved": "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "stat": [
+            48,
+            4443037567,
+            33188,
+            7710,
+            1792956542437003136,
+            1792956542437003136
+          ]
+        },
+        "python": {
+          "bytes": 15448,
+          "lookup_stat": [
+            33,
+            22574889,
+            33261,
+            15448,
+            1786714180000000000,
+            1787700294617247170
+          ],
+          "path": "/usr/bin/python3.9",
+          "resolved": "/usr/bin/python3.9",
+          "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+          "stat": [
+            33,
+            22574889,
+            33261,
+            15448,
+            1786714180000000000,
+            1787700294617247170
+          ]
+        },
+        "timeout": {
+          "bytes": 36848,
+          "lookup_stat": [
+            33,
+            101023,
+            33261,
+            36848,
+            1781095363000000000,
+            1786585985722214039
+          ],
+          "path": "/usr/bin/timeout",
+          "resolved": "/usr/bin/timeout",
+          "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+          "stat": [
+            33,
+            101023,
+            33261,
+            36848,
+            1781095363000000000,
+            1786585985722214039
+          ]
+        }
+      }
+    },
+    {
+      "attempt": "v2",
+      "build_context": "v2/build",
+      "build_parent_context": "v2/build-parent",
+      "campaign_context": "v2/campaign",
+      "campaign_parent_seconds": 5.37807778804563,
+      "cases": {
+        "attempted": 1,
+        "failed": 1,
+        "passed": 0,
+        "planned": 13,
+        "unrun": 12
+      },
+      "closed_prefix_extra": {
+        "completed_children": 2,
+        "source_attested_live_comparisons": 3
+      },
+      "compiler_tools": {
+        "cargo": {
+          "bytes": 42839824,
+          "lookup_stat": [
+            48,
+            2168708,
+            33261,
+            42839824,
+            1785313166764622552,
+            1785313166866070163
+          ],
+          "path": "${TOOLCHAIN}/bin/cargo",
+          "resolved": "${TOOLCHAIN}/bin/cargo",
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+          "stat": [
+            48,
+            2168708,
+            33261,
+            42839824,
+            1785313166764622552,
+            1785313166866070163
+          ]
+        },
+        "rustc": {
+          "bytes": 645000,
+          "lookup_stat": [
+            48,
+            2691961,
+            33261,
+            645000,
+            1785313199899758217,
+            1785313205039357744
+          ],
+          "path": "${TOOLCHAIN}/bin/rustc",
+          "resolved": "${TOOLCHAIN}/bin/rustc",
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+          "stat": [
+            48,
+            2691961,
+            33261,
+            645000,
+            1785313199899758217,
+            1785313205039357744
+          ]
+        },
+        "rustdoc": {
+          "bytes": 13680928,
+          "lookup_stat": [
+            48,
+            2691931,
+            33261,
+            13680928,
+            1785313199896926336,
+            1785313205039391975
+          ],
+          "path": "${TOOLCHAIN}/bin/rustdoc",
+          "resolved": "${TOOLCHAIN}/bin/rustdoc",
+          "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+          "stat": [
+            48,
+            2691931,
+            33261,
+            13680928,
+            1785313199896926336,
+            1785313205039391975
+          ]
+        }
+      },
+      "configuration_observation_sha256": "391687d34314dd3aa6aa3febb52f69634688ed5a8ff80043e86b10d022356a63",
+      "construction_context": "v2/construct",
+      "constructor_direct_parent_recorded": true,
+      "failure": "fixture expected PC in the generic terminal-value field whose existing contract stores invocation; rejected",
+      "hardware": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ]
+      },
+      "independent_saved_state_audit": false,
+      "product": {
+        "bytes": 4528704,
+        "lookup_stat": [
+          48,
+          4661049738,
+          33261,
+          4528704,
+          1793097480834282241,
+          1793097480855282234
+        ],
+        "path": "${REPO}/target/debug/frontend-native-point",
+        "resolved": "${REPO}/target/debug/frontend-native-point",
+        "sha256": "b7784c9fc797c8c1d5cfb23c668cb5e532180614437cf8af8a25045f1ad6fa26",
+        "stat": [
+          48,
+          4661049738,
+          33261,
+          4528704,
+          1793097480834282241,
+          1793097480855282234
+        ]
+      },
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "0",
+        "overflow_checks": true,
+        "test": false
+      },
+      "qualification_complete": false,
+      "raw_summary_sha256": "158697dad58a9ad685033e6bc40d94e560be62b3c20e584a9ede3b9a4c46bf8e",
+      "review_sha256": "a1d48e52232b900e805e03bf9228528e63bb5464ce1169c54b0c736b906b02ea",
+      "revision": "5403fdf53bbf21b8d3890a9a13d6f6f0f3d1c41a",
+      "selected_runtime_owners": {
+        "driver_interpreter": {
+          "bytes": 939216,
+          "lookup_stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ],
+          "path": "/lib64/ld-linux-x86-64.so.2",
+          "resolved": "/usr/lib64/ld-linux-x86-64.so.2",
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ]
+        },
+        "libc": {
+          "bytes": 2553784,
+          "lookup_stat": [
+            33,
+            73572743,
+            33261,
+            2553784,
+            1790592712000000000,
+            1792761591058034858
+          ],
+          "path": "/lib64/libc.so.6",
+          "resolved": "/usr/lib64/libc.so.6",
+          "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+          "stat": [
+            33,
+            73572743,
+            33261,
+            2553784,
+            1790592712000000000,
+            1792761591058034858
+          ]
+        },
+        "loader_cache": {
+          "bytes": 29499,
+          "lookup_stat": [
+            33,
+            127677586,
+            33188,
+            29499,
+            1793098027379138809,
+            1793098027379138809
+          ],
+          "path": "/etc/ld.so.cache",
+          "resolved": "/etc/ld.so.cache",
+          "sha256": "e84f89705a0c808ca0c840a74c521ee96a2ddd86936465b256b794ea9bc6b4ad",
+          "stat": [
+            33,
+            127677586,
+            33188,
+            29499,
+            1793098027379138809,
+            1793098027379138809
+          ]
+        },
+        "python_interpreter": {
+          "bytes": 939216,
+          "lookup_stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ],
+          "path": "/lib64/ld-linux-x86-64.so.2",
+          "resolved": "/usr/lib64/ld-linux-x86-64.so.2",
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ]
+        }
+      },
+      "selected_runtime_scope": "selected-host owners only; no complete loader/process mapping closure",
+      "source_attested_live_comparisons_in_passing_cases": 0,
+      "source_files": 2189,
+      "source_map_sha256": "1a65454f5260b3403d18d8f48d66b8f83593d9959eedfa96f805139414d9f5eb",
+      "source_materials": {
+        "tests/support/native_interval_oracle.rs": {
+          "bytes": 79860,
+          "mode": "100644",
+          "sha256": "0b72e9ce64c71b839f15c097668fcfb95d2880442ec53cffe4ea73b70b580112",
+          "stat": [
+            48,
+            4500155067,
+            33188,
+            79860,
+            1793096025000688481,
+            1793096025000688481
+          ]
+        },
+        "tests/support/native_point.rs": {
+          "bytes": 8883,
+          "mode": "100644",
+          "sha256": "550e9c9ffbf262d8c3b2eee7ab991bb1b72591746da58e8b47efb912e9edc479",
+          "stat": [
+            48,
+            4658961440,
+            33188,
+            8883,
+            1793096025003688480,
+            1793096025003688480
+          ]
+        },
+        "tools/rapid-profiler/Cargo.toml": {
+          "bytes": 586,
+          "mode": "100644",
+          "sha256": "263e2cf2ba4841754ae6bf143fe0879d7ccb7156901273faa2cc38cc3f35eca4",
+          "stat": [
+            48,
+            4374367211,
+            33188,
+            586,
+            1793096011463557869,
+            1793096011463557869
+          ]
+        },
+        "tools/rapid-profiler/native-point/main.rs": {
+          "bytes": 34587,
+          "mode": "100644",
+          "sha256": "011f866ac9fc98d887eb4309f68248f9295f698486b124287603ef00a04c57e9",
+          "stat": [
+            48,
+            4658961442,
+            33188,
+            34587,
+            1793097302627355189,
+            1793097302627355189
+          ]
+        }
+      },
+      "status": "FAILED",
+      "tools": {
+        "du": {
+          "bytes": 152832,
+          "lookup_stat": [
+            33,
+            100554,
+            33261,
+            152832,
+            1781095363000000000,
+            1786585984949331657
+          ],
+          "path": "/usr/bin/du",
+          "resolved": "/usr/bin/du",
+          "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f",
+          "stat": [
+            33,
+            100554,
+            33261,
+            152832,
+            1781095363000000000,
+            1786585984949331657
+          ]
+        },
+        "git": {
+          "bytes": 4397400,
+          "lookup_stat": [
+            33,
+            459602,
+            33261,
+            4397400,
+            1767977060000000000,
+            1786587492795029005
+          ],
+          "path": "/usr/bin/git",
+          "resolved": "/usr/bin/git",
+          "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240",
+          "stat": [
+            33,
+            459602,
+            33261,
+            4397400,
+            1767977060000000000,
+            1786587492795029005
+          ]
+        },
+        "helper": {
+          "bytes": 7710,
+          "lookup_stat": [
+            48,
+            4443037567,
+            33188,
+            7710,
+            1792956542437003136,
+            1792956542437003136
+          ],
+          "path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "resolved": "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "stat": [
+            48,
+            4443037567,
+            33188,
+            7710,
+            1792956542437003136,
+            1792956542437003136
+          ]
+        },
+        "python": {
+          "bytes": 15448,
+          "lookup_stat": [
+            33,
+            22574889,
+            33261,
+            15448,
+            1786714180000000000,
+            1787700294617247170
+          ],
+          "path": "/usr/bin/python3.9",
+          "resolved": "/usr/bin/python3.9",
+          "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+          "stat": [
+            33,
+            22574889,
+            33261,
+            15448,
+            1786714180000000000,
+            1787700294617247170
+          ]
+        },
+        "timeout": {
+          "bytes": 36848,
+          "lookup_stat": [
+            33,
+            101023,
+            33261,
+            36848,
+            1781095363000000000,
+            1786585985722214039
+          ],
+          "path": "/usr/bin/timeout",
+          "resolved": "/usr/bin/timeout",
+          "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+          "stat": [
+            33,
+            101023,
+            33261,
+            36848,
+            1781095363000000000,
+            1786585985722214039
+          ]
+        }
+      }
+    },
+    {
+      "attempt": "v3",
+      "build_context": "v3/build",
+      "build_parent_context": "v3/build-parent",
+      "campaign_context": "v3/campaign",
+      "campaign_parent_seconds": 48.681549275061116,
+      "cases": {
+        "attempted": 9,
+        "failed": 1,
+        "passed": 8,
+        "planned": 13,
+        "unrun": 4
+      },
+      "closed_prefix_extra": {
+        "completed_children": 1,
+        "source_attested_live_comparisons": 0
+      },
+      "compiler_tools": {
+        "cargo": {
+          "bytes": 42839824,
+          "lookup_stat": [
+            48,
+            2168708,
+            33261,
+            42839824,
+            1785313166764622552,
+            1785313166866070163
+          ],
+          "path": "${TOOLCHAIN}/bin/cargo",
+          "resolved": "${TOOLCHAIN}/bin/cargo",
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+          "stat": [
+            48,
+            2168708,
+            33261,
+            42839824,
+            1785313166764622552,
+            1785313166866070163
+          ]
+        },
+        "rustc": {
+          "bytes": 645000,
+          "lookup_stat": [
+            48,
+            2691961,
+            33261,
+            645000,
+            1785313199899758217,
+            1785313205039357744
+          ],
+          "path": "${TOOLCHAIN}/bin/rustc",
+          "resolved": "${TOOLCHAIN}/bin/rustc",
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+          "stat": [
+            48,
+            2691961,
+            33261,
+            645000,
+            1785313199899758217,
+            1785313205039357744
+          ]
+        },
+        "rustdoc": {
+          "bytes": 13680928,
+          "lookup_stat": [
+            48,
+            2691931,
+            33261,
+            13680928,
+            1785313199896926336,
+            1785313205039391975
+          ],
+          "path": "${TOOLCHAIN}/bin/rustdoc",
+          "resolved": "${TOOLCHAIN}/bin/rustdoc",
+          "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+          "stat": [
+            48,
+            2691931,
+            33261,
+            13680928,
+            1785313199896926336,
+            1785313205039391975
+          ]
+        }
+      },
+      "configuration_observation_sha256": "391687d34314dd3aa6aa3febb52f69634688ed5a8ff80043e86b10d022356a63",
+      "construction_context": "v3/construct",
+      "constructor_direct_parent_recorded": true,
+      "failure": "old-reservation-seed-0 exhausted the unchanged 20000-step oracle bound",
+      "hardware": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ]
+      },
+      "independent_saved_state_audit": false,
+      "product": {
+        "bytes": 4528704,
+        "lookup_stat": [
+          48,
+          4662376702,
+          33261,
+          4528704,
+          1793098174743815670,
+          1793098174756102809
+        ],
+        "path": "${REPO}/target/debug/frontend-native-point",
+        "resolved": "${REPO}/target/debug/frontend-native-point",
+        "sha256": "56ac9ec5a93b7c62a8f93f70aa1f0caaa39a376139edba56377954c359220110",
+        "stat": [
+          48,
+          4662376702,
+          33261,
+          4528704,
+          1793098174743815670,
+          1793098174756102809
+        ]
+      },
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "0",
+        "overflow_checks": true,
+        "test": false
+      },
+      "qualification_complete": false,
+      "raw_summary_sha256": "5be431b087213a435eb8ba574c58f804302c0631f6a72b0ba25a1a3149672a80",
+      "review_sha256": "18dd8f0fe755b852d3043b4bf35ab685fa9559e9fc26b218d588dc7c9617ced2",
+      "revision": "4fe20da702222651894501f297123e367312544c",
+      "selected_runtime_owners": {
+        "driver_interpreter": {
+          "bytes": 939216,
+          "lookup_stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ],
+          "path": "/lib64/ld-linux-x86-64.so.2",
+          "resolved": "/usr/lib64/ld-linux-x86-64.so.2",
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ]
+        },
+        "libc": {
+          "bytes": 2553784,
+          "lookup_stat": [
+            33,
+            73572743,
+            33261,
+            2553784,
+            1790592712000000000,
+            1792761591058034858
+          ],
+          "path": "/lib64/libc.so.6",
+          "resolved": "/usr/lib64/libc.so.6",
+          "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+          "stat": [
+            33,
+            73572743,
+            33261,
+            2553784,
+            1790592712000000000,
+            1792761591058034858
+          ]
+        },
+        "loader_cache": {
+          "bytes": 29499,
+          "lookup_stat": [
+            33,
+            127677586,
+            33188,
+            29499,
+            1793098027379138809,
+            1793098027379138809
+          ],
+          "path": "/etc/ld.so.cache",
+          "resolved": "/etc/ld.so.cache",
+          "sha256": "e84f89705a0c808ca0c840a74c521ee96a2ddd86936465b256b794ea9bc6b4ad",
+          "stat": [
+            33,
+            127677586,
+            33188,
+            29499,
+            1793098027379138809,
+            1793098027379138809
+          ]
+        },
+        "python_interpreter": {
+          "bytes": 939216,
+          "lookup_stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ],
+          "path": "/lib64/ld-linux-x86-64.so.2",
+          "resolved": "/usr/lib64/ld-linux-x86-64.so.2",
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "stat": [
+            33,
+            73572739,
+            33261,
+            939216,
+            1790592712000000000,
+            1792761591056750388
+          ]
+        }
+      },
+      "selected_runtime_scope": "selected-host owners only; no complete loader/process mapping closure",
+      "source_attested_live_comparisons_in_passing_cases": 120,
+      "source_files": 2189,
+      "source_map_sha256": "aad2323cf321c04ad72ef4f73d1ee2db87b9df05a31a9324f3b4412d8ff1e520",
+      "source_materials": {
+        "tests/support/native_interval_oracle.rs": {
+          "bytes": 79860,
+          "mode": "100644",
+          "sha256": "0b72e9ce64c71b839f15c097668fcfb95d2880442ec53cffe4ea73b70b580112",
+          "stat": [
+            48,
+            4500155067,
+            33188,
+            79860,
+            1793096025000688481,
+            1793096025000688481
+          ]
+        },
+        "tests/support/native_point.rs": {
+          "bytes": 8883,
+          "mode": "100644",
+          "sha256": "550e9c9ffbf262d8c3b2eee7ab991bb1b72591746da58e8b47efb912e9edc479",
+          "stat": [
+            48,
+            4658961440,
+            33188,
+            8883,
+            1793096025003688480,
+            1793096025003688480
+          ]
+        },
+        "tools/rapid-profiler/Cargo.toml": {
+          "bytes": 586,
+          "mode": "100644",
+          "sha256": "263e2cf2ba4841754ae6bf143fe0879d7ccb7156901273faa2cc38cc3f35eca4",
+          "stat": [
+            48,
+            4374367211,
+            33188,
+            586,
+            1793096011463557869,
+            1793096011463557869
+          ]
+        },
+        "tools/rapid-profiler/native-point/main.rs": {
+          "bytes": 34602,
+          "mode": "100644",
+          "sha256": "048c360a005888defc66998cc924014d9ecaebe7594ec92f20be40539d2a5645",
+          "stat": [
+            48,
+            4658961442,
+            33188,
+            34602,
+            1793098152198551873,
+            1793098152198551873
+          ]
+        }
+      },
+      "status": "FAILED",
+      "tools": {
+        "du": {
+          "bytes": 152832,
+          "lookup_stat": [
+            33,
+            100554,
+            33261,
+            152832,
+            1781095363000000000,
+            1786585984949331657
+          ],
+          "path": "/usr/bin/du",
+          "resolved": "/usr/bin/du",
+          "sha256": "509baa6d93d9afb7aaecb4aed33bf87f5122e0ba64583614611b57f2c0b1ae2f",
+          "stat": [
+            33,
+            100554,
+            33261,
+            152832,
+            1781095363000000000,
+            1786585984949331657
+          ]
+        },
+        "git": {
+          "bytes": 4397400,
+          "lookup_stat": [
+            33,
+            459602,
+            33261,
+            4397400,
+            1767977060000000000,
+            1786587492795029005
+          ],
+          "path": "/usr/bin/git",
+          "resolved": "/usr/bin/git",
+          "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240",
+          "stat": [
+            33,
+            459602,
+            33261,
+            4397400,
+            1767977060000000000,
+            1786587492795029005
+          ]
+        },
+        "helper": {
+          "bytes": 7710,
+          "lookup_stat": [
+            48,
+            4443037567,
+            33188,
+            7710,
+            1792956542437003136,
+            1792956542437003136
+          ],
+          "path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "resolved": "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "stat": [
+            48,
+            4443037567,
+            33188,
+            7710,
+            1792956542437003136,
+            1792956542437003136
+          ]
+        },
+        "python": {
+          "bytes": 15448,
+          "lookup_stat": [
+            33,
+            22574889,
+            33261,
+            15448,
+            1786714180000000000,
+            1787700294617247170
+          ],
+          "path": "/usr/bin/python3.9",
+          "resolved": "/usr/bin/python3.9",
+          "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+          "stat": [
+            33,
+            22574889,
+            33261,
+            15448,
+            1786714180000000000,
+            1787700294617247170
+          ]
+        },
+        "timeout": {
+          "bytes": 36848,
+          "lookup_stat": [
+            33,
+            101023,
+            33261,
+            36848,
+            1781095363000000000,
+            1786585985722214039
+          ],
+          "path": "/usr/bin/timeout",
+          "resolved": "/usr/bin/timeout",
+          "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c",
+          "stat": [
+            33,
+            101023,
+            33261,
+            36848,
+            1781095363000000000,
+            1786585985722214039
+          ]
+        }
+      }
+    }
+  ],
+  "attempts_aggregated_as_unique_tests": false,
+  "durations": "operational observations, not performance measurements",
+  "independent_saved_state_audit": false,
+  "input_sha256": "4c7018d5fec8c0d0a3bd674af690a05989e80f239184ad2b84e976dc4da9257e",
+  "planned_per_attempt": {
+    "cases": 13,
+    "children": 75,
+    "full_state_comparisons": 130
+  },
+  "qualification_complete": false,
+  "schema": 1,
+  "unimplemented_modes": [
+    "words-atomic-real-lifecycle",
+    "words-split-real-lifecycle",
+    "words-split-real-sync-refusal",
+    "coalesced-mandatory-data-flag"
+  ],
+  "whole_A4": false
+}

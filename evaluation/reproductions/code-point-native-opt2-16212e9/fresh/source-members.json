@@ -1,0 +1,18 @@
+{
+  "tests/support/native_interval_oracle.rs": {
+    "bytes": 79860,
+    "sha256": "0b72e9ce64c71b839f15c097668fcfb95d2880442ec53cffe4ea73b70b580112"
+  },
+  "tests/support/native_point.rs": {
+    "bytes": 8883,
+    "sha256": "550e9c9ffbf262d8c3b2eee7ab991bb1b72591746da58e8b47efb912e9edc479"
+  },
+  "tools/rapid-profiler/Cargo.toml": {
+    "bytes": 586,
+    "sha256": "263e2cf2ba4841754ae6bf143fe0879d7ccb7156901273faa2cc38cc3f35eca4"
+  },
+  "tools/rapid-profiler/native-point/main.rs": {
+    "bytes": 34602,
+    "sha256": "048c360a005888defc66998cc924014d9ecaebe7594ec92f20be40539d2a5645"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "files": {
+    "CASES.json": {
+      "bytes": 8485,
+      "sha256": "16878c690a95f52845968272354d7f692ac2ff03776b589d2df4373df852de1f"
+    },
+    "build.py": {
+      "bytes": 6448,
+      "sha256": "392f8c6e1b1d93c80828393fb42db4df9400cec6598f1090f34f36100af73e2a"
+    },
+    "launch.py": {
+      "bytes": 4756,
+      "sha256": "533caba08f3a592876e5965dbb562c7134d2d5ef5314f0d0fbb9c19e3feb5672"
+    },
+    "prepare.py": {
+      "bytes": 9577,
+      "sha256": "b1b5a71bcb61b5a441d435750d0c09d8acf69d65c300805d188fd402989ba568"
+    },
+    "run.py": {
+      "bytes": 25018,
+      "sha256": "5630b2fa0ee2e7dac0b7462bc9d8a081294bc1aed088f78757040013af4735fb"
+    },
+    "source-members.json": {
+      "bytes": 596,
+      "sha256": "c1e726926b5381ec88140df1b2464003b0232f14471144c2d0e1541d1f832207"
+    }
+  },
+  "revision": "4fe20da702222651894501f297123e367312544c",
+  "schema": 1
+}

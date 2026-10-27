@@ -1,0 +1,122 @@
+[
+  {
+    "attempt": "v1",
+    "file": "v1/run.py",
+    "historical_source_only": true,
+    "original_sha256": "0f239b101ad087ccec3da79e269c9b1db96fa303f5c8d918810c841f954751cf",
+    "public_sha256": "0f239b101ad087ccec3da79e269c9b1db96fa303f5c8d918810c841f954751cf",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v1",
+    "file": "v1/build.py",
+    "historical_source_only": true,
+    "original_sha256": "b5d7f6652746fc0cf2c987997ce28d6122943c5cc2fbd5604fa8954726865c40",
+    "public_sha256": "b5d7f6652746fc0cf2c987997ce28d6122943c5cc2fbd5604fa8954726865c40",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v1",
+    "file": "v1/construct-historical.py",
+    "historical_source_only": true,
+    "original_sha256": "66957887bb508fabad5c5761c4ace58346fd4a0adf6202c7b70f5c30199b4aee",
+    "public_sha256": "66957887bb508fabad5c5761c4ace58346fd4a0adf6202c7b70f5c30199b4aee",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v1",
+    "file": "v1/native-parent.py.template",
+    "historical_source_only": true,
+    "original_sha256": "dad32ed5ae71e5cf2e681097786c4068c6991c28631a342ed1821a03349bcdf1",
+    "public_sha256": "dad32ed5ae71e5cf2e681097786c4068c6991c28631a342ed1821a03349bcdf1",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v1",
+    "file": "v1/build-parent.py.template",
+    "historical_source_only": true,
+    "original_sha256": "d4685ee64fbb7990a04f8293ef4c8bb5f7fb28c6f79b8a4ea9b30690e184cddb",
+    "public_sha256": "9de631904a2fa097d4688ad52c828d845382e682fd3a54ed7827651d45b9919f",
+    "transformation": "invertible private-path roles"
+  },
+  {
+    "attempt": "v2",
+    "file": "v2/run.py",
+    "historical_source_only": true,
+    "original_sha256": "3146d75c23cf73144efccb2e7b8bc937d023bc4cfb2c4d738076b15ba239e3be",
+    "public_sha256": "3146d75c23cf73144efccb2e7b8bc937d023bc4cfb2c4d738076b15ba239e3be",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v2",
+    "file": "v2/build.py",
+    "historical_source_only": true,
+    "original_sha256": "60d6189b8e77ddff0c12961872ea5c3a6dbe103a742ea89585eb8dfc5aa80888",
+    "public_sha256": "60d6189b8e77ddff0c12961872ea5c3a6dbe103a742ea89585eb8dfc5aa80888",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v2",
+    "file": "v2/construct-historical.py",
+    "historical_source_only": true,
+    "original_sha256": "34f3ac4abbf3bda422cc75c504bb1676be3e06ca6dde78652d62b3d01fa43091",
+    "public_sha256": "34f3ac4abbf3bda422cc75c504bb1676be3e06ca6dde78652d62b3d01fa43091",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v2",
+    "file": "v2/native-parent.py.template",
+    "historical_source_only": true,
+    "original_sha256": "fb27138d7a94a37a2cd69fd28a8c7d2bcd0db4dbf3232327d77af823434dfb81",
+    "public_sha256": "fb27138d7a94a37a2cd69fd28a8c7d2bcd0db4dbf3232327d77af823434dfb81",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v2",
+    "file": "v2/build-parent.py.template",
+    "historical_source_only": true,
+    "original_sha256": "3faca830bc77aeafc501780ba61e57c5e5d3759c6aea1ecd34a0a07de16cdfa1",
+    "public_sha256": "350f80f1848c3569989dac97efec0b2fb2337c6e424c219b68ed63e8fcd71b27",
+    "transformation": "invertible private-path roles"
+  },
+  {
+    "attempt": "v3",
+    "file": "v3/run.py",
+    "historical_source_only": true,
+    "original_sha256": "5475eaf96bfcb8a72870129cba136c7206cab80af24b3280b4c05281fe9bb859",
+    "public_sha256": "5475eaf96bfcb8a72870129cba136c7206cab80af24b3280b4c05281fe9bb859",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v3",
+    "file": "v3/build.py",
+    "historical_source_only": true,
+    "original_sha256": "109692c23bd5df08b2ff903ae27d68a815b127d0d8c0c91cd3e86f54ef48db44",
+    "public_sha256": "109692c23bd5df08b2ff903ae27d68a815b127d0d8c0c91cd3e86f54ef48db44",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v3",
+    "file": "v3/construct-historical.py",
+    "historical_source_only": true,
+    "original_sha256": "5095838812cb89d0cb440decbd92d6f589f4a833c9dd1eedf031d7a175d91a6f",
+    "public_sha256": "5095838812cb89d0cb440decbd92d6f589f4a833c9dd1eedf031d7a175d91a6f",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v3",
+    "file": "v3/native-parent.py.template",
+    "historical_source_only": true,
+    "original_sha256": "e4de96f5b19fcc094368f971ca895955a6d44269579ea4733e9bba0fa757a4d3",
+    "public_sha256": "e4de96f5b19fcc094368f971ca895955a6d44269579ea4733e9bba0fa757a4d3",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "v3",
+    "file": "v3/build-parent.py.template",
+    "historical_source_only": true,
+    "original_sha256": "f8f954adb18fa90c83da076c0480b1df70e98c0694863a7ed3b17764ca76d365",
+    "public_sha256": "a3ea52989ba856f2a405a623d71465107cf0415e31662d1421ef474d78f4fe24",
+    "transformation": "invertible private-path roles"
+  }
+]
