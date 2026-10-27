@@ -1,0 +1,23 @@
+[workspace]
+
+[package]
+name = "li2-page-selected-decoder"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["staticlib"]
+
+[dependencies]
+iced-x86 = { version = "=1.21.0", default-features = false, features = ["no_std", "decoder"] }
+
+[profile.release]
+opt-level = 2
+debug = 1
+panic = "abort"
+overflow-checks = true
+codegen-units = 1
+
+[profile.dev]
+panic = "abort"
