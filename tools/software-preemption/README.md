@@ -12,7 +12,16 @@ Each release benchmark has native, counter-only, and stop/resume modes, two warm
 
 ## Build and run
 
-Integrate the six source/documentation destinations from the private packet, format and compile at an exact committed revision. This source proposal and every planned command are UNRUN. The root caller must supply the resulting complete source-owner catalog, exact release product and tool owners, reviewed saved build command/closure, and four admitted CPUs; no historical product or namespace authority transfers.
+Run from a clean committed checkout on Linux x86-64. `evaluate.py` builds the release binary, records the exact revision and source/tool/product owners, and runs the fixed qualification and four benchmarks. All detailed records go to a fresh directory under `ignored/`; the caller uses four available CPUs and four Cargo jobs. The recipe requires the existing offline Cargo dependencies. It never downloads or cleans the target directory.
+
+```sh
+python3 -B tools/software-preemption/evaluate.py \
+  --repo "$PWD" --raw "$PWD/ignored/preemption-new" \
+  --toolchain /absolute/rust-toolchain \
+  --user-home /absolute/user-home --cargo-home /absolute/cargo-home
+```
+
+The release build inside that recipe is:
 
 ```sh
 CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=4 \
@@ -21,7 +30,7 @@ CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=true CARGO_PROFILE_RELEASE_OVERFLOW_CHECK
 cargo build --locked --offline --release --bin liteinst-preempt
 ```
 
-First run the two pure tests with `cargo test --bin liteinst-preempt`, then the strict qualification. The fixed caller subsequently runs all four benchmarks in declared order and stops on any failure, retaining all remaining rows UNRUN. Its root-reviewed binding is deliberately unfilled in the source packet. Each of the five commands uses 60 CPU seconds, 90 wall seconds, 1 MiB per-file output, outer timeout 100 seconds/kill-after 10, direct-parent wait 115 seconds and failure cleanup 10. The unchanged bounded helper requires ECHILD and no unexpected descendants. Resource failures remain failures. The caller checks exact source/tool/product ownership before and after; its small free-filesystem check is not a managed-slot quota proof or a full dynamic-loader closure.
+First run the two pure tests with `cargo test --bin liteinst-preempt`, then the strict qualification. The fixed caller subsequently runs all four benchmarks in declared order and stops on any failure, retaining all remaining rows UNRUN. The reproduction recipe constructs the binding from its actual successful build and current owners. Each of the five commands uses 60 CPU seconds, 90 wall seconds, 1 MiB per-file output, outer timeout 100 seconds/kill-after 10, direct-parent wait 115 seconds and failure cleanup 10. The unchanged bounded helper requires ECHILD and no unexpected descendants. Resource failures remain failures. The caller checks exact source/tool/product ownership before and after; its small free-filesystem check is not a managed-slot quota proof or a full dynamic-loader closure.
 
 ```sh
 python3 -B tools/software-preemption/run.py \
@@ -29,4 +38,6 @@ python3 -B tools/software-preemption/run.py \
   --binding-sha256 EXACT_BINDING_SHA256 --raw NEW_ABSOLUTE_IGNORED_DIRECTORY
 ```
 
-The build object is a root-reviewed join of the exact build command, actual waited closure and pinned saved evidence files. The small caller does not parse Cargo logs or independently establish build provenance. Build/tool/source/runtime admission remains the root's task. Result sources and failed records must be preserved if later corrections are needed.
+The build object joins the exact build command, actual waited closure and saved evidence files. The small caller does not parse Cargo logs or independently establish build provenance. Build/tool/source/runtime admission remains the root's task. Result sources and failed records must be preserved if later corrections are needed.
+
+The first measured result is [the d07873a receipt](../../evaluation/software-preemption-d07873a/README.md). The convenient `evaluate.py` wrapper was added afterward and is source-reviewed, not executed in that historical run. Configuration snapshots may contain `READ_DENIED`; equality establishes continuity of those observations, not complete readable Cargo configuration closure. The tracked wrapper itself is included in the source snapshot.

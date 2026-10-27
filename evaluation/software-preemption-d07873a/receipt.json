@@ -1,0 +1,293 @@
+{
+  "binary_sha256": "fb9543017cf6b60058c3c753814660a5a8b3008fa09a4369899f4d0363864160",
+  "build": {
+    "argv": [
+      "cargo",
+      "build",
+      "--locked",
+      "--offline",
+      "--release",
+      "--bin",
+      "liteinst-preempt"
+    ],
+    "env": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_RELEASE_DEBUG": "0",
+      "CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_RELEASE_OPT_LEVEL": "3",
+      "CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0"
+    },
+    "log_sha256": "af913236976d0495c2214f67b7ae9f9f0010d6d32e19541aa7c5f539ab4abe74",
+    "seconds": 16.93104240903631
+  },
+  "claim": 3,
+  "closed_commands": [
+    {
+      "absence_proof": "ECHILD",
+      "exit": 0,
+      "id": "qualify",
+      "parent_sha256": "5f7c83ea8c58ef31130ae72e068e511bb95b25edda40ac8923d3d35c13d3f6e9",
+      "receipt_sha256": "487dc6a5c53d6165ae31fd1244a5f01946ab62aaedb1f4adbf6630cd0099ab2c"
+    },
+    {
+      "absence_proof": "ECHILD",
+      "exit": 0,
+      "id": "countdown-jnz",
+      "parent_sha256": "8d3bcc574b7e5779bd71241041b0d8fe14fb8535a25486e58b6c7a97ff2828cf",
+      "receipt_sha256": "d82d0c7f09609df536ba49f881660d85e0c7e1bfac3b3b9f670421a27806279d"
+    },
+    {
+      "absence_proof": "ECHILD",
+      "exit": 0,
+      "id": "signed-jg",
+      "parent_sha256": "1c18fd9c771c82da0cb9ba73cf4467a45febde73d69e31e0d213be9102841ba1",
+      "receipt_sha256": "253fcd0ef68799cebf8ab4a8ff7873c9b73cb10ec9b9679ebabb56d136ff1594"
+    },
+    {
+      "absence_proof": "ECHILD",
+      "exit": 0,
+      "id": "unsigned-jb",
+      "parent_sha256": "2cb485d48164abb3eb1701a75c7e3e4db0a54c70bfc32689c2a839a7f0348baa",
+      "receipt_sha256": "f3922d47fa1d0b6a59ecc9682249967734a2fd78c15bbf65400e0189f986dc5b"
+    },
+    {
+      "absence_proof": "ECHILD",
+      "exit": 0,
+      "id": "direct-jmp",
+      "parent_sha256": "d42a2504064f29f01c18acb1badbb71a4742cd805af3c24e75d1b3ea9cd241dc",
+      "receipt_sha256": "1d59f019c21b10e57652d9b84653bea2be77a7607044df716f9dadf4f5a00233"
+    }
+  ],
+  "commands": [
+    [
+      "liteinst-preempt",
+      "qualify",
+      "NEW_OUTPUT"
+    ],
+    [
+      "liteinst-preempt",
+      "bench",
+      "countdown-jnz",
+      "NEW_OUTPUT"
+    ],
+    [
+      "liteinst-preempt",
+      "bench",
+      "signed-jg",
+      "NEW_OUTPUT"
+    ],
+    [
+      "liteinst-preempt",
+      "bench",
+      "unsigned-jb",
+      "NEW_OUTPUT"
+    ],
+    [
+      "liteinst-preempt",
+      "bench",
+      "direct-jmp",
+      "NEW_OUTPUT"
+    ]
+  ],
+  "data": {
+    "measurements.csv": {
+      "bytes": 8938,
+      "sha256": "8272cf3f94629c35f4a19ece89d7b15ed4e6df80dc63f2312ab5b58bf2eba837"
+    },
+    "qualification.csv": {
+      "bytes": 2899,
+      "sha256": "b26623ad1df759da67b08311c96e28ea708e46e178b0c2ef0580498c3f751789"
+    },
+    "stops.csv": {
+      "bytes": 9435,
+      "sha256": "57550758721f056efe7fff7802eaa1537d7491c563b2e13c5b8890b69bdb20c9"
+    }
+  },
+  "hardware": {
+    "affinity": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ]
+  },
+  "metrics": [
+    {
+      "case": "countdown-jnz",
+      "max_elapsed_ns": 19039,
+      "median_elapsed_ns": 18968,
+      "min_elapsed_ns": 18928,
+      "mode": "native",
+      "repetitions": 7,
+      "work_units": 32768
+    },
+    {
+      "case": "countdown-jnz",
+      "max_elapsed_ns": 11763935,
+      "median_elapsed_ns": 11662813,
+      "min_elapsed_ns": 11203394,
+      "mode": "counter-only",
+      "repetitions": 7,
+      "work_units": 32768
+    },
+    {
+      "case": "countdown-jnz",
+      "max_elapsed_ns": 14171608,
+      "median_elapsed_ns": 14029004,
+      "min_elapsed_ns": 13818830,
+      "mode": "before-taken-backedge-stop-resume",
+      "repetitions": 7,
+      "work_units": 32768
+    },
+    {
+      "case": "signed-jg",
+      "max_elapsed_ns": 19148,
+      "median_elapsed_ns": 18939,
+      "min_elapsed_ns": 18919,
+      "mode": "native",
+      "repetitions": 7,
+      "work_units": 32768
+    },
+    {
+      "case": "signed-jg",
+      "max_elapsed_ns": 11973300,
+      "median_elapsed_ns": 11837095,
+      "min_elapsed_ns": 11674160,
+      "mode": "counter-only",
+      "repetitions": 7,
+      "work_units": 32768
+    },
+    {
+      "case": "signed-jg",
+      "max_elapsed_ns": 15145471,
+      "median_elapsed_ns": 14245229,
+      "min_elapsed_ns": 13779580,
+      "mode": "before-taken-backedge-stop-resume",
+      "repetitions": 7,
+      "work_units": 32768
+    },
+    {
+      "case": "unsigned-jb",
+      "max_elapsed_ns": 19730,
+      "median_elapsed_ns": 19630,
+      "min_elapsed_ns": 18818,
+      "mode": "native",
+      "repetitions": 7,
+      "work_units": 32768
+    },
+    {
+      "case": "unsigned-jb",
+      "max_elapsed_ns": 12252758,
+      "median_elapsed_ns": 11697445,
+      "min_elapsed_ns": 11602293,
+      "mode": "counter-only",
+      "repetitions": 7,
+      "work_units": 32768
+    },
+    {
+      "case": "unsigned-jb",
+      "max_elapsed_ns": 14255825,
+      "median_elapsed_ns": 14125830,
+      "min_elapsed_ns": 13866671,
+      "mode": "before-taken-backedge-stop-resume",
+      "repetitions": 7,
+      "work_units": 32768
+    },
+    {
+      "case": "direct-jmp",
+      "max_elapsed_ns": 20151,
+      "median_elapsed_ns": 20100,
+      "min_elapsed_ns": 20030,
+      "mode": "native",
+      "repetitions": 7,
+      "work_units": 32768
+    },
+    {
+      "case": "direct-jmp",
+      "max_elapsed_ns": 12024095,
+      "median_elapsed_ns": 11850976,
+      "min_elapsed_ns": 11598737,
+      "mode": "counter-only",
+      "repetitions": 7,
+      "work_units": 32768
+    },
+    {
+      "case": "direct-jmp",
+      "max_elapsed_ns": 16008586,
+      "median_elapsed_ns": 15072901,
+      "min_elapsed_ns": 14390307,
+      "mode": "before-taken-backedge-stop-resume",
+      "repetitions": 7,
+      "work_units": 32768
+    }
+  ],
+  "private_records": "Detailed build, ownership and process records are retained under ignored/; no raw host paths are published.",
+  "qualification": {
+    "condition_controls": 512,
+    "counter_cells": 16,
+    "deterministic_repeats": 48,
+    "native_cells": 16,
+    "parked_checks": 256,
+    "scope": "finite-before-taken-backedge",
+    "status": "PASS",
+    "stop_cells": 96
+  },
+  "raw_rows": {
+    "benchmark": 108,
+    "measured_per_mode": 7,
+    "qualification": 96,
+    "stops": 256,
+    "warmup_per_mode": 2
+  },
+  "revision": "d07873afaef7c0adafc31dff2adc8172ff4db0b0",
+  "runtime_limits": {
+    "cpu_seconds_per_command": 60,
+    "file_bytes": 1048576,
+    "outer_kill_after_seconds": 10,
+    "outer_timeout_seconds": 100,
+    "parent_cleanup_seconds": 10,
+    "parent_wait_seconds": 115,
+    "wall_seconds_per_command": 90,
+    "whole_campaign_parent_seconds": 650
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "schema": 1,
+  "scope": {
+    "arbitrary_elf_instrumentation": false,
+    "authored_loops": 4,
+    "clock": "taken backward branch decision BEFORE execution",
+    "full_state_callback": true,
+    "general_progress_guarantee": false,
+    "independent_xsave_stack_oracle": false,
+    "parked_saved_words": 18,
+    "repeated_state_projection": [
+      "logical_site_offset",
+      "counted_taken_edges",
+      "branch_encounters",
+      "RAX",
+      "RCX",
+      "RDX",
+      "RFLAGS & 0x8d5"
+    ],
+    "timed_region": "function calls, branch callbacks and controller scheduling; excludes publication and thread creation; no ptrace or deliberate parked delay"
+  },
+  "status": "PASS",
+  "workload": {
+    "calls_per_repetition": 128,
+    "iterations_per_call": 256,
+    "iterations_per_repetition": 32768,
+    "stop_quantum": 64,
+    "stops_per_stop_resume_repetition": 510
+  }
+}
