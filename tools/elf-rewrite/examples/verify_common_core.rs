@@ -21,6 +21,11 @@ mod common_core_foreign;
 #[path = "../../../tests/support/e9_common_planning_profile.rs"]
 mod planning_profile;
 use planning_profile::PlanningProfile;
+#[path = "support/common_core_router.rs"]
+mod common_core_router;
+#[path = "../../../tests/support/e9_common_router_contract.rs"]
+mod router_contract;
+use router_contract::RouterMode;
 
 const INPUT: usize = 1_048_576;
 const OUTPUT: usize = 16_777_216;
@@ -382,7 +387,7 @@ fn field(
     ]
 }
 
-fn ledger_shape(rows: &[Vec<&str>]) {
+fn ledger_shape(rows: &[Vec<&str>], router: RouterMode) {
     for r in rows {
         let length = match r[0] {
             "LI2LEDGER"
@@ -400,6 +405,7 @@ fn ledger_shape(rows: &[Vec<&str>]) {
             | "phdr_vaddr" => 2,
             "requirement" | "route" | "restored-boundary" | "unmet-requirement"
             | "entry-preserved" => 4,
+            "entry-router-required" if router.enabled() => 5,
             "hook"
             | "step-read"
             | "semantic-write"
@@ -913,6 +919,7 @@ fn derived_permits(original: &[(u64, u64)], pcs: &[u64]) -> Vec<[Permit; 2]> {
 
 fn main() {
     let mut args: Vec<_> = std::env::args_os().collect();
+    let router = RouterMode::arguments(&mut args);
     let planning = PlanningProfile::arguments(&mut args, 7);
     assert_eq!(
         args.len(),
@@ -1329,7 +1336,7 @@ fn main() {
     assert!(!rows(plan).iter().any(|r| r[0] == "CARRIER-EXTENSION"));
     assert!(full[plan.len()..].starts_with(b"CARRIER-EXTENSION\t1\n"));
     let r = rows(full);
-    ledger_shape(&r);
+    ledger_shape(&r, router);
     assert_eq!(r[0], vec!["LI2LEDGER", "1"]);
     assert_eq!(one(&r, "original_sha256")[1], hash(&original.bytes));
     assert_eq!(one(&r, "selection_sha256")[1], hash(&selection.bytes));
@@ -1347,7 +1354,10 @@ fn main() {
         .map(String::as_str)
         .collect::<Vec<_>>()
     );
-    assert!(!r.iter().any(|x| x[0] == "entry-router-required"));
+    if !router.enabled() {
+        assert!(!r.iter().any(|x| x[0] == "entry-router-required"));
+    }
+    let router_declarations = common_core_router::declarations(router, &r);
     let foreign_pairs = if planning == PlanningProfile::OwnedForeignNeighbors {
         common_core_foreign::pairs(&s.sites, &r, &report)
     } else {
@@ -1382,7 +1392,23 @@ fn main() {
             })
             .collect();
         assert_eq!(live.len(), 1);
-        assert_eq!(&live[0][3..], ["true", "true", "false"]);
+        let routed_step = router_declarations
+            .iter()
+            .any(|x| (x.0, x.1) == (n(step[1]), n(step[2])));
+        if routed_step {
+            assert!(router.enabled());
+            assert_eq!(&live[0][3..], ["true", "true", "true"]);
+            common_core_router::step(
+                &r,
+                step,
+                &router_declarations,
+                &old,
+                &original.bytes,
+                &overlay,
+            );
+        } else {
+            assert_eq!(&live[0][3..], ["true", "true", "false"]);
+        }
         if planning == PlanningProfile::OwnedForeignNeighbors {
             common_core_foreign::check_current_read(&s.sites, &r, step, &overlay);
             for pair in &foreign_pairs {
@@ -1460,6 +1486,7 @@ fn main() {
                 | "semantic-write"
                 | "live-store-span"
                 | "entry-preserved"
+                | "entry-router-required"
                 | "allocation"
                 | "live-prerequisites-not-receipts"
         ) {
@@ -1828,18 +1855,7 @@ fn main() {
                 .collect::<Vec<_>>(),
             expected_pc_ranges
         );
-        let mut requirements: Vec<_> = r
-            .iter()
-            .filter(|x| x[0] == "unmet-requirement" && n(x[1]) == id)
-            .map(|x| (n(x[2]), n(x[3])))
-            .collect();
-        requirements.sort();
-        let mut expected: Vec<_> = [1, 2, 3, 4, 7, 8].map(|v| (v, 0)).to_vec();
-        if hooks > 0 {
-            expected.push((5, 2));
-        }
-        expected.sort();
-        assert_eq!(requirements, expected);
+        common_core_router::requirements(&r, id, hooks, router, &router_declarations);
         images.push(Image { address, bytes });
     }
     assert_eq!(
@@ -1929,6 +1945,8 @@ fn main() {
             assert!(head.target == t || all_heads.get(&t).is_some_and(|v| v.route == head.target));
         }
     }
+    let router_routes =
+        common_core_router::authenticate(&r, &router_declarations, &all_heads, &elf);
     let mut witness = format!(
         "LI2COMMONCORE\t1\nscope\tSTRUCTURAL_CORE_NULL_WITNESSES_ONLY\noriginal_sha256\t{}\ninstructions_sha256\t{}\ntarget_sha256\t{}\nselection_sha256\t{}\ncandidate_sha256\t{}\nqualification_complete\tfalse\n",
         hash(&original.bytes),
@@ -2031,6 +2049,22 @@ fn main() {
     assert!(added <= 2048);
     assert_eq!(n(one(&r, "new_load_pages")[1]), added);
     assert!(pages.last().unwrap() + 4096 - pages.first().unwrap() <= 1_073_741_824);
+    if router.enabled() {
+        writeln!(&mut witness, "router-profile\t{}", router_contract::PROFILE).unwrap();
+        for route in &router_routes {
+            writeln!(
+                &mut witness,
+                "router\t{}\t{}\t{}\t{}\t{}",
+                route.pc,
+                route.target,
+                route.source_start,
+                route.source_end,
+                hex(&route.fetch)
+            )
+            .unwrap();
+        }
+    }
+    let mut used_router_routes = BTreeSet::new();
     for src in seed::HEADS {
         let mut head = all_heads.get(&src.pc).cloned().unwrap_or_else(|| {
             let at = file_at(&old, src.pc, usize::from(src.length));
@@ -2067,6 +2101,18 @@ fn main() {
                     .iter()
                     .any(|q| q.pc <= at && at < q.pc + q.bytes.len() as u64)
             );
+            if let Some(route) = router_routes.iter().find(|route| route.pc == at) {
+                assert!(router.enabled());
+                assert_eq!(
+                    at, src.pc,
+                    "router only at its authenticated original entry"
+                );
+                assert_eq!(route.target, head.route);
+                assert!(used_router_routes.insert(at));
+                gateway.push((at, route.target, route.fetch.clone()));
+                at = route.target;
+                continue;
+            }
             let off = file_at(&elf, at, 1);
             let i = decoded(&candidate[off..candidate.len().min(off + 15)], at);
             assert_eq!(i.flow_control(), FlowControl::UnconditionalBranch);
@@ -2087,9 +2133,17 @@ fn main() {
         )
         .unwrap();
         for (pc, next, b) in head.walk {
-            writeln!(&mut witness, "walk\t{}\t{pc}\t{next}\t{}", src.pc, hex(&b)).unwrap();
+            if router_routes.iter().any(|route| route.pc == pc) {
+                writeln!(&mut witness, "trap\t{}\t{pc}\t{next}\t{}", src.pc, hex(&b)).unwrap();
+            } else {
+                writeln!(&mut witness, "walk\t{}\t{pc}\t{next}\t{}", src.pc, hex(&b)).unwrap();
+            }
         }
     }
+    assert_eq!(
+        used_router_routes,
+        router_routes.iter().map(|r| r.pc).collect()
+    );
     writeln!(&mut witness, "complete\t87\t174\t2\tE9_UNIMPLEMENTED_UNRUN").unwrap();
     for f in files.values().chain(inventory_inputs.values()).chain([
         &inventory_complete,

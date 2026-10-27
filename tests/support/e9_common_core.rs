@@ -6,6 +6,16 @@ use super::*;
 #[path = "e9_common_planning_profile.rs"]
 mod planning_profile;
 use planning_profile::PlanningProfile;
+#[path = "e9_common_router_contract.rs"]
+mod router_contract;
+#[path = "e9_common_router_native.rs"]
+mod router_native;
+use router_contract::{Route, RouterMode};
+#[path = "e9_common_router_controls.rs"]
+mod router_controls;
+pub fn router_controls_main() {
+    router_controls::main();
+}
 
 const MAX_INPUT: usize = 1_048_576;
 const MAX_OUTPUT: usize = 16_777_216;
@@ -58,6 +68,7 @@ fn read_empty(path: &Path) -> Input {
 }
 #[derive(Clone)]
 struct Walk {
+    trap: bool,
     pc: u64,
     next: u64,
     bytes: Vec<u8>,
@@ -74,6 +85,7 @@ struct Candidate {
     heads: Vec<Head>,
     pages: Vec<Page>,
     base: Vec<u8>,
+    routes: Vec<Route>,
 }
 impl Candidate {
     fn read(
@@ -82,6 +94,7 @@ impl Candidate {
         original: &Input,
         target: &Input,
         planning: PlanningProfile,
+        router: RouterMode,
     ) -> Self {
         assert!(directory.is_absolute());
         assert_eq!(
@@ -210,6 +223,68 @@ impl Candidate {
         }
         assert_eq!(loads, declared);
         let (base, pages) = materialize_load_pages(elf, loads);
+        let mut routes = Vec::new();
+        if router.enabled() {
+            assert_eq!(
+                rows[cursor],
+                vec!["router-profile", router_contract::PROFILE]
+            );
+            cursor += 1;
+            while rows[cursor][0] == "router" {
+                let r = &rows[cursor];
+                assert_eq!(r.len(), 6);
+                routes.push(Route {
+                    pc: number(r[1]),
+                    target: number(r[2]),
+                    source_start: number(r[3]),
+                    source_end: number(r[4]),
+                    fetch: bytes(r[5]),
+                });
+                cursor += 1;
+            }
+        }
+        router_contract::check_routes(&routes);
+        let ledger: Vec<Vec<_>> = text(get("plan-ledger.tsv"))
+            .lines()
+            .map(|r| r.split('\t').collect())
+            .collect();
+        let declared: Vec<_> = ledger
+            .iter()
+            .filter(|r| r[0] == "entry-router-required")
+            .map(|r| {
+                assert_eq!(r.len(), 5);
+                (number(r[3]), number(r[4]))
+            })
+            .collect();
+        assert_eq!(declared.len(), routes.len());
+        assert_eq!(
+            declared.into_iter().collect::<BTreeSet<_>>(),
+            routes.iter().map(|r| (r.pc, r.target)).collect()
+        );
+        for route in &routes {
+            let source = seed::ORIGINAL_RANGES
+                .iter()
+                .find(|r| {
+                    r.pc == route.source_start && r.pc + r.bytes.len() as u64 == route.source_end
+                })
+                .unwrap();
+            assert!(source.pc <= route.pc && route.pc < source.pc + source.bytes.len() as u64);
+            assert!(
+                seed::HEADS
+                    .iter()
+                    .any(|h| h.pc == route.pc && !matches!(h.flow, seed::Flow::Call(_)))
+            );
+            assert_eq!(
+                ledger
+                    .iter()
+                    .filter(|r| r[0] == "route"
+                        && number(r[2]) == route.pc
+                        && number(r[3]) == route.target)
+                    .count(),
+                1
+            );
+        }
+        let mut used_routes = BTreeSet::new();
         let mut heads = Vec::new();
         for src in seed::HEADS {
             let r = &rows[cursor];
@@ -223,7 +298,7 @@ impl Candidate {
             cursor += 1;
             let mut walk = Vec::new();
             let mut pc = src.pc;
-            while rows[cursor][0] == "walk" {
+            while rows[cursor][0] == "walk" || (router.enabled() && rows[cursor][0] == "trap") {
                 let r = &rows[cursor];
                 assert_eq!(r.len(), 5);
                 assert_eq!(number(r[1]), src.pc);
@@ -231,7 +306,20 @@ impl Candidate {
                 let next = number(r[3]);
                 let b = bytes(r[4]);
                 assert!(!b.is_empty() && b.len() <= 15);
-                walk.push(Walk { pc, next, bytes: b });
+                let trap = r[0] == "trap";
+                if trap {
+                    assert_eq!(pc, src.pc);
+                    assert!(walk.is_empty());
+                    let route = routes.iter().find(|r| r.pc == pc).unwrap();
+                    assert_eq!((next, b.as_slice()), (route.target, route.fetch.as_slice()));
+                    assert!(used_routes.insert(pc));
+                }
+                walk.push(Walk {
+                    trap,
+                    pc,
+                    next,
+                    bytes: b,
+                });
                 pc = next;
                 cursor += 1;
                 assert!(walk.len() < MAX_STEPS);
@@ -254,12 +342,19 @@ impl Candidate {
             vec!["complete", "87", "174", "2", "E9_UNIMPLEMENTED_UNRUN"]
         );
         assert_eq!(cursor + 1, rows.len());
+        assert_eq!(used_routes, routes.iter().map(|r| r.pc).collect());
         let out = Self {
             inputs,
             heads,
             pages,
             base,
+            routes,
         };
+        for route in &out.routes {
+            assert!(out.pages.iter().any(|p| p.flags == 5
+                && p.address <= route.target
+                && route.target < p.address + 4096));
+        }
         for h in &out.heads {
             assert_eq!(out.bytes_at(h.body, h.bytes.len()), h.bytes);
             for w in &h.walk {
@@ -479,6 +574,8 @@ fn pair(
                 && scratch_end <= FRAME - 128
         );
     }
+    let router = (!versions.candidate.routes.is_empty())
+        .then(|| router_native::Router::new(&versions.candidate.routes));
     let child = Tracee::fork();
     child.request(libc::PTRACE_SETOPTIONS, 0, libc::PTRACE_O_EXITKILL as usize);
     assert_eq!(inherited(&child.registers()), inherited(&context.registers));
@@ -500,6 +597,12 @@ fn pair(
     trace
         .write_all(b"phase\tbefore_pc\tafter_pc\tbytes\n")
         .unwrap();
+    if let Some(router) = &router {
+        trace.write_all(router.descriptor().as_bytes()).unwrap();
+    }
+    if let Some(router) = &router {
+        router.observed(&child, "before", &mut trace);
+    }
     let mut steps = 0;
     for w in &head.walk {
         assert_eq!(child.registers().rip, w.pc);
@@ -512,9 +615,33 @@ fn pair(
                 "literal hook return word"
             );
         }
-        step(&child, &mut steps);
+        if w.trap {
+            let route = versions
+                .candidate
+                .routes
+                .iter()
+                .find(|r| r.pc == w.pc)
+                .unwrap();
+            router
+                .as_ref()
+                .unwrap()
+                .deliver(&child, route, &mut steps, &mut trace);
+        } else {
+            step(&child, &mut steps);
+        }
         let next = child.registers().rip;
-        writeln!(&mut trace, "prefix\t{}\t{}\t{}", w.pc, next, hex(&w.bytes)).unwrap();
+        if w.trap {
+            writeln!(
+                &mut trace,
+                "trap-prefix\t{}\t{}\t{}",
+                w.pc,
+                next,
+                hex(&w.bytes)
+            )
+            .unwrap();
+        } else {
+            writeln!(&mut trace, "prefix\t{}\t{}\t{}", w.pc, next, hex(&w.bytes)).unwrap();
+        }
         trace.flush().unwrap();
         assert_eq!(next, w.next);
     }
@@ -553,6 +680,9 @@ fn pair(
     .unwrap();
     trace.flush().unwrap();
     let final_state = versions.capture(&child, spec, dir, "after", logical(spec), finish);
+    if let Some(router) = &router {
+        router.observed(&child, "after", &mut trace);
+    }
     assert_state(&after.state, &final_state.state);
     assert_eq!(final_state.raw.len(), after.raw.len());
     if let seed::Completion::Fault {
@@ -593,6 +723,7 @@ fn pair(
 
 pub fn main() {
     let mut args: Vec<_> = std::env::args_os().collect();
+    let router = RouterMode::arguments(&mut args);
     let planning = PlanningProfile::arguments(&mut args, 8);
     assert_eq!(
         args.len(),
@@ -617,6 +748,7 @@ pub fn main() {
         &original,
         &requested_target,
         planning,
+        router,
     );
     let inventory = admit(&original.bytes, &instructions.bytes);
     let original_view = original_pages(&original.bytes);

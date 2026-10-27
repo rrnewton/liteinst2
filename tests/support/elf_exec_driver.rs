@@ -7,6 +7,12 @@
 mod oracle;
 
 fn main() {
+    if std::env::args_os().nth(1).as_deref()
+        == Some(std::ffi::OsStr::new("common-core-router-controls"))
+    {
+        oracle::elf_exec_oracle::common_image::core_pair::router_controls_main();
+        return;
+    }
     if std::env::args_os().nth(1).as_deref() == Some(std::ffi::OsStr::new("replay-common-e9")) {
         oracle::elf_exec_oracle::common_image::e9_pair::main();
         return;
