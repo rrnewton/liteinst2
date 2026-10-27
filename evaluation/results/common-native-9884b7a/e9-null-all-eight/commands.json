@@ -1,0 +1,3662 @@
+[
+  {
+    "cell": "null-heap-write-unstripped-stock-algorithm",
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-paired-runner-v2/payload/evaluation/e9-common-app/run_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-inputs-v1/inputs.json",
+          "--inputs-sha256",
+          "d7c2bf315909d1d91eedbe69c730d9cd9f648bd0d318cdb9cbc9e444647ec887",
+          "--cell",
+          "null-heap-write-unstripped-stock-algorithm",
+          "--raw",
+          "${EPOCH}/e9-null-heap-unstripped-stock-v1"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "recipe_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 59.71916050999425,
+          "parent_wait_returned": true,
+          "pid": 2595991,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "705e2ff97628ad745010723cbcf19956dc2afd9fbc8cbd3184e9e96c15d12698"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-launch-v1/launch.py"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "ef498715a3dc8120725011ab71d0a57dfd16ddc984cdde044fa23aee19146ca8",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 59.61445966712199,
+        "parent_wait_returned": true,
+        "pid": 2596149,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4"
+      }
+    },
+    "cpu_limit": null,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": null,
+    "helper_sha256": null,
+    "kind": "runner",
+    "operational_seconds": 59.61445966712199,
+    "ordinal": 1,
+    "parent_seconds": 59.71916050999425,
+    "script_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "status": "CLOSED_COMMAND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4",
+    "subject_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "wall_limit": null
+  },
+  {
+    "cell": "null-heap-write-unstripped-stock-algorithm",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-null-heap-unstripped-stock-v1/verify/request.json",
+          "--receipt",
+          "${EPOCH}/e9-null-heap-unstripped-stock-v1/verify/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55,
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+            "${EPOCH}/e9-null-heap-unstripped-stock-v1/witness-inputs.json",
+            "${EPOCH}/e9-null-heap-unstripped-stock-v1/witness",
+            "--inputs-sha256",
+            "413aa1ce49a743d0e8df536d04e7b0d713821181afa825897859637aa08c075d",
+            "--structural-reader",
+            "${REPO}/tools/elf-rewrite/e9-sites.py"
+          ],
+          "cpu_seconds": 20,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-null-heap-unstripped-stock-v1/verify/tmp"
+          },
+          "file_bytes": 16777216,
+          "stderr": "${EPOCH}/e9-null-heap-unstripped-stock-v1/verify/stderr.txt",
+          "stdout": "${EPOCH}/e9-null-heap-unstripped-stock-v1/verify/stdout.txt",
+          "wall_seconds": 30
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 0.2670967001467943,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.2107245228253305,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "aa702de30da823ed8139c384f110b5ad541afc1142d50bce03bd4907adafec17",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+          "${EPOCH}/e9-null-heap-unstripped-stock-v1/witness-inputs.json",
+          "${EPOCH}/e9-null-heap-unstripped-stock-v1/witness",
+          "--inputs-sha256",
+          "413aa1ce49a743d0e8df536d04e7b0d713821181afa825897859637aa08c075d",
+          "--structural-reader",
+          "${REPO}/tools/elf-rewrite/e9-sites.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-null-heap-unstripped-stock-v1/verify/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${EPOCH}/e9-null-heap-unstripped-stock-v1/verify/stderr.txt",
+        "stdout": "${EPOCH}/e9-null-heap-unstripped-stock-v1/verify/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "cpu_limit": 20,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 16777216,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "verify",
+    "operational_seconds": 0.2107245228253305,
+    "ordinal": 2,
+    "parent_seconds": 0.2670967001467943,
+    "script_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "status": "PASS_STRUCTURAL_WITNESS",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+    "subject_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "wall_limit": 30
+  },
+  {
+    "cell": "null-heap-write-unstripped-stock-algorithm",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-null-heap-unstripped-stock-v1/replay/request.json",
+          "--receipt",
+          "${EPOCH}/e9-null-heap-unstripped-stock-v1/replay/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request": {
+          "argv": [
+            "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+            "replay-common-e9",
+            "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "${EPOCH}/build-v1/inventories/null-heap-write-unstripped/instructions.tsv",
+            "${EPOCH}/e9-inputs-v1/target.tsv",
+            "${EPOCH}/e9-null-heap-unstripped-stock-v1/witness/witness.json",
+            "${EPOCH}/e9-null-heap-unstripped-stock-v1/witness/native.tsv",
+            "${EPOCH}/e9-null-heap-unstripped-stock-v1/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-null-heap-unstripped-stock-v1/replay/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${EPOCH}/e9-null-heap-unstripped-stock-v1/replay/stderr.txt",
+          "stdout": "${EPOCH}/e9-null-heap-unstripped-stock-v1/replay/stdout.txt",
+          "wall_seconds": 90
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 5.4786635839845985,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 5.429094057064503,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "c21bac99ebaaf4850c74c37005ecdcd4348d86c375531794d5e9fe350699929d",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+          "replay-common-e9",
+          "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+          "${EPOCH}/build-v1/inventories/null-heap-write-unstripped/instructions.tsv",
+          "${EPOCH}/e9-inputs-v1/target.tsv",
+          "${EPOCH}/e9-null-heap-unstripped-stock-v1/witness/witness.json",
+          "${EPOCH}/e9-null-heap-unstripped-stock-v1/witness/native.tsv",
+          "${EPOCH}/e9-null-heap-unstripped-stock-v1/captures"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-null-heap-unstripped-stock-v1/replay/tmp"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-null-heap-unstripped-stock-v1/replay/stderr.txt",
+        "stdout": "${EPOCH}/e9-null-heap-unstripped-stock-v1/replay/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "replay",
+    "operational_seconds": 5.429094057064503,
+    "ordinal": 3,
+    "parent_seconds": 5.4786635839845985,
+    "script_sha256": null,
+    "status": "PASS_COMMAND_AND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+    "subject_sha256": "41200e70953c4b4450efdb4c91282857859d28a7a391a7a272750c1aaae77b5d",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-heap-write-unstripped-stock-algorithm",
+    "context": {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-audit-launch-v2/audit/request.json",
+          "--receipt",
+          "${EPOCH}/e9-audit-launch-v2/audit/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request_sha256": "1ebd42aaff962ce6a4c7c9d072578dc7123ca3fba58afa5833c0d3ea9051b3b2"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 47.77286678017117,
+          "parent_wait_returned": true,
+          "pid": 2443768,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "e3ef67088833dc92b47818a780084c25ad9ee5f9a8b1aaced967546ee53f2f0b"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/run-e9-audit-v2.py",
+            "--review-sha256",
+            "97b34cb68a455775431fbf148efad88c30552787694f77312b47a42caaf39801"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "05bd263c8267c820a2e57726bf2d602cd0c55bb030b02feeb2d06724492fca6b",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 47.17189224017784,
+        "parent_wait_returned": true
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 47.10848198598251,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "1ebd42aaff962ce6a4c7c9d072578dc7123ca3fba58afa5833c0d3ea9051b3b2",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "2ea0269b4a783286e35db544bea71353564746dc9aaa3cc0d4c21f86cbcd916a",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-pair-audit-hash-reuse-v2/payload/evaluation/e9-common-app/audit_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-audit-retry-v2/assembled/inputs.json",
+          "--inputs-sha256",
+          "d0fff8688b40e234b7db7333b07db0a4ebbcb84f987ef354158613a5341e139c",
+          "--raw",
+          "${EPOCH}/e9-audit-v2"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-audit-launch-v2/audit/stderr.txt",
+        "stdout": "${EPOCH}/e9-audit-launch-v2/audit/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "audit-pass",
+    "operational_seconds": 47.10848198598251,
+    "ordinal": 4,
+    "parent_seconds": 47.17189224017784,
+    "script_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "status": "PASS_SAVED_CONTENT",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "2ea0269b4a783286e35db544bea71353564746dc9aaa3cc0d4c21f86cbcd916a",
+    "subject_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-heap-write-unstripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-paired-runner-v2/payload/evaluation/e9-common-app/run_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-inputs-002-v1/inputs.json",
+          "--inputs-sha256",
+          "dfab3e596bad6dc815856686e1a1929fe99cc396f77b5f99a625d47065819dc6",
+          "--cell",
+          "null-heap-write-unstripped-bootstrap-patched-reference",
+          "--raw",
+          "${EPOCH}/e9-cell-002-v1"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "recipe_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 73.83144244295545,
+          "parent_wait_returned": true,
+          "pid": 6908,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "534b2c955a967ae9244d89ac1b2a0b90fa2aa1c6b6aaf504c3440b9896229405"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-launch-002-v1/launch.py"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "ef498715a3dc8120725011ab71d0a57dfd16ddc984cdde044fa23aee19146ca8",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 73.61373334098607,
+        "parent_wait_returned": true,
+        "pid": 8324,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4"
+      }
+    },
+    "cpu_limit": null,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": null,
+    "helper_sha256": null,
+    "kind": "runner",
+    "operational_seconds": 73.61373334098607,
+    "ordinal": 5,
+    "parent_seconds": 73.83144244295545,
+    "script_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "status": "CLOSED_COMMAND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4",
+    "subject_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "wall_limit": null
+  },
+  {
+    "cell": "null-heap-write-unstripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-002-v1/verify/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-002-v1/verify/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55,
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+            "${EPOCH}/e9-cell-002-v1/witness-inputs.json",
+            "${EPOCH}/e9-cell-002-v1/witness",
+            "--inputs-sha256",
+            "f9aaea549ca15eef11e775698b66a101033c19620e99a9928573568c6b849dad",
+            "--structural-reader",
+            "${REPO}/tools/elf-rewrite/e9-sites.py"
+          ],
+          "cpu_seconds": 20,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-002-v1/verify/tmp"
+          },
+          "file_bytes": 16777216,
+          "stderr": "${EPOCH}/e9-cell-002-v1/verify/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-002-v1/verify/stdout.txt",
+          "wall_seconds": 30
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 0.3714873609133065,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.2802798671182245,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "8cb93e0cbc392784a813bb92a2e4d3c92b6dcf67a01c071e0546e0b1067f5451",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+          "${EPOCH}/e9-cell-002-v1/witness-inputs.json",
+          "${EPOCH}/e9-cell-002-v1/witness",
+          "--inputs-sha256",
+          "f9aaea549ca15eef11e775698b66a101033c19620e99a9928573568c6b849dad",
+          "--structural-reader",
+          "${REPO}/tools/elf-rewrite/e9-sites.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-002-v1/verify/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${EPOCH}/e9-cell-002-v1/verify/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-002-v1/verify/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "cpu_limit": 20,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 16777216,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "verify",
+    "operational_seconds": 0.2802798671182245,
+    "ordinal": 6,
+    "parent_seconds": 0.3714873609133065,
+    "script_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "status": "PASS_STRUCTURAL_WITNESS",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+    "subject_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "wall_limit": 30
+  },
+  {
+    "cell": "null-heap-write-unstripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-002-v1/replay/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-002-v1/replay/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request": {
+          "argv": [
+            "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+            "replay-common-e9",
+            "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "${EPOCH}/build-v1/inventories/null-heap-write-unstripped/instructions.tsv",
+            "${EPOCH}/e9-inputs-002-v1/target.tsv",
+            "${EPOCH}/e9-cell-002-v1/witness/witness.json",
+            "${EPOCH}/e9-cell-002-v1/witness/native.tsv",
+            "${EPOCH}/e9-cell-002-v1/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-002-v1/replay/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${EPOCH}/e9-cell-002-v1/replay/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-002-v1/replay/stdout.txt",
+          "wall_seconds": 90
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 8.450485894922167,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 8.231474486878142,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "41b05edab633133b72cb76f450d5175e9fbc5b8d8e95de55de2ca37bac9373a6",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+          "replay-common-e9",
+          "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+          "${EPOCH}/build-v1/inventories/null-heap-write-unstripped/instructions.tsv",
+          "${EPOCH}/e9-inputs-002-v1/target.tsv",
+          "${EPOCH}/e9-cell-002-v1/witness/witness.json",
+          "${EPOCH}/e9-cell-002-v1/witness/native.tsv",
+          "${EPOCH}/e9-cell-002-v1/captures"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-002-v1/replay/tmp"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-cell-002-v1/replay/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-002-v1/replay/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "replay",
+    "operational_seconds": 8.231474486878142,
+    "ordinal": 7,
+    "parent_seconds": 8.450485894922167,
+    "script_sha256": null,
+    "status": "PASS_COMMAND_AND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+    "subject_sha256": "41200e70953c4b4450efdb4c91282857859d28a7a391a7a272750c1aaae77b5d",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-heap-write-unstripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-audit-launch-002-v1/audit/request.json",
+          "--receipt",
+          "${EPOCH}/e9-audit-launch-002-v1/audit/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request_sha256": "2f08861d7b1ea47a99e859e60136e709e840e95bd3406ca518b22e518ef2dcd6"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 57.34239851287566,
+          "parent_wait_returned": true,
+          "pid": 1297250,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "bdbfcb3326e1598b33937c34e82b5e09e729eb75bdbc9c8aa5c727cfa9c4cd23"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-audit-ordered-launcher-v1/launch.py",
+            "--caller",
+            "${EPOCH}/e9-audit-caller-002-v1/caller.json",
+            "--caller-sha256",
+            "12f11267509191c7d86db2d981f65029a01cf3cbac52c04d8a90e88b69267c51",
+            "--launch-root",
+            "${EPOCH}/e9-audit-launch-002-v1"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "4315dbfd89fe256479491aeadec909348d90de4f0006c63c84c300f9f42690cc",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 48.12203676998615,
+        "parent_wait_returned": true
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 48.06254529301077,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "2f08861d7b1ea47a99e859e60136e709e840e95bd3406ca518b22e518ef2dcd6",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "9629346019d19b68dd6bac904242dc2ae9e7ea64efe2a4904e110f2e8dabfd4b",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-pair-audit-hash-reuse-v2/payload/evaluation/e9-common-app/audit_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-audit-inputs-002-v1/inputs.json",
+          "--inputs-sha256",
+          "bf7fcbbafafc914d4053b5ce9f24009d4091f1a8f8f40f9a84cd22b5882742b7",
+          "--raw",
+          "${EPOCH}/e9-audit-002-v1"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-audit-launch-002-v1/audit/stderr.txt",
+        "stdout": "${EPOCH}/e9-audit-launch-002-v1/audit/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "audit-pass",
+    "operational_seconds": 48.06254529301077,
+    "ordinal": 8,
+    "parent_seconds": 48.12203676998615,
+    "script_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "status": "PASS_SAVED_CONTENT",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "9629346019d19b68dd6bac904242dc2ae9e7ea64efe2a4904e110f2e8dabfd4b",
+    "subject_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-heap-write-stripped-stock-algorithm",
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-paired-runner-v2/payload/evaluation/e9-common-app/run_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-inputs-003-v1/inputs.json",
+          "--inputs-sha256",
+          "fdfb75cfb26e7c0ea0e7b4d09bed45e3bbbb49d40fa2c6728191b7d2ea51fdc0",
+          "--cell",
+          "null-heap-write-stripped-stock-algorithm",
+          "--raw",
+          "${EPOCH}/e9-cell-003-v1"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "recipe_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 64.83097188384272,
+          "parent_wait_returned": true,
+          "pid": 207135,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "d890440fc2c6fb3f83d204c15143b60750fdfeb5040940738186d425100f4aab"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-launch-003-v1/launch.py"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "ef498715a3dc8120725011ab71d0a57dfd16ddc984cdde044fa23aee19146ca8",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 64.70614366605878,
+        "parent_wait_returned": true,
+        "pid": 207800,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4"
+      }
+    },
+    "cpu_limit": null,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": null,
+    "helper_sha256": null,
+    "kind": "runner",
+    "operational_seconds": 64.70614366605878,
+    "ordinal": 9,
+    "parent_seconds": 64.83097188384272,
+    "script_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "status": "CLOSED_COMMAND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4",
+    "subject_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "wall_limit": null
+  },
+  {
+    "cell": "null-heap-write-stripped-stock-algorithm",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-003-v1/verify/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-003-v1/verify/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55,
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+            "${EPOCH}/e9-cell-003-v1/witness-inputs.json",
+            "${EPOCH}/e9-cell-003-v1/witness",
+            "--inputs-sha256",
+            "4b5661c639d269bb559c0bac09ad536b3653a4e5c7f1d3f0c71ebd155a58b95c",
+            "--structural-reader",
+            "${REPO}/tools/elf-rewrite/e9-sites.py"
+          ],
+          "cpu_seconds": 20,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-003-v1/verify/tmp"
+          },
+          "file_bytes": 16777216,
+          "stderr": "${EPOCH}/e9-cell-003-v1/verify/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-003-v1/verify/stdout.txt",
+          "wall_seconds": 30
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 0.31807806505821645,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.22456669504754245,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "7fcf68c84df86df94af93438661f42d8eed8f1a4dfb0623ad58033d4ae211439",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+          "${EPOCH}/e9-cell-003-v1/witness-inputs.json",
+          "${EPOCH}/e9-cell-003-v1/witness",
+          "--inputs-sha256",
+          "4b5661c639d269bb559c0bac09ad536b3653a4e5c7f1d3f0c71ebd155a58b95c",
+          "--structural-reader",
+          "${REPO}/tools/elf-rewrite/e9-sites.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-003-v1/verify/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${EPOCH}/e9-cell-003-v1/verify/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-003-v1/verify/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "cpu_limit": 20,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 16777216,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "verify",
+    "operational_seconds": 0.22456669504754245,
+    "ordinal": 10,
+    "parent_seconds": 0.31807806505821645,
+    "script_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "status": "PASS_STRUCTURAL_WITNESS",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+    "subject_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "wall_limit": 30
+  },
+  {
+    "cell": "null-heap-write-stripped-stock-algorithm",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-003-v1/replay/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-003-v1/replay/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request": {
+          "argv": [
+            "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+            "replay-common-e9",
+            "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "${EPOCH}/build-v1/inventories/null-heap-write-stripped/instructions.tsv",
+            "${EPOCH}/e9-inputs-003-v1/target.tsv",
+            "${EPOCH}/e9-cell-003-v1/witness/witness.json",
+            "${EPOCH}/e9-cell-003-v1/witness/native.tsv",
+            "${EPOCH}/e9-cell-003-v1/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-003-v1/replay/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${EPOCH}/e9-cell-003-v1/replay/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-003-v1/replay/stdout.txt",
+          "wall_seconds": 90
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 5.832710477057844,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 5.7429936120752245,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "ce34d8be7be8c541ae4ccbb24ff4a47f6bbaebce367d64c3f40c5748fdaf26d9",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+          "replay-common-e9",
+          "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+          "${EPOCH}/build-v1/inventories/null-heap-write-stripped/instructions.tsv",
+          "${EPOCH}/e9-inputs-003-v1/target.tsv",
+          "${EPOCH}/e9-cell-003-v1/witness/witness.json",
+          "${EPOCH}/e9-cell-003-v1/witness/native.tsv",
+          "${EPOCH}/e9-cell-003-v1/captures"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-003-v1/replay/tmp"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-cell-003-v1/replay/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-003-v1/replay/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "replay",
+    "operational_seconds": 5.7429936120752245,
+    "ordinal": 11,
+    "parent_seconds": 5.832710477057844,
+    "script_sha256": null,
+    "status": "PASS_COMMAND_AND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+    "subject_sha256": "41200e70953c4b4450efdb4c91282857859d28a7a391a7a272750c1aaae77b5d",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-heap-write-stripped-stock-algorithm",
+    "context": {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-audit-launch-003-v1/audit/request.json",
+          "--receipt",
+          "${EPOCH}/e9-audit-launch-003-v1/audit/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request_sha256": "178d8f5e8e96f5269e851cc4676cb0fa4ecb05c24dfdc66931ac61925f16798f"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 59.76085827499628,
+          "parent_wait_returned": true,
+          "pid": 407244,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "48ee327542783b5c87d966be37cf099d87c0ca46a54811470bcb74cc603e67b4"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-audit-ordered-launcher-v1/launch.py",
+            "--caller",
+            "${EPOCH}/e9-audit-caller-003-v1/caller.json",
+            "--caller-sha256",
+            "220b799b67b9618cb75b7f7a0bea441fbfa9393d5be4a359deac023d2f43f81a",
+            "--launch-root",
+            "${EPOCH}/e9-audit-launch-003-v1"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "4315dbfd89fe256479491aeadec909348d90de4f0006c63c84c300f9f42690cc",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 50.678014697972685,
+        "parent_wait_returned": true
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 50.60180699802004,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "178d8f5e8e96f5269e851cc4676cb0fa4ecb05c24dfdc66931ac61925f16798f",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "d7793d977067791b2a20c9ce346fced58b2e418a43984810334f3b09c4e8a865",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-pair-audit-hash-reuse-v2/payload/evaluation/e9-common-app/audit_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-audit-inputs-003-v1/inputs.json",
+          "--inputs-sha256",
+          "116a851aae112731280388a97dc3e79533a2c630b1612461cf169c2e92304e18",
+          "--raw",
+          "${EPOCH}/e9-audit-003-v1"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-audit-launch-003-v1/audit/stderr.txt",
+        "stdout": "${EPOCH}/e9-audit-launch-003-v1/audit/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "audit-pass",
+    "operational_seconds": 50.60180699802004,
+    "ordinal": 12,
+    "parent_seconds": 50.678014697972685,
+    "script_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "status": "PASS_SAVED_CONTENT",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "d7793d977067791b2a20c9ce346fced58b2e418a43984810334f3b09c4e8a865",
+    "subject_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-heap-write-stripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-paired-runner-v2/payload/evaluation/e9-common-app/run_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-inputs-004-v1/inputs.json",
+          "--inputs-sha256",
+          "38b32ca831077abc8a933b24902272f56daf080a318e398d2e850981e758b026",
+          "--cell",
+          "null-heap-write-stripped-bootstrap-patched-reference",
+          "--raw",
+          "${EPOCH}/e9-cell-004-v1"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "recipe_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 61.342989628901705,
+          "parent_wait_returned": true,
+          "pid": 603884,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "d5925d24c9b322625ecc8b5695469a4f7a7e9483c7013cd870317c009f055fce"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-launch-004-v1/launch.py"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "ef498715a3dc8120725011ab71d0a57dfd16ddc984cdde044fa23aee19146ca8",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 61.22922808607109,
+        "parent_wait_returned": true,
+        "pid": 603991,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4"
+      }
+    },
+    "cpu_limit": null,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": null,
+    "helper_sha256": null,
+    "kind": "runner",
+    "operational_seconds": 61.22922808607109,
+    "ordinal": 13,
+    "parent_seconds": 61.342989628901705,
+    "script_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "status": "CLOSED_COMMAND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4",
+    "subject_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "wall_limit": null
+  },
+  {
+    "cell": "null-heap-write-stripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-004-v1/verify/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-004-v1/verify/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55,
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+            "${EPOCH}/e9-cell-004-v1/witness-inputs.json",
+            "${EPOCH}/e9-cell-004-v1/witness",
+            "--inputs-sha256",
+            "f5bb374688504482ca323e1c512681679224ca95ce9572093ebecbc6919cc1e0",
+            "--structural-reader",
+            "${REPO}/tools/elf-rewrite/e9-sites.py"
+          ],
+          "cpu_seconds": 20,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-004-v1/verify/tmp"
+          },
+          "file_bytes": 16777216,
+          "stderr": "${EPOCH}/e9-cell-004-v1/verify/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-004-v1/verify/stdout.txt",
+          "wall_seconds": 30
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 0.3211948301177472,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.22170069604180753,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "e1649b22eea68723fd4817ea28c1b2fccbc534080e55fb6a142c25065e0ecf61",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+          "${EPOCH}/e9-cell-004-v1/witness-inputs.json",
+          "${EPOCH}/e9-cell-004-v1/witness",
+          "--inputs-sha256",
+          "f5bb374688504482ca323e1c512681679224ca95ce9572093ebecbc6919cc1e0",
+          "--structural-reader",
+          "${REPO}/tools/elf-rewrite/e9-sites.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-004-v1/verify/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${EPOCH}/e9-cell-004-v1/verify/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-004-v1/verify/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "cpu_limit": 20,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 16777216,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "verify",
+    "operational_seconds": 0.22170069604180753,
+    "ordinal": 14,
+    "parent_seconds": 0.3211948301177472,
+    "script_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "status": "PASS_STRUCTURAL_WITNESS",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+    "subject_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "wall_limit": 30
+  },
+  {
+    "cell": "null-heap-write-stripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-004-v1/replay/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-004-v1/replay/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request": {
+          "argv": [
+            "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+            "replay-common-e9",
+            "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "${EPOCH}/build-v1/inventories/null-heap-write-stripped/instructions.tsv",
+            "${EPOCH}/e9-inputs-004-v1/target.tsv",
+            "${EPOCH}/e9-cell-004-v1/witness/witness.json",
+            "${EPOCH}/e9-cell-004-v1/witness/native.tsv",
+            "${EPOCH}/e9-cell-004-v1/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-004-v1/replay/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${EPOCH}/e9-cell-004-v1/replay/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-004-v1/replay/stdout.txt",
+          "wall_seconds": 90
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 5.480006197001785,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 5.432414518902078,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "ede58b8cb556299705ba134cfb32e3df232f1a53219cc7364a13a456ab45cbf5",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+          "replay-common-e9",
+          "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+          "${EPOCH}/build-v1/inventories/null-heap-write-stripped/instructions.tsv",
+          "${EPOCH}/e9-inputs-004-v1/target.tsv",
+          "${EPOCH}/e9-cell-004-v1/witness/witness.json",
+          "${EPOCH}/e9-cell-004-v1/witness/native.tsv",
+          "${EPOCH}/e9-cell-004-v1/captures"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-004-v1/replay/tmp"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-cell-004-v1/replay/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-004-v1/replay/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "replay",
+    "operational_seconds": 5.432414518902078,
+    "ordinal": 15,
+    "parent_seconds": 5.480006197001785,
+    "script_sha256": null,
+    "status": "PASS_COMMAND_AND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+    "subject_sha256": "41200e70953c4b4450efdb4c91282857859d28a7a391a7a272750c1aaae77b5d",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-heap-write-stripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-audit-launch-004-v1/audit/request.json",
+          "--receipt",
+          "${EPOCH}/e9-audit-launch-004-v1/audit/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request_sha256": "3a9b19e4a989a387bd5457750ad9de01fb47068764d42620dcfc0655433b76b5"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 59.003558410098776,
+          "parent_wait_returned": true,
+          "pid": 699238,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "d019eac0377c0fcbc04c8b21353dd1ec4e40a0ef23a7ce1ce2a45cd1cfd8052b"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-audit-ordered-launcher-v1/launch.py",
+            "--caller",
+            "${EPOCH}/e9-audit-caller-004-v1/caller.json",
+            "--caller-sha256",
+            "a7fd658cb426084e4aecc9aa826f770f1942ecf22b47579cdcc282d08efbf08a",
+            "--launch-root",
+            "${EPOCH}/e9-audit-launch-004-v1"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "4315dbfd89fe256479491aeadec909348d90de4f0006c63c84c300f9f42690cc",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 50.22109938785434,
+        "parent_wait_returned": true
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 50.14882196788676,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "3a9b19e4a989a387bd5457750ad9de01fb47068764d42620dcfc0655433b76b5",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "8c0b4f55e6ccce1478b6714c5558caf8ae022c5f6d22244e4cb404a6e9454312",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-pair-audit-hash-reuse-v2/payload/evaluation/e9-common-app/audit_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-audit-inputs-004-v1/inputs.json",
+          "--inputs-sha256",
+          "4b663010bbabf41a179a3a981f85920b66340f38d15f28a50225b2cbe4c856ee",
+          "--raw",
+          "${EPOCH}/e9-audit-004-v1"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-audit-launch-004-v1/audit/stderr.txt",
+        "stdout": "${EPOCH}/e9-audit-launch-004-v1/audit/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "audit-pass",
+    "operational_seconds": 50.14882196788676,
+    "ordinal": 16,
+    "parent_seconds": 50.22109938785434,
+    "script_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "status": "PASS_SAVED_CONTENT",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "8c0b4f55e6ccce1478b6714c5558caf8ae022c5f6d22244e4cb404a6e9454312",
+    "subject_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-jump-site-unstripped-stock-algorithm",
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-paired-runner-v2/payload/evaluation/e9-common-app/run_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-inputs-005-v1/inputs.json",
+          "--inputs-sha256",
+          "48401ff09342c1b18b0aa0e6c842957cad5491459677e7800934bdf8e5260add",
+          "--cell",
+          "null-jump-site-unstripped-stock-algorithm",
+          "--raw",
+          "${EPOCH}/e9-cell-005-v1"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "recipe_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 65.49241134384647,
+          "parent_wait_returned": true,
+          "pid": 908828,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "337882c715a911b29625033ddb3a7aa8ff6d4693dcbd9cd6b485abcf6fd89921"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-launch-005-v1/launch.py"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "ef498715a3dc8120725011ab71d0a57dfd16ddc984cdde044fa23aee19146ca8",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 65.3689110649284,
+        "parent_wait_returned": true,
+        "pid": 908974,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4"
+      }
+    },
+    "cpu_limit": null,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": null,
+    "helper_sha256": null,
+    "kind": "runner",
+    "operational_seconds": 65.3689110649284,
+    "ordinal": 17,
+    "parent_seconds": 65.49241134384647,
+    "script_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "status": "CLOSED_COMMAND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4",
+    "subject_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "wall_limit": null
+  },
+  {
+    "cell": "null-jump-site-unstripped-stock-algorithm",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-005-v1/verify/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-005-v1/verify/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55,
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+            "${EPOCH}/e9-cell-005-v1/witness-inputs.json",
+            "${EPOCH}/e9-cell-005-v1/witness",
+            "--inputs-sha256",
+            "5d99e97581d1ab3a6b90f80321b0b1ed03cef4ae002e9724d82c2a3eca281116",
+            "--structural-reader",
+            "${REPO}/tools/elf-rewrite/e9-sites.py"
+          ],
+          "cpu_seconds": 20,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-005-v1/verify/tmp"
+          },
+          "file_bytes": 16777216,
+          "stderr": "${EPOCH}/e9-cell-005-v1/verify/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-005-v1/verify/stdout.txt",
+          "wall_seconds": 30
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 0.31785701285116374,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.22825363813899457,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "7f6653e5bf4723d7689f70aa6084f3d7a72f62acf61a3de22e8a50457e21678b",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+          "${EPOCH}/e9-cell-005-v1/witness-inputs.json",
+          "${EPOCH}/e9-cell-005-v1/witness",
+          "--inputs-sha256",
+          "5d99e97581d1ab3a6b90f80321b0b1ed03cef4ae002e9724d82c2a3eca281116",
+          "--structural-reader",
+          "${REPO}/tools/elf-rewrite/e9-sites.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-005-v1/verify/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${EPOCH}/e9-cell-005-v1/verify/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-005-v1/verify/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "cpu_limit": 20,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 16777216,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "verify",
+    "operational_seconds": 0.22825363813899457,
+    "ordinal": 18,
+    "parent_seconds": 0.31785701285116374,
+    "script_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "status": "PASS_STRUCTURAL_WITNESS",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+    "subject_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "wall_limit": 30
+  },
+  {
+    "cell": "null-jump-site-unstripped-stock-algorithm",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-005-v1/replay/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-005-v1/replay/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request": {
+          "argv": [
+            "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+            "replay-common-e9",
+            "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "${EPOCH}/build-v1/inventories/null-jump-site-unstripped/instructions.tsv",
+            "${EPOCH}/e9-inputs-005-v1/target.tsv",
+            "${EPOCH}/e9-cell-005-v1/witness/witness.json",
+            "${EPOCH}/e9-cell-005-v1/witness/native.tsv",
+            "${EPOCH}/e9-cell-005-v1/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-005-v1/replay/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${EPOCH}/e9-cell-005-v1/replay/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-005-v1/replay/stdout.txt",
+          "wall_seconds": 90
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 7.486209821887314,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 7.393454083940014,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "e7e2afe6523c3da1e0a8a106e60af9ab1af8613ab35963cb5302ddb4a5d77b9b",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+          "replay-common-e9",
+          "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+          "${EPOCH}/build-v1/inventories/null-jump-site-unstripped/instructions.tsv",
+          "${EPOCH}/e9-inputs-005-v1/target.tsv",
+          "${EPOCH}/e9-cell-005-v1/witness/witness.json",
+          "${EPOCH}/e9-cell-005-v1/witness/native.tsv",
+          "${EPOCH}/e9-cell-005-v1/captures"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-005-v1/replay/tmp"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-cell-005-v1/replay/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-005-v1/replay/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "replay",
+    "operational_seconds": 7.393454083940014,
+    "ordinal": 19,
+    "parent_seconds": 7.486209821887314,
+    "script_sha256": null,
+    "status": "PASS_COMMAND_AND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+    "subject_sha256": "41200e70953c4b4450efdb4c91282857859d28a7a391a7a272750c1aaae77b5d",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-jump-site-unstripped-stock-algorithm",
+    "context": {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-audit-launch-005-v1/audit/request.json",
+          "--receipt",
+          "${EPOCH}/e9-audit-launch-005-v1/audit/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request_sha256": "312fbcff9832f41ead0cbb737f17c827df3c2a09dacb8f0d1cc52e5d40d59946"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 65.29152874997817,
+          "parent_wait_returned": true,
+          "pid": 1040376,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "75c0c5dde8385529329eda4a71c0d9bed709b0273aa74fccde4488fdb1441e7f"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-audit-ordered-launcher-v1/launch.py",
+            "--caller",
+            "${EPOCH}/e9-audit-caller-005-v1/caller.json",
+            "--caller-sha256",
+            "c5a31ca8b797769f85c56863bdf4212deaa79f2561a331502396bd2a3ce3fb71",
+            "--launch-root",
+            "${EPOCH}/e9-audit-launch-005-v1"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "4315dbfd89fe256479491aeadec909348d90de4f0006c63c84c300f9f42690cc",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 55.884274632204324,
+        "parent_wait_returned": true
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 55.811104857129976,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "312fbcff9832f41ead0cbb737f17c827df3c2a09dacb8f0d1cc52e5d40d59946",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "f79fc82ef98a6b4f03c4ae606ed08c3001a8043876c087faf790b81888441972",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-pair-audit-hash-reuse-v2/payload/evaluation/e9-common-app/audit_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-audit-inputs-005-v1/inputs.json",
+          "--inputs-sha256",
+          "c1984bc4fabd3286527bd2e4cfeeb0c9ce4c0e2ec96993d421925ef74e0078e8",
+          "--raw",
+          "${EPOCH}/e9-audit-005-v1"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-audit-launch-005-v1/audit/stderr.txt",
+        "stdout": "${EPOCH}/e9-audit-launch-005-v1/audit/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "audit-pass",
+    "operational_seconds": 55.811104857129976,
+    "ordinal": 20,
+    "parent_seconds": 55.884274632204324,
+    "script_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "status": "PASS_SAVED_CONTENT",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "f79fc82ef98a6b4f03c4ae606ed08c3001a8043876c087faf790b81888441972",
+    "subject_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-jump-site-unstripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-paired-runner-v2/payload/evaluation/e9-common-app/run_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-inputs-006-v1/inputs.json",
+          "--inputs-sha256",
+          "fdfdffb167bbb68032a8c271484829620914f8e8b06e623163d25b7fccb76fe1",
+          "--cell",
+          "null-jump-site-unstripped-bootstrap-patched-reference",
+          "--raw",
+          "${EPOCH}/e9-cell-006-v1"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "recipe_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 65.96854388387874,
+          "parent_wait_returned": true,
+          "pid": 1558613,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "d9582bf0fd31b45008cacec966ac2c0641fd31af5d3fbecfe711a079ca9d8ddf"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-launch-006-v1/launch.py"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "ef498715a3dc8120725011ab71d0a57dfd16ddc984cdde044fa23aee19146ca8",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 65.86332653905265,
+        "parent_wait_returned": true,
+        "pid": 1558896,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4"
+      }
+    },
+    "cpu_limit": null,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": null,
+    "helper_sha256": null,
+    "kind": "runner",
+    "operational_seconds": 65.86332653905265,
+    "ordinal": 21,
+    "parent_seconds": 65.96854388387874,
+    "script_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "status": "CLOSED_COMMAND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4",
+    "subject_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "wall_limit": null
+  },
+  {
+    "cell": "null-jump-site-unstripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-006-v1/verify/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-006-v1/verify/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55,
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+            "${EPOCH}/e9-cell-006-v1/witness-inputs.json",
+            "${EPOCH}/e9-cell-006-v1/witness",
+            "--inputs-sha256",
+            "4a6dc911b31f30a2ecf4a7231c4476576f21b396052e54db813a4b438f21bf61",
+            "--structural-reader",
+            "${REPO}/tools/elf-rewrite/e9-sites.py"
+          ],
+          "cpu_seconds": 20,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-006-v1/verify/tmp"
+          },
+          "file_bytes": 16777216,
+          "stderr": "${EPOCH}/e9-cell-006-v1/verify/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-006-v1/verify/stdout.txt",
+          "wall_seconds": 30
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 0.31754394993185997,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.22894685296341777,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "b8d78629d73a6ff7343696c3150fdf8ae7491b6c590d18fd53671e0395596c2d",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+          "${EPOCH}/e9-cell-006-v1/witness-inputs.json",
+          "${EPOCH}/e9-cell-006-v1/witness",
+          "--inputs-sha256",
+          "4a6dc911b31f30a2ecf4a7231c4476576f21b396052e54db813a4b438f21bf61",
+          "--structural-reader",
+          "${REPO}/tools/elf-rewrite/e9-sites.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-006-v1/verify/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${EPOCH}/e9-cell-006-v1/verify/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-006-v1/verify/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "cpu_limit": 20,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 16777216,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "verify",
+    "operational_seconds": 0.22894685296341777,
+    "ordinal": 22,
+    "parent_seconds": 0.31754394993185997,
+    "script_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "status": "PASS_STRUCTURAL_WITNESS",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+    "subject_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "wall_limit": 30
+  },
+  {
+    "cell": "null-jump-site-unstripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-006-v1/replay/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-006-v1/replay/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request": {
+          "argv": [
+            "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+            "replay-common-e9",
+            "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "${EPOCH}/build-v1/inventories/null-jump-site-unstripped/instructions.tsv",
+            "${EPOCH}/e9-inputs-006-v1/target.tsv",
+            "${EPOCH}/e9-cell-006-v1/witness/witness.json",
+            "${EPOCH}/e9-cell-006-v1/witness/native.tsv",
+            "${EPOCH}/e9-cell-006-v1/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-006-v1/replay/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${EPOCH}/e9-cell-006-v1/replay/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-006-v1/replay/stdout.txt",
+          "wall_seconds": 90
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 7.154375183163211,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 7.100421149050817,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "77be85ef6a03cece2ec083efb4380d3bb69e6e1f3d3a9a2fe9fc453324c87295",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+          "replay-common-e9",
+          "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+          "${EPOCH}/build-v1/inventories/null-jump-site-unstripped/instructions.tsv",
+          "${EPOCH}/e9-inputs-006-v1/target.tsv",
+          "${EPOCH}/e9-cell-006-v1/witness/witness.json",
+          "${EPOCH}/e9-cell-006-v1/witness/native.tsv",
+          "${EPOCH}/e9-cell-006-v1/captures"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-006-v1/replay/tmp"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-cell-006-v1/replay/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-006-v1/replay/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "replay",
+    "operational_seconds": 7.100421149050817,
+    "ordinal": 23,
+    "parent_seconds": 7.154375183163211,
+    "script_sha256": null,
+    "status": "PASS_COMMAND_AND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+    "subject_sha256": "41200e70953c4b4450efdb4c91282857859d28a7a391a7a272750c1aaae77b5d",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-jump-site-unstripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-audit-launch-006-v2/audit/request.json",
+          "--receipt",
+          "${EPOCH}/e9-audit-launch-006-v2/audit/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request_sha256": "228bdcf40588fd5bf371ad2bc0e8b4070c19f04e877a91f808cb291523c4e87a"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 52.09297788795084,
+          "parent_wait_returned": true,
+          "pid": 219970,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "f7bcce6b7d6cd9fe457b9ca182e8df953c8cf0681daeec3d4ec64d9f9a778d55"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-audit-ordered-launcher-v2/launch.py",
+            "--caller",
+            "${EPOCH}/e9-audit-caller-006-v2/caller.json",
+            "--caller-sha256",
+            "0da19ed8fe1f38db0d981c0f538999d304989bcd06e654aaa6660a200ddc3c8e",
+            "--launch-root",
+            "${EPOCH}/e9-audit-launch-006-v2"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "ac57d5de05ab1cdff1a542e1095b7f28d19fbdf03471d62bdd5e9af76b3d3aaf",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 41.66154628386721,
+        "parent_wait_returned": true
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 41.615560746984556,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "228bdcf40588fd5bf371ad2bc0e8b4070c19f04e877a91f808cb291523c4e87a",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "a77ce085435b292dc3727be6a609fbf3ef2f6d0d7a475155f17902784be5025d",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-pair-audit-efficiency-v3/payload/evaluation/e9-common-app/audit_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-audit-inputs-006-v2/inputs.json",
+          "--inputs-sha256",
+          "7e5a155b84a469179c504363a1a77ac6f350e3cc971e08a7f227536875477417",
+          "--raw",
+          "${EPOCH}/e9-audit-006-v2"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-audit-launch-006-v2/audit/stderr.txt",
+        "stdout": "${EPOCH}/e9-audit-launch-006-v2/audit/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "audit-pass",
+    "operational_seconds": 41.615560746984556,
+    "ordinal": 24,
+    "parent_seconds": 41.66154628386721,
+    "script_sha256": "5cf71fbe47efccd39517228f51c80513d979575ecabdd5057e179a7daa3b8700",
+    "status": "PASS_SAVED_CONTENT",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "a77ce085435b292dc3727be6a609fbf3ef2f6d0d7a475155f17902784be5025d",
+    "subject_sha256": "5cf71fbe47efccd39517228f51c80513d979575ecabdd5057e179a7daa3b8700",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-jump-site-stripped-stock-algorithm",
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-paired-runner-v2/payload/evaluation/e9-common-app/run_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-inputs-007-v1/inputs.json",
+          "--inputs-sha256",
+          "cda319930cbe52f443a4e621ab79db724fabd4a50bb3979dd9486dfb4ca8df64",
+          "--cell",
+          "null-jump-site-stripped-stock-algorithm",
+          "--raw",
+          "${EPOCH}/e9-cell-007-v1"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "recipe_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 65.3472961250227,
+          "parent_wait_returned": true,
+          "pid": 454271,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "f4bc0fcc337c8349421139eda10e27a1eb6f09569164f39885e3345431ab6858"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-launch-007-v1/launch.py"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "ef498715a3dc8120725011ab71d0a57dfd16ddc984cdde044fa23aee19146ca8",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 65.24192204000428,
+        "parent_wait_returned": true,
+        "pid": 454294,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4"
+      }
+    },
+    "cpu_limit": null,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": null,
+    "helper_sha256": null,
+    "kind": "runner",
+    "operational_seconds": 65.24192204000428,
+    "ordinal": 25,
+    "parent_seconds": 65.3472961250227,
+    "script_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "status": "CLOSED_COMMAND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4",
+    "subject_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "wall_limit": null
+  },
+  {
+    "cell": "null-jump-site-stripped-stock-algorithm",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-007-v1/verify/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-007-v1/verify/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55,
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+            "${EPOCH}/e9-cell-007-v1/witness-inputs.json",
+            "${EPOCH}/e9-cell-007-v1/witness",
+            "--inputs-sha256",
+            "07b43fe35ec384a6f9fd14108379ce122cc32eac8b4638c6d92e43415f15bd49",
+            "--structural-reader",
+            "${REPO}/tools/elf-rewrite/e9-sites.py"
+          ],
+          "cpu_seconds": 20,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-007-v1/verify/tmp"
+          },
+          "file_bytes": 16777216,
+          "stderr": "${EPOCH}/e9-cell-007-v1/verify/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-007-v1/verify/stdout.txt",
+          "wall_seconds": 30
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 0.36888516996987164,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.3041286109946668,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "e1c7789a213f086493105875ee461cb2d9668c2b1d78cd8427d33950082b91a3",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+          "${EPOCH}/e9-cell-007-v1/witness-inputs.json",
+          "${EPOCH}/e9-cell-007-v1/witness",
+          "--inputs-sha256",
+          "07b43fe35ec384a6f9fd14108379ce122cc32eac8b4638c6d92e43415f15bd49",
+          "--structural-reader",
+          "${REPO}/tools/elf-rewrite/e9-sites.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-007-v1/verify/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${EPOCH}/e9-cell-007-v1/verify/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-007-v1/verify/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "cpu_limit": 20,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 16777216,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "verify",
+    "operational_seconds": 0.3041286109946668,
+    "ordinal": 26,
+    "parent_seconds": 0.36888516996987164,
+    "script_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "status": "PASS_STRUCTURAL_WITNESS",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+    "subject_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "wall_limit": 30
+  },
+  {
+    "cell": "null-jump-site-stripped-stock-algorithm",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-007-v1/replay/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-007-v1/replay/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request": {
+          "argv": [
+            "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+            "replay-common-e9",
+            "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "${EPOCH}/build-v1/inventories/null-jump-site-stripped/instructions.tsv",
+            "${EPOCH}/e9-inputs-007-v1/target.tsv",
+            "${EPOCH}/e9-cell-007-v1/witness/witness.json",
+            "${EPOCH}/e9-cell-007-v1/witness/native.tsv",
+            "${EPOCH}/e9-cell-007-v1/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-007-v1/replay/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${EPOCH}/e9-cell-007-v1/replay/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-007-v1/replay/stdout.txt",
+          "wall_seconds": 90
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 6.642014664132148,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 6.54544408316724,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "e23bf9e2ca3fda72f10ff0951b45b53ed8eb35fcece9898b32f308d4e235b2b6",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+          "replay-common-e9",
+          "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+          "${EPOCH}/build-v1/inventories/null-jump-site-stripped/instructions.tsv",
+          "${EPOCH}/e9-inputs-007-v1/target.tsv",
+          "${EPOCH}/e9-cell-007-v1/witness/witness.json",
+          "${EPOCH}/e9-cell-007-v1/witness/native.tsv",
+          "${EPOCH}/e9-cell-007-v1/captures"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-007-v1/replay/tmp"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-cell-007-v1/replay/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-007-v1/replay/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "replay",
+    "operational_seconds": 6.54544408316724,
+    "ordinal": 27,
+    "parent_seconds": 6.642014664132148,
+    "script_sha256": null,
+    "status": "PASS_COMMAND_AND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+    "subject_sha256": "41200e70953c4b4450efdb4c91282857859d28a7a391a7a272750c1aaae77b5d",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-jump-site-stripped-stock-algorithm",
+    "context": {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-audit-launch-007-v2/audit/request.json",
+          "--receipt",
+          "${EPOCH}/e9-audit-launch-007-v2/audit/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request_sha256": "681f5ddef1241558357889b16dcf786e12f9c06e6d1ff605abb4514a76516797"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 50.90234337281436,
+          "parent_wait_returned": true,
+          "pid": 859401,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "8596ed98acce63b8db67dbdb0a5a61ddc8132a6f1369cb6a5029765e0a041e5a"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-audit-ordered-launcher-v2/launch.py",
+            "--caller",
+            "${EPOCH}/e9-audit-caller-007-v2/caller.json",
+            "--caller-sha256",
+            "976c3b3febe104810ce2042b11822ebe6793ea5a1e3cd21f5c40d35793d50ca3",
+            "--launch-root",
+            "${EPOCH}/e9-audit-launch-007-v2"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "ac57d5de05ab1cdff1a542e1095b7f28d19fbdf03471d62bdd5e9af76b3d3aaf",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 41.59097175998613,
+        "parent_wait_returned": true
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 41.536232294049114,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "681f5ddef1241558357889b16dcf786e12f9c06e6d1ff605abb4514a76516797",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "4bacefa08802ec2101ff7a23dbe7cf8136030f045823432d0ea03d96c0237d51",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-pair-audit-efficiency-v3/payload/evaluation/e9-common-app/audit_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-audit-inputs-007-v2/inputs.json",
+          "--inputs-sha256",
+          "acf5326653e10261d7cc81a4b65b13c576807023cbf85a1e477ac2816ade74b4",
+          "--raw",
+          "${EPOCH}/e9-audit-007-v2"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-audit-launch-007-v2/audit/stderr.txt",
+        "stdout": "${EPOCH}/e9-audit-launch-007-v2/audit/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "audit-pass",
+    "operational_seconds": 41.536232294049114,
+    "ordinal": 28,
+    "parent_seconds": 41.59097175998613,
+    "script_sha256": "5cf71fbe47efccd39517228f51c80513d979575ecabdd5057e179a7daa3b8700",
+    "status": "PASS_SAVED_CONTENT",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "4bacefa08802ec2101ff7a23dbe7cf8136030f045823432d0ea03d96c0237d51",
+    "subject_sha256": "5cf71fbe47efccd39517228f51c80513d979575ecabdd5057e179a7daa3b8700",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-jump-site-stripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-paired-runner-v2/payload/evaluation/e9-common-app/run_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-inputs-008-v1/inputs.json",
+          "--inputs-sha256",
+          "c7d05c663f7e00eb552b22775d8ce4d14ae1fda734a9e8fa888e05f99cddaf38",
+          "--cell",
+          "null-jump-site-stripped-bootstrap-patched-reference",
+          "--raw",
+          "${EPOCH}/e9-cell-008-v1"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "recipe_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 65.23181210504845,
+          "parent_wait_returned": true,
+          "pid": 1142434,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "dbcbaf34ff864949f93c64fa3fd132c954a30b9b9c167e1d9997e0fbfce03aad"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-launch-008-v1/launch.py"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "ef498715a3dc8120725011ab71d0a57dfd16ddc984cdde044fa23aee19146ca8",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 65.12353744497523,
+        "parent_wait_returned": true,
+        "pid": 1142635,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4"
+      }
+    },
+    "cpu_limit": null,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": null,
+    "helper_sha256": null,
+    "kind": "runner",
+    "operational_seconds": 65.12353744497523,
+    "ordinal": 29,
+    "parent_seconds": 65.23181210504845,
+    "script_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "status": "CLOSED_COMMAND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e26289abc8687481245ebecad3c11f61dffe1be62edcee0e66a899d455434ad4",
+    "subject_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "wall_limit": null
+  },
+  {
+    "cell": "null-jump-site-stripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-008-v1/verify/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-008-v1/verify/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55,
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+            "${EPOCH}/e9-cell-008-v1/witness-inputs.json",
+            "${EPOCH}/e9-cell-008-v1/witness",
+            "--inputs-sha256",
+            "18501be93f8d045f2a2383d9d2a33c729017804d83439b4e138c00c6cf49fdb1",
+            "--structural-reader",
+            "${REPO}/tools/elf-rewrite/e9-sites.py"
+          ],
+          "cpu_seconds": 20,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-008-v1/verify/tmp"
+          },
+          "file_bytes": 16777216,
+          "stderr": "${EPOCH}/e9-cell-008-v1/verify/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-008-v1/verify/stdout.txt",
+          "wall_seconds": 30
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 0.3175679750274867,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.2240095071028918,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "bd1c44c2cfce5be508d7e7c484ef4ebe0f7b32a9515153ed86b3c983deae8659",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/elf-rewrite/e9-null-witness.py",
+          "${EPOCH}/e9-cell-008-v1/witness-inputs.json",
+          "${EPOCH}/e9-cell-008-v1/witness",
+          "--inputs-sha256",
+          "18501be93f8d045f2a2383d9d2a33c729017804d83439b4e138c00c6cf49fdb1",
+          "--structural-reader",
+          "${REPO}/tools/elf-rewrite/e9-sites.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-008-v1/verify/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "${EPOCH}/e9-cell-008-v1/verify/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-008-v1/verify/stdout.txt",
+        "wall_seconds": 30
+      }
+    },
+    "cpu_limit": 20,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 16777216,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "verify",
+    "operational_seconds": 0.2240095071028918,
+    "ordinal": 30,
+    "parent_seconds": 0.3175679750274867,
+    "script_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "status": "PASS_STRUCTURAL_WITNESS",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7791223c6367d6618bdbe82fa25cf1ec0e674583928b4557229ea183f9ec8176",
+    "subject_sha256": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "wall_limit": 30
+  },
+  {
+    "cell": "null-jump-site-stripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "cwd": "${REPO}",
+        "outer_argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-cell-008-v1/replay/request.json",
+          "--receipt",
+          "${EPOCH}/e9-cell-008-v1/replay/receipt.json"
+        ],
+        "outer_env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request": {
+          "argv": [
+            "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+            "replay-common-e9",
+            "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "${EPOCH}/build-v1/inventories/null-jump-site-stripped/instructions.tsv",
+            "${EPOCH}/e9-inputs-008-v1/target.tsv",
+            "${EPOCH}/e9-cell-008-v1/witness/witness.json",
+            "${EPOCH}/e9-cell-008-v1/witness/native.tsv",
+            "${EPOCH}/e9-cell-008-v1/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${EPOCH}/e9-cell-008-v1/replay/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${EPOCH}/e9-cell-008-v1/replay/stderr.txt",
+          "stdout": "${EPOCH}/e9-cell-008-v1/replay/stdout.txt",
+          "wall_seconds": 90
+        }
+      },
+      "namespace": null,
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 7.0205273849423975,
+        "parent_timeout": false
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 6.945700773969293,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "a34b6dfe3edfc6828e57822fc92fa2ae1b79fdcfe82a39a2e2c500367c175fc6",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "${EPOCH}/build-v1/artifacts/native-compile/product-39",
+          "replay-common-e9",
+          "${REPO}/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+          "${EPOCH}/build-v1/inventories/null-jump-site-stripped/instructions.tsv",
+          "${EPOCH}/e9-inputs-008-v1/target.tsv",
+          "${EPOCH}/e9-cell-008-v1/witness/witness.json",
+          "${EPOCH}/e9-cell-008-v1/witness/native.tsv",
+          "${EPOCH}/e9-cell-008-v1/captures"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "${EPOCH}/e9-cell-008-v1/replay/tmp"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-cell-008-v1/replay/stderr.txt",
+        "stdout": "${EPOCH}/e9-cell-008-v1/replay/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "replay",
+    "operational_seconds": 6.945700773969293,
+    "ordinal": 31,
+    "parent_seconds": 7.0205273849423975,
+    "script_sha256": null,
+    "status": "PASS_COMMAND_AND_CAPTURE_SCHEMA",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "7bad384cb145698f37bd3ce261e1e1983aba0197bbf246d87e5718ae851ff767",
+    "subject_sha256": "41200e70953c4b4450efdb4c91282857859d28a7a391a7a272750c1aaae77b5d",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-jump-site-stripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-audit-launch-008-v2/audit/request.json",
+          "--receipt",
+          "${EPOCH}/e9-audit-launch-008-v2/audit/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request_sha256": "9699c62d58a7934c699c5fadce41d452136d346b08c74ee039ef1fdcf23c43e7"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 51.985219802940264,
+          "parent_wait_returned": true,
+          "pid": 1512155,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "6e9a14003891d942c10d1c0bf827136c1959415ba93c398d1c696518fcc2f51f"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-audit-ordered-launcher-v2/launch.py",
+            "--caller",
+            "${EPOCH}/e9-audit-caller-008-v2/caller.json",
+            "--caller-sha256",
+            "03aa73de65d489a85d865273351adb4db9eb4d6d61486ef2fc9bc8edcc088bd6",
+            "--launch-root",
+            "${EPOCH}/e9-audit-launch-008-v2"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "ac57d5de05ab1cdff1a542e1095b7f28d19fbdf03471d62bdd5e9af76b3d3aaf",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 0,
+        "operational_seconds": 42.49972578603774,
+        "parent_wait_returned": true
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 42.44785622693598,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "9699c62d58a7934c699c5fadce41d452136d346b08c74ee039ef1fdcf23c43e7",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "0d53989136cb39f37039b1477544e74fa4884c6a86d5652eec56d0899f401d29",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-pair-audit-efficiency-v3/payload/evaluation/e9-common-app/audit_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-audit-inputs-008-v2/inputs.json",
+          "--inputs-sha256",
+          "58808bea99afab233036f4d09033cbe0837f85592f362cd83e015aa96a087e41",
+          "--raw",
+          "${EPOCH}/e9-audit-008-v2"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-audit-launch-008-v2/audit/stderr.txt",
+        "stdout": "${EPOCH}/e9-audit-launch-008-v2/audit/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": 0,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "audit-pass",
+    "operational_seconds": 42.44785622693598,
+    "ordinal": 32,
+    "parent_seconds": 42.49972578603774,
+    "script_sha256": "5cf71fbe47efccd39517228f51c80513d979575ecabdd5057e179a7daa3b8700",
+    "status": "PASS_SAVED_CONTENT",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "0d53989136cb39f37039b1477544e74fa4884c6a86d5652eec56d0899f401d29",
+    "subject_sha256": "5cf71fbe47efccd39517228f51c80513d979575ecabdd5057e179a7daa3b8700",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-heap-write-unstripped-stock-algorithm",
+    "context": {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-audit-launch-v1/audit/request.json",
+          "--receipt",
+          "${EPOCH}/e9-audit-launch-v1/audit/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request_sha256": "0d69629847428cb6591011d1cd8b8811f3aa56622416aedb9abafe7f3111f93b"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 1,
+          "operational_seconds": 69.19932470982894,
+          "parent_wait_returned": true,
+          "pid": 3785310,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "99721952873c5ca9b240c44c656caf0437cd9c7fe3153ed61954ec1a5514a63d",
+          "stdout_sha256": "005344d4018f678570a70a58ee38d2a9b0b92ceab25020f3b1a0d372d669ad2b"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/run-e9-audit-v1.py",
+            "--caller",
+            "${EPOCH}/e9-audit-inputs-proposal-v1/caller.json",
+            "--caller-sha256",
+            "0ef2d9191d38818680b14f70c21bbb89de20129bcb368f9160f2747e7c1971e3",
+            "--assembler-sha256",
+            "5fad466571dfc1d00330336e37fbce141bde3e6af10c409fa9c9af5606ecff3f"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "69fd8d714930bdbf9cdbf24b9c92d476a1368504465b96955bb7e355813e988a",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 1,
+        "operational_seconds": 60.67950806999579,
+        "parent_wait_returned": true
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 60.61889094603248,
+        "exit": -9,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "0d69629847428cb6591011d1cd8b8811f3aa56622416aedb9abafe7f3111f93b",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-pair-audit-v1/payload/evaluation/e9-common-app/audit_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-audit-inputs-v1/inputs.json",
+          "--inputs-sha256",
+          "7b3b5fae44401042505e6bfab379e007438139264d93acf5935583db94cff496",
+          "--raw",
+          "${EPOCH}/e9-audit-v1"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-audit-launch-v1/audit/stderr.txt",
+        "stdout": "${EPOCH}/e9-audit-launch-v1/audit/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": -9,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "audit-failed",
+    "operational_seconds": 60.61889094603248,
+    "ordinal": 33,
+    "parent_seconds": 60.67950806999579,
+    "script_sha256": "3d69c425fee567dace19e72fc1cce3e65bc41ef2b8725ce74ed7b10b4c9e8008",
+    "status": "FAILED_SIGNAL_9_ORIGIN_UNPROVEN",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "subject_sha256": "3d69c425fee567dace19e72fc1cce3e65bc41ef2b8725ce74ed7b10b4c9e8008",
+    "wall_limit": 90
+  },
+  {
+    "cell": "null-jump-site-unstripped-bootstrap-patched-reference",
+    "context": {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${EPOCH}/e9-audit-launch-006-v1/audit/request.json",
+          "--receipt",
+          "${EPOCH}/e9-audit-launch-006-v1/audit/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115,
+        "request_sha256": "25cdbd79c403c84aa816bcad11d04709e12579aaeb48a9703dc82d1909243243"
+      },
+      "namespace": {
+        "closed": {
+          "exit": 1,
+          "operational_seconds": 71.6152517599985,
+          "parent_wait_returned": true,
+          "pid": 1844696,
+          "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+          "stderr_sha256": "f79f6eb5092e12e6c8bebea8a1555e401160cba09cc27317b74f23e4af577868",
+          "stdout_sha256": "c66227f3949ce9d1719b758103417f503a7c62b5651b752ba1547f731d4ff789"
+        },
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${EPOCH}/e9-audit-ordered-launcher-v1/launch.py",
+            "--caller",
+            "${EPOCH}/e9-audit-caller-006-v1/caller.json",
+            "--caller-sha256",
+            "feec4cda572f3cea74e48c8e3dfdc24a88d468267627c4a69d1c26f62123c0d6",
+            "--launch-root",
+            "${EPOCH}/e9-audit-launch-006-v1"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          }
+        },
+        "command_source_sha256": "4315dbfd89fe256479491aeadec909348d90de4f0006c63c84c300f9f42690cc",
+        "helper_sha256": "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+        "ready_sha256": "95f5790a349027ce5e9ede600d905b2e8e44e8ec1977595b1c5edb36e86763f2"
+      },
+      "parent": {
+        "exit": 1,
+        "operational_seconds": 62.53555806190707,
+        "parent_wait_returned": true
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 62.44414222310297,
+        "exit": -9,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "25cdbd79c403c84aa816bcad11d04709e12579aaeb48a9703dc82d1909243243",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/e9-common-e9-pair-audit-hash-reuse-v2/payload/evaluation/e9-common-app/audit_e9_pairs.py",
+          "--inputs",
+          "${EPOCH}/e9-audit-inputs-006-v1/inputs.json",
+          "--inputs-sha256",
+          "cc3ccedef49bfed6669d16b3b33df02596a222cd9fbf85b0acf3a5bef6bb0e3b",
+          "--raw",
+          "${EPOCH}/e9-audit-006-v1"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${EPOCH}/e9-audit-launch-006-v1/audit/stderr.txt",
+        "stdout": "${EPOCH}/e9-audit-launch-006-v1/audit/stdout.txt",
+        "wall_seconds": 90
+      }
+    },
+    "cpu_limit": 60,
+    "cpu_seconds_measured": null,
+    "exit": -9,
+    "file_limit": 67108864,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "kind": "audit-failed",
+    "operational_seconds": 62.44414222310297,
+    "ordinal": 34,
+    "parent_seconds": 62.53555806190707,
+    "script_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "status": "FAILED_SIGNAL_9_ORIGIN_UNPROVEN",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "subject_sha256": "448d255df8220d2a2503ab13b6a2b02482dbca240986416f4c5444669f0da8ad",
+    "wall_limit": 90
+  }
+]

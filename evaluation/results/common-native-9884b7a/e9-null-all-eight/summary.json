@@ -1,0 +1,347 @@
+{
+  "call_intermediate_checks": 0,
+  "captures": 69096,
+  "cases": 1408,
+  "children": 2816,
+  "collector_sha256": "6af468b1091c994d3560eee61ece8f7b542c02ca40fc54817720c565b2caea78",
+  "comparisons": 4224,
+  "completed_cells": 8,
+  "core_null": {
+    "denominator": 704,
+    "status": "UNRUN"
+  },
+  "failed_audit_attempts": 2,
+  "fault_cases": 16,
+  "full_a3": false,
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "input_sha256": "ff3a9a832c0764422b1a4a3366d856dc88f33eef248a0164d0f074ff47e9cc61",
+  "mandatory_cells": 8,
+  "normal_cases": 1392,
+  "normal_loader_validation": false,
+  "operation_rows": 34,
+  "operational_timings_not_performance": true,
+  "ordinary": {
+    "failed": 0,
+    "passed": 160,
+    "planned": 192,
+    "successful": false,
+    "unrun": 32
+  },
+  "original_observations": {
+    "denominator": 16,
+    "status": "CLOSED_REVIEWED"
+  },
+  "product_capture_cache_reads": 0,
+  "production": {
+    "failed": 12,
+    "passed": 62,
+    "planned": 74,
+    "successful": false,
+    "unrun": 0
+  },
+  "qualification_complete": false,
+  "recorded_obligations": [
+    {
+      "cell": "null-heap-write-unstripped-stock-algorithm",
+      "recorded": {
+        "E9_null": {
+          "denominator": 1408,
+          "record": null,
+          "status": "UNRUN"
+        },
+        "core_null": {
+          "denominator": 704,
+          "record": null,
+          "status": "UNRUN"
+        },
+        "ordinary": {
+          "denominator": 192,
+          "record": "${EPOCH}/ordinary-admission-v3/ordinary-content-admission.json",
+          "status": "FAILED"
+        },
+        "original": {
+          "denominator": 16,
+          "record": "${EPOCH}/ordinary-inputs-v3/observation-content-admission.json",
+          "status": "CLOSED_REVIEWED"
+        },
+        "production": {
+          "denominator": 74,
+          "record": "${EPOCH}/ordinary-caller-v1/production-admission.json",
+          "status": "FAILED"
+        },
+        "recording_pairs": {
+          "denominator": 2112,
+          "record": null,
+          "status": "UNRUN"
+        }
+      }
+    },
+    {
+      "cell": "null-heap-write-unstripped-bootstrap-patched-reference",
+      "recorded": {
+        "E9_null": {
+          "denominator": 1408,
+          "record": "${EPOCH}/e9-first-admission-v1/admission.json",
+          "status": "PARTIAL"
+        },
+        "core_null": {
+          "denominator": 704,
+          "record": null,
+          "status": "UNRUN"
+        },
+        "ordinary": {
+          "denominator": 192,
+          "record": "${EPOCH}/ordinary-admission-v3/ordinary-content-admission.json",
+          "status": "FAILED"
+        },
+        "original": {
+          "denominator": 16,
+          "record": "${EPOCH}/ordinary-inputs-v3/observation-content-admission.json",
+          "status": "CLOSED_REVIEWED"
+        },
+        "production": {
+          "denominator": 74,
+          "record": "${EPOCH}/ordinary-caller-v1/production-admission.json",
+          "status": "FAILED"
+        },
+        "recording_pairs": {
+          "denominator": 2112,
+          "record": null,
+          "status": "UNRUN"
+        }
+      }
+    },
+    {
+      "cell": "null-heap-write-stripped-stock-algorithm",
+      "recorded": {
+        "E9_null": {
+          "denominator": 1408,
+          "record": "${EPOCH}/e9-admission-002-v1/admission.json",
+          "status": "PARTIAL"
+        },
+        "core_null": {
+          "denominator": 704,
+          "record": null,
+          "status": "UNRUN"
+        },
+        "ordinary": {
+          "denominator": 192,
+          "record": "${EPOCH}/ordinary-admission-v3/ordinary-content-admission.json",
+          "status": "FAILED"
+        },
+        "original": {
+          "denominator": 16,
+          "record": "${EPOCH}/ordinary-inputs-v3/observation-content-admission.json",
+          "status": "CLOSED_REVIEWED"
+        },
+        "production": {
+          "denominator": 74,
+          "record": "${EPOCH}/ordinary-caller-v1/production-admission.json",
+          "status": "FAILED"
+        },
+        "recording_pairs": {
+          "denominator": 2112,
+          "record": null,
+          "status": "UNRUN"
+        }
+      }
+    },
+    {
+      "cell": "null-heap-write-stripped-bootstrap-patched-reference",
+      "recorded": {
+        "E9_null": {
+          "denominator": 1408,
+          "record": "${EPOCH}/e9-admission-003-v1/admission.json",
+          "status": "PARTIAL"
+        },
+        "core_null": {
+          "denominator": 704,
+          "record": null,
+          "status": "UNRUN"
+        },
+        "ordinary": {
+          "denominator": 192,
+          "record": "${EPOCH}/ordinary-admission-v3/ordinary-content-admission.json",
+          "status": "FAILED"
+        },
+        "original": {
+          "denominator": 16,
+          "record": "${EPOCH}/ordinary-inputs-v3/observation-content-admission.json",
+          "status": "CLOSED_REVIEWED"
+        },
+        "production": {
+          "denominator": 74,
+          "record": "${EPOCH}/ordinary-caller-v1/production-admission.json",
+          "status": "FAILED"
+        },
+        "recording_pairs": {
+          "denominator": 2112,
+          "record": null,
+          "status": "UNRUN"
+        }
+      }
+    },
+    {
+      "cell": "null-jump-site-unstripped-stock-algorithm",
+      "recorded": {
+        "E9_null": {
+          "denominator": 1408,
+          "record": "${EPOCH}/e9-admission-004-v1/admission.json",
+          "status": "PARTIAL"
+        },
+        "core_null": {
+          "denominator": 704,
+          "record": null,
+          "status": "UNRUN"
+        },
+        "ordinary": {
+          "denominator": 192,
+          "record": "${EPOCH}/ordinary-admission-v3/ordinary-content-admission.json",
+          "status": "FAILED"
+        },
+        "original": {
+          "denominator": 16,
+          "record": "${EPOCH}/ordinary-inputs-v3/observation-content-admission.json",
+          "status": "CLOSED_REVIEWED"
+        },
+        "production": {
+          "denominator": 74,
+          "record": "${EPOCH}/ordinary-caller-v1/production-admission.json",
+          "status": "FAILED"
+        },
+        "recording_pairs": {
+          "denominator": 2112,
+          "record": null,
+          "status": "UNRUN"
+        }
+      }
+    },
+    {
+      "cell": "null-jump-site-unstripped-bootstrap-patched-reference",
+      "recorded": {
+        "E9_null": {
+          "denominator": 1408,
+          "record": "${EPOCH}/e9-admission-005-v1/admission.json",
+          "status": "PARTIAL"
+        },
+        "core_null": {
+          "denominator": 704,
+          "record": null,
+          "status": "UNRUN"
+        },
+        "ordinary": {
+          "denominator": 192,
+          "record": "${EPOCH}/ordinary-admission-v3/ordinary-content-admission.json",
+          "status": "FAILED"
+        },
+        "original": {
+          "denominator": 16,
+          "record": "${EPOCH}/ordinary-inputs-v3/observation-content-admission.json",
+          "status": "CLOSED_REVIEWED"
+        },
+        "production": {
+          "denominator": 74,
+          "record": "${EPOCH}/ordinary-caller-v1/production-admission.json",
+          "status": "FAILED"
+        },
+        "recording_pairs": {
+          "denominator": 2112,
+          "record": null,
+          "status": "UNRUN"
+        }
+      }
+    },
+    {
+      "cell": "null-jump-site-stripped-stock-algorithm",
+      "recorded": {
+        "E9_null": {
+          "denominator": 1408,
+          "record": "${EPOCH}/e9-admission-006-v1/admission.json",
+          "status": "PARTIAL"
+        },
+        "core_null": {
+          "denominator": 704,
+          "record": null,
+          "status": "UNRUN"
+        },
+        "ordinary": {
+          "denominator": 192,
+          "record": "${EPOCH}/ordinary-admission-v3/ordinary-content-admission.json",
+          "status": "FAILED"
+        },
+        "original": {
+          "denominator": 16,
+          "record": "${EPOCH}/ordinary-inputs-v3/observation-content-admission.json",
+          "status": "CLOSED_REVIEWED"
+        },
+        "production": {
+          "denominator": 74,
+          "record": "${EPOCH}/ordinary-caller-v1/production-admission.json",
+          "status": "FAILED"
+        },
+        "recording_pairs": {
+          "denominator": 2112,
+          "record": null,
+          "status": "UNRUN"
+        }
+      }
+    },
+    {
+      "cell": "null-jump-site-stripped-bootstrap-patched-reference",
+      "recorded": {
+        "E9_null": {
+          "denominator": 1408,
+          "record": "${EPOCH}/e9-admission-007-v1/admission.json",
+          "status": "PARTIAL"
+        },
+        "core_null": {
+          "denominator": 704,
+          "record": null,
+          "status": "UNRUN"
+        },
+        "ordinary": {
+          "denominator": 192,
+          "record": "${EPOCH}/ordinary-admission-v3/ordinary-content-admission.json",
+          "status": "FAILED"
+        },
+        "original": {
+          "denominator": 16,
+          "record": "${EPOCH}/ordinary-inputs-v3/observation-content-admission.json",
+          "status": "CLOSED_REVIEWED"
+        },
+        "production": {
+          "denominator": 74,
+          "record": "${EPOCH}/ordinary-caller-v1/production-admission.json",
+          "status": "FAILED"
+        },
+        "recording_pairs": {
+          "denominator": 2112,
+          "record": null,
+          "status": "UNRUN"
+        }
+      }
+    }
+  ],
+  "recording_pairs": {
+    "denominator": 2112,
+    "status": "UNRUN"
+  },
+  "reporter_revision": null,
+  "reporter_revision_scope": "standalone reporting script identified by its exact SHA; no tested revision transfer",
+  "schema": 1,
+  "snapshots": 7040,
+  "source_attested_limits": [
+    "The no-repair sequence, one hardware reference instruction, ptrace stop provenance, per-child timing/stop limits and task-count checks are live source assertions; saved states and ordered physical trace edges are rechecked here.",
+    "Intermediate prefix registers are not serialized. Every prefix is independently authenticated as a stateless EB/E9 edge; both restored and final complete 64KiB stacks are checked without any scratch exemption.",
+    "Each expanded CALL PUSH intermediate is serialized and independently compared, including the exact original return word, full registers, canonical XSAVE, data, owned stack and all image pages. These checks remain separate from the 528 cross-version comparisons.",
+    "Fault signal/code/address tuples are saved in both child completion records. Full siginfo and raw wait records are not retained; reaped_echild is a native source assertion with separate helper and root-parent closure.",
+    "Live CPUID/XGETBV and initial parent context are not separately captured. The finite admitted target/components are joined to every raw/canonical XSAVE; inherited selectors/bases remain equal across all352 children.",
+    "Complete RPC/template, producer-statistics and selection-policy checks remain assertions of the pinned structural reader and its actual reviewed execution. This audit independently rechecks whole lane loader bytes, page ownership, every gateway/operation and all saved native state.",
+    "NOREPLACE reservation and live descriptor stability are source-attested. Saved maps, whole pages, input/owner records and before/after observations are rechecked; controlled page materialization is not proof the E9 or system loader ran."
+  ],
+  "source_files": 1839,
+  "source_files_sha256": "517062a165906c6825dd86a29c7ea975c048d8651b8a10723dd24818edb5cfef",
+  "status": "ALL_8_CONTROLLED_E9_NULL_CELLS_CONTENT_REVIEWED",
+  "tested_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a",
+  "validation_reproducer": "Not supplied by this reporting script; private runner, auditors, input assembly and runtime admission are separate."
+}

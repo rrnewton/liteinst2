@@ -1,0 +1,9 @@
+# Eight controlled E9-null cells
+
+At source revision `9884b7a259b4e0ea80d2cca6d726abab4594807a`, all eight controlled E9-null cells completed saved-content validation on **AMD EPYC Zen 5 dev host**: 1,408 pairs, 2,816 child executions and 4,224 cross-version state comparisons. Each cell covers 87 instruction heads with two seeds and two fault cases. The heap-write/jump-site, stripped/unstripped and stock/bootstrap combinations each retain all 176 cases.
+
+`cases.json` and `cases.csv` contain every pair result. `cells.json`, `commands.json` and their CSV counterparts retain the exact cell counts, source hashes and command contexts. Commands use reversible path roles to omit private paths; raw logs and captures remain outside Git. Durations are operational observations, not performance measurements. The two earlier content-audit attempts that exited `-9` remain in `failed-audits.json`; their signal origins are unproven.
+
+These are controlled page-materialization and saved-state comparisons. They do not establish normal system/E9-loader execution or full A3 completion. Ordinary remains 160 PASS / 0 FAILED / 32 UNRUN and unsuccessful overall; production remains 62 PASS / 12 FAILED / 0 UNRUN. Core-null's 704 pairs and recording's 2,112 pairs remain UNRUN. Claim 4 therefore remains partial.
+
+The [collector](../../../e9-common-app/COLLECT-E9-PAIRS.md) regenerates this report from the private closed-record envelope. Its source SHA-256 is `6af468b1091c994d3560eee61ece8f7b542c02ca40fc54817720c565b2caea78`; actual-output review binding SHA-256 is `4d8c1bb19ec56e28fe371fba70cb7c822925e55197e4a42d29ad904f8183f7f2`. Report regeneration executes no native cases. [Exact runner and auditor recipes](../../../e9-common-app/E9-NATIVE-RECIPES.md) are included, but an end-to-end fresh-input campaign launcher remains to be supplied. Historical source-owner and runtime admissions cannot be recreated by substituting path strings.
