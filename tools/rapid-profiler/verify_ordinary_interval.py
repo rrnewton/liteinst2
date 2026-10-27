@@ -82,18 +82,88 @@ def native_output(directory, terminal):
     return rows, table, comparisons
 
 
+EXACT_SCHEDULES = ('short', 'long', 'alternating', 'late-long')
+EXACT_SCOPE = '# exact original work from authenticated fixed assembly; uncalibrated raw RDTSCP endpoints, no timing accuracy or savings-from-K claim'
+EXACT_HEADER = 'schedule,k,external_id,ordinal,length,owner,generation,invocation,instructions,branches,taken_branches,input_byte_reads,return_read_bytes,value,start_ticks,end_ticks,start_aux,end_aux'
+
+
+def exact_table(data, header, count):
+    assert 0 < len(data) <= MIB and data.endswith(b'\n') and b'\r' not in data
+    lines = data.decode('ascii').splitlines(); assert len(lines) == count+1 and lines[0] == header
+    rows = list(csv.DictReader(lines, strict=True)); assert len(rows) == count
+    assert all(set(row) == set(header.split(',')) and all(isinstance(v, str) for v in row.values()) for row in rows)
+    return rows
+
+
+def exact_number(word):
+    assert re.fullmatch(r'0|[1-9][0-9]*', word)
+    value = int(word); assert value < 2**64
+    return value
+
+
+def exact_output(data, schedule, retained):
+    assert schedule in EXACT_SCHEDULES and type(retained) is int and retained in (24, 1, 10)
+    assert 0 < len(data) <= MIB and data.endswith(b'\n') and b'\r' not in data
+    lines = data.decode('ascii').splitlines(); assert len(lines) == 27 and lines[0] == EXACT_SCOPE
+    table = '\n'.join(lines[1:-1])+'\n'; rows = exact_table(table.encode('ascii'), EXACT_HEADER, 24)
+    lengths = {'short': [1]*24, 'long': [64]*24, 'alternating': [1, 64]*12, 'late-long': [1]*10+[64]*14}[schedule]
+    for i, (row, length) in enumerate(zip(rows, lengths)):
+        assert row['schedule'] == schedule
+        for key in set(row)-{'schedule', 'owner', 'invocation'}: row[key] = exact_number(row[key])
+        assert (row['k'], row['external_id'], row['ordinal'], row['length'], row['generation']) == (
+            retained, EXACT_SCHEDULES.index(schedule)*10000+retained*100+i, i+1, length, 1)
+        if i < retained:
+            assert row['owner'] == 'sampled' and row['invocation'] == str(i); row['invocation'] = i
+        else:
+            assert row['owner'] == 'closed' and row['invocation'] == ''; row['invocation'] = None
+        assert (row['instructions'], row['branches'], row['taken_branches'], row['input_byte_reads'], row['return_read_bytes']) == (6*length+5, length, length-1, length, 8)
+        assert row['value'] == sum((((j*37+11) & 255) ^ 0x5a) for j in range(length)) ^ 0x9e3779b97f4a7c15
+        assert row['start_aux'] == row['end_aux'] < 2**32 and row['end_ticks'] >= row['start_ticks']
+    population = sum(6*n+5 for n in lengths); selected = sum(6*n+5 for n in lengths[:retained])
+    numerator, denominator = selected*24-population*retained, retained*24
+    assert lines[-1] == (f'exact-work PASS calls=24 retained={retained} population_instructions={population} retained_instructions={selected} '
+        f'selection_error_numerator={numerator} selection_error_denominator={denominator} originals=24 raw_rows=24 input_unchanged=true joined=true')
+    return rows, table, dict(schedule=schedule, k=retained, calls=24, originals=24, raw_rows=24, sampled=retained, closed=24-retained,
+        population_instructions=population, retained_instructions=selected, selection_error_numerator=numerator, selection_error_denominator=denominator)
+
+
+def exact_native_output(directory, terminal):
+    header = 'seed,length,status,children,comparisons,original_visits,original_steps,candidate_steps,value'
+    truth_header = 'seed,length,status,instructions,conditional_branches,taken_branches,input_reads,return_reads,value'
+    table = (directory/'exact-pairs.csv').read_bytes(); rows = exact_table(table, header, 4)
+    truth_table = (directory/'exact-truth.csv').read_bytes(); truth = exact_table(truth_table, truth_header, 4)
+    population = [(seed, n) for seed in (0x1234567887654320, 0xfedcba9801234567) for n in (1, 64)]
+    for row, observed, (seed, n) in zip(rows, truth, population):
+        for item in (row, observed):
+            assert item['status'] == 'PASS'
+            for key in set(item)-{'status'}: item[key] = exact_number(item[key])
+            assert (item['seed'], item['length']) == (seed, n)
+        assert row['children'] == 2 and row['original_visits'] == 6*n+5
+        assert 0 < row['original_steps'] <= 20000 and 0 < row['candidate_steps'] <= 20000
+        assert row['original_visits'] < row['comparisons'] <= min(row['original_steps'], row['candidate_steps'])
+        expected = sum(((((128+j)*37+11+seed) & 255) ^ 0x5a) for j in range(n)) ^ 0x9e3779b97f4a7c15
+        assert row['value'] == observed['value'] == expected
+        assert (observed['instructions'], observed['conditional_branches'], observed['taken_branches'], observed['input_reads'], observed['return_reads']) == (6*n+5, n, n-1, n, 1)
+    comparisons = sum(row['comparisons'] for row in rows)
+    assert (directory/'exact-refusals.csv').read_bytes() == b'case,status,reason\nempty_capable_symbol,PASS,NoPatchWindow\n'
+    assert terminal == (f'native-exact:required=4:pairs=4:children=8:comparisons={comparisons}:truth-instructions=800:conditional=130:taken=126:'
+        'input-reads=130:return-reads=4:short-ret-refusals=1:real-outer-ret=8:complete\n').encode('ascii')
+    return rows, table, truth_table, comparisons
+
+
 def main():
     if sys.flags.optimize: raise SystemExit('assertions required')
     sys.dont_write_bytecode = True
     ap = argparse.ArgumentParser(description=__doc__); ap.add_argument('--revision', required=True)
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'): ap.add_argument('--'+name, type=Path, required=True)
+    ap.add_argument('--exact-work', action='store_true', help='also require exact native work truth and all 12 fresh 24-call populations')
     a = ap.parse_args(); repo = Path(__file__).resolve().parents[2]; raw = a.raw
     assert Path(__file__).resolve() == repo/'tools/rapid-profiler/verify_ordinary_interval.py'
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
     for p in (repo, a.toolchain, a.user_home, a.cargo_home): assert p.is_absolute() and p.resolve(strict=True) == p and p.is_dir()
     assert raw.is_absolute() and raw.is_relative_to(repo/'ignored') and not raw.exists()
     assert raw.parent.resolve(strict=True) == raw.parent
-    raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight',
+    raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight', exact_work_requested=a.exact_work,
         native_setup='Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.',
         scope='uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim', native_state_qualification='PENDING: gate entry through post-POP; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim')
     try:
@@ -116,7 +186,10 @@ def main():
             'tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs',
             'tools/rapid-profiler/src/frontend_native/always_on.rs', 'tools/rapid-profiler/src/frontend_native/always_on/gate.rs',
             'tools/rapid-profiler/src/frontend_native/always_on/timing.rs', 'tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs',
-            'tools/rapid-profiler/verify_ordinary_interval.py', 'evaluation/admission/processes.py', 'tools/unwind-oracle/bounded_command.py']
+            'tools/rapid-profiler/verify_ordinary_interval.py', 'evaluation/admission/processes.py', 'tools/unwind-oracle/bounded_command.py',
+            'tools/rapid-profiler/ordinary-interval/exact.rs', 'tools/rapid-profiler/exact-work/exact_work.S',
+            'tools/rapid-profiler/exact-work/truth.rs', 'tools/rapid-profiler/exact-work/join.rs', 'tools/rapid-profiler/exact-work/join/tests.rs',
+            'tools/rapid-profiler/exact-work/README.md', 'tools/rapid-profiler/exact-work/test_recipe.py']
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -195,13 +268,54 @@ def main():
         assert (native/'stderr.txt').read_bytes() == b''
         checked, table = output((native/'stdout.txt').read_bytes())
         assert {n: digest(p) for n, p in binaries.items()} == {n: a['binary'] for n, a in artifacts.items()} and digest(trusted) == digest(candidate) == trusted_hash
-        assert trusted.read_bytes() == candidate.read_bytes(); save(raw/'sources-after.json', sources())
+        assert trusted.read_bytes() == candidate.read_bytes()
         (raw/'rows.csv').write_text(table)
-        result.update(status='PASS', stage='complete', rows=checked, originals=8, calls=8, entries=8, returns=8, completed=6, unsampled=2, reports=[4, 2],
+        result.update(checksum_status='PASS', rows=checked, originals=8, calls=8, entries=8, returns=8, completed=6, unsampled=2, reports=[4, 2],
             required_short_ret_refusal=True, whole_guarded_input_bytes=96, worker_joined=True,
             commands=[['$GCC', *CFLAGS, '$REPO/tools/rapid-profiler/native-interval/ordinary_checksum.c', '-o', '$RAW/trusted.so'], ['$CARGO', *build_args],
                 ['$REPO/target/release/frontend-native-oracle', 'ordinary-state', '$RAW/candidate.so', '$RAW/trusted.so', '$RAW/oracle-output'],
                 ['$REPO/target/release/ordinary-interval', '$RAW/candidate.so', '$RAW/trusted.so']])
+        if a.exact_work:
+            exact = dict(status='FAILED', stage='assembly-build', scope='exact original work and retention bias; uncalibrated callback ticks, no duration accuracy or savings-from-K claim',
+                boundary_and_report_joins='source-attested: synchronous Rust Trial::begin/finish/validate checks complete entry/RET, raw prefix, stack, totals and retained Report; CSV does not export those complete objects',
+                trials=[dict(schedule=name, k=k, status='UNRUN') for name in EXACT_SCHEDULES for k in (24, 1, 10)])
+            result['exact_work'] = exact
+            exact_trusted, exact_candidate = raw/'exact-trusted.so', raw/'exact-candidate.so'
+            assembly = repo/'tools/rapid-profiler/exact-work/exact_work.S'
+            # Keep the original short-RET refusal symbol in this separate DSO.
+            result['commands'].append(['$GCC', *CFLAGS, '$REPO/tools/rapid-profiler/native-interval/ordinary_checksum.c',
+                '$REPO/tools/rapid-profiler/exact-work/exact_work.S', '-o', '$RAW/exact-trusted.so'])
+            stage('exact-build', [str(tools['gcc']), *CFLAGS, str(source), str(assembly), '-o', str(exact_trusted)], 20, 30, MIB)
+            exact_hash = digest(exact_trusted); assert 0 < exact_hash['bytes'] <= MIB
+            with exact_trusted.open('rb') as inp, exact_candidate.open('xb') as out: out.write(inp.read(MIB+1))
+            assert (exact_trusted.stat().st_dev, exact_trusted.stat().st_ino) != (exact_candidate.stat().st_dev, exact_candidate.stat().st_ino)
+            def exact_stable():
+                assert {n: digest(p) for n, p in binaries.items()} == {n: a['binary'] for n, a in artifacts.items()}
+                assert digest(trusted) == digest(candidate) == trusted_hash and trusted.read_bytes() == candidate.read_bytes()
+                assert digest(exact_trusted) == digest(exact_candidate) == exact_hash and exact_trusted.read_bytes() == exact_candidate.read_bytes()
+            exact_stable(); exact['dso'] = exact_hash; exact['stage'] = 'oracle'
+            exact_dir = raw/'exact-oracle-output'
+            result['commands'].append(['$REPO/target/release/frontend-native-oracle', 'exact-state', '$RAW/exact-candidate.so', '$RAW/exact-trusted.so', '$RAW/exact-oracle-output'])
+            observed = stage('exact-oracle', [str(binaries['frontend-native-oracle']), 'exact-state', str(exact_candidate), str(exact_trusted), str(exact_dir)], 90, 90, MIB)
+            assert (observed/'stderr.txt').read_bytes() == b''
+            exact_pairs, exact_table_bytes, truth_table, count = exact_native_output(exact_dir, (observed/'stdout.txt').read_bytes())
+            exact_stable(); (raw/'exact-state-pairs.csv').write_bytes(exact_table_bytes); (raw/'exact-truth.csv').write_bytes(truth_table)
+            exact['oracle'] = dict(status='PASS', pairs=4, children=8, comparisons=count, short_ret_refusals=1, real_outer_returns=8,
+                original_instructions=800, conditional_branches=130, taken_branches=126, input_reads=130, return_reads=4, rows=exact_pairs)
+            for trial in exact['trials']:
+                name, k = trial['schedule'], trial['k']; label = f'exact-{name}-k{k}'
+                exact['stage'] = label; trial['status'] = 'FAILED'; exact_stable()
+                result['commands'].append(['$REPO/target/release/ordinary-interval', 'exact-work', '$RAW/exact-candidate.so', '$RAW/exact-trusted.so', name, str(k)])
+                observed = stage(label, [str(binary), 'exact-work', str(exact_candidate), str(exact_trusted), name, str(k)], 20, 30, MIB)
+                assert (observed/'stderr.txt').read_bytes() == b''
+                exact_rows, exact_csv, summary = exact_output((observed/'stdout.txt').read_bytes(), name, k)
+                exact_stable(); csv_path = raw/(label+'.csv'); csv_path.write_text(exact_csv)
+                trial.update(summary, status='PASS', csv=csv_path.name, csv_digest=digest(csv_path))
+            assert len(exact['trials']) == 12 and all(t['status'] == 'PASS' for t in exact['trials'])
+            assert sum(t['calls'] for t in exact['trials']) == 288 and sum(t['sampled'] for t in exact['trials']) == 140
+            exact.update(status='PASS', stage='complete', fresh_processes=12, calls=288, originals=288, sampled=140, closed=148)
+        after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
+        result.update(status='PASS', stage='complete')
     except BaseException:
         (raw/'failure.txt').write_text(traceback.format_exc())
     save(raw/'result.json', result); print(json.dumps(result, sort_keys=True))
