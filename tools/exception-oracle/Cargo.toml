@@ -6,6 +6,7 @@ publish = false
 description = "Native C++ exception landing fixture for LiteInst validation"
 
 [dev-dependencies]
+iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder"] }
 liteinst2 = { path = "../.." }
 libc = "0.2.186"
 

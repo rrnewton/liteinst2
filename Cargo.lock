@@ -138,6 +138,7 @@ dependencies = [
 name = "liteinst2-exception-oracle"
 version = "0.1.0"
 dependencies = [
+ "iced-x86",
  "libc",
  "liteinst2",
 ]

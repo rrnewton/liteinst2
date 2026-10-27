@@ -131,7 +131,7 @@ pub(super) fn main() {
             reaped(child);
             router.verify();
             drop(router);
-            write_source(&owned, &vec![0x90; 15]);
+            write_source(&owned, &[0x90; 15]);
             comparisons += 3;
         }
     }
@@ -180,7 +180,7 @@ pub(super) fn main() {
         reaped(child);
         router.verify();
         drop(router);
-        write_source(&owned, &vec![0x90; 64]);
+        write_source(&owned, &[0x90; 64]);
     }
     assert_eq!(comparisons, 12);
     write_new(&dir.join("complete.tsv"),b"LI2COMMONROUTERCONTROLS\t1\nsynthetic_roundtrips\t4\nfull_state_comparisons\t12\nrefused_deliveries\t2\nchildren\t10\ncommon_corpus_credit\tfalse\nqualification_complete\tfalse\n");
