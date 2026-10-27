@@ -2,11 +2,27 @@
 #define SELECTED_MASK (UINT64_MAX & ~(UINT64_C(1)<<(SIGSEGV-1)) & ~(UINT64_C(1)<<(SIGTRAP-1)) & ~(UINT64_C(1)<<(SIGSYS-1)) & ~(UINT64_C(1)<<(SIGKILL-1)) & ~(UINT64_C(1)<<(SIGSTOP-1)))
 #define SELECTED_RF UINT64_C(0x10000)
 #define SELECTED_TF UINT64_C(0x100)
+#ifdef LI2_REGISTER_RUN
+#include "register_run_reset.h"
+static struct li2_run_cache *selected_run_cache;
+static struct li2_run_owner selected_run_owner;
+static struct li2_run_completion_history selected_run_history;
+static struct li2_run_plan selected_run_plan;
+static const struct li2_run_publication *selected_run_publication;
+static struct li2_run_nested selected_run_interrupted;
+static volatile sig_atomic_t selected_run_failing;
+static uint64_t selected_run_plan_misses;
+static struct li2_run_brk_observation selected_run_private_brk;
+#endif
 static struct li2_step_session selected_session;
 static struct li2_step_owner selected_step;
 /* The old pending bit continues to guard every existing dispatch boundary.
    This tag chooses the sole cleanup owner; it is never execution authority. */
-enum selected_pending_route { SELECTED_NO_STEP, SELECTED_OLD_STEP, SELECTED_GENERIC_TF, SELECTED_REPEAT };
+enum selected_pending_route { SELECTED_NO_STEP, SELECTED_OLD_STEP, SELECTED_GENERIC_TF, SELECTED_REPEAT
+#ifdef LI2_REGISTER_RUN
+    , SELECTED_REGISTER_RUN
+#endif
+};
 static volatile sig_atomic_t selected_pending_route;
 static struct li2_repeat_owner selected_repeat;
 static struct li2_step_request selected_repeat_request;

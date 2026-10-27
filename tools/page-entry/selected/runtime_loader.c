@@ -27,6 +27,15 @@ static long last_syscall=-1;
 static uintptr_t vdso_first,vdso_end;
 static unsigned long vdso_selected;
 static void fail(unsigned,long) __attribute__((noreturn));
+#ifdef LI2_REGISTER_RUN
+static void selected_run_initialize(void);
+static void selected_run_report(unsigned,unsigned,long);
+static int selected_run_try(int,siginfo_t *,ucontext_t *,uint64_t);
+static void selected_run_exit(int,siginfo_t *,ucontext_t *);
+static void selected_run_before_syscall(long,const long[6]);
+static _Noreturn void selected_run_abort(unsigned,long);
+static _Noreturn void selected_run_unexpected(int,siginfo_t *,ucontext_t *);
+#endif
 
 #include "fork_profile.h"
 
@@ -49,7 +58,11 @@ static void report(unsigned status,unsigned code,long detail) {
     reported=1;
     if(fork_profile.enabled) { fork_report(status,code,detail); return; }
     struct writer w={.used=0}; struct li2_lifecycle_counts lc; li2_lifecycle_snapshot(&lc);
+#ifdef LI2_REGISTER_RUN
+    text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_register_run\",\"source_patches\":0");
+#else
     text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_generic_tf_original_entry\",\"source_patches\":0");
+#endif
     field(&w,",\"status\":",status); field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
     field(&w,",\"detail_negative\":",detail<0); field(&w,",\"dependency_objects\":",dependency_count);
@@ -71,8 +84,14 @@ static void report(unsigned status,unsigned code,long detail) {
     selected_report(&w);
     text(&w,"}\n"); (void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
     if(selected_repeat_attempts)selected_repeat_report(status,code,detail);
+#ifdef LI2_REGISTER_RUN
+    selected_run_report(status,code,detail);
+#endif
 }
 static void fail(unsigned code,long detail) {
+#ifdef LI2_REGISTER_RUN
+    if(selected_pending_route==SELECTED_REGISTER_RUN)selected_run_abort(code,detail);
+#endif
     if(selected_pending_route==SELECTED_REPEAT) li2_repeat_abort(&selected_repeat,code,detail);
     if(selected_pending_route==SELECTED_GENERIC_TF) li2_tf_abort(&selected_tf,code,detail);
     if(selected_step_pending) li2_step_abort(&selected_step,code,detail);
@@ -151,6 +170,10 @@ static void dispatch_operation(long n,ucontext_t *context) {
     }
     checked(n!=SYS_close || ((unsigned int)a[0]!=(unsigned int)report_fd && !fork_reserved_fd(a[0])),204,n);
     checked(n!=SYS_fcntl || a[1]==F_GETFD || a[1]==F_GETFL || !fork_sink_alias(a[0]),274,n);
+
+#ifdef LI2_REGISTER_RUN
+    selected_run_before_syscall(n,a);
+#endif
     li2_lifecycle_before_other(n,a);
     if(!fork_dispatch(n,a,context,&result) && !li2_lifecycle_dispatch(n,a,&result)) {
         if(n==SYS_arch_prctl) checked(a[0]==ARCH_SET_FS || a[0]==ARCH_SET_GS || a[0]==ARCH_GET_FS || a[0]==ARCH_GET_GS || a[0]==0x3001 || a[0]==ARCH_SHSTK_STATUS,205,a[0]);
@@ -176,8 +199,17 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
     (void)si;(void)context;fail(602,0);
 }
 #include "selected_controller.inc"
+#ifdef LI2_REGISTER_RUN
+#include "selected_register_run.inc"
+#endif
 
 static void handler(int sig,siginfo_t *si,void *ptr) {
+#ifdef LI2_REGISTER_RUN
+    if(selected_pending_route==SELECTED_REGISTER_RUN &&
+       (handling || !selected_step_pending || !si || !ptr ||
+        selected_run_owner.phase!=LI2_RUN_RUNNING))
+        selected_run_unexpected(sig,si,ptr);
+#endif
     if(selected_pending_route==SELECTED_REPEAT) {
         /* Preserve a real running REP fault before any generic guard. Nested
            or invalid frames remain refused by the installed owner's enter. */
@@ -201,6 +233,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
             li2_tf_unexpected(&selected_tf,sig,si,uc);
     }
     checked(!handling && si && ptr,218,sig); handling=1;
+#ifdef LI2_REGISTER_RUN
+    if(selected_pending_route==SELECTED_REGISTER_RUN) {
+        selected_run_exit(sig,si,ptr);
+    } else
+#endif
     if(selected_pending_route==SELECTED_REPEAT) {
         selected_repeat_trace(sig,si,ptr);
     } else if(selected_pending_route==SELECTED_GENERIC_TF) {

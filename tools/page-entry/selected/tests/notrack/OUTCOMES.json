@@ -1,0 +1,98 @@
+{
+  "schema_version": 1,
+  "prospective_only": true,
+  "record_header_format": "<17Q",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_extent": "header_bytes + 22 * sample_bytes + 40; actual DWARF defines sample layout",
+  "record_limit_bytes": 16777216,
+  "requires": [
+    "exact source/archive/binary binding",
+    "fresh actual singleton child and owned fd3",
+    "retained raw signal preparation",
+    "zero process cleanup errors, actual reap, no timeout",
+    "all capture hashes and exact stdout/stderr/exit",
+    "full actual header and record extent, sample field replay"
+  ],
+  "commands": [
+    {
+      "name": "group0",
+      "argv": [
+        "notrack-0"
+      ],
+      "exit": 0,
+      "stdout": "LI2_NOTRACK_TF_PASS group=0 branch=jmp pairs=21 notrack=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=44 full_state=21 full_memory=21 live_endpoints=21\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 21,
+        "refusals": 91,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 21,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "completed finite original-address jmp register pair cohort",
+      "environment_delta": {}
+    },
+    {
+      "name": "group1",
+      "argv": [
+        "notrack-1"
+      ],
+      "exit": 0,
+      "stdout": "LI2_NOTRACK_TF_PASS group=1 branch=call pairs=21 notrack=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=44 full_state=21 full_memory=21 live_endpoints=21\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 21,
+        "refusals": 91,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 21,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "completed finite original-address call register pair cohort",
+      "environment_delta": {}
+    }
+  ],
+  "scope": "Two new bounded 21-pair cohorts including real startup pair each. Original generic21/47/three actual failed-operation cohort remains separately required, unchanged.",
+  "bounds": {
+    "cpu_seconds": 5,
+    "address_space_bytes": 536870912,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15,
+    "cpu_affinity_count": 1
+  }
+}

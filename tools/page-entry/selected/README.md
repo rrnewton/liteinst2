@@ -215,3 +215,38 @@ registers, page endings and crossing fetches. An actual inaccessible-memory
 instruction remains a failed operation with native and stepped fault records.
 All prior suites remain required; this addition does not establish general SSE
 encoding support or completed real-linker execution.
+
+Scalar BSF/BSR r16/r32/r64 register and memory forms use the same
+original-address owner. Run
+`python3 evaluation/inprocess/page_selected_bitscan.py --expect-revision REVISION`
+on one reserved CPU for three bounded cohorts: 48 new pairs and three startups,
+including zero/nonzero sources, low/high registers and crossing fetches. Literal
+effects constrain ZF and nonzero destination indices; exact native comparisons
+retain every actual flag and zero-input destination. Two actual inaccessible
+memory commands remain failed operations, with native and stepped fault records.
+All 47 old encoding refusals and 24 additive refusals run in each process.
+All prior suites remain required; no general exception continuation or completed
+real-linker execution is claimed.
+
+The separate `build-register-run.sh` build enables a bounded register-only
+code cache. Original source pages stay nonexecutable. A run copies at least
+two canonical NOP or register MOV instructions from an already-owned source
+window of at most 15 bytes, then jumps to its complete original guard.
+Memory operations, selected instructions and branches remain guards. The
+original NX fault validates the completed run and dispatches that guard
+through the existing owner with a fresh source borrow.
+
+The cache owns 64 immutable private pages. Each publication authenticates the
+held source and plan, fills an RW page, changes it to RX, synchronizes and
+verifies the complete page. Hits recheck the actual source and RX publication.
+A full cache takes the existing original-address path; no slot is recycled.
+Incomplete publication and interrupted owners retain their failure prefixes
+and cannot resume the application. The default build remains the reference.
+
+`python3 evaluation/inprocess/page_selected_register.py --expect-revision REVISION`
+runs nine literal inputs as genuine publication/hit pairs, then fills all
+64 slots, exercises a genuine fallback and checks a hit after capacity fills.
+It retains all 18 semantic records and five capacity/fallback/hit records.
+The other capacity cycles retain in-process full-state checks and hashes.
+This finite oracle does not establish arbitrary relocation, application
+completion, signal/thread support or a performance result.

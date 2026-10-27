@@ -70,6 +70,19 @@ fn canonical_padding_nop(instruction: &Instruction, bytes: &[u8]) -> bool {
         (Code::Nop_rm16, [0x66, 0x2e, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]))
 }
 
+// Exact near-register NOTRACK forms in the existing no-user-CET profile.
+// RSP-source and memory forms remain outside this first native cohort. No
+// ignored REX bits, other prefixes, far transfers or operand-size override.
+fn canonical_notrack_register(instruction: &Instruction, bytes: &[u8]) -> bool {
+    let modrm = match bytes {
+        [0x3e, 0xff, byte] if (*byte & 7) != 4 => *byte,
+        [0x3e, 0x41, 0xff, byte] => *byte,
+        _ => return false,
+    };
+    matches!((instruction.code(), modrm & 0xf8),
+        (Code::Call_rm64, 0xd0) | (Code::Jmp_rm64, 0xe0))
+}
+
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
@@ -86,6 +99,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // before either instruction page opens; decoding grants no RX permit.
         if source[..instruction.len()] != [0x0f, 0x01, 0xd0] { return Ok(out); }
     } else if !canonical_padding_nop(&instruction, &source[..instruction.len()])
+        && !canonical_notrack_register(&instruction, &source[..instruction.len()])
         && !prefixes(&instruction, &source[..instruction.len()]) { return Ok(out); }
     // Exact Code enumeration, never a catch-all mnemonic/valid-decode permit.
     let (flow, family) = match instruction.code() {
@@ -298,6 +312,10 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::Setle_rm8
         // Setg — exact iced-x86 1.21.0 Code alternatives.
         | Code::Setg_rm8
+        // BSF/BSR — exact scalar forms. CPU supplies all actual flags and
+        // destination state, including zero-source architecture variations.
+        | Code::Bsf_r16_rm16 | Code::Bsf_r32_rm32 | Code::Bsf_r64_rm64
+        | Code::Bsr_r16_rm16 | Code::Bsr_r32_rm32 | Code::Bsr_r64_rm64
         // Bswap — exact iced-x86 1.21.0 Code alternatives.
         | Code::Bswap_r32 | Code::Bswap_r64
         // Bt — exact iced-x86 1.21.0 Code alternatives.

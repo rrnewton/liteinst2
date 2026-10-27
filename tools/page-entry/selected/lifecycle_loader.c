@@ -700,3 +700,6 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 
 /* Private non-authoritative fetch borrow; no permission-changing operations. */
 #include "fetch_loader.inc"
+
+/* Runtime-private code inspection: does not register application sources. */
+#include "private_code_query.inc"
