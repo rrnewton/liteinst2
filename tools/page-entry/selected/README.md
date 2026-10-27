@@ -25,9 +25,10 @@ and its output names remain unchanged. A caller can explicitly use
 and the existing sealed-namespace `exec-loader` command with that carrier.
 
 Canonical NOP and register/immediate MOV retain their original typed owner.
-A separate owner executes a closed set of 302 decoder instruction codes at
+A separate owner executes a closed set of 534 decoder instruction codes at
 their original addresses: integer arithmetic and memory access, stack operations,
-near branches/CALL/RET, and selected SSE2 data operations. The CPU supplies the
+near branches/CALL/RET, integer shifts/rotates, multiply/divide, conditional
+results, bit operations/exchanges, and selected SSE2 data operations. The CPU supplies the
 actual register, flags, memory and FP results. The runtime validates the actual
 post-instruction PC after revoking all temporary executable pages; it does not
 predict indirect targets or emulate ordinary instructions.
@@ -83,7 +84,7 @@ uses the bridge's SUD-allowed raw gateway. Policies dependent on the original
 syscall PC or private handler context, such as seccomp/tracing policies,
 remain outside the parent execution contract.
 Unexpected reserved faults retain their actual frame and terminate after
-revoking the owned prefix. SIGBUS/SIGILL are process-terminal in this profile;
+revoking the owned prefix. SIGBUS/SIGILL/SIGFPE are process-terminal in this profile;
 application fault delivery or restart is not implemented.
 
 The decoder borrows one process-lifetime arena, seals allocation after genuine
@@ -146,3 +147,13 @@ Run the complete component suite on one reserved CPU with
 `python3 evaluation/inprocess/page_selected_components.py --expect-revision REVISION`.
 It builds the sealed archive afresh and retains exact native records privately;
 its public JSON contains totals, source/tool identities and record hashes.
+
+
+`tests/integer` adds two separate cohorts of twenty ordinary-integer cases
+and one real startup pair each. The original generic oracle remains required,
+including its three failed-operation controls. Each new case checks full
+native/TF state and memory plus independent literal architectural effects.
+Run both `page_selected_integer.py --group 0` and `--group 1` at the same
+committed revision as the original generic oracle and connected evaluator.
+This finite validation does not claim every encoding or application exception
+behavior; divide faults remain outside the supported continuation profile.

@@ -144,7 +144,163 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::Dec_rm32 | Code::Dec_rm64 | Code::Neg_rm8
         | Code::Neg_rm16 | Code::Neg_rm32 | Code::Neg_rm64
         | Code::Not_rm8 | Code::Not_rm16 | Code::Not_rm32
-        | Code::Not_rm64 => (1, 1),
+        | Code::Not_rm64
+        // Shl — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Shl_rm8_imm8 | Code::Shl_rm16_imm8 | Code::Shl_rm32_imm8
+        | Code::Shl_rm64_imm8 | Code::Shl_rm8_1 | Code::Shl_rm16_1
+        | Code::Shl_rm32_1 | Code::Shl_rm64_1 | Code::Shl_rm8_CL
+        | Code::Shl_rm16_CL | Code::Shl_rm32_CL | Code::Shl_rm64_CL
+        // Shr — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Shr_rm8_imm8 | Code::Shr_rm16_imm8 | Code::Shr_rm32_imm8
+        | Code::Shr_rm64_imm8 | Code::Shr_rm8_1 | Code::Shr_rm16_1
+        | Code::Shr_rm32_1 | Code::Shr_rm64_1 | Code::Shr_rm8_CL
+        | Code::Shr_rm16_CL | Code::Shr_rm32_CL | Code::Shr_rm64_CL
+        // Sar — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Sar_rm8_imm8 | Code::Sar_rm16_imm8 | Code::Sar_rm32_imm8
+        | Code::Sar_rm64_imm8 | Code::Sar_rm8_1 | Code::Sar_rm16_1
+        | Code::Sar_rm32_1 | Code::Sar_rm64_1 | Code::Sar_rm8_CL
+        | Code::Sar_rm16_CL | Code::Sar_rm32_CL | Code::Sar_rm64_CL
+        // Rol — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Rol_rm8_imm8 | Code::Rol_rm16_imm8 | Code::Rol_rm32_imm8
+        | Code::Rol_rm64_imm8 | Code::Rol_rm8_1 | Code::Rol_rm16_1
+        | Code::Rol_rm32_1 | Code::Rol_rm64_1 | Code::Rol_rm8_CL
+        | Code::Rol_rm16_CL | Code::Rol_rm32_CL | Code::Rol_rm64_CL
+        // Ror — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Ror_rm8_imm8 | Code::Ror_rm16_imm8 | Code::Ror_rm32_imm8
+        | Code::Ror_rm64_imm8 | Code::Ror_rm8_1 | Code::Ror_rm16_1
+        | Code::Ror_rm32_1 | Code::Ror_rm64_1 | Code::Ror_rm8_CL
+        | Code::Ror_rm16_CL | Code::Ror_rm32_CL | Code::Ror_rm64_CL
+        // Rcl — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Rcl_rm8_imm8 | Code::Rcl_rm16_imm8 | Code::Rcl_rm32_imm8
+        | Code::Rcl_rm64_imm8 | Code::Rcl_rm8_1 | Code::Rcl_rm16_1
+        | Code::Rcl_rm32_1 | Code::Rcl_rm64_1 | Code::Rcl_rm8_CL
+        | Code::Rcl_rm16_CL | Code::Rcl_rm32_CL | Code::Rcl_rm64_CL
+        // Rcr — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Rcr_rm8_imm8 | Code::Rcr_rm16_imm8 | Code::Rcr_rm32_imm8
+        | Code::Rcr_rm64_imm8 | Code::Rcr_rm8_1 | Code::Rcr_rm16_1
+        | Code::Rcr_rm32_1 | Code::Rcr_rm64_1 | Code::Rcr_rm8_CL
+        | Code::Rcr_rm16_CL | Code::Rcr_rm32_CL | Code::Rcr_rm64_CL
+        // Shld — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Shld_rm16_r16_imm8 | Code::Shld_rm32_r32_imm8 | Code::Shld_rm64_r64_imm8
+        | Code::Shld_rm16_r16_CL | Code::Shld_rm32_r32_CL | Code::Shld_rm64_r64_CL
+        // Shrd — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Shrd_rm16_r16_imm8 | Code::Shrd_rm32_r32_imm8 | Code::Shrd_rm64_r64_imm8
+        | Code::Shrd_rm16_r16_CL | Code::Shrd_rm32_r32_CL | Code::Shrd_rm64_r64_CL
+        // Mul — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Mul_rm8 | Code::Mul_rm16 | Code::Mul_rm32
+        | Code::Mul_rm64
+        // Imul — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Imul_r16_rm16_imm16 | Code::Imul_r32_rm32_imm32 | Code::Imul_r64_rm64_imm32
+        | Code::Imul_r16_rm16_imm8 | Code::Imul_r32_rm32_imm8 | Code::Imul_r64_rm64_imm8
+        | Code::Imul_rm8 | Code::Imul_rm16 | Code::Imul_rm32
+        | Code::Imul_rm64 | Code::Imul_r16_rm16 | Code::Imul_r32_rm32
+        | Code::Imul_r64_rm64
+        // Div — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Div_rm8 | Code::Div_rm16 | Code::Div_rm32
+        | Code::Div_rm64
+        // Idiv — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Idiv_rm8 | Code::Idiv_rm16 | Code::Idiv_rm32
+        | Code::Idiv_rm64
+        // Cbw — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cbw
+        // Cwde — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cwde
+        // Cdqe — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cdqe
+        // Cwd — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cwd
+        // Cdq — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cdq
+        // Cqo — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cqo
+        // Cmovo — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovo_r16_rm16 | Code::Cmovo_r32_rm32 | Code::Cmovo_r64_rm64
+        // Cmovno — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovno_r16_rm16 | Code::Cmovno_r32_rm32 | Code::Cmovno_r64_rm64
+        // Cmovb — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovb_r16_rm16 | Code::Cmovb_r32_rm32 | Code::Cmovb_r64_rm64
+        // Cmovae — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovae_r16_rm16 | Code::Cmovae_r32_rm32 | Code::Cmovae_r64_rm64
+        // Cmove — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmove_r16_rm16 | Code::Cmove_r32_rm32 | Code::Cmove_r64_rm64
+        // Cmovne — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovne_r16_rm16 | Code::Cmovne_r32_rm32 | Code::Cmovne_r64_rm64
+        // Cmovbe — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovbe_r16_rm16 | Code::Cmovbe_r32_rm32 | Code::Cmovbe_r64_rm64
+        // Cmova — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmova_r16_rm16 | Code::Cmova_r32_rm32 | Code::Cmova_r64_rm64
+        // Cmovs — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovs_r16_rm16 | Code::Cmovs_r32_rm32 | Code::Cmovs_r64_rm64
+        // Cmovns — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovns_r16_rm16 | Code::Cmovns_r32_rm32 | Code::Cmovns_r64_rm64
+        // Cmovp — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovp_r16_rm16 | Code::Cmovp_r32_rm32 | Code::Cmovp_r64_rm64
+        // Cmovnp — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovnp_r16_rm16 | Code::Cmovnp_r32_rm32 | Code::Cmovnp_r64_rm64
+        // Cmovl — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovl_r16_rm16 | Code::Cmovl_r32_rm32 | Code::Cmovl_r64_rm64
+        // Cmovge — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovge_r16_rm16 | Code::Cmovge_r32_rm32 | Code::Cmovge_r64_rm64
+        // Cmovle — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovle_r16_rm16 | Code::Cmovle_r32_rm32 | Code::Cmovle_r64_rm64
+        // Cmovg — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmovg_r16_rm16 | Code::Cmovg_r32_rm32 | Code::Cmovg_r64_rm64
+        // Seto — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Seto_rm8
+        // Setno — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setno_rm8
+        // Setb — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setb_rm8
+        // Setae — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setae_rm8
+        // Sete — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Sete_rm8
+        // Setne — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setne_rm8
+        // Setbe — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setbe_rm8
+        // Seta — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Seta_rm8
+        // Sets — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Sets_rm8
+        // Setns — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setns_rm8
+        // Setp — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setp_rm8
+        // Setnp — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setnp_rm8
+        // Setl — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setl_rm8
+        // Setge — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setge_rm8
+        // Setle — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setle_rm8
+        // Setg — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Setg_rm8
+        // Bswap — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Bswap_r32 | Code::Bswap_r64
+        // Bt — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Bt_rm16_r16 | Code::Bt_rm32_r32 | Code::Bt_rm64_r64
+        | Code::Bt_rm16_imm8 | Code::Bt_rm32_imm8 | Code::Bt_rm64_imm8
+        // Bts — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Bts_rm16_r16 | Code::Bts_rm32_r32 | Code::Bts_rm64_r64
+        | Code::Bts_rm16_imm8 | Code::Bts_rm32_imm8 | Code::Bts_rm64_imm8
+        // Btr — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Btr_rm16_r16 | Code::Btr_rm32_r32 | Code::Btr_rm64_r64
+        | Code::Btr_rm16_imm8 | Code::Btr_rm32_imm8 | Code::Btr_rm64_imm8
+        // Btc — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Btc_rm16_imm8 | Code::Btc_rm32_imm8 | Code::Btc_rm64_imm8
+        | Code::Btc_rm16_r16 | Code::Btc_rm32_r32 | Code::Btc_rm64_r64
+        // Xchg — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Xchg_rm8_r8 | Code::Xchg_rm16_r16 | Code::Xchg_rm32_r32
+        | Code::Xchg_rm64_r64 | Code::Xchg_r16_AX | Code::Xchg_r32_EAX
+        | Code::Xchg_r64_RAX
+        // Xadd — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Xadd_rm8_r8 | Code::Xadd_rm16_r16 | Code::Xadd_rm32_r32
+        | Code::Xadd_rm64_r64
+        // Cmpxchg — exact iced-x86 1.21.0 Code alternatives.
+        | Code::Cmpxchg_rm8_r8 | Code::Cmpxchg_rm16_r16 | Code::Cmpxchg_rm32_r32
+        | Code::Cmpxchg_rm64_r64 => (1, 1),
         Code::Push_r64 | Code::Push_rm64 | Code::Pushq_imm32
         | Code::Pushq_imm8 | Code::Pop_r64 | Code::Pop_rm64
         | Code::Leaveq => (1, 2),
