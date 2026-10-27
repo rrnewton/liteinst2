@@ -76,9 +76,15 @@ extents separately from actual NX containers. The opt-in owned-initial-stack
 addition contributes 74 pure controls and 17 native identities. Expected totals
 are 703 launcher units, 2148 workspace tests in 93 harnesses (2144 possible passes
 and four unchanged ignores), and 995 serial launch tests in the same 27 harnesses.
-The recorder expects 305 Python controls, including twelve separate compiler-consumer
-record/schema regressions, three launch-cleanup controls, three coalescence controls
-and three owned-stack inventory controls.
+The recorder expects 330 Python controls: all 305 prior controls plus fourteen
+finite stack-consumer record controls, eight separate feature-runner controls and
+three strict historical-inventory controls. The prior corpus includes twelve
+compiler-consumer record/schema regressions, three launch-cleanup controls,
+three coalescence controls and three owned-stack inventory controls. The new
+[finite compiled CALL/RET consumer](runtime-stack-consumer.md) preserves every
+prior identity and reconstructs the complete 305-control corpus before historical
+checks. Its Rust feature-pure controls have a separate source-bound inventory and
+explicit command; they do not change these default workspace or native counts.
 The separately merged core adds 49 methods: three seed-contract integration
 controls, 24 `common_sites` example controls, 14 carrier controls and eight
 counter-reading controls. Its two new workspace harnesses and two changed
