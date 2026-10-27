@@ -1,6 +1,8 @@
 //! Bounded pure frontend/session/controller model. All return slots and physical
 //! states below are data: this module installs no TLS, return hook, trap, or code.
 //! Frontend owners retain their permit until their actual last strong owner drops.
+//! Crate-private point-adapter updates may store managed flags while the existing
+//! writer/registry locks are held; model Booleans still are not physical receipts.
 
 use crate::generation::{
     Admission, AdmissionRefusal, CancelReason, Completion, Config, CreateError,
@@ -538,6 +540,17 @@ impl Session {
     /// Publish staged metadata under uninterrupted writer then registry authority.
     /// Injected failures concern model data only, never real instruction visibility.
     pub fn publish(&self, next: &EpochHandle, failure: FailurePoint) -> Result<(), ControlError> {
+        self.publish_with_controls(next, failure, |_| {})
+    }
+
+    // Only crate-owned infallible atomic stores run here; never caller callbacks.
+    // Writer and registry authority remain held through all control changes.
+    pub(crate) fn publish_with_controls(
+        &self,
+        next: &EpochHandle,
+        failure: FailurePoint,
+        update: impl FnOnce(&[bool]),
+    ) -> Result<(), ControlError> {
         if !Arc::ptr_eq(&self.inner.spec, &next.owner.spec) {
             return Err(ControlError::ForeignEpoch);
         }
@@ -596,11 +609,20 @@ impl Session {
             current: Some(generation),
             group: None,
         });
+        self.inner.update_controls(&r, update);
         Ok(())
     }
 
     /// Remove current metadata and close admission; this does not retire code.
     pub fn remove_current(&self) -> Result<(), ControlError> {
+        self.remove_with_controls(None, |_| {})
+    }
+
+    pub(crate) fn remove_with_controls(
+        &self,
+        expected: Option<GenerationId>,
+        update: impl FnOnce(&[bool]),
+    ) -> Result<(), ControlError> {
         let mut w = self
             .inner
             .writer
@@ -612,6 +634,9 @@ impl Session {
             .registry
             .lock()
             .map_err(|_| ControlError::Poisoned)?;
+        if expected.is_some() && w.current != expected {
+            return Err(ControlError::ForeignEpoch);
+        }
         let old = r.current.take().ok_or(ControlError::NoCurrent)?;
         old.epoch.close();
         let generation = old.epoch.id();
@@ -623,6 +648,7 @@ impl Session {
             current: None,
             group: None,
         });
+        self.inner.update_controls(&r, update);
         Ok(())
     }
 
@@ -631,6 +657,15 @@ impl Session {
         &self,
         request: DeactivationRequest,
         failure: FailurePoint,
+    ) -> Result<(), ControlError> {
+        self.deactivate_with_controls(request, failure, |_| {})
+    }
+
+    pub(crate) fn deactivate_with_controls(
+        &self,
+        request: DeactivationRequest,
+        failure: FailurePoint,
+        update: impl FnOnce(&[bool]),
     ) -> Result<(), ControlError> {
         let mut w = self
             .inner
@@ -643,13 +678,91 @@ impl Session {
             .registry
             .lock()
             .map_err(|_| ControlError::Poisoned)?;
-        self.inner.apply_request(&mut w, &r, request, failure)
+        self.inner.apply_request(&mut w, &r, request, failure)?;
+        if w.current == Some(request.generation) {
+            self.inner.update_controls(&r, update);
+        }
+        Ok(())
+    }
+
+    // A data-admission completion barrier, not an instruction-stream barrier.
+    // The same locks serialize publication/physical stores and owner acquisition.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(crate) fn confirm_controls(
+        &self,
+        expected: Option<GenerationId>,
+    ) -> Result<(), ControlError> {
+        let w = self
+            .inner
+            .writer
+            .lock()
+            .map_err(|_| ControlError::Poisoned)?;
+        self.inner.preflight_writer(&w, 0)?;
+        let r = self
+            .inner
+            .registry
+            .lock()
+            .map_err(|_| ControlError::Poisoned)?;
+        if w.current != expected || r.current.as_ref().map(|o| o.epoch.id()) != expected {
+            return Err(ControlError::ForeignEpoch);
+        }
+        Ok(())
+    }
+
+    // Exact group intent for the separate code-point transaction. This takes
+    // only metadata locks and returns data; it never invokes a publisher.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(crate) fn code_groups(
+        &self,
+        expected: Option<GenerationId>,
+    ) -> Result<Vec<bool>, ControlError> {
+        let w = self
+            .inner
+            .writer
+            .lock()
+            .map_err(|_| ControlError::Poisoned)?;
+        self.inner.preflight_writer(&w, 0)?;
+        let r = self
+            .inner
+            .registry
+            .lock()
+            .map_err(|_| ControlError::Poisoned)?;
+        if w.current != expected || r.current.as_ref().map(|o| o.epoch.id()) != expected {
+            return Err(ControlError::ForeignEpoch);
+        }
+        Ok(self
+            .inner
+            .spec
+            .groups
+            .iter()
+            .enumerate()
+            .map(|(group, spec)| {
+                let all_closed = r.current.as_ref().is_none_or(|owner| {
+                    owner.epoch.is_closed()
+                        || self
+                            .inner
+                            .spec
+                            .functions
+                            .iter()
+                            .filter(|f| f.group == group)
+                            .all(|f| owner.epoch.function_closed(f.function) == Some(true))
+                });
+                !all_closed || spec.mandatory
+            })
+            .collect())
     }
 
     /// Bounded closed-function scan; no notification queue can silently lose work.
     /// Capacity for every function is checked before any action, since completion
     /// may close another function while the scan holds writer authority.
     pub fn scan_closed(&self) -> Result<usize, ControlError> {
+        self.scan_with_controls(|_| {})
+    }
+
+    pub(crate) fn scan_with_controls(
+        &self,
+        update: impl FnOnce(&[bool]),
+    ) -> Result<usize, ControlError> {
         let mut w = self
             .inner
             .writer
@@ -678,6 +791,7 @@ impl Session {
                 count += 1;
             }
         }
+        self.inner.update_controls(&r, update);
         Ok(count)
     }
 
@@ -698,6 +812,17 @@ impl Session {
     }
 }
 impl SessionInner {
+    fn update_controls(&self, registry: &Registry, update: impl FnOnce(&[bool])) {
+        let mut states = [false; MAX_MODEL_FUNCTIONS];
+        if let Some(owner) = &registry.current {
+            for (i, function) in self.spec.ids.iter().enumerate() {
+                states[i] = !owner.epoch.is_closed()
+                    && owner.epoch.function_closed(*function) == Some(false);
+            }
+        }
+        update(&states[..self.spec.ids.len()]);
+    }
+
     fn acquire(&self, thread: u64, install: u64) -> Result<AdmissionHandle, EntryError> {
         if install != self.spec.install {
             return Err(EntryError::WrongInstall);

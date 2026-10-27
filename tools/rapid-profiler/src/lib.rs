@@ -22,6 +22,10 @@ pub mod frontend;
 /// Ordinary Rust TLS intervals retaining the original bounded frontend owner.
 pub mod frontend_tls;
 
+/// Generation-bound point observations using managed data controls.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub mod data_flag;
+
 /// Opt-in fixed-leaf native intervals; process-lifetime owners and no unwind escape.
 pub mod frontend_native;
 

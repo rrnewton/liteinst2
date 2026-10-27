@@ -1552,6 +1552,12 @@ impl TrampolinePlan {
         Ok(plan)
     }
 
+    /// Exact immutable managed point associations retained by this plan.
+    /// Read-only clones cannot recover managed write authority.
+    pub fn controlled_actions(&self) -> &[ControlledAction] {
+        &self.controls
+    }
+
     /// Returns the first displaced instruction address.
     pub const fn execute_address(&self) -> u64 {
         self.execute_address

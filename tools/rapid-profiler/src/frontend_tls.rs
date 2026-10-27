@@ -91,6 +91,18 @@ pub enum IntervalOutcome {
     InvariantFailure(BridgeError),
 }
 
+// Private optional-work result. Existing IntervalOutcome::Refused still means
+// its public observe() body ran; this distinct path refuses before optional work.
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+pub(crate) enum PointObservation {
+    Completed {
+        completion: Completion,
+        payload: Payload,
+    },
+    Refused(BridgeError),
+    InvariantFailure,
+}
+
 struct Attached {
     identity: u64,
     thread: ThreadId,
@@ -265,6 +277,16 @@ impl ThreadRegistration {
         function: FunctionId,
         start: u64,
     ) -> Result<IntervalGuard<'_>, BridgeError> {
+        self.begin_acquired(install, function, start, None)
+    }
+
+    fn begin_acquired(
+        &self,
+        install: u64,
+        function: FunctionId,
+        start: u64,
+        acquired: Option<&crate::frontend::AdmissionHandle>,
+    ) -> Result<IntervalGuard<'_>, BridgeError> {
         self.access(|attached| {
             let identity = attached.next_slot;
             let next = identity
@@ -276,10 +298,13 @@ impl ThreadRegistration {
                 identity,
                 word: ORIGINAL_TOKEN,
             };
-            let admission = attached
-                .model()
-                .enter(install, function, start, &mut slot)
-                .map_err(BridgeError::Entry)?;
+            let admission = match acquired {
+                Some(owner) => attached
+                    .model()
+                    .enter_acquired(owner, function, start, &mut slot),
+                None => attached.model().enter(install, function, start, &mut slot),
+            }
+            .map_err(BridgeError::Entry)?;
             Ok(IntervalGuard {
                 registration: self,
                 slot,
@@ -309,6 +334,32 @@ impl ThreadRegistration {
                 let (value, _) = body();
                 (value, IntervalOutcome::Refused(error))
             }
+        }
+    }
+
+    // Unlike observe(), optional work runs only after successful reservation.
+    // Reuses the exact guard, completion, cancellation and TLS owner path.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    pub(crate) fn observe_point(
+        &self,
+        owner: &crate::frontend::AdmissionHandle,
+        function: FunctionId,
+        value: u64,
+        body: impl FnOnce() -> Observation,
+    ) -> PointObservation {
+        match self.begin_acquired(0, function, value, Some(owner)) {
+            Ok(guard) => match guard.finish(body()) {
+                IntervalOutcome::Completed {
+                    completion,
+                    payload,
+                } => PointObservation::Completed {
+                    completion,
+                    payload,
+                },
+                IntervalOutcome::Refused(error) => PointObservation::Refused(error),
+                IntervalOutcome::InvariantFailure(_error) => PointObservation::InvariantFailure,
+            },
+            Err(error) => PointObservation::Refused(error),
         }
     }
 
