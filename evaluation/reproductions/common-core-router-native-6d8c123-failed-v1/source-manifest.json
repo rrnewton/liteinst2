@@ -1,0 +1,30 @@
+{
+  "tests/support/e9_common_core.rs": {
+    "bytes": 33207,
+    "sha256": "88f20edc26b86d9602eb2e3904ee4d78f46ebbeddf8363dcee701c5c1e284f1b"
+  },
+  "tests/support/e9_common_router_contract.rs": {
+    "bytes": 4315,
+    "sha256": "117e56b69a8f6020e8a9eadcf0802dbf5ab0fd2a84893be4dbbf3a7d8a582cfb"
+  },
+  "tests/support/e9_common_router_controls.rs": {
+    "bytes": 7448,
+    "sha256": "1b32bcc8b1f39b039029a35bcd38b6f65b373b415a82462debe3485b9a67310b"
+  },
+  "tests/support/e9_common_router_native.rs": {
+    "bytes": 25400,
+    "sha256": "ddb5b5a8a3da0e71172edea8a6e565500341462b23184cc19a233a4ad688965a"
+  },
+  "tests/support/elf_exec_driver.rs": {
+    "bytes": 1386,
+    "sha256": "25f5ba3d2b47b7ffd525f3a5398b93d83f5e06ea14ceaecddd45b16dceae6130"
+  },
+  "tools/elf-rewrite/examples/support/common_core_router.rs": {
+    "bytes": 16058,
+    "sha256": "1ee59854e36795fc1df5e0eb4443724075c9ac5d0b884661ff91f67582472cda"
+  },
+  "tools/elf-rewrite/examples/verify_common_core.rs": {
+    "bytes": 88369,
+    "sha256": "f7f1021a80c0aa4992364ca356db9af1fb2f77edf56e1638efde7e591fc73cb1"
+  }
+}

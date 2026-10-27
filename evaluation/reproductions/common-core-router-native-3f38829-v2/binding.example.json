@@ -1,0 +1,283 @@
+{
+  "authority": "ROOT_REVIEWED_SYNTHETIC_ROUTER_CONTROL_INPUTS",
+  "build": "${BUILD}",
+  "build_launch": "${BUILD_LAUNCH}",
+  "build_parent_source": "${REPO}/ignored/a3/common-core-router-integration-v5/launch.py",
+  "caller_sha256": "00661a3ab0b0f9abbae99403075dcdf0cec49fb1bb93368b8a9864c537bdf9fd",
+  "files": {
+    "${BUILD_LAUNCH}/closed.json": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${BUILD_LAUNCH}/command.json": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${BUILD_LAUNCH}/started.json": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${BUILD_LAUNCH}/stderr.txt": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${BUILD_LAUNCH}/stdout.txt": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${BUILD}/command.json": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${BUILD}/command.log": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${BUILD}/inputs-after.json": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${BUILD}/inputs-before.json": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${BUILD}/product.json": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${BUILD}/summary.json": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${REPO}/ignored/a3/common-core-router-integration-v5/formatted.json": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${REPO}/ignored/a3/common-core-router-integration-v5/launch.py": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${REPO}/ignored/a3/common-core-router-integration-v5/validate.py": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "${REPO}/ignored/a3/common-core-router-native-caller-proposal-v1/run.py": {
+      "bytes": "<fresh-byte-count>",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    }
+  },
+  "repo": "${REPO}",
+  "revision": "3f388297f069432fbf5442d7003062dcf3962f95",
+  "schema": 1,
+  "source_manifest": "${REPO}/ignored/a3/common-core-router-integration-v5/formatted.json",
+  "tools": {
+    "git": {
+      "bytes": "<fresh-byte-count>",
+      "lookup_stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ],
+      "path": "/usr/bin/git",
+      "resolved": "/usr/bin/git",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "helper": {
+      "bytes": "<fresh-byte-count>",
+      "lookup_stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ],
+      "path": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "resolved": "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "python": {
+      "bytes": "<fresh-byte-count>",
+      "lookup_stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ],
+      "path": "/usr/bin/python3.9",
+      "resolved": "/usr/bin/python3.9",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    },
+    "timeout": {
+      "bytes": "<fresh-byte-count>",
+      "lookup_stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ],
+      "path": "/usr/bin/timeout",
+      "resolved": "/usr/bin/timeout",
+      "sha256": "<fresh-sha256>",
+      "stat": [
+        "<dev>",
+        "<ino>",
+        "<mode>",
+        "<size>",
+        "<mtime_ns>",
+        "<ctime_ns>"
+      ]
+    }
+  }
+}

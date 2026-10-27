@@ -1,0 +1,3564 @@
+[
+  {
+    "command": "dd1ce13/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 79
+    },
+    "group": "unit/liteinst_rewrite/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "8d9791c395268ec3b246092502647816e07e6460dcfcaf659c4028bf7b35b008"
+  },
+  {
+    "command": "dd1ce13/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/liteinst_rewrite/main",
+    "nested_terminal_observations": 0,
+    "review_sha256": "8d9791c395268ec3b246092502647816e07e6460dcfcaf659c4028bf7b35b008"
+  },
+  {
+    "command": "dd1ce13/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 19
+    },
+    "group": "test/integration",
+    "nested_terminal_observations": 0,
+    "review_sha256": "8d9791c395268ec3b246092502647816e07e6460dcfcaf659c4028bf7b35b008"
+  },
+  {
+    "command": "dd1ce13/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/check_elf_tactic_refusals/check_elf_tactic_refusals",
+    "nested_terminal_observations": 0,
+    "review_sha256": "8d9791c395268ec3b246092502647816e07e6460dcfcaf659c4028bf7b35b008"
+  },
+  {
+    "command": "dd1ce13/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 24
+    },
+    "group": "unit/common_sites/common_sites",
+    "nested_terminal_observations": 0,
+    "review_sha256": "8d9791c395268ec3b246092502647816e07e6460dcfcaf659c4028bf7b35b008"
+  },
+  {
+    "command": "dd1ce13/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "unit/verify_common_core/verify_common_core",
+    "nested_terminal_observations": 0,
+    "review_sha256": "8d9791c395268ec3b246092502647816e07e6460dcfcaf659c4028bf7b35b008"
+  },
+  {
+    "command": "dd1ce13/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/verify_elf_exec/verify_elf_exec",
+    "nested_terminal_observations": 0,
+    "review_sha256": "8d9791c395268ec3b246092502647816e07e6460dcfcaf659c4028bf7b35b008"
+  },
+  {
+    "command": "dd1ce13/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/verify_elf_tactics/verify_elf_tactics",
+    "nested_terminal_observations": 0,
+    "review_sha256": "8d9791c395268ec3b246092502647816e07e6460dcfcaf659c4028bf7b35b008"
+  },
+  {
+    "command": "6d8c123/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 79
+    },
+    "group": "unit/liteinst_rewrite/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "b3df26a36e716209ad29e9edff238dcdf75ba692b08afb3fd6ebb41abb1c886e"
+  },
+  {
+    "command": "6d8c123/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/liteinst_rewrite/main",
+    "nested_terminal_observations": 0,
+    "review_sha256": "b3df26a36e716209ad29e9edff238dcdf75ba692b08afb3fd6ebb41abb1c886e"
+  },
+  {
+    "command": "6d8c123/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 19
+    },
+    "group": "test/integration",
+    "nested_terminal_observations": 0,
+    "review_sha256": "b3df26a36e716209ad29e9edff238dcdf75ba692b08afb3fd6ebb41abb1c886e"
+  },
+  {
+    "command": "6d8c123/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/check_elf_tactic_refusals/check_elf_tactic_refusals",
+    "nested_terminal_observations": 0,
+    "review_sha256": "b3df26a36e716209ad29e9edff238dcdf75ba692b08afb3fd6ebb41abb1c886e"
+  },
+  {
+    "command": "6d8c123/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 24
+    },
+    "group": "unit/common_sites/common_sites",
+    "nested_terminal_observations": 0,
+    "review_sha256": "b3df26a36e716209ad29e9edff238dcdf75ba692b08afb3fd6ebb41abb1c886e"
+  },
+  {
+    "command": "6d8c123/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "unit/verify_common_core/verify_common_core",
+    "nested_terminal_observations": 0,
+    "review_sha256": "b3df26a36e716209ad29e9edff238dcdf75ba692b08afb3fd6ebb41abb1c886e"
+  },
+  {
+    "command": "6d8c123/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/verify_elf_exec/verify_elf_exec",
+    "nested_terminal_observations": 0,
+    "review_sha256": "b3df26a36e716209ad29e9edff238dcdf75ba692b08afb3fd6ebb41abb1c886e"
+  },
+  {
+    "command": "6d8c123/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/verify_elf_tactics/verify_elf_tactics",
+    "nested_terminal_observations": 0,
+    "review_sha256": "b3df26a36e716209ad29e9edff238dcdf75ba692b08afb3fd6ebb41abb1c886e"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2
+    },
+    "group": "unit/liteinst_admission/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/core_bridge",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 15
+    },
+    "group": "test/model",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 12
+    },
+    "group": "test/oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 21
+    },
+    "group": "test/oracle_chain",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 15
+    },
+    "group": "test/return_obligations",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 20
+    },
+    "group": "unit/liteinst_artifact/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 703
+    },
+    "group": "unit/liteinst_launch/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/b2_mode_reference",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_exec_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_mapping_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_signal_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 23
+    },
+    "group": "test/checkpoint",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/concurrent_control",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 10
+    },
+    "group": "test/concurrent_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 15
+    },
+    "group": "test/dynamic_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/dynamic_control",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/dynamic_exec",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/dynamic_fork",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 4
+    },
+    "group": "test/dynamic_signals",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 12
+    },
+    "group": "test/dynamic_thread",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "test/lifecycle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/lifecycle_exec_event",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 11
+    },
+    "group": "test/lifecycle_exec_exit",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/lifecycle_exiting",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/lifecycle_thread",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/native_int80",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 50
+    },
+    "group": "test/native_selected",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/native_syscall",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/oracle_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 17
+    },
+    "group": "test/page_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 24
+    },
+    "group": "test/selected_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 17
+    },
+    "group": "test/selected_semantics",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "test/trap_coverage",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 79
+    },
+    "group": "unit/liteinst_rewrite/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/liteinst_rewrite/main",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 19
+    },
+    "group": "test/integration",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 24
+    },
+    "group": "unit/common_sites/common_sites",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "unit/verify_common_core/verify_common_core",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 1,
+      "measured": 0,
+      "passed": 212
+    },
+    "group": "unit/liteinst2/lib",
+    "nested_terminal_observations": 2,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/liteinst2_arena_fork_fixture/arena_fork_fixture",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 43
+    },
+    "group": "test/a2_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/arena_fork",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/boundary_signal_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/bounded_proc_stat",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/bundle_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/call_return_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 11
+    },
+    "group": "test/concurrent_overlap",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/controlled_coalescing_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/controlled_oracle",
+    "nested_terminal_observations": 3,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 9
+    },
+    "group": "test/cross_function_neighbor",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 9
+    },
+    "group": "test/e9_common_core_pages_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/e9_common_seed_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/elf_exec_provider_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/entry_backedge",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/entry_paths_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 13
+    },
+    "group": "test/eviction_chain_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 31
+    },
+    "group": "test/eviction_chain_extensions",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/eviction_chain_grouping_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 32
+    },
+    "group": "test/eviction_chain_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/exact_syscall",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 9
+    },
+    "group": "test/foreign_neighbor_engine",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/generalized_pun_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 31
+    },
+    "group": "test/mandatory_prefix_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/neighbor_eviction_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 74
+    },
+    "group": "test/neighbor_eviction_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/overlap_concurrency",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/parked_context_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/pc_relative",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/prefixed_pun_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/prefixed_pun_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/quiescent_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 33
+    },
+    "group": "test/quiescent_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/rel32_endpoint_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2
+    },
+    "group": "test/replace_first_cet",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 4
+    },
+    "group": "test/search_eviction_evidence",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/search_evidence",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2
+    },
+    "group": "test/sigtrap_origin",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 3,
+      "measured": 0,
+      "passed": 4
+    },
+    "group": "test/stress",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/successor_eviction_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 34
+    },
+    "group": "test/successor_eviction_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/sync_core_capability",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/tactic_engine",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 12
+    },
+    "group": "test/trampoline_tail",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/exception_landing",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 106
+    },
+    "group": "unit/rapid_profiler/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "unit/rapid_profiler/main",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2
+    },
+    "group": "test/e2e",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 26
+    },
+    "group": "test/frontend_native_calibrations",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "doc/liteinst_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "doc/liteinst_artifact",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "doc/liteinst_launch",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "doc/liteinst_rewrite",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "doc/liteinst2",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 10
+    },
+    "group": "doc/rapid_profiler",
+    "nested_terminal_observations": 0,
+    "review_sha256": "587a8934570b36081857b58cbf24bb37f3d0deac76ab2c46eed1950885d99a32"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 703
+    },
+    "group": "unit/liteinst_launch/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/b2_mode_reference",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_exec_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_mapping_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_signal_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 23
+    },
+    "group": "test/checkpoint",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/concurrent_control",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 10
+    },
+    "group": "test/concurrent_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 15
+    },
+    "group": "test/dynamic_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/dynamic_control",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/dynamic_exec",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/dynamic_fork",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 4
+    },
+    "group": "test/dynamic_signals",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 12
+    },
+    "group": "test/dynamic_thread",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "test/lifecycle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/lifecycle_exec_event",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 11
+    },
+    "group": "test/lifecycle_exec_exit",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/lifecycle_exiting",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/lifecycle_thread",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/native_int80",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 50
+    },
+    "group": "test/native_selected",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/native_syscall",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/oracle_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 17
+    },
+    "group": "test/page_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 24
+    },
+    "group": "test/selected_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 17
+    },
+    "group": "test/selected_semantics",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "test/trap_coverage",
+    "nested_terminal_observations": 0,
+    "review_sha256": "11a9c1b1a1195fe9738680998686b3199652e7641a7c642e5cb92a0693a5deb1"
+  },
+  {
+    "command": "6d8c123/parallel-library",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 1,
+      "measured": 0,
+      "passed": 212
+    },
+    "group": "unit/liteinst2/lib",
+    "nested_terminal_observations": 2,
+    "review_sha256": "67136949b2c92873c8820afd6c99d0ad51ba12f6b85e53a17d95fb9de68fc22f"
+  },
+  {
+    "command": "6d8c123/parallel-prefixed",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/prefixed_pun_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "e81c30e5838f4454db4567087de716fdd24fead1f2ad8dc0ac9d0434592ae209"
+  },
+  {
+    "command": "6d8c123/parallel-neighbor",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 74
+    },
+    "group": "test/neighbor_eviction_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "95de1f124673c7f382f7c74e273119080be20c9a7b8ff242f4f06d5f0b83de92"
+  },
+  {
+    "command": "3f38829/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 79
+    },
+    "group": "unit/liteinst_rewrite/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c59fb17f800de74912840269b88400542b7f55e6ad2bfddc585716979654c4d"
+  },
+  {
+    "command": "3f38829/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/liteinst_rewrite/main",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c59fb17f800de74912840269b88400542b7f55e6ad2bfddc585716979654c4d"
+  },
+  {
+    "command": "3f38829/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 19
+    },
+    "group": "test/integration",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c59fb17f800de74912840269b88400542b7f55e6ad2bfddc585716979654c4d"
+  },
+  {
+    "command": "3f38829/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/check_elf_tactic_refusals/check_elf_tactic_refusals",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c59fb17f800de74912840269b88400542b7f55e6ad2bfddc585716979654c4d"
+  },
+  {
+    "command": "3f38829/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 24
+    },
+    "group": "unit/common_sites/common_sites",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c59fb17f800de74912840269b88400542b7f55e6ad2bfddc585716979654c4d"
+  },
+  {
+    "command": "3f38829/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "unit/verify_common_core/verify_common_core",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c59fb17f800de74912840269b88400542b7f55e6ad2bfddc585716979654c4d"
+  },
+  {
+    "command": "3f38829/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/verify_elf_exec/verify_elf_exec",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c59fb17f800de74912840269b88400542b7f55e6ad2bfddc585716979654c4d"
+  },
+  {
+    "command": "3f38829/targeted",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/verify_elf_tactics/verify_elf_tactics",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c59fb17f800de74912840269b88400542b7f55e6ad2bfddc585716979654c4d"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2
+    },
+    "group": "unit/liteinst_admission/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/core_bridge",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 15
+    },
+    "group": "test/model",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 12
+    },
+    "group": "test/oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 21
+    },
+    "group": "test/oracle_chain",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 15
+    },
+    "group": "test/return_obligations",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 20
+    },
+    "group": "unit/liteinst_artifact/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 703
+    },
+    "group": "unit/liteinst_launch/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/b2_mode_reference",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_exec_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_mapping_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_signal_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 23
+    },
+    "group": "test/checkpoint",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/concurrent_control",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 10
+    },
+    "group": "test/concurrent_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 15
+    },
+    "group": "test/dynamic_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/dynamic_control",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/dynamic_exec",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/dynamic_fork",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 4
+    },
+    "group": "test/dynamic_signals",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 12
+    },
+    "group": "test/dynamic_thread",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "test/lifecycle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/lifecycle_exec_event",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 11
+    },
+    "group": "test/lifecycle_exec_exit",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/lifecycle_exiting",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/lifecycle_thread",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/native_int80",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 50
+    },
+    "group": "test/native_selected",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/native_syscall",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/oracle_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 17
+    },
+    "group": "test/page_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 24
+    },
+    "group": "test/selected_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 17
+    },
+    "group": "test/selected_semantics",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "test/trap_coverage",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 79
+    },
+    "group": "unit/liteinst_rewrite/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/liteinst_rewrite/main",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 19
+    },
+    "group": "test/integration",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 24
+    },
+    "group": "unit/common_sites/common_sites",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "unit/verify_common_core/verify_common_core",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 1,
+      "measured": 0,
+      "passed": 212
+    },
+    "group": "unit/liteinst2/lib",
+    "nested_terminal_observations": 2,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "unit/liteinst2_arena_fork_fixture/arena_fork_fixture",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 43
+    },
+    "group": "test/a2_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/arena_fork",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/boundary_signal_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/bounded_proc_stat",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/bundle_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/call_return_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 11
+    },
+    "group": "test/concurrent_overlap",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/controlled_coalescing_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/controlled_oracle",
+    "nested_terminal_observations": 3,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 9
+    },
+    "group": "test/cross_function_neighbor",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 9
+    },
+    "group": "test/e9_common_core_pages_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/e9_common_seed_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/elf_exec_provider_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/entry_backedge",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/entry_paths_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 13
+    },
+    "group": "test/eviction_chain_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 31
+    },
+    "group": "test/eviction_chain_extensions",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/eviction_chain_grouping_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 32
+    },
+    "group": "test/eviction_chain_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/exact_syscall",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 9
+    },
+    "group": "test/foreign_neighbor_engine",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/generalized_pun_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 31
+    },
+    "group": "test/mandatory_prefix_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/neighbor_eviction_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 74
+    },
+    "group": "test/neighbor_eviction_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/overlap_concurrency",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/parked_context_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/pc_relative",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/prefixed_pun_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/prefixed_pun_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/quiescent_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 33
+    },
+    "group": "test/quiescent_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/rel32_endpoint_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2
+    },
+    "group": "test/replace_first_cet",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 4
+    },
+    "group": "test/search_eviction_evidence",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/search_evidence",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2
+    },
+    "group": "test/sigtrap_origin",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 3,
+      "measured": 0,
+      "passed": 4
+    },
+    "group": "test/stress",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/successor_eviction_contract",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 34
+    },
+    "group": "test/successor_eviction_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/sync_core_capability",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 1
+    },
+    "group": "test/tactic_engine",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 12
+    },
+    "group": "test/trampoline_tail",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/exception_landing",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 106
+    },
+    "group": "unit/rapid_profiler/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "unit/rapid_profiler/main",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 2
+    },
+    "group": "test/e2e",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 26
+    },
+    "group": "test/frontend_native_calibrations",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "doc/liteinst_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "doc/liteinst_artifact",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "doc/liteinst_launch",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "doc/liteinst_rewrite",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 0
+    },
+    "group": "doc/liteinst2",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/required/test",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 10
+    },
+    "group": "doc/rapid_profiler",
+    "nested_terminal_observations": 0,
+    "review_sha256": "59286bb8dd817a1284a64cd9ff9c60b629e3faad6e522bf4481129a0d57b0bde"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 703
+    },
+    "group": "unit/liteinst_launch/lib",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/b2_mode_reference",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_exec_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_mapping_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/b3_signal_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 23
+    },
+    "group": "test/checkpoint",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/concurrent_control",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 10
+    },
+    "group": "test/concurrent_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 15
+    },
+    "group": "test/dynamic_admission",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/dynamic_control",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 8
+    },
+    "group": "test/dynamic_exec",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/dynamic_fork",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 4
+    },
+    "group": "test/dynamic_signals",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 12
+    },
+    "group": "test/dynamic_thread",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "test/lifecycle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/lifecycle_exec_event",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 11
+    },
+    "group": "test/lifecycle_exec_exit",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/lifecycle_exiting",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 5
+    },
+    "group": "test/lifecycle_thread",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 6
+    },
+    "group": "test/native_int80",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 50
+    },
+    "group": "test/native_selected",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 7
+    },
+    "group": "test/native_syscall",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 3
+    },
+    "group": "test/oracle_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 17
+    },
+    "group": "test/page_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 24
+    },
+    "group": "test/selected_gate",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 17
+    },
+    "group": "test/selected_semantics",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/serial",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 16
+    },
+    "group": "test/trap_coverage",
+    "nested_terminal_observations": 0,
+    "review_sha256": "2c5467b11647d63178f0269bb0b496c430b7bd52de8bd01a32ba1ab136147c88"
+  },
+  {
+    "command": "3f38829/parallel-library",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 1,
+      "measured": 0,
+      "passed": 212
+    },
+    "group": "unit/liteinst2/lib",
+    "nested_terminal_observations": 2,
+    "review_sha256": "20f6b3fc71fdd9114f8381faf27fb452b334364c1c4e76eb5e2ce948d1173f78"
+  },
+  {
+    "command": "3f38829/parallel-prefixed",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "group": "test/prefixed_pun_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "70fd0bbc98c1fa9650ee45ca56af5ba6404f91e92629a9d0aa60a273e3b0f763"
+  },
+  {
+    "command": "3f38829/parallel-neighbor",
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 74
+    },
+    "group": "test/neighbor_eviction_oracle",
+    "nested_terminal_observations": 0,
+    "review_sha256": "b240efa7408bde5ba8133471773ebacb861f094bd8b6b6886d0605ee65df156a"
+  }
+]

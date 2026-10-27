@@ -1,0 +1,6 @@
+id,scope,revision,status,exit,seconds
+native-command,synthetic-bootstrap-failed,6d8c123531f30e1a841c52c8955d46f294811172,FAILED,101,0.15368607197888196
+helper-wrapper,strict-helper-parent,6d8c123531f30e1a841c52c8955d46f294811172,FAILED,1,0.26694331993348897
+native-caller,enclosing-caller-parent,6d8c123531f30e1a841c52c8955d46f294811172,FAILED,1,1.528256522025913
+native-build,binary-build-only,6d8c123531f30e1a841c52c8955d46f294811172,PASS_BUILD_ONLY,0,0.05235452204942703
+build-caller,enclosing-build-parent,6d8c123531f30e1a841c52c8955d46f294811172,PASS_BUILD_ONLY,0,1.016485475935042

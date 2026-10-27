@@ -1,0 +1,108 @@
+[
+  {
+    "after_attempt": "6d8c123",
+    "after_revision": "6d8c123531f30e1a841c52c8955d46f294811172",
+    "before_attempt": "dd1ce13",
+    "before_revision": "dd1ce13c4e9657257babe4cca7a804be908c312b",
+    "files": [
+      {
+        "after": {
+          "bytes": 5078,
+          "mode": "100644",
+          "sha256": "c0c8ad2c47e4e15861ccc8911ebe5ac32ef520359213dcf0b0b4c66bd0c3e35c"
+        },
+        "before": {
+          "bytes": 5065,
+          "mode": "100644",
+          "sha256": "03219ed869deb61b7bf28250b13a61a458a61962dfc9dea0576facff9cfd6333"
+        },
+        "corrected_git_object": "6d8c123531f30e1a841c52c8955d46f294811172:Cargo.lock",
+        "original_git_object": "dd1ce13c4e9657257babe4cca7a804be908c312b:Cargo.lock",
+        "path": "Cargo.lock"
+      },
+      {
+        "after": {
+          "bytes": 7448,
+          "mode": "100644",
+          "sha256": "1b32bcc8b1f39b039029a35bcd38b6f65b373b415a82462debe3485b9a67310b"
+        },
+        "before": {
+          "bytes": 7456,
+          "mode": "100644",
+          "sha256": "4c745f8e5064577de4209a90a08a226b016c8fbeb3e722420b77360dda7864ad"
+        },
+        "corrected_git_object": "6d8c123531f30e1a841c52c8955d46f294811172:tests/support/e9_common_router_controls.rs",
+        "original_git_object": "dd1ce13c4e9657257babe4cca7a804be908c312b:tests/support/e9_common_router_controls.rs",
+        "path": "tests/support/e9_common_router_controls.rs"
+      },
+      {
+        "after": {
+          "bytes": 406,
+          "mode": "100644",
+          "sha256": "13fde0b76cea61d1caecf580626d185ee30286278f5da92b6c4bea4995f207ee"
+        },
+        "before": {
+          "bytes": 315,
+          "mode": "100644",
+          "sha256": "09a149ab9dd290ae2fc3e8938b9af4d898783319ed32932e9528fc8e7b6e05db"
+        },
+        "corrected_git_object": "6d8c123531f30e1a841c52c8955d46f294811172:tools/exception-oracle/Cargo.toml",
+        "original_git_object": "dd1ce13c4e9657257babe4cca7a804be908c312b:tools/exception-oracle/Cargo.toml",
+        "path": "tools/exception-oracle/Cargo.toml"
+      }
+    ]
+  },
+  {
+    "after_attempt": "3f38829",
+    "after_revision": "3f388297f069432fbf5442d7003062dcf3962f95",
+    "before_attempt": "6d8c123",
+    "before_revision": "6d8c123531f30e1a841c52c8955d46f294811172",
+    "files": [
+      {
+        "after": {
+          "bytes": 33302,
+          "mode": "100644",
+          "sha256": "e40a441970517aa0c0a32a9f5222480bea64ee554e3eb5b2a147d5b5dde5b88b"
+        },
+        "before": {
+          "bytes": 33207,
+          "mode": "100644",
+          "sha256": "88f20edc26b86d9602eb2e3904ee4d78f46ebbeddf8363dcee701c5c1e284f1b"
+        },
+        "corrected_git_object": "3f388297f069432fbf5442d7003062dcf3962f95:tests/support/e9_common_core.rs",
+        "original_git_object": "6d8c123531f30e1a841c52c8955d46f294811172:tests/support/e9_common_core.rs",
+        "path": "tests/support/e9_common_core.rs"
+      },
+      {
+        "after": {
+          "bytes": 7522,
+          "mode": "100644",
+          "sha256": "4104cce63784b34d4a572799da60f80d824a75aaf50394138596a59185ce1d1d"
+        },
+        "before": {
+          "bytes": 7448,
+          "mode": "100644",
+          "sha256": "1b32bcc8b1f39b039029a35bcd38b6f65b373b415a82462debe3485b9a67310b"
+        },
+        "corrected_git_object": "3f388297f069432fbf5442d7003062dcf3962f95:tests/support/e9_common_router_controls.rs",
+        "original_git_object": "6d8c123531f30e1a841c52c8955d46f294811172:tests/support/e9_common_router_controls.rs",
+        "path": "tests/support/e9_common_router_controls.rs"
+      },
+      {
+        "after": {
+          "bytes": 29031,
+          "mode": "100644",
+          "sha256": "4e793a2f48588060fb827807a882461e7f23a3dcd81d86d568facec08c5108d8"
+        },
+        "before": {
+          "bytes": 25400,
+          "mode": "100644",
+          "sha256": "ddb5b5a8a3da0e71172edea8a6e565500341462b23184cc19a233a4ad688965a"
+        },
+        "corrected_git_object": "3f388297f069432fbf5442d7003062dcf3962f95:tests/support/e9_common_router_native.rs",
+        "original_git_object": "6d8c123531f30e1a841c52c8955d46f294811172:tests/support/e9_common_router_native.rs",
+        "path": "tests/support/e9_common_router_native.rs"
+      }
+    ]
+  }
+]

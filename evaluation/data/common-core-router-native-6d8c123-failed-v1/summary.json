@@ -1,0 +1,107 @@
+{
+  "build": {
+    "build_log_sha256": "0ac8777765681088254ea7cf9e13e28d2a8cdfcf4a30bdcfa88dac9138853f41",
+    "build_summary_sha256": "53611027d6adf08a5c257f05a144a4a4f47d586c09db59df4e0b662b3eda0691",
+    "cargo_profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "product_bytes": 6119272,
+    "product_opened_by_reporter": false,
+    "product_sha256": "0de455f68f774dd7af4162cd6c0adf0d7ef93e6a03ef0b84be10b0f2bdc8c329",
+    "revision": "6d8c123531f30e1a841c52c8955d46f294811172",
+    "saved_build_inputs_sha256": "fe5fcb5891ef20a4ab0d6ac258537a0f9f0337705b8e09f345f4ef68b7b4488e",
+    "status": "PASS"
+  },
+  "caller_sha256": "00661a3ab0b0f9abbae99403075dcdf0cec49fb1bb93368b8a9864c537bdf9fd",
+  "cohort": "synthetic-router-bootstrap-failed-v1",
+  "common_corpus_credit": false,
+  "completed_children": null,
+  "completed_full_state_comparisons": null,
+  "completed_negative_cases": null,
+  "completed_roundtrips": null,
+  "controls_files": 0,
+  "enclosing_exit": 1,
+  "enclosing_parent_seconds": 1.528256522025913,
+  "full_a3": false,
+  "hardware": {
+    "affinity": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ]
+  },
+  "helper_elapsed_seconds": 0.15368607197888196,
+  "helper_parent_seconds": 0.26694331993348897,
+  "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+  "helper_wrapper_exit": 1,
+  "independent_failed_record_review_sha256": "6f14806daf0e81df40b8c9a1e4719740b2c32541a7ae620258110b1f889e0c6f",
+  "later_success_cohort": "separate; no result included",
+  "limits": {
+    "affinity": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "caller_parent_seconds": 115,
+    "cpu_seconds": 60,
+    "enclosing_parent_seconds": 145,
+    "file_bytes": 67108864,
+    "kill_after_seconds": 10,
+    "outer_seconds": 100,
+    "wall_seconds": 90
+  },
+  "native_controls_completed": false,
+  "native_exit": 101,
+  "normal_loader_qualification": false,
+  "observed_failure": {
+    "altstack_installer": "not established by saved records",
+    "column": 9,
+    "diagnostic": "thread 'main' panicked at tests/support/e9_common_router_native.rs:154:9:\nassertion `left == right` failed\n  left: 0\n right: 2\n",
+    "diagnostic_projection": "PID and backtrace hint omitted; selected diagnostic text otherwise literal",
+    "expected_ss_flags": 2,
+    "line": 154,
+    "observed_ss_flags": 0,
+    "original_stderr_sha256": "243fa2cf7235e76b48930f57e3705ecfa7d241159b794d982ca8604b918a88bf",
+    "source": "tests/support/e9_common_router_native.rs",
+    "source_order": "one preparatory reference child stepped/reaped; before first candidate fork, router signal-state mutation or trace"
+  },
+  "planned": {
+    "planned_children": 10,
+    "planned_full_state_comparisons": 12,
+    "planned_negative_cases": 2,
+    "planned_roundtrips": 4,
+    "positive_stops_source_contract": 34
+  },
+  "qualification_complete": false,
+  "receipt_inputs_unchanged_scope": "request/helper bytes only",
+  "root_input_binding_sha256": "1c4661902ba69fd68677d381a1468a098724c42bc67a456b97a95eaeedc24060",
+  "saved_source_tools_product_metadata_equal": true,
+  "schema": 1,
+  "source_files": 2081,
+  "status": "FAILED",
+  "strict_cleanup": {
+    "aborted": null,
+    "absence_proof": "ECHILD",
+    "cleanup_error": null,
+    "cleanup_events": [],
+    "inputs_unchanged": true,
+    "unexpected_descendants": [],
+    "wall_timeout": false
+  },
+  "tested_revision": "6d8c123531f30e1a841c52c8955d46f294811172",
+  "timings": "operational observations, not performance measurements"
+}

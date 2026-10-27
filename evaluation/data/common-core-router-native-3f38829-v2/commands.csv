@@ -1,0 +1,6 @@
+id,scope,revision,status,exit,seconds
+native-command,synthetic-router-controls,3f388297f069432fbf5442d7003062dcf3962f95,PASS,0,0.2592674868647009
+helper-wrapper,strict-helper-parent,3f388297f069432fbf5442d7003062dcf3962f95,PASS,0,0.3153746319003403
+native-caller,enclosing-caller-parent,3f388297f069432fbf5442d7003062dcf3962f95,PASS,0,1.1166230759117752
+native-build,binary-build-only,3f388297f069432fbf5442d7003062dcf3962f95,PASS_BUILD_ONLY,0,2.595414601964876
+build-caller,enclosing-build-parent,3f388297f069432fbf5442d7003062dcf3962f95,PASS_BUILD_ONLY,0,4.478826787089929

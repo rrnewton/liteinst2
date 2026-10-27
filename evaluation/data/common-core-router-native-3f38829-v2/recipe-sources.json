@@ -1,0 +1,44 @@
+{
+  "build-launch.py.template": {
+    "bytes": 2405,
+    "delta": "whole inverse private-path normalization of actual build parent; never execute unexpanded",
+    "executed_by_report_author": false,
+    "mode": 420,
+    "sha256": "509bc8df1b142d7ed3c4e2ecbcabbdb4147dfa25ff78d83600116416f1651801"
+  },
+  "build.py": {
+    "bytes": 6215,
+    "executed_by_report_author": false,
+    "historically_executed_source": true,
+    "mode": 420,
+    "sha256": "d30a94c23eb2ea05d053aacf1f5b2a12b45e6a58ae913355b1a33a38b5ad5eb1"
+  },
+  "check-traces.py": {
+    "bytes": 14255,
+    "delta": "five complete reviewed trace functions literal; new explicit path/index reader and sanitized writer; prospective",
+    "executed_by_report_author": false,
+    "mode": 420,
+    "sha256": "530815bfaab045ca4d77559e41a04f5c5026c2495a26703f224f39fd5db1a696"
+  },
+  "launch-historical.py": {
+    "bytes": 2055,
+    "executed_by_report_author": false,
+    "historically_executed_source": true,
+    "mode": 420,
+    "sha256": "49a9e53fa83515a813acd07a11f871383cb548b79771582636fac2dbc6f25949"
+  },
+  "launch.py": {
+    "bytes": 2992,
+    "delta": "one exact revision guard substitution from failed-cohort parameterized wrapper; prospective",
+    "executed_by_report_author": false,
+    "mode": 420,
+    "sha256": "c6229411c7c306b74aa4b1198b15aea7d6cb4be045dd23357ddff11658ca49f4"
+  },
+  "run.py": {
+    "bytes": 15010,
+    "executed_by_report_author": false,
+    "historically_executed_source": true,
+    "mode": 420,
+    "sha256": "00661a3ab0b0f9abbae99403075dcdf0cec49fb1bb93368b8a9864c537bdf9fd"
+  }
+}

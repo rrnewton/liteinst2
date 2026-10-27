@@ -1,0 +1,278 @@
+[
+  {
+    "context": {
+      "command": {
+        "argv": [
+          "${REPO}/target/debug/elf-exec-oracle",
+          "common-core-router-controls",
+          "${RAW}/controls"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONNOUSERSITE": "1",
+          "TMPDIR": "${RAW}/tmp"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${RAW}/stderr.txt",
+        "stdout": "${RAW}/stdout.txt",
+        "wall_seconds": 90
+      },
+      "id": "native-command",
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.2592674868647009,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "9eaad344bca9d8cac1154a73f8ade249eec28ed537d04ff7bbf9bf5647ffca7a",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "scope": "synthetic-router-controls"
+    },
+    "exit": 0,
+    "id": "native-command",
+    "revision": "3f388297f069432fbf5442d7003062dcf3962f95",
+    "scope": "synthetic-router-controls",
+    "seconds": 0.2592674868647009,
+    "status": "PASS"
+  },
+  {
+    "context": {
+      "closed": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 2843152,
+        "seconds": 0.3153746319003403,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${RAW}/request.json",
+          "--receipt",
+          "${RAW}/receipt.json"
+        ],
+        "binding_sha256": "92089e9bd8544aba7d8ba4269de329b22cb74ee32601d4e3e91025cbcb762716",
+        "caller_sha256": "00661a3ab0b0f9abbae99403075dcdf0cec49fb1bb93368b8a9864c537bdf9fd",
+        "cwd": "${REPO}",
+        "env": {
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONNOUSERSITE": "1",
+          "TMPDIR": "${RAW}/tmp"
+        },
+        "parent_timeout_seconds": 115,
+        "request_sha256": "9eaad344bca9d8cac1154a73f8ade249eec28ed537d04ff7bbf9bf5647ffca7a"
+      },
+      "id": "helper-wrapper",
+      "scope": "strict-helper-parent",
+      "started": {
+        "pid": 2843152
+      }
+    },
+    "exit": 0,
+    "id": "helper-wrapper",
+    "revision": "3f388297f069432fbf5442d7003062dcf3962f95",
+    "scope": "strict-helper-parent",
+    "seconds": 0.3153746319003403,
+    "status": "PASS"
+  },
+  {
+    "context": {
+      "closed": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 2842110,
+        "seconds": 1.1166230759117752,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7f10be9713f71ca24c43ec51d9fbdba02206046d3134ee946e7ac632188e1213"
+      },
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/common-core-router-native-caller-proposal-v1/run.py",
+          "--binding",
+          "${REPO}/ignored/a3/common-core-router-native-integration-v2/binding.json",
+          "--binding-sha256",
+          "92089e9bd8544aba7d8ba4269de329b22cb74ee32601d4e3e91025cbcb762716",
+          "--raw",
+          "${RAW}"
+        ],
+        "binding_sha256": "92089e9bd8544aba7d8ba4269de329b22cb74ee32601d4e3e91025cbcb762716",
+        "caller_sha256": "00661a3ab0b0f9abbae99403075dcdf0cec49fb1bb93368b8a9864c537bdf9fd",
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONNOUSERSITE": "1"
+        },
+        "parent_source_sha256": "49a9e53fa83515a813acd07a11f871383cb548b79771582636fac2dbc6f25949",
+        "parent_timeout_seconds": 145
+      },
+      "id": "native-caller",
+      "scope": "enclosing-caller-parent",
+      "started": {
+        "monotonic": 1187678.105702501,
+        "pid": 2842110
+      }
+    },
+    "exit": 0,
+    "id": "native-caller",
+    "revision": "3f388297f069432fbf5442d7003062dcf3962f95",
+    "scope": "enclosing-caller-parent",
+    "seconds": 1.1166230759117752,
+    "status": "PASS"
+  },
+  {
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "cargo",
+          "build",
+          "-p",
+          "liteinst2",
+          "--bin",
+          "elf-exec-oracle",
+          "--message-format=json"
+        ],
+        "caller_sha256": "d30a94c23eb2ea05d053aacf1f5b2a12b45e6a58ae913355b1a33a38b5ad5eb1",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${BUILD}/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "3f388297f069432fbf5442d7003062dcf3962f95",
+        "timeout_seconds": 180
+      },
+      "id": "native-build",
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "2b1decf831bfc09345abd38b09135ce18d0fd17366cb82c2f9e93a8b3959b80d",
+        "reaped_descendants": 0,
+        "seconds": 2.595414601964876,
+        "start_utc": "2026-10-27T09:01:01.450109+00:00",
+        "termination": null
+      },
+      "scope": "binary-build-only"
+    },
+    "exit": 0,
+    "id": "native-build",
+    "revision": "3f388297f069432fbf5442d7003062dcf3962f95",
+    "scope": "binary-build-only",
+    "seconds": 2.595414601964876,
+    "status": "PASS_BUILD_ONLY"
+  },
+  {
+    "context": {
+      "closed": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 2613988,
+        "seconds": 4.478826787089929,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "95fb21274e50783ee40cd5ef4748d8a3e9bd73898f0a1e650360cd9c5ede4a0e"
+      },
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/common-core-router-integration-v5/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${BUILD}",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "native-build"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "6753f8479058677980dc28f2973cd14ac5df880d3e99d2b0bf1b78d349180e43",
+        "parent_timeout_seconds": 240,
+        "source_revision": "3f388297f069432fbf5442d7003062dcf3962f95",
+        "source_sha256": "d30a94c23eb2ea05d053aacf1f5b2a12b45e6a58ae913355b1a33a38b5ad5eb1"
+      },
+      "id": "build-caller",
+      "scope": "enclosing-build-parent",
+      "started": {
+        "monotonic": 1187607.177278945,
+        "pid": 2613988
+      }
+    },
+    "exit": 0,
+    "id": "build-caller",
+    "revision": "3f388297f069432fbf5442d7003062dcf3962f95",
+    "scope": "enclosing-build-parent",
+    "seconds": 4.478826787089929,
+    "status": "PASS_BUILD_ONLY"
+  }
+]
