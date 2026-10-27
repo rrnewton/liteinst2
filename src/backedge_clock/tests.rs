@@ -238,6 +238,7 @@ fn inline_clock_emits_only_exact_flag_neutral_gate_and_original_branch() {
             let len = usize::try_from(gate.observing_entry - gate.entry).unwrap();
             let instructions: Vec<_> =
                 Decoder::with_ip(64, &image.bytes()[..len], gate.entry, DecoderOptions::NONE)
+                    .into_iter()
                     .collect();
             assert!(!instructions.is_empty());
             assert_eq!(
