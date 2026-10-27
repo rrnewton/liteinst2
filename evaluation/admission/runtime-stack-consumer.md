@@ -55,6 +55,15 @@ validation, before any original instruction. Both profiles and their phase,
 wait, state and deadline associations remain owned through cleanup. The admitted
 lane and later CALL/RET checks retain their existing strict requirements.
 
+The raw EXEC map check uses the existing authenticated executable projection.
+The opened descriptor must match the pinned artifact; its separately observed
+procfs VMA identity must match exactly the two declared R/RX rows, including
+bounds, offsets and permissions. Extra aliases refuse. Descriptor and VMA
+identities are not assumed equal. The original stop, both identity projections
+and two distinct bounded scratch owners remain retained through cleanup and
+participate in the existing accounting. This observation grants no execution
+authority and does not change the production source reader.
+
 These numbers are success requirements, not values inserted into failed rows.
 The formatter projects actual initialized records and leaves unobserved values
 null. The parent driver independently checks the row, process result, pinned

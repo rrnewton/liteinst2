@@ -15,6 +15,7 @@ use crate::linux::remote::dynamic::owner::{
 use crate::{DynamicEvent, DynamicEventKind, RegisterSnapshot};
 use std::{mem::size_of, time::Instant};
 mod namespace;
+mod projection;
 use namespace::Namespace;
 use observe::control::{EntryControls, EntryPhase};
 #[cfg(test)]
@@ -78,6 +79,7 @@ impl Wait {
 pub(super) struct PreparedRawLane {
     pub(super) lane: PreparedLane,
     controls: EntryControls,
+    projection: projection::ExecutableProjection,
     pub(super) states: [StateSlot; STATES],
     pub(super) waits: [Wait; WAITS],
     pub(super) requests: [Option<RawRequest>; REQUESTS],
@@ -118,6 +120,7 @@ impl PreparedRawLane {
         Self {
             lane: PreparedLane::empty(),
             controls: EntryControls::empty(),
+            projection: projection::ExecutableProjection::empty(),
             states: std::array::from_fn(|_| observe::empty_state()),
             waits: std::array::from_fn(|_| Wait::empty()),
             requests: [None; REQUESTS],
@@ -157,6 +160,7 @@ impl PreparedRawLane {
     }
     pub(super) fn mark_aborted(&mut self) {
         self.first_failure.get_or_insert(self.phase);
+        self.projection.mark_aborted();
     }
     fn result<T>(&mut self, result: Result<T, OracleError>) -> Result<T, OracleError> {
         if result.is_err() {
@@ -169,7 +173,10 @@ impl PreparedRawLane {
             return Err(OracleError::Invalid("raw metadata reused"));
         }
         self.phase = RawPhase::Metadata;
-        let result = self.lane.allocate_metadata();
+        let result = (|| {
+            self.lane.allocate_metadata()?;
+            self.projection.allocate_payloads()
+        })();
         self.result(result)
     }
     pub(super) fn capture_initial(
@@ -202,7 +209,16 @@ impl PreparedRawLane {
             {
                 return Err(OracleError::Invalid("raw native EXEC state differs"));
             }
-            require_original_maps(plan, file, self.lane.metadata.maps.prefix())?;
+            self.projection.capture(
+                owner,
+                initial.stop_token().ok_or(OracleError::Invalid(
+                    "raw executable projection EXEC token absent",
+                ))?,
+                file,
+                plan,
+                self.lane.metadata.maps.prefix(),
+                until,
+            )?;
             self.frame = Some(dataflow::require_frame(plan, state)?);
             self.segments[0] = Some(until);
             self.lane.observed_shape(plan)
@@ -238,6 +254,7 @@ impl PreparedRawLane {
         let own = size_of::<Self>() - size_of::<PreparedLane>();
         own.checked_add(self.lane.allocated_bytes()?)
             .and_then(|n| n.checked_add(self.controls.allocated_payload_bytes()))
+            .and_then(|n| n.checked_add(self.projection.allocated_payload_bytes()))
             .and_then(|n| {
                 n.checked_add(
                     self.states
@@ -252,10 +269,12 @@ impl PreparedRawLane {
         (size_of::<Self>() - size_of::<PreparedLane>())
             .checked_add(shape.retained_bytes)
             .and_then(|n| n.checked_add(EntryControls::reserved_payload_bytes()))
+            .and_then(|n| n.checked_add(projection::ExecutableProjection::reserved_payload_bytes()))
             .and_then(|n| n.checked_add(STATES * 64 * 1024))
             .ok_or(OracleError::Invalid("raw reservation overflows"))
     }
     pub(super) fn temporary_bytes(shape: LaneShape) -> Result<usize, OracleError> {
+        let projection = projection::ExecutableProjection::temporary_bytes()?;
         shape
             .temporary_bytes
             .checked_add(
@@ -271,6 +290,7 @@ impl PreparedRawLane {
                     + 2 * 8
                     + 32 * size_of::<usize>(),
             )
+            .and_then(|n| n.checked_add(projection))
             .ok_or(OracleError::Invalid("raw temporary overflows"))
     }
     pub(super) fn initialize(
@@ -303,6 +323,14 @@ impl PreparedRawLane {
             initial
                 .stop_token()
                 .ok_or(OracleError::Invalid("raw actual EXEC token absent"))?,
+        )?;
+        self.projection.require_at(
+            plan,
+            self.lane.metadata.maps.prefix(),
+            initial.stop_token().ok_or(OracleError::Invalid(
+                "raw executable projection release token absent",
+            ))?,
+            until,
         )?;
         self.phase = RawPhase::ExecExit;
         self.release(owner, libc::PTRACE_SYSCALL, until)?;
@@ -821,6 +849,12 @@ pub(super) fn require_complete(
         .terminal
         .ok_or(OracleError::Invalid("raw actual terminal absent"))?
         .0;
+    p.projection.require_retained(
+        plan,
+        p.lane.metadata.maps.prefix(),
+        p.segments[0].ok_or(OracleError::Invalid("raw projection deadline absent"))?,
+        actual_pid,
+    )?;
     p.lane.require_complete(
         plan,
         contract,
@@ -950,16 +984,12 @@ fn require_exit(
 }
 fn require_original_maps(
     plan: &ArtifactPlan,
-    file: &PinnedArtifact,
+    id: source_identity::FileIdentity,
     maps: &[u8],
 ) -> Result<(), OracleError> {
-    let id = file.identity()?;
     let mut matched = 0;
     for row in source_identity::parse(maps)?.entries() {
-        if row.inode == id.inode
-            && row.device_major == libc::major(id.device)
-            && row.device_minor == libc::minor(id.device)
-        {
+        if row.inode == id.inode && row.device_major == id.major && row.device_minor == id.minor {
             let expected = if row.start == plan.read_load.start {
                 (plan.read_load.end, 0, *b"r--p")
             } else if row.start == plan.text_load.start {
