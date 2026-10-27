@@ -21,6 +21,8 @@ pub enum RawIntervalOwner {
 /// One real entry/original-RET pair, including unsampled invocations.
 /// Endpoints include callback/trampoline and descheduling costs. Ticks are not
 /// nanoseconds, core cycles or overhead-corrected application work.
+/// With concurrent activation, start precedes controller-lock waiting; ownership
+/// is selected at reservation after that wait, not at the raw start timestamp.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct RawInterval {
     pub ordinal: u64,

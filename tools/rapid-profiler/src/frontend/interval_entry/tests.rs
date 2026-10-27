@@ -3,6 +3,8 @@ use crate::generation::{Disposition, Population, Terminal};
 use std::sync::mpsc;
 use std::time::Duration;
 
+mod concurrent;
+
 const INSTALL: u64 = 71;
 const A: FunctionId = FunctionId(11);
 fn limits() -> Limits {

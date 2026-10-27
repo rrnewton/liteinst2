@@ -390,6 +390,8 @@ struct SessionInner {
     pool: Arc<PermitPool>,
     registry: Mutex<Registry>,
     writer: Mutex<Controller>,
+    #[cfg(test)]
+    entry_waits: [AtomicUsize; 2],
 }
 
 /// Bounded session with writer-before-registry lock order. No destructor takes
@@ -477,6 +479,8 @@ impl Session {
                     actions: reserved(limits.actions)?,
                     failed_owner: None,
                 }),
+                #[cfg(test)]
+                entry_waits: [const { AtomicUsize::new(0) }; 2],
             }),
         })
     }

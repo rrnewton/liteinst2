@@ -154,6 +154,30 @@ impl ThreadModel {
         value: u64,
         slot: &mut ModelReturnSlot,
     ) -> Result<IntervalEntry, IntervalEntryError> {
+        self.enter_interval_mode(install, function, value, slot, false)
+    }
+
+    // The sealed native bridge excludes same-thread controller reentry before
+    // choosing this mode. It never exposes these locks to application code.
+    // Both modes use the same preflight, stamp, reservation and retained owner.
+    pub(crate) fn enter_interval_waiting(
+        &mut self,
+        install: u64,
+        function: FunctionId,
+        value: u64,
+        slot: &mut ModelReturnSlot,
+    ) -> Result<IntervalEntry, IntervalEntryError> {
+        self.enter_interval_mode(install, function, value, slot, true)
+    }
+
+    fn enter_interval_mode(
+        &mut self,
+        install: u64,
+        function: FunctionId,
+        value: u64,
+        slot: &mut ModelReturnSlot,
+        wait: bool,
+    ) -> Result<IntervalEntry, IntervalEntryError> {
         self.preflight(slot).map_err(IntervalEntryError::Model)?;
         self.in_callback = true;
         let session = Arc::clone(&self.session);
@@ -166,6 +190,14 @@ impl ThreadModel {
             }
             let writer = match session.writer.try_lock() {
                 Ok(guard) => guard,
+                Err(TryLockError::WouldBlock) if wait => {
+                    #[cfg(test)]
+                    session.entry_waits[0].fetch_add(1, Ordering::Release);
+                    session
+                        .writer
+                        .lock()
+                        .map_err(|_| IntervalEntryError::ControllerPoisoned)?
+                }
                 Err(TryLockError::WouldBlock) => return Err(IntervalEntryError::ControllerBusy),
                 Err(TryLockError::Poisoned(_)) => {
                     return Err(IntervalEntryError::ControllerPoisoned);
@@ -173,6 +205,14 @@ impl ThreadModel {
             };
             let registry = match session.registry.try_lock() {
                 Ok(guard) => guard,
+                Err(TryLockError::WouldBlock) if wait => {
+                    #[cfg(test)]
+                    session.entry_waits[1].fetch_add(1, Ordering::Release);
+                    session
+                        .registry
+                        .lock()
+                        .map_err(|_| IntervalEntryError::Model(EntryError::RegistryPoisoned))?
+                }
                 Err(TryLockError::WouldBlock) => {
                     return Err(IntervalEntryError::Model(EntryError::RegistryBusy));
                 }
@@ -398,3 +438,14 @@ impl IntervalExit {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+impl Session {
+    // Observes actual WouldBlock branches; it neither pauses nor changes entry.
+    pub(crate) fn interval_waits(&self) -> [usize; 2] {
+        self.inner
+            .entry_waits
+            .each_ref()
+            .map(|count| count.load(Ordering::Acquire))
+    }
+}

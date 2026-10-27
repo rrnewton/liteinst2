@@ -3,6 +3,8 @@ use super::*;
 use crate::frontend::{EntryError, PayloadOutcome};
 use crate::generation::AdmissionRefusal;
 
+mod concurrent;
+
 const FUNCTION: FunctionId = FunctionId(11);
 fn limits() -> Limits {
     Limits {

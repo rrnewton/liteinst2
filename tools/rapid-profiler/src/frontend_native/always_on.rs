@@ -41,6 +41,7 @@ enum Cause {
     Outstanding,
     Gate(GateError),
     ClockProfile,
+    ControllerReentry,
 }
 /// Opaque typed failure. Debug retains the exact original model error; no
 /// FunctionClosed/NoCurrent fallback converts an unrelated error into a sample.
@@ -60,6 +61,12 @@ struct Binding {
     install: u64,
     function: FunctionId,
     limits: Limits,
+    entry_mode: EntryMode,
+}
+#[derive(Clone, Copy)]
+enum EntryMode {
+    NonBlocking,
+    Concurrent,
 }
 impl Binding {
     fn process(&self) -> Result<(), BridgeError> {
@@ -163,6 +170,31 @@ impl PreparedIntervalController {
     /// the parent's copy must not be activated/reused. Installation and managed
     /// controls are process-private snapshots. Active controllers cannot be rebound.
     pub unsafe fn activate(self) -> Result<(IntervalController, IntervalClient), BridgeError> {
+        self.activate_mode(EntryMode::NonBlocking)
+    }
+
+    /// Activate callbacks that wait for concurrent metadata transitions. Each
+    /// admission observes one complete writer/registry state and retains that
+    /// owner until its original return. Contention is never an unsampled result.
+    ///
+    /// # Safety
+    /// All [`Self::activate`] obligations apply. Controller operations may run
+    /// on another thread, but must not wait for a callback to finish or acquire
+    /// their metadata locks (including through allocator hooks). Same-thread controller
+    /// reentry is refused. No signal, cancellation or unwind may interrupt a
+    /// callback. Waiting has no fairness or bounded-latency guarantee. Raw start
+    /// timestamps precede the wait; the chosen epoch is the one at reservation,
+    /// not necessarily the one current at that timestamp.
+    pub unsafe fn activate_concurrent(
+        self,
+    ) -> Result<(IntervalController, IntervalClient), BridgeError> {
+        self.activate_mode(EntryMode::Concurrent)
+    }
+
+    fn activate_mode(
+        self,
+        entry_mode: EntryMode,
+    ) -> Result<(IntervalController, IntervalClient), BridgeError> {
         STATE
             .try_with(|cell| {
                 if POISONED.get()
@@ -197,6 +229,7 @@ impl PreparedIntervalController {
             install: self.install,
             function: self.function,
             limits: self.limits,
+            entry_mode,
         });
         let client = IntervalClient {
             binding: Arc::clone(&binding),
@@ -239,6 +272,7 @@ impl IntervalController {
     }
     /// Exact existing metadata publication; physical bookkeeping stays enabled.
     pub fn arm(&mut self, epoch: &IntervalEpoch) -> Result<(), BridgeError> {
+        let _scope = ControllerScope::enter()?;
         let owner = self.owner(epoch)?;
         self.binding
             .session
@@ -247,6 +281,7 @@ impl IntervalController {
     }
     /// Remove only the specified current epoch, preserving its old reservations.
     pub fn disarm(&mut self, epoch: &IntervalEpoch) -> Result<(), BridgeError> {
+        let _scope = ControllerScope::enter()?;
         let generation = self.owner(epoch)?.generation();
         self.binding
             .session
@@ -259,6 +294,7 @@ impl IntervalController {
     }
     /// Bounded immutable copy of the complete existing action history.
     pub fn history(&self) -> Result<ControllerSnapshot, BridgeError> {
+        let _scope = ControllerScope::enter()?;
         self.binding.process()?;
         self.binding
             .session
@@ -391,6 +427,30 @@ struct State {
 thread_local! {
     static STATE: RefCell<Option<State>> = const { RefCell::new(None) };
     static POISONED: Cell<bool> = const { Cell::new(false) };
+    static CONTROLLER_ACTIVE: Cell<bool> = const { Cell::new(false) };
+}
+
+// Snapshot allocates while holding writer authority. An instrumented allocator
+// must refuse same-thread reentry instead of waiting for its own lock. The
+// marker spans all lock-owning facade operations and cannot move across threads.
+struct ControllerScope(PhantomData<Rc<()>>);
+impl ControllerScope {
+    fn enter() -> Result<Self, BridgeError> {
+        CONTROLLER_ACTIVE
+            .try_with(|active| {
+                if active.replace(true) {
+                    Err(error(Cause::ControllerReentry))
+                } else {
+                    Ok(Self(PhantomData))
+                }
+            })
+            .unwrap_or(Err(error(Cause::ControllerReentry)))
+    }
+}
+impl Drop for ControllerScope {
+    fn drop(&mut self) {
+        let _ = CONTROLLER_ACTIVE.try_with(|active| active.set(false));
+    }
 }
 /// Non-Clone actual-thread token; failure retains TLS ownership, not return credit.
 pub struct IntervalThread {
@@ -410,8 +470,10 @@ impl IntervalClient {
     /// Attach only after the complete site publication and caller stack admission.
     ///
     /// # Safety
-    /// The installed fixed grammar, caller-certified single-thread/signal and
-    /// readable-stack contract holds until an empty explicit detach. A real
+    /// The installed fixed grammar, caller-certified execution/signal and
+    /// readable-stack contract holds until an empty explicit detach. Concurrent
+    /// metadata transitions require activation with `activate_concurrent`;
+    /// publication itself still requires quiescence. A real
     /// original invoke CALL must supply the sealed terminal return word.
     pub unsafe fn attach(
         &self,
@@ -705,6 +767,9 @@ impl State {
         start: Option<RawTimestamp>,
         gate: Option<gate::GateEntry>,
     ) -> Result<(), BridgeError> {
+        if CONTROLLER_ACTIVE.try_with(Cell::get).unwrap_or(true) {
+            return Err(error(Cause::ControllerReentry));
+        }
         let timed = self.binding.site.gate.is_some();
         if timed != start.is_some() || timed != gate.is_some() || timed != self.timing.is_some() {
             return Err(error(Cause::ClockProfile));
@@ -737,15 +802,18 @@ impl State {
             identity: self.next,
             word: TOKEN,
         };
-        let receipt = self
-            .model
-            .enter_interval(
-                self.binding.install,
-                self.binding.function,
-                start.map_or(self.next, |value| value.ticks),
-                &mut slot,
-            )
-            .map_err(|e| error(Cause::Entry(e)))?;
+        let enter = match self.binding.entry_mode {
+            EntryMode::NonBlocking => ThreadModel::enter_interval,
+            EntryMode::Concurrent => ThreadModel::enter_interval_waiting,
+        };
+        let receipt = enter(
+            &mut self.model,
+            self.binding.install,
+            self.binding.function,
+            start.map_or(self.next, |value| value.ticks),
+            &mut slot,
+        )
+        .map_err(|e| error(Cause::Entry(e)))?;
         // Retain before any postcondition; even impossible failure cannot lose an admission.
         self.pairs[depth] = Some(Pair {
             key: Arc::clone(&self.binding.key),
