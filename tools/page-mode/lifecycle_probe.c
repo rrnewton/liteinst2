@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/mman.h>
+#include <sys/stat.h>
 #include <sys/syscall.h>
 #include <unistd.h>
 #include "lifecycle.h"
@@ -175,12 +176,58 @@ static void negative(const char *which,const char *fd_text) {
     /* The accepted negative profile must refuse before this application point. */
     _exit(99);
 }
+static int fd_same(const struct stat *a,const struct stat *b) {
+    return a->st_dev==b->st_dev && a->st_ino==b->st_ino &&
+        a->st_mode==b->st_mode && a->st_rdev==b->st_rdev && a->st_size==b->st_size;
+}
+static int held_duplicate(int source,unsigned first,unsigned end) {
+    struct stat original;assert(!fstat(source,&original));int found=-1;
+    for(unsigned fd=first;fd<end;fd++) {
+        errno=0;long flags=syscall(SYS_fcntl,fd,F_GETFD,0);
+        if(flags==-1) { assert(errno==EBADF);continue; }
+        assert(flags>=0);struct stat actual;assert(!fstat((int)fd,&actual));
+        if(flags==FD_CLOEXEC && fd_same(&actual,&original)) { assert(found==-1);found=(int)fd; }
+    }
+    assert(found>=0);return found;
+}
+static void fd_marker(const char *prefix,const char *name) {
+    char line[96];int n=snprintf(line,sizeof(line),"%s%s\n",prefix,name);
+    assert(n>0 && (size_t)n<sizeof(line) && syscall(SYS_write,1,line,n)==n);
+}
+static void fd_control(const char *name,int source) {
+    int fd=-1;struct stat original;assert(!fstat(source,&original) && S_ISREG(original.st_mode) && original.st_size>0);
+    if(!strcmp(name,"fd_report_highbits")) {
+        if(!instrumented) {
+            errno=0;assert(syscall(SYS_fcntl,100,F_GETFD,0)==-1 && errno==EBADF);
+            assert(syscall(SYS_fcntl,2,F_DUPFD_CLOEXEC,100)==100);
+        }
+        fd=held_duplicate(2,100,200);
+    } else if(!strcmp(name,"fd_retained_highbits")) {
+        if(!instrumented) {
+            errno=0;assert(syscall(SYS_fcntl,200,F_GETFD,0)==-1 && errno==EBADF);
+            assert(syscall(SYS_fcntl,source,F_DUPFD_CLOEXEC,200)==200);
+        }
+        fd=held_duplicate(source,200,234);
+    } else {
+        assert(!strcmp(name,"fd_ordinary_highbits"));
+        fd=(int)syscall(SYS_fcntl,source,F_DUPFD_CLOEXEC,300);assert(fd>=300);
+        struct stat actual;assert(!fstat(fd,&actual) && fd_same(&original,&actual));
+    }
+    struct stat before;assert(!fstat(fd,&before) && syscall(SYS_fcntl,fd,F_GETFD,0)>=0);
+    fd_marker("ATTEMPT ",name);
+    assert(syscall(SYS_close,(long)((1ULL<<32)|(unsigned)fd))==0);
+    errno=0;assert(syscall(SYS_fcntl,fd,F_GETFD,0)==-1 && errno==EBADF);
+    fd_marker("NATIVE_OK ",name);
+}
 int main(int argc,char **argv) {
     assert(argc==3);
     snapshot=(void (*)(struct li2_lifecycle_counts *))dlsym(RTLD_DEFAULT,"li2_dynamic_lifecycle_snapshot");
     page_view=(int (*)(uintptr_t,struct li2_lifecycle_page_view *))dlsym(RTLD_DEFAULT,"li2_dynamic_lifecycle_page");
     instrumented=snapshot!=0;
     if (instrumented) assert(page_view && state().enabled);
+    if (!strcmp(argv[1],"fd_report_highbits") || !strcmp(argv[1],"fd_retained_highbits") || !strcmp(argv[1],"fd_ordinary_highbits")) {
+        fd_control(argv[1],atoi(argv[2]));return 0;
+    }
     if (strcmp(argv[1],"positive")) { negative(argv[1],argv[2]); return 99; }
     library(argv[2]); sealed_slice(argv[2]); jit(); cross_page(); partial(0); partial(1);
     /* Kernel errors that require no supported mutation remain genuine. */

@@ -23,13 +23,14 @@ EXTRA = {'lifecycle_' + name for name in (
 NEGATIVES = {'wx': 136, 'shared': 140, 'unsealed': 142, 'alias': 119,
              'protected': 155, 'unknown': 157, 'thread': 30, 'stale': 40,
              'capacity': 121, 'post_effect': 170, 'partial_alias': 119, 'brk_hole': 181}
+FD_CONTROLS = {'fd_report_highbits': 31, 'fd_retained_highbits': 160, 'fd_ordinary_highbits': 0}
 EXPECTED_OUTPUT = (b'sealed_dlopen=40,40\nsealed_partial_vma=rx,rw\n'
                    b'jit_generations=17,29,41\ncross_page=53,67\n'
                    b'partial_r=ENOMEM,73\npartial_rx=ENOMEM,73\n'
                    b'kernel_errors=EINVAL,EINVAL\n')
 
 
-def report(data, expected_code):
+def report(data, expected_code, case='positive'):
     lines = data.decode().splitlines()
     require(len(lines) == 1, 'lifecycle_diagnostic_count')
     row = dynamic.object_row(lines[0], 'LI2_DYNAMIC ')
@@ -44,10 +45,18 @@ def report(data, expected_code):
                                         'selfcheck_syscall', 'capability_checks')), 'lifecycle_activation')
     if expected_code == 0:
         dynamic.metric_row('LI2_DYNAMIC ' + json.dumps({key: row[key] for key in dynamic.METRIC_KEYS}))
+    if expected_code == 0 and case == 'positive':
         for key, expected in {'mappings': 15, 'generations': 52, 'retired': 52,
                               'admissions': 14, 'kernel_errors': 4, 'partial_errors': 2,
                               'sync_core': 14, 'live_pages': 0, 'records': 52}.items():
             require(row['lifecycle_' + key] == expected, 'lifecycle_positive_counts')
+    if case in FD_CONTROLS:
+        require(row['failure_detail_abs'] == (3 if expected_code else 0) and
+                row['syscall_traps'] == row['forwarded_syscalls'] + bool(expected_code),
+                'fd_close_kernel_result')
+        require(all(row['lifecycle_' + key] == 0 for key in
+                    ('mappings', 'generations', 'retired', 'admissions', 'sync_core', 'live_pages', 'records')),
+                'fd_control_changed_owned_pages')
     return row
 
 
@@ -96,7 +105,9 @@ def main():
         record['sealed_fixture_sha256'] = binaries['lifecycle_dso.so']
         record['seals'] = seals
         reference = None
-        for case, instrumented in (('positive', False), ('positive', True), *((key, True) for key in NEGATIVES)):
+        fd_reference = {}
+        for case, instrumented in (('positive', False), ('positive', True), *((key, True) for key in NEGATIVES),
+                                   *((key, mode) for key in FD_CONTROLS for mode in (False, True))):
             require(all(file_digest(Path('target/page-mode') / name) == value for name, value in binaries.items()),
                     'lifecycle_binary_changed')
             label = case + ('-lifecycle' if instrumented else '-reference')
@@ -110,12 +121,23 @@ def main():
                 label, cpu, pass_fds=(fd,))
             command['environment_delta'] = {key: value for key, value in env.items() if key not in dynamic.SETTINGS}
             record['commands'].append(command)
-            expected_code = 0 if case == 'positive' else NEGATIVES[case]
+            expected_code = (FD_CONTROLS[case] if instrumented else 0) if case in FD_CONTROLS else (
+                0 if case == 'positive' else NEGATIVES[case])
             require(command['exit_code'] == (125 if expected_code else 0)
                     and command['leader_reaped'] and not command['timed_out'] and command['error'] is None,
                     'lifecycle_process_outcome')
             observed = {'case': case, 'instrumented': instrumented, 'expected_failure_code': expected_code}
-            if case == 'positive':
+            if case in FD_CONTROLS:
+                marker = ('ATTEMPT ' + case + '\n').encode()
+                complete = ('NATIVE_OK ' + case + '\n').encode()
+                require(stdout.read_bytes() == marker + (b'' if expected_code else complete),
+                        'fd_control_completion_differs')
+                if not instrumented:
+                    fd_reference[case] = stdout.read_bytes()
+                elif expected_code == 0:
+                    require(stdout.read_bytes() == fd_reference[case], 'fd_native_output_differs')
+                    observed['native_output_equal'] = True
+            elif case == 'positive':
                 require(stdout.read_bytes() == EXPECTED_OUTPUT, 'lifecycle_output_differs')
                 if instrumented:
                     require(stdout.read_bytes() == reference, 'lifecycle_native_output_differs')
@@ -125,7 +147,7 @@ def main():
             else:
                 require(stdout.read_bytes() == b'', 'refusal_resumed_application')
             if instrumented:
-                observed['metrics'] = report(stderr.read_bytes(), expected_code)
+                observed['metrics'] = report(stderr.read_bytes(), expected_code, case)
                 if case == 'post_effect':
                     require(observed['metrics']['lifecycle_last_errno'] == 0
                             and observed['metrics']['lifecycle_last_phase'] == 3
@@ -148,7 +170,7 @@ def main():
             else:
                 require(stderr.read_bytes() == b'', 'native_stderr')
             record['rows'].append(observed)
-        require(len(record['rows']) == 14, 'lifecycle_case_count')
+        require(len(record['rows']) == 20, 'lifecycle_case_count')
         record['status'] = 'passed'
     except Refusal as error:
         record['error'] = str(error)

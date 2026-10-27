@@ -511,7 +511,7 @@ int li2_lifecycle_dispatch(long n,const long a[6],long *result) {
 }
 void li2_lifecycle_before_other(long n,const long a[6]) {
     if (!active) return;
-    if (n==SYS_close && a[0]==retained_fd) DIE(160,n);
+    if (n==SYS_close && (unsigned int)a[0]==(unsigned int)retained_fd) DIE(160,n);
     if (n==SYS_brk && a[0]) {
         long observed=RAW(SYS_brk,0,0,0,0,0,0);
         if (kernel_error(observed) || (uintptr_t)observed>UINTPTR_MAX-(PAGE-1)) DIE(182,0);

@@ -295,7 +295,7 @@ static void dispatch(siginfo_t *info, ucontext_t *uc) {
         (void)raw(n, a, b, c, d, e, f);
         fail(21, n);
     }
-    if (n == SYS_close && a == report_fd) fail(31, n);
+    if (n == SYS_close && (unsigned int)a == (unsigned int)report_fd) fail(31, n);
     long arguments[6] = {a,b,c,d,e,f}, lifecycle_result;
     li2_lifecycle_before_other(n, arguments);
     if (li2_lifecycle_dispatch(n, arguments, &lifecycle_result)) {
