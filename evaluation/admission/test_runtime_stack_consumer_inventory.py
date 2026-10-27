@@ -11,12 +11,14 @@ import runtime_stack_consumer_inventory as inventory
 from core_719519_inventory import before_core_719519
 import ordinary_shared_inventory as shared
 import ordinary_thirtytwo_inventory as thirtytwo
+import core_c73f159_inventory as corec73
 import native_fixtures as fixtures
 
 
 class RuntimeStackConsumerInventoryTests(unittest.TestCase):
     def test_current_corpus_and_methods_reconstruct_exact_old_history(self):
-        expanded = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        raw_current = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        expanded = corec73.before_core_c73f159(raw_current)
         thirtytwo_previous = thirtytwo.before_ordinary_thirtytwo(expanded)
         current = thirtytwo_previous
         shared_previous = shared.before_ordinary_shared(current)
@@ -57,7 +59,7 @@ class RuntimeStackConsumerInventoryTests(unittest.TestCase):
         declared = shared_previous
         # The new current corpus is authenticated before the old fixture is used.
         # This unchanged raw-file equality observes the actual outer input.
-        current = expanded
+        current = raw_current
         self.assertEqual(current, json.loads(Path(__file__).with_name("corpus.json").read_text()))
         # Remaining shared assertions observe its authenticated exact predecessor.
         current = thirtytwo_previous
@@ -75,7 +77,10 @@ class RuntimeStackConsumerInventoryTests(unittest.TestCase):
             shared.before_ordinary_shared(declared)
 
         # The separately registered32-step method remains mandatory current evidence.
+        expanded_previous = expanded
+        expanded = raw_current
         self.assertEqual(expanded, json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        expanded = expanded_previous
         self.assertEqual(thirtytwo.digest(expanded), thirtytwo.CURRENT_ORDINARY_THIRTYTWO_CORPUS_SHA256)
         self.assertEqual(thirtytwo.digest(thirtytwo_previous), thirtytwo.PRE_ORDINARY_THIRTYTWO_CORPUS_SHA256)
         self.assertEqual(expanded["native_validation_fixtures"][:107], current["native_validation_fixtures"])
@@ -90,7 +95,8 @@ class RuntimeStackConsumerInventoryTests(unittest.TestCase):
             thirtytwo.before_ordinary_thirtytwo(thirtytwo_previous)
 
     def test_projection_refuses_changed_fields_counts_and_identities(self):
-        expanded = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        raw_current = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        expanded = corec73.before_core_c73f159(raw_current)
         thirtytwo_previous = thirtytwo.before_ordinary_thirtytwo(expanded)
         current = thirtytwo_previous
         shared_previous = shared.before_ordinary_shared(current)
