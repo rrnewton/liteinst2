@@ -461,24 +461,34 @@ unsafe extern "C" fn point_callback(context: *mut HookContext, identity: Control
     let pc = unsafe { (*context).instruction_pointer };
     let _ = POINT.try_with(|local| {
         let outcome = (|| {
-            let slot = local
-                .attached
-                .try_borrow_mut()
-                .map_err(|_| PointOutcome::BindingRefused)?;
-            let attached = slot.as_ref().ok_or(PointOutcome::BindingRefused)?;
+            let Ok(slot) = local.attached.try_borrow_mut() else {
+                return PointOutcome::BindingRefused;
+            };
+            let Some(attached) = slot.as_ref() else {
+                return PointOutcome::BindingRefused;
+            };
             let binding = &attached.binding;
-            let index = binding
+            let Some(index) = binding
                 .specs
                 .iter()
                 .zip(&binding.controls)
                 .position(|(s, c)| s.pc == pc && c.has_identity(identity))
-                .ok_or(PointOutcome::BindingRefused)?;
+            else {
+                return PointOutcome::BindingRefused;
+            };
             let spec = binding.specs[index];
-            let function = spec.function.ok_or(PointOutcome::BindingRefused)?;
-            let owner = binding
+            let Some(function) = spec.function else {
+                return PointOutcome::BindingRefused;
+            };
+            let owner = match binding
                 .session
                 .acquire(attached.registration.identity(), binding.install)
-                .map_err(|e| PointOutcome::AdmissionRefused(frontend_tls::BridgeError::Entry(e)))?;
+            {
+                Ok(owner) => owner,
+                Err(e) => {
+                    return PointOutcome::AdmissionRefused(frontend_tls::BridgeError::Entry(e));
+                }
+            };
             #[cfg(test)]
             tests::pause(binding, pc, tests::Phase::BeforeReservation);
             let observed = attached
@@ -494,15 +504,14 @@ unsafe extern "C" fn point_callback(context: *mut HookContext, identity: Control
                 PointObservation::Completed {
                     completion,
                     payload,
-                } => Ok(PointOutcome::Completed {
+                } => PointOutcome::Completed {
                     completion,
                     payload,
-                }),
-                PointObservation::Refused(e) => Err(PointOutcome::AdmissionRefused(e)),
+                },
+                PointObservation::Refused(e) => PointOutcome::AdmissionRefused(e),
                 PointObservation::InvariantFailure => std::process::abort(),
             }
-        })()
-        .unwrap_or_else(|e| e);
+        })();
         local.last.set(Some(outcome));
         if !matches!(outcome, PointOutcome::Completed { .. }) {
             local.last_refusal.set(Some(outcome));
