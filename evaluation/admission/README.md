@@ -73,10 +73,20 @@ identities. The additive runtime launch-failure cleanup API contributes seven pu
 controls and two separate native controls. The separate finite initial map-coalescence
 addition contributes 36 pure and three native controls, retaining original RX source
 extents separately from actual NX containers. Expected totals are 612 launcher units,
-1988 workspace tests in the same 89 harnesses (1984 possible passes and four
+2037 workspace tests in 91 harnesses (2033 possible passes and four
 unchanged ignores), and 904 serial launch tests in the same 27 harnesses.
 The recorder expects 302 Python controls, including twelve separate compiler-consumer
 record/schema regressions, three launch-cleanup controls and three coalescence controls.
+The separately merged core adds 49 methods: three seed-contract integration
+controls, 24 `common_sites` example controls, 14 carrier controls and eight
+counter-reading controls. Its two new workspace harnesses and two changed
+library counts are authenticated before reconstructing the exact previous
+1988-test/89-harness corpus for historical checks. Launcher612, serial904,
+all302 Python identities, all86 native rows, the coalescence39 inventory and
+every old assertion remain unchanged. Only the observed exact `common_sites`
+source/binary/example-directory header is added to Cargo header recognition;
+all other example-directory variants refuse. No native collection or command
+limit changes are part of this inventory reconciliation.
 These are source-derived expectations;
 this inventory makes no execution or qualification claim.
 The [compiler-produced C consumer](runtime-kernel-consumer.md) has a separate

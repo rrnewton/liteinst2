@@ -44,12 +44,21 @@ def harness_id(line):
     doc = re.fullmatch(r"\s*Doc-tests ([A-Za-z0-9_-]+)", line)
     if doc:
         return "doc/" + doc[1]
+    example = re.fullmatch(
+        r"\s*Running unittests examples/common_sites\.rs "
+        r"\(target/debug/examples/common_sites-[a-f0-9]+\)", line)
+    if example:
+        return "unit/common_sites/common_sites"
     match = re.fullmatch(r"\s*Running (unittests [^()]+|tests/[^()]+|native-interval/calibrations\.rs) \(([^()]+)\)", line)
     if not match:
         return None
     binary = re.fullmatch(r"target/debug/deps/([A-Za-z0-9_]+)-[a-f0-9]+", match[2])
     require(binary is not None, "invalid_harness_binary_path")
     label = match[1]
+    # This reviewed example has one source/binary/output-directory identity.
+    # The generic legacy unit matcher cannot provide an alternate spelling.
+    require(label != "unittests examples/common_sites.rs" and binary[1] != "common_sites",
+            "invalid_harness_source_label")
     if label == "native-interval/calibrations.rs":
         require(binary[1] == "frontend_native_calibrations", "invalid_harness_source_label")
         return "test/frontend_native_calibrations"

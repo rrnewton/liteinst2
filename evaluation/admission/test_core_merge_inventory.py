@@ -5,6 +5,10 @@ import hashlib
 import json
 from pathlib import Path
 import unittest
+from unittest.mock import patch
+from core_main_inventory import (ADDED_HARNESSES, CHANGED_HARNESSES, RUST_METHODS,
+                                 SOURCE_WIRING, PRE_CORE_MAIN_CORPUS_SHA256,
+                                 before_core_main, validate_core_main_source)
 from test_runtime_kernel_inventory import before_kernel
 
 from test_runtime_inventory import before_runtime
@@ -37,6 +41,32 @@ class CoreMergeInventoryTests(unittest.TestCase):
             self.assertNotIn("PRIVATE_SENTINEL", json.dumps(caught.exception.partial))
             self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
 
+        # Source/binary/directory spelling authenticated from the saved core
+        # workspace capture. This adds no general examples-directory grammar.
+        example = "     Running unittests examples/common_sites.rs (target/debug/examples/common_sites-123abc)"
+        expected = {"unit/common_sites/common_sites": counts(24)}
+        valid = "\n".join((example, "running 24 tests", summary(24)))
+        row = parsing.parse_harnesses(valid, expected, 0)[0]
+        self.assertEqual(row["outer"]["passed"], 24)
+        self.assertEqual(row["nested"], [])
+        for text in (valid.replace("examples/common_sites.rs", "examples/other.rs"),
+                     valid.replace("examples/common_sites.rs", "src/common_sites.rs"),
+                     valid.replace("common_sites-", "other-"),
+                     valid.replace("target/debug/examples/", "target/debug/deps/"),
+                     valid.replace("target/debug/examples/", "target/release/examples/"),
+                     valid.replace("target/debug/examples/", "/PRIVATE_SENTINEL/"),
+                     valid.replace("examples/common_sites.rs", "/PRIVATE_SENTINEL/common_sites.rs"),
+                     valid.replace("common_sites-123abc", "common_sites-NOTHEX"),
+                     valid + "\n" + valid, example + "\nrunning 24 tests\n"):
+            with self.subTest(example=text), self.assertRaises(parsing.InvalidEvidence) as caught:
+                parsing.parse_harnesses(text, expected, 0)
+            self.assertNotIn("PRIVATE_SENTINEL", json.dumps(caught.exception.partial))
+            self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+        seed = "     Running tests/e9_common_seed_contract.rs (target/debug/deps/e9_common_seed_contract-123abc)"
+        row = parsing.parse_harnesses("\n".join((seed, "running 3 tests", summary(3))),
+                                      {"test/e9_common_seed_contract": counts(3)}, 0)[0]
+        self.assertEqual(row["outer"]["passed"], 3)
+
     def test_new_core_cohort_retains_exact_child_shape_without_generalizing_it(self):
         for total in (176, 184, 208):
             valid = "\n".join((header("liteinst2"), f"running {total} tests", "running 1 test",
@@ -55,6 +85,68 @@ class CoreMergeInventoryTests(unittest.TestCase):
                 parsing.parse_harnesses(text, {f"unit/{name}/lib": counts(total, ignored)}, 0)
 
     def test_catalog_preserves_all_old_harnesses_and_native_collection_identities(self):
+        current = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        unchanged = copy.deepcopy(current)
+        previous = before_core_main(current)
+        self.assertEqual(current, unchanged)
+        self.assertEqual(digest(previous), PRE_CORE_MAIN_CORPUS_SHA256)
+        self.assertEqual(current["recorder_tests"], 302)
+        self.assertEqual(len(current["native_validation_fixtures"]), 86)
+        self.assertEqual(current["native_validation_fixtures"], previous["native_validation_fixtures"])
+        self.assertEqual(current["harness_test_counts"]["serial_launch"],
+                         previous["harness_test_counts"]["serial_launch"])
+        workspace_now = current["harness_test_counts"]["workspace_tests"]
+        self.assertEqual(len(workspace_now), 91)
+        self.assertEqual(sum(row["tests"] for row in workspace_now.values()), 2037)
+        self.assertEqual(sum(row["ignored"] for row in workspace_now.values()), 4)
+        self.assertEqual(workspace_now["unit/liteinst_launch/lib"], counts(612))
+        self.assertEqual(sum(map(len, RUST_METHODS.values())), 49)
+        for identity in (*ADDED_HARNESSES, *CHANGED_HARNESSES):
+            for change in ("missing", "count", "ignored", "type", "ignored_type", "rename", "extra"):
+                altered = copy.deepcopy(current)
+                group = altered["harness_test_counts"]["workspace_tests"]
+                if change == "missing": del group[identity]
+                elif change == "count": group[identity]["tests"] -= 1
+                elif change == "ignored": group[identity]["ignored"] = 1
+                elif change == "type": group[identity]["tests"] = float(group[identity]["tests"])
+                elif change == "ignored_type": group[identity]["ignored"] = False
+                elif change == "rename": group[identity + "_extra"] = group.pop(identity)
+                else: group[identity]["extra"] = "PRIVATE_SENTINEL"
+                with self.subTest(identity=identity, change=change), self.assertRaises(parsing.InvalidEvidence) as caught:
+                    before_core_main(altered)
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+        for change in ("recorder", "serial", "old_workspace", "native", "static", "dynamic", "matrix", "helper", "extra"):
+            altered = copy.deepcopy(current)
+            if change == "recorder": altered["recorder_tests"] -= 1
+            elif change == "serial": altered["harness_test_counts"]["serial_launch"]["unit/liteinst_launch/lib"]["tests"] -= 1
+            elif change == "old_workspace": altered["harness_test_counts"]["workspace_tests"]["unit/liteinst_launch/lib"]["tests"] -= 1
+            elif change == "native": altered["native_validation_fixtures"].pop()
+            elif change == "static": altered["native_cases"].pop()
+            elif change == "dynamic": altered["dynamic_admission_fixtures"].pop()
+            elif change == "matrix": altered["dynamic_matrix_cases"].pop()
+            elif change == "helper": altered["backing_cleanup_harnesses"]["serial_launch"].pop()
+            else: altered["extra"] = "PRIVATE_SENTINEL"
+            with self.subTest(history=change), self.assertRaises(parsing.InvalidEvidence):
+                before_core_main(altered)
+        for path, names in RUST_METHODS.items():
+            for bad in (list(names[:-1]), list(names) + [names[0]], list(reversed(names)),
+                        ["PRIVATE_SENTINEL"] + list(names[1:])):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_main_source_inventory_differs$"):
+                    validate_core_main_source(path, bad)
+        read_text = Path.read_text
+        for target in (*RUST_METHODS, *SOURCE_WIRING):
+            for mutation in ("missing", "changed"):
+                def altered_source(path, *args, **kwargs):
+                    if path.as_posix().endswith(target):
+                        if mutation == "missing": raise OSError("PRIVATE_SENTINEL /private/source")
+                        text = read_text(path, *args, **kwargs)
+                        needle = RUST_METHODS[target][0] if target in RUST_METHODS else SOURCE_WIRING[target]
+                        return text.replace(needle, "PRIVATE_SENTINEL", 1)
+                    return read_text(path, *args, **kwargs)
+                with self.subTest(source=target, mutation=mutation), patch("core_main_inventory.Path.read_text", altered_source):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_main_source_inventory_differs$") as caught:
+                        before_core_main(current)
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
         corpus = json.loads(Path(__file__).with_name("corpus.json").read_text())
         corpus = before_kernel(corpus)
         corpus = before_runtime(corpus)

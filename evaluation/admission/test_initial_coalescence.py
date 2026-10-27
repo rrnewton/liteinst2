@@ -9,10 +9,11 @@ import unittest
 from unittest.mock import patch
 
 import native_fixtures as fixtures
+from core_main_inventory import before_core_main
 from coalescence_inventory import (
     NATIVE_NAMES, NATIVE_ROOT, OLD_NATIVE83_SHA256, OLD_PYTHON299_SHA256,
     PRE_COALESCENCE_CORPUS_SHA256, PYTHON_METHODS, ROWS, RUST_METHODS,
-    before_coalescence, before_coalescence_python, digest,
+    before_coalescence_baseline as before_coalescence, before_coalescence_python, digest,
     validate_coalescence_source,
 )
 from parsing import InvalidEvidence
@@ -77,7 +78,7 @@ class InitialCoalescenceTests(unittest.TestCase):
         self.assertEqual(fixtures.INITIAL_COALESCENCE_ROOT, NATIVE_ROOT)
         self.assertEqual(fixtures.INITIAL_COALESCENCE_NAMES, NATIVE_NAMES)
         self.assertEqual(fixtures.INITIAL_COALESCENCE_ROWS, ROWS)
-        declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_core_main(json.loads(Path(__file__).with_name("corpus.json").read_text()))
         original = copy.deepcopy(declared)
         previous = before_coalescence(declared)
         self.assertEqual(declared, original)
@@ -111,7 +112,7 @@ class InitialCoalescenceTests(unittest.TestCase):
         self.assertEqual([name for name in current_python if name not in old_python], list(PYTHON_METHODS))
 
     def test_coalescence_projection_rejects_source_row_count_and_historical_tampering(self):
-        declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_core_main(json.loads(Path(__file__).with_name("corpus.json").read_text()))
         for index in (83, 84, 85):
             for change in ("missing", "duplicate", "position", "cohort", "harness", "test", "extra"):
                 changed = copy.deepcopy(declared)
@@ -228,7 +229,7 @@ class InitialCoalescenceTests(unittest.TestCase):
                 self.assertEqual((rows[index]["status"], rows[index]["test_result"]),
                                  ("failed", "FAILED" if terminal == "FAILED" else "ignored"))
                 self.assertEqual(sum(row["status"] == "complete" for row in rows), 2)
-        declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_core_main(json.loads(Path(__file__).with_name("corpus.json").read_text()))
         all_rows = declared["native_validation_fixtures"]
         before_coalescence(declared)
         output = named_capture(all_rows)
