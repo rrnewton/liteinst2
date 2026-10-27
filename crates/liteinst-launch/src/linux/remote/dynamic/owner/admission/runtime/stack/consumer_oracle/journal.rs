@@ -5,6 +5,9 @@ use super::observe::Frame;
 use super::{Experiment, OracleError};
 use crate::gate::SelectedExecution;
 use crate::linux::remote::dynamic::admission::AdmissionReply;
+use crate::linux::remote::dynamic::owner::admission::census::runtime_stack::consumer_oracle::{
+    CensusHeader, StackPartialView,
+};
 use crate::linux::remote::dynamic::owner::kernel_journal::{
     JournalAttemptView, JournalBindingView, JournalCounts, JournalPartialView, JournalStateView,
     JournalWriterTransition, KernelAttemptId, KernelStopIdentity, KernelWriterStatus,
@@ -248,15 +251,21 @@ fn last(attempt: &JournalAttemptView<'_>) -> Result<Fact> {
         .ok_or(OracleError::Invalid("journal_commit"))
 }
 
+struct JournalOwner<'a> {
+    task: &'a DynamicTask,
+    pid: i32,
+    census: u64,
+}
+
 fn check(
     attempt: &JournalAttemptView<'_>,
     input: &SelectedInput,
     xstate: &[u8],
     mask: u64,
     returned: Option<&TaskStateSnapshot>,
-    task: &DynamicTask,
-    pid: i32,
+    owner: JournalOwner<'_>,
 ) -> Result<()> {
+    let JournalOwner { task, pid, census } = owner;
     let b = attempt
         .binding
         .as_ref()
@@ -291,7 +300,7 @@ fn check(
             && h.charge > 0
             && b.execution.0 == id.session
             && b.execution.1 > 0
-            && b.origin.0 == id.session
+            && b.origin.0 == census
             && b.origin.1 > 0
             && b.source.generation == task.generation
             && b.source.mapping != 0,
@@ -702,6 +711,24 @@ pub(super) fn require_complete(experiment: &Experiment) -> Result<()> {
             && admitted.progress.segment == 3,
         "journal owner or admitted completion differs",
     )?;
+    // Origin IDs belong to the census; execution IDs belong to the session.
+    // Both retained stack observations were authenticated against the real
+    // census before and after cleanup, so retain the exact domain relationship.
+    let census = admitted.snapshots[0]
+        .partial_view()
+        .census
+        .ok_or(OracleError::Invalid("journal retained CALL census absent"))?;
+    let returned_census = admitted.snapshots[1]
+        .partial_view()
+        .census
+        .ok_or(OracleError::Invalid("journal retained RET census absent"))?;
+    require(
+        census.identity != 0
+            && census.session == archive.session
+            && returned_census.identity == census.identity
+            && returned_census.session == census.session,
+        "journal retained census domains differ",
+    )?;
     let counts = experiment.journal.counts()?;
     require(
         counts.attempts == 3
@@ -848,8 +875,11 @@ pub(super) fn require_complete(experiment: &Experiment) -> Result<()> {
             &before.state.state.xstate,
             before.state.state.mask,
             returned,
-            &input.token.task,
-            owner.pid,
+            JournalOwner {
+                task: &input.token.task,
+                pid: owner.pid,
+                census: census.identity,
+            },
         )?;
         if i > 0 {
             chain(
@@ -922,8 +952,13 @@ pub(super) fn temporary_bytes() -> Result<usize> {
         8 * size_of::<&Frame>(),
         size_of::<[u8; 8]>(),
         4 * size_of::<[u64; 3]>(),
-        size_of::<[usize; 43]>(),
-        size_of::<std::array::IntoIter<usize, 43>>(),
+        4 * size_of::<StackPartialView<'_>>()
+            + 4 * size_of::<Option<&CensusHeader>>()
+            + 4 * size_of::<Result<&CensusHeader>>()
+            + 4 * size_of::<JournalOwner<'_>>()
+            + 4 * size_of::<u64>(),
+        size_of::<[usize; 44]>(),
+        size_of::<std::array::IntoIter<usize, 44>>(),
     ];
     parts.into_iter().try_fold(0usize, |sum, value| {
         sum.checked_add(value).ok_or(OracleError::Invalid(
