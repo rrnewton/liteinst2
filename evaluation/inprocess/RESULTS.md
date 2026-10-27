@@ -326,3 +326,36 @@ An earlier connected run at `f090e7b7` failed an observer assertion that incorre
 - [Required checks, recorder and serial](results/20261027T192329.459383Z-checks-96038db8aae4.json)
 
 The results commit adds documentation and seven numeric receipts totaling 117,232 bytes. Full captures and state records remain private.
+
+## Exact canonical padding NOPs (claims 2 and 4)
+
+Source `ca0f9c3616e52da81e5415815a38133b2f2a999c` adds the exact ten-byte `66 2e 0f 1f 84 00 00 00 00 00` padding form before the unchanged general prefix policy. The existing 534-code set and prior refused encodings remain unchanged. Twenty new native/stepped pairs cover lengths 1–10 ending at a page boundary, every split of the ten-byte form, and a nine-byte crossing. All preserve literal no-op effects and full state, including 2,444 kernel-FP bytes, 2,440 live-XSAVE bytes, 8 KiB stack and 4 KiB data. The genuine startup pair and all 47 prior plus twelve new refusal controls pass. All 31 opened-page prefixes revoke, synchronize and close.
+
+All seven optimized native runners pass: padding, original generic, REP oracle, connected REP, both integer groups and components. The connected cohort retains all 32 cases (28 completed and four required refusals), 189 commands, and every previous predicate. Components retain 112 decoder forms, two fatal cases, one freestanding decoder, 385 provider cases, twenty ordinary-step pairs, thirteen arm/false-claim refusals, four control processes and eighteen fetch cases. No performance result is claimed.
+
+The real linker progresses to 6,040 completed generic steps, 458 original steps, nine CPUID callbacks, two RDTSC callbacks and one source syscall, with 6,512 NX faults and the completed 52-iteration REP. It then refuses canonical XGETBV `0f01d0` (code 825) before effect, status 125/error 100. Selected-profile `ls` remains incomplete. This observed failure remains a failure; accepting padding does not establish general prefix or XGETBV support.
+
+Native runs used one reserved CPU (16), optimized builds and the exact tool/hardware identities in the receipts. Reproduce on one reserved CPU at the source revision:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_padding.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_generic_oracle.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_repeat_oracle.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_repeat.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_integer.py --group 0 --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_integer.py --group 1 --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_components.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+```
+
+All four required checks pass at this same revision: formatting, strict workspace/all-feature/all-target Clippy, workspace tests (2,457 passed, four previously ignored, 98 harnesses) and workspace/all-feature/all-target check. Recorder passes 330 tests. Serial passes 1,029 across 27 harnesses, with all 50 native, 15 dynamic, 388 matrix and 108 validation cases qualified and backing cleanup complete. Workspace takes 350.613 seconds within its unchanged 900-second bound; serial takes 136.627 seconds within its unchanged 180-second bound. Source/configuration stay unchanged. Reproduce checks with `PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/checks.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c` on four reserved CPUs. Saved-log replay reconstructs the full strict qualification and compact receipt without changing any parser or assertion.
+
+- [Padding full-state oracle](results/20261027T193927.693722Z-page-selected-padding-ca0f9c3616e5.json)
+- [Unchanged generic oracle](results/20261027T193936.034753Z-page-selected-generic-oracle-ca0f9c3616e5.json)
+- [REP full-state oracle](results/20261027T193944.698558Z-page-selected-repeat-oracle-ca0f9c3616e5.json)
+- [Connected REP and linker diagnostic](results/20261027T193953.503973Z-page-selected-repeat-ca0f9c3616e5.json)
+- [Integer group zero](results/20261027T194030.946840Z-page-selected-integer-0-ca0f9c3616e5.json)
+- [Integer group one](results/20261027T194040.986892Z-page-selected-integer-1-ca0f9c3616e5.json)
+- [Complete components](results/20261027T194049.391917Z-page-selected-components-ca0f9c3616e5.json)
+- [Required checks, recorder and serial](results/20261027T194241.260102Z-checks-ca0f9c3616e5.json)
+
+The eight numeric receipts total 118,423 bytes. All 727 native/build commands are reaped without timeout or cleanup error; raw captures and state records remain private.
