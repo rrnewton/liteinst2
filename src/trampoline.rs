@@ -668,6 +668,7 @@ impl HookContext {
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod backedge_clock;
+mod original_nops;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod saved_pkru;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -1112,6 +1113,7 @@ pub struct TrampolinePlan {
     controls: Vec<ControlledAction>,
     clock: Option<Box<crate::backedge_clock::BackedgeClockAction>>,
     instructions: Vec<Instruction>,
+    source_nops: Vec<Option<Vec<u8>>>,
     logical_index: usize,
     relocated_start: usize,
     ptrace_stops: bool,
@@ -1205,6 +1207,7 @@ impl TrampolinePlan {
             actions: Vec::new(),
             controls: Vec::new(),
             clock: None,
+            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
             relocated_start: 1,
@@ -1290,6 +1293,7 @@ impl TrampolinePlan {
             actions: Vec::new(),
             controls: Vec::new(),
             clock: None,
+            source_nops: original_nops::capture(scan, &instructions)?,
             instructions,
             logical_index: 0,
             relocated_start,
@@ -1390,6 +1394,7 @@ impl TrampolinePlan {
             actions: Vec::new(),
             controls: Vec::new(),
             clock: None,
+            source_nops: original_nops::capture(scan, &instructions)?,
             instructions,
             logical_index,
             relocated_start: logical_index + usize::from(replace),
@@ -1453,6 +1458,7 @@ impl TrampolinePlan {
             actions: Vec::new(),
             controls: Vec::new(),
             clock: None,
+            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
             relocated_start: usize::from(replace),
@@ -1495,6 +1501,7 @@ impl TrampolinePlan {
             actions: Vec::new(),
             controls: Vec::new(),
             clock: None,
+            source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
             relocated_start: 0,
@@ -1725,7 +1732,7 @@ impl TrampolinePlan {
             let prefix_block = if prefix_instructions.is_empty() {
                 None
             } else {
-                let prefix = encode_relocated_block(prefix_instructions, address, None)?;
+                let prefix = self.encode_originals(0..self.logical_index, address, None)?;
                 if prefix.terminal_jump_offset.is_some() || !prefix.branch_relays.is_empty() {
                     return Err(encoding_error(
                         "upstream prefix must have straight-line flow without branch relays",
@@ -1787,8 +1794,8 @@ impl TrampolinePlan {
                 (self.relocated_start == self.logical_index).then_some(self.logical_address());
             let relocated_block = match self.kind {
                 TrampolineKind::ExactSyscall => None,
-                TrampolineKind::PatchWindow => Some(encode_relocated_block(
-                    relocated_instructions,
+                TrampolineKind::PatchWindow => Some(self.encode_originals(
+                    self.relocated_start..self.instructions.len(),
                     relocated_address,
                     observing_entry,
                 )?),
@@ -1946,6 +1953,29 @@ impl TrampolinePlan {
         }
     }
 
+    // Preserve scanner-owned NOP bytes without changing branch relocation,
+    // literal-pool handling or the original instructions used by PC/frame maps.
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn encode_originals(
+        &self,
+        range: core::ops::Range<usize>,
+        address: u64,
+        observing_entry: Option<u64>,
+    ) -> Result<RelocatedBlock, TrampolineError> {
+        let instructions = self.instructions[range.clone()]
+            .iter()
+            .zip(&self.source_nops[range.clone()])
+            .map(|(original, bytes)| original_nops::instruction(original, bytes.as_deref()))
+            .collect::<Result<Vec<_>, _>>()?;
+        let block = encode_relocated_block(&instructions, address, observing_entry)?;
+        for (index, bytes) in self.source_nops[range].iter().enumerate() {
+            if let Some(bytes) = bytes {
+                original_nops::verify(&block.encoded, index, bytes)?;
+            }
+        }
+        Ok(block)
+    }
+
     #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
     fn emit_actions_at(
         &self,
@@ -2014,6 +2044,7 @@ impl TrampolinePlan {
         };
         let mut fragments = Vec::new();
         let mut original_operands = Vec::new();
+        let mut emitted_nops = Vec::new();
         // Give every encoder label an identity distinct from *all* original
         // addresses and operands. Direct branches are retargeted explicitly;
         // RIP-relative data references must never follow an encoder label.
@@ -2137,7 +2168,8 @@ impl TrampolinePlan {
             encoded_instructions.push(body);
             let replaced = action.is_some_and(|action| action.2);
             if !replaced {
-                let mut instruction = *original;
+                let retained_nop = self.source_nops[index].as_deref();
+                let mut instruction = original_nops::instruction(original, retained_nop)?;
                 instruction.set_ip(identity()?);
                 let internal_target = if matches!(
                     instruction.op0_kind(),
@@ -2157,6 +2189,9 @@ impl TrampolinePlan {
                         OpKind::NearBranch64 => instruction.set_near_branch64(target),
                         _ => unreachable!(),
                     }
+                }
+                if let Some(bytes) = retained_nop {
+                    emitted_nops.push((encoded_instructions.len(), bytes));
                 }
                 original_operands.push((encoded_instructions.len(), *original));
                 encoded_instructions.push(instruction);
@@ -2190,6 +2225,9 @@ impl TrampolinePlan {
                 artifact.is_some(),
             )?
         };
+        for &(index, bytes) in &emitted_nops {
+            original_nops::verify(&block.encoded, index, bytes)?;
+        }
         let offset = |index: usize| -> Result<usize, TrampolineError> {
             block
                 .encoded
