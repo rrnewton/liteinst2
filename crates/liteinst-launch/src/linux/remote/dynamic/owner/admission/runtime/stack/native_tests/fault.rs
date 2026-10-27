@@ -123,7 +123,8 @@ pub(super) fn run(point: InterventionPoint, kind: InterventionKind) {
             let result = support::invoke(owner, AdmissionRequest::Advance, until);
             assert!(
                 matches!(result,Err(GateError::Control(LaunchError::Invalid(reason))) if reason==match point {InterventionPoint::AfterA=>"owned private before-state differs",InterventionPoint::AfterB=>"owned original did not reach exact trace stop"}),
-                "stack intervention {point:?}/{kind:?}: {result:?}"
+                "stack intervention {point:?}/{kind:?}: error={:?}",
+                result.as_ref().err()
             );
             let runtime = owner.runtime.as_ref().unwrap();
             let retained = runtime.stack.as_ref().unwrap();
