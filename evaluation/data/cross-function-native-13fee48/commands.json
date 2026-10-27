@@ -1,0 +1,244 @@
+[
+  {
+    "attempt": 1,
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/cross-function-native-integration-v1/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_V1}",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "targeted"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 240,
+        "source_revision": "b11870928d88cfcb63499e24bfba6268ee15712d",
+        "source_sha256": "5764a764df2f7b17ea8a251a006c7410a033107dc9cab99b68690607711025e5"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--test",
+          "neighbor_eviction_oracle",
+          "cross_function_native::native_foreign_neighbor_two_owners_all_heads_both_seeds",
+          "--",
+          "--exact"
+        ],
+        "caller_sha256": "5764a764df2f7b17ea8a251a006c7410a033107dc9cab99b68690607711025e5",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_V1}/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "b11870928d88cfcb63499e24bfba6268ee15712d",
+        "timeout_seconds": 180
+      },
+      "parent": {
+        "exit": 1,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 1475186,
+        "seconds": 2.5192415919154882,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "1afacbd49f43017186993ff962750829782b2c18d0e4942367c0767d8bab9314"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 101,
+        "private_log_sha256": "7f898fd06e718182701b976f56f1cc53ccc131f2e2e153d989663da53fbd581f",
+        "reaped_descendants": 0,
+        "seconds": 1.6708617971744388,
+        "start_utc": "2026-10-27T07:45:49.654341+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1183095.981929834,
+        "pid": 1475186
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 101,
+          "private_log_sha256": "7f898fd06e718182701b976f56f1cc53ccc131f2e2e153d989663da53fbd581f",
+          "reaped_descendants": 0,
+          "seconds": 1.6708617971744388,
+          "start_utc": "2026-10-27T07:45:49.654341+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "targeted",
+        "qualification_complete": false,
+        "revision": "b11870928d88cfcb63499e24bfba6268ee15712d",
+        "source_tools_configs_equal": true,
+        "status": "FAILED"
+      }
+    }
+  },
+  {
+    "attempt": 2,
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/cross-function-native-integration-v2/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_V2}",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "targeted"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 240,
+        "source_revision": "13fee48dad74409e401dce4943de7dc6dc416625",
+        "source_sha256": "97b2a631467e665549e481d2a816f65f48d4ca53efb75dd4dddb8faf5814a5e1"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--test",
+          "neighbor_eviction_oracle",
+          "cross_function_native::native_foreign_neighbor_two_owners_all_heads_both_seeds",
+          "--",
+          "--exact"
+        ],
+        "caller_sha256": "97b2a631467e665549e481d2a816f65f48d4ca53efb75dd4dddb8faf5814a5e1",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_V2}/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "13fee48dad74409e401dce4943de7dc6dc416625",
+        "timeout_seconds": 180
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 1609063,
+        "seconds": 3.0215634158812463,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "c2c8522180dcc0257abe5fb5c7adfba88fc7d696b03d3a355ddb1c27f36535d2"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "5be3d8e5fb6bf9875ac3f64cc0fbc60b67538055ee5fd8e810aaf35fb148bde3",
+        "reaped_descendants": 0,
+        "seconds": 2.1906472148839384,
+        "start_utc": "2026-10-27T07:47:04.751359+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1183171.073467222,
+        "pid": 1609063
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "5be3d8e5fb6bf9875ac3f64cc0fbc60b67538055ee5fd8e810aaf35fb148bde3",
+          "reaped_descendants": 0,
+          "seconds": 2.1906472148839384,
+          "start_utc": "2026-10-27T07:47:04.751359+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "targeted",
+        "qualification_complete": false,
+        "revision": "13fee48dad74409e401dce4943de7dc6dc416625",
+        "source_tools_configs_equal": true,
+        "status": "PASS"
+      }
+    }
+  }
+]
