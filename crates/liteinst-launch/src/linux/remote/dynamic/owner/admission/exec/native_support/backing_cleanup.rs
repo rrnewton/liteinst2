@@ -1,4 +1,4 @@
-//! Three native controls. Child-role dispatch is isolated; no shared fault switch.
+//! Five native controls. Child-role dispatch is isolated; no shared fault switch.
 //! The complete case reuses all existing state/history/CALL/census comparisons.
 use super::*;
 use crate::ExecMapsStatus;
@@ -6,6 +6,8 @@ use crate::ExecMapsStatus;
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub(super) enum Scenario {
     Complete,
+    Legacy,
+    QueryError,
     ReadError,
     Unwind,
 }
@@ -26,13 +28,15 @@ pub(super) fn failed_attempt(
     let panic = view.scenario == Scenario::Unwind;
     assert!(matches!(
         view.scenario,
-        Scenario::ReadError | Scenario::Unwind
+        Scenario::ReadError | Scenario::QueryError | Scenario::Unwind
     ));
-    owner.exec_fault.set(Some(if panic {
-        ExecFault::AfterMapPanic
-    } else {
-        ExecFault::MapsRead
-    }));
+    let fault = match view.scenario {
+        Scenario::ReadError => ExecFault::MapsRead,
+        Scenario::QueryError => ExecFault::MapsQuery,
+        Scenario::Unwind => ExecFault::AfterMapPanic,
+        _ => unreachable!("failed scenario checked above"),
+    };
+    owner.exec_fault.set(Some(fault));
     let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         owner.execute_admission(
             AdmissionRequest::Complete {
@@ -54,14 +58,21 @@ pub(super) fn failed_attempt(
     } else {
         match result {
             Ok(Err(GateError::Control(LaunchError::System { operation, source }))) => {
-                assert_eq!(operation, "read exec identity self maps");
+                assert_eq!(
+                    operation,
+                    if view.scenario == Scenario::QueryError {
+                        "query exec identity self map"
+                    } else {
+                        "read exec identity self maps"
+                    }
+                );
                 assert_eq!(source.raw_os_error(), Some(libc::EFAULT));
             }
-            _ => panic!("actual null maps-read EFAULT must remain an error"),
+            _ => panic!("actual operation-specific null maps I/O EFAULT must remain an error"),
         }
     }
     assert_eq!(owner.exec_fault.get(), None);
-    view.inspection.check(1, until, Some(panic));
+    view.inspection.check(1, until, Some(fault));
     let snapshot = view.progress.snapshot();
     assert_eq!(
         snapshot.first_failure,
