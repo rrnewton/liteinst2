@@ -159,13 +159,13 @@ def main():
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
     record = {'schema_version': 1, 'profile': 'page-selected-lock-add-oracle-v1', 'status': 'failed',
-        'scope': 'Canonical f0 83 05 disp32 imm8 atomic ADD m32 at the original PC. Two additive 17-pair cohorts give 32 arithmetic pairs and two startup pairs, with 47 unchanged and 16 new supplied refusals per command. Genuine no-access and read-only RMW faults remain failed operations. Full source-bound native/TF state comparisons and actual private records are retained. Prior suites remain separately required. Singleton profile; no split-lock, concurrent atomicity, real-loader, performance or full-B2 qualification.',
+        'scope': 'Canonical f0 83 05 disp32 imm8 atomic ADD m32 at the original PC. Two additive 17-pair cohorts give 32 arithmetic pairs and two startup pairs, with 47 unchanged and 15 neighboring supplied refusals plus one explicit promoted SUB acceptance per command. Genuine no-access and read-only RMW faults remain failed operations. Full source-bound native/TF state comparisons and actual private records are retained. Prior suites remain separately required. Singleton profile; no split-lock, concurrent atomicity, real-loader, performance or full-B2 qualification.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
         'totals': {'positive_pairs': 0, 'generic_pairs': 0, 'positive_selftest_pairs': 0,
                    'supplied_refusal_encodings': 0, 'old_refusal_encodings': 0,
-                   'new_refusal_encodings': 0, 'lock_add_pairs': 0,
+                   'new_refusal_encodings': 0, 'promoted_acceptance_checks': 0, 'lock_add_pairs': 0,
                    'immediate_positive_pairs': 0, 'immediate_negative_pairs': 0,
                    'new_page_ending_pairs': 0, 'new_crossing_pairs': 0,
                    'verified_memory_fault_commands': 0, 'actual_native_failed_operations': 0,
@@ -244,7 +244,7 @@ def main():
                  file_size_bytes=16 << 20, wall_seconds=15, cpu_affinity_count=1),
              'exact LOCK ADD names, input environments, exits, header schema and bounds')
         need(fact(FIXTURE/'OUTCOMES.json')['sha256'] ==
-             '172f09dba6c11e38f5401907847a17f328e262467f751ae3720ada6ea0ba0d79',
+             '67705c4b513fa02e3d5d3af095245928df67f45dd5efcc35d0432e107af99b78',
              'exact reviewed four-command outcomes')
         for case in outcomes['commands']:
             name = case['name']
@@ -273,6 +273,7 @@ def main():
             end = header['header_bytes']+21*header['sample_bytes']
             need(not any(data[start:end]), 'all unused original sample slots remain zero')
             record['totals']['executed_refusal_checks'] += header['refusals']
+            record['totals']['promoted_acceptance_checks'] += 1
             if positive:
                 need(not any(data[end:end+header['sample_bytes']]), 'positive has no negative sample')
                 result['operation_completed'] = True
@@ -284,8 +285,8 @@ def main():
                 record['totals']['immediate_negative_pairs'] += 0 if name == 'group0' else 8
                 record['totals']['new_page_ending_pairs'] += 2
                 record['totals']['new_crossing_pairs'] += 14
-                record['totals'].update(supplied_refusal_encodings=63,
-                    old_refusal_encodings=47, new_refusal_encodings=16)
+                record['totals'].update(supplied_refusal_encodings=62,
+                    old_refusal_encodings=47, new_refusal_encodings=15)
             else:
                 need(any(data[end:end+header['sample_bytes']]), 'retain actual failed-operation sample')
                 # The authenticated C path requires actual native #PF and the
@@ -299,12 +300,12 @@ def main():
                 record['totals']['additional_negative_command_selftests'] += 1
             result['accepted'] = True
         need(record['totals'] == dict(positive_pairs=34, generic_pairs=32, lock_add_pairs=32,
-                 positive_selftest_pairs=2, supplied_refusal_encodings=63, old_refusal_encodings=47,
-                 new_refusal_encodings=16, immediate_positive_pairs=24, immediate_negative_pairs=8,
+                 positive_selftest_pairs=2, supplied_refusal_encodings=62, old_refusal_encodings=47,
+                 new_refusal_encodings=15, immediate_positive_pairs=24, immediate_negative_pairs=8,
                  new_page_ending_pairs=4, new_crossing_pairs=28,
                  verified_memory_fault_commands=2, actual_native_failed_operations=2,
                  actual_stepped_failed_operations=2, additional_negative_command_selftests=2,
-                 executed_refusal_checks=252) and
+                 executed_refusal_checks=248, promoted_acceptance_checks=4) and
              len(record['cases']) == 4 and all(c['accepted'] for c in record['cases']),
              'complete two seventeen-pair cohorts and two failed atomic-memory operations')
         record['status'] = 'passed'

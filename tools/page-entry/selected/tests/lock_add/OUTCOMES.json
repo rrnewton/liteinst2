@@ -27,13 +27,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 63,
+        "refusals": 62,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_LOCK_ADD_TF_PASS group=0 pairs=17 lock_add=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=16 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_LOCK_SUB_PROMOTED_ACCEPTANCES 1\nLI2_LOCK_ADD_TF_PASS group=0 pairs=17 lock_add=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=15 full_state=17 full_memory=17 live_endpoints=17\n"
     },
     {
       "argv": [
@@ -54,13 +54,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 63,
+        "refusals": 62,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_LOCK_ADD_TF_PASS group=1 pairs=17 lock_add=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=16 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_LOCK_SUB_PROMOTED_ACCEPTANCES 1\nLI2_LOCK_ADD_TF_PASS group=1 pairs=17 lock_add=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=15 full_state=17 full_memory=17 live_endpoints=17\n"
     },
     {
       "argv": [
@@ -83,7 +83,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 63,
+        "refusals": 62,
         "version": 1
       },
       "name": "no-access",
@@ -119,7 +119,7 @@
         "step_endpoint_seen": 0
       },
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_LOCK_SUB_PROMOTED_ACCEPTANCES 1\nLI2_TF_EXPECTED_FAILURE 7\n"
     },
     {
       "argv": [
@@ -142,7 +142,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 63,
+        "refusals": 62,
         "version": 1
       },
       "name": "read-only",
@@ -178,7 +178,7 @@
         "step_endpoint_seen": 0
       },
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_LOCK_SUB_PROMOTED_ACCEPTANCES 1\nLI2_TF_EXPECTED_FAILURE 7\n"
     }
   ],
   "literal_effects": "Exactly four data bytes and OF/SF/ZF/AF/CF/PF; all GPRs, other logical flags, initialized kernel/live FP, full stack and other data bytes unchanged. Complete old native/TF comparator stays mandatory.",
@@ -188,9 +188,11 @@
   ],
   "negative_endpoint": "Genuine original-PC RMW #PF with ERR6 for populated PROT_NONE or ERR7 for populated read-only; both source pages revoke and synchronize, no TRACE/continuation/completion. Four complete failed-operand page snapshots stay byte-exact.",
   "new_lock_add_pairs_total": 32,
-  "new_refusal_count": 16,
+  "new_refusal_count": 15,
   "old_cohorts": "All original generic, integer, padding, XGETBV and REP sources/commands/predicates remain separately required.",
   "old_refusal_count": 47,
+  "promoted_acceptances_per_command": 1,
+  "promotion": "Original neighbor row3 f0832d0000000001 now requires exact positive Code263 classification; all16 rows stay, other15 remain refused. Paired new SUB native oracle is separately required. Historical receipts remain unchanged.",
   "prospective_only": true,
   "record_extent": "header_bytes + 22*actual sample_bytes + 40 + 16512-byte failed-operand trailer",
   "record_header_fields": [

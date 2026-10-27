@@ -101,6 +101,13 @@ fn canonical_lock_add_rip(instruction: &Instruction, bytes: &[u8]) -> bool {
         && matches!(bytes, [0xf0, 0x83, 0x05, _, _, _, _, _])
 }
 
+// Paired canonical memory SUB only; no general LOCK/prefix permission.
+// The CPU performs the atomic RMW at the original RIP-relative address.
+fn canonical_lock_sub_rip(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::Sub_rm32_imm8
+        && matches!(bytes, [0xf0, 0x83, 0x2d, _, _, _, _, _])
+}
+
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
@@ -126,6 +133,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     } else if !canonical_padding_nop(&instruction, &source[..instruction.len()])
         && !canonical_notrack_register(&instruction, &source[..instruction.len()])
         && !canonical_lock_add_rip(&instruction, &source[..instruction.len()])
+        && !canonical_lock_sub_rip(&instruction, &source[..instruction.len()])
         && !prefixes(&instruction, &source[..instruction.len()]) { return Ok(out); }
     // Exact Code enumeration, never a catch-all mnemonic/valid-decode permit.
     let (flow, family) = match instruction.code() {

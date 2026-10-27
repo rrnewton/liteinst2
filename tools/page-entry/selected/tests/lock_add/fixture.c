@@ -3,7 +3,19 @@
 #define fixture_main li2_unchanged_generic_fixture_main
 #include "tests/generic/fixture.c"
 #undef fixture_main
+#ifndef LOCK_OPERATION_SUB
+#define LOCK_OPERATION_SUB 0
+#endif
+_Static_assert(LOCK_OPERATION_SUB==0 || LOCK_OPERATION_SUB==1,"closed ADD/SUB operation selector");
+#if LOCK_OPERATION_SUB
+#include "tests/lock_sub/cases.inc"
+#define LOCK_EXPECTED_CODE 263
+#define LOCK_CONTROL_KEY "LI2_LOCK_SUB_CONTROL="
+#else
 #include "cases.inc"
+#define LOCK_EXPECTED_CODE 248
+#define LOCK_CONTROL_KEY "LI2_LOCK_ADD_CONTROL="
+#endif
 #ifndef LOCK_ADD_GROUP
 #error LOCK_ADD_GROUP must select an exact bounded cohort
 #endif
@@ -82,12 +94,12 @@ static void lock_prepare(struct sample *s,unsigned index) {
     memcpy((void *)s->mapping,s->source,sizeof(s->source));
     need(!dispatch(SYS_mprotect,s->mapping,CODE_BYTES,PROT_READ|PROT_EXEC,0,0,0),918);
     need(!li2_decoder_decode(s->pc,(const void *)s->pc,s->length,&s->decoded)&&
-         s->decoded.decode_status==LI2_VALID&&s->decoded.kind==LI2_NONE&&s->decoded.code==248&&
+         s->decoded.decode_status==LI2_VALID&&s->decoded.kind==LI2_NONE&&s->decoded.code==LOCK_EXPECTED_CODE&&
          s->decoded.length==8&&!memcmp(s->decoded.bytes,s->source+offset,8),919);
 }
 static void lock_effects(struct sample *s) {
     const struct lock_case *v=lock_case(s);const struct li2_step_owner *o=&s->owner.step;
-    need(s->owner.classification.policy==1&&s->owner.classification.code==248&&
+    need(s->owner.classification.policy==1&&s->owner.classification.code==LOCK_EXPECTED_CODE&&
          s->owner.classification.flow==LI2_TF_FALLTHROUGH&&s->owner.classification.family==LI2_TF_INTEGER&&
          s->expected_post==s->pc+8&&!memcmp(s->decoded.bytes,v->bytes,8),920);
     int32_t disp;memcpy(&disp,s->decoded.bytes+3,4);
@@ -216,14 +228,29 @@ static void lock_refusals(void) {
         {7,{0xf0,0x83,0x05,0,0,0,0}}, /* truncated immediate */
     };
     _Static_assert(sizeof(cases)/sizeof(cases[0])==16,"closed supplied LOCK neighbors");
+    unsigned promoted=0;
     for(size_t i=0;i<sizeof(cases)/sizeof(cases[0]);i++) {
         result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,cases[i].b,cases[i].n,&refused_last);
+        /* Historical row3 is deliberately promoted; its full bytes stay in
+           the original table and all other rows retain the old predicate. */
+        if(i==3) {
+            static const unsigned char canonical[]={0xf0,0x83,0x2d,0,0,0,0,1};
+            need(cases[i].n==sizeof(canonical)&&!memcmp(cases[i].b,canonical,sizeof(canonical))&&
+                 !result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
+                 refused_last.next_pc==0x1008&&refused_last.code==263&&refused_last.length==8&&
+                 refused_last.policy==1&&refused_last.flow==LI2_TF_FALLTHROUGH&&
+                 refused_last.family==LI2_TF_INTEGER,976);
+            ++promoted;
+        } else {
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,950+(unsigned)i);
         ++result.refusals;
+        }
     }
     result.failed_refusal=SIZE_MAX;
+    need(promoted==1,977);
+    output("LI2_LOCK_SUB_PROMOTED_ACCEPTANCES 1\n");
 }
 int fixture_main(unsigned long *stack) {
     _Static_assert(sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)+sizeof(lock_fault)<16*1024*1024,
@@ -231,7 +258,7 @@ int fixture_main(unsigned long *stack) {
     result.magic=UINT64_C(0x314649585446324c);result.version=1;result.pairs=LOCK_PAIRS;
     lock_fault.magic=UINT64_C(0x314b434f4c32494c);lock_fault.version=1;lock_fault.bytes=sizeof(lock_fault);
     need(stack[0]==1,970);setup(stack);lock_install_handler();
-    const char *const *env=(const void *)(stack+3);const char key[]="LI2_LOCK_ADD_CONTROL=";
+    const char *const *env=(const void *)(stack+3);const char key[]=LOCK_CONTROL_KEY;
     const char *names[]={"no-access","read-only"};
     for(size_t i=0;env[i];i++)if(length(env[i])>=sizeof(key)-1&&!memcmp(env[i],key,sizeof(key)-1)) {
         need(!control&&LOCK_ADD_GROUP==0,971);unsigned found=0;
@@ -243,15 +270,23 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47,130);
-    lock_refusals();need(result.refusals==63,973);
+    lock_refusals();need(result.refusals==62,973);
     prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     if(control){lock_prepare(&negative_sample,1);lock_pair(&negative_sample);die(974);}
     for(unsigned i=0;i<LOCK_COUNT;i++){lock_prepare(&samples[i+1],i);lock_pair(&samples[i+1]);}
     need(result.completed==LOCK_PAIRS&&dump()&&write_all(3,&lock_fault,sizeof(lock_fault)),975);
+#if LOCK_OPERATION_SUB
 #if LOCK_ADD_GROUP==0
-    output("LI2_LOCK_ADD_TF_PASS group=0 pairs=17 lock_add=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=16 full_state=17 full_memory=17 live_endpoints=17\n");
+    output("LI2_LOCK_SUB_TF_PASS group=0 pairs=17 lock_sub=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=15 full_state=17 full_memory=17 live_endpoints=17\n");
 #else
-    output("LI2_LOCK_ADD_TF_PASS group=1 pairs=17 lock_add=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=16 full_state=17 full_memory=17 live_endpoints=17\n");
+    output("LI2_LOCK_SUB_TF_PASS group=1 pairs=17 lock_sub=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=15 full_state=17 full_memory=17 live_endpoints=17\n");
+#endif
+#else
+#if LOCK_ADD_GROUP==0
+    output("LI2_LOCK_ADD_TF_PASS group=0 pairs=17 lock_add=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=15 full_state=17 full_memory=17 live_endpoints=17\n");
+#else
+    output("LI2_LOCK_ADD_TF_PASS group=1 pairs=17 lock_add=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=15 full_state=17 full_memory=17 live_endpoints=17\n");
+#endif
 #endif
     return 0;
 }
