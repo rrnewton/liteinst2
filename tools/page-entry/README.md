@@ -32,6 +32,7 @@ Run the committed-source validation with:
 
 ```sh
 python3 evaluation/inprocess/first_entry.py --expect-revision "$(git rev-parse HEAD)"
+python3 evaluation/inprocess/first_entry_abi.py --expect-revision "$(git rev-parse HEAD)"
 ```
 
 The evaluator uses bounded fresh children pinned to one CPU, actual native and
@@ -59,8 +60,11 @@ are restored at the actual AT_PHDR address under temporary RW/NX, then returned
 to readonly/NX. Only AT_BASE changes to the original interpreter's new bias.
 The bridge saves entry GPRs, flags and enabled user XSAVE state (or FXSAVE state),
 uses its own stack, then restores state and original RSP before jumping to the
-interpreter entry. Native ls output is not an independent full entry-state
-oracle. The separate first-opcode fixture requires interpreter CPUID and main
+interpreter entry. The [independent ABI fixture](abi/README.md) compares actual
+kernel-origin GPRs, flags, FS/GS, qualified XSAVE state, full initial stack and
+restored PHDRs before and after that production entry body. It uses a separate
+capture interpreter; it does not observe real ld.so's entry registers. The
+separate first-opcode fixture requires interpreter CPUID and main
 RDTSC to be intercepted before their following instructions execute.
 
 Every dependency is retained through an actual sealed descriptor. Private

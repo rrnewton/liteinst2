@@ -34,26 +34,45 @@ BOUNDS = {'cpu_seconds': 3, 'address_space_bytes': 256 * 1024**2,
           'capture_file_bytes': 1024**2, 'wall_seconds': 10}
 
 
-def invoke(argv, environment, cwd, private, label, cpu, build=False, pass_fds=()):
+def command_bounds(build=False, bounds=None):
+    """An explicit per-command profile; omission preserves the original limits."""
+    if bounds is None:
+        return ({'cpu_seconds': 30, 'address_space_bytes': 1024**3,
+                 'capture_file_bytes': 16 * 1024**2, 'wall_seconds': 60}
+                if build else BOUNDS.copy())
+    require(not build and type(bounds) is dict and
+            set(bounds) == set(BOUNDS) | {'process_count'}, 'invalid_bounds_override')
+    require(all(type(value) is int and 0 < value <= 2**63 - 1 for value in bounds.values()),
+            'invalid_bounds_override')
+    return bounds.copy()
+
+
+def invoke(argv, environment, cwd, private, label, cpu, build=False, pass_fds=(), bounds=None):
+    profile = command_bounds(build, bounds)  # Reject before opening captures or Popen.
     stdout = private / (label + '.stdout')
     stderr = private / (label + '.stderr')
-    seconds = 60 if build else BOUNDS['wall_seconds']
+    seconds = profile['wall_seconds']
     row = {'label': label, 'argv': argv, 'cwd': cwd.as_posix(), 'affinity_cpu': cpu,
            'timeout_seconds': seconds, 'exit_code': None, 'timed_out': False,
            'leader_reaped': False, 'killpg_requested': False, 'killpg_errno': None,
            'error': None, 'error_errno': None, 'capture_errors': {}}
+    if bounds is not None:
+        row['bounds_override'] = profile.copy()
+        row['pidfd_close'] = None
     process = None
     pidfd = None
     started = time.perf_counter_ns()
 
     def limits():
         os.sched_setaffinity(0, {cpu})
-        resource.setrlimit(resource.RLIMIT_CPU, (30, 30) if build else (3, 3))
-        memory = 1024**3 if build else BOUNDS['address_space_bytes']
+        resource.setrlimit(resource.RLIMIT_CPU, (profile['cpu_seconds'], profile['cpu_seconds']))
+        memory = profile['address_space_bytes']
         resource.setrlimit(resource.RLIMIT_AS, (memory, memory))
-        size = 16 * 1024**2 if build else BOUNDS['capture_file_bytes']
+        size = profile['capture_file_bytes']
         resource.setrlimit(resource.RLIMIT_FSIZE, (size, size))
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        if bounds is not None:
+            resource.setrlimit(resource.RLIMIT_NPROC, (profile['process_count'], profile['process_count']))
 
     def exited(timeout):
         return bool(select.select([pidfd], [], [], timeout)[0])
@@ -107,7 +126,17 @@ def invoke(argv, environment, cwd, private, label, cpu, build=False, pass_fds=()
             stop_and_reap()
     finally:
         if pidfd is not None:
-            os.close(pidfd)
+            if bounds is None:
+                os.close(pidfd)
+            else:
+                try:
+                    os.close(pidfd)
+                    row['pidfd_close'] = {'complete': True, 'errno': None}
+                except OSError as error:
+                    row['pidfd_close'] = {'complete': False, 'errno': error.errno}
+                    row['error'] = row['error'] or 'pidfd_close_failed'
+                    if row['error_errno'] is None:
+                        row['error_errno'] = error.errno
     row['wall_ns'] = time.perf_counter_ns() - started
     for name, path in (('stdout', stdout), ('stderr', stderr)):
         try:
