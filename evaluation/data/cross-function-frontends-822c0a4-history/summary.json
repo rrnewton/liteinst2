@@ -1,0 +1,227 @@
+{
+  "attempted_validation_commands": 3,
+  "command_rows": 10,
+  "complete_contexts": 4,
+  "diagnostic": {
+    "line": 68,
+    "lint": "clippy::needless_lifetimes",
+    "path": "tools/elf-rewrite/examples/support/common_core_foreign.rs",
+    "strict_policy": "-D warnings"
+  },
+  "driver_sha256": "1a45d1017116b2da194acf973348a76c8f85de88407972384496c3581c345e91",
+  "enclosing_required_dispatches": 1,
+  "failure_preserved": true,
+  "full_a3": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ]
+  },
+  "operational_durations_not_performance": true,
+  "phases": [
+    {
+      "configurations_sha256": "391687d34314dd3aa6aa3febb52f69634688ed5a8ff80043e86b10d022356a63",
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ]
+      },
+      "phase": "targeted",
+      "review_sha256": "6c7cc899561f4c19ce931378cf2c5027b860a2e3128a2922373a50ef699d8924",
+      "source_files": 2032,
+      "source_map_sha256": "921549c4538f4b9e22f8729d23574a98811d9ed6a02b1de31fb53f22dc06ca61",
+      "source_tools_configs_equal": true,
+      "status": "PASS",
+      "tools": {
+        "cargo": {
+          "bytes": 42839824,
+          "lookup_stat": [
+            48,
+            2168708,
+            33261,
+            42839824,
+            1785313166764622552,
+            1785313166866070163
+          ],
+          "path": "${TOOLCHAIN}/bin/cargo",
+          "resolved": "${TOOLCHAIN}/bin/cargo",
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+          "stat": [
+            48,
+            2168708,
+            33261,
+            42839824,
+            1785313166764622552,
+            1785313166866070163
+          ]
+        },
+        "rustc": {
+          "bytes": 645000,
+          "lookup_stat": [
+            48,
+            2691961,
+            33261,
+            645000,
+            1785313199899758217,
+            1785313205039357744
+          ],
+          "path": "${TOOLCHAIN}/bin/rustc",
+          "resolved": "${TOOLCHAIN}/bin/rustc",
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+          "stat": [
+            48,
+            2691961,
+            33261,
+            645000,
+            1785313199899758217,
+            1785313205039357744
+          ]
+        },
+        "rustdoc": {
+          "bytes": 13680928,
+          "lookup_stat": [
+            48,
+            2691931,
+            33261,
+            13680928,
+            1785313199896926336,
+            1785313205039391975
+          ],
+          "path": "${TOOLCHAIN}/bin/rustdoc",
+          "resolved": "${TOOLCHAIN}/bin/rustdoc",
+          "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+          "stat": [
+            48,
+            2691931,
+            33261,
+            13680928,
+            1785313199896926336,
+            1785313205039391975
+          ]
+        }
+      }
+    },
+    {
+      "configurations_sha256": "391687d34314dd3aa6aa3febb52f69634688ed5a8ff80043e86b10d022356a63",
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ]
+      },
+      "phase": "required",
+      "review_sha256": "aeca7e59e66285fb868a1db632757c06174c1997881ea6c754d5832407f7c3cc",
+      "source_files": 2032,
+      "source_map_sha256": "921549c4538f4b9e22f8729d23574a98811d9ed6a02b1de31fb53f22dc06ca61",
+      "source_tools_configs_equal": true,
+      "status": "FAILED",
+      "tools": {
+        "cargo": {
+          "bytes": 42839824,
+          "lookup_stat": [
+            48,
+            2168708,
+            33261,
+            42839824,
+            1785313166764622552,
+            1785313166866070163
+          ],
+          "path": "${TOOLCHAIN}/bin/cargo",
+          "resolved": "${TOOLCHAIN}/bin/cargo",
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+          "stat": [
+            48,
+            2168708,
+            33261,
+            42839824,
+            1785313166764622552,
+            1785313166866070163
+          ]
+        },
+        "rustc": {
+          "bytes": 645000,
+          "lookup_stat": [
+            48,
+            2691961,
+            33261,
+            645000,
+            1785313199899758217,
+            1785313205039357744
+          ],
+          "path": "${TOOLCHAIN}/bin/rustc",
+          "resolved": "${TOOLCHAIN}/bin/rustc",
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+          "stat": [
+            48,
+            2691961,
+            33261,
+            645000,
+            1785313199899758217,
+            1785313205039357744
+          ]
+        },
+        "rustdoc": {
+          "bytes": 13680928,
+          "lookup_stat": [
+            48,
+            2691931,
+            33261,
+            13680928,
+            1785313199896926336,
+            1785313205039391975
+          ],
+          "path": "${TOOLCHAIN}/bin/rustdoc",
+          "resolved": "${TOOLCHAIN}/bin/rustdoc",
+          "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df",
+          "stat": [
+            48,
+            2691931,
+            33261,
+            13680928,
+            1785313199896926336,
+            1785313205039391975
+          ]
+        }
+      }
+    },
+    {
+      "phase": "serial",
+      "status": "UNRUN"
+    },
+    {
+      "phase": "parallel-library",
+      "status": "UNRUN"
+    },
+    {
+      "phase": "parallel-prefixed",
+      "status": "UNRUN"
+    },
+    {
+      "phase": "parallel-neighbor",
+      "status": "UNRUN"
+    }
+  ],
+  "planned_validation_commands": 9,
+  "qualification_complete": false,
+  "required_failed_gate": "clippy",
+  "results_transferred_to_corrected_revision": false,
+  "schema": 1,
+  "source_catalogue_representation": "exact revision plus SHA-256 of sorted, indented JSON source object with terminal LF; full map stays in pinned saved input snapshots",
+  "status": "FAILED",
+  "targeted_passes": 133,
+  "tested_revision": "822c0a4f2a0c0ee53a43438c7e9c64a128d2f58f"
+}

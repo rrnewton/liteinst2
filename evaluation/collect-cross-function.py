@@ -12,17 +12,16 @@ import runpy
 import stat
 import sys
 
-REVISION = 'be886cc1637630985bef497ad2d6376facdb883f'
-DRIVER_SHA = '138dac66abdfe8cd41f1345c4e7faee468d54a6fd6302d0a673b9b9a64353aae'
-PHASES = ('targeted', 'required', 'serial', 'parallel-library', 'parallel-prefixed')
+REVISION = '76278bdfd19db60a0734ed1195d0f96d9da1a680'
+DRIVER_SHA = 'd3354949d3d021cc843ca625253ed13eccda2983b7f10f92974a4afed7c56ccd'
+PHASES = ('targeted', 'required', 'serial', 'parallel-library', 'parallel-prefixed', 'parallel-neighbor')
 COMMANDS = {
-    'targeted': (['cargo', 'test', '-p', 'liteinst2', '--test', 'cross_function_neighbor',
-                 '--test', 'foreign_neighbor_engine', '--test', 'neighbor_eviction_contract',
-                 '--test', 'search_eviction_evidence'], 180, 4),
+    'targeted': (['cargo', 'test', '-p', 'liteinst-rewrite', '--all-targets'], 180, 4),
     'serial': (['cargo', 'test', '-p', 'liteinst-launch', '--tests', '--',
                 '--test-threads=1', '--nocapture'], 180, 4),
     'parallel-library': (['cargo', 'test', '-p', 'liteinst2', '--lib'], 360, 8),
     'parallel-prefixed': (['cargo', 'test', '-p', 'liteinst2', '--test', 'prefixed_pun_oracle'], 360, 8),
+    'parallel-neighbor': (['cargo', 'test', '-p', 'liteinst2', '--test', 'neighbor_eviction_oracle'], 360, 8),
 }
 GATES = (('fmt', ['cargo', 'fmt', '--check'], 180),
          ('clippy', ['cargo', 'clippy', '--workspace', '--all-targets', '--all-features', '--', '-D', 'warnings'], 180),
@@ -67,6 +66,29 @@ def read(path):
         fields = lambda s: (s.st_dev, s.st_ino, s.st_mode, s.st_size, s.st_mtime_ns, s.st_ctime_ns)
         assert fields(before) == fields(os.fstat(stream.fileno())) == fields(path.lstat()) and len(data) == before.st_size
     return data
+
+
+def reviewed_harness_id(phase, group, lines, source_files, parser):
+    """Join the three reviewed all-targets zero-test examples; preserve parser limits."""
+    names = ('check_elf_tactic_refusals', 'verify_elf_exec', 'verify_elf_tactics')
+    header = group['header']
+    if not any(name in header for name in names):
+        return parser['harness_id'](header)
+    assert phase == 'targeted', 'extra example identities are targeted-only'
+    match = re.fullmatch(
+        r'\s*Running unittests examples/(check_elf_tactic_refusals|verify_elf_exec|verify_elf_tactics)\.rs '
+        r'\(target/debug/examples/\1-[a-f0-9]{16}\)', header)
+    assert match is not None, 'malformed or ambiguous targeted example identity'
+    name = match[1]
+    assert 'tools/elf-rewrite/examples/' + name + '.rs' in source_files, 'example source absent from tested source map'
+    assert group['cases'] == {} and group['summary'][1] == [0, 0, 0, 0, 0], 'reviewed extra examples require exact zero-test counts'
+    assert group['nested_summaries'] == [], 'reviewed extra examples have no nested summaries'
+    first, last = group['start_line'], group['end_line']
+    assert 1 <= first <= group['summary'][0] <= last <= len(lines)
+    terminal = 'test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in ' + group['summary'][2] + 's'
+    assert lines[group['summary'][0] - 1] == terminal, 'example summary line differs from reviewed zero summary'
+    assert [line for line in lines[first - 1:last] if line.strip()] == [header, 'running 0 tests', terminal], 'example block is not the complete zero-test harness'
+    return 'unit/' + name + '/' + name
 
 
 def main():
@@ -149,7 +171,7 @@ def main():
         assert len(observed) == checks['outer_groups']
         text = data.decode(); lines = text.splitlines(); expected = {}; local_cases = []
         for group in observed:
-            gid = parser['harness_id'](group['header']); assert gid is not None and gid not in expected
+            gid = reviewed_harness_id(phase, group, lines, source_files, parser); assert gid is not None and gid not in expected
             assert lines[group['start_line']-1] == group['header']
             first, last = group['start_line'], group['end_line']
             block = '\n'.join(lines[first-1:last])
@@ -274,11 +296,11 @@ def main():
                 rows.append(dict(id='required/' + name, scope='required-gate', status='UNRUN' if row is None else 'PASS' if row['exit'] == 0 else 'FAILED',
                                  exit=row['exit'] if row else None, seconds=row['seconds'] if row else None,
                                  log_sha256=row['sha256'] if row else None, counts=count, context=normalize(gate_context)))
-    assert len(phases) == 5 and len(rows) == 9
+    assert len(phases) == 6 and len(rows) == 10
     summary = dict(schema=1, tested_revision=REVISION, hardware=hardware, driver_sha256=DRIVER_SHA,
                    collector_sha256=sha(read(Path(__file__).resolve())), phases=phases,
                    status='PASS' if all(x['status'] == 'PASS' for x in rows) else 'FAILED' if any(x['status'] == 'FAILED' for x in rows) else 'INCOMPLETE',
-                   planned_validation_commands=8, required_dispatch_rows=1, command_rows=9,
+                   planned_validation_commands=9, required_dispatch_rows=1, command_rows=10,
                    debug_information='disabled', debug_assertions='unchanged', operational_durations_not_performance=True,
                    native_t3_qualification=False, full_a3=False, qualification_complete=False,
                    case_totals_not_added_across_repeated_commands=True, raw_terminal_observations_not_additive=True)
