@@ -1,0 +1,32 @@
+diff --git a/crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/source_identity.rs b/crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/source_identity.rs
+index 30b0d14..a0d5d70 100644
+--- a/crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/source_identity.rs
++++ b/crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/source_identity.rs
+@@ -427,8 +427,10 @@ pub(super) fn parse(raw: &[u8]) -> Result<ParsedMaps<'_>, GateError> {
+     if raw.len() > MAP_BYTES {
+         return Err(refused("exec source maps exceed fixed capture bound"));
+     }
+-    ParsedMaps::parse(raw, MAP_ROWS)
+-        .map_err(|_| refused("exec source maps are malformed or excessive"))
++    ParsedMaps::parse(raw, MAP_ROWS).map_err(|error| {
++        eprintln!("source-map diagnostic: error={error:?} bytes={} rows={}", raw.len(), raw.iter().filter(|&&b| b == b'\n').count());
++        refused("exec source maps are malformed or excessive")
++    })
+ }
+ 
+ pub(in crate::linux::remote::dynamic::owner::admission) fn file_identity(
+diff --git a/crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/source_identity/backing.rs b/crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/source_identity/backing.rs
+index 7f64e25..3828194 100644
+--- a/crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/source_identity/backing.rs
++++ b/crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/source_identity/backing.rs
+@@ -338,7 +338,9 @@ pub(super) fn observe(
+         .owner
+         .time_left(context.until, "exec identity probe mapping")?;
+     let length = self_maps(context, storage)?;
+-    let vma = projection(&storage[..length], page.address())?;
++    let vma = projection(&storage[..length], page.address()).inspect_err(|_| {
++        eprintln!("source-map diagnostic: failing capture belongs to tracer self maps");
++    })?;
+     if descriptor(&file)? != opened {
+         return Err(refused("exec identity descriptor changed during mapping"));
+     }
