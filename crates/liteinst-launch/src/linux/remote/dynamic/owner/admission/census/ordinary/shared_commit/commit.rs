@@ -67,7 +67,7 @@ impl PreparedSharedOrdinaryCensus {
         }
     }
 
-    fn copy_origins(&mut self, actual: &CompletionModel<'_>) -> Result<(), CensusError> {
+    pub(super) fn copy_origins(&mut self, actual: &CompletionModel<'_>) -> Result<(), CensusError> {
         for index in 0..2 {
             let bytes = &mut self.origins[index];
             let progress = &mut self.copies[index];
@@ -139,7 +139,7 @@ impl ResumeCensus {
         result
     }
 
-    fn publish_shared_ordinary(
+    pub(super) fn publish_shared_ordinary(
         &mut self,
         reservation: Reservation,
         actual: &CompletionModel<'_>,
@@ -208,7 +208,7 @@ impl ResumeCensus {
         Ok(OrdinaryCensusResult { current: id })
     }
 
-    fn validate_shared_model(
+    pub(super) fn validate_shared_model(
         &self,
         reservation: Reservation,
         actual: &CompletionModel<'_>,

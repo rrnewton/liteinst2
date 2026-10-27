@@ -27,7 +27,7 @@ impl SharedOrdinaryPreparation {
         })
     }
 
-    fn prepare_with(
+    pub(super) fn prepare_with(
         &mut self,
         census: &mut ResumeCensus,
         reservation: Reservation,
@@ -261,7 +261,7 @@ impl ResumeCensus {
         )
     }
 
-    fn prepare_shared_model(
+    pub(super) fn prepare_shared_model(
         &self,
         reservation: Reservation,
         request: SharedRequest,

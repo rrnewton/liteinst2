@@ -6,7 +6,9 @@ use crate::linux::remote::dynamic::owner::kernel_journal::{KernelAttemptId, Kern
 #[cfg(test)]
 mod native_oracle;
 #[cfg(test)]
-pub(super) use native_oracle::{ControlLineageSnapshot, ProfileSnapshot};
+pub(in crate::linux::remote::dynamic::owner::admission) use native_oracle::ControlLineageSnapshot;
+#[cfg(test)]
+pub(super) use native_oracle::ProfileSnapshot;
 const DR_BASE: u64 = 0xffff_0ff0;
 pub(in crate::linux::remote::dynamic::owner::admission) const DR_TRACE: u64 = DR_BASE ^ 0x4000;
 

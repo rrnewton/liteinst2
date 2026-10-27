@@ -65,7 +65,7 @@ pub(in crate::linux::remote::dynamic::owner::admission) struct PreparedSnapshot 
     allocation: Progress,
     installed_bytes: usize,
     transferred: bool,
-    archive: Option<ArchiveSnapshot>,
+    pub(super) archive: Option<ArchiveSnapshot>,
 }
 #[cfg(test)]
 impl PreparedOrdinaryHistory {
