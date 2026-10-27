@@ -1,0 +1,118 @@
+{
+  "native_pairs": 20,
+  "predecessor_pairs_retained": 5,
+  "new_register_pairs": [
+    {
+      "bytes": "6689c8",
+      "source": 1,
+      "destination": 0,
+      "width": 16,
+      "cross_page": false
+    },
+    {
+      "bytes": "664589f7",
+      "source": 14,
+      "destination": 15,
+      "width": 16,
+      "cross_page": false
+    },
+    {
+      "bytes": "66448bd4",
+      "source": 4,
+      "destination": 10,
+      "width": 16,
+      "cross_page": true
+    },
+    {
+      "bytes": "668bdb",
+      "source": 3,
+      "destination": 3,
+      "width": 16,
+      "cross_page": false
+    },
+    {
+      "bytes": "664189d8",
+      "source": 3,
+      "destination": 8,
+      "width": 16,
+      "cross_page": false
+    },
+    {
+      "bytes": "89d1",
+      "source": 2,
+      "destination": 1,
+      "width": 32,
+      "cross_page": false
+    },
+    {
+      "bytes": "458bf9",
+      "source": 9,
+      "destination": 15,
+      "width": 32,
+      "cross_page": false
+    },
+    {
+      "bytes": "4189e2",
+      "source": 4,
+      "destination": 10,
+      "width": 32,
+      "cross_page": false
+    },
+    {
+      "bytes": "8bc0",
+      "source": 0,
+      "destination": 0,
+      "width": 32,
+      "cross_page": false
+    },
+    {
+      "bytes": "4489e6",
+      "source": 12,
+      "destination": 6,
+      "width": 32,
+      "cross_page": false
+    },
+    {
+      "bytes": "4889e7",
+      "source": 4,
+      "destination": 7,
+      "width": 64,
+      "cross_page": true
+    },
+    {
+      "bytes": "4d8be5",
+      "source": 13,
+      "destination": 12,
+      "width": 64,
+      "cross_page": false
+    },
+    {
+      "bytes": "4c8bfc",
+      "source": 4,
+      "destination": 15,
+      "width": 64,
+      "cross_page": false
+    },
+    {
+      "bytes": "4889db",
+      "source": 3,
+      "destination": 3,
+      "width": 64,
+      "cross_page": false
+    },
+    {
+      "bytes": "4989d8",
+      "source": 3,
+      "destination": 8,
+      "width": 64,
+      "cross_page": false
+    }
+  ],
+  "old_control_names": [
+    "foreign",
+    "nested",
+    "tf",
+    "rf"
+  ],
+  "new_arm_refusals": 13
+}

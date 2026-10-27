@@ -1,0 +1,143 @@
+{
+  "schema_version": 1,
+  "prospective_only": true,
+  "record_header_format": "<17Q",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_extent": "header_bytes + 22 * sample_bytes + 40; actual DWARF defines sample layout",
+  "record_limit_bytes": 16777216,
+  "requires": [
+    "exact source/archive/binary binding",
+    "fresh actual singleton child and owned fd3",
+    "retained raw signal preparation",
+    "zero process cleanup errors, actual reap, no timeout",
+    "all capture hashes and exact stdout/stderr/exit",
+    "full actual header and record extent, sample field replay"
+  ],
+  "commands": [
+    {
+      "name": "positive",
+      "argv": [
+        "generic-tf-fixture"
+      ],
+      "exit": 0,
+      "stdout": "LI2_GENERIC_TF_PASS pairs=21 generic=20 selftest=1 refusal_bytes=47 full_state=21 full_memory=21 live_endpoints=21\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 21,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 21,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "completed finite pair cohort"
+    },
+    {
+      "name": "load-fault",
+      "argv": [
+        "generic-tf-fixture",
+        "load-fault"
+      ],
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 21,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 1,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 7,
+        "owner_detail_abs": 11
+      },
+      "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+    },
+    {
+      "name": "unowned-target",
+      "argv": [
+        "generic-tf-fixture",
+        "unowned-target"
+      ],
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 101\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 21,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 2,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 101,
+        "owner_detail_abs": 305
+      },
+      "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+    },
+    {
+      "name": "rsp-domain",
+      "argv": [
+        "generic-tf-fixture",
+        "rsp-domain"
+      ],
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 103\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 21,
+        "refusals": 47,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 3,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 103,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "failed operation; expected refusal and actual cleanup verified separately"
+    }
+  ]
+}

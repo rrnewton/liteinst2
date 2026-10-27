@@ -1,0 +1,1506 @@
+{
+  "cohorts": [
+    {
+      "binaries_sha256": "777628f49df2f9687e3715c214ec44288a176088bd0ede8fdebf104d072f174c",
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "build_status": "passed",
+      "cases": [
+        {
+          "accepted": true,
+          "header": {
+            "completed": 21,
+            "control": 0,
+            "decoder_result": 0,
+            "expected_failure_verified": 0,
+            "failed_refusal": 18446744073709551615,
+            "fixture_failure": 0,
+            "header_bytes": 136,
+            "magic": 3550605999948051020,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "pairs": 21,
+            "refusals": 47,
+            "sample_bytes": 720960,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "positive",
+          "process_outcome": "completed finite pair cohort",
+          "record": {
+            "bytes": 15861296,
+            "sha256": "33e2350abe69dc97879ae3ef725f8f2a967ff906a70eea77939e2879a7aad0ee"
+          }
+        },
+        {
+          "accepted": true,
+          "header": {
+            "completed": 1,
+            "control": 1,
+            "decoder_result": 0,
+            "expected_failure_verified": 1,
+            "failed_refusal": 18446744073709551615,
+            "fixture_failure": 0,
+            "header_bytes": 136,
+            "magic": 3550605999948051020,
+            "owner_detail_abs": 11,
+            "owner_detail_negative": 0,
+            "owner_failure": 7,
+            "pairs": 21,
+            "refusals": 47,
+            "sample_bytes": 720960,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "load-fault",
+          "process_outcome": "failed operation; expected refusal and actual cleanup verified separately",
+          "record": {
+            "bytes": 15861296,
+            "sha256": "39cf336ae438ccfca66af078bc428b753761cdeef29feb21c6f37c7615e8d684"
+          }
+        },
+        {
+          "accepted": true,
+          "header": {
+            "completed": 1,
+            "control": 2,
+            "decoder_result": 0,
+            "expected_failure_verified": 1,
+            "failed_refusal": 18446744073709551615,
+            "fixture_failure": 0,
+            "header_bytes": 136,
+            "magic": 3550605999948051020,
+            "owner_detail_abs": 305,
+            "owner_detail_negative": 0,
+            "owner_failure": 101,
+            "pairs": 21,
+            "refusals": 47,
+            "sample_bytes": 720960,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "unowned-target",
+          "process_outcome": "failed operation; expected refusal and actual cleanup verified separately",
+          "record": {
+            "bytes": 15861296,
+            "sha256": "2a8f446931ab1cce84272aca6f4069aff318d514aa435b940a3e58d83f232813"
+          }
+        },
+        {
+          "accepted": true,
+          "header": {
+            "completed": 1,
+            "control": 3,
+            "decoder_result": 0,
+            "expected_failure_verified": 1,
+            "failed_refusal": 18446744073709551615,
+            "fixture_failure": 0,
+            "header_bytes": 136,
+            "magic": 3550605999948051020,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 103,
+            "pairs": 21,
+            "refusals": 47,
+            "sample_bytes": 720960,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "rsp-domain",
+          "process_outcome": "failed operation; expected refusal and actual cleanup verified separately",
+          "record": {
+            "bytes": 15861296,
+            "sha256": "198defb09e125c7f2d123ef1845069ab4c6f14e3893d444e00680957da5fc1e5"
+          }
+        }
+      ],
+      "cases_sha256": "36e82291a2be522b6627aa692a1da5fa58d0b1ca7fece3572f7d311e94cc985d",
+      "command_count": 22,
+      "commands_sha256": "57a7c85d7446bfcd7ebfb44bc5790120fed8673520e84a3a60a3bdba51db7b18",
+      "cpu": 13,
+      "failure_type": null,
+      "final_error_count": 0,
+      "generated_receipt": {
+        "bytes": 16232,
+        "name": "20261027T175910.211918Z-page-selected-generic-oracle-9c7ada5c39b7.json",
+        "sha256": "66265896f4bb72e3298166ece0d4be718db28bd1468f0c35b4a52bee86f747a7"
+      },
+      "inputs_sha256": "f739dae07419943951907fee928fd5473c93d99950af1abbe46a43148ee410e8",
+      "private_receipt": {
+        "bytes": 133758,
+        "sha256": "9617e13c980b1f329f610a8f42e5b33743381492625dd1dd8dcce22f20397557"
+      },
+      "profile": "page-selected-generic-oracle-v1",
+      "source_unchanged": true,
+      "started_utc": "20261027T175910.211918Z",
+      "status": "passed",
+      "totals": {
+        "additional_negative_command_selftests": 3,
+        "generic_pairs": 20,
+        "positive_pairs": 21,
+        "positive_selftest_pairs": 1,
+        "supplied_refusal_encodings": 47,
+        "verified_failed_operations": 3
+      }
+    },
+    {
+      "binaries_sha256": "f608ee1af2f94232464eb73e9aae4677c915589d4d327770c63e825afe85f127",
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "build_status": "passed",
+      "cases": [
+        {
+          "accepted": true,
+          "header": {
+            "completed": 21,
+            "control": 0,
+            "decoder_result": 0,
+            "expected_failure_verified": 0,
+            "failed_refusal": 18446744073709551615,
+            "fixture_failure": 0,
+            "header_bytes": 136,
+            "magic": 3550605999948051020,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "pairs": 21,
+            "refusals": 47,
+            "sample_bytes": 720960,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "positive",
+          "process_outcome": "completed finite pair cohort",
+          "record": {
+            "bytes": 15861296,
+            "sha256": "b7854fbed9c8e51ac41d882dcc9c316a254b856a90cc6bef16e760f683d5562a"
+          }
+        }
+      ],
+      "cases_sha256": "cb3ee10d9b919922424e61a4bb1bbdcc952f12fde6e9bdf2e19ebe46d0f92a26",
+      "command_count": 19,
+      "commands_sha256": "66c0c5824355206f90a6eb53862bbcec8616d2e66d27994266e017377b272df3",
+      "cpu": 13,
+      "failure_type": null,
+      "final_error_count": 0,
+      "generated_receipt": {
+        "bytes": 11379,
+        "name": "20261027T175918.644216Z-page-selected-integer-0-9c7ada5c39b7.json",
+        "sha256": "8a5d24efa61d9888186315d267a5ee889b71ccd0103a156a5ad78a1a09f0f4c9"
+      },
+      "group": 0,
+      "inputs_sha256": "f739dae07419943951907fee928fd5473c93d99950af1abbe46a43148ee410e8",
+      "private_receipt": {
+        "bytes": 125858,
+        "sha256": "cf0d109c3c98f3d4d6dfda53c3c30e24cefeae30e4785390bd89a7c5a0728c5c"
+      },
+      "profile": "page-selected-integer-oracle-v1",
+      "source_unchanged": true,
+      "started_utc": "20261027T175918.644216Z",
+      "status": "passed",
+      "totals": {
+        "additional_negative_command_selftests": 0,
+        "generic_pairs": 20,
+        "positive_pairs": 21,
+        "positive_selftest_pairs": 1,
+        "supplied_refusal_encodings": 47,
+        "verified_failed_operations": 0
+      }
+    },
+    {
+      "binaries_sha256": "a0ec40f7d3a937587844793d84dfe677d50bfe9dec4a7bcfb74fdb51388f799f",
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "fixture_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "build_status": "passed",
+      "cases": [
+        {
+          "accepted": true,
+          "header": {
+            "completed": 21,
+            "control": 0,
+            "decoder_result": 0,
+            "expected_failure_verified": 0,
+            "failed_refusal": 18446744073709551615,
+            "fixture_failure": 0,
+            "header_bytes": 136,
+            "magic": 3550605999948051020,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "pairs": 21,
+            "refusals": 47,
+            "sample_bytes": 720960,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "positive",
+          "process_outcome": "completed finite pair cohort",
+          "record": {
+            "bytes": 15861296,
+            "sha256": "ca9d4af2370126b0ac58274a1702defb860fee0ada10058c90d059c7bb69e220"
+          }
+        }
+      ],
+      "cases_sha256": "8f4caea1c4a97f49ad482bc0b451291c65218ea02c566b7b5405f646710b1cdf",
+      "command_count": 19,
+      "commands_sha256": "3fdfc1b3a8357a6d5c7d474da8a726c1b72dc5edd95caa433c92fb0340becd63",
+      "cpu": 13,
+      "failure_type": null,
+      "final_error_count": 0,
+      "generated_receipt": {
+        "bytes": 11379,
+        "name": "20261027T175926.185725Z-page-selected-integer-1-9c7ada5c39b7.json",
+        "sha256": "2074abe30751b5281f4e9469ecfbe5b1b7cf995ba46176094b32f23ccd03c622"
+      },
+      "group": 1,
+      "inputs_sha256": "f739dae07419943951907fee928fd5473c93d99950af1abbe46a43148ee410e8",
+      "private_receipt": {
+        "bytes": 125858,
+        "sha256": "2e71d05e6e8db0e465831a6dbb40e3338b140c517b75483225d99664b774d18c"
+      },
+      "profile": "page-selected-integer-oracle-v1",
+      "source_unchanged": true,
+      "started_utc": "20261027T175926.185725Z",
+      "status": "passed",
+      "totals": {
+        "additional_negative_command_selftests": 0,
+        "generic_pairs": 20,
+        "positive_pairs": 21,
+        "positive_selftest_pairs": 1,
+        "supplied_refusal_encodings": 47,
+        "verified_failed_operations": 0
+      }
+    },
+    {
+      "artifact_manifest_sha256": "fe841c04ef52468ebb94493ca4f17bc9be9f938b02f9996efd17704c4a46ffa0",
+      "bounds": {
+        "build": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "metadata": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "native": [
+          3,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "build_status": "passed",
+      "cases": [
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 3,
+            "rdpid": 0,
+            "rdrand": 1,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 1,
+            "source_syscalls": 1,
+            "status": 10710
+          },
+          "exact_report_sha256": "6d6014768cc406fb5c0cee9f06a6858c29377db2d62dd96e39babddb4b847ea8",
+          "name": "rdrand16",
+          "native_exit": 144,
+          "outcome_class": "completed",
+          "selected_outcome": {
+            "carry": 1,
+            "destination": 7,
+            "input_destination": 0,
+            "kind": 2,
+            "native_attempts": 1,
+            "output_destination": 10710,
+            "phase": 4,
+            "status": 0,
+            "value": 10710,
+            "width": 16
+          }
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 3,
+            "rdpid": 0,
+            "rdrand": 1,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 1,
+            "source_syscalls": 1,
+            "status": 3116378081
+          },
+          "exact_report_sha256": "c511bbe1b4bed8b4ef52c3a6d6cf5442b97d5ef3e6b9436eb39f9e4c07fc648d",
+          "name": "rdrand32",
+          "native_exit": 50,
+          "outcome_class": "completed",
+          "selected_outcome": {
+            "carry": 1,
+            "destination": 7,
+            "input_destination": 0,
+            "kind": 2,
+            "native_attempts": 1,
+            "output_destination": 3116378081,
+            "phase": 4,
+            "status": 0,
+            "value": 3116378081,
+            "width": 32
+          }
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 3,
+            "rdpid": 0,
+            "rdrand": 1,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 1,
+            "source_syscalls": 1,
+            "status": 557819768
+          },
+          "exact_report_sha256": "da6fb8673d656ad752cec47e7c243b096b408c42c725990cacc8a274aef12882",
+          "name": "rdrand64",
+          "native_exit": 255,
+          "outcome_class": "completed",
+          "selected_outcome": {
+            "carry": 1,
+            "destination": 7,
+            "input_destination": 0,
+            "kind": 2,
+            "native_attempts": 1,
+            "output_destination": 12045293223082436472,
+            "phase": 4,
+            "status": 0,
+            "value": 12045293223082436472,
+            "width": 64
+          }
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 3,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 1,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 1,
+            "source_syscalls": 1,
+            "status": 3197
+          },
+          "exact_report_sha256": "03f3b678af7490fff25da8c66df9c91296f632df49bfa6265228d5c9030944e4",
+          "name": "rdseed16",
+          "native_exit": 0,
+          "outcome_class": "completed",
+          "selected_outcome": {
+            "carry": 1,
+            "destination": 7,
+            "input_destination": 0,
+            "kind": 3,
+            "native_attempts": 1,
+            "output_destination": 3197,
+            "phase": 4,
+            "status": 0,
+            "value": 3197,
+            "width": 16
+          }
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 3,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 1,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 1,
+            "source_syscalls": 1,
+            "status": 1356452661
+          },
+          "exact_report_sha256": "0489f3568b66933eacc16a5c1037da8f9448167a8272dd602a5ec806419bc801",
+          "name": "rdseed32",
+          "native_exit": 190,
+          "outcome_class": "completed",
+          "selected_outcome": {
+            "carry": 1,
+            "destination": 7,
+            "input_destination": 0,
+            "kind": 3,
+            "native_attempts": 1,
+            "output_destination": 1356452661,
+            "phase": 4,
+            "status": 0,
+            "value": 1356452661,
+            "width": 32
+          }
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 3,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 1,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 1,
+            "source_syscalls": 1,
+            "status": 3165339868
+          },
+          "exact_report_sha256": "2992d27f9e7a0f672c3e2f9173e036834fdc8fe89d480b6145b7ee9480da684c",
+          "name": "rdseed64",
+          "native_exit": 216,
+          "outcome_class": "completed",
+          "selected_outcome": {
+            "carry": 1,
+            "destination": 7,
+            "input_destination": 0,
+            "kind": 3,
+            "native_attempts": 1,
+            "output_destination": 17058282588615688412,
+            "phase": 4,
+            "status": 0,
+            "value": 17058282588615688412,
+            "width": 64
+          }
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 3,
+            "rdpid": 1,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 1,
+            "source_syscalls": 1,
+            "status": 13
+          },
+          "exact_report_sha256": "ef8f21d29972a4743b1e95ab1168db8ffdf7ee0f1a93740320695cccb1a055a7",
+          "name": "rdpid64",
+          "native_exit": 13,
+          "outcome_class": "completed",
+          "selected_outcome": {
+            "carry": 0,
+            "destination": 7,
+            "input_destination": 0,
+            "kind": 4,
+            "native_attempts": 1,
+            "output_destination": 13,
+            "phase": 4,
+            "status": 0,
+            "value": 13,
+            "width": 64
+          }
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 3,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 2,
+            "source_syscalls": 1,
+            "status": 43
+          },
+          "exact_report_sha256": "e6423a9871a32b3c48b708b6bfdab2833277f08d43765f39a733fadef06833d6",
+          "name": "mov_exit",
+          "native_exit": 43,
+          "outcome_class": "completed"
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 5,
+            "rdpid": 0,
+            "rdrand": 1,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 3,
+            "source_syscalls": 1,
+            "status": 827009752
+          },
+          "exact_report_sha256": "cf37143a58860bb9ef7394d2d3d7036cfd879227127010efb63378c5ede8438d",
+          "name": "prefix_random",
+          "native_exit": 29,
+          "outcome_class": "completed",
+          "selected_outcome": {
+            "carry": 1,
+            "destination": 7,
+            "input_destination": 0,
+            "kind": 2,
+            "native_attempts": 1,
+            "output_destination": 1505534609583712984,
+            "phase": 4,
+            "status": 0,
+            "value": 1505534609583712984,
+            "width": 64
+          }
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 4,
+            "rdpid": 0,
+            "rdrand": 1,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 2,
+            "source_syscalls": 1,
+            "status": 2462281541
+          },
+          "exact_report_sha256": "0645a6b7dc5cf0c4233cdaf107e342b0f7ddaf77944edf3b40857288b6fc0836",
+          "name": "cross_mov",
+          "native_exit": 20,
+          "outcome_class": "completed",
+          "selected_outcome": {
+            "carry": 1,
+            "destination": 7,
+            "input_destination": 1311768467463790320,
+            "kind": 2,
+            "native_attempts": 1,
+            "output_destination": 8239477216002666309,
+            "phase": 4,
+            "status": 0,
+            "value": 8239477216002666309,
+            "width": 64
+          }
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 3,
+            "rdpid": 1,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 1,
+            "source_syscalls": 1,
+            "status": 13
+          },
+          "exact_report_sha256": "ef8f21d29972a4743b1e95ab1168db8ffdf7ee0f1a93740320695cccb1a055a7",
+          "name": "cross_selected",
+          "native_exit": 13,
+          "outcome_class": "completed",
+          "selected_outcome": {
+            "carry": 0,
+            "destination": 7,
+            "input_destination": 0,
+            "kind": 4,
+            "native_attempts": 1,
+            "output_destination": 13,
+            "phase": 4,
+            "status": 0,
+            "value": 13,
+            "width": 64
+          }
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 7,
+            "detail_negative": 0,
+            "failure_code": 629,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 1,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 0,
+            "source_syscalls": 0,
+            "status": 125
+          },
+          "exact_report_sha256": "1b0d718f8c16940daea711ddc76dcb837d13d373db67f0dadd94d4058c566c1a",
+          "name": "rsp_refusal",
+          "native_exit": null,
+          "outcome_class": "expected_refusal",
+          "selected_outcome": {
+            "carry": 0,
+            "destination": 4,
+            "input_destination": 0,
+            "kind": 2,
+            "native_attempts": 0,
+            "output_destination": 0,
+            "phase": 0,
+            "status": 7,
+            "value": 0,
+            "width": 64
+          }
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 13,
+            "detail_negative": 0,
+            "failure_code": 206,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 6,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 5,
+            "source_syscalls": 1,
+            "status": 125
+          },
+          "exact_report_sha256": "8c83fa3281ca4f3c7a2bfbbd16d0210dd6ffc649525d9198dcf9708ee2db142b",
+          "name": "query_trap",
+          "native_exit": 0,
+          "outcome_class": "expected_refusal"
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 13,
+            "detail_negative": 0,
+            "failure_code": 206,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 6,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 5,
+            "source_syscalls": 1,
+            "status": 125
+          },
+          "exact_report_sha256": "8c83fa3281ca4f3c7a2bfbbd16d0210dd6ffc649525d9198dcf9708ee2db142b",
+          "name": "query_trap_highbits",
+          "native_exit": 0,
+          "outcome_class": "expected_refusal"
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 0,
+            "generic_tf_steps": 0,
+            "nx_faults": 14,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 11,
+            "source_syscalls": 3,
+            "status": 0
+          },
+          "exact_report_sha256": "11e6d8e716c7b5cee55ad83aa429c6dfeb49835c343c797d348eea1da4fa4aa6",
+          "name": "query_usr1",
+          "native_exit": 0,
+          "outcome_class": "completed"
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 15,
+            "generic_tf_steps": 15,
+            "nx_faults": 26,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 9,
+            "source_syscalls": 2,
+            "status": 0
+          },
+          "exact_report_sha256": "1eaf376f810498e44f6ca624db790539f1fa13d2cbb446d66231b8bb191b2a30",
+          "name": "branch_memory_stack",
+          "native_exit": 0,
+          "outcome": {
+            "output_words": [
+              15,
+              15,
+              15
+            ]
+          },
+          "outcome_class": "completed"
+        },
+        {
+          "accepted": true,
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 7,
+            "generic_tf_steps": 7,
+            "nx_faults": 18,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 9,
+            "source_syscalls": 2,
+            "status": 0
+          },
+          "exact_report_sha256": "9d91eac76de3fc427ff4344ec03ef5c0923fd80a786c3e15517114af160fa91e",
+          "name": "boundary_call_ret",
+          "native_exit": 0,
+          "outcome": {
+            "output_words": [
+              4202496,
+              42
+            ]
+          },
+          "outcome_class": "completed"
+        },
+        {
+          "accepted": true,
+          "builtin_outcome": {
+            "a": 16,
+            "b": 1752462657,
+            "c": 1145913699,
+            "d": 1769238117,
+            "enable_result_abs": 0,
+            "enable_result_negative": 0,
+            "kind": 1,
+            "phase": 7,
+            "restore_result_abs": 0,
+            "restore_result_negative": 0
+          },
+          "counters": {
+            "cpuid": 1,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 8,
+            "generic_tf_steps": 8,
+            "nx_faults": 22,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 0,
+            "selected_steps": 11,
+            "source_syscalls": 2,
+            "status": 0
+          },
+          "exact_report_sha256": "abdf583af0a0a96eba57adebde370d37cbba824295b2509fe5964677ea490bbe",
+          "name": "cpuid0",
+          "native_exit": 0,
+          "outcome": {
+            "cpuid0": [
+              16,
+              1752462657,
+              1145913699,
+              1769238117
+            ]
+          },
+          "outcome_class": "completed"
+        },
+        {
+          "accepted": true,
+          "builtin_outcome": {
+            "a": 4055576824,
+            "b": 0,
+            "c": 0,
+            "d": 439682,
+            "enable_result_abs": 0,
+            "enable_result_negative": 0,
+            "kind": 5,
+            "phase": 7,
+            "restore_result_abs": 0,
+            "restore_result_negative": 0
+          },
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 8,
+            "generic_tf_steps": 8,
+            "nx_faults": 22,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 1,
+            "rdtscp": 0,
+            "selected_steps": 11,
+            "source_syscalls": 2,
+            "status": 0
+          },
+          "exact_report_sha256": "74bac62c341baacc28304d08cc6b64353893c52e8f95c620e0a71ef977bfac6f",
+          "name": "rdtsc",
+          "native_exit": 0,
+          "outcome": {
+            "after_tsc": 1888424096338175,
+            "aux": 13,
+            "before_tsc": 1888423343483846,
+            "gated_tsc": 1888423866216696,
+            "native_tsc": 1888423570570812
+          },
+          "outcome_class": "completed"
+        },
+        {
+          "accepted": true,
+          "builtin_outcome": {
+            "a": 1247611034,
+            "b": 0,
+            "c": 13,
+            "d": 439683,
+            "enable_result_abs": 0,
+            "enable_result_negative": 0,
+            "kind": 6,
+            "phase": 7,
+            "restore_result_abs": 0,
+            "restore_result_negative": 0
+          },
+          "counters": {
+            "cpuid": 0,
+            "detail_abs": 0,
+            "detail_negative": 0,
+            "failure_code": 0,
+            "generic_tf_attempts": 8,
+            "generic_tf_steps": 8,
+            "nx_faults": 22,
+            "rdpid": 0,
+            "rdrand": 0,
+            "rdseed": 0,
+            "rdtsc": 0,
+            "rdtscp": 1,
+            "selected_steps": 11,
+            "source_syscalls": 2,
+            "status": 0
+          },
+          "exact_report_sha256": "5625ef5ea769cb54b73106f64a08edff7446a4117bd7293e39d32b6fff36aa93",
+          "name": "rdtscp",
+          "native_exit": 0,
+          "outcome": {
+            "after_tsc": 1888425580650895,
+            "aux": 13,
+            "before_tsc": 1888424833306135,
+            "gated_tsc": 1888425353218202,
+            "native_tsc": 1888425055827994
+          },
+          "outcome_class": "completed"
+        }
+      ],
+      "command_count": 97,
+      "command_rows_sha256": "39fc8dfdc70f7cacea99fc773203ea217f11573c7fe821797cbc04e939f6c60a",
+      "configuration_unchanged": true,
+      "cpu": 13,
+      "failure_type": null,
+      "final_error_count": 0,
+      "generated_receipt": {
+        "bytes": 135150,
+        "name": "20261027T175933.960893Z-page-selected-generic-9c7ada5c39b7.json",
+        "sha256": "5c123a68358793d6b807d92aa7db08ce0c55d7d204b8b91229043c1e85c53096"
+      },
+      "input_manifest_sha256": "b425d63eaa8b514cf4694be163a0169e301386c6d9b514dd76407d43a3c99a7a",
+      "ls_diagnostic": {
+        "bytes": "f348ab",
+        "counters": {
+          "admissions": 0,
+          "cpuid": 0,
+          "dependency_faults": 0,
+          "dependency_objects": 5,
+          "detail_abs": 0,
+          "detail_negative": 0,
+          "failure_code": 100,
+          "first_target_is_interpreter_entry": 1,
+          "forwarded": 0,
+          "generations": 63,
+          "generic_tf_attempts": 1806,
+          "generic_tf_steps": 1805,
+          "interpreter_faults": 1852,
+          "live_pages": 61,
+          "main_faults": 0,
+          "nx_faults": 1852,
+          "rdpid": 0,
+          "rdrand": 0,
+          "rdseed": 0,
+          "rdtsc": 2,
+          "rdtscp": 0,
+          "retired": 2,
+          "selected_selftests": 1,
+          "selected_steps": 44,
+          "source_syscalls": 0,
+          "status": 125,
+          "step_route": 2,
+          "sync_core": 0,
+          "syscalls": 0,
+          "tf_code": 346,
+          "tf_error": 100,
+          "tf_family": 0,
+          "tf_flow": 0,
+          "tf_length": 3,
+          "tf_phase": 6,
+          "tf_release_complete": 0
+        },
+        "exact_report_sha256": "59027fbb1982559bb3edf9ef1469494b98c2c27dc0b30a591eb3f2f919c4ddc9",
+        "interpreter": {
+          "bytes": 939216,
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+        },
+        "original": {
+          "bytes": 140752,
+          "sha256": "eec29318f59647c9a13b619e2738575164e3c43c7a1ee2b8509f36cb09019315"
+        },
+        "status": "unsupported_actual_opcode"
+      },
+      "private_receipt": {
+        "bytes": 403090,
+        "sha256": "ec5dddead4907ecd52ff9fab4f7e52f8b1a14a3d0cb8062be66b0f83e4aecf93"
+      },
+      "profile": "page-selected-generic-v1",
+      "source_unchanged": true,
+      "started_utc": "20261027T175933.960893Z",
+      "status": "passed_finite_cohort"
+    },
+    {
+      "bounds": {
+        "archive": [
+          120,
+          2147483648,
+          134217728,
+          150
+        ],
+        "decoder": [
+          3,
+          268435456,
+          1048576,
+          10
+        ],
+        "fetch": [
+          5,
+          1073741824,
+          16777216,
+          10
+        ],
+        "fetch_link": [
+          30,
+          1073741824,
+          16777216,
+          60
+        ],
+        "inspect": [
+          10,
+          268435456,
+          4194304,
+          20
+        ],
+        "link": [
+          30,
+          536870912,
+          67108864,
+          60
+        ],
+        "provider": [
+          3,
+          268435456,
+          1048576,
+          10
+        ],
+        "step": [
+          5,
+          536870912,
+          16777216,
+          15
+        ],
+        "step_link": [
+          5,
+          536870912,
+          16777216,
+          15
+        ]
+      },
+      "command_count": 437,
+      "commands_sha256": "92ab6b40f56df385e6073e9ce82aafc2d280cdb7f467721c3caee26d60a94f22",
+      "cpu": 13,
+      "failure_type": null,
+      "final_error_count": 0,
+      "generated_receipt": {
+        "bytes": 9235,
+        "name": "20261027T175953.411571Z-page-selected-components-9c7ada5c39b7.json",
+        "sha256": "499e48f05a1453fb956da91bc423dd410b6420b21fd05325912992a66286d377"
+      },
+      "input_manifest_sha256": "baa1ef6b0f0dacdd4d1fbf7f4bcd700f7988d9ad9254c768e9d5a90a04387fcd",
+      "private_receipt": {
+        "bytes": 1057223,
+        "sha256": "99e7dd39f3a33eac1b7d6cbf1e6823ef3505ae8b164bad322adc49d62e24f877"
+      },
+      "profile": "page-selected-components-v1",
+      "source_unchanged": true,
+      "started_utc": "20261027T175953.411571Z",
+      "status": "passed",
+      "totals": {
+        "decoder_fatal": 2,
+        "decoder_forms": 112,
+        "decoder_freestanding": 1,
+        "fetch_cases": 18,
+        "provider_cases": 385,
+        "step_arm_refusals": 13,
+        "step_control_processes": 4,
+        "step_false_claim_refusals": 13,
+        "step_pairs": 20
+      }
+    }
+  ],
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 13,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "profile": "original-entry-integer-milestone-summary-v1",
+  "projection_note": "Top-level source/hardware are shared exactly. Cohort fields are copied from each generated receipt; connected case counters retain the specified fields below. No outcome or count is inferred from a command exit alone.",
+  "reproduce": [
+    [
+      "python3",
+      "evaluation/inprocess/page_selected_generic_oracle.py",
+      "--expect-revision",
+      "9c7ada5c39b7385d689f8fdf8c517612b713b08f"
+    ],
+    [
+      "python3",
+      "evaluation/inprocess/page_selected_integer.py",
+      "--expect-revision",
+      "9c7ada5c39b7385d689f8fdf8c517612b713b08f",
+      "--group",
+      "0"
+    ],
+    [
+      "python3",
+      "evaluation/inprocess/page_selected_integer.py",
+      "--expect-revision",
+      "9c7ada5c39b7385d689f8fdf8c517612b713b08f",
+      "--group",
+      "1"
+    ],
+    [
+      "python3",
+      "evaluation/inprocess/page_selected_generic.py",
+      "--expect-revision",
+      "9c7ada5c39b7385d689f8fdf8c517612b713b08f"
+    ],
+    [
+      "python3",
+      "evaluation/inprocess/page_selected_components.py",
+      "--expect-revision",
+      "9c7ada5c39b7385d689f8fdf8c517612b713b08f"
+    ]
+  ],
+  "reproduction_note": "Run each committed script on one externally reserved CPU. Each produces the full numeric receipt summarized here; full outputs remain private and are bound by SHA-256. Different native random values and timestamps are expected.",
+  "schema_version": 1,
+  "scope": "Finite original-address integer execution; separate original oracle/components and real-loader refusal. No full B2/B3/B4 or performance claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "9c7ada5c39b7385d689f8fdf8c517612b713b08f",
+    "source_manifest_sha256": "06af5e76d50e2e1c1d3981314520d4b3cd9ee85fe3a43a093e5393be16aefd8c",
+    "tracked_clean": true,
+    "tree": "9f3a8114920d1afd52f824ff7c578aeeda105e89"
+  },
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "total_commands": 594
+}
