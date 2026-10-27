@@ -657,7 +657,18 @@ impl OrdinaryOracle {
             let status = walk.child.wait();
             assert!(
                 libc::WIFEXITED(status) && libc::WEXITSTATUS(status) == 0,
-                "real invoke validation failed {status:#x}"
+                "real invoke validation failed {status:#x}; saved_flags={:#x} after_ret_flags={:#x} stopped={:?}",
+                saved.eflags,
+                after.eflags,
+                if libc::WIFSTOPPED(status) {
+                    let registers = walk.child.registers();
+                    let mut info: libc::siginfo_t = unsafe { core::mem::zeroed() };
+                    walk.child
+                        .request(libc::PTRACE_GETSIGINFO, 0, (&raw mut info) as usize);
+                    Some((registers.rip, registers.eflags, info.si_code, walk.steps))
+                } else {
+                    None
+                }
             );
             assert!(walk.child.reaped.get());
             let mut status = 0;
