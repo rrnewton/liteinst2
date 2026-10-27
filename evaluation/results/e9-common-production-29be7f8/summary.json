@@ -1,0 +1,85 @@
+{
+  "actual_helper_commands": 74,
+  "actual_recipe_launches": 1,
+  "architectural_comparisons": 0,
+  "cells": 8,
+  "collector_sha256": "e4a5007653335d5da604a32ef18c112a29e7d9d7f855ba004b889cc77f875bff",
+  "command_context_rows": 75,
+  "full_a3": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ],
+    "logical_cpus": 316
+  },
+  "hook_artifact": {
+    "bytes": 13216,
+    "sha256": "11da6de557b821d670d374a8f5dfacac1ee4b2cf4670da7b90aff5be73331372"
+  },
+  "limits": [
+    "Saved-record reporting only; artifact hashes come from the reviewed raw index, not new product reads.",
+    "Historical source map and byte/owner checks retain the named independent review authority.",
+    "Unavailable site inventories and unrun command contexts stay null; no success is inferred.",
+    "All durations are operational diagnostics, not benchmarks. No loader, runtime or state-equivalence credit."
+  ],
+  "native_executions": 0,
+  "ordinary_executions": 0,
+  "parent": {
+    "exit": 1,
+    "operational_seconds": 186.5410159449093,
+    "parent_wait_returned": true,
+    "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "ef7feab124356fe5ac255a9033d842034d34c6bb6159e9dd083424d5bfd80cd8"
+  },
+  "preserved_failures": [
+    "Four jump-core commands exited 2 with all nine candidate_emitted=false rows and no candidate ELF or sparse transaction.",
+    "In every jump cell IDs 14, 24, 32, 36, 49 and 64 retain composition ExpectedBytesChanged/10001 (B1 except ID64 B2): 24 report rows total.",
+    "In every jump cell ID15 retains core NoPatchWindow/9 with no tactic: four report rows total.",
+    "In every jump cell IDs41 and81 retain atomic-selection/10003 withholding because another requested site or carrier failed; no partial candidate: eight report rows total.",
+    "All eight jump comparisons exited 2 and lose all nine E9 trampoline sites: 72 pair-site losses, not 72 independent core sites.",
+    "The complete 74-stage campaign remains failed (parent exit1); four heap B1 candidates and eight heap comparison passes do not qualify the failed jump cells.",
+    "Historical b0 fixed-arena/core and bootstrap-loader failures remain unchanged and separate."
+  ],
+  "production": {
+    "attempted_stages": 74,
+    "build_authority": "Caller-admitted source/build/product records; this recipe does not compile the core or decoder",
+    "completed_traversal": true,
+    "core_cells": 8,
+    "fatal": null,
+    "native_executions": 0,
+    "ordinary_dataset_executions": 0,
+    "parent_closed_reaped_authority": "Must be recorded separately by the invoking root process",
+    "planned_stages": 74,
+    "qualification_complete": false,
+    "reference_cells_per_lane": 8,
+    "revision": "29be7f8424e75ae16ed92a5d9df7459d821474d0",
+    "schema": 1,
+    "scope": "Artifact production and complete structural comparison only",
+    "successful": false,
+    "timings": "Operational diagnostics only, not performance measurements"
+  },
+  "qualification_complete": false,
+  "raw_index": {
+    "bytes": 159400026,
+    "files": 1098,
+    "sha256": "e322b3a4ac2b8283b374c4ba20586f4ad5a3d4205176e1f429f78c6e7a12f2f5"
+  },
+  "recipe_sha256": "55683ce0f9d1c401b327552d1d385cb7db93a2e18659f67ea34489728ba09c71",
+  "reporting_revision": "29be7f8424e75ae16ed92a5d9df7459d821474d0",
+  "review_sha256": "feedde4d3cf11e9e51d9d1f5c649821351c0f971384c7ff5e5e9da44a6b35c5a",
+  "schema": 1,
+  "source_files": 1555,
+  "source_files_sha256": "a12e9961424ba4d918ce8a359161dc0a642213f5f1753ec50b3dc89b9c1b5c97",
+  "stage_counts": {
+    "FAILED": 12,
+    "PASS": 62,
+    "UNRUN": 0
+  },
+  "tested_revision": "29be7f8424e75ae16ed92a5d9df7459d821474d0"
+}

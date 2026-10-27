@@ -1,0 +1,292 @@
+{
+  "command_rows": 12,
+  "command_statuses": {
+    "FAIL": 0,
+    "PASS": 12,
+    "UNRUN": 0
+  },
+  "configuration_attestation": {
+    "parallel_complete": false,
+    "scope": "Saved observations only; READ_DENIED is not absence or a Cargo-consumption proof."
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ],
+    "logical_cpus": 316
+  },
+  "launches": {
+    "parallel": {
+      "closed": {
+        "exit": 0,
+        "operational_seconds": 384.9420633520931,
+        "parent_wait_returned": true,
+        "pid": 640555,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "9b44af0e54b94cfc4118c97d65860f4c39a848ccc17a1d9e590af9a85caf6e05"
+      },
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "$REPO/evaluation/trampoline-parallel.py",
+          "--repo",
+          "$REPO",
+          "--output",
+          "$RAW/parallel",
+          "--toolchain",
+          "$TOOLCHAIN",
+          "--user-home",
+          "$HOME",
+          "--cargo-home",
+          "$CARGO_HOME"
+        ],
+        "cpu_affinity": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "cwd": "$REPO",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "recipe_sha256": "0d3697eaaf433fc76d22f4ec7b6bc8047d0260f90bf9227072ad8dee2f4662ba",
+        "source_revision": "41a236dff00295a70b5c4cf2982eb91359e5b2c1"
+      },
+      "parent_source_sha256": "d0e2e99e3a1e6024b417d379db471b7d7ac98ec2978d2c962c18e7586025267e",
+      "started": {
+        "command_sha256": "3e40507fcb7cfd331b8b813e6f9cb3863ad1731c17db48d1867a5ed2c86a71ca",
+        "pid": 640555,
+        "start_utc": "2026-10-26T23:56:07.309405+00:00"
+      }
+    },
+    "required": {
+      "closed": {
+        "exit": 0,
+        "operational_seconds": 382.0129625699483,
+        "parent_wait_returned": true,
+        "pid": 1610285,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e7edf277c045ab14143951af43007f098657dd81b11ef139f1a3260cf54cf8ea"
+      },
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "$REPO/evaluation/required-gates.py",
+          "--repo",
+          "$REPO",
+          "--output",
+          "$RAW/required"
+        ],
+        "cpu_affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "cwd": "$REPO",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "$CARGO_HOME",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "$REPO/target",
+          "HOME": "$HOME",
+          "LC_ALL": "C",
+          "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "$TOOLCHAIN/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "$RAW/required-tmp"
+        },
+        "recipe_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+        "scope": "Existing four required gates, unchanged180/180/360/180second limits; no downstream production run.",
+        "source_revision": "41a236dff00295a70b5c4cf2982eb91359e5b2c1"
+      },
+      "parent_source_sha256": "d0e2e99e3a1e6024b417d379db471b7d7ac98ec2978d2c962c18e7586025267e",
+      "started": {
+        "command_sha256": "520b2887d0ec87276aaa12b95fa37921c329ee1b8cec20954ab7c3a47d3d323d",
+        "pid": 1610285,
+        "start_utc": "2026-10-26T22:48:44.634706+00:00"
+      }
+    },
+    "serial": {
+      "closed": {
+        "exit": 0,
+        "operational_seconds": 139.6576221541036,
+        "parent_wait_returned": true,
+        "pid": 430082,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "dff2423aae6ceb733d461876648ae64a277ebd44893ab8dc7ff315256f25a8d3"
+      },
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "$RAW/serial-proposal/serial_launch.py",
+          "--repo",
+          "$REPO",
+          "--output",
+          "$RAW/serial",
+          "--toolchain",
+          "$TOOLCHAIN",
+          "--user-home",
+          "$HOME",
+          "--cargo-home",
+          "$CARGO_HOME",
+          "--cpus",
+          "0,1,2,3"
+        ],
+        "cpu_affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "cwd": "$REPO",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "recipe_sha256": "dc3885bec8e3717ecd4122895f0f3646e98b2e08b0a1cc1bebfb0449a08620a4",
+        "source_revision": "41a236dff00295a70b5c4cf2982eb91359e5b2c1"
+      },
+      "parent_source_sha256": "d0e2e99e3a1e6024b417d379db471b7d7ac98ec2978d2c962c18e7586025267e",
+      "started": {
+        "command_sha256": "b67308bb48c600c25c69df44d207dd43d0fbf44067e4dfb845c077578769c200",
+        "pid": 430082,
+        "start_utc": "2026-10-26T23:53:44.397128+00:00"
+      }
+    }
+  },
+  "limits": [
+    "Operational durations are not benchmarks; CPU time was not measured.",
+    "Serial is one command, not the complete admission protocol.",
+    "Required/default recipes record leader waits; serial separately records its owned-descendant cleanup.",
+    "Parent wait records are saved caller authority, not a new descendant-closure proof.",
+    "No full dependency, Cargo-config, runtime-loader, architectural-state or milestone qualification."
+  ],
+  "parallel_errors": [],
+  "qualification_complete": false,
+  "reporter": {
+    "revision": "f1ea106541a40d6afb74936cd60860552d8dc04a",
+    "sha256": "42ce9f2c7bb089b3ef401c03798366b801bfd8bcac5900a3c1d620be51eb8a79"
+  },
+  "reproducers": {
+    "parallel": {
+      "path": "evaluation/trampoline-parallel.py",
+      "sha256": "0d3697eaaf433fc76d22f4ec7b6bc8047d0260f90bf9227072ad8dee2f4662ba"
+    },
+    "required": {
+      "path": "evaluation/required-gates.py",
+      "sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b"
+    },
+    "serial": {
+      "path": "evaluation/serial-launch.py",
+      "sha256": "dc3885bec8e3717ecd4122895f0f3646e98b2e08b0a1cc1bebfb0449a08620a4"
+    }
+  },
+  "schema": 1,
+  "source": {
+    "authority": "Whole Git blob/mode checks in pinned serial/default recipes; required hash map equal.",
+    "before_after_equal": true,
+    "files": 1808,
+    "sha256": "4fb214a35e644c0e573a856f3754fe61933d2295eeb2138b4acf7be96a3a7452"
+  },
+  "status": "PASS",
+  "test_counts": null,
+  "test_counts_scope": "Independent complete log review is separate; no counts inferred here.",
+  "tested_revision": "41a236dff00295a70b5c4cf2982eb91359e5b2c1",
+  "tools": {
+    "parallel": {
+      "cargo": {
+        "bytes": 42839824,
+        "path": "$TOOLCHAIN/bin/cargo",
+        "resolved": "$TOOLCHAIN/bin/cargo",
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "cc": {
+        "bytes": 1093144,
+        "path": "/usr/bin/cc",
+        "resolved": "/usr/bin/gcc",
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "git": {
+        "bytes": 4397400,
+        "path": "/usr/bin/git",
+        "resolved": "/usr/bin/git",
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "python": {
+        "bytes": 15448,
+        "path": "/usr/bin/python3.9",
+        "resolved": "/usr/bin/python3.9",
+        "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+      },
+      "rustc": {
+        "bytes": 645000,
+        "path": "$TOOLCHAIN/bin/rustc",
+        "resolved": "$TOOLCHAIN/bin/rustc",
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "rustdoc": {
+        "bytes": 13680928,
+        "path": "$TOOLCHAIN/bin/rustdoc",
+        "resolved": "$TOOLCHAIN/bin/rustdoc",
+        "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+      }
+    },
+    "serial": {
+      "cargo": {
+        "bytes": 42839824,
+        "path": "$TOOLCHAIN/bin/cargo",
+        "resolved": "$TOOLCHAIN/bin/cargo",
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "git": {
+        "bytes": 4397400,
+        "path": "/usr/bin/git",
+        "resolved": "/usr/bin/git",
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "python": {
+        "bytes": 15448,
+        "path": "/usr/bin/python3.9",
+        "resolved": "/usr/bin/python3.9",
+        "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+      },
+      "rustc": {
+        "bytes": 645000,
+        "path": "$TOOLCHAIN/bin/rustc",
+        "resolved": "$TOOLCHAIN/bin/rustc",
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "rustdoc": {
+        "bytes": 13680928,
+        "path": "$TOOLCHAIN/bin/rustdoc",
+        "resolved": "$TOOLCHAIN/bin/rustdoc",
+        "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+      }
+    }
+  }
+}

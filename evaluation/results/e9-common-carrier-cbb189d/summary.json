@@ -1,0 +1,309 @@
+{
+  "actual_command": {
+    "aborted": null,
+    "absence_proof": "ECHILD",
+    "child_exit": 2,
+    "cleanup_error": null,
+    "cleanup_events": [],
+    "helper_elapsed_seconds": 0.5806932770647109,
+    "inputs_unchanged": true,
+    "inputs_unchanged_scope": "The strict helper receipt covers request.json and the bounded helper source only. Original/selection bytes, core archive identity and source joins are separate evidence, not guarantees made by this receipt field.",
+    "invocation_origin": "direct bounded CLI invocation; the newly published reproducer was not invoked",
+    "outer": {
+      "argv": [
+        "${TIMEOUT}",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "40s",
+        "${HELPER_PYTHON}",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW}/command/request.json",
+        "--receipt",
+        "${RAW}/command/receipt.json"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_timeout_seconds": 55,
+      "request_sha256": "0998a8505376678985ae9bb1fc3593b63bfb2c69f4e7215d83eb714ce69585c9"
+    },
+    "outer_exit": 1,
+    "parent_operational_seconds": 0.6658402942121029,
+    "parent_wait_returned": true,
+    "request": {
+      "argv": [
+        "${CORE}",
+        "prepare",
+        "${ORIGINAL}",
+        "${SELECTION}",
+        "${RAW}/artifact"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "file_bytes": 16777216,
+      "stderr": "${RAW}/command/stderr.txt",
+      "stdout": "${RAW}/command/stdout.txt",
+      "wall_seconds": 30
+    },
+    "timing_kind": "operational, not a performance measurement",
+    "unexpected_descendants": [],
+    "wall_timeout": false
+  },
+  "application_executions": 0,
+  "architectural_comparison_credit": false,
+  "artifact_bytes": 1510639,
+  "artifact_files": 9,
+  "candidate_complete": false,
+  "candidate_files": 0,
+  "coordinate_semantics": {
+    "roles": {
+      "CORE": "Caller-supplied archived cbb liteinst-rewrite executable matching the recorded complete hash.",
+      "HELPER_PYTHON": "/usr/bin/python3.9 in the observed command; reproduced at that path.",
+      "ORIGINAL": "Caller-supplied unstripped original ELF matching the recorded complete hash.",
+      "RAW": "Fresh canonical ignored output directory, with command/ captures and artifact/ output.",
+      "REPO": "Canonical repository directory used as cwd; contains the pinned bounded helper.",
+      "SELECTION": "Caller-supplied complete null/heap/unstripped selection matching the recorded complete hash.",
+      "TIMEOUT": "/usr/bin/timeout in the observed command; reproduced at that path."
+    },
+    "roundtrip": "Complete decoded request and outer-command objects; original byte hashes bind retained private records. JSON key order is not preserved.",
+    "rule": "Replace a leading whole role token in each decoded string with the selected canonical coordinate; preserve the remaining suffix. Values are not shell commands or recursive substitutions."
+  },
+  "core_refusal": {
+    "code": 9,
+    "reason": "NoPatchWindow"
+  },
+  "full_74_stage_credit": false,
+  "full_a3": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ],
+    "logical_cpus": 316
+  },
+  "hardware_provenance": {
+    "origin": "preceding closed cbb build",
+    "recaptured_for_this_command": false,
+    "record_sha256": "efd21582e7821282517d86428a8d743ee3d6414df5cf6dcc201a4119540331e9"
+  },
+  "independent_actual_review": {
+    "binding_sha256": "2b291fe5df12f47dc5470f585c30277d290c0bfaffe9be3f2ff23640a5f2a434",
+    "findings": [],
+    "verdict": "CLOSED_TARGETED_CORE_REFUSAL_RECORDS_VERIFIED"
+  },
+  "independent_b1_arena_analysis": {
+    "arena_half_open": [
+      268435456,
+      268500992
+    ],
+    "compatible_targets": 0,
+    "displacement_byte_3": 15,
+    "displacement_max": 264300474,
+    "displacement_min": 264234939,
+    "illegal_bytes": [
+      6,
+      7,
+      14,
+      22,
+      23,
+      30,
+      31,
+      39,
+      47,
+      55,
+      63,
+      96,
+      97,
+      206
+    ],
+    "interior_entry": 4200516,
+    "kind": "separate source and integer arithmetic proof; not a changed search result",
+    "next_pc": 4200517,
+    "oracle_diagnosis_binding_sha256": "4a517418720743988b30753ccbd0052a8b2f79a5d10c016e144bf150bf4a6bda",
+    "oracle_verdict": "DIAGNOSED_POLICY_INFEASIBILITY_NO_ALLOCATOR_MISS_PROVEN",
+    "placement_record_sha256": "589ae2b8cbd74e5cb0f3aeb79b7b9d0f36f37b0728f4b8823150438e2e8a07e3",
+    "required_byte_class": "ILLEGAL",
+    "scope": "Exact declared selection and source policy; not a proof for other placements or selections."
+  },
+  "inputs": {
+    "core": {
+      "bytes": 27871000,
+      "sha256": "2ebb35cf4489856bd77a894480e5d8b219e035d3eff95c9c32e03a9a6e944f8b"
+    },
+    "original": {
+      "bytes": 154608,
+      "sha256": "987b20efe393a0a2ca0293cd5601ba323b3f8292c9f1b5fab8a22b3124d3cff8"
+    },
+    "selection": {
+      "bytes": 694,
+      "sha256": "9c200659f67725b0ddce8f2ca974d8f329de1270d8e37f3018259877547fd4b9"
+    }
+  },
+  "new_reproducer": {
+    "behavior": "Returns the actual child exit code after strict receipt validation; exit 2 remains a failed selection, never a production PASS.",
+    "executed": false,
+    "path": "../../e9-common-app/reproduce_carrier.py",
+    "sha256": "58e368679c61dbc1f0dd50c0c1976838c75251bfda9f5050d223bc58c4085b3f",
+    "tested_revision": null
+  },
+  "outcome": "FAILED_NO_CANDIDATE",
+  "prepared_original_revision": "ab443afc2f4d9b62a9d04d56c4ca78a10e48ec05",
+  "qualification_complete": false,
+  "raw_files": 19,
+  "raw_record_hashes": {
+    "artifact/COMPLETE": {
+      "bytes": 152,
+      "sha256": "64392055be534614dc4b922cae4317014ac6ae58222ac276cb05511ca3f066f0"
+    },
+    "artifact/bundle-index.tsv": {
+      "bytes": 803,
+      "sha256": "27a453cabf395a64ed8bfdf27aa579f087f18cdb9367a4d4a34f9c8e0bd850f4"
+    },
+    "artifact/metadata.li2meta": {
+      "bytes": 368,
+      "sha256": "74c98bca1ff5fc2daaf6af5170aa029962d8d3cb9617d2fc95d5e5b01cd8fc30"
+    },
+    "artifact/report.tsv": {
+      "bytes": 378,
+      "sha256": "d3681b679e9c672180071207ed464dc98ced7f60a3875215ce93cd1442d3c011"
+    },
+    "artifact/site-1.diagnostics.txt": {
+      "bytes": 1506878,
+      "sha256": "856e46bf7321086bf98c41398766e9cf523a643c64bd1cda01caa999e19fad74"
+    },
+    "command/command.json": {
+      "bytes": 852,
+      "sha256": "1ed5ddedd6d0d8e054652e66de68ca2ce60cf051b1b5f8890f11258363752943"
+    },
+    "command/helper.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "command/helper.stdout": {
+      "bytes": 98,
+      "sha256": "01c3055f6236d673f9ba3fec449e68ba828ad00fcfedd5559f5248b6a8437ea1"
+    },
+    "command/parent-closed.json": {
+      "bytes": 243,
+      "sha256": "ad4f4fedbcd4c76fab957f796f78baf210fd172e299a4405fada2905c3052446"
+    },
+    "command/receipt.json": {
+      "bytes": 588,
+      "sha256": "3b3822fba00e29fe9e28af847dc1a86c735b836f5bdd9392b202b4624ec411c3"
+    },
+    "command/request.json": {
+      "bytes": 1139,
+      "sha256": "0998a8505376678985ae9bb1fc3593b63bfb2c69f4e7215d83eb714ce69585c9"
+    },
+    "command/stderr.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "command/stdout.txt": {
+      "bytes": 62,
+      "sha256": "9af82e1e8edbf25cfcb7cdeb813a156a535033346b660e32ffa57f0010a42eb4"
+    },
+    "command/strict-closure.json": {
+      "bytes": 283,
+      "sha256": "366b072c813b586ed4fcdbccf7ca751e5e7eaf7c9196fc5ff69d7503a1916d1a"
+    }
+  },
+  "recorded_b1_search": {
+    "address_policy_refusals": 3328,
+    "classification_complete": false,
+    "domain": "SelectedImages",
+    "examined": 65536,
+    "finite_total": null,
+    "limit": 65536,
+    "omitted_slot": 65536,
+    "omitted_target": 239665152,
+    "permanent_end_exclusive": 402318,
+    "remaining_at_least": 1,
+    "stop": "BudgetLimited"
+  },
+  "schema": 1,
+  "scope": "One complete null-heap-write-unstripped core carrier selection; failed planning only.",
+  "selected_instruction": {
+    "authenticated_window_bytes": 5,
+    "file_offset": 6208,
+    "length": 4,
+    "pc": 4200512
+  },
+  "selected_sites": 1,
+  "source_files": 1518,
+  "source_files_sha256": "f9702218c12ccc4b03f5d5a61a4cff5de0812a7d41be592478f124bf6916e0d6",
+  "tactics": [
+    {
+      "classification_complete": false,
+      "family": "B2",
+      "refusal": "AllocationUnavailable",
+      "refusal_classes": {},
+      "refusal_evidence": {},
+      "site_attempts": 1,
+      "tactic": "GeneralizedPun"
+    },
+    {
+      "classification_complete": false,
+      "family": "B1",
+      "refusal": "AllocationUnavailable",
+      "refusal_classes": {
+        "AddressPolicy": 3328
+      },
+      "refusal_evidence": {
+        "AllocationUnavailable": 3328
+      },
+      "site_attempts": 1,
+      "tactic": "Relocation"
+    },
+    {
+      "classification_complete": false,
+      "family": "T1",
+      "refusal": "NoPatchWindow",
+      "refusal_classes": {
+        "Prerequisite": 3
+      },
+      "refusal_evidence": {
+        "NoPatchWindow": 3
+      },
+      "site_attempts": 3,
+      "tactic": "PrefixedPun"
+    },
+    {
+      "classification_complete": false,
+      "family": "T2",
+      "refusal": "NoPatchWindow",
+      "refusal_classes": {
+        "Prerequisite": 1
+      },
+      "refusal_evidence": {
+        "NoPatchWindow": 1
+      },
+      "site_attempts": 0,
+      "tactic": "SuccessorEviction"
+    },
+    {
+      "classification_complete": false,
+      "family": "T3",
+      "refusal": "NoPatchWindow",
+      "refusal_classes": {},
+      "refusal_evidence": {},
+      "site_attempts": 0,
+      "tactic": "NeighborEviction"
+    }
+  ],
+  "tested_revision": "cbb189d1d17f947c97194842129b66eb68b0531f"
+}

@@ -1,0 +1,30 @@
+{
+  "artifacts.csv": {
+    "bytes": 22397,
+    "sha256": "43218bfcb305988ab6afb68f06303e23b05faa1699a0755b3a3f05e075519149"
+  },
+  "commands.json": {
+    "bytes": 64862,
+    "sha256": "2b6733b5bbf0c85337f6dc9fb58314ed22bc7dd3cc2d3d9aac3b78d261726894"
+  },
+  "gates.csv": {
+    "bytes": 698,
+    "sha256": "44c5b70d2ff1c1e199d85fbea8bae43bb38dbe847b1114f6f4f64281f4b893dc"
+  },
+  "inventories.csv": {
+    "bytes": 1545,
+    "sha256": "200380c662ac2c000a143bdf0464930119294233c932cea3b381915ad4d2d3e4"
+  },
+  "source-files.json": {
+    "bytes": 299916,
+    "sha256": "3f6adab4bcf6e0dcaf626b188e567c4991208a7b9fd2a43e014f1c9ca1f86a1b"
+  },
+  "stages.csv": {
+    "bytes": 4959,
+    "sha256": "d50e7077489ecfe95e3581d336229baa0daf9e5b2d71d03f01338c2a38529821"
+  },
+  "summary.json": {
+    "bytes": 10418,
+    "sha256": "f3d3356928f4293658c34387101cc056f42dba0a3e52c83bf8dd5771a47cad95"
+  }
+}

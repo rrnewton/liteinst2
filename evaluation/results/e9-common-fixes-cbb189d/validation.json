@@ -1,0 +1,107 @@
+{
+  "build_review_sha256": "92d989660d40802a3e5eedd0b14ce8a03106c82e9957a099ee031526c2acce1c",
+  "counts": {
+    "child_starts_without_separate_terminal": 5,
+    "nested_completed_summaries": 5,
+    "new_cases": 14,
+    "outer_counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 4,
+      "measured": 0,
+      "passed": 1685
+    },
+    "outer_groups": 90,
+    "outer_named_cases": 1689,
+    "retained_prior_cases": 1675
+  },
+  "gates": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "name": "fmt",
+      "seconds": 3.4702163441106677,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "name": "clippy",
+      "seconds": 17.860086150001734,
+      "sha256": "a2abd08523f93c461b45975e1310c56cfa6582f64ba249fd46e3eab051895041",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit": 0,
+      "name": "test",
+      "seconds": 324.5544912489131,
+      "sha256": "38838ee87960c146526c4bb0843f5da9f5d7c114783c13959fa685ec62030b46",
+      "timeout_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "exit": 0,
+      "name": "check",
+      "seconds": 1.0165022099390626,
+      "sha256": "38841c1eb9e22ba8305f01d32c32208c3420532ae6004edb161fb91624d3a89c",
+      "timeout_seconds": 180
+    }
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ],
+    "logical_cpus": 316
+  },
+  "log_review_sha256": "f0acc3a82290802f2dedfab2f31f51830f063eecc3cc54e282b138ed0ea4e0da",
+  "qualification_complete": false,
+  "raw_test_log_sha256": "38838ee87960c146526c4bb0843f5da9f5d7c114783c13959fa685ec62030b46",
+  "recipe_parent_seconds": 352.29253662284464,
+  "reproduce": {
+    "argv": [
+      "python3",
+      "-B",
+      "evaluation/required-gates.py",
+      "--repo",
+      "${REPO}",
+      "--output",
+      "${NEW_IGNORED_OUTPUT}"
+    ],
+    "exact_recorded_environments_and_commands": "../e9-common-builds-cbb189d/commands.json",
+    "script": "evaluation/required-gates.py",
+    "script_sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b"
+  },
+  "schema": 1,
+  "scope": "Workspace build/test validation; nested child summaries remain separate. No new rewritten application or paired architectural-equivalence result.",
+  "tested_revision": "cbb189d1d17f947c97194842129b66eb68b0531f"
+}

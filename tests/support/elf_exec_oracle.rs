@@ -19,6 +19,15 @@ use std::path::{Path, PathBuf};
 #[path = "elf_exec_tactics.rs"]
 pub mod tactics;
 
+#[path = "e9_common_app.rs"]
+pub mod common_app;
+
+#[path = "e9_common_image.rs"]
+// This shared support module also compiles in workspace test crates without
+// their own MSRV; keep Clippy's syntax suggestions within the root crate's 1.85.
+#[clippy::msrv = "1.85"]
+pub mod common_image;
+
 #[path = "elf_exec_provider.rs"]
 mod provider;
 

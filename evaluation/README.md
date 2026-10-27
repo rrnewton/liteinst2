@@ -230,3 +230,24 @@ The [two-return native leaf record at `94a1fd3`](native-two-returns-94a1fd3.md) 
 The [grouped successor-chain result at `7520688`](chain-grouping-7520688.md) records 108 full-state comparisons and four virtual pages sharing one sealed backing page, with collision rollback and writable-upgrade refusals. The required workspace run passed 1,056 tests with four unchanged ignores. The [recipe](chain-grouping/README.md) runs the unchanged gates once; the result supports one bounded slice of claim 4.
 
 The [normal kernel-exec ELF frontend record](elf-frontend-fc83079.md) joins exact-source workspace gates, four B1 executable candidates, 24 full-state traces and three separate static-parity inventories at `fc830799`. Its [development history](elf-exec-development-attempts.md) preserves all earlier failures and the incomplete control postcheck. This supports bounded partial claim 4; full A3 and claims 1–3 remain open.
+
+The [compiled common-corpus preparation](e9-common-preparation-ab443af.md)
+records 16 ordinary original executions and six required refusals at `ab443af`.
+All eight datasets pass for both stripped and unstripped inputs. The 30-stage
+recipe and independently reviewed CSV/JSON establish original preparation;
+rewritten execution and complete site retention remain open.
+
+The [E9 adapter and comparator controls](e9-sites-controls-e57a72c.md) preserve
+two separate synthetic suites at `e57a72c`, each with three accepted cases and
+24 required refusals. The reviewed replay script and actual CSV/JSON distinguish
+synthetic structural checks from producer and application execution.
+
+The [compiled-corpus reproduction sequence](e9-common-app/PIPELINE.md) links
+the fixed preparation, complete build/inventory, original observation and
+core/E9 production recipes, with their separate revisions and current execution
+limits.
+
+The [allocation-isolation regression](allocation-parallel-8ff87a0.md) records
+seven complete default-parallel invocations and the four separate required gates
+at `8ff87a0`. All original cases and assertions remain required; child terminal
+summaries stay separate. The reproducible JSON/CSV support partial claim 4.

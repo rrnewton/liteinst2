@@ -1,0 +1,179 @@
+{
+  "allocation_regressions": [
+    {
+      "commands": [
+        "parallel-prefixed-pun-1",
+        "parallel-prefixed-pun-2",
+        "parallel-prefixed-pun-3",
+        "parallel-workspace"
+      ],
+      "outer_inclusions": 4,
+      "status": "PASS",
+      "test": "native_state_covers_every_prefixed_pun_and_original_successor"
+    },
+    {
+      "commands": [
+        "parallel-library-1",
+        "parallel-library-2",
+        "parallel-library-3",
+        "parallel-workspace"
+      ],
+      "outer_inclusions": 4,
+      "status": "PASS",
+      "test": "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners"
+    },
+    {
+      "commands": [
+        "parallel-library-1",
+        "parallel-library-2",
+        "parallel-library-3",
+        "parallel-workspace"
+      ],
+      "outer_inclusions": 4,
+      "status": "PASS",
+      "test": "trampoline::tests::dropping_staged_image_releases_its_exact_mapping"
+    }
+  ],
+  "commands": [
+    {
+      "command": "required-test",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 4,
+        "measured": 0,
+        "passed": 1994
+      },
+      "log_sha256": "c73b61254ae27a8760c604e862a81e5dfd6660ea76772b9e4a82bbcd10694233",
+      "outer_groups": 91,
+      "outer_named_cases": 1998,
+      "review_sha256": "6580bd665e92b2708ad12af70abf93d32995c49b43d06147fadd965adf6992c6"
+    },
+    {
+      "command": "serial-launch",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 865
+      },
+      "log_sha256": "67426d023dc8bb178f164a903f0ed264692eb7e7bc4ea0fea443a956fdcfb914",
+      "outer_groups": 27,
+      "outer_named_cases": 865,
+      "review_sha256": "ccdb86fac5c8cb3539ada41c6cc5a6ee9030b359cfac18e044c82cade2d0ccd7"
+    },
+    {
+      "command": "parallel-library-1",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 1,
+        "measured": 0,
+        "passed": 207
+      },
+      "log_sha256": "31bdc8e00ea9d1d7bb47948daf6246214aeddd52e88f3938fff83986431c61ba",
+      "outer_groups": 1,
+      "outer_named_cases": 208,
+      "review_sha256": "2fc8a0efc50a1c271c73f7dcb2284bc3ff51532615ce7b1d0a8e36562ba3895f"
+    },
+    {
+      "command": "parallel-library-2",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 1,
+        "measured": 0,
+        "passed": 207
+      },
+      "log_sha256": "e61a24e45c03b1f5edce7be1d7294036b6b01675185e9d7543aca9aaec1a1a5f",
+      "outer_groups": 1,
+      "outer_named_cases": 208,
+      "review_sha256": "2fc8a0efc50a1c271c73f7dcb2284bc3ff51532615ce7b1d0a8e36562ba3895f"
+    },
+    {
+      "command": "parallel-library-3",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 1,
+        "measured": 0,
+        "passed": 207
+      },
+      "log_sha256": "7b5ea7e8d97a877a430958808c91fc6125880a931f5b2f4156d90ab701dfec90",
+      "outer_groups": 1,
+      "outer_named_cases": 208,
+      "review_sha256": "2fc8a0efc50a1c271c73f7dcb2284bc3ff51532615ce7b1d0a8e36562ba3895f"
+    },
+    {
+      "command": "parallel-prefixed-pun-1",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 27
+      },
+      "log_sha256": "732584d84f426c9b9fbadd238119f5a6d47a22822cf97af5b97b9d109be6de64",
+      "outer_groups": 1,
+      "outer_named_cases": 27,
+      "review_sha256": "2fc8a0efc50a1c271c73f7dcb2284bc3ff51532615ce7b1d0a8e36562ba3895f"
+    },
+    {
+      "command": "parallel-prefixed-pun-2",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 27
+      },
+      "log_sha256": "575fe5736b39dbee00a26a4d93f45f03b255ccc067ae00f67ee5806e717ce1c7",
+      "outer_groups": 1,
+      "outer_named_cases": 27,
+      "review_sha256": "2fc8a0efc50a1c271c73f7dcb2284bc3ff51532615ce7b1d0a8e36562ba3895f"
+    },
+    {
+      "command": "parallel-prefixed-pun-3",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 27
+      },
+      "log_sha256": "d517972ec0095dd503a8a9152074881ce2b61623a7422fd11b74ddca2eda7750",
+      "outer_groups": 1,
+      "outer_named_cases": 27,
+      "review_sha256": "2fc8a0efc50a1c271c73f7dcb2284bc3ff51532615ce7b1d0a8e36562ba3895f"
+    },
+    {
+      "command": "parallel-workspace",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 4,
+        "measured": 0,
+        "passed": 1994
+      },
+      "log_sha256": "b3f5ff78eb739cbc082a4c03db799410e76382b2b88a4de32d7579725de6c0c5",
+      "outer_groups": 91,
+      "outer_named_cases": 1998,
+      "review_sha256": "2fc8a0efc50a1c271c73f7dcb2284bc3ff51532615ce7b1d0a8e36562ba3895f"
+    }
+  ],
+  "limits": [
+    "Repeated commands overlap and are not distinct-case totals.",
+    "Named passes include source-enforced child cleanup; no separate status-102 process receipt is invented.",
+    "No full A3 or architectural-equivalence claim."
+  ],
+  "nested_results_aggregated": false,
+  "ordinary_main_controls": {
+    "controls": 3,
+    "libtest_pass_credit": 0,
+    "trajectories": 4
+  },
+  "schema": 1,
+  "scope": "Independent saved-log outer case accounting; separate from command-result collection.",
+  "tested_revision": "41a236dff00295a70b5c4cf2982eb91359e5b2c1"
+}

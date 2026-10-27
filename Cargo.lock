@@ -119,6 +119,7 @@ dependencies = [
 name = "liteinst-rewrite"
 version = "0.1.0"
 dependencies = [
+ "iced-x86",
  "liteinst-artifact",
  "liteinst2",
 ]

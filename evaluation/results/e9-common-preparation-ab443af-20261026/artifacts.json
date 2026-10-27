@@ -1,0 +1,280 @@
+{
+  "artifacts": {
+    "stripped": {
+      "bytes": 150472,
+      "sha256": "1c7c66c58376c98df1dc3e5fd76d3c22a82ad7e96ef7aee1543a7c5b90a6f529"
+    },
+    "unstripped": {
+      "bytes": 154608,
+      "sha256": "987b20efe393a0a2ca0293cd5601ba323b3f8292c9f1b5fab8a22b3124d3cff8"
+    }
+  },
+  "metadata": {
+    "compile.d": {
+      "bytes": 3470,
+      "sha256": "3ed1a306ab3a3b50a4cfac963282efc58729e3c2f24b8bc75bdb232980301962"
+    },
+    "link.map": {
+      "bytes": 23874,
+      "sha256": "36d10158722c82f63677af02acca519ff80638df7f3149ca39667da870c8b020"
+    },
+    "stripped-nm/stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stripped-readelf/stdout.txt": {
+      "bytes": 7684,
+      "sha256": "495ad0da89d72102ed40bf7289920c1d211e1f832f5f85a4e0d65232dc26079d"
+    },
+    "unstripped-nm/stdout.txt": {
+      "bytes": 1401,
+      "sha256": "3b273da8293eb561acc6e7f7c9cff20a26d7aea15d21d177d9e4fcf69fa555da"
+    },
+    "unstripped-readelf/stdout.txt": {
+      "bytes": 15488,
+      "sha256": "3ea87aea189431462dbafee2a08590064bbed8996c75fc79caf0935b74f13277"
+    }
+  },
+  "program_headers": [
+    [
+      6,
+      4,
+      64,
+      4194368,
+      4194368,
+      728,
+      728,
+      8
+    ],
+    [
+      3,
+      4,
+      792,
+      4195096,
+      4195096,
+      28,
+      28,
+      1
+    ],
+    [
+      1,
+      4,
+      0,
+      4194304,
+      4194304,
+      2224,
+      2224,
+      4096
+    ],
+    [
+      1,
+      5,
+      4096,
+      4198400,
+      4198400,
+      2641,
+      2641,
+      4096
+    ],
+    [
+      1,
+      4,
+      8192,
+      4202496,
+      4202496,
+      3612,
+      3612,
+      4096
+    ],
+    [
+      1,
+      6,
+      15872,
+      4210176,
+      4210176,
+      131928,
+      131984,
+      4096
+    ],
+    [
+      2,
+      6,
+      15888,
+      4210192,
+      4210192,
+      464,
+      464,
+      8
+    ],
+    [
+      4,
+      4,
+      824,
+      4195128,
+      4195128,
+      32,
+      32,
+      8
+    ],
+    [
+      4,
+      4,
+      856,
+      4195160,
+      4195160,
+      68,
+      68,
+      4
+    ],
+    [
+      1685382483,
+      4,
+      824,
+      4195128,
+      4195128,
+      32,
+      32,
+      8
+    ],
+    [
+      1685382480,
+      4,
+      11196,
+      4205500,
+      4205500,
+      116,
+      116,
+      4
+    ],
+    [
+      1685382481,
+      6,
+      0,
+      0,
+      0,
+      0,
+      0,
+      16
+    ],
+    [
+      1685382482,
+      4,
+      15872,
+      4210176,
+      4210176,
+      512,
+      512,
+      1
+    ]
+  ],
+  "schema": 1,
+  "slices": [
+    {
+      "bytes": 2371,
+      "file_offset": "0x1100",
+      "name": "text",
+      "owner_kind": "section",
+      "sha256": "3a580b24a64b9ed0f08bfb0219983e5ede4227101182beb67f326b860161095c",
+      "virtual_address": "0x401100"
+    },
+    {
+      "bytes": 1,
+      "file_offset": "0x16b0",
+      "name": "li2_after_sort",
+      "owner_kind": "function",
+      "sha256": "ae3f4619b0413d70d3004b9131c3752153074e45725be13b9a148978895e359e",
+      "virtual_address": "0x4016b0"
+    },
+    {
+      "bytes": 5,
+      "file_offset": "0x1840",
+      "name": "li2_array_store",
+      "owner_kind": "function",
+      "sha256": "8e33a6be5d373fe9df36d49b0a4cb90321c38a99369422c92831df6c28760728",
+      "virtual_address": "0x401840"
+    },
+    {
+      "bytes": 1,
+      "file_offset": "0x16a0",
+      "name": "li2_before_sort",
+      "owner_kind": "function",
+      "sha256": "ae3f4619b0413d70d3004b9131c3752153074e45725be13b9a148978895e359e",
+      "virtual_address": "0x4016a0"
+    },
+    {
+      "bytes": 129,
+      "file_offset": "0x18d0",
+      "name": "li2_heap_sort",
+      "owner_kind": "function",
+      "sha256": "e840107b12c5fa0a59fc26e0a113c49b1b157491e1039bc697e1d30368f5b4fa",
+      "virtual_address": "0x4018d0"
+    },
+    {
+      "bytes": 131144,
+      "file_offset": "0x40a0",
+      "name": "li2_journal",
+      "owner_kind": "object",
+      "sha256": "8b6354acf32af11c000bd77d5efc7af1ada6860ddf9cf383ebeb8a24314260b0",
+      "virtual_address": "0x4040a0"
+    },
+    {
+      "bytes": 1,
+      "file_offset": "0x1960",
+      "name": "li2_null_hook",
+      "owner_kind": "function",
+      "sha256": "ae3f4619b0413d70d3004b9131c3752153074e45725be13b9a148978895e359e",
+      "virtual_address": "0x401960"
+    },
+    {
+      "bytes": 211,
+      "file_offset": "0x1970",
+      "name": "li2_record_hook",
+      "owner_kind": "function",
+      "sha256": "b100f4e43fbad5143a8986b187979e2f05d122a2c30549f36e1f5f23501c96f9",
+      "virtual_address": "0x401970"
+    },
+    {
+      "bytes": 88,
+      "file_offset": "0x24100",
+      "name": "li2_run",
+      "owner_kind": "object",
+      "sha256": "800928f90d558dd36cdb10f4828ed7b2e8f390b1eee0bedcc79800f4cf2cc359",
+      "virtual_address": "0x424100"
+    },
+    {
+      "bytes": 127,
+      "file_offset": "0x1850",
+      "name": "li2_sift_down",
+      "owner_kind": "function",
+      "sha256": "c4f371228e7f5a5ceec925101dc051f93676e3b07515637fa75d31a1820e410f",
+      "virtual_address": "0x401850"
+    },
+    {
+      "bytes": 1197,
+      "file_offset": "0x1100",
+      "name": "main",
+      "owner_kind": "function",
+      "sha256": "835dd66505d340de7e5bfb193fcaa02719249a4507c4a49406bdd8060f5df2bc",
+      "virtual_address": "0x401100"
+    }
+  ],
+  "stripping": "Exact LOAD bytes except e_shoff/e_shnum/e_shstrndx; all program headers and section-entry width unchanged.",
+  "tools": {
+    "/usr/bin/gcc": {
+      "resolved": "/usr/bin/gcc",
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "/usr/bin/nm": {
+      "resolved": "/usr/bin/nm",
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "/usr/bin/readelf": {
+      "resolved": "/usr/bin/readelf",
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "/usr/bin/strip": {
+      "resolved": "/usr/bin/strip",
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    }
+  }
+}

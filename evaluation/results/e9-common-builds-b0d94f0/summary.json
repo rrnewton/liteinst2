@@ -1,0 +1,256 @@
+{
+  "artifact_hash_scope": "Copied from reviewed saved archive records; this collector does not reopen products, target files or binaries.",
+  "attempted_revisions_aggregated": false,
+  "attempts": [
+    {
+      "archive_record_sha256": "cb94e82d1922d75819d18d53f071cda9157b27c3ccbf98e08131594b204c47f9",
+      "config_scope": {
+        "consumed_configuration_attested": false,
+        "denied_lookup_is_absent": false,
+        "invocation_cwd": "${REPO}",
+        "lookup": "cwd and ancestors plus explicit CARGO_HOME; no changed compiler cwd",
+        "scope": "Observed lookup identities only; denied content remains unknown and a later open/read denial fails."
+      },
+      "configs_sha256": "067cf135a07ab682941106ade12712589cd45404260bf8fdbcf405580c2dd030",
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ],
+        "logical_cpus": 316
+      },
+      "id": "historical-8ff",
+      "independent_review_references_sha256": "69abd5899099413f72c85e08b473b6c44a89037780d4945c14f6318e49b2edcb",
+      "independent_review_sha256": "b01986fc1eebb782cad159eac41e28f7465e86cd54120f657eb9303f39501cd4",
+      "independent_review_verdict": "CLOSED_BUILD_AND_STATIC_INVENTORIES_PASS_EXECUTION_RECORD_SCOPE",
+      "parent_closure_sha256": "9f361dcd3320a31a24be91594acfc4c8d6d620f02f80c69b867092209b49fb7c",
+      "raw_inputs_sha256": "957fab84e46b91e9a07cf1c1e80a456e66ac46265c0631095b81be59f16e4e51",
+      "raw_summary_sha256": "545808866e571954e7229264db810cce865d70c64b57ea34248c1765a6d9d7d0",
+      "recorded_artifacts": 88,
+      "script_hashes": {
+        "evaluation/e9-common-app/build_inventory.py": "01a500aa807b131c94d158efb95a625eb777b11846013cd14fbddf33f63ee1b9",
+        "evaluation/required-gates.py": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+        "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+      },
+      "source_files": 1499,
+      "source_map_sha256": "1df63515ceb2c637ebce5a926948cbe0e846f5d8dd70ff2d021f2a895540b376",
+      "source_record_sha256": "c270d5072839577e64030d3bfe10952ed8afa54e560e6a366f9ace18242d9d89",
+      "summary": {
+        "archive_scope": "Cargo-reported files and selected depfile/source joins only; full archive review and caller admission remain separate.",
+        "cells_complete": 8,
+        "completed": true,
+        "failure": null,
+        "last_phase": "inventory-journal-heap-write-stripped",
+        "native_application_runs": 0,
+        "observed_stages": 12,
+        "original_execution_credit": false,
+        "planned_stages": [
+          "required",
+          "native-compile",
+          "common-sites-compile",
+          "target",
+          "inventory-null-jump-site-unstripped",
+          "inventory-null-jump-site-stripped",
+          "inventory-null-heap-write-unstripped",
+          "inventory-null-heap-write-stripped",
+          "inventory-journal-jump-site-unstripped",
+          "inventory-journal-jump-site-stripped",
+          "inventory-journal-heap-write-unstripped",
+          "inventory-journal-heap-write-stripped"
+        ],
+        "preparation_revision": "ab443afc2f4d9b62a9d04d56c4ca78a10e48ec05",
+        "qualification_complete": false,
+        "revision": "8ff87a0a14c9348610c843063516c79190f6dede",
+        "rewriting_runs": 0,
+        "schema": 1,
+        "selected_tools_before_after_equal": true,
+        "source_before_after_equal": true,
+        "source_scope": "Current exact clean committed build and static inventory; prior original preparation remains a separate revision.",
+        "target_observation_only": true,
+        "unrun_stages": []
+      },
+      "tested_revision": "8ff87a0a14c9348610c843063516c79190f6dede",
+      "tools_sha256": "8adf642910f2a0dccc697a77bfb8f91819aa838876f8bb09d7ded36abe908440"
+    },
+    {
+      "archive_record_sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356",
+      "config_scope": {
+        "consumed_configuration_attested": false,
+        "denied_lookup_is_absent": false,
+        "invocation_cwd": "${REPO}",
+        "lookup": "cwd and ancestors plus explicit CARGO_HOME; no changed compiler cwd",
+        "scope": "Observed lookup identities only; denied content remains unknown and a later open/read denial fails."
+      },
+      "configs_sha256": "067cf135a07ab682941106ade12712589cd45404260bf8fdbcf405580c2dd030",
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ],
+        "logical_cpus": 316
+      },
+      "id": "failed-c956",
+      "independent_review_references_sha256": "78f609e676d3ce23f7a933158c108d29cc691275027258dd8491b9d69f132e84",
+      "independent_review_sha256": "8440a10badb201ec841c39ef5cf0fa8c276e4f1679ff8e151d2833a1bf8adaac",
+      "independent_review_verdict": "FAILED_BUILD_RETAINED_NO_LATER_STAGE_CREDIT",
+      "parent_closure_sha256": "0c54204486f4e140d94e7e388a2d9d05426be016bf0403e9ff8d4c51f5b688b2",
+      "raw_inputs_sha256": "957fab84e46b91e9a07cf1c1e80a456e66ac46265c0631095b81be59f16e4e51",
+      "raw_summary_sha256": "d7d6c463ecc234ec0ccc70511a19558ef2bc2d7d38c861830fd0890fe1ed0f16",
+      "recorded_artifacts": 0,
+      "script_hashes": {
+        "evaluation/e9-common-app/build_inventory.py": "01a500aa807b131c94d158efb95a625eb777b11846013cd14fbddf33f63ee1b9",
+        "evaluation/required-gates.py": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+        "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+      },
+      "source_files": 1512,
+      "source_map_sha256": "e9282089da19f8a1050f5ab3543d94a209ea00eea66a7f216288a924427ae2b0",
+      "source_record_sha256": "4d3b5e8899cc295375eac37c1ff4ef93267af3b809a59289983092304f157cb2",
+      "summary": {
+        "archive_scope": "Cargo-reported files and selected depfile/source joins only; full archive review and caller admission remain separate.",
+        "cells_complete": 0,
+        "completed": false,
+        "failure": {
+          "message": "failed stage retained; later stages unrun",
+          "phase": "required",
+          "type": "AssertionError"
+        },
+        "last_phase": "required",
+        "native_application_runs": 0,
+        "observed_stages": 1,
+        "original_execution_credit": false,
+        "planned_stages": [
+          "required",
+          "native-compile",
+          "common-sites-compile",
+          "target",
+          "inventory-null-jump-site-unstripped",
+          "inventory-null-jump-site-stripped",
+          "inventory-null-heap-write-unstripped",
+          "inventory-null-heap-write-stripped",
+          "inventory-journal-jump-site-unstripped",
+          "inventory-journal-jump-site-stripped",
+          "inventory-journal-heap-write-unstripped",
+          "inventory-journal-heap-write-stripped"
+        ],
+        "preparation_revision": "ab443afc2f4d9b62a9d04d56c4ca78a10e48ec05",
+        "qualification_complete": false,
+        "revision": "c95662fed9cc139d556ad42c80d38d9b24189a6e",
+        "rewriting_runs": 0,
+        "schema": 1,
+        "selected_tools_before_after_equal": true,
+        "source_before_after_equal": true,
+        "source_scope": "Current exact clean committed build and static inventory; prior original preparation remains a separate revision.",
+        "target_observation_only": true,
+        "unrun_stages": [
+          "native-compile",
+          "common-sites-compile",
+          "target",
+          "inventory-null-jump-site-unstripped",
+          "inventory-null-jump-site-stripped",
+          "inventory-null-heap-write-unstripped",
+          "inventory-null-heap-write-stripped",
+          "inventory-journal-jump-site-unstripped",
+          "inventory-journal-jump-site-stripped",
+          "inventory-journal-heap-write-unstripped",
+          "inventory-journal-heap-write-stripped"
+        ]
+      },
+      "tested_revision": "c95662fed9cc139d556ad42c80d38d9b24189a6e",
+      "tools_sha256": "8adf642910f2a0dccc697a77bfb8f91819aa838876f8bb09d7ded36abe908440"
+    },
+    {
+      "archive_record_sha256": "3c29075ccb5ca0ddff602da1b45a8d7a4e8a80c4da7a7a3efc858a0edb8bcd27",
+      "config_scope": {
+        "consumed_configuration_attested": false,
+        "denied_lookup_is_absent": false,
+        "invocation_cwd": "${REPO}",
+        "lookup": "cwd and ancestors plus explicit CARGO_HOME; no changed compiler cwd",
+        "scope": "Observed lookup identities only; denied content remains unknown and a later open/read denial fails."
+      },
+      "configs_sha256": "067cf135a07ab682941106ade12712589cd45404260bf8fdbcf405580c2dd030",
+      "hardware": {
+        "architecture": "x86_64",
+        "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+        "host_label": "AMD EPYC Zen 5 dev host",
+        "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+        "libc": [
+          "glibc",
+          "2.34"
+        ],
+        "logical_cpus": 316
+      },
+      "id": "current",
+      "independent_review_references_sha256": "fd86dbfb3e49aeef3c29e810f63d7162f21c07a3ec986074ff36ea651f211a88",
+      "independent_review_sha256": "2396cf4c441a2944845d9d841c746c898a8c609beb20626cbfb6a83b0d25bf1b",
+      "independent_review_verdict": "CLOSED_BUILD_AND_STATIC_INVENTORIES_PASS_EXECUTION_RECORD_SCOPE",
+      "parent_closure_sha256": "ebb6c7e6b9364bcb238009c80b497d1368ec9cd2d904f6c5c9bd064ad252ddc8",
+      "raw_inputs_sha256": "957fab84e46b91e9a07cf1c1e80a456e66ac46265c0631095b81be59f16e4e51",
+      "raw_summary_sha256": "4e4cfc97f888b3b84cc2ff7d9bab3e1b841021bf82545b99ec9593672dad2a8c",
+      "recorded_artifacts": 88,
+      "script_hashes": {
+        "evaluation/e9-common-app/build_inventory.py": "01a500aa807b131c94d158efb95a625eb777b11846013cd14fbddf33f63ee1b9",
+        "evaluation/required-gates.py": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+        "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+      },
+      "source_files": 1512,
+      "source_map_sha256": "27d748fe502c9310e5b7132859dc597e6fab2bceb3b3859ef35adfd1d70cee7e",
+      "source_record_sha256": "dbd47e02af7d926106be7b14de11cab8254dd970211cbf6d62c7d02a957b260a",
+      "summary": {
+        "archive_scope": "Cargo-reported files and selected depfile/source joins only; full archive review and caller admission remain separate.",
+        "cells_complete": 8,
+        "completed": true,
+        "failure": null,
+        "last_phase": "inventory-journal-heap-write-stripped",
+        "native_application_runs": 0,
+        "observed_stages": 12,
+        "original_execution_credit": false,
+        "planned_stages": [
+          "required",
+          "native-compile",
+          "common-sites-compile",
+          "target",
+          "inventory-null-jump-site-unstripped",
+          "inventory-null-jump-site-stripped",
+          "inventory-null-heap-write-unstripped",
+          "inventory-null-heap-write-stripped",
+          "inventory-journal-jump-site-unstripped",
+          "inventory-journal-jump-site-stripped",
+          "inventory-journal-heap-write-unstripped",
+          "inventory-journal-heap-write-stripped"
+        ],
+        "preparation_revision": "ab443afc2f4d9b62a9d04d56c4ca78a10e48ec05",
+        "qualification_complete": false,
+        "revision": "b0d94f009196b4dea433ea2a5b267fa94f9512b0",
+        "rewriting_runs": 0,
+        "schema": 1,
+        "selected_tools_before_after_equal": true,
+        "source_before_after_equal": true,
+        "source_scope": "Current exact clean committed build and static inventory; prior original preparation remains a separate revision.",
+        "target_observation_only": true,
+        "unrun_stages": []
+      },
+      "tested_revision": "b0d94f009196b4dea433ea2a5b267fa94f9512b0",
+      "tools_sha256": "8adf642910f2a0dccc697a77bfb8f91819aa838876f8bb09d7ded36abe908440"
+    }
+  ],
+  "collector_revision": "cbb189d1d17f947c97194842129b66eb68b0531f",
+  "collector_sha256": "a234065e7f0829c844892d096c7782d03560955929f6f653ebdaf4bd16052c32",
+  "command_inverse": "Complete decoded objects under literal symbolic path roles. Original JSON key order is not preserved; raw file hashes bind original bytes.",
+  "failed_c956_history": "fmt passed; Clippy exited 101 on three collapsible_if diagnostics in the shared seed/image helpers as consumed by exception-oracle. Test/check and the other eleven build stages were unrun. Later fixes/results do not change this outcome.",
+  "input_index_sha256": "3eef9eb145af9d2b2510bbeedc19ee39d948096b849d41d1fbcb01e7da647b5e",
+  "qualification_complete": false,
+  "raw_logs_and_products_private": true,
+  "schema": 1,
+  "scope": "Build/gate/static-inventory reporting only. Artifact bytes and full log/content validation remain in the separately identified independent reviews.",
+  "source_map_hash_semantics": "SHA256 of sorted compact JSON path-to-{bytes,mode,sha256}, without a trailing newline; identical to the build archive source digest.",
+  "source_or_runtime_result_transfer": false,
+  "state_equivalence": false
+}

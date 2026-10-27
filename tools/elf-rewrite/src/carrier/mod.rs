@@ -137,7 +137,7 @@ pub enum Error {
     Elf(elf64::Error),
     /// This staged writer does not implement PIE/DSO load-bias qualification.
     UnsupportedObjectType,
-    /// Interpreter/dynamic/property qualification is deliberately unimplemented.
+    /// This segment or GNU property is outside the selected writer profile.
     UnsupportedSegment { index: usize, kind: SegmentType },
     /// Original dynamic tables or loader write ownership are not qualified.
     Dynamic(dynamic::Error),
@@ -240,8 +240,10 @@ pub fn append_read_only_carrier(
 ///
 /// This preserves original dynamic/interpreter hooks. It does not prove PIC,
 /// hook readiness, CPU/CET compatibility, unwind, or actual loader behavior.
-/// All new pages must follow the complete original load-page span. GNU_PROPERTY,
-/// text relocations, COPY and unknown relocation formats remain typed refusals.
+/// All new pages must follow the complete original load-page span. Recognized
+/// x86 ISA property notes remain literal. CET feature requests, text relocations
+/// and unknown relocation formats remain typed refusals. COPY is limited to
+/// bounded ET_EXEC/DT_RELA destination reservations.
 pub fn append_carrier_with_images(
     input: &Elf64<'_>,
     request: ImageRequest<'_>,
@@ -275,9 +277,15 @@ fn append_internal(
         return Err(Error::InvalidTargetPolicy);
     }
     input.check_load_page_congruence(policy.page_size)?;
+    if extended {
+        validate_no_cet_properties(input)?;
+    }
     for item in input.program_headers() {
-        if item.kind == SegmentType::GnuProperty
-            || (!extended && matches!(item.kind, SegmentType::Interpreter | SegmentType::Dynamic))
+        if !extended
+            && matches!(
+                item.kind,
+                SegmentType::GnuProperty | SegmentType::Interpreter | SegmentType::Dynamic
+            )
         {
             return Err(Error::UnsupportedSegment {
                 index: item.index,
@@ -723,6 +731,76 @@ fn validate_interpreter(input: &Elf64<'_>, first_load_index: usize) -> Result<()
         if !mapping.flags.readable() || mapping.virtual_range.start() != item.vaddr {
             return Err(Error::InvalidInterpreter);
         }
+    }
+    Ok(())
+}
+
+/// Preserve bounded x86 ISA requirements without admitting CET instrumentation.
+///
+/// GNU_PROPERTY_X86_ISA_1_NEEDED is a loader requirement, not a declaration that
+/// emitted code is CET compatible. Its known baseline/v2/v3/v4 bits stay literal
+/// in the original read-only mapping. A FEATURE_1_AND record is accepted only
+/// with no feature bits: adding an IBT/SHSTK-compatible image needs a separate
+/// emitter/entry contract. This does not qualify hardware or dynamic loading.
+fn validate_no_cet_properties(input: &Elf64<'_>) -> Result<(), Error> {
+    let items: Vec<_> = input.segments(SegmentType::GnuProperty).collect();
+    let Some(item) = items.first() else {
+        return Ok(());
+    };
+    let refused = || Error::UnsupportedSegment {
+        index: item.index,
+        kind: SegmentType::GnuProperty,
+    };
+    // At most the two supported four-byte properties, with ELF64's eight-byte
+    // property alignment. Multiple notes, unknown records and padding are not
+    // silently discarded.
+    if items.len() != 1
+        || !matches!(item.file_size, 32 | 48)
+        || item.memory_size != item.file_size
+        || item.flags.0 != 4
+        || item.alignment != 8
+        || item.offset.0 % 8 != 0
+        || item.vaddr.0 % 8 != 0
+    {
+        return Err(refused());
+    }
+    let range = item.file_range()?;
+    let mapping = input.file_to_virtual(range.start(), range.len())?;
+    if mapping.flags.0 != 4 || mapping.virtual_range.start() != item.vaddr {
+        return Err(refused());
+    }
+    // The note must not alias the ELF header or the program table that this
+    // writer relocates. Source edits/dependencies separately require RX owners.
+    let header = FileRange::checked(FileOffset(0), 64)?;
+    let table = FileRange::checked(
+        input.header().program_offset,
+        u64::from(input.header().program_count) * 56,
+    )?;
+    if intersects(range, header) || intersects(range, table) {
+        return Err(refused());
+    }
+    let bytes = &input.bytes()[host_index(range.start().0)?..host_index(range.end().0)?];
+    let word = |at| u32::from_le_bytes(bytes[at..at + 4].try_into().unwrap());
+    if word(0) != 4
+        || u64::from(word(4)) != item.file_size - 16
+        || word(8) != 5 // NT_GNU_PROPERTY_TYPE_0
+        || &bytes[12..16] != b"GNU\0"
+    {
+        return Err(refused());
+    }
+    let mut previous = None;
+    for at in (16..bytes.len()).step_by(16) {
+        let kind = word(at);
+        if previous.is_some_and(|old| kind <= old) || word(at + 4) != 4 || word(at + 12) != 0 {
+            return Err(refused());
+        }
+        let value = word(at + 8);
+        match kind {
+            0xc000_8002 if value & !0xf == 0 => {} // X86_ISA_1_NEEDED
+            0xc000_0002 if value == 0 => {}        // X86_FEATURE_1_AND, no CET
+            _ => return Err(refused()),
+        }
+        previous = Some(kind);
     }
     Ok(())
 }

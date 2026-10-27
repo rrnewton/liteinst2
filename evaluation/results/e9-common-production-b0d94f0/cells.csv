@@ -1,0 +1,9 @@
+name,hook,style,variant,selected_sites,core_status,core_candidate_present,stock-algorithm_status,stock-algorithm_phase,stock-algorithm_candidate_bytes,stock-algorithm_admitted_sites,bootstrap-patched-reference_status,bootstrap-patched-reference_phase,bootstrap-patched-reference_candidate_bytes,bootstrap-patched-reference_admitted_sites
+null-jump-site-unstripped,null,jump-site,unstripped,9,FAILED,False,FAILED,core-report,169109,9,FAILED,adapter,169121,
+null-jump-site-stripped,null,jump-site,stripped,9,FAILED,False,FAILED,core-report,165013,9,FAILED,adapter,165025,
+null-heap-write-unstripped,null,heap-write,unstripped,1,FAILED,False,FAILED,core-report,164881,1,FAILED,adapter,164893,
+null-heap-write-stripped,null,heap-write,stripped,1,FAILED,False,FAILED,core-report,160785,1,FAILED,adapter,160797,
+journal-jump-site-unstripped,journal,jump-site,unstripped,9,FAILED,False,FAILED,core-report,173310,9,FAILED,adapter,173322,
+journal-jump-site-stripped,journal,jump-site,stripped,9,FAILED,False,FAILED,core-report,169214,9,FAILED,adapter,169226,
+journal-heap-write-unstripped,journal,heap-write,unstripped,1,FAILED,False,FAILED,core-report,173188,1,FAILED,adapter,173200,
+journal-heap-write-stripped,journal,heap-write,stripped,1,FAILED,False,FAILED,core-report,169092,1,FAILED,adapter,169104,

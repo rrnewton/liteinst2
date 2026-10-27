@@ -1,0 +1,9 @@
+name,hook,style,variant,selected_sites,core_status,core_candidate_present,stock-algorithm_status,stock-algorithm_phase,stock-algorithm_candidate_bytes,stock-algorithm_admitted_sites,bootstrap-patched-reference_status,bootstrap-patched-reference_phase,bootstrap-patched-reference_candidate_bytes,bootstrap-patched-reference_admitted_sites
+null-jump-site-unstripped,null,jump-site,unstripped,9,FAILED,False,FAILED,,169109,9,FAILED,,169121,9
+null-jump-site-stripped,null,jump-site,stripped,9,FAILED,False,FAILED,,165013,9,FAILED,,165025,9
+null-heap-write-unstripped,null,heap-write,unstripped,1,PASS,True,PASS,,164881,1,PASS,,164893,1
+null-heap-write-stripped,null,heap-write,stripped,1,PASS,True,PASS,,160785,1,PASS,,160797,1
+journal-jump-site-unstripped,journal,jump-site,unstripped,9,FAILED,False,FAILED,,173310,9,FAILED,,173322,9
+journal-jump-site-stripped,journal,jump-site,stripped,9,FAILED,False,FAILED,,169214,9,FAILED,,169226,9
+journal-heap-write-unstripped,journal,heap-write,unstripped,1,PASS,True,PASS,,173188,1,PASS,,173200,1
+journal-heap-write-stripped,journal,heap-write,stripped,1,PASS,True,PASS,,169092,1,PASS,,169104,1

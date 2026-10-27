@@ -1,0 +1,183 @@
+{
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ],
+    "logical_cpus": 316
+  },
+  "native_runs": 0,
+  "parent_result": {
+    "child_reaped": true,
+    "elapsed_seconds": 0.7223367230035365,
+    "exit": 0,
+    "wait_completed": true
+  },
+  "producer_runs": 0,
+  "public_result_changed_by_corrections": false,
+  "publication_draft_failures": [
+    "Initial source join compared a newer working-tree Cargo.lock; corrected to exact historical Git blobs.",
+    "Initial public rendering applied role normalization twice; corrected to normalize raw objects once."
+  ],
+  "qualification_complete": false,
+  "reproduction_source_executed": false,
+  "reproduction_source_sha256": "88aca300e5dfdd10764500289fc534ed9a7538045c220fbb28b146cb38365289",
+  "saved_source_before_after_equal": true,
+  "schema": 1,
+  "source_files": 1206,
+  "source_git_blobs_equal": true,
+  "suites": [
+    {
+      "accepted": 3,
+      "outer_command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "$REPO/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "$RAW/adapter/request.json",
+          "--receipt",
+          "$RAW/adapter/receipt.json"
+        ],
+        "cwd": "$REPO",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.18018090608529747,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "58bad4031f242a1bb7e84bebfde2d553c5de316e44ad0e6545426f98e3e1b4ae",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "665e5ecc8fbade19f41d7a7f9548bd21c4c9786c32e879762c6a51a7051facd7",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "$REPO/tools/elf-rewrite/e9-sites-controls.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "$REPO",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "$RAW/adapter/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "$RAW/adapter/stderr.txt",
+        "stdout": "$RAW/adapter/stdout.txt",
+        "wall_seconds": 30
+      },
+      "required_refusals": 24,
+      "result": {
+        "elapsed_seconds": 0.2651651371270418,
+        "exit": 0,
+        "name": "adapter",
+        "parent_wait_completed": true,
+        "timed_out": false
+      },
+      "suite": "adapter"
+    },
+    {
+      "accepted": 3,
+      "outer_command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "40s",
+          "/usr/bin/python3.9",
+          "-B",
+          "$REPO/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "$RAW/comparator/request.json",
+          "--receipt",
+          "$RAW/comparator/receipt.json"
+        ],
+        "cwd": "$REPO",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 55
+      },
+      "receipt": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.1820973609574139,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "09c7b9459f5238b013e371254e164dc2af3e56043aab9dba190587a530740882",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "ab8290a53d4ab25e2cd7f787881f16cf61eb01cf80ae86bd21af86f7e58a4e85",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "$REPO/tools/elf-rewrite/tests/compare_sites.py"
+        ],
+        "cpu_seconds": 20,
+        "cwd": "$REPO",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "TMPDIR": "$RAW/comparator/tmp"
+        },
+        "file_bytes": 16777216,
+        "stderr": "$RAW/comparator/stderr.txt",
+        "stdout": "$RAW/comparator/stdout.txt",
+        "wall_seconds": 30
+      },
+      "required_refusals": 24,
+      "result": {
+        "elapsed_seconds": 0.26544867106713355,
+        "exit": 0,
+        "name": "comparator",
+        "parent_wait_completed": true,
+        "timed_out": false
+      },
+      "suite": "comparator"
+    }
+  ],
+  "tested_revision": "e57a72c62fc569bd09c12815f7c9eec5162f3a50",
+  "timing_scope": "Operational diagnostics only",
+  "tools": {
+    "/usr/bin/python3.9": {
+      "resolved": "/usr/bin/python3.9",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    "/usr/bin/timeout": {
+      "resolved": "/usr/bin/timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+    }
+  }
+}

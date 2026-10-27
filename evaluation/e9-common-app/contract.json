@@ -1,0 +1,182 @@
+{
+  "actual_site_counts": null,
+  "application_cli": [
+    "ORIGINAL_OR_REWRITTEN",
+    "DATASET_NAME",
+    "NEW_JOURNAL_FILE"
+  ],
+  "architecture": "x86_64-linux-gnu",
+  "array": {
+    "allocator": "mmap(NULL,12288,PROT_NONE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0)",
+    "base": "mapping+4096+64",
+    "element_bytes": 8,
+    "element_type": "u64 unsigned",
+    "guards": "first and last pages PROT_NONE; every middle-page byte outside array remains 0xa5",
+    "length_elements_max": 64,
+    "middle": "mprotect(mapping+4096,4096,PROT_READ|PROT_WRITE)",
+    "runtime_address": "Fresh per process, recorded in li2_run; no cross-run pointer normalization or full-state equivalence inferred"
+  },
+  "compiled_artifacts": null,
+  "compiler_profile": {
+    "all_actual_header_dependencies": "Complete actual depfile must be authenticated by root; system header/compiler/runtime identities are fresh observations",
+    "direct_headers": [
+      "datasets.h",
+      "journal.h"
+    ],
+    "language": "GNU C11",
+    "observed_historical_version": "GCC 11.5.0, recorded by closed elf-exec-e6243a8-v1/tools.json; not a new observation",
+    "ordinary_unwind_retained": true,
+    "prospective_argv": [
+      "GCC",
+      "-std=c11",
+      "-O2",
+      "-fomit-frame-pointer",
+      "-fno-optimize-sibling-calls",
+      "-fno-pie",
+      "-no-pie",
+      "-fno-lto",
+      "-fno-toplevel-reorder",
+      "-fno-reorder-blocks-and-partition",
+      "-fno-stack-protector",
+      "-fcf-protection=none",
+      "-Wall",
+      "-Wextra",
+      "-Werror",
+      "-MD",
+      "-MF",
+      "NEW_DEPFILE",
+      "-Wl,-Map,NEW_LINK_MAP",
+      "SOURCE/heap_sort.c",
+      "-o",
+      "NEW_ORIGINAL"
+    ]
+  },
+  "elf": {
+    "cet": "disabled prospective profile, no CET qualification",
+    "initial": "ET_EXEC, dynamically linked, non-PIE",
+    "original_outputs": [
+      "unstripped",
+      "stripped"
+    ],
+    "page_size": 4096,
+    "stripping_contract": "Same LOAD geometry/bytes except explicit ELF section-table coordinates; retain exact original identities separately",
+    "unwind": "ordinary compiler unwind sections retained; rewritten unwind not qualified"
+  },
+  "error_status": {
+    "64": "usage",
+    "65": "dataset/page size/bounds",
+    "66": "mmap/mprotect",
+    "67": "journal output failure",
+    "68": "array/journal invariant failure",
+    "69": "stdout/munmap failure"
+  },
+  "execution_results": null,
+  "expected_dataset_count": 8,
+  "full_A3_complete": false,
+  "hooks": {
+    "core_null": "li2_null_hook(const void *context), read/write no context fields",
+    "core_record": "li2_record_hook(const void *context), reads only HookContext.instruction_pointer at offset0; writes only journal",
+    "e9_address": "Required LI2_JOURNAL_ADDRESS macro equals exact original li2_journal ELF symbol; no default or external lookup; shared stripped pair must retain address",
+    "e9_null": "passthru for primary null comparison; optional li2_e9_null(uint64_t pc) is a separately labeled null-call ABI control",
+    "e9_record": "call[clean,before]li2_e9_record(instrAddr)@E9_HOOK_ELF",
+    "semantics": "One logical-PC row per selected instruction visit before instruction; null means no journal writes; machine code and hook ABI wrappers may differ"
+  },
+  "journal": {
+    "application_check": "Exact header/guards, active0, count<=capacity, overflow0/fault0/reserved0, zero unused tail; raw file is written before returning invariant failure",
+    "bytes": 131144,
+    "capacity": 16384,
+    "fault": "Header failure sets fault=1; inactive call sets fault=2; nonzero fault/overflow blocks further PC writes. Full run refuses.",
+    "guards": [
+      "0x6c69326a6f75726e",
+      "0x7265636f72647321"
+    ],
+    "header_words": [
+      "guard_low",
+      "version",
+      "capacity",
+      "active",
+      "count",
+      "overflow",
+      "fault",
+      "reserved"
+    ],
+    "no_calls": "Hooks contain no libc/allocator/syscall/recursive callback",
+    "overflow": "When count>=16384, set sticky overflow=1 without writing any PC or advancing count. Full run refuses.",
+    "pc_word_bytes": 8,
+    "pcs_offset": 64,
+    "runtime_expectation": "Original/null runs require external count0/zero PCs; recording runs require exact complete selected-site PC sequence derived from the original baseline, including legitimate zero-visit empty/singleton heap-write cells",
+    "symbol": "li2_journal",
+    "tail_guard_offset": 131136,
+    "tail_unused": "All PC slots after count remain zero",
+    "version": 1,
+    "writer": "Single-threaded volatile word stores; PC then count, no atomic/concurrent claim"
+  },
+  "kernel": {
+    "all_heads": "Complete decoder inventory including every nonselected verified head; no success filtering",
+    "caller_bounds": "n<=64; sift_down root<n/2 implies 2*root+1<n, right child tested <n; root/child and heap_sort end-1 stores remain below original n",
+    "calls": "Only direct calls among the three kernel functions plus returns; actual decoder must enforce this initial closure",
+    "heap_write_complete": "Only the admitted array_store explicit write; all other explicit/implicit writes in all kernel functions must be owned RSP-relative stack writes with no index, including CALL pushes. Any other writer is retained as unsupported and refuses complete inventory.",
+    "heap_write_scope": "All array writes during the sorting kernel, excluding declared initialization, output, runtime and instrumentation-private writes outside that range",
+    "input_section": ".text.li2_sort",
+    "jump_style": "Every conditional/unconditional jump in full kernel ranges, excluding CALL/RET; exact instruction family policy from both decoders must agree",
+    "output_section": ".text",
+    "ranges_rule": "Actual ELF symbol-sized ranges, nonoverlapping and wholly RX .text; enclosing span contains only the three functions and decoded alignment padding; no hidden clone/helper",
+    "store_abi": {
+      "RDI": "current li2_run.array_begin",
+      "RDX": "u64 value",
+      "RSI": "u64 index < li2_run.length",
+      "actual_body": null,
+      "expected_compiled_body": "MOV qword ptr [RDI+RSI*8], RDX; RET, no displacement or segment override",
+      "expected_compiled_hex": "488914f7c3",
+      "symbol": "li2_array_store"
+    },
+    "styles": [
+      "jump-site",
+      "heap-write"
+    ],
+    "symbol_lengths": null,
+    "symbols": [
+      "li2_array_store",
+      "li2_sift_down",
+      "li2_heap_sort"
+    ],
+    "virtual_range": null
+  },
+  "qualification_complete": false,
+  "run_record": {
+    "boundary_semantics": "Ordinary noipa compiled calls with memory barriers; no child trap, state seed or runtime tracer",
+    "boundary_symbols": [
+      "li2_before_sort",
+      "li2_after_sort"
+    ],
+    "bytes": 88,
+    "guards": [
+      "0x72616e67652d6c6f",
+      "0x72616e67652d6869"
+    ],
+    "phases": {
+      "0": "uninitialized",
+      "1": "owned array seeded, journal active, before sort",
+      "2": "sort returned and journal disabled"
+    },
+    "symbol": "li2_run",
+    "word_order": [
+      "guard_low",
+      "mapping_begin",
+      "mapping_bytes",
+      "writable_begin",
+      "writable_bytes",
+      "array_begin",
+      "array_end",
+      "length",
+      "dataset_id",
+      "phase",
+      "guard_high"
+    ]
+  },
+  "schema": 1,
+  "status": "SOURCE_ONLY_NO_COMPILED_COORDINATES_OR_EXECUTION",
+  "successful_status": 0,
+  "successful_stderr": "empty",
+  "successful_stdout": "Exact complete dataset-specific expected/*.stdout"
+}
