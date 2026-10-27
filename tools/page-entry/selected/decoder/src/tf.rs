@@ -376,7 +376,9 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::Movlpd_xmm_m64 | Code::Movlpd_m64_xmm
         | Code::Movhpd_xmm_m64 | Code::Movhpd_m64_xmm
         // Legacy byte-count shifts of one XMM register; upper vectors survive.
-        | Code::Pslldq_xmm_imm8 | Code::Psrldq_xmm_imm8 => (1, 6),
+        | Code::Pslldq_xmm_imm8 | Code::Psrldq_xmm_imm8
+        // Legacy MOVD r/m32 only; load clears XMM[127:32], r32 stores zero-extend.
+        | Code::Movd_xmm_rm32 | Code::Movd_rm32_xmm => (1, 6),
         _ => return Ok(out),
     };
     out.policy = 1;

@@ -1,0 +1,219 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "case_table": "CASES.json and literal cases.inc: XMM1 with ESI/RDI, XMM9 with R14D/R15; every instruction split. Memory groups alternate unaligned and guarded last-four-byte data offsets.",
+  "commands": [
+    {
+      "argv": [
+        "sse2-movd-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 71,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_MOVD_TF_PASS group=0 pairs=17 movd=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "sse2-movd-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 71,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_MOVD_TF_PASS group=1 pairs=21 movd=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "argv": [
+        "sse2-movd-0"
+      ],
+      "environment_delta": {
+        "LI2_MOVD_CONTROL": "movd-load-fault"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 71,
+        "version": 1
+      },
+      "name": "movd-load-fault",
+      "process_outcome": "Failed original-PC m32 load; actual native/stepped fault, unchanged full state/memory and revoke/sync/held-source prefix required. No completion credit.",
+      "required_record": {
+        "code": 1581,
+        "fetch_held": 1,
+        "memory_bytes": 4,
+        "native_after_ERR": 4,
+        "native_after_TRAPNO": 14,
+        "native_complete": 0,
+        "native_fault": 1,
+        "negative_verified": 1,
+        "owner_continuation_complete": 0,
+        "owner_continuation_started": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_phase": 6,
+        "owner_revoke_sync": 0,
+        "owner_revoke_sync_started": 1,
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_signal_code": 2,
+        "owner_signal_errno": 0,
+        "owner_signal_number": 11,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "source_pages": 2,
+        "step_endpoint_seen": 0
+      },
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    },
+    {
+      "argv": [
+        "sse2-movd-0"
+      ],
+      "environment_delta": {
+        "LI2_MOVD_CONTROL": "movd-store-fault"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 71,
+        "version": 1
+      },
+      "name": "movd-store-fault",
+      "process_outcome": "Failed original-PC m32 store; actual native/stepped fault, unchanged full state/memory and revoke/sync/held-source prefix required. No completion credit.",
+      "required_record": {
+        "code": 1820,
+        "fetch_held": 1,
+        "memory_bytes": 4,
+        "native_after_ERR": 6,
+        "native_after_TRAPNO": 14,
+        "native_complete": 0,
+        "native_fault": 1,
+        "negative_verified": 1,
+        "owner_continuation_complete": 0,
+        "owner_continuation_started": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_phase": 6,
+        "owner_revoke_sync": 0,
+        "owner_revoke_sync_started": 1,
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_signal_code": 2,
+        "owner_signal_errno": 0,
+        "owner_signal_number": 11,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "source_pages": 2,
+        "step_endpoint_seen": 0
+      },
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    }
+  ],
+  "literal_effects": "Loads replace XMM low32 and clear upper96. Register stores zero-extend r32 into64 bits. Memory stores change exactly4 bytes. All other initialized kernel/live FP bytes, upper vectors, GPRs/RSP/logical flags/bases/selectors/stack/data remain exact.",
+  "native_pairs_per_group": [
+    17,
+    21
+  ],
+  "negative_endpoint": "Actual PROT_NONE load ERR4 and store ERR6 at original crossing PC in both native and stepped lanes; failed owner retains revoke/sync/held borrow and no completion.",
+  "new_refusal_count": 24,
+  "new_sse2_pairs_total": 36,
+  "old_cohorts": "All original generic, integer, padding, XGETBV and REP sources/commands/predicates remain separately required.",
+  "old_refusal_count": 47,
+  "prospective_only": true,
+  "record_extent": "header_bytes +22*actual_DWARF_sample_bytes+40; group0 uses17, group1 uses21 positive samples; failed commands retain startup plus negative_sample.",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Two legacy SSE2 MOVD r/m32 Codes, finite original-PC native/TF qualification. MOVQ, MMX, VEX and EVEX excluded; no every-destination or loader-completion claim."
+}
