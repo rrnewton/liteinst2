@@ -319,6 +319,36 @@ impl ForeignPair {
             self.victim + len as u64,
         );
     }
+    pub(super) fn images_recording(&self, heads: &BTreeMap<u64, Head>, images: &[Image]) {
+        let selected = &heads[&self.selected];
+        let victim = &heads[&self.victim];
+        let si = &images[self.selected_image as usize];
+        let vi = &images[self.victim_image as usize];
+        assert_eq!(selected.route, si.address);
+        assert_eq!(
+            selected
+                .walk
+                .iter()
+                .filter(|(_, next, _)| *next == recording::CORE_HOOK)
+                .count(),
+            1
+        );
+        assert_eq!((victim.route, victim.body), (vi.address, vi.address));
+        assert!(victim.walk.is_empty());
+        assert_eq!(victim.target, 0);
+        let src = source(self.victim);
+        let offset = (self.victim - src.pc) as usize;
+        let len = usize::from(head(self.victim).length);
+        assert_eq!(victim.bytes, src.bytes[offset..offset + len]);
+        assert_eq!(vi.bytes.len(), len + 5);
+        assert_eq!(vi.bytes[..len], victim.bytes);
+        transfer(
+            &vi.bytes[len..],
+            vi.address + len as u64,
+            0xe9,
+            self.victim + len as u64,
+        );
+    }
 }
 
 #[cfg(test)]

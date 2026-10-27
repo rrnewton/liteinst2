@@ -30,6 +30,31 @@ use router_contract::RouterMode;
 const INPUT: usize = 1_048_576;
 const OUTPUT: usize = 16_777_216;
 const HOOK: u64 = 0x401960;
+#[allow(dead_code)]
+#[path = "../../../tests/support/e9_common_recording.rs"]
+mod recording;
+fn recording_helper(pc: u64, logical: u64, state: SavedExtendedStateLayout) -> Vec<u8> {
+    let mut code = helper(pc, logical, state);
+    let marker = [0xfc, 0x4c, 0x89, 0xe7, 0xe8];
+    let offsets: Vec<_> = code
+        .windows(marker.len())
+        .enumerate()
+        .filter_map(|(i, b)| (b == marker).then_some(i + marker.len()))
+        .collect();
+    assert_eq!(offsets.len(), 1);
+    let at = offsets[0];
+    let next = pc + at as u64 + 4;
+    assert_eq!(
+        i128::from(next) + i128::from(i32::from_le_bytes(code[at..at + 4].try_into().unwrap())),
+        i128::from(HOOK)
+    );
+    code[at..at + 4].copy_from_slice(
+        &i32::try_from(i128::from(recording::CORE_HOOK) - i128::from(next))
+            .unwrap()
+            .to_le_bytes(),
+    );
+    code
+}
 const IMAGE_END: u64 = 0x425000;
 
 fn hash(bytes: &[u8]) -> String {
@@ -919,6 +944,8 @@ fn derived_permits(original: &[(u64, u64)], pcs: &[u64]) -> Vec<[Permit; 2]> {
 
 fn main() {
     let mut args: Vec<_> = std::env::args_os().collect();
+    let record = recording::arguments(&mut args);
+    let hook_pc = if record { recording::CORE_HOOK } else { HOOK };
     let router = RouterMode::arguments(&mut args);
     let planning = PlanningProfile::arguments(&mut args, 7);
     assert_eq!(
@@ -1010,7 +1037,7 @@ fn main() {
         ("policy_sha256", hash(&inventory_inputs["policy.txt"].bytes)),
         ("target_sha256", hash(&inventory_inputs["target.txt"].bytes)),
         ("selection_sha256", hash(&selection.bytes)),
-        ("hook", "null".to_owned()),
+        ("hook", (if record { "journal" } else { "null" }).to_owned()),
         ("instruction_heads", "87".to_owned()),
         ("complete_static_policy", "true".to_owned()),
         ("qualification_complete", "false".to_owned()),
@@ -1054,8 +1081,16 @@ fn main() {
     };
     assert_eq!(inventory_inputs["target.txt"].bytes, compact.as_bytes());
     let h = &s.hooks[0];
-    assert_eq!((h.id, h.pc, h.length), (2, HOOK, 1));
-    assert_eq!(h.expected, ContentId::of(&[0xc3]));
+    if record {
+        assert_eq!(
+            (h.id, h.pc, h.length),
+            (3, recording::CORE_HOOK, recording::CORE_HOOK_BYTES)
+        );
+        assert_eq!(h.expected, ContentId::of(&original.bytes[0x1970..0x1a43]));
+    } else {
+        assert_eq!((h.id, h.pc, h.length), (2, HOOK, 1));
+        assert_eq!(h.expected, ContentId::of(&[0xc3]));
+    }
     let ranges: Vec<_> = seed::ORIGINAL_RANGES
         .iter()
         .map(|r| seed::SourceRange {
@@ -1124,7 +1159,11 @@ fn main() {
         assert_eq!(x.id, ordinal as u64 + 1);
         assert_eq!((x.block.start(), x.block.end()), original_block(head));
         assert_eq!(x.length, head.length);
-        assert_eq!(x.hook, 2);
+        if record {
+            assert_eq!(x.hook, 3);
+        } else {
+            assert_eq!(x.hook, 2);
+        }
         assert_eq!(x.completeness, EntryCompleteness::Complete);
         assert_eq!(x.resumes, ResumeObligation::NoneExist);
         assert_eq!(x.semantics, li2core::planner::HookSemantics::Observe);
@@ -1330,6 +1369,26 @@ fn main() {
     assert_eq!(elf.header().object_type, old.header().object_type);
     assert_eq!(old.executable_bytes(ElfVaddr(HOOK), 1).unwrap(), [0xc3]);
     assert_eq!(elf.executable_bytes(ElfVaddr(HOOK), 1).unwrap(), [0xc3]);
+    let record_bytes = if record {
+        old.executable_bytes(
+            ElfVaddr(recording::CORE_HOOK),
+            recording::CORE_HOOK_BYTES as u64,
+        )
+        .unwrap()
+        .to_vec()
+    } else {
+        Vec::new()
+    };
+    if record {
+        assert_eq!(
+            elf.executable_bytes(
+                ElfVaddr(recording::CORE_HOOK),
+                recording::CORE_HOOK_BYTES as u64
+            )
+            .unwrap(),
+            record_bytes
+        );
+    }
     let plan = &files["plan-ledger.tsv"].bytes;
     let full = &files["ledger.tsv"].bytes;
     assert!(full.starts_with(plan));
@@ -1345,10 +1404,18 @@ fn main() {
         *one(&r, "hook"),
         [
             "hook".to_owned(),
-            "2".to_owned(),
-            HOOK.to_string(),
-            "1".to_owned(),
-            hash(&[0xc3])
+            (if record { "3" } else { "2" }).to_owned(),
+            hook_pc.to_string(),
+            if record {
+                recording::CORE_HOOK_BYTES.to_string()
+            } else {
+                "1".to_owned()
+            },
+            if record {
+                hash(&record_bytes)
+            } else {
+                hash(&[0xc3])
+            }
         ]
         .iter()
         .map(String::as_str)
@@ -1547,6 +1614,18 @@ fn main() {
         .unwrap()])
         .collect();
     dynamic.check_source_ranges(&kernel_dependencies).unwrap();
+    if record {
+        let hook_range = liteinst_rewrite::carrier::elf64::FileRange::checked(
+            liteinst_rewrite::carrier::elf64::FileOffset(file_at(
+                &old,
+                recording::CORE_HOOK,
+                recording::CORE_HOOK_BYTES,
+            ) as u64),
+            recording::CORE_HOOK_BYTES as u64,
+        )
+        .unwrap();
+        dynamic.check_source_ranges(&[hook_range]).unwrap();
+    }
     let mut dynamic_rows = Vec::new();
     for v in &dynamic.writes {
         dynamic_rows.push(format!(
@@ -1719,7 +1798,11 @@ fn main() {
             assert!(entry <= body && body < address + bytes.len() as u64);
             let mut walk = Vec::new();
             if selected.contains_key(&logical) {
-                let expected = helper(entry, logical, s.target);
+                let expected = if record {
+                    recording_helper(entry, logical, s.target)
+                } else {
+                    helper(entry, logical, s.target)
+                };
                 assert_eq!(body, entry + expected.len() as u64);
                 assert_eq!(
                     &bytes[(entry - address) as usize..(body - address) as usize],
@@ -1741,7 +1824,7 @@ fn main() {
                     let next = at + i.len() as u64;
                     let raw = bytes[(at - address) as usize..(next - address) as usize].to_vec();
                     if i.flow_control() == FlowControl::Call {
-                        assert_eq!(i.near_branch_target(), HOOK);
+                        assert_eq!(i.near_branch_target(), hook_pc);
                         assert_eq!(raw.len(), 5);
                         assert_eq!(raw[0], 0xe8);
                         expected_fields.push(field(
@@ -1749,12 +1832,17 @@ fn main() {
                             4,
                             "Relative",
                             next - address,
-                            HOOK,
+                            hook_pc,
                             "HookCall",
                             &bytes,
                         ));
-                        walk.push((at, HOOK, raw));
-                        walk.push((HOOK, next, vec![0xc3]));
+                        if record {
+                            walk.push((at, hook_pc, raw));
+                            walk.push((hook_pc, next, record_bytes.clone()));
+                        } else {
+                            walk.push((at, HOOK, raw));
+                            walk.push((HOOK, next, vec![0xc3]));
+                        }
                     } else {
                         assert_eq!(i.flow_control(), FlowControl::Next);
                         walk.push((at, next, raw));
@@ -1855,7 +1943,11 @@ fn main() {
                 .collect::<Vec<_>>(),
             expected_pc_ranges
         );
-        common_core_router::requirements(&r, id, hooks, router, &router_declarations);
+        if record {
+            common_core_router::requirements_recording(&r, id, hooks, router, &router_declarations);
+        } else {
+            common_core_router::requirements(&r, id, hooks, router, &router_declarations);
+        }
         images.push(Image { address, bytes });
     }
     assert_eq!(
@@ -1863,7 +1955,11 @@ fn main() {
         expected_names
     );
     for pair in &foreign_pairs {
-        pair.images(&all_heads, &images);
+        if record {
+            pair.images_recording(&all_heads, &images);
+        } else {
+            pair.images(&all_heads, &images);
+        }
     }
     assert!(!images.is_empty());
     assert!(images.iter().map(|i| i.bytes.len()).sum::<usize>() <= 8_388_608);
@@ -1874,7 +1970,7 @@ fn main() {
         assert_eq!(
             head.walk
                 .iter()
-                .filter(|(_, next, _)| *next == HOOK)
+                .filter(|(_, next, _)| *next == hook_pc)
                 .count(),
             1
         );
@@ -1955,6 +2051,13 @@ fn main() {
         hash(&selection.bytes),
         hash(candidate)
     );
+    if record {
+        assert!(witness.contains("STRUCTURAL_CORE_NULL_WITNESSES_ONLY"));
+        witness = witness.replace(
+            "STRUCTURAL_CORE_NULL_WITNESSES_ONLY",
+            "STRUCTURAL_CORE_RECORDING_WITNESSES_ONLY",
+        );
+    }
     for (name, f) in &files {
         writeln!(
             &mut witness,
@@ -2133,7 +2236,15 @@ fn main() {
         )
         .unwrap();
         for (pc, next, b) in head.walk {
-            if router_routes.iter().any(|route| route.pc == pc) {
+            if record && pc == recording::CORE_HOOK {
+                writeln!(
+                    &mut witness,
+                    "record-hook\t{}\t{pc}\t{next}\t{}",
+                    src.pc,
+                    hex(&b)
+                )
+                .unwrap();
+            } else if router_routes.iter().any(|route| route.pc == pc) {
                 writeln!(&mut witness, "trap\t{}\t{pc}\t{next}\t{}", src.pc, hex(&b)).unwrap();
             } else {
                 writeln!(&mut witness, "walk\t{}\t{pc}\t{next}\t{}", src.pc, hex(&b)).unwrap();
@@ -2188,9 +2299,15 @@ fn main() {
         .unwrap();
     file.write_all(witness.as_bytes()).unwrap();
     file.sync_all().unwrap();
-    println!(
-        "core null witness complete: heads=87 normal=174 faults=2 execution=false qualification_complete=false"
-    );
+    if record {
+        println!(
+            "core recording witness complete: heads=87 normal=174 faults=2 execution=false qualification_complete=false"
+        );
+    } else {
+        println!(
+            "core null witness complete: heads=87 normal=174 faults=2 execution=false qualification_complete=false"
+        );
+    }
 }
 
 #[cfg(test)]

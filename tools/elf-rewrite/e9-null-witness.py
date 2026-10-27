@@ -146,7 +146,7 @@ def target_join(raw, selection):
 
 class View:
     """Declared controlled page image, not evidence the loader ran."""
-    def __init__(self, candidate, image, maps):
+    def __init__(self, candidate, image, maps, recording_hook=None):
         self.pages, self.records, self.order = {}, {}, []
         for index, p in enumerate(image['rows']):
             if p[0] != 1:
@@ -171,9 +171,16 @@ class View:
         for mapping in maps:  # The reused reader authenticated this actual loader order.
             row = dict(mapping)
             assert row['va'] >= 0 and row['va'] + row['length'] < LOW_END
-            assert row['prot'] in (1, 5), 'null code mappings must be immutable/readable'
+            if recording_hook is not None and row['prot'] not in (1,5):
+                assert row['prot'] == 3, 'only the admitted readable/writable non-executable hook LOAD'
+                owners=[p for p in recording_hook['loads'] if p['flags']==6
+                        and p['start']//PAGE*PAGE <= row['va']
+                        and row['va']+row['length'] <= (p['end']+PAGE-1)//PAGE*PAGE]
+                assert len(owners)==1 and row['kind']=='trampoline'
+            else:
+                assert row['prot'] in (1, 5), 'null code mappings must be immutable/readable'
             self.order.append(row)
-            flags = 4 | (1 if row['prot'] & 4 else 0)
+            flags = 4 | (1 if row['prot'] & 4 else 0) | (2 if recording_hook is not None and row['prot'] & 2 else 0)
             for page in range(row['va'], row['va'] + row['length'], PAGE):
                 assert (page in self.pages) == (row['kind'] == 'refactoring')
                 if row['kind'] == 'refactoring':
@@ -333,6 +340,101 @@ def derive(head, view, outcome, bypass):
     raise AssertionError('unreachable bound')
 
 
+RECORDING_PROFILE = 'bounded-journal-v1'
+E9_BEFORE = bytes.fromhex('488da42400c0ffff415341525041514150515256570f90c09f50')
+E9_AFTER = bytes.fromhex('58047f9e5f5e5a594158415958415a415b488da42400400000')
+
+
+def recording_hook_info(adapter, envelope, blobs):
+    hook = envelope['hook']
+    assert hook is not None and hook['symbol'] == 'li2_e9_record'
+    data = blobs['hook_elf']
+    image = adapter['elf'](data, 3)
+    assert adapter['dynamic_symbol'](data, 'li2_e9_record') == hook['entry']
+    # Recover the size from the same complete dynsym, not a RET scan or a
+    # caller-provided extent. The existing structural reader owns all reserves.
+    shoff = struct.unpack_from('<Q', data, 40)[0]
+    width, count = struct.unpack_from('<HH', data, 58)
+    assert width == 64 and 1 <= count <= 4096 and shoff + width*count <= len(data)
+    sections = [struct.unpack_from('<IIQQQQIIQQ', data, shoff+i*width) for i in range(count)]
+    tables = [s for s in sections if s[1] == 11]
+    assert len(tables) == 1
+    table = tables[0]
+    assert table[9] == 24 and table[5] % 24 == 0 and table[5]//24 <= 4096
+    assert table[4]+table[5] <= len(data) and table[6] < count
+    strings = sections[table[6]]
+    assert strings[1] == 3 and strings[4]+strings[5] <= len(data)
+    names = data[strings[4]:strings[4]+strings[5]]
+    matches = []
+    for at in range(table[4], table[4]+table[5], 24):
+        name, info, other, section, value, size = struct.unpack_from('<IBBHQQ', data, at)
+        assert name < len(names) and b'\0' in names[name:]
+        if names[name:].split(b'\0',1)[0] == b'li2_e9_record':
+            assert info == 0x12 and section != 0 and value == hook['entry'] and 0 < size <= 4096
+            offset = adapter['owner'](image,value,size,True)
+            matches.append((value,size,data[offset:offset+size]))
+    assert len(matches) == 1
+    value,size,code = matches[0]
+    return dict(entry=hook['base']+value, bytes=code.hex(),
+                loads=[dict(start=hook['base']+p[3], end=hook['base']+p[3]+p[6], flags=p[1])
+                       for p in image['rows'] if p[0] == 1])
+
+
+def clean_prefix(entry, logical, hook):
+    result = E9_BEFORE + relative(b'\x48\x8d\x3d', entry+len(E9_BEFORE), logical)
+    result += relative(b'\xe8', entry+len(result), hook)
+    result += E9_AFTER
+    assert len(result) == 63
+    return result
+
+
+def derive_recording(head, view, outcome, bypass, hook):
+    if outcome is None:
+        result = derive(head,view,None,bypass)
+        result['clean'] = None
+        return result
+    record = {k:v for k,v in head.items() if k != 'code'}
+    record.update(original_bytes=head['code'].hex(), status='REQUIRED_UNRESOLVED', prefix=[],
+                  body=None,operation=[],continuation=None,reason=None,clean=None)
+    if outcome['tactic'] is None:
+        record['reason'] = 'selected_site_refused'; return record
+    entry = outcome['low']
+    prefix = route(view,head['pc'],entry)
+    if prefix is None:
+        record['reason'] = 'no_complete_gateway'; return record
+    clean = clean_prefix(entry,head['pc'],hook['entry'])
+    body = entry+len(clean)
+    if not view.trampoline(entry,len(clean)) or b''.join(view.read(entry+i,1) or b'' for i in range(len(clean))) != clean:
+        record['reason'] = 'exact_clean_template_mismatch'; return record
+    operation_parts = operation(head,body)
+    if operation_parts is None:
+        record['reason'] = 'operation_out_of_range'; return record
+    code = b''.join(operation_parts)
+    if view.read(body,len(code)) != code:
+        record['reason'] = 'whole_relocated_operation_mismatch'; return record
+    at = body+len(code)
+    raw = view.read(at,5)
+    if raw is None or raw[0] != 0xe9 or at+5 != outcome['high']:
+        record['reason'] = 'exact_recording_extent_or_continue_mismatch'; return record
+    to = at+5+struct.unpack_from('<i',raw,1)[0]
+    logical = head['pc']+head['length']
+    bypass_steps=[]
+    if to != logical:
+        bypass_steps=route(view,logical,to)
+        if (logical,to) not in bypass or bypass_steps is None:
+            record['reason']='unowned_continue_bypass'; return record
+    parts=[]; pc=body
+    for part in operation_parts:
+        parts.append(dict(pc=pc,bytes=part.hex())); pc+=len(part)
+    # CALL is the final five bytes before the literal restore suffix.
+    return_pc=body-len(E9_AFTER)
+    record.update(status='BYTE_WITNESS_COMPLETE',prefix=prefix,body=body,operation=parts,
+                  clean=dict(entry=entry,hook=hook['entry'],return_pc=return_pc,bytes=clean.hex()),
+                  continuation=dict(pc=at,next=to,bytes=raw.hex(),logical_fallthrough=logical,
+                                    bypass_steps=bypass_steps,executed_for_completion=False))
+    return record
+
+
 def cases(heads):
     result = []
     for case in range(176):
@@ -361,9 +463,14 @@ def cases(heads):
     return result
 
 
-def read_witness(adapter, envelope, blobs, table, target):
+def read_witness(adapter, envelope, blobs, table, target, record=False):
     site_wire, structural = adapter['validate'](envelope, blobs)
-    assert envelope['hook'] is None and structural['policy']['instrumentation'] == 'null'
+    if record:
+        assert envelope['hook'] is not None and structural['policy']['instrumentation']=='real-hook'
+        hook=recording_hook_info(adapter,envelope,blobs)
+    else:
+        assert envelope['hook'] is None and structural['policy']['instrumentation'] == 'null'
+        hook=None
     assert structural['policy']['selection_style'] in ('jump-site', 'heap-write')
     heads, old = inventory(table, blobs['original'], adapter)
     target_record = target_join(target, blobs['selection'])
@@ -373,10 +480,10 @@ def read_witness(adapter, envelope, blobs, table, target):
     assert sites == expected, 'complete original static selection, including zero-visit sites'
     outcomes, maps, bypass = adapter['debug'](blobs['producer_stderr'], sites)
     new = adapter['elf'](blobs['candidate'], 2)
-    view, original_view = View(blobs['candidate'], new, maps), View(blobs['original'], old, [])
+    view, original_view = View(blobs['candidate'], new, maps, hook), View(blobs['original'], old, [])
     assert len(original_view.pages) == 37
     by_pc = {row['pc']: row for row in outcomes}
-    witnesses = [derive(h, view, by_pc.get(h['pc']), bypass) for h in heads]
+    witnesses = [derive_recording(h,view,by_pc.get(h['pc']),bypass,hook) if record else derive(h, view, by_pc.get(h['pc']), bypass) for h in heads]
     unresolved = [dict(head_id=h['id'], pc=h['pc'], reason=h['reason']) for h in witnesses if h['status'] != 'BYTE_WITNESS_COMPLETE']
     global_issues = []
     classified = [line.split('\t')[4] for line in site_wire.decode().splitlines()[7:]]
@@ -422,6 +529,11 @@ def read_witness(adapter, envelope, blobs, table, target):
                                   canonical_xsave_and_complete_data_and_fixed_stack_required=True,
                                   fixed_application_stack=[FRAME - 128, FRAME + 32760],
                                   native_state_comparison_performed=False, loader_execution_proved=False))
+    if record:
+        report['scope']='STRUCTURAL_E9_RECORDING_COMPLETION_WITNESSES_ONLY'
+        report['recording_profile']=RECORDING_PROFILE
+        report['recording_hook']=hook
+        assert sum(h['clean'] is not None for h in witnesses)==len(sites) if ready else True
     return report, site_wire
 
 
@@ -450,10 +562,18 @@ def native_projection(report, json_bytes):
         for item in report['final_pages']:
             rows.append(['page', *[item[k] for k in ('va', 'flags', 'owner_order',
                          'file_offset', 'copied_bytes', 'zero_from', 'sha256')]])
+        if report.get('recording_profile')==RECORDING_PROFILE:
+            hook=report['recording_hook']
+            rows.append(['recording-hook',hook['entry'],hook['bytes']])
+            for load in hook['loads']:
+                rows.append(['hook-load',load['start'],load['end'],load['flags']])
         for head in report['heads']:
             rows.append(['head', head['id'], head['pc'], head['body'], head['original_bytes']])
             for edge in head['prefix']:
                 rows.append(['walk', head['id'], edge['pc'], edge['next'], edge['bytes']])
+            if head.get('clean') is not None:
+                clean=head['clean']
+                rows.append(['clean',head['id'],clean['entry'],clean['hook'],clean['return_pc'],clean['bytes']])
             for edge in head['operation']:
                 rows.append(['op', head['id'], edge['pc'], edge['bytes']])
             continuation = head['continuation']
@@ -484,11 +604,17 @@ def main():
     parser.add_argument('--inputs-sha256', required=True)
     parser.add_argument('--structural-reader', type=Path,
                         help='optional canonical path to the same exact pinned e9-sites.py')
+    parser.add_argument('--recording-profile', choices=[RECORDING_PROFILE])
     args = parser.parse_args()
+    record=args.recording_profile is not None
     # Reading the small caller record is itself bound, including its path owner.
     given = Bound(dict(path=str(args.inputs), sha256=args.inputs_sha256, bytes=args.inputs.stat().st_size))
     value = load_json(given.data)
-    assert value.keys() == {'schema', 'structural_envelope', 'instructions', 'target'} and type(value['schema']) is int and value['schema'] == 1
+    if record:
+        assert value.keys()=={'schema','structural_envelope','instructions','target','recording_profile'} and value['recording_profile']==RECORDING_PROFILE
+        assert type(value['schema']) is int and value['schema']==1
+    else:
+        assert value.keys() == {'schema', 'structural_envelope', 'instructions', 'target'} and type(value['schema']) is int and value['schema'] == 1
     held = {role: Bound(value[role]) for role in ('structural_envelope', 'instructions', 'target')}
     own_path = Path(__file__).resolve()
     own_bytes = own_path.read_bytes()
@@ -498,10 +624,13 @@ def main():
     namespace = {'__name__': '_pinned_e9_sites_reader_', '__file__': str(source_path)}
     exec(compile(source.data, str(source_path), 'exec'), namespace)  # Exact existing reader; main() is not called.
     envelope = namespace['loads'](held['structural_envelope'].data)
-    assert type(envelope['files']) is dict and len(envelope['files']) == 17
+    if record:
+        assert type(envelope['files']) is dict and len(envelope['files'])==18 and 'hook_elf' in envelope['files']
+    else:
+        assert type(envelope['files']) is dict and len(envelope['files']) == 17
     products = {role: Bound(row) for role, row in envelope['files'].items()}
     report, site_wire = read_witness(namespace, envelope, {k: v.data for k, v in products.items()},
-                                     held['instructions'].data, held['target'].data)
+                                     held['instructions'].data, held['target'].data, record)
     all_inputs = {'inputs': given, 'structural_reader': source, 'witness_reader': own_source, **held,
                   **{'producer/' + k: v for k, v in products.items()}}
     for bound in all_inputs.values():
@@ -518,7 +647,7 @@ def main():
     index = {name: dict(bytes=len(data), sha256=sha(data)) for name, data in output.items()}
     with (args.new_output / 'files.json').open('xb') as stream:
         stream.write(canonical(index))
-    print(f"E9 null witnesses: 87 required heads; 176 required cases; {report['status']}")
+    print(f"E9 {'recording' if record else 'null'} witnesses: 87 required heads; 176 required cases; {report['status']}")
     return 0 if report['witness_complete'] else 2
 
 

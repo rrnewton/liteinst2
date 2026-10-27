@@ -224,6 +224,31 @@ pub(super) fn requirements(
     assert_eq!(requirements, expected);
 }
 
+pub(super) fn requirements_recording(
+    r: &[Vec<&str>],
+    id: u64,
+    hooks: usize,
+    router: RouterMode,
+    router_declarations: &[(u64, u64, u64, u64)],
+) {
+    let mut requirements: Vec<_> = r
+        .iter()
+        .filter(|x| x[0] == "unmet-requirement" && n(x[1]) == id)
+        .map(|x| (n(x[2]), n(x[3])))
+        .collect();
+    requirements.sort();
+    let mut expected: Vec<_> = [1, 2, 3, 4, 7, 8].map(|v| (v, 0)).to_vec();
+    if hooks > 0 {
+        expected.push((5, 3));
+    }
+    if image_requires_router(r, id, router_declarations) {
+        assert!(router.enabled());
+        expected.push((6, 0));
+    }
+    expected.sort();
+    assert_eq!(requirements, expected);
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

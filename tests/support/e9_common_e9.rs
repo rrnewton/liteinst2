@@ -1,5 +1,6 @@
-//! Controlled E9 null pairs, consuming an externally authenticated JSON/TSV pair.
-//! No loader execution, producer admission, journal-hook or whole-A3 claim.
+//! Controlled E9 pairs consuming an externally authenticated JSON/TSV pair.
+//! Null remains the default; recording requires its exact trailing profile.
+//! No loader execution, producer admission or whole-A3 claim.
 use super::*;
 use std::collections::BTreeMap;
 use std::os::unix::ffi::OsStringExt;
@@ -102,11 +103,18 @@ struct Walk {
     next: u64,
     bytes: Vec<u8>,
 }
+struct Clean {
+    entry: u64,
+    hook: u64,
+    return_pc: u64,
+    bytes: Vec<u8>,
+}
 struct Head {
     pc: u64,
     body: u64,
     walk: Vec<Walk>,
     operation: Vec<(u64, Vec<u8>)>,
+    clean: Option<Clean>,
 }
 struct Case {
     steps: Vec<Walk>,
@@ -131,6 +139,8 @@ struct Candidate {
     cases: Vec<Case>,
     pages: Vec<Page>,
     base: Vec<u8>,
+    journal: Option<recording::Journal>,
+    hook: Option<(u64, Vec<u8>)>,
 }
 
 fn relative(opcode: &[u8], pc: u64, target: u64) -> Vec<u8> {
@@ -210,12 +220,17 @@ impl Candidate {
         table: &Input,
         target: &Input,
         specs: &[seed::SeedSpec],
+        record: bool,
     ) -> Self {
         let mut rows = Rows::new(witness);
         rows.exact(&["LI2COMMONE9NATIVE", "1"]);
         rows.exact(&["status", "COMPLETE_BYTE_WITNESSES"]);
         digest(rows.take("witness_json_sha256", 2)[1]);
-        rows.exact(&["scope", "STRUCTURAL_E9_NULL_COMPLETION_WITNESSES_ONLY"]);
+        if record {
+            rows.exact(&["scope", "STRUCTURAL_E9_RECORDING_COMPLETION_WITNESSES_ONLY"]);
+        } else {
+            rows.exact(&["scope", "STRUCTURAL_E9_NULL_COMPLETION_WITNESSES_ONLY"]);
+        }
         for key in [
             "original_sha256",
             "instructions_sha256",
@@ -252,7 +267,11 @@ impl Candidate {
             );
             inputs.push(input);
             roles.push(role);
-            assert!(inputs.len() <= 23);
+            if record {
+                assert!(inputs.len() <= 24);
+            } else {
+                assert!(inputs.len() <= 23);
+            }
         }
         let mut required: Vec<String> = [
             "inputs",
@@ -284,6 +303,9 @@ impl Candidate {
             "producer_stderr",
         ] {
             required.push(format!("producer/{role}"));
+        }
+        if record {
+            required.push("producer/hook_elf".to_owned());
         }
         required.sort();
         assert_eq!(roles, required);
@@ -396,8 +418,18 @@ impl Candidate {
                 va.checked_add(len).unwrap() < 1 << 47
                     && off.checked_add(len).unwrap() <= elf.len() as u64
             );
-            assert!(matches!(prot, 1 | 5));
-            let flags = if prot == 5 { 5 } else { 4 };
+            if record {
+                assert!(matches!(prot, 1 | 3 | 5));
+            } else {
+                assert!(matches!(prot, 1 | 5));
+            }
+            let flags = if record && prot == 3 {
+                6
+            } else if prot == 5 {
+                5
+            } else {
+                4
+            };
             for address in (va..va + len).step_by(PAGE) {
                 assert_eq!(all.contains_key(&address), r[2] == "refactoring");
                 if r[2] == "refactoring" {
@@ -458,7 +490,9 @@ impl Candidate {
                 let at = (address - IMAGE_START) as usize;
                 base[at..at + PAGE].copy_from_slice(&p.page.bytes);
             } else {
-                assert_ne!(p.page.flags, 6);
+                if !record {
+                    assert_ne!(p.page.flags, 6);
+                }
                 pages.push(p.page.clone());
             }
         }
@@ -469,8 +503,61 @@ impl Candidate {
             cases: Vec::new(),
             pages,
             base,
+            journal: None,
+            hook: None,
         };
         let original_view = original_pages(&original.bytes);
+        if record {
+            let j = recording::Journal::locate(
+                &original_view,
+                IMAGE_START,
+                LOADS[3].1,
+                LOADS[3].1 + LOADS[3].3,
+            );
+            assert_eq!(j.journal(&candidate.base), j.journal(&original_view));
+            let row = rows.take("recording-hook", 3);
+            let entry = n(row[1]);
+            let code = bytes(row[2]);
+            let hook_input =
+                &candidate.inputs[roles.iter().position(|r| r == "producer/hook_elf").unwrap()];
+            let base =
+                page_end(LOADS.iter().map(|p| p.1 + p.3).max().unwrap() + 0x1000000 + 8 * 4096);
+            let loads = recording::e9_hook(&hook_input.bytes, base, entry, &code);
+            for (a, b, flags, raw) in &loads {
+                let row = rows.take("hook-load", 4);
+                assert_eq!(
+                    [n(row[1]), n(row[2]), n(row[3])],
+                    [*a, *b, u64::from(*flags)]
+                );
+                for (i, &value) in raw.iter().enumerate() {
+                    let pc = a + i as u64;
+                    let p = candidate
+                        .pages
+                        .iter()
+                        .find(|p| p.address <= pc && pc < p.address + 4096)
+                        .unwrap();
+                    assert_eq!(p.flags, *flags);
+                    assert_eq!(p.bytes[(pc - p.address) as usize], value);
+                }
+            }
+            for p in &candidate.pages {
+                if p.flags == 6 {
+                    assert_eq!(
+                        loads
+                            .iter()
+                            .filter(|(a, b, f, _)| *f == 6
+                                && *a & !4095 <= p.address
+                                && p.address + 4096 <= page_end(*b))
+                            .count(),
+                        1,
+                        "only exact hook-owned RW pages"
+                    );
+                }
+            }
+            j.seed(&mut candidate.base);
+            candidate.journal = Some(j);
+            candidate.hook = Some((entry, code));
+        }
         for (index, src) in seed::HEADS.iter().copied().enumerate() {
             let id = index as u64 + 1;
             let r = rows.take("head", 5);
@@ -498,6 +585,31 @@ impl Candidate {
                 pc = next;
                 assert!(walk.len() <= MAX_PREFIX);
             }
+            let clean = if record && rows.is("clean") {
+                let r = rows.take("clean", 6);
+                assert_eq!((n(r[1]), n(r[2])), (id, pc));
+                let hook = candidate.hook.as_ref().unwrap().0;
+                assert_eq!(n(r[3]), hook);
+                let raw = recording::e9_prefix(pc, src.pc, hook);
+                assert_eq!(bytes(r[5]), raw);
+                assert_eq!(
+                    n(r[4]),
+                    pc + raw.len() as u64 - recording::E9_AFTER.len() as u64
+                );
+                for (i, &value) in raw.iter().enumerate() {
+                    assert_eq!(candidate.bytes_at(pc + i as u64, 1), [value]);
+                }
+                let clean = Clean {
+                    entry: pc,
+                    hook,
+                    return_pc: n(r[4]),
+                    bytes: raw,
+                };
+                pc += recording::E9_PREFIX_BYTES as u64;
+                Some(clean)
+            } else {
+                None
+            };
             assert_eq!(pc, body);
             let expected = operation(src, old, body);
             let mut operation = Vec::new();
@@ -543,6 +655,7 @@ impl Candidate {
                 body,
                 walk,
                 operation,
+                clean,
             });
         }
         for spec in specs {
@@ -736,10 +849,20 @@ impl<'a> Versions<'a> {
         );
         assert_eq!(target(), self.original.target);
         xstate_ready(&raw, &self.original.target);
-        assert_eq!(
-            base, self.candidate.base,
-            "all candidate original pages including globals/journal remain exact"
-        );
+        if let Some(j) = self.candidate.journal {
+            let h = &self.candidate.heads[spec.head_index];
+            let recorded = stem != "before" && h.clean.is_some();
+            assert_eq!(
+                base,
+                j.expected(&self.candidate.base, recorded.then_some(h.pc)),
+                "entire LOAD image; exact append and all other bytes unchanged"
+            );
+        } else {
+            assert_eq!(
+                base, self.candidate.base,
+                "all candidate original pages including globals/journal remain exact"
+            );
+        }
         let maps = std::fs::read_to_string(dir.join(format!("{stem}.maps"))).unwrap();
         for (index, p) in self.candidate.pages.iter().enumerate() {
             assert_eq!(&generated[index * PAGE..(index + 1) * PAGE], p.bytes);
@@ -752,7 +875,11 @@ impl<'a> Versions<'a> {
                 if a <= p.address && p.address + 4096 <= b {
                     matches += 1;
                     assert_eq!(f.len(), 5);
-                    assert_eq!(f[1], if p.flags == 5 { "r-xp" } else { "r--p" });
+                    if self.candidate.journal.is_some() && p.flags == 6 {
+                        assert_eq!(f[1], "rw-p");
+                    } else {
+                        assert_eq!(f[1], if p.flags == 5 { "r-xp" } else { "r--p" });
+                    }
                     assert_eq!(u64::from_str_radix(f[2], 16).unwrap(), 0);
                     assert_eq!((f[3], f[4]), ("00:00", "0"));
                 }
@@ -811,13 +938,79 @@ fn pair(
         trace.flush().unwrap();
         assert_eq!(actual, w.next);
     }
+    if let Some(clean) = &head.clean {
+        let mut decoder = iced_x86::Decoder::with_ip(
+            64,
+            &clean.bytes,
+            clean.entry,
+            iced_x86::DecoderOptions::NONE,
+        );
+        while decoder.can_decode() {
+            let instruction = decoder.decode();
+            assert!(!instruction.is_invalid());
+            let pc = instruction.ip();
+            let at = (pc - clean.entry) as usize;
+            let raw = &clean.bytes[at..at + instruction.len()];
+            assert_eq!(child.registers().rip, pc);
+            assert_eq!(child.memory(pc, raw.len()), raw);
+            step(&child, &mut steps);
+            let next = child.registers().rip;
+            writeln!(&mut trace, "clean-prefix\t{pc}\t{next}\t{}", hex(raw)).unwrap();
+            trace.flush().unwrap();
+            if instruction.flow_control() == iced_x86::FlowControl::Call {
+                assert_eq!(instruction.near_branch_target(), clean.hook);
+                assert_eq!(next, clean.hook);
+                assert_eq!(instruction.next_ip(), clean.return_pc);
+                recording_native::callback(
+                    &child,
+                    recording_native::Callback {
+                        start: clean.hook,
+                        code: &versions.candidate.hook.as_ref().unwrap().1,
+                        return_pc: clean.return_pc,
+                        logical: head.pc,
+                        core: false,
+                    },
+                    &mut steps,
+                    &mut trace,
+                );
+            } else {
+                assert_eq!(instruction.flow_control(), iced_x86::FlowControl::Next);
+                assert_eq!(next, instruction.next_ip());
+            }
+        }
+        assert_eq!(decoder.ip(), head.body);
+    }
+    let stack_expected = |base: &[u8]| {
+        if let Some(clean) = &head.clean {
+            let r = &before.state.registers;
+            recording::e9_stack(
+                base,
+                STACK_START,
+                spec.compared_stack_start,
+                r.rsp,
+                r.eflags,
+                [r.r11, r.r10, r.rax, r.r9, r.r8, r.rcx, r.rdx, r.rsi, r.rdi],
+                clean.return_pc,
+            )
+        } else {
+            base.to_vec()
+        }
+    };
     let restored = versions.capture(&child, spec, dir, "restored", head.pc, head.body);
     assert_state(&before.state, &restored.state);
     assert_eq!(restored.raw.len(), before.raw.len());
-    assert_eq!(
-        restored.stack, before.stack,
-        "null stateless gateway cannot claim private scratch writes"
-    );
+    if head.clean.is_some() {
+        assert_eq!(
+            restored.stack,
+            stack_expected(&before.stack),
+            "entire stack equals exact clean-call byte model"
+        );
+    } else {
+        assert_eq!(
+            restored.stack, before.stack,
+            "null stateless gateway cannot claim private scratch writes"
+        );
+    }
     if let Some(effect) = spec.memory_effect {
         if effect.access == seed::Access::Read {
             assert_eq!(child.memory(effect.address, 8), effect.bytes);
@@ -865,7 +1058,7 @@ fn pair(
             );
             assert_eq!(child.registers().rsp, address);
             assert_eq!(word(&child.memory(address, 8), 0), return_word);
-            let mut expected_stack = before.stack.clone();
+            let mut expected_stack = stack_expected(&before.stack);
             let at = usize::try_from(address.checked_sub(STACK_START).unwrap()).unwrap();
             expected_stack[at..at + 8].copy_from_slice(&return_word.to_le_bytes());
             let mut expected = Snapshot {
@@ -887,10 +1080,18 @@ fn pair(
     let final_state = versions.capture(&child, spec, dir, "after", logical(spec), case.finish);
     assert_state(&after.state, &final_state.state);
     assert_eq!(final_state.raw.len(), after.raw.len());
-    assert_eq!(
-        final_state.stack, after.stack,
-        "complete owned stack, with no scratch exception"
-    );
+    if head.clean.is_some() {
+        assert_eq!(
+            final_state.stack,
+            stack_expected(&after.stack),
+            "complete owned stack, exact clean-call words plus original effect"
+        );
+    } else {
+        assert_eq!(
+            final_state.stack, after.stack,
+            "complete owned stack, with no scratch exception"
+        );
+    }
     match spec.completion {
         seed::Completion::Fault {
             signal,
@@ -932,7 +1133,8 @@ fn pair(
 }
 
 pub fn main() {
-    let args: Vec<_> = std::env::args_os().collect();
+    let mut args: Vec<_> = std::env::args_os().collect();
+    let record = recording::arguments(&mut args);
     assert_eq!(
         args.len(),
         8,
@@ -952,7 +1154,7 @@ pub fn main() {
     let json = Input::open(Path::new(&args[5]), MAX_INPUT);
     let witness = Input::open(Path::new(&args[6]), MAX_INPUT);
     let inventory = admit(&original.bytes, &instructions.bytes);
-    let original_view = original_pages(&original.bytes);
+    let mut original_view = original_pages(&original.bytes);
     let anchors = seed::Anchors::new(ARRAY, FRAME).unwrap();
     let specs: Vec<_> = (0..seed::CASE_COUNT)
         .map(|i| inventory.case(i, anchors).unwrap())
@@ -963,7 +1165,11 @@ pub fn main() {
         &instructions,
         &requested_target,
         &specs,
+        record,
     );
+    if let Some(j) = candidate.journal {
+        j.seed(&mut original_view);
+    }
     let expanded = candidate
         .cases
         .iter()
@@ -1157,6 +1363,13 @@ pub fn main() {
         }
         candidate.stable();
         write_new(&case.join("pair.tsv"),format!("LI2E9PAIR\t1\ncase\t{}\ncomparisons\t3\nchildren\t2\ncall_intermediate_checks\t{}\nnormal_loader_validation\tfalse\nqualification_complete\tfalse\n",spec.case_index,usize::from(c.steps.len()==2)).as_bytes());
+    }
+    if record {
+        write_new(&dir.join("complete.tsv"),format!("LI2COMMONE9RECORDINGPAIRS\t1\nheads\t87\nnormal_pairs\t174\nfault_pairs\t2\nchildren\t352\ncomparisons\t528\ncall_intermediate_checks\t{expanded}\nsnapshots\t{}\nfiles\t{files}\nrecording_profile\tbounded-journal-v1\nnormal_loader_validation\tfalse\nqualification_complete\tfalse\n",880+expanded).as_bytes());
+        println!(
+            "E9 recording pairs complete: heads=87 normal=174 faults=2 comparisons=528 call_intermediates={expanded} files={files} qualification_complete=false"
+        );
+        return;
     }
     write_new(&dir.join("complete.tsv"),format!("LI2COMMONE9PAIRS\t1\nheads\t87\nnormal_pairs\t174\nfault_pairs\t2\nchildren\t352\ncomparisons\t528\ncall_intermediate_checks\t{expanded}\nsnapshots\t{}\nfiles\t{files}\nrecording_hooks\tUNIMPLEMENTED_UNRUN\nnormal_loader_validation\tfalse\nqualification_complete\tfalse\n",880+expanded).as_bytes());
     println!(
