@@ -33,9 +33,14 @@ actual register, flags, memory and FP results. The runtime validates the actual
 post-instruction PC after revoking all temporary executable pages; it does not
 predict indirect targets or emulate ordinary instructions.
 
-The classifier explicitly checks prefixes and refuses every unlisted code.
-TF-affecting, repeated-string, privileged and transaction instructions remain
-unsupported. Canonical ENDBR64 (`f3 0f 1e fa`) is admitted only under the
+The generic classifier explicitly checks prefixes and refuses every unlisted code,
+including repeated strings, TF-affecting, privileged and transaction instructions.
+A separate owner handles exactly canonical REP STOSQ (`f3 48 ab`). Every genuine
+iteration trap closes and synchronizes its source pages, checks actual RCX/RDI
+progress and validates the closed continuation while retaining the same borrow.
+Intermediate traps retain the CPU's RF/TF state; only final completion removes
+the injected TF and releases the borrow. Operand faults remain terminal.
+Canonical ENDBR64 (`f3 0f 1e fa`) is admitted only under the
 existing no-CET profile; additional or ignored prefixes and ENDBR32 still refuse.
 The prior measured linker refusal remains a historical failed continuation;
 this source addition does not establish a completed gated `ls` run. Random/ID instructions targeting
@@ -157,3 +162,12 @@ Run both `page_selected_integer.py --group 0` and `--group 1` at the same
 committed revision as the original generic oracle and connected evaluator.
 This finite validation does not claim every encoding or application exception
 behavior; divide faults remain outside the supported continuation profile.
+
+`page_selected_repeat.py --expect-revision REVISION` runs the original twenty-two
+connected programs plus ten REP programs: counts zero/one/three in both
+directions, crossing and end-of-page instructions, repeated owner use, and an
+actual first-store write fault. Run it on one reserved CPU. A separate bounded
+`LI2_REPEAT` report retains the last request, real permission/query/release
+prefixes and counters; the original `LI2_LOADER` report is unchanged. Its parser
+requires complete REP evidence and rejects an extra report in every old finite
+program. The real-linker diagnostic remains separate from finite completion.

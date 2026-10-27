@@ -6,8 +6,17 @@ static struct li2_step_session selected_session;
 static struct li2_step_owner selected_step;
 /* The old pending bit continues to guard every existing dispatch boundary.
    This tag chooses the sole cleanup owner; it is never execution authority. */
-enum selected_pending_route { SELECTED_NO_STEP, SELECTED_OLD_STEP, SELECTED_GENERIC_TF };
+enum selected_pending_route { SELECTED_NO_STEP, SELECTED_OLD_STEP, SELECTED_GENERIC_TF, SELECTED_REPEAT };
 static volatile sig_atomic_t selected_pending_route;
+static struct li2_repeat_owner selected_repeat;
+static struct li2_step_request selected_repeat_request;
+static struct li2_fetch_ref selected_repeat_borrow;
+static unsigned selected_repeat_borrow_held;
+static struct li2_tf_continuation selected_repeat_query,selected_repeat_previous_query;
+static uint64_t selected_repeat_attempts,selected_repeat_steps,selected_repeat_traces;
+static uint64_t selected_repeat_queries;
+static unsigned selected_repeat_release_started,selected_repeat_release_complete;
+static int selected_repeat_release_result;
 static struct li2_tf_owner selected_tf;
 static struct li2_tf_continuation selected_tf_continuation;
 static uint64_t selected_tf_attempts,selected_tf_steps;

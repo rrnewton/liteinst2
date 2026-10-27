@@ -5,6 +5,7 @@
 #include "provider.h"
 #include "step_owner.h"
 #include "tf_owner.h"
+#include "repeat_owner.h"
 #include "tf_continuation.h"
 #include "selected_globals.inc"
 #include <linux/audit.h>
@@ -42,6 +43,7 @@ static void number(struct writer *w,uint64_t n) {
 }
 static void field(struct writer *w,const char *name,uint64_t n) { text(w,name); number(w,n); }
 static void selected_report(struct writer *);
+static void selected_repeat_report(unsigned,unsigned,long);
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
     reported=1;
@@ -68,8 +70,10 @@ static void report(unsigned status,unsigned code,long detail) {
     field(&w,",\"last_mapping_syscall\":",lc.last_syscall); field(&w,",\"last_phase\":",lc.last_phase);
     selected_report(&w);
     text(&w,"}\n"); (void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
+    if(selected_repeat_attempts)selected_repeat_report(status,code,detail);
 }
 static void fail(unsigned code,long detail) {
+    if(selected_pending_route==SELECTED_REPEAT) li2_repeat_abort(&selected_repeat,code,detail);
     if(selected_pending_route==SELECTED_GENERIC_TF) li2_tf_abort(&selected_tf,code,detail);
     if(selected_step_pending) li2_step_abort(&selected_step,code,detail);
     li2_lifecycle_abort(); report(125,code,detail);
@@ -174,6 +178,16 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #include "selected_controller.inc"
 
 static void handler(int sig,siginfo_t *si,void *ptr) {
+    if(selected_pending_route==SELECTED_REPEAT) {
+        /* Preserve a real running REP fault before any generic guard. Nested
+           or invalid frames remain refused by the installed owner's enter. */
+        ucontext_t *uc=ptr;
+        if(handling || !selected_step_pending || !si || !uc || sig!=SIGTRAP ||
+           si->si_signo!=SIGTRAP || si->si_code!=TRAP_TRACE || si->si_errno ||
+           uc->uc_mcontext.gregs[REG_TRAPNO]!=1 || uc->uc_mcontext.gregs[REG_ERR] ||
+           (uintptr_t)si->si_addr!=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP])
+            li2_repeat_unexpected(&selected_repeat,sig,si,uc);
+    }
     if(selected_pending_route==SELECTED_GENERIC_TF) {
         /* Route real unexpected reserved events to the owner before the old
            controller guard can lose their actual running signal frame. The
@@ -187,7 +201,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
             li2_tf_unexpected(&selected_tf,sig,si,uc);
     }
     checked(!handling && si && ptr,218,sig); handling=1;
-    if(selected_pending_route==SELECTED_GENERIC_TF) {
+    if(selected_pending_route==SELECTED_REPEAT) {
+        selected_repeat_trace(sig,si,ptr);
+    } else if(selected_pending_route==SELECTED_GENERIC_TF) {
         selected_generic_trace(sig,si,ptr);
     } else if(selected_step_pending) {
         checked(selected_pending_route==SELECTED_OLD_STEP,657,0);

@@ -1,5 +1,5 @@
 /* Every target instruction stays NX until exact selected completion or one
-   of two distinct original-address step owners. No fast page is admitted. */
+   of three distinct original-address step owners. No fast page is admitted. */
 static void selected_report(struct writer *w) {
     field(w,",\"selected_profile\":",1);
     field(w,",\"selected_steps\":",selected_steps);
@@ -232,6 +232,8 @@ static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
     /* Retain the actual last owner, frame, query and release prefix until the
        next generic attempt. Counters are not an unbounded execution journal. */
 }
+#include "selected_repeat.inc"
+
 /* Internal-only controls while target is stopped and no step page is open.
    These controls cannot change source/lifecycle generations. Actual restoration
    must complete before any frame commit, fetch release or application return. */
@@ -300,6 +302,9 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
         g[REG_RIP]=(greg_t)selected_decoded.next_pc;g[REG_RCX]=g[REG_RIP];
         g[REG_EFL]=(greg_t)flags;g[REG_R11]=(greg_t)flags;
         selected_release();++selected_source_syscalls;dispatch_operation(number,context);return;
+    }
+    if(!selected_selftesting && li2_repeat_candidate(&selected_decoded)) {
+        selected_repeat_begin(sig,si,context,flags);return;
     }
     if(!selected_selftesting && selected_decoded.kind==LI2_NONE &&
        selected_decoded.step_disposition!=LI2_STEP_CANDIDATE) {
