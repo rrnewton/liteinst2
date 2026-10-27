@@ -80,3 +80,6 @@ thread override. These controls support finite evidence for page admission,
 first-instruction coverage and tactic validation (candidate claims 1, 2 and 4).
 They do not establish a software preemption clock, general mapping support,
 complete B3/B4, useful-scale performance or a fault-transparency theorem.
+
+Exact-revision qualification and the successful compiler consumer are recorded in
+[initial coalescence results](initial-coalescence-results.md).
