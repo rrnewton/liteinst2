@@ -21,8 +21,8 @@ pub(super) fn setup(before: &TaskStateSnapshot, ordinal: usize) -> TaskStateSnap
         }
         1 => {
             assert_eq!(before.registers.rsp & 4095, 0);
-            after.registers.rsp += 4;
-            after.registers.rip += 4;
+            after.registers.rsp += 4100;
+            after.registers.rip += 7;
             after.registers.eflags = before.registers.eflags & !0x8d5;
         }
         _ => panic!("unexpected literal stack setup instruction"),

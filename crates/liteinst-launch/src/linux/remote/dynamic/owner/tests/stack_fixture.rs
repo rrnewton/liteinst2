@@ -1,5 +1,21 @@
 //! Additive literal ELF constructor; existing Fixture constructors stay exact.
 use super::*;
+
+impl Harness {
+    /// Fixed positive-only argv table; use the enclosing original deadline.
+    /// Existing Harness::launch and every negative fixture remain unchanged.
+    pub(in crate::linux::remote::dynamic::owner) fn launch_stack_pair(
+        &mut self,
+        fixture: &Fixture,
+        until: Instant,
+    ) -> Result<Ready, LaunchError> {
+        let inherited = self.mask.as_ref().unwrap().original();
+        let _guard = crate::TEST_FILE_FORK.lock().unwrap();
+        let mut command = LaunchCommand::new(&fixture.path);
+        command.args = vec![std::ffi::OsString::new(); 512];
+        launch::start(self.owner(), &command, inherited, until)
+    }
+}
 impl Fixture {
     pub(in crate::linux::remote::dynamic::owner) fn stack_code(
         entry: usize,

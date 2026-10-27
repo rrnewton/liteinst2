@@ -12,8 +12,9 @@ pub(super) struct Before {
     pub(super) maps: Vec<u8>,
     pub(super) source: Vec<u8>,
     pub(super) stack_range: std::ops::Range<u64>,
-    /// Positive fixtures deliberately read the complete stack before admission
-    /// to establish residency. Negative raw fixtures never select this mode.
+    /// Positive fixtures retain the complete stack before admission. A read
+    /// does not establish exclusivity; cross-page fixtures check actual page
+    /// eligibility first. Negative raw fixtures never select this mode.
     pub(super) stack: Option<Vec<u8>>,
     pub(super) memory: File,
 }
@@ -23,6 +24,7 @@ impl Before {
         initial: &crate::linux::remote::dynamic::DynamicEvent,
         until: Instant,
         read_stack: bool,
+        cross_page_stack: bool,
     ) -> Self {
         held(owner, until);
         assert_eq!(initial.tid, owner.pid);
@@ -38,7 +40,32 @@ impl Before {
         let range = stack[0].start..stack[0].end;
         let length = usize::try_from(range.end - range.start).unwrap();
         assert!((1..=1024 * 1024).contains(&length));
+        // Check both real entries before opening mem or touching any stack byte.
+        let initial_pair = cross_page_stack.then(|| {
+            assert!(read_stack);
+            resident_pair(owner, until, &range)
+        });
         let memory = File::open(format!("/proc/{}/mem", owner.pid)).unwrap();
+        // Validate the actual fixed table after eligibility and before the
+        // complete stack read; retain it for the later unchanged-byte check.
+        let initial_table = initial_pair.as_ref().map(|initial| {
+            held(owner, until);
+            let mut table = [0_u8; 4120];
+            assert_eq!(
+                memory.read_at(&mut table, initial.registers.rsp).unwrap(),
+                table.len()
+            );
+            let word = |index: usize| {
+                u64::from_le_bytes(table[index * 8..(index + 1) * 8].try_into().unwrap())
+            };
+            assert_eq!(word(0), 513);
+            assert_eq!(word(514), 0);
+            for index in 1..=513 {
+                assert!(range.contains(&word(index)));
+            }
+            held(owner, until);
+            table
+        });
         let stack = read_stack.then(|| {
             let mut bytes = vec![0; length];
             memory.read_exact_at(&mut bytes, range.start).unwrap();
@@ -55,6 +82,29 @@ impl Before {
             stack,
             memory,
         };
+        if let Some(initial) = initial_pair {
+            assert_eq!(value.state, initial);
+            let original = value.stack.as_ref().unwrap();
+            let start = usize::try_from(initial.registers.rsp - value.stack_range.start).unwrap();
+            let table = &original[start..start + 4120];
+            assert_eq!(table, initial_table.as_ref().unwrap());
+            let word = |index: usize| {
+                u64::from_le_bytes(table[index * 8..(index + 1) * 8].try_into().unwrap())
+            };
+            assert_eq!(word(0), 513);
+            assert_eq!(word(514), 0);
+            for index in 1..=513 {
+                let pointer = word(index);
+                assert!(value.stack_range.contains(&pointer));
+                if index > 1 {
+                    let offset = usize::try_from(pointer - value.stack_range.start).unwrap();
+                    assert_eq!(original[offset], 0);
+                }
+            }
+            owner
+                .require_stop(value.initial.stop_token().unwrap())
+                .unwrap();
+        }
         held(owner, until);
         value
     }
@@ -75,6 +125,36 @@ impl Before {
         assert_eq!(actual, self.source);
         assert_eq!(diagnostic_held(owner, until), custody);
     }
+}
+/// Independent positive-fixture check, not an operand or completion authority.
+fn resident_pair(owner: &Owner, until: Instant, stack: &std::ops::Range<u64>) -> TaskStateSnapshot {
+    held(owner, until);
+    let initial = state(owner.pid);
+    let rsp = initial.registers.rsp;
+    assert_eq!(rsp & 15, 0);
+    let table_end = rsp.checked_add(4120).unwrap();
+    assert!(stack.start <= rsp && table_end <= stack.end);
+    let boundary = (rsp & !4095).checked_add(4096).unwrap();
+    let first = boundary.checked_sub(8).unwrap();
+    let end = boundary.checked_add(8).unwrap();
+    assert!(rsp <= first && end <= table_end);
+    assert!(stack.start <= first && end <= stack.end);
+    assert_eq!((end - 1) / 4096, first / 4096 + 1);
+    let offset = (first / 4096).checked_mul(8).unwrap();
+    let pagemap = File::open(format!("/proc/{}/pagemap", owner.pid)).unwrap();
+    let mut entries = [0_u8; 16];
+    assert_eq!(pagemap.read_at(&mut entries, offset).unwrap(), 16);
+    const PRESENT: u64 = 1 << 63;
+    const EXCLUSIVE: u64 = 1 << 56;
+    const ALLOWED: u64 = PRESENT | EXCLUSIVE | (1 << 55) | ((1 << 55) - 1);
+    for bytes in entries.chunks_exact(8) {
+        let entry = u64::from_le_bytes(bytes.try_into().unwrap());
+        assert_eq!(entry & (PRESENT | EXCLUSIVE), PRESENT | EXCLUSIVE);
+        assert_eq!(entry & !ALLOWED, 0);
+    }
+    drop(pagemap);
+    held(owner, until);
+    initial
 }
 pub(super) fn held(owner: &Owner, until: Instant) {
     owner
@@ -170,13 +250,24 @@ pub(super) fn with_owner<T>(
     );
     harness.owner().lifecycle_options = Some(DynamicLifecycleOptions::default());
     let until = Instant::now() + TIMEOUT;
-    let launched = harness.launch(&program.fixture).unwrap();
+    let cross_page_stack = program.cross_page_stack();
+    let launched = if cross_page_stack {
+        harness.launch_stack_pair(&program.fixture, until).unwrap()
+    } else {
+        harness.launch(&program.fixture).unwrap()
+    };
     let app = pin(launched.pid);
     let helper = pin(harness.owner().broker.as_ref().unwrap().pid);
     assert_ne!(app.as_raw_fd(), helper.as_raw_fd());
     let initial = launched.event.stop_token().unwrap().clone();
     let outcome = catch_unwind(AssertUnwindSafe(|| {
-        let before = Before::capture(harness.owner(), &launched.event, until, read_stack);
+        let before = Before::capture(
+            harness.owner(),
+            &launched.event,
+            until,
+            read_stack,
+            cross_page_stack,
+        );
         assert_eq!(before.state.registers.rip, program.entry);
         assert_eq!(before.state.registers.orig_rax, libc::SYS_execve as u64);
         action(harness.owner(), &initial, until, &before)
@@ -401,7 +492,7 @@ pub(super) fn with_raw_owner<T: FnOnce()>(
     let helper = pin(harness.owner().broker.as_ref().unwrap().pid);
     let initial = ready.event.stop_token().unwrap().clone();
     let outcome = catch_unwind(AssertUnwindSafe(|| {
-        let before = Before::capture(harness.owner(), &ready.event, until, false);
+        let before = Before::capture(harness.owner(), &ready.event, until, false, false);
         assert!(before.stack.is_none());
         action(harness.owner(), &initial, until, &before)
     }));

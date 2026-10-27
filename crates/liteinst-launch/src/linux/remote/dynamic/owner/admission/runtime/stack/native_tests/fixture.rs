@@ -18,7 +18,9 @@ impl Program {
     pub(super) fn call(entry: usize, unaligned: bool) -> Self {
         let setup: &[u8] = if unaligned {
             &[
-                0x48, 0x81, 0xe4, 0x00, 0xf0, 0xff, 0xff, 0x48, 0x83, 0xc4, 0x04,
+                // AND RSP,-4096; ADD RSP,4100. The upper boundary lies
+                // in the fixed kernel-written argc/argv table, not below it.
+                0x48, 0x81, 0xe4, 0x00, 0xf0, 0xff, 0xff, 0x48, 0x81, 0xc4, 0x04, 0x10, 0x00, 0x00,
             ]
         } else {
             &[]
@@ -50,6 +52,13 @@ impl Program {
             next,
             setup: usize::from(unaligned) * 2,
             encoding,
+        }
+    }
+    pub(super) fn cross_page_stack(&self) -> bool {
+        match self.setup {
+            0 => false,
+            2 => true,
+            _ => panic!("unexpected positive stack fixture setup"),
         }
     }
     pub(super) fn literal(entry: usize, code: &[u8]) -> Self {
