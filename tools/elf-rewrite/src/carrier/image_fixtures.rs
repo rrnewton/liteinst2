@@ -1317,3 +1317,559 @@ fn mixed_relocation_reference_inventory_is_ordered_and_distinct_from_writes() {
             .any(|owner| owner.start().0 <= 0xc00 && owner.end().0 >= 0xc78)
     );
 }
+
+// Explicit ET_EXEC interleaving. The legacy append-only fixtures above remain literal.
+fn interleaved_fixture(interpreter: bool) -> Vec<u8> {
+    let mut bytes = fixture(2, 0x400000, interpreter, &[]);
+    let rw = 3 + usize::from(interpreter);
+    for field in [16, 24] {
+        put64(&mut bytes, 64 + rw * 56 + field, 0x406000);
+        put64(&mut bytes, 64 + (rw + 1) * 56 + field, 0x406200);
+    }
+    bytes
+}
+
+fn interleaved_images() -> Vec<RxImage> {
+    vec![
+        RxImage {
+            entry: ElfVaddr(0x40c003),
+            bytes: vec![0x90, 0xc3],
+        },
+        RxImage {
+            entry: ElfVaddr(0x10005),
+            bytes: vec![0xb8, 42, 0, 0, 0, 0xc3],
+        },
+        RxImage {
+            entry: ElfVaddr(0x403007),
+            bytes: vec![0x90, 0xc3],
+        },
+    ]
+}
+
+fn interleaved_policy() -> ImagePolicy {
+    ImagePolicy {
+        layout: CarrierPolicy {
+            max_virtual_span: 0x800000,
+            ..policy().layout
+        },
+        ..policy()
+    }
+}
+
+fn interleaved_append(
+    bytes: &[u8],
+    images: &[RxImage],
+    bounds: ImagePolicy,
+) -> Result<CarrierOutput, Error> {
+    append_exec_carrier_with_interleaved_images(
+        &parse(bytes),
+        ImageRequest {
+            carrier_vaddr: ElfVaddr(0x40a000),
+            payload: b"metadata",
+            images,
+            source_dependencies: &[dependency()],
+        },
+        &[edit(bytes)],
+        bounds,
+    )
+}
+
+fn assert_interleaved_preservation(original: &[u8], output: &CarrierOutput, images: &[RxImage]) {
+    let old = parse(original);
+    let new = parse(output.bytes());
+    let mut expected = original.to_vec();
+    assert_eq!(output.changes().len(), 3);
+    for change in output.changes() {
+        let at = change.edit.offset.0 as usize;
+        assert_eq!(
+            &original[at..at + change.edit.expected.len()],
+            change.edit.expected
+        );
+        expected[at..at + change.edit.replacement.len()].copy_from_slice(&change.edit.replacement);
+    }
+    assert_eq!(&output.bytes()[..original.len()], expected);
+    assert_eq!(new.header().entry, old.header().entry);
+    assert_eq!(
+        output.original_to_output_header.len(),
+        old.program_headers().len()
+    );
+    assert!(
+        output
+            .original_to_output_header
+            .windows(2)
+            .all(|w| w[0] < w[1])
+    );
+    for item in old.program_headers() {
+        let index = output.original_to_output_header[item.index];
+        if item.kind != SegmentType::ProgramHeaders {
+            let before = 64 + item.index * 56;
+            let after = output.program_table.start().0 as usize + index * 56;
+            assert_eq!(
+                &original[before..before + 56],
+                &output.bytes()[after..after + 56]
+            );
+        }
+    }
+    let first_load = new.segments(SegmentType::Load).next().unwrap().index;
+    assert_eq!(new.segments(SegmentType::ProgramHeaders).count(), 1);
+    assert!(output.phdr_index < first_load);
+    for interp in new.segments(SegmentType::Interpreter) {
+        assert!(interp.index < first_load);
+    }
+    let phdr = &new.program_headers()[output.phdr_index];
+    assert_eq!(
+        (
+            phdr.offset,
+            phdr.vaddr,
+            phdr.file_size,
+            phdr.memory_size,
+            phdr.flags.0
+        ),
+        (
+            output.program_table.start(),
+            output.program_table_vaddr,
+            output.program_table.len(),
+            output.program_table.len(),
+            4
+        )
+    );
+    let table = new
+        .file_to_virtual(output.program_table.start(), output.program_table.len())
+        .unwrap();
+    assert_eq!(
+        (
+            table.program_header,
+            table.virtual_range.start(),
+            table.flags.0
+        ),
+        (output.carrier_index, output.program_table_vaddr, 4)
+    );
+    assert_eq!(
+        new.file_to_virtual(FileOffset(0), 64)
+            .unwrap()
+            .virtual_range
+            .start(),
+        ElfVaddr(0x400000)
+    );
+    let loads: Vec<_> = new.segments(SegmentType::Load).collect();
+    assert!(loads.windows(2).all(|w| w[0].vaddr <= w[1].vaddr));
+    let nonempty: Vec<_> = loads.iter().filter(|h| h.memory_size != 0).collect();
+    assert!(
+        nonempty
+            .windows(2)
+            .all(|w| align_up(w[0].vaddr.0 + w[0].memory_size, 4096).unwrap()
+                <= align_down(w[1].vaddr.0, 4096))
+    );
+    assert_eq!(output.images.len(), images.len());
+    for (image, placement) in images.iter().zip(&output.images) {
+        let header = &new.program_headers()[placement.program_header];
+        assert_eq!(placement.entry, image.entry);
+        assert_eq!(
+            new.executable_bytes(image.entry, image.bytes.len() as u64)
+                .unwrap(),
+            image.bytes
+        );
+        assert_eq!((header.flags.0, header.file_size), (5, header.memory_size));
+        assert_eq!(
+            (
+                header.offset.0 % 4096,
+                header.vaddr.0 % 4096,
+                header.alignment
+            ),
+            (0, 0, 4096)
+        );
+        let prefix = (image.entry.0 - header.vaddr.0) as usize;
+        assert!(
+            output.bytes()[header.offset.0 as usize..header.offset.0 as usize + prefix]
+                .iter()
+                .all(|b| *b == 0)
+        );
+        assert_eq!(
+            new.file_to_virtual(placement.file.start(), placement.file.len())
+                .unwrap()
+                .program_header,
+            placement.program_header
+        );
+    }
+}
+
+#[test]
+fn interleaved_exec_low_gap_high_preserve_header_mapping_order_and_image_identity() {
+    for interpreter in [false, true] {
+        for existing_phdr in [false, true] {
+            let mut original = interleaved_fixture(interpreter);
+            if !existing_phdr {
+                put32(&mut original, 64, 0);
+            }
+            let saved = original.clone();
+            let images = interleaved_images();
+            let output = interleaved_append(&original, &images, interleaved_policy()).unwrap();
+            assert_eq!(original, saved);
+            assert_interleaved_preservation(&original, &output, &images);
+            assert_eq!(output.new_load_pages, 4);
+            assert_eq!(output.bytes().len(), 0x6009);
+            for (p, (at, size)) in output
+                .images
+                .iter()
+                .zip([(0x4003, 2), (0x5005, 6), (0x6007, 2)])
+            {
+                assert_eq!(p.file, FileRange::checked(FileOffset(at), size).unwrap());
+            }
+            assert!(
+                output.images[1].program_header
+                    < output.original_to_output_header[1 + usize::from(interpreter)]
+            );
+            assert!(output.carrier_index < output.images[0].program_header);
+        }
+    }
+}
+
+#[test]
+fn interleaved_empty_load_ties_keep_original_first_and_phdr_interpreter_precedence() {
+    let mut original = interleaved_fixture(true);
+    encode_phdr(
+        &mut original,
+        64 + 6 * 56,
+        EncodedHeader {
+            kind: 1,
+            flags: 0,
+            offset: 0,
+            vaddr: 0x409000,
+            file_size: 0,
+            memory_size: 0,
+            alignment: 1,
+        },
+    )
+    .unwrap();
+    let mut images = interleaved_images();
+    images[0].entry = ElfVaddr(0x409003);
+    let output = interleaved_append(&original, &images, interleaved_policy()).unwrap();
+    assert_interleaved_preservation(&original, &output, &images);
+    assert!(output.original_to_output_header[6] < output.images[0].program_header);
+}
+
+#[test]
+fn interleaved_all_original_pages_bss_crossings_and_new_load_overlaps_refuse() {
+    let original = interleaved_fixture(true);
+    let saved = original.clone();
+    for (entry, length) in [
+        (0x400000, 1),
+        (0x401080, 1),
+        (0x406080, 1),
+        (0x407080, 1),
+        (0x3fffff, 2),
+        (0x405fff, 2),
+        (0x40a001, 1),
+    ] {
+        let image = RxImage {
+            entry: ElfVaddr(entry),
+            bytes: vec![0x90; length],
+        };
+        assert!(
+            matches!(
+                interleaved_append(&original, &[image], interleaved_policy()),
+                Err(Error::InvalidImage { .. })
+            ),
+            "entry={entry:x}"
+        );
+    }
+    let mut images = interleaved_images();
+    images[2].entry = ElfVaddr(0x10080);
+    assert!(matches!(
+        interleaved_append(&original, &images, interleaved_policy()),
+        Err(Error::InvalidImage { .. })
+    ));
+    images = interleaved_images();
+    images[0].bytes.clear();
+    assert_eq!(
+        interleaved_append(&original, &images, interleaved_policy()).unwrap_err(),
+        Error::InvalidImage { index: 0 }
+    );
+    assert_eq!(original, saved);
+    let mut overlap = original.clone();
+    for field in [16, 24] {
+        put64(&mut overlap, 64 + 4 * 56 + field, 0x401000);
+    }
+    assert_eq!(
+        interleaved_append(&overlap, &interleaved_images(), interleaved_policy()).unwrap_err(),
+        Error::OverlappingLoadPages {
+            before: 3,
+            after: 4
+        }
+    );
+}
+
+#[test]
+fn interleaved_metadata_and_original_header_ownership_are_not_exemptions() {
+    for kind in [4, 0x70000042] {
+        let mut original = interleaved_fixture(true);
+        encode_phdr(
+            &mut original,
+            64 + 6 * 56,
+            EncodedHeader {
+                kind,
+                flags: 4,
+                offset: 0x600,
+                vaddr: 0x10080,
+                file_size: 16,
+                memory_size: 16,
+                alignment: 8,
+            },
+        )
+        .unwrap();
+        assert_eq!(
+            interleaved_append(&original, &interleaved_images(), interleaved_policy()).unwrap_err(),
+            Error::CarrierMetadataOverlap { index: 6 }
+        );
+    }
+    let mut original = interleaved_fixture(true);
+    put32(&mut original, 64 + 2 * 56 + 4, 0);
+    assert_eq!(
+        interleaved_append(&original, &interleaved_images(), interleaved_policy()).unwrap_err(),
+        Error::HeaderMapping
+    );
+    let mut original = interleaved_fixture(true);
+    for field in [32, 40] {
+        put64(&mut original, 64 + 2 * 56 + field, 64);
+    }
+    assert!(matches!(
+        interleaved_append(&original, &interleaved_images(), interleaved_policy()),
+        Err(Error::Elf(elf64::Error::UnmappedFile { .. }))
+    ));
+    let mut original = interleaved_fixture(true);
+    put64(&mut original, 64 + 16, 0x400048);
+    assert_eq!(
+        interleaved_append(&original, &interleaved_images(), interleaved_policy()).unwrap_err(),
+        Error::InvalidProgramHeaderMapping
+    );
+    let mut original = interleaved_fixture(true);
+    original[0x606] = b'x';
+    assert_eq!(
+        interleaved_append(&original, &interleaved_images(), interleaved_policy()).unwrap_err(),
+        Error::InvalidInterpreter
+    );
+    for (index, expected) in [
+        (0, Error::InvalidProgramHeaderMapping),
+        (1, Error::InvalidInterpreter),
+    ] {
+        let mut original = interleaved_fixture(true);
+        let early = original[64 + index * 56..64 + (index + 1) * 56].to_vec();
+        let late = original[64 + 6 * 56..64 + 7 * 56].to_vec();
+        original[64 + index * 56..64 + (index + 1) * 56].copy_from_slice(&late);
+        original[64 + 6 * 56..64 + 7 * 56].copy_from_slice(&early);
+        assert_eq!(
+            interleaved_append(&original, &interleaved_images(), interleaved_policy()).unwrap_err(),
+            expected
+        );
+    }
+}
+
+#[test]
+fn interleaved_union_span_and_all_allocation_budgets_have_exact_edges() {
+    let original = interleaved_fixture(true);
+    let images = interleaved_images();
+    let exact = ImagePolicy {
+        max_images: 3,
+        max_new_load_pages: 4,
+        layout: CarrierPolicy {
+            max_program_headers: 11,
+            max_added_file_bytes: 0x3009,
+            max_output_file_bytes: 0x6009,
+            max_virtual_span: 0x3fd000,
+            ..interleaved_policy().layout
+        },
+        ..interleaved_policy()
+    };
+    let output = interleaved_append(&original, &images, exact).unwrap();
+    assert_eq!(
+        (
+            output.new_load_pages,
+            output.bytes().len(),
+            output.program_table.len()
+        ),
+        (4, 0x6009, 11 * 56)
+    );
+    for (resource, required, limit, bounds) in [
+        (
+            "images",
+            3,
+            2,
+            ImagePolicy {
+                max_images: 2,
+                ..exact
+            },
+        ),
+        (
+            "new load pages",
+            4,
+            3,
+            ImagePolicy {
+                max_new_load_pages: 3,
+                ..exact
+            },
+        ),
+        (
+            "program headers",
+            11,
+            10,
+            ImagePolicy {
+                layout: CarrierPolicy {
+                    max_program_headers: 10,
+                    ..exact.layout
+                },
+                ..exact
+            },
+        ),
+        (
+            "added file bytes",
+            0x3009,
+            0x3008,
+            ImagePolicy {
+                layout: CarrierPolicy {
+                    max_added_file_bytes: 0x3008,
+                    ..exact.layout
+                },
+                ..exact
+            },
+        ),
+        (
+            "output file bytes",
+            0x6009,
+            0x6008,
+            ImagePolicy {
+                layout: CarrierPolicy {
+                    max_output_file_bytes: 0x6008,
+                    ..exact.layout
+                },
+                ..exact
+            },
+        ),
+        (
+            "virtual span",
+            0x3fd000,
+            0x3fcfff,
+            ImagePolicy {
+                layout: CarrierPolicy {
+                    max_virtual_span: 0x3fcfff,
+                    ..exact.layout
+                },
+                ..exact
+            },
+        ),
+    ] {
+        assert_eq!(
+            interleaved_append(&original, &images, bounds).unwrap_err(),
+            Error::Budget {
+                resource,
+                required,
+                limit
+            }
+        );
+    }
+}
+
+#[test]
+fn interleaved_profile_is_explicit_exec_only_and_legacy_low_image_refusal_remains() {
+    let original = interleaved_fixture(true);
+    let low = [RxImage {
+        entry: ElfVaddr(0x10005),
+        bytes: vec![0xc3],
+    }];
+    assert_eq!(
+        append_carrier_with_images(
+            &parse(&original),
+            ImageRequest {
+                carrier_vaddr: ElfVaddr(0x40a000),
+                payload: b"metadata",
+                images: &low,
+                source_dependencies: &[],
+            },
+            &[],
+            interleaved_policy()
+        )
+        .unwrap_err(),
+        Error::InvalidImage { index: 0 }
+    );
+    assert_eq!(
+        append_exec_carrier_with_interleaved_images(
+            &parse(&original),
+            ImageRequest {
+                carrier_vaddr: ElfVaddr(0x403000),
+                payload: b"metadata",
+                images: &low,
+                source_dependencies: &[],
+            },
+            &[],
+            interleaved_policy()
+        )
+        .unwrap_err(),
+        Error::CarrierPlacement
+    );
+    let mut dynamic = original.clone();
+    put16(&mut dynamic, 16, 3);
+    assert_eq!(
+        interleaved_append(&dynamic, &low, interleaved_policy()).unwrap_err(),
+        Error::UnsupportedObjectType
+    );
+    let mut images = interleaved_images();
+    images[0].entry = ElfVaddr(1 << 47);
+    assert_eq!(
+        interleaved_append(&original, &images, interleaved_policy()).unwrap_err(),
+        Error::AddressLimit { index: None }
+    );
+    images[0].entry = ElfVaddr(u64::MAX);
+    assert!(matches!(
+        interleaved_append(&original, &images, interleaved_policy()),
+        Err(Error::Arithmetic { .. })
+    ));
+}
+
+#[test]
+fn interleaved_above_only_output_is_byte_identical_to_legacy_append_profile() {
+    let original = interleaved_fixture(true);
+    let images = [
+        RxImage {
+            entry: ElfVaddr(0x40c003),
+            bytes: vec![0x90, 0xc3],
+        },
+        RxImage {
+            entry: ElfVaddr(0x409005),
+            bytes: vec![0xc3],
+        },
+    ];
+    let new = interleaved_append(&original, &images, interleaved_policy()).unwrap();
+    let old = append_carrier_with_images(
+        &parse(&original),
+        ImageRequest {
+            carrier_vaddr: ElfVaddr(0x40a000),
+            payload: b"metadata",
+            images: &images,
+            source_dependencies: &[dependency()],
+        },
+        &[edit(&original)],
+        interleaved_policy(),
+    )
+    .unwrap();
+    assert_eq!(new.bytes(), old.bytes());
+    assert_eq!(new.changes(), old.changes());
+    assert_eq!(new.images, old.images);
+    assert_eq!(new.original_to_output_header, old.original_to_output_header);
+    assert_eq!(
+        (new.phdr_index, new.carrier_index, new.new_load_pages),
+        (old.phdr_index, old.carrier_index, old.new_load_pages)
+    );
+    assert_eq!(
+        (
+            new.program_table,
+            new.program_table_vaddr,
+            new.payload,
+            new.appended
+        ),
+        (
+            old.program_table,
+            old.program_table_vaddr,
+            old.payload,
+            old.appended
+        )
+    );
+}

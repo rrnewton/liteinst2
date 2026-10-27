@@ -391,6 +391,91 @@ fn carrier(
     expected
 }
 
+// Independent explicit owned-neighbor layout: use the unchanged byte/backing
+// reconstruction, then merge only its new LOAD records into the original table.
+// This does not call the producer or infer the mode from candidate addresses.
+fn carrier_interleaved(
+    original: &[u8],
+    overlay: &[u8],
+    old: &Elf64<'_>,
+    images: &[Image],
+    metadata: &[u8],
+    plan: &[u8],
+    carrier_pc: u64,
+) -> Vec<u8> {
+    assert_eq!(
+        old.header().object_type,
+        liteinst_rewrite::carrier::elf64::ObjectType::Executable
+    );
+    let mut expected = carrier(original, overlay, old, images, metadata, plan, carrier_pc);
+    let offset = end(original.len() as u64) as usize;
+    let insert = usize::from(old.segments(SegmentType::ProgramHeaders).next().is_none());
+    let original_count = old.program_headers().len();
+    let new_count = 1 + images.len();
+    let count = original_count + insert + new_count;
+    let table = expected[offset..offset + count * 56].to_vec();
+    let old_records = &table[insert * 56..(insert + original_count) * 56];
+    let new_records: Vec<_> = table[(insert + original_count) * 56..]
+        .chunks_exact(56)
+        .collect();
+    assert_eq!(new_records.len(), new_count);
+    let address = |raw: &[u8]| u64::from_le_bytes(raw[16..24].try_into().unwrap());
+    let kind = |raw: &[u8]| u32::from_le_bytes(raw[..4].try_into().unwrap());
+    assert!(new_records.iter().all(|raw| kind(raw) == 1));
+    assert!(
+        new_records
+            .windows(2)
+            .all(|pair| address(pair[0]) < address(pair[1]))
+    );
+    let mut result = Vec::with_capacity(count * 56);
+    if insert == 1 {
+        result.extend_from_slice(&table[..56]);
+    }
+    let mut remaining = new_records.iter().peekable();
+    let mut original_indices = Vec::with_capacity(original_count);
+    for (ph, raw) in old
+        .program_headers()
+        .iter()
+        .zip(old_records.chunks_exact(56))
+    {
+        if ph.kind == SegmentType::Load {
+            while remaining
+                .peek()
+                .is_some_and(|next| address(next) < ph.vaddr.0)
+            {
+                result.extend_from_slice(remaining.next().unwrap());
+            }
+        }
+        original_indices.push(result.len() / 56);
+        result.extend_from_slice(raw);
+    }
+    for raw in remaining {
+        result.extend_from_slice(raw);
+    }
+    assert_eq!(result.len(), table.len());
+    assert!(original_indices.windows(2).all(|pair| pair[0] < pair[1]));
+    let first_load = result
+        .chunks_exact(56)
+        .position(|raw| kind(raw) == 1)
+        .unwrap();
+    let phdr: Vec<_> = result
+        .chunks_exact(56)
+        .enumerate()
+        .filter(|(_, raw)| kind(raw) == 6)
+        .collect();
+    assert_eq!(phdr.len(), 1);
+    assert!(phdr[0].0 < first_load);
+    assert!(
+        result
+            .chunks_exact(56)
+            .enumerate()
+            .filter(|(_, raw)| kind(raw) == 3)
+            .all(|(index, _)| index < first_load)
+    );
+    expected[offset..offset + table.len()].copy_from_slice(&result);
+    expected
+}
+
 fn field(
     offset: usize,
     width: usize,
@@ -1988,8 +2073,17 @@ fn main() {
             assert!(n(row[1]) < images.len() as u64);
         }
     }
+    let reconstruct = match planning {
+        PlanningProfile::OwnedForeignNeighbors
+            if old.header().object_type
+                == liteinst_rewrite::carrier::elf64::ObjectType::Executable =>
+        {
+            carrier_interleaved
+        }
+        PlanningProfile::Legacy | PlanningProfile::OwnedForeignNeighbors => carrier,
+    };
     assert_eq!(
-        carrier(
+        reconstruct(
             &original.bytes,
             &sparse_view,
             &old,
@@ -2553,5 +2647,92 @@ mod placement_tests {
                 assert!(owners.iter().all(|&r| disjoint(r, permit.range)));
             }
         }
+    }
+
+    #[test]
+    fn interleaved_full_carrier_reconstruction_matches_literal_header_ownership() {
+        use liteinst_rewrite::carrier::{self, CarrierPolicy, ImagePolicy, ImageRequest, RxImage};
+        let (original, _) = policy_fixture(true);
+        let old = Elf64::parse(&original, ParseLimits::default()).unwrap();
+        let images = vec![
+            Image {
+                address: 0x500003,
+                bytes: vec![0x90, 0xc3],
+            },
+            Image {
+                address: 0x10005,
+                bytes: vec![0xc3],
+            },
+        ];
+        let rx: Vec<_> = images
+            .iter()
+            .map(|image| RxImage {
+                entry: ElfVaddr(image.address),
+                bytes: image.bytes.clone(),
+            })
+            .collect();
+        let metadata = b"synthetic-metadata";
+        let plan = b"synthetic-plan";
+        let mut payload = b"LI2TOOL-CANDIDATE-UNREADY-V1\0".to_vec();
+        payload.extend_from_slice(&ContentId::of(metadata).0);
+        payload.extend_from_slice(&ContentId::of(plan).0);
+        let request = || ImageRequest {
+            carrier_vaddr: ElfVaddr(0x20000000),
+            payload: &payload,
+            images: &rx,
+            source_dependencies: &[],
+        };
+        let policy = ImagePolicy {
+            layout: CarrierPolicy {
+                page_size: 4096,
+                user_address_limit: 1 << 47,
+                max_added_file_bytes: 1_048_576,
+                max_output_file_bytes: 1_048_576,
+                max_program_headers: 512,
+                max_virtual_span: 1 << 30,
+            },
+            dynamic: carrier::dynamic::Limits::default(),
+            max_images: 2,
+            max_new_load_pages: 3,
+        };
+        assert!(matches!(
+            carrier::append_carrier_with_images(&old, request(), &[], policy),
+            Err(carrier::Error::InvalidImage { index: 1 })
+        ));
+        let output =
+            carrier::append_exec_carrier_with_interleaved_images(&old, request(), &[], policy)
+                .unwrap();
+        let expected = carrier_interleaved(
+            &original, &original, &old, &images, metadata, plan, 0x20000000,
+        );
+        assert_eq!(output.bytes(), expected);
+        let parsed = Elf64::parse(output.bytes(), ParseLimits::default()).unwrap();
+        assert_eq!(
+            parsed
+                .segments(SegmentType::Load)
+                .map(|ph| ph.vaddr.0)
+                .collect::<Vec<_>>(),
+            [
+                0x10000, 0x400000, 0x401000, 0x402000, 0x403e00, 0x500000, 0x20000000
+            ]
+        );
+        assert_eq!(output.original_to_output_header, [2, 3, 4, 5]);
+        assert_eq!(output.phdr_index, 0);
+        assert_eq!(output.carrier_index, 7);
+        assert_eq!(
+            output
+                .images
+                .iter()
+                .map(|image| image.program_header)
+                .collect::<Vec<_>>(),
+            [6, 1]
+        );
+        assert_eq!(output.new_load_pages, 3);
+        assert_ne!(
+            carrier(
+                &original, &original, &old, &images, metadata, plan, 0x20000000
+            ),
+            expected
+        );
     }
 }
