@@ -44,7 +44,7 @@ The first measured result is [the d07873a receipt](../../evaluation/software-pre
 
 ## Explicit inline clock profile
 
-The default commands and historical results above remain the full-callback profile. The separate `inline-clock-v1` profile is a finite source addition, with compilation, native qualification and measurements pending when proposed. It accepts only the exact four authored function byte strings. Calls, general ELF discovery, multiple sites, artifact emission, frame metadata and asynchronous entry are unsupported.
+The default commands and historical results above remain the full-callback profile. The separate `inline-clock-v1` profile has passed its finite native qualification and release measurements; see [the 2b18607 result](../../evaluation/software-preemption-2b18607/README.md). It accepts only the exact four authored function byte strings. Calls, general ELF discovery, multiple sites, artifact emission, frame metadata and asynchronous entry are unsupported.
 
 Its generated gate counts encounters and taken decisions with MOV/LEA, tests the original branch condition, and decrements a positive remainder without changing flags or RSP. RCX is saved in a separate owned RW page and restored before the original branch or the unchanged full-save helper. Counter mode never calls the callback. Stop mode enters that helper only at zero; the callback authenticates the already-charged words, parks before the original branch, accepts the exact resume, then refills the quantum. It does not charge the edge twice.
 
@@ -62,7 +62,7 @@ python3 -B tools/software-preemption/run.py --profile inline-clock-v1 \
   --binding-sha256 EXACT_BINDING_SHA256 --raw NEW_ABSOLUTE_IGNORED_DIRECTORY
 ```
 
-The convenience `evaluate.py` wrapper defaults to the legacy profile; its explicit inline selection is described below. No inline build, admission, performance result or completed control is implied by this source addition. The eight new core pure tests and three compile-fail ownership examples are also prospective until run.
+The convenience `evaluate.py` wrapper defaults to the legacy profile; its explicit inline selection is described below. The result receipt records the exact admitted release build, gate qualification, and timing rows. The core also has eight pure tests and three compile-fail ownership examples.
 
 ### One-command inline reproduction
 
@@ -77,4 +77,4 @@ python3 -B tools/software-preemption/evaluate.py --profile inline-clock-v1 \
 
 The default `--profile full-callback-v1` retains the existing five-command invocation and binding without an added profile field. Inline selection constructs the distinct inline authority plus exact profile field and passes `--profile inline-clock-v1` to `run.py`. Both use the same actual successful release build, whole source/tool/configuration continuity and exact binary owner; selecting a profile supplies no historical result or independent runtime admission.
 
-The build retains 120 CPU / 180 wall seconds / 128 MiB per file, outer 190 seconds / kill-after 10 and direct-parent 205 seconds. Every experimental command retains 60 CPU / 90 wall seconds / 1 MiB, outer 100 / kill-after 10, parent 115 / failure cleanup 10, and four-CPU affinity. Only the whole-experiment parent differs: legacy 650 seconds = five × 115 + 75; inline 765 seconds = six × 115 + the same 75-second caller allowance. A per-command failure is still failed, remaining commands stay UNRUN, and this outer allowance does not widen any measurement or oracle limit. The evaluator and inline cohort remain unexecuted until their own actual fresh invocation is recorded.
+The build retains 120 CPU / 180 wall seconds / 128 MiB per file, outer 190 seconds / kill-after 10 and direct-parent 205 seconds. Every experimental command retains 60 CPU / 90 wall seconds / 1 MiB, outer 100 / kill-after 10, parent 115 / failure cleanup 10, and four-CPU affinity. Only the whole-experiment parent differs: legacy 650 seconds = five × 115 + 75; inline 765 seconds = six × 115 + the same 75-second caller allowance. A per-command failure is still failed, remaining commands stay UNRUN, and this outer allowance does not widen any measurement or oracle limit. The result receipt records the fresh evaluator invocation separately from the earlier failed fixture attempt; the failed attempt supplied no qualification or benchmark credit.

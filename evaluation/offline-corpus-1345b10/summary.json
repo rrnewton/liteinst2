@@ -1,0 +1,121 @@
+{
+  "architectural_full_state": false,
+  "build_products_sha256": {
+    "build-core": "a658e2953d45d55b4ff8f3900db9d26ba1db2f892c4addddb435e54151755496",
+    "build-target": "71480f42d7b0918e508f997290d92256a33fadca3c233b50f61339807deffc83"
+  },
+  "common_core_null_pairs": 704,
+  "common_obligations_satisfied": false,
+  "common_recording_pairs": 2112,
+  "comparison_commands": 99,
+  "comparisons": {
+    "FAILED": 0,
+    "PASS": 80,
+    "UNRUN": 0,
+    "UNSUPPORTED": 0
+  },
+  "controls": {
+    "absence_proof": "ECHILD",
+    "cleanup_events": 0,
+    "expected_refusals": 68,
+    "legacy_gap_acceptances": 20,
+    "observations": 96,
+    "parent_seconds": 0.8670251860748976,
+    "positives": 8,
+    "strict_seconds": 0.7734649640042335,
+    "subject_execution": false,
+    "unexpected_descendants": 0
+  },
+  "datasets_per_program": 10,
+  "e9_branch_witnesses": 28,
+  "evidence_sha256": {
+    "cases_csv": "79127af4ce617037e27209f85894a22fabf32ad5bf0f8439937a118356482281",
+    "cases_json": "536929e310875c007cd52643c1df7f18f0fec0044c40c4aa7791a10163a64110",
+    "comparison_summary": "47eebf4a69f5a825ec83a94731c57a3ca26379a846428182185a858712377c8f",
+    "controls_outer_closed": "a911b691da9c1cbd31712cc6f85d5e65c9f4fccb343abbf61a98d4c5177f2688",
+    "controls_receipt": "1a28ce03a97711f20cbd2a0e7e77e63e4ed80b8c91d0e4a96bfe64388a37d8e3",
+    "controls_request": "ca96ba4a1d0c8f1a92410447fdc400b394ee87799477946c72f2a61cf8d8268b",
+    "controls_results": "9fe66103e5eb15cadb6ce96bf835b3b63b1939deaca28730740b6a3a399b7bf8",
+    "independent_review": "025b0d06dd8182e926660e3f380780c62c0ebfd60952e337ead6925bade51b4f",
+    "inner_commands": "08c73f1ba0e9852de2698bc786a4ce88b6e134f25fea1710c6988fbf4df1468e",
+    "outer_closed": "e27851f233a01c48eb3167390cee30d5c373ff005dfeebe670ad920a0154f670",
+    "run_summary": "4c31cbaef5212cf40384eab19afc32ae241e99bee7acac4c275ba546054b3e51"
+  },
+  "full_a3": false,
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "helper_prefixes": 14,
+  "lanes": [
+    "native",
+    "liteinst",
+    "stock-algorithm",
+    "bootstrap-patched-reference"
+  ],
+  "normal_loader_generalization": false,
+  "outer_seconds": 46.20067598903552,
+  "performance_scope": "end-to-end bounded process wall time, including helper/exec/I/O; no isolated kernel or steady-state claim",
+  "phases": [
+    {
+      "id": "build-core",
+      "limits": [
+        120,
+        180,
+        134217728
+      ],
+      "receipt_sha256": "fca3e967a9e723c737d32e7d9e2adb574c9358033bf97ff4c41246746b2662e4",
+      "request_sha256": "ef669f34d014e49a7ea189c0877fd4f0035ae5eb5704653e7208ebbab21db632",
+      "seconds": 2.927513362141326,
+      "status": "PASS"
+    },
+    {
+      "id": "build-target",
+      "limits": [
+        120,
+        180,
+        134217728
+      ],
+      "receipt_sha256": "8648afe0bb14e8c45db2bc205af2a245e8235619aa1dc510b9b2f2e4481579ec",
+      "request_sha256": "646814b04ffeaa746c5ea59c402b99a9608458946ccc0c7d87dac2b21046914f",
+      "seconds": 6.43620225507766,
+      "status": "PASS"
+    },
+    {
+      "id": "target",
+      "limits": [
+        20,
+        30,
+        16777216
+      ],
+      "receipt_sha256": "e56ab8b04f7ecfcb772442d3ec6be1f1b2314ddf5cd98e900c1cfbac5daa114a",
+      "request_sha256": "919c2cd14b84263a0e6c70a521446c3ee53eef26fc851a3e5390263f20104557",
+      "seconds": 0.10819958592765033,
+      "status": "PASS"
+    },
+    {
+      "id": "compare",
+      "limits": [
+        120,
+        180,
+        268435456
+      ],
+      "receipt_sha256": "27205ab28d752dbcfc33c4000bc35720500aa1a6eebb7691e94a3aead3f7365a",
+      "request_sha256": "cfff20a93b728403b8466e2e2a741f1ffa49941b8e393c2f38783765863a70f5",
+      "seconds": 31.4277446588967,
+      "status": "PASS"
+    }
+  ],
+  "profile": {
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "opt_level": "3",
+    "overflow_checks": true,
+    "test": false
+  },
+  "programs": [
+    "checksum",
+    "rle-roundtrip"
+  ],
+  "qualification_complete": false,
+  "revision": "1345b10dc4ca76ccabcde7c60cc94934a7b14541",
+  "schema": 1,
+  "strict_run_receipts": 103
+}

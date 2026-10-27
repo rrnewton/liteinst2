@@ -1,0 +1,18 @@
+{
+  "emitted_by_offline_wrapper": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ]
+  },
+  "observation_bytes": 223,
+  "observation_sha256": "7b8045a29f005210d4b6fc65d270ce4eccae560df23150cc471e8fb3ab1fbf80",
+  "provenance": "Separate closed inline-pure hardware observation on the same host before the offline run; same-host and source revision confirmed by the implementation agent.",
+  "schema": 1,
+  "source_revision": "1345b10dc4ca76ccabcde7c60cc94934a7b14541"
+}

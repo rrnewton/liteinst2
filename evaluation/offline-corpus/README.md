@@ -89,9 +89,11 @@ tool binaries yet.
 
 Use [reproduce.py](reproduce.py) and its [argument and build contract](REPRODUCE.md) to build fresh release products, capture the current target and run the complete comparison. The manual catalog interface below documents what that wrapper constructs.
 
-The initial comparison at `2cf9a6e` passed all 80 output cases. The stronger
-helper-prefix witness and its mutation controls require a fresh run at their own
-revision; previous results do not supply that evidence. Execute after source review. The unchanged bounded command helper
+The initial comparison at `2cf9a6e` passed all 80 output cases. The fresh
+[1345b10 comparison](../offline-corpus-1345b10/README.md) also passed all 80
+with the stronger helper-prefix witness; its 96 saved-artifact controls include
+68 expected refusals. The receipt distinguishes valid positive controls from
+20 historical-witness gap acceptances, which supply no qualification credit. The unchanged bounded command helper
 provides strict ECHILD cleanup. The new driver records each complete request,
 helper receipt and enclosing wait, with 60 CPU/90 wall/128 MiB per assembler or
 linker stage and 20 CPU/30 wall/16 MiB per other command, plus the established

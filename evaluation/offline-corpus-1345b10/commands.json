@@ -1,0 +1,60 @@
+{
+  "controls": {
+    "argv": [
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/evaluation/offline-corpus/controls.py",
+      "--repo",
+      "${REPO}",
+      "--raw",
+      "${RUN_RAW}",
+      "--out",
+      "${CONTROL_RAW}"
+    ],
+    "cpu_seconds": 10,
+    "cwd": "${REPO}",
+    "env": {
+      "LC_ALL": "C.UTF-8",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1"
+    },
+    "failure_cleanup_seconds": 10,
+    "file_bytes": 16777216,
+    "parent_timeout_seconds": 40,
+    "source_sha256": "6247ff48ad319e76ac0812fc072fb2c2b492106f3e81ad0e6a2d29644acd3933",
+    "wall_seconds": 15
+  },
+  "reproduce": {
+    "argv": [
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/evaluation/offline-corpus/reproduce.py",
+      "--repo",
+      "${REPO}",
+      "--raw",
+      "${RUN_RAW}",
+      "--toolchain",
+      "${TOOLCHAIN}",
+      "--user-home",
+      "${USER_HOME}",
+      "--cargo-home",
+      "${CARGO_HOME}",
+      "--e9-stock-dir",
+      "${E9_STOCK}",
+      "--e9-transport",
+      "${E9_TRANSPORT}",
+      "--e9-abi-dir",
+      "${E9_ABI}"
+    ],
+    "cwd": "${REPO}",
+    "env": {
+      "LC_ALL": "C.UTF-8",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "failure_cleanup_seconds": 10,
+    "parent_timeout_seconds": 750,
+    "source_sha256": "55f43d2a46e0dd512c2d55f048c6b1d59bc67bdce3244fde8de90874b3136811"
+  }
+}
