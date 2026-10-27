@@ -65,7 +65,7 @@ fn member_row<'a>(rows: &'a [Vec<&'a str>], step: &[&str], tag: &str) -> &'a Vec
     assert_eq!(found.len(), 1, "one {tag} per foreign member");
     found[0]
 }
-fn current<'a>(overlay: &'a [u8], pc: u64, len: usize) -> &'a [u8] {
+fn current(overlay: &[u8], pc: u64, len: usize) -> &[u8] {
     let src = source(pc);
     let offset = usize::try_from(pc - src.pc).unwrap();
     assert!(offset.checked_add(len).unwrap() <= src.bytes.len());
