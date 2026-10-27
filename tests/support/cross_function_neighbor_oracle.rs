@@ -398,7 +398,7 @@ fn native_foreign_neighbor_two_owners_all_heads_both_seeds() {
     // Symbolic HookCall is rel32. This test-owned, nearby MOVABS/JMP bridge
     // reaches the real callback only after emitted full-state save/RDI setup.
     let mut hook_bridge = vec![0x48, 0xb8];
-    hook_bridge.extend_from_slice(&(observe as usize as u64).to_le_bytes());
+    hook_bridge.extend_from_slice(&(observe as *const () as usize as u64).to_le_bytes());
     hook_bridge.extend_from_slice(&[0xff, 0xe0]);
     let bridge_offset = 2 * IMAGE_SLOT;
     expected_generated[bridge_offset..bridge_offset + hook_bridge.len()]
