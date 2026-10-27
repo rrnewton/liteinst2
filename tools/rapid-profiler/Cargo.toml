@@ -6,6 +6,7 @@ publish = false
 rust-version = "1.85"
 
 [dependencies]
+iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "instr_info"] }
 libc = "0.2.186"
 liteinst2 = { path = "../.." }
 object = { version = "0.36.7", default-features = false, features = ["elf", "read_core", "std"] }
@@ -24,5 +25,11 @@ path = "native-interval/calibrations.rs"
 [[bin]]
 name = "frontend-native-point"
 path = "native-point/main.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "ordinary-interval"
+path = "ordinary-interval/main.rs"
 test = false
 bench = false
