@@ -54,6 +54,22 @@ fn prefixes(instruction: &Instruction, bytes: &[u8]) -> bool {
     true
 }
 
+// Exact padding palette only. In particular, the CS-prefixed ten-byte form
+// does not authorize segment overrides or repeated prefixes on other bytes.
+fn canonical_padding_nop(instruction: &Instruction, bytes: &[u8]) -> bool {
+    matches!((instruction.code(), bytes),
+        (Code::Nopd, [0x90]) |
+        (Code::Nopw, [0x66, 0x90]) |
+        (Code::Nop_rm32, [0x0f, 0x1f, 0x00]) |
+        (Code::Nop_rm32, [0x0f, 0x1f, 0x40, 0x00]) |
+        (Code::Nop_rm32, [0x0f, 0x1f, 0x44, 0x00, 0x00]) |
+        (Code::Nop_rm16, [0x66, 0x0f, 0x1f, 0x44, 0x00, 0x00]) |
+        (Code::Nop_rm32, [0x0f, 0x1f, 0x80, 0x00, 0x00, 0x00, 0x00]) |
+        (Code::Nop_rm32, [0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]) |
+        (Code::Nop_rm16, [0x66, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]) |
+        (Code::Nop_rm16, [0x66, 0x2e, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]))
+}
+
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
@@ -65,7 +81,8 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // Existing no-CET profile only: one canonical instruction, no added
         // or ignored prefix. Other Code values retain the old prefix policy.
         if source[..instruction.len()] != [0xf3, 0x0f, 0x1e, 0xfa] { return Ok(out); }
-    } else if !prefixes(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if !canonical_padding_nop(&instruction, &source[..instruction.len()])
+        && !prefixes(&instruction, &source[..instruction.len()]) { return Ok(out); }
     // Exact Code enumeration, never a catch-all mnemonic/valid-decode permit.
     let (flow, family) = match instruction.code() {
         Code::Endbr64 | Code::Nopw | Code::Nopd | Code::Nopq

@@ -178,3 +178,14 @@ generic refusals, six REP refusal checks and an actual first-store fault. It
 builds the current product sources and retains raw records privately. The
 public receipt records actual iteration counts and preserves the fault as a
 failed operation.
+
+`tests/padding` qualifies the exact 1–10-byte canonical NOP palette, including
+`66 2e 0f 1f 84 00 00 00 00 00`. This single additional ten-byte encoding does
+not permit segment prefixes on other instructions. Run
+`python3 evaluation/inprocess/page_selected_padding.py --expect-revision REVISION`
+on one reserved CPU for twenty full-state native/stepped pairs: page-end
+placements and all nine splits of the ten-byte form. It retains the genuine
+startup pair, all 47 old refusal controls and twelve additional near-neighbor
+refusals. The original generic oracle, its actual failed-operation controls and
+the connected REP cohort remain separate requirements. Padding support alone
+does not establish a completed real-linker run.
