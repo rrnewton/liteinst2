@@ -21,7 +21,7 @@ enum li2_tf_flow { LI2_TF_REFUSED, LI2_TF_FALLTHROUGH, LI2_TF_NEAR_FLOW };
 enum li2_tf_family { LI2_TF_NONE, LI2_TF_INTEGER, LI2_TF_STACK,
     LI2_TF_BRANCH, LI2_TF_CALL, LI2_TF_RETURN, LI2_TF_SIMD };
 enum li2_tf_error { LI2_TF_CLASSIFICATION=100, LI2_TF_CONTINUATION, LI2_TF_FRAME,
-    LI2_TF_RSP_DOMAIN, LI2_TF_XCR_INDEX };
+    LI2_TF_RSP_DOMAIN, LI2_TF_XCR_INDEX, LI2_TF_SHSTK_QUERY, LI2_TF_SHSTK_ENABLED };
 uint32_t li2_decoder_tf_classify(uint64_t,const unsigned char *,size_t,
                                struct li2_tf_classification *);
 
@@ -42,6 +42,11 @@ struct li2_tf_owner {
     uint64_t actual_post_flags;
     unsigned continuation_started,continuation_complete,unexpected_frame_observed;
     int continuation_result;
+    /* This retained query belongs only to RDSSPQ's authenticated NX entry.
+       Unsupported/error status is not evidence of disabled shadow stacks. */
+    unsigned rdssp_query_attempted,rdssp_query_complete;
+    long rdssp_query_result;
+    uint64_t rdssp_features;
 };
 
 /* Distinct proof: the CPU executes the original instruction. No emulated GPR,

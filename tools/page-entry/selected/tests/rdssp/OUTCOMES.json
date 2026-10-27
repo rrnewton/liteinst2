@@ -1,0 +1,570 @@
+{
+  "schema_version": 1,
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "old_refusal_count": 47,
+  "old_cohorts": "All original generic, integer, padding, XGETBV and REP sources/commands/predicates remain separately required.",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "prospective_only": true,
+  "commands": [
+    {
+      "argv": [
+        "rdssp-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 63,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_RDSSP_TF_PASS group=0 pairs=17 rdsspq=16 selftest=1 actual_native_query_zero=16 actual_owner_query_zero=16 old_refusal_bytes=47 new_refusal_bytes=16 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "rdssp-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 63,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_RDSSP_TF_PASS group=1 pairs=17 rdsspq=16 selftest=1 actual_native_query_zero=16 actual_owner_query_zero=16 old_refusal_bytes=47 new_refusal_bytes=16 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "rdssp-0"
+      ],
+      "environment_delta": {
+        "LI2_RDSSP_CONTROL": "query-einval"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 22,
+        "owner_detail_negative": 1,
+        "owner_failure": 105,
+        "pairs": 17,
+        "refusals": 63,
+        "version": 1
+      },
+      "name": "query-einval",
+      "process_outcome": "Failed genuine-NX pre-open operation with explicitly nonissued query injection; no native RDSSPQ or native kernel-query failure credit.",
+      "stderr": "",
+      "stdout": "LI2_RDSSP_INJECTED_QUERY_REFUSAL control=1\n",
+      "required_record": {
+        "native_complete": 0,
+        "native_fault": 0,
+        "step_endpoint_seen": 0,
+        "negative_verified": 1,
+        "owner_trace_seen": 0,
+        "owner_before_TRAPNO": 14,
+        "owner_before_ERR": 21,
+        "owner_open_started": [
+          0,
+          0
+        ],
+        "owner_opened": [
+          0,
+          0
+        ],
+        "owner_revoked": [
+          0,
+          0
+        ],
+        "query_attempted": 1,
+        "query_complete": 1,
+        "query_result": -22,
+        "query_features": 18446744073709551615,
+        "fetch_held": 1
+      }
+    },
+    {
+      "argv": [
+        "rdssp-0"
+      ],
+      "environment_delta": {
+        "LI2_RDSSP_CONTROL": "query-enosys"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 2,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 38,
+        "owner_detail_negative": 1,
+        "owner_failure": 105,
+        "pairs": 17,
+        "refusals": 63,
+        "version": 1
+      },
+      "name": "query-enosys",
+      "process_outcome": "Failed genuine-NX pre-open operation with explicitly nonissued query injection; no native RDSSPQ or native kernel-query failure credit.",
+      "stderr": "",
+      "stdout": "LI2_RDSSP_INJECTED_QUERY_REFUSAL control=2\n",
+      "required_record": {
+        "native_complete": 0,
+        "native_fault": 0,
+        "step_endpoint_seen": 0,
+        "negative_verified": 1,
+        "owner_trace_seen": 0,
+        "owner_before_TRAPNO": 14,
+        "owner_before_ERR": 21,
+        "owner_open_started": [
+          0,
+          0
+        ],
+        "owner_opened": [
+          0,
+          0
+        ],
+        "owner_revoked": [
+          0,
+          0
+        ],
+        "query_attempted": 1,
+        "query_complete": 1,
+        "query_result": -38,
+        "query_features": 18446744073709551615,
+        "fetch_held": 1
+      }
+    },
+    {
+      "argv": [
+        "rdssp-0"
+      ],
+      "environment_delta": {
+        "LI2_RDSSP_CONTROL": "status-shstk"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 3,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 1,
+        "owner_detail_negative": 0,
+        "owner_failure": 106,
+        "pairs": 17,
+        "refusals": 63,
+        "version": 1
+      },
+      "name": "status-shstk",
+      "process_outcome": "Failed genuine-NX pre-open operation with explicitly nonissued query injection; no native RDSSPQ or native kernel-query failure credit.",
+      "stderr": "",
+      "stdout": "LI2_RDSSP_INJECTED_QUERY_REFUSAL control=3\n",
+      "required_record": {
+        "native_complete": 0,
+        "native_fault": 0,
+        "step_endpoint_seen": 0,
+        "negative_verified": 1,
+        "owner_trace_seen": 0,
+        "owner_before_TRAPNO": 14,
+        "owner_before_ERR": 21,
+        "owner_open_started": [
+          0,
+          0
+        ],
+        "owner_opened": [
+          0,
+          0
+        ],
+        "owner_revoked": [
+          0,
+          0
+        ],
+        "query_attempted": 1,
+        "query_complete": 1,
+        "query_result": 0,
+        "query_features": 1,
+        "fetch_held": 1
+      }
+    },
+    {
+      "argv": [
+        "rdssp-0"
+      ],
+      "environment_delta": {
+        "LI2_RDSSP_CONTROL": "status-wrss"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 4,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 2,
+        "owner_detail_negative": 0,
+        "owner_failure": 106,
+        "pairs": 17,
+        "refusals": 63,
+        "version": 1
+      },
+      "name": "status-wrss",
+      "process_outcome": "Failed genuine-NX pre-open operation with explicitly nonissued query injection; no native RDSSPQ or native kernel-query failure credit.",
+      "stderr": "",
+      "stdout": "LI2_RDSSP_INJECTED_QUERY_REFUSAL control=4\n",
+      "required_record": {
+        "native_complete": 0,
+        "native_fault": 0,
+        "step_endpoint_seen": 0,
+        "negative_verified": 1,
+        "owner_trace_seen": 0,
+        "owner_before_TRAPNO": 14,
+        "owner_before_ERR": 21,
+        "owner_open_started": [
+          0,
+          0
+        ],
+        "owner_opened": [
+          0,
+          0
+        ],
+        "owner_revoked": [
+          0,
+          0
+        ],
+        "query_attempted": 1,
+        "query_complete": 1,
+        "query_result": 0,
+        "query_features": 2,
+        "fetch_held": 1
+      }
+    }
+  ],
+  "new_refusal_count": 16,
+  "scope": "Canonical RDSSPQ r64 only, actual successful zero SHSTK status before native and stepped operations. No RDSSPD, enabled-CET, unsupported-query fallback or loader-completion claim.",
+  "record_extent": "header_bytes +22*actual_DWARF_sample_bytes+40+720; original record plus actual native query evidence trailer.",
+  "query_trailer": {
+    "bytes": 720,
+    "header_format": "<6Q",
+    "header_fields": [
+      "magic",
+      "version",
+      "bytes",
+      "actual_native_queries",
+      "injected_calls",
+      "injected_control"
+    ],
+    "magic": 3553431723088949836,
+    "query_count": 21,
+    "query_format": "<QQqQ",
+    "query_fields": [
+      "attempted",
+      "complete",
+      "result",
+      "features"
+    ]
+  },
+  "positive_pairs": 34,
+  "new_rdsspq_pairs": 32,
+  "positive_queries": {
+    "native": 32,
+    "owner": 32
+  },
+  "supplied_refusals": 63,
+  "executed_refusal_checks": 378,
+  "negative_controls": "Four failed operations at actual NX entry. The exact query is deliberately not issued and returns two errors or two nonzero feature masks; all pages stay closed and full refused frames are retained.",
+  "required_native_query": "Each real original-PC native reference requires actual arch_prctl(0x5005,&status)==0 and status==0; errors/nonzero status stop the positive cohort without execution credit.",
+  "pairs": [
+    {
+      "group": 0,
+      "reg": 0,
+      "bytes": "f3480f1ec8",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 0,
+      "bytes": "f3480f1ec8",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 1,
+      "bytes": "f3480f1ec9",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 1,
+      "bytes": "f3480f1ec9",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 2,
+      "bytes": "f3480f1eca",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 2,
+      "bytes": "f3480f1eca",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 3,
+      "bytes": "f3480f1ecb",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 3,
+      "bytes": "f3480f1ecb",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 4,
+      "bytes": "f3480f1ecc",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 4,
+      "bytes": "f3480f1ecc",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 5,
+      "bytes": "f3480f1ecd",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 5,
+      "bytes": "f3480f1ecd",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 6,
+      "bytes": "f3480f1ece",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 6,
+      "bytes": "f3480f1ece",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 7,
+      "bytes": "f3480f1ecf",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 0,
+      "reg": 7,
+      "bytes": "f3480f1ecf",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 8,
+      "bytes": "f3490f1ec8",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 8,
+      "bytes": "f3490f1ec8",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 9,
+      "bytes": "f3490f1ec9",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 9,
+      "bytes": "f3490f1ec9",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 10,
+      "bytes": "f3490f1eca",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 10,
+      "bytes": "f3490f1eca",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 11,
+      "bytes": "f3490f1ecb",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 11,
+      "bytes": "f3490f1ecb",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 12,
+      "bytes": "f3490f1ecc",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 12,
+      "bytes": "f3490f1ecc",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 13,
+      "bytes": "f3490f1ecd",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 13,
+      "bytes": "f3490f1ecd",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 14,
+      "bytes": "f3490f1ece",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 14,
+      "bytes": "f3490f1ece",
+      "tail": 4,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 15,
+      "bytes": "f3490f1ecf",
+      "tail": 5,
+      "code": 1053
+    },
+    {
+      "group": 1,
+      "reg": 15,
+      "bytes": "f3490f1ecf",
+      "tail": 4,
+      "code": 1053
+    }
+  ]
+}

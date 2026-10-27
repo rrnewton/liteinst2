@@ -77,9 +77,51 @@ static void tf_xgetbv_begin(struct li2_step_owner *o,int sig,siginfo_t *si,ucont
     o->phase=LI2_STEP_RUNNING;o->in_handler=0;
 }
 
+/* Canonical RDSSPQ executes only after actual per-thread SHSTK status is
+   observed zero. The complete old NX/open/TF sequence is otherwise retained. */
+static void tf_rdssp_begin(struct li2_tf_owner *owner,int sig,siginfo_t *si,ucontext_t *uc) {
+    struct li2_step_owner *o=&owner->step;
+    enter(o,LI2_STEP_ARMED,sig,si,uc);
+    greg_t *g=uc->uc_mcontext.gregs;
+    uintptr_t pc=o->request.decoded.pc;
+    require(o,sig==SIGSEGV && si->si_code==SEGV_ACCERR && !si->si_errno &&
+            (uintptr_t)g[REG_RIP]==pc && g[REG_TRAPNO]==14 && g[REG_ERR]==21 &&
+            (uintptr_t)si->si_addr==pc,LI2_STEP_FOREIGN_EVENT,sig);
+    require(o,(uint64_t)g[REG_EFL]==(o->request.original_flags|LI2_STEP_RF),LI2_STEP_INPUT_FLAGS,g[REG_EFL]);
+    frame(o,&o->before,uc);
+    require(o,equal((const void *)pc,o->request.decoded.bytes,o->request.decoded.length),LI2_STEP_PAGE_BINDING,2);
+    /* A successful actual status query is mandatory, including on CPUs
+       without CET. No EINVAL/ENOSYS fallback and no CPUID-derived permission. */
+    owner->rdssp_features=UINT64_MAX;
+    __asm__ volatile("":::"memory");
+    owner->rdssp_query_attempted=1;
+    owner->rdssp_query_result=RAW(SYS_arch_prctl,0x5005,&owner->rdssp_features,0,0,0,0);
+    owner->rdssp_query_complete=1;
+    __asm__ volatile("":::"memory");
+    require(o,!owner->rdssp_query_result,LI2_TF_SHSTK_QUERY,owner->rdssp_query_result);
+    require(o,!owner->rdssp_features,LI2_TF_SHSTK_ENABLED,(long)owner->rdssp_features);
+    o->phase=LI2_STEP_OPENING;
+    for(size_t i=0;i<o->request.page_count;i++) {
+        const struct li2_step_page *p=&o->request.pages[i];
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->closed_prot),LI2_STEP_PAGE_BINDING,(long)i);
+        o->open_started[i]=1;
+        o->open_result[i]=RAW(SYS_mprotect,p->address,LI2_STEP_PAGE,p->open_prot,0,0,0);
+        require(o,!o->open_result[i],LI2_STEP_OPEN,o->open_result[i]);o->opened[i]=1;
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->open_prot),LI2_STEP_PAGE_BINDING,(long)i);
+    }
+    o->open_sync=RAW(SYS_membarrier,32,0,0,0,0,0);
+    require(o,!o->open_sync,LI2_STEP_SYNC_OPEN,o->open_sync);
+    require(o,equal(uc->uc_mcontext.fpregs,o->before.fp,o->before.fp_bytes),LI2_STEP_FRAME,4);
+    g[REG_EFL]|=LI2_STEP_TF;
+    o->phase=LI2_STEP_RUNNING;o->in_handler=0;
+}
+
 void li2_tf_begin(struct li2_tf_owner *o,int sig,siginfo_t *si,ucontext_t *uc) {
     if(o->classification.code==825) {
         tf_xgetbv_begin(&o->step,sig,si,uc);return;
+    }
+    if(o->classification.code==1053) {
+        tf_rdssp_begin(o,sig,si,uc);return;
     }
     /* This old function performs no emulated-result check: exact real NX
        entry, immutable source, installed open prefixes, sync, then TF only. */
