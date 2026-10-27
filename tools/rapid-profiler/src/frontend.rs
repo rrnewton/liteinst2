@@ -1164,5 +1164,10 @@ impl ThreadModel {
     }
 }
 
+// First increment: pure model qualification only. The native interval bridge
+// must become a real caller before this module is enabled in non-test builds.
+#[cfg(test)]
+mod interval_entry;
+
 #[cfg(test)]
 mod tests;
