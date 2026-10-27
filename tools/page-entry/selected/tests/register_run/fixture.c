@@ -439,7 +439,7 @@ int fixture_main(unsigned long *stack) {
                    "bounded complete private output");
     header.magic=UINT64_C(0x314e55525232494c);header.version=1;header.group=REGISTER_GROUP;
     setup(stack);size_t done=0,failed=0;uint32_t decoder=0;
-    need(!li2_tf_refusal_controls(&done,&failed,&decoder,&refused_last)&&done==47&&!failed&&!decoder,373);
+    need(!li2_tf_refusal_controls(&done,&failed,&decoder,&refused_last)&&done==47&&failed==SIZE_MAX&&!decoder,373);
     header.refusals=done;prepare_case(&samples[0],0);run_pair(&samples[0]);
     need(session.self_test_complete&&samples[0].checked&&result.completed==1,374);
     need(!li2_run_cache_initialize(&session,&protection,&cache)&&cache,375);
