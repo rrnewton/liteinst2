@@ -1,0 +1,11 @@
+id,scope,status,exit,seconds,parent_seconds,log_sha256
+targeted,validation,PASS,0,2.6752451171632856,3.522435358958319,336972bc249fc3c4c9adc95adabfa65ff37cca63b81b5043e86d01aa3e5a2282
+required,required-dispatch,FAILED,1,7.176458517089486,7.980402298970148,ba0b3d3ec0a6e03cba837b035fa86e86ac1d81a7fd3852f8b0aacf146a757ac1
+required/fmt,required-gate,PASS,0,4.834882062859833,,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
+required/clippy,required-gate,FAILED,101,2.1718366499990225,,98f7bf8a1d1e035f767f62b5b57a77e5694694b93940588de919530ad43e4625
+required/test,required-gate,UNRUN,,,,
+required/check,required-gate,UNRUN,,,,
+serial,validation,UNRUN,,,,
+parallel-library,validation,UNRUN,,,,
+parallel-prefixed,validation,UNRUN,,,,
+parallel-neighbor,validation,UNRUN,,,,

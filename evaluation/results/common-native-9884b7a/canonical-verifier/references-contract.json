@@ -1,0 +1,160 @@
+{
+  "historical_bytes": 10593,
+  "historical_members": {
+    "Cargo.lock": {
+      "bytes": 5065,
+      "sha256": "03219ed869deb61b7bf28250b13a61a458a61962dfc9dea0576facff9cfd6333"
+    },
+    "evaluation/e9-common-app/build_inventory.py": {
+      "bytes": 35639,
+      "sha256": "31545ba44b5cb3b055a96269c689b9235957ec3dab0cfd3e65ba86efbdde71ed"
+    },
+    "evaluation/e9-common-app/run_candidates.py": {
+      "bytes": 52452,
+      "sha256": "523ce6007068c5764be6bf007d67f8093aaedf4054b1beb3b7465bed95f1196f"
+    },
+    "ignored/a3/common-native-epoch-v1/build-review-v1/binding.json": {
+      "bytes": 6381,
+      "sha256": "e7a552db103e07531219b06107625bd0d2d950a86c74461235fc0697550f12f6"
+    },
+    "ignored/a3/common-native-epoch-v1/build-review-v1/references-combined.json": {
+      "bytes": 653760,
+      "sha256": "8d0f91d410df488e14df02dd4d68edf665f75df540d72f13aa2326416f9e7d1b"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/artifacts.json": {
+      "bytes": 103074,
+      "sha256": "cce511533cec8d642bd34a20f6a5ea40255cf57934026dcfacf92b033cbcc389"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/common-sites-compile/artifact-archive.json": {
+      "bytes": 42017,
+      "sha256": "aa92e7238e4eb4fb477dee497a93351dc977fefa4c1ed211ed2fd562295c8d04"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/common-sites-compile/command.json": {
+      "bytes": 3533,
+      "sha256": "ae7ee333acbf78df1fa090bbaa28f276c05a88335859f19627728bed13ed4620"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/common-sites-compile/helper.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/common-sites-compile/helper.stdout": {
+      "bytes": 97,
+      "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/common-sites-compile/receipt.json": {
+      "bytes": 588,
+      "sha256": "d783ea61400a83f1d99e91e599fcacdcc122b58189cf497539f04b076f4b247a"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/common-sites-compile/request.json": {
+      "bytes": 1539,
+      "sha256": "b86d116feaadff7781bedd61b2c8f5c470073f918e7e32dce84e5cc07039ed36"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/common-sites-compile/result.json": {
+      "bytes": 3614,
+      "sha256": "75f418394a46eb04188f3aa0a7b0ad3f22d02f20ac5058501cacd9e8e0c275c0"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/common-sites-compile/stderr.txt": {
+      "bytes": 191,
+      "sha256": "efe081ba48996234d52f72378d1abc13ae6472d8580229399816379bd8ad0217"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/common-sites-compile/stdout.txt": {
+      "bytes": 20710,
+      "sha256": "438392316ee92453c329573273f5b9daea9af9de601ef404bf50a83cd89c874f"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/configs-after.json": {
+      "bytes": 1802,
+      "sha256": "067cf135a07ab682941106ade12712589cd45404260bf8fdbcf405580c2dd030"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/configs.json": {
+      "bytes": 1802,
+      "sha256": "067cf135a07ab682941106ade12712589cd45404260bf8fdbcf405580c2dd030"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/source-after.json": {
+      "bytes": 714686,
+      "sha256": "e57e7fa333d69f1f55e4121fbdcbf1181305407027fda4763470b2b57233fe39"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/source.json": {
+      "bytes": 714686,
+      "sha256": "e57e7fa333d69f1f55e4121fbdcbf1181305407027fda4763470b2b57233fe39"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/stage-inventory.json": {
+      "bytes": 411,
+      "sha256": "de4da530eb6c8f142cd5782802a03e2506785db2b563d5744503299f156df476"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/summary.json": {
+      "bytes": 1292,
+      "sha256": "82c613b824b22ebf7b87094c4c27319a3c414b26a065f5dd8bb9a72d168fb80e"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/tools-after.json": {
+      "bytes": 2784,
+      "sha256": "8adf642910f2a0dccc697a77bfb8f91819aa838876f8bb09d7ded36abe908440"
+    },
+    "ignored/a3/common-native-epoch-v1/build-v1/tools.json": {
+      "bytes": 2784,
+      "sha256": "8adf642910f2a0dccc697a77bfb8f91819aa838876f8bb09d7ded36abe908440"
+    },
+    "ignored/a3/common-native-epoch-v1/verifier-actual-review-v1/binding.json": {
+      "bytes": 1416,
+      "sha256": "e49cf904f3c3dc842a21b2830e6aad26dde5ce52ffa8d3dcb2ad1db0d5c676f4"
+    },
+    "ignored/a3/common-native-epoch-v1/verifier-actual-review-v1/checks-failures.json": {
+      "bytes": 78141,
+      "sha256": "5c9838025365eb13c3774a326b0d9ec2a7fa6de17e505e8e5b5f29986d186934"
+    },
+    "ignored/a3/common-native-epoch-v1/verifier-producer-review-v1/v5-REVIEW.md": {
+      "bytes": 2138,
+      "sha256": "4d2bd7f596fc722eb4cf33bf93c8ed70436058e3be75ffe71d7b887154b1f1f8"
+    },
+    "ignored/a3/common-native-epoch-v1/verifier-producer-review-v1/v5-binding.json": {
+      "bytes": 954,
+      "sha256": "94a090db28ba009fbf15a1c37ef5513813c9f46f963c2c3e47b4662770d0229d"
+    },
+    "ignored/a3/common-native-epoch-v1/verifier-producer-review-v1/v5-checks.json": {
+      "bytes": 548,
+      "sha256": "f6b91fda649408ac2d837aa37948459dc3e8fb3d3fdf0477d6c6a58bcf408d81"
+    },
+    "ignored/a3/common-native-epoch-v1/verifier-producer-v5/build-verifier.py": {
+      "bytes": 15310,
+      "sha256": "23e72599cce39029fd6fb5b3a4dba1c4f7d21acb5fcb5e7c2d98c136512322ad"
+    },
+    "ignored/a3/e9-common-core-paired-cbb-proposal-v1/payload/evaluation/e9-common-app/run_core_pairs.py": {
+      "bytes": 46598,
+      "sha256": "80ac3d3d3e761fd16847f2b35973f3ed16cfbfdfa8e585fd85e325f962eb6421"
+    },
+    "tests/support/e9_common_seed.instructions.tsv": {
+      "bytes": 7950,
+      "sha256": "74afc406acb8eb7742695afdf0e610a7e77afbaa6fb1498463a9e8ae85901fcd"
+    },
+    "tests/support/e9_common_seed.rs": {
+      "bytes": 43874,
+      "sha256": "df1678dc0d0a5eede05d76d592048d5065d983fa44ba42c6d5dd7da9d297c2e3"
+    },
+    "tools/elf-rewrite/Cargo.toml": {
+      "bytes": 797,
+      "sha256": "1dd5b5802a66222fcf249bd918dd914b126512e109d69bef26786875f0eac926"
+    },
+    "tools/elf-rewrite/examples/verify_common_core.rs": {
+      "bytes": 85225,
+      "sha256": "e7bbccbe54e4b3827afc40bed119c9f39009de31f5ee1a71876a135c666ef189"
+    },
+    "tools/unwind-oracle/bounded_command.py": {
+      "bytes": 7710,
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    }
+  },
+  "historical_rows": 35,
+  "historical_whole_sha256": "9bffaf28e47f9469f9083b2228e0882cf00416ea29a452e5b09a43e75bf84db9",
+  "row_schema": {
+    "bytes": "integer",
+    "sha256": "whole file SHA256",
+    "stat": [
+      "dev",
+      "ino",
+      "mode",
+      "size",
+      "mtime_ns",
+      "ctime_ns"
+    ]
+  },
+  "scope": "Historical byte identities only; old owners withheld. A fresh caller must pin a complete freshly reviewed envelope; these rows are not current admission."
+}

@@ -1,0 +1,493 @@
+{
+  "contexts": [
+    {
+      "command": {
+        "argv": [
+          "${TOOLCHAIN}/bin/rustc",
+          "--crate-name",
+          "verify_common_core",
+          "--edition=2024",
+          "--crate-type=bin",
+          "-C",
+          "opt-level=0",
+          "-C",
+          "debuginfo=2",
+          "-C",
+          "debug-assertions=yes",
+          "-C",
+          "overflow-checks=yes",
+          "-C",
+          "codegen-units=4",
+          "-C",
+          "linker=/usr/bin/gcc",
+          "--emit=link=${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/output/verify_common_core,dep-info=${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/output/verify_common_core.d",
+          "-L",
+          "dependency=deps",
+          "--extern",
+          "formats=deps/libliteinst_artifact-8cde00d7fb42846a.rlib",
+          "--extern",
+          "iced_x86=deps/libiced_x86-dedf5566ddeb6cb0.rlib",
+          "--extern",
+          "li2core=deps/libliteinst2-7e4d26230b242b72.rlib",
+          "--extern",
+          "liteinst_rewrite=deps/libliteinst_rewrite-e5a68b2fab6c9d2b.rlib",
+          "src/verify_common_core.rs"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/inputs",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/tmp"
+        },
+        "file_bytes": 134217728,
+        "wall_seconds": 90
+      },
+      "id": "v1/compiler-exec",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compiler-job.json",
+      "record_sha256": "2fd5319ea3b368b1c3e95a2d3ef1b1c6910a22772be3f0eabb783e927ab118e2"
+    },
+    {
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v1/compiler_entry.py",
+          "--job",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compiler-job.json",
+          "--job-sha256",
+          "2fd5319ea3b368b1c3e95a2d3ef1b1c6910a22772be3f0eabb783e927ab118e2"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 134217728,
+        "wall_seconds": 90
+      },
+      "id": "v1/compiler-entry",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/request.json",
+      "record_sha256": "8710260a917024fe69b13820b90217801bd664e524d8767e29aa36f2e241b826"
+    },
+    {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "id": "v1/compiler-parent",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/command.json",
+      "record_sha256": "43c129dc6db7530773d2d8c23be75021253dbcebfadc5c09e2c8b38df7ec30db"
+    },
+    {
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v1/build.py",
+          "--caller",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-caller-v1/caller.json",
+          "--caller-sha256",
+          "29357d4671d3a2db61d0d04b189a94e55b17d1b99b36bdae06e549773970d8f5"
+        ],
+        "cpu_seconds": 120,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 134217728,
+        "wall_seconds": 180
+      },
+      "id": "v1/producer",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v1/request.json",
+      "record_sha256": "39e369492bb65b1e653be45690546c2ec8cf626331e4c9b0f6568f2cafffe4ea"
+    },
+    {
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v1/request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v1/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "id": "v1/namespace-command",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v1/command-spec.json",
+      "record_sha256": "f2f78cd8cd53d5d0a22baae74a0873b64618d2ecee2a7783ed31c2e24ecdf814"
+    },
+    {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/runtime-isolation-proposal-v1/successor-v4/isolate.py",
+          "join",
+          "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v1/command-spec.json",
+          "f2f78cd8cd53d5d0a22baae74a0873b64618d2ecee2a7783ed31c2e24ecdf814"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "id": "v1/namespace-parent",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v1/command.json",
+      "record_sha256": "6ea3f5a6240b1f7aff930124df88a8e9bfcba9105e4a60f3b5a49fc0b89d942c"
+    },
+    {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "190s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/enter.py",
+          "${REPO}/ignored/a3/runtime-isolation-proposal-v1/successor-v4/isolate.py",
+          "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+          "canonical-verifier-produce-v1",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v1/request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v1/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 205
+      },
+      "id": "v1/root-parent",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v1/command.json",
+      "record_sha256": "490c86240e47fe9f81c56d36c4ff33c354706b80d6540932d91d5ea593da71d0"
+    },
+    {
+      "command": {
+        "argv": [
+          "${TOOLCHAIN}/bin/rustc",
+          "--crate-name",
+          "verify_common_core",
+          "--edition=2024",
+          "--crate-type=bin",
+          "-C",
+          "opt-level=0",
+          "-C",
+          "debuginfo=2",
+          "-C",
+          "debug-assertions=yes",
+          "-C",
+          "overflow-checks=yes",
+          "-C",
+          "codegen-units=4",
+          "-C",
+          "linker=/usr/bin/gcc",
+          "--emit=link=${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/output/verify_common_core,dep-info=${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/output/verify_common_core.d",
+          "--out-dir",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/output",
+          "-L",
+          "dependency=deps",
+          "--extern",
+          "formats=deps/libliteinst_artifact-8cde00d7fb42846a.rlib",
+          "--extern",
+          "iced_x86=deps/libiced_x86-dedf5566ddeb6cb0.rlib",
+          "--extern",
+          "li2core=deps/libliteinst2-7e4d26230b242b72.rlib",
+          "--extern",
+          "liteinst_rewrite=deps/libliteinst_rewrite-e5a68b2fab6c9d2b.rlib",
+          "src/verify_common_core.rs"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/inputs",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "HOME": "${USER_HOME}",
+          "LC_ALL": "C",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "${TOOLCHAIN}/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/tmp"
+        },
+        "file_bytes": 134217728,
+        "wall_seconds": 90
+      },
+      "id": "v2/compiler-exec",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compiler-job.json",
+      "record_sha256": "df169778bcefe96dc437efb2aec374001ff00f452ca5351748e47d8a3e0e6f63"
+    },
+    {
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v2/compiler_entry.py",
+          "--job",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compiler-job.json",
+          "--job-sha256",
+          "df169778bcefe96dc437efb2aec374001ff00f452ca5351748e47d8a3e0e6f63"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 134217728,
+        "wall_seconds": 90
+      },
+      "id": "v2/compiler-entry",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/request.json",
+      "record_sha256": "10868f72a99e0ec9ec08f3eb21e6bfae6613287b5416f8cf3d032a92951ac021"
+    },
+    {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 115
+      },
+      "id": "v2/compiler-parent",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/command.json",
+      "record_sha256": "0df4627bda1b9a0076d545c7fd0d737fd82b17cadc75935aad6d71d603333872"
+    },
+    {
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v2/build.py",
+          "--caller",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-caller-v2/caller.json",
+          "--caller-sha256",
+          "89225a0e254275be65a1b6bbcc292065c025b773da0227a00580cb636645f481"
+        ],
+        "cpu_seconds": 120,
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "file_bytes": 134217728,
+        "wall_seconds": 180
+      },
+      "id": "v2/producer",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v2/request.json",
+      "record_sha256": "acf486ad857ff98fd390747f5f7c2cf24dd85fa04c125f9d3e8e98d3a70cacc6"
+    },
+    {
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v2/request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v2/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "id": "v2/namespace-command",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v2/command-spec.json",
+      "record_sha256": "84737ee6308453504189eb5e52cfa5613115ccd423fdd050cfea09c0d0d28ce4"
+    },
+    {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/runtime-isolation-proposal-v1/successor-v4/isolate.py",
+          "join",
+          "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v2/command-spec.json",
+          "84737ee6308453504189eb5e52cfa5613115ccd423fdd050cfea09c0d0d28ce4"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "id": "v2/namespace-parent",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v2/command.json",
+      "record_sha256": "6f0bc193d24b79425416129f76d4cfeb79ef7077d63cb8212cd5bbd2927bd088"
+    },
+    {
+      "command": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "190s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/enter.py",
+          "${REPO}/ignored/a3/runtime-isolation-proposal-v1/successor-v4/isolate.py",
+          "8eb1d0a576336a570c8363cfd55633c52101f86fdf8058d94926c39665dad61e",
+          "canonical-verifier-produce-v2",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v2/request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v2/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_timeout_seconds": 205
+      },
+      "id": "v2/root-parent",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v2/command.json",
+      "record_sha256": "a5260e43013010f54990f9a554810ae1d344922dd89882291659ff2f0f1069bd"
+    },
+    {
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-root-check-v2/check.py"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "id": "v2/root-byte-check/command-spec",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-root-check-v2/command-spec.json",
+      "record_sha256": "3ab99bd8d479cf7bf59d2cd6635b938c3fde144427338989f6acfe8251a1ec09"
+    },
+    {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a3/runtime-isolation-proposal-v1/successor-v4/isolate.py",
+          "join",
+          "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-root-check-v2/command-spec.json",
+          "3ab99bd8d479cf7bf59d2cd6635b938c3fde144427338989f6acfe8251a1ec09"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        }
+      },
+      "id": "v2/root-byte-check/command",
+      "record": "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-root-check-v2/command.json",
+      "record_sha256": "cf517841ebbf8dd9aba6c5d0a093d3af4ca4cfcf3efb9c11acda0a5c31a54264"
+    }
+  ],
+  "roles": {
+    "${CARGO_HOME}": "recorded Cargo home",
+    "${REPO}": "checkout root",
+    "${TOOLCHAIN}": "Rust 1.97.1 toolchain root",
+    "${USER_HOME}": "recorded caller home"
+  },
+  "schema": 1,
+  "scope": "Exact saved argv/cwd/env and limit fields; selected fields roundtrip through private role inverse. Whole raw-record hashes are retained."
+}

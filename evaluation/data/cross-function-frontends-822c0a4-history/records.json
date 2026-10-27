@@ -1,0 +1,126 @@
+{
+  "${RAW}/required-launch/closed.json": {
+    "bytes": 296,
+    "sha256": "8cdabedcc2b38bc16e0beee50243155f5d27755a2ed0b903613763fad520804f"
+  },
+  "${RAW}/required-launch/command.json": {
+    "bytes": 986,
+    "sha256": "49484863b1e6b97bacb645dd92de66c2b55a9be735f314eafcc107d5af9caaf1"
+  },
+  "${RAW}/required-launch/started.json": {
+    "bytes": 55,
+    "sha256": "0de187861dd3cc86f7bf2eba45401ca6cd5430720cd2112cbab5dcfd8cc90396"
+  },
+  "${RAW}/required-launch/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "${RAW}/required-launch/stdout.txt": {
+    "bytes": 562,
+    "sha256": "00d6866421511d767b0dec55d3b10bd8c7452118cebc72737d6829e930d0aa3d"
+  },
+  "${RAW}/required/command.json": {
+    "bytes": 1864,
+    "sha256": "672e661744694ebe126840cad7b9caa4eb40157af673ccabab192c4f26aac8d5"
+  },
+  "${RAW}/required/command.log": {
+    "bytes": 2099,
+    "sha256": "ba0b3d3ec0a6e03cba837b035fa86e86ac1d81a7fd3852f8b0aacf146a757ac1"
+  },
+  "${RAW}/required/gates/clippy.log": {
+    "bytes": 1336,
+    "sha256": "98f7bf8a1d1e035f767f62b5b57a77e5694694b93940588de919530ad43e4625"
+  },
+  "${RAW}/required/gates/commands.json": {
+    "bytes": 280687,
+    "sha256": "6d121f1312f36556cc5fca6808b4714210bae543ed96ba1ddf4f1b63fbb568bb"
+  },
+  "${RAW}/required/gates/fmt.log": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "${RAW}/required/hardware.json": {
+    "bytes": 223,
+    "sha256": "7b8045a29f005210d4b6fc65d270ce4eccae560df23150cc471e8fb3ab1fbf80"
+  },
+  "${RAW}/required/inputs-after.json": {
+    "bytes": 769073,
+    "sha256": "3850af5db209b67b524fcea6690e4058fa3d024ddc9efc79d4a6f08c3fe779cc"
+  },
+  "${RAW}/required/inputs-before.json": {
+    "bytes": 769073,
+    "sha256": "3850af5db209b67b524fcea6690e4058fa3d024ddc9efc79d4a6f08c3fe779cc"
+  },
+  "${RAW}/required/process-result.json": {
+    "bytes": 343,
+    "sha256": "a697c573acb699ea6f52dd8032b1297503b9489ebffb45d44c8a5ad0a522f144"
+  },
+  "${RAW}/required/summary.json": {
+    "bytes": 614,
+    "sha256": "9cd236d45b9c7b3e05de66bd407d2665f390645ac56ddd3f29b5d9f916c8472c"
+  },
+  "${RAW}/targeted-launch/closed.json": {
+    "bytes": 296,
+    "sha256": "b6aa1c1d85035cb24e7e77d591604c5ea47e6611d5dbe14063e05d186c7e29a5"
+  },
+  "${RAW}/targeted-launch/command.json": {
+    "bytes": 985,
+    "sha256": "59617f378c9daabc8ad5b2c0ea4d7f589cafc9b6fa64de68cfb24f5930d8c1e9"
+  },
+  "${RAW}/targeted-launch/started.json": {
+    "bytes": 55,
+    "sha256": "1797771863727faae354c708bdcecdb50c466a2bab94fcb37a7c1db208235d99"
+  },
+  "${RAW}/targeted-launch/stderr.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "${RAW}/targeted-launch/stdout.txt": {
+    "bytes": 561,
+    "sha256": "e9e63976eb9d01dcfc80259f3a8db91c4abcb386441994fd70c62f25962c18a7"
+  },
+  "${RAW}/targeted/command.json": {
+    "bytes": 1576,
+    "sha256": "0895c96fa37eae16ce4de08d1ae1efd55221f478009926a4cc18aec5b003a041"
+  },
+  "${RAW}/targeted/command.log": {
+    "bytes": 14457,
+    "sha256": "336972bc249fc3c4c9adc95adabfa65ff37cca63b81b5043e86d01aa3e5a2282"
+  },
+  "${RAW}/targeted/hardware.json": {
+    "bytes": 223,
+    "sha256": "7b8045a29f005210d4b6fc65d270ce4eccae560df23150cc471e8fb3ab1fbf80"
+  },
+  "${RAW}/targeted/inputs-after.json": {
+    "bytes": 769073,
+    "sha256": "3850af5db209b67b524fcea6690e4058fa3d024ddc9efc79d4a6f08c3fe779cc"
+  },
+  "${RAW}/targeted/inputs-before.json": {
+    "bytes": 769073,
+    "sha256": "3850af5db209b67b524fcea6690e4058fa3d024ddc9efc79d4a6f08c3fe779cc"
+  },
+  "${RAW}/targeted/process-result.json": {
+    "bytes": 344,
+    "sha256": "965cb74b587544b99f3bf3cf89333730e55117d5b72ed5f685dadc74c9c9fac3"
+  },
+  "${RAW}/targeted/summary.json": {
+    "bytes": 613,
+    "sha256": "0f6e17cd100ffdcb3cb44f0b605db8fa6adce318c3673672c5cf7b7ae5bf5a28"
+  },
+  "${REPO}/ignored/a3/cross-function-frontends-integration-v1/validate.py": {
+    "bytes": 6093,
+    "sha256": "1a45d1017116b2da194acf973348a76c8f85de88407972384496c3581c345e91"
+  },
+  "${REPO}/ignored/a3/cross-function-frontends-validation-log-review-v1/targeted/binding.json": {
+    "bytes": 1001,
+    "sha256": "6c7cc899561f4c19ce931378cf2c5027b860a2e3128a2922373a50ef699d8924"
+  },
+  "${REPO}/ignored/a3/cross-function-frontends-validation-required-failure-review-v1/binding.json": {
+    "bytes": 828,
+    "sha256": "aeca7e59e66285fb868a1db632757c06174c1997881ea6c754d5832407f7c3cc"
+  },
+  "${REPO}/ignored/a3/cross-function-validation-collector-inputs-v1/inputs.json": {
+    "bytes": 24518,
+    "sha256": "734c2e46f6145eebab8487d4ea413ae080d3c3d7f4096c15ce5e126b4e1bbb67"
+  }
+}

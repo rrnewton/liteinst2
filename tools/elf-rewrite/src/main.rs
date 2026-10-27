@@ -1,5 +1,5 @@
 //! CLI: create a new inspectable, non-executable artifact directory.
-use liteinst_rewrite::{Error, prepare};
+use liteinst_rewrite::{Error, prepare, prepare_with_owned_neighbors};
 use std::io::{Read as _, Write as _};
 use std::os::unix::fs::OpenOptionsExt as _;
 use std::path::{Path, PathBuf};
@@ -34,10 +34,10 @@ fn write_new(path: &Path, bytes: &[u8]) -> Result<(), Error> {
 }
 fn run() -> Result<bool, Error> {
     let args: Vec<_> = std::env::args_os().collect();
-    if args.len() != 5 || args[1] != "prepare" {
+    if args.len() != 5 || (args[1] != "prepare" && args[1] != "prepare-owned-neighbors") {
         return Err(io(
             "usage",
-            "liteinst-rewrite prepare INPUT_ELF SELECTION NEW_DIRECTORY",
+            "liteinst-rewrite (prepare|prepare-owned-neighbors) INPUT_ELF SELECTION NEW_DIRECTORY",
         ));
     }
     let input = PathBuf::from(&args[2]);
@@ -46,7 +46,11 @@ fn run() -> Result<bool, Error> {
     let manifest = read_bounded(&selection, 1024 * 1024)?;
     let limits = liteinst_rewrite::selection::parse(&manifest)?.limits;
     let original = read_bounded(&input, limits.input_bytes)?;
-    let prepared = prepare(&original, &manifest);
+    let prepared = if args[1] == "prepare-owned-neighbors" {
+        prepare_with_owned_neighbors(&original, &manifest)
+    } else {
+        prepare(&original, &manifest)
+    };
     // Reauthenticate before creating any output. A concurrent path replacement
     // cannot make the producer report another file as the original input.
     if read_bounded(&input, limits.input_bytes)? != original

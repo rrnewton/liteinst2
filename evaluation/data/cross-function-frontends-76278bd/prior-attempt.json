@@ -1,0 +1,33 @@
+{
+  "corrected_revision_results_transferred": false,
+  "failure_preserved": true,
+  "later_serial_and_contention_phases": "UNRUN",
+  "qualification_complete": false,
+  "required": {
+    "check": "UNRUN",
+    "clippy": "FAILED",
+    "clippy_exit": 101,
+    "diagnostic": "clippy::needless_lifetimes",
+    "fmt": "PASS",
+    "line": 68,
+    "path": "tools/elf-rewrite/examples/support/common_core_foreign.rs",
+    "review_sha256": "aeca7e59e66285fb868a1db632757c06174c1997881ea6c754d5832407f7c3cc",
+    "status": "FAILED",
+    "workspace_tests": "UNRUN"
+  },
+  "schema": 1,
+  "targeted": {
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 133
+    },
+    "log_sha256": "336972bc249fc3c4c9adc95adabfa65ff37cca63b81b5043e86d01aa3e5a2282",
+    "outer_groups": 8,
+    "review_sha256": "6c7cc899561f4c19ce931378cf2c5027b860a2e3128a2922373a50ef699d8924",
+    "status": "PASS"
+  },
+  "tested_revision": "822c0a4f2a0c0ee53a43438c7e9c64a128d2f58f"
+}

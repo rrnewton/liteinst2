@@ -1,0 +1,593 @@
+{
+  "attempts": [
+    {
+      "context": {
+        "closed": {
+          "exit": 1,
+          "parent_error": null,
+          "parent_wait_returned": true,
+          "pid": 125522,
+          "seconds": 0.21549937804229558,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "b565686ed0ecf74c33e75975bd176637758f4f842505f43369bacbb490b0cca1"
+        },
+        "command": {
+          "affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/request.json",
+            "--receipt",
+            "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/receipt.json"
+          ],
+          "collector_sha256": "6d4f077822e94b05f33bd1f48b6ef21d67e51a345bd6b818241514bd78125d5c",
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request_sha256": "27a4073c7ce58cde86f5dc28ad29dd2c1d20ca9e61ce5b0fde15fb7df2ce4138"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.159662791993469,
+          "exit": 1,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "27a4073c7ce58cde86f5dc28ad29dd2c1d20ca9e61ce5b0fde15fb7df2ce4138",
+          "stderr_sha256": "ea1b08f9dc507327e92ba03e6107a34141bdde1325e159091d8cdb4180be19dd",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/ignored/a3/cross-function-frontends-report-proposal-v1/payload/evaluation/collect-cross-function.py",
+            "--inputs",
+            "${REPO}/ignored/a3/cross-function-frontends-collector-inputs-v1/inputs.json",
+            "--inputs-sha256",
+            "dbb15d256587db9936555e790330e2cd57d1f30b116cdd78a631528cf5f4c0a3",
+            "--new-output",
+            "${REPO}/ignored/a3/cross-function-frontends-public-v1"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/stderr.txt",
+          "stdout": "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/stdout.txt",
+          "wall_seconds": 90
+        },
+        "started": {
+          "monotonic": 1184785.830572923,
+          "pid": 125522
+        }
+      },
+      "error_code": "invalid_harness_binary_path",
+      "exit": 1,
+      "id": "collector-v1",
+      "output_created": false,
+      "raw_records": {
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/closed.json": {
+          "bytes": 297,
+          "sha256": "cad67eb3a8cdfc00a8171631365e77fac8549fcb1a57041d9d3d8152d298c019"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/command.json": {
+          "bytes": 980,
+          "sha256": "70d24eb368e8b9d951b3432de82949df04a65774f46e4804325e9c059b435450"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/helper.stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/helper.stdout": {
+          "bytes": 98,
+          "sha256": "b565686ed0ecf74c33e75975bd176637758f4f842505f43369bacbb490b0cca1"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/receipt.json": {
+          "bytes": 587,
+          "sha256": "5c212bda0919c695f851de5f93432f4e77e6499c123131a9e324defc89e9d826"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/request.json": {
+          "bytes": 1131,
+          "sha256": "27a4073c7ce58cde86f5dc28ad29dd2c1d20ca9e61ce5b0fde15fb7df2ce4138"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/started.json": {
+          "bytes": 54,
+          "sha256": "50c6e636fe36751e3bc076582e25ff33bf0c41a557dd2c30c7289e720ce14a17"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/stderr.txt": {
+          "bytes": 1251,
+          "sha256": "ea1b08f9dc507327e92ba03e6107a34141bdde1325e159091d8cdb4180be19dd"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v1/stdout.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "status": "FAILED",
+      "workload_execution": false
+    },
+    {
+      "context": {
+        "closed": {
+          "exit": 0,
+          "parent_error": null,
+          "parent_wait_returned": true,
+          "pid": 564456,
+          "seconds": 0.46534090093337,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+        },
+        "command": {
+          "affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/request.json",
+            "--receipt",
+            "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/receipt.json"
+          ],
+          "collector_sha256": "a917b61f00df9c6aeaa32dc9b543ef9f500d48ef6e01b7e5472ca104f4a274e7",
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "parent_timeout_seconds": 115,
+          "request_sha256": "46810643530c242e62b22569845f1da5a1357198d40dd05345305b4e91c45dbd"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.4054408420342952,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "46810643530c242e62b22569845f1da5a1357198d40dd05345305b4e91c45dbd",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "fdb6ffac8482971c1039fbc1ad858520ad0c75cf4ef3833d0b42fecaf26ce58a",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/ignored/a3/cross-function-frontends-report-proposal-v2/payload/evaluation/collect-cross-function.py",
+            "--inputs",
+            "${REPO}/ignored/a3/cross-function-frontends-collector-inputs-v1/inputs.json",
+            "--inputs-sha256",
+            "dbb15d256587db9936555e790330e2cd57d1f30b116cdd78a631528cf5f4c0a3",
+            "--new-output",
+            "${REPO}/ignored/a3/cross-function-frontends-public-v2"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/stderr.txt",
+          "stdout": "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/stdout.txt",
+          "wall_seconds": 90
+        },
+        "started": {
+          "pid": 564456
+        }
+      },
+      "error_code": null,
+      "exit": 0,
+      "id": "collector-v2",
+      "output_created": true,
+      "raw_records": {
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/closed.json": {
+          "bytes": 294,
+          "sha256": "473e8ea85ca3be4f3115f5948155c0088092a1b327bca77f4abb5d8ecc2291af"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/command.json": {
+          "bytes": 1067,
+          "sha256": "bb6ce4f2d0c571d3f167791fb5190228c7582be374f5ddd238bd122ae2c97af9"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/helper.stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/helper.stdout": {
+          "bytes": 97,
+          "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/receipt.json": {
+          "bytes": 588,
+          "sha256": "821c9a02b80d605157bd130585c5f4dff01db6540db0ec111a2fff5274714bf8"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/request.json": {
+          "bytes": 1131,
+          "sha256": "46810643530c242e62b22569845f1da5a1357198d40dd05345305b4e91c45dbd"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/run-parent.py": {
+          "bytes": 1292,
+          "sha256": "8928181a46e57759c890d01b3157dfe2bd455e66a852ddea7b364ec763db1bd3"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/started.json": {
+          "bytes": 20,
+          "sha256": "38141c81ce898fc82a28a704d9785447441115a8ebd79e0261e41430b3fa07e4"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-public-launch-v2/stdout.txt": {
+          "bytes": 1447,
+          "sha256": "fdb6ffac8482971c1039fbc1ad858520ad0c75cf4ef3833d0b42fecaf26ce58a"
+        }
+      },
+      "status": "PASS_REPORTING_ONLY",
+      "workload_execution": false
+    },
+    {
+      "context": {
+        "closed": {
+          "exit": 0,
+          "operational_seconds": 0.6266742798034102,
+          "parent_error": null,
+          "parent_wait_returned": true,
+          "pid": 585735,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+        },
+        "command": {
+          "affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/request.json",
+            "--receipt",
+            "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/receipt.json"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1"
+          },
+          "parent_timeout_seconds": 40,
+          "request_sha256": "48a1bb55e1fcb1f69bf7b8c14e6da10f9c5eae7abf3b3ced7291115e99faaaa9"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.5605034090112895,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "48a1bb55e1fcb1f69bf7b8c14e6da10f9c5eae7abf3b3ced7291115e99faaaa9",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "3f853ed769ef5b9ccaff58dbf41dcbd29d2ee04ecbd0f5643054fb2b64600660",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/ignored/a3/cross-function-frontends-report-proposal-v2/controls.py",
+            "--collector",
+            "${REPO}/ignored/a3/cross-function-frontends-report-proposal-v2/payload/evaluation/collect-cross-function.py",
+            "--inputs",
+            "${REPO}/ignored/a3/cross-function-frontends-collector-inputs-v1/inputs.json",
+            "--inputs-sha256",
+            "dbb15d256587db9936555e790330e2cd57d1f30b116cdd78a631528cf5f4c0a3",
+            "--out",
+            "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/observations"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "${REPO}",
+          "env": {
+            "LANG": "C.UTF-8",
+            "LC_ALL": "C.UTF-8",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1"
+          },
+          "file_bytes": 1048576,
+          "stderr": "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/stderr.txt",
+          "stdout": "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/stdout.txt",
+          "wall_seconds": 15
+        },
+        "started": {
+          "pid": 585735
+        }
+      },
+      "error_code": null,
+      "exit": 0,
+      "id": "reporting-controls-v2",
+      "output_created": true,
+      "raw_records": {
+        "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/closed.json": {
+          "bytes": 308,
+          "sha256": "604b9a7daf5970c70f50b3b1b402c6867516ec64f683c7a0ac5d13e68ae463d7"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/command.json": {
+          "bytes": 950,
+          "sha256": "5c89dd905982eae44569f8070097f1ac008b697c4e40ad8b3b01da85a250ae27"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/outer-stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/outer-stdout.txt": {
+          "bytes": 97,
+          "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/receipt.json": {
+          "bytes": 588,
+          "sha256": "7b43709937b82589af56359bf720d2b9da04b15de274002c35ee104b68b7d043"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/request.json": {
+          "bytes": 1362,
+          "sha256": "48a1bb55e1fcb1f69bf7b8c14e6da10f9c5eae7abf3b3ced7291115e99faaaa9"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/run-parent.py": {
+          "bytes": 1685,
+          "sha256": "8a96cba27fcab351d0ab5c0c196b79df51581bf0409afe1d5c402598ab5879d5"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/started.json": {
+          "bytes": 20,
+          "sha256": "0f89dfaa65fff971c5b5109e2e9e53dc9f1dee18bd2dbc0e4264687ac72a3a6c"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/stderr.txt": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "${REPO}/ignored/a3/cross-function-frontends-report-controls-v2/stdout.txt": {
+          "bytes": 201,
+          "sha256": "3f853ed769ef5b9ccaff58dbf41dcbd29d2ee04ecbd0f5643054fb2b64600660"
+        }
+      },
+      "status": "PASS_REPORTING_ONLY",
+      "workload_execution": false
+    }
+  ],
+  "controls": [
+    {
+      "assertion": "assert log is not None, 'PASS phase requires complete command.log'",
+      "message": "PASS phase requires complete command.log",
+      "name": "missing-pass-log",
+      "output_absent": true,
+      "source_line": 253,
+      "status": "EXPECTED_ASSERTION_REFUSAL"
+    },
+    {
+      "assertion": "assert exit_code != 0, 'successful tests require their complete reviewed inventory'",
+      "message": "successful tests require their complete reviewed inventory",
+      "name": "missing-pass-inventory",
+      "output_absent": true,
+      "source_line": 160,
+      "status": "EXPECTED_ASSERTION_REFUSAL"
+    },
+    {
+      "name": "real-complete-projection",
+      "status": "PASS_SAVED_REPORT_PROJECTION",
+      "targeted_cases": 133,
+      "targeted_groups": 8,
+      "unchanged_parser_error_retained": true,
+      "zero_examples": 3
+    },
+    {
+      "assertion": "assert match is not None, 'malformed or ambiguous targeted example identity'",
+      "message": "malformed or ambiguous targeted example identity",
+      "name": "malformed-example-source-binary",
+      "output_absent": true,
+      "source_line": 81,
+      "status": "EXPECTED_ASSERTION_REFUSAL"
+    },
+    {
+      "assertion": "gid = reviewed_harness_id(phase, group, lines, source_files, parser); assert gid is not None and gid not in expected",
+      "message": "",
+      "name": "ambiguous-duplicate-example",
+      "output_absent": true,
+      "source_line": 174,
+      "status": "EXPECTED_ASSERTION_REFUSAL"
+    }
+  ],
+  "first_reporting_failure_preserved": true,
+  "full_a3": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ]
+  },
+  "operational_durations_not_performance": true,
+  "parser_diagnostics": [
+    {
+      "command": "targeted",
+      "log_sha256": "1baf9e11efb9c09c377225e32856234726ef6aac99edd7496d8f9e8c5b40e404",
+      "public_parser": "invalid_harness_binary_path",
+      "review_sha256": "88a214150d55fca68823a4ef052a1fad28b0b809b7e762c29057f50f88a0c417",
+      "reviewed_inventory": true
+    },
+    {
+      "command": "required/test",
+      "log_sha256": "f7f531af5845edbe41baaa2e2bfc601ab94a8be11263436f22e5e35d2c60ec77",
+      "public_parser": "unexpected_or_duplicate_harness",
+      "review_sha256": "9d24f7c1503fcbe0916d9b29ade0e10f390e05c7cc024720fcb866645fd2bd2a",
+      "reviewed_inventory": true
+    },
+    {
+      "command": "serial",
+      "log_sha256": "9dd6a73b9fce60b720bbdaf511474b960bb0dcb1b37c19be51df56163c0f6a8e",
+      "public_parser": "unexpected_or_duplicate_harness",
+      "review_sha256": "a2498c8ea4b09581d0a7247d6e9fb284e9a1a3d90abca06a6e91b8da067952cb",
+      "reviewed_inventory": true
+    },
+    {
+      "command": "parallel-library",
+      "log_sha256": "586e4e954239828e3fed8f96041c686319f1c59815c23a58557d716d5df0aaee",
+      "public_parser": "COMPLETE",
+      "review_sha256": "bd70d854a073d7e34d70328a4566e958adbbdfc25db19839375b002d6a84f1f2",
+      "reviewed_inventory": true
+    },
+    {
+      "command": "parallel-prefixed",
+      "log_sha256": "b68daa599ba2cb9416d0f38c4ac836163a33be6fe81167fb5dc38b6a15f792bf",
+      "public_parser": "COMPLETE",
+      "review_sha256": "55625e47955f39c2a05b3eb64a95843dc9b433669e2fd254ae859ef1ca8d5d9e",
+      "reviewed_inventory": true
+    },
+    {
+      "command": "parallel-neighbor",
+      "log_sha256": "bad9effd04da7fbe4140196e5ceddf891bfef6ab6071b991ac6acf8a2f21cd80",
+      "public_parser": "COMPLETE",
+      "review_sha256": "29243ed0be1a1de2716d1f112dc773f22966bae0c5163c7b88a91111d8794f51",
+      "reviewed_inventory": true
+    }
+  ],
+  "qualification_complete": false,
+  "real_and_control_positive_public_bytes_identical": true,
+  "schema": 1,
+  "scope": "closed saved-report projection and synthetic reporting controls; no validation execution",
+  "source_validation_history": "Separate 822c targeted success and strict Clippy failure remain in the published history cohort.",
+  "sources": {
+    "caller_sha256": "dbb15d256587db9936555e790330e2cd57d1f30b116cdd78a631528cf5f4c0a3",
+    "collector_v1_sha256": "6d4f077822e94b05f33bd1f48b6ef21d67e51a345bd6b818241514bd78125d5c",
+    "collector_v2_sha256": "a917b61f00df9c6aeaa32dc9b543ef9f500d48ef6e01b7e5472ca104f4a274e7",
+    "controls_v2_sha256": "929087223cb6ef592a38c778f55b184e4743e378bd232a38f289532922ce8240",
+    "driver_sha256": "d3354949d3d021cc843ca625253ed13eccda2983b7f10f92974a4afed7c56ccd",
+    "parser_sha256": "2560b809a39b8d80dcb12c88c951b9066ad6a8b2dd139d39add7e3718d52371a"
+  },
+  "tested_revision": "76278bdfd19db60a0734ed1195d0f96d9da1a680",
+  "validation_phase_counts": [
+    {
+      "cases": 133,
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 133
+      },
+      "groups": 8,
+      "phase": "targeted"
+    },
+    {
+      "cases": 2198,
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 4,
+        "measured": 0,
+        "passed": 2194
+      },
+      "groups": 95,
+      "phase": "required"
+    },
+    {
+      "cases": 995,
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 995
+      },
+      "groups": 27,
+      "phase": "serial"
+    },
+    {
+      "cases": 213,
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 1,
+        "measured": 0,
+        "passed": 212
+      },
+      "groups": 1,
+      "phase": "parallel-library"
+    },
+    {
+      "cases": 28,
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 28
+      },
+      "groups": 1,
+      "phase": "parallel-prefixed"
+    },
+    {
+      "cases": 72,
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 72
+      },
+      "groups": 1,
+      "phase": "parallel-neighbor"
+    }
+  ]
+}

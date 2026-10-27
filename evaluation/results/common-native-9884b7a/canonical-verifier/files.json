@@ -1,0 +1,298 @@
+{
+  "files": {
+    "${REPO}/evaluation/results/common-native-9884b7a/originals-and-archive-failures/summary.json": {
+      "bytes": 12228,
+      "sha256": "0005a664efcd3aadbc6435014f2c564c075ccd5821fd8e532166e93e70d0b235"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/build-v1/hardware.json": {
+      "bytes": 246,
+      "sha256": "efd21582e7821282517d86428a8d743ee3d6414df5cf6dcc201a4119540331e9"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-actual-review-v2/REVIEW.md": {
+      "bytes": 4375,
+      "sha256": "a2032fe2740c20a0fbebced00561c886b0847286834246c37e10e7480c0e16de"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-actual-review-v2/binding.json": {
+      "bytes": 5189,
+      "sha256": "77a490bef30bc3f464e6ada6856d24984b83c8ccb13a3cf5c21ec606a977f581"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-actual-review-v2/check_saved.py": {
+      "bytes": 18403,
+      "sha256": "b4e4c7b87f81eeac15dac56b9da2c1bd3c0807bcb7b2d8229ad6014c88a5682f"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-actual-review-v2/checks.json": {
+      "bytes": 5832,
+      "sha256": "a72bbfa37133f87a3af4eb27219bae6b80f2937e9291bd9ab932f676a4264a38"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-actual-review-v2/reference-provenance.json": {
+      "bytes": 8342,
+      "sha256": "6d4e120eb300cf4afc9e8751a091448caf85fc8039645fd8e291e51b8ff5dd15"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-actual-review-v2/references-read.json": {
+      "bytes": 28787,
+      "sha256": "7490288e19212a7a4051ee792680dd604aa26feffc298f935212b1f9a3824131"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-actual-review-v2/references.json": {
+      "bytes": 47555,
+      "sha256": "72ef2cb578e2b3aa9669526fe5301e2d2f62c92b492833ac08f492e9185f3e12"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-actual-review-v2/reviewer-checker-delta.json": {
+      "bytes": 7713,
+      "sha256": "0a15f695c55f464781ca887485c01b1ac85877cedfca61529359436afbf7a019"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-actual-review-v2/root-byte-check-join.json": {
+      "bytes": 3578,
+      "sha256": "203dd86df8fc57d5c1c8114f1224a6593f7c62c00d7241a88660066dd206add8"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-failure-review-v1/REVIEW.md": {
+      "bytes": 3547,
+      "sha256": "4e34d3db86eada5eb0f807d52b8854da57280a063fd657c60d84fd99c91f6cff"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-failure-review-v1/binding.json": {
+      "bytes": 1949,
+      "sha256": "d94ce331082b1f08830f8011bb8d64b31776bceedc76583c7db426e31b8c8b33"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-failure-review-v1/check_saved.py": {
+      "bytes": 11290,
+      "sha256": "4e6fa4c1087fb886ed3553198897352629f5537c14d9f3a2feca6e97b19cd6f6"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-failure-review-v1/checks.json": {
+      "bytes": 4445,
+      "sha256": "0251326bd1c3de93e2f2f1dbf0796252d60cdf88eed2362fa91d383d22cc74d2"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-failure-review-v1/reference-provenance.json": {
+      "bytes": 8014,
+      "sha256": "6a0ebe2a4557e181c452f03a82ad25d50694bc0f72f15f1afe5dd09fd2884b43"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-failure-review-v1/references-read.json": {
+      "bytes": 21284,
+      "sha256": "02de63047b936b87d32ee9e9efc68471774d09cc574fa579fa672252ec12b34d"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-failure-review-v1/references.json": {
+      "bytes": 39254,
+      "sha256": "d72300b61fb80fef1e221205994bf39012c6bf34611f28828367dd959201aaab"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v1/build.py": {
+      "bytes": 19084,
+      "sha256": "fa9de2e9e57f70a3d69575373e0585fbd2bcb86faa0f7533cc6146240af4e2fa"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v1/compiler_entry.py": {
+      "bytes": 4332,
+      "sha256": "70c4f0ec1cfc2f0b0b74c00199927f83e5a7cfbe4bb2d2ce2e3295e9ecea1ee0"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v1/references.json": {
+      "bytes": 10593,
+      "sha256": "9bffaf28e47f9469f9083b2228e0882cf00416ea29a452e5b09a43e75bf84db9"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v2/build.py": {
+      "bytes": 19114,
+      "sha256": "390d7ce6c0782696159ae524415dc3f6d3c2ffe02fad27b3634039442e25eab5"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v2/compiler_entry.py": {
+      "bytes": 4332,
+      "sha256": "70c4f0ec1cfc2f0b0b74c00199927f83e5a7cfbe4bb2d2ce2e3295e9ecea1ee0"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v2/references.json": {
+      "bytes": 10593,
+      "sha256": "9bffaf28e47f9469f9083b2228e0882cf00416ea29a452e5b09a43e75bf84db9"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/caller.json": {
+      "bytes": 1238,
+      "sha256": "29357d4671d3a2db61d0d04b189a94e55b17d1b99b36bdae06e549773970d8f5"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/command.json": {
+      "bytes": 1900,
+      "sha256": "43c129dc6db7530773d2d8c23be75021253dbcebfadc5c09e2c8b38df7ec30db"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/receipt.json": {
+      "bytes": 588,
+      "sha256": "6be18c965f3b88cdc1266b8e8db6016952d2eae800971051db2d74cf92833820"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/request.json": {
+      "bytes": 1046,
+      "sha256": "8710260a917024fe69b13820b90217801bd664e524d8767e29aa36f2e241b826"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/result.json": {
+      "bytes": 2030,
+      "sha256": "021e529208ed8a473512fa0fe9bd08091c31dec393922d57d5f2cae42d73cede"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compiler-entry.json": {
+      "bytes": 15651,
+      "sha256": "94432e03d0ecba786072f5b71a7208936af5ee0860183d309275a71024e57485"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compiler-job.json": {
+      "bytes": 15561,
+      "sha256": "2fd5319ea3b368b1c3e95a2d3ef1b1c6910a22772be3f0eabb783e927ab118e2"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/configs-after.json": {
+      "bytes": 1802,
+      "sha256": "067cf135a07ab682941106ade12712589cd45404260bf8fdbcf405580c2dd030"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/configs.json": {
+      "bytes": 1802,
+      "sha256": "067cf135a07ab682941106ade12712589cd45404260bf8fdbcf405580c2dd030"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/source-after.json": {
+      "bytes": 1457282,
+      "sha256": "609c811475e4ef3c9d2fdf56d6895e64c6e056b363700226b790c8aaff84fb10"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/source.json": {
+      "bytes": 1457282,
+      "sha256": "609c811475e4ef3c9d2fdf56d6895e64c6e056b363700226b790c8aaff84fb10"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/tools-after.json": {
+      "bytes": 2784,
+      "sha256": "8adf642910f2a0dccc697a77bfb8f91819aa838876f8bb09d7ded36abe908440"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/tools.json": {
+      "bytes": 2784,
+      "sha256": "8adf642910f2a0dccc697a77bfb8f91819aa838876f8bb09d7ded36abe908440"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/caller.json": {
+      "bytes": 1238,
+      "sha256": "89225a0e254275be65a1b6bbcc292065c025b773da0227a00580cb636645f481"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/command.json": {
+      "bytes": 1900,
+      "sha256": "0df4627bda1b9a0076d545c7fd0d737fd82b17cadc75935aad6d71d603333872"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/receipt.json": {
+      "bytes": 586,
+      "sha256": "87a3a198566be1863c567e0a3236a45d2ff1486c65c0962bba4666ed24367c40"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/request.json": {
+      "bytes": 1046,
+      "sha256": "10868f72a99e0ec9ec08f3eb21e6bfae6613287b5416f8cf3d032a92951ac021"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/result.json": {
+      "bytes": 2031,
+      "sha256": "45f8b3b60529fc5974ff7b26b700e4658b90b1ab731107b6628a05a4fb243642"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compiler-entry.json": {
+      "bytes": 15811,
+      "sha256": "a5d76cce870cbf40ae609414a49e212df4bca69dc205e0417fc2060a4f0b3315"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compiler-job.json": {
+      "bytes": 15721,
+      "sha256": "df169778bcefe96dc437efb2aec374001ff00f452ca5351748e47d8a3e0e6f63"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/configs-after.json": {
+      "bytes": 1802,
+      "sha256": "067cf135a07ab682941106ade12712589cd45404260bf8fdbcf405580c2dd030"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/configs.json": {
+      "bytes": 1802,
+      "sha256": "067cf135a07ab682941106ade12712589cd45404260bf8fdbcf405580c2dd030"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/source-after.json": {
+      "bytes": 1457282,
+      "sha256": "609c811475e4ef3c9d2fdf56d6895e64c6e056b363700226b790c8aaff84fb10"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/source.json": {
+      "bytes": 1457282,
+      "sha256": "609c811475e4ef3c9d2fdf56d6895e64c6e056b363700226b790c8aaff84fb10"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/tools-after.json": {
+      "bytes": 2784,
+      "sha256": "8adf642910f2a0dccc697a77bfb8f91819aa838876f8bb09d7ded36abe908440"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/tools.json": {
+      "bytes": 2784,
+      "sha256": "8adf642910f2a0dccc697a77bfb8f91819aa838876f8bb09d7ded36abe908440"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-caller-v1/caller.json": {
+      "bytes": 1238,
+      "sha256": "29357d4671d3a2db61d0d04b189a94e55b17d1b99b36bdae06e549773970d8f5"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-caller-v2/caller.json": {
+      "bytes": 1238,
+      "sha256": "89225a0e254275be65a1b6bbcc292065c025b773da0227a00580cb636645f481"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v1/closed.json": {
+      "bytes": 295,
+      "sha256": "d211899a7e2502da3d5cf1909331aff093c8656930090825a9bd6c0b7a688875"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v1/command.json": {
+      "bytes": 1437,
+      "sha256": "490c86240e47fe9f81c56d36c4ff33c354706b80d6540932d91d5ea593da71d0"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v1/receipt.json": {
+      "bytes": 587,
+      "sha256": "fbc393f6c57d4b624529f36634559817e2a66f85c4dea99aa1669527399b9987"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v1/request.json": {
+      "bytes": 1026,
+      "sha256": "39e369492bb65b1e653be45690546c2ec8cf626331e4c9b0f6568f2cafffe4ea"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v2/closed.json": {
+      "bytes": 295,
+      "sha256": "2e7a924b170a5b1b3935dd065f2cb40efa0b29f0be175d488e5fd7f444364341"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v2/command.json": {
+      "bytes": 1437,
+      "sha256": "a5260e43013010f54990f9a554810ae1d344922dd89882291659ff2f0f1069bd"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v2/receipt.json": {
+      "bytes": 587,
+      "sha256": "167647c117c7a238c828679d9d4750b5c53d0fe1ab0484dfd450fbf841444d6b"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-launch-v2/request.json": {
+      "bytes": 1026,
+      "sha256": "acf486ad857ff98fd390747f5f7c2cf24dd85fa04c125f9d3e8e98d3a70cacc6"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-root-check-v2/check.py": {
+      "bytes": 5218,
+      "sha256": "7e2d4ce930bb60ce22db5d989ca95c408ffd3f731950f0cde61a5b2f75c0551e"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-root-check-v2/checks.json": {
+      "bytes": 519,
+      "sha256": "3ad6abc42c7b3b826b3b38d8a4e0e45d5d780fb01a4820e031122913d4b92a6b"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v1/closed.json": {
+      "bytes": 376,
+      "sha256": "387b462b1a052288c43ada5711683eca5d0af989d6692d04e63e6ea1583ac703"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v1/command-spec.json": {
+      "bytes": 2330,
+      "sha256": "f2f78cd8cd53d5d0a22baae74a0873b64618d2ecee2a7783ed31c2e24ecdf814"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v1/command.json": {
+      "bytes": 1255,
+      "sha256": "6ea3f5a6240b1f7aff930124df88a8e9bfcba9105e4a60f3b5a49fc0b89d942c"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v2/closed.json": {
+      "bytes": 375,
+      "sha256": "96a67ebcb10857f15e6a04f5e1d65201e27dca62af8c5fdaf094907eb21b1cbb"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v2/command-spec.json": {
+      "bytes": 2330,
+      "sha256": "84737ee6308453504189eb5e52cfa5613115ccd423fdd050cfea09c0d0d28ce4"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-produce-v2/command.json": {
+      "bytes": 1255,
+      "sha256": "6f0bc193d24b79425416129f76d4cfeb79ef7077d63cb8212cd5bbd2927bd088"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-root-check-v2/closed.json": {
+      "bytes": 375,
+      "sha256": "7371dbacec0097144c12fcb79b2d289f14d35eefdfe9407781fb057187647307"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-root-check-v2/command-spec.json": {
+      "bytes": 2041,
+      "sha256": "3ab99bd8d479cf7bf59d2cd6635b938c3fde144427338989f6acfe8251a1ec09"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/runtime-isolation-launch-v7/canonical-verifier-root-check-v2/command.json": {
+      "bytes": 1258,
+      "sha256": "cf517841ebbf8dd9aba6c5d0a093d3af4ca4cfcf3efb9c11acda0a5c31a54264"
+    },
+    "${REPO}/ignored/a3/common-native-epoch-v1/verifier-actual-review-v1/binding.json": {
+      "bytes": 1416,
+      "sha256": "e49cf904f3c3dc842a21b2830e6aad26dde5ce52ffa8d3dcb2ad1db0d5c676f4"
+    },
+    "${REPO}/ignored/a3/e9-native-recipes-export-proposal-v1/payload/evaluation/e9-common-app/materialize_e9_native.py": {
+      "bytes": 6267,
+      "sha256": "8a088e99505f8928cdb4f62c5c8dd0cfa6eaeb0540409ce407b1994879fa87d6"
+    }
+  },
+  "schema": 1,
+  "scope": "Whole hashes of source and saved metadata read for this projection; product/capture/cache bytes not read."
+}

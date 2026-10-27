@@ -421,3 +421,6 @@ fn original_rx_is_required_independently_for_source_and_hook() {
 
 #[path = "support/composition_overlay.rs"]
 mod composition_overlay;
+
+#[path = "support/owned_neighbors.rs"]
+mod owned_neighbors;

@@ -1,0 +1,716 @@
+{
+  "actor_attribution": "UNPROVEN; v2 success does not identify the cause of v1 timestamp changes.",
+  "affinity": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "attempts": [
+    {
+      "archive_products": 0,
+      "attempt": "v1",
+      "compiler_absence_proof": "ECHILD",
+      "compiler_exit": 0,
+      "compiler_seconds": 2.2730038459412754,
+      "consumer_admission": false,
+      "copied_libraries": 38,
+      "original_dependency_archives": 43,
+      "private_leaves": 41,
+      "private_root_differences": [
+        {
+          "after": 1793083944555923050,
+          "before": 1793083941431922641,
+          "path": [
+            "directories",
+            "",
+            4
+          ]
+        },
+        {
+          "after": 1793083944555923050,
+          "before": 1793083941889922701,
+          "path": [
+            "directories",
+            "",
+            5
+          ]
+        },
+        {
+          "after": 1793083944555923050,
+          "before": 1793083941431922641,
+          "path": [
+            "path_directories",
+            "",
+            4
+          ]
+        },
+        {
+          "after": 1793083944555923050,
+          "before": 1793083941889922701,
+          "path": [
+            "path_directories",
+            "",
+            5
+          ]
+        }
+      ],
+      "producer_absence_proof": "ECHILD",
+      "producer_exit": 1,
+      "producer_seconds": 5.335135915083811,
+      "raw_index_rows": 70,
+      "review_sha256": "d94ce331082b1f08830f8011bb8d64b31776bceedc76583c7db426e31b8c8b33",
+      "root_parent_exit": 1,
+      "root_parent_seconds": 5.52619690913707,
+      "root_parent_wait_returned": true,
+      "source_copies": 3,
+      "source_files": 1839,
+      "status": "FAILED_PRIVATE_INPUT_OWNER_CHECK",
+      "verifier_executions": 0
+    },
+    {
+      "archive_products": 2,
+      "attempt": "v2",
+      "compiler_absence_proof": "ECHILD",
+      "compiler_exit": 0,
+      "compiler_seconds": 2.43114479794167,
+      "consumer_admission": false,
+      "copied_libraries": 38,
+      "original_dependency_archives": 43,
+      "private_leaves": 41,
+      "private_root_differences": [],
+      "producer_absence_proof": "ECHILD",
+      "producer_exit": 0,
+      "producer_seconds": 6.416439010063186,
+      "raw_index_rows": 72,
+      "review_sha256": "77a490bef30bc3f464e6ada6856d24984b83c8ccb13a3cf5c21ec606a977f581",
+      "root_parent_exit": 0,
+      "root_parent_seconds": 8.13276534085162,
+      "root_parent_wait_returned": true,
+      "source_copies": 3,
+      "source_files": 1839,
+      "status": "PASS_DIRECT_RUSTC_PRODUCTION_AND_ROOT_BYTE_CHECK",
+      "verifier_executions": 0
+    }
+  ],
+  "callers": {
+    "v1": {
+      "authority": "ROOT_AUTHORIZED_DIRECT_RUSTC_VERIFIER_PRODUCTION",
+      "capacity_record_sha256": "d34fa62b4e4ced616b1dbcda13790ac80550e57dec6d422013ae1f3af3e6cc0c",
+      "entry_sha256": "70c4f0ec1cfc2f0b0b74c00199927f83e5a7cfbe4bb2d2ce2e3295e9ecea1ee0",
+      "linker": {
+        "bytes": 1093144,
+        "path": "/usr/bin/gcc",
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "producer_sha256": "fa9de2e9e57f70a3d69575373e0585fbd2bcb86faa0f7533cc6146240af4e2fa",
+      "record_sha256": "29357d4671d3a2db61d0d04b189a94e55b17d1b99b36bdae06e549773970d8f5",
+      "references_sha256": "9bffaf28e47f9469f9083b2228e0882cf00416ea29a452e5b09a43e75bf84db9"
+    },
+    "v2": {
+      "authority": "ROOT_AUTHORIZED_DIRECT_RUSTC_VERIFIER_PRODUCTION",
+      "capacity_record_sha256": "62621c30f64bdcb5a17bb2cd39ac0b6a4ee5c831e2d4706a86b85f0d5a638edd",
+      "entry_sha256": "70c4f0ec1cfc2f0b0b74c00199927f83e5a7cfbe4bb2d2ce2e3295e9ecea1ee0",
+      "linker": {
+        "bytes": 1093144,
+        "path": "/usr/bin/gcc",
+        "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+      },
+      "producer_sha256": "390d7ce6c0782696159ae524415dc3f6d3c2ffe02fad27b3634039442e25eab5",
+      "record_sha256": "89225a0e254275be65a1b6bbcc292065c025b773da0227a00580cb636645f481",
+      "references_sha256": "9bffaf28e47f9469f9083b2228e0882cf00416ea29a452e5b09a43e75bf84db9"
+    }
+  },
+  "command_contexts": 16,
+  "compiler_limits": {
+    "cpu_seconds": 60,
+    "file_bytes": 134217728,
+    "kill_after_seconds": 10,
+    "outer_seconds": 100,
+    "parent_seconds": 115,
+    "wall_seconds": 90
+  },
+  "consumer_admission": false,
+  "copy_materializer_execution": "UNRUN",
+  "existing_cargo_consumer_compatible": false,
+  "full_a3": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ],
+    "logical_cpus": 316
+  },
+  "hardware_scope": "Saved 9884 build host context; no separate per-attempt hardware capture.",
+  "native_equivalence_credit": false,
+  "performance_claim": false,
+  "prior_attempts_2_to_4_only": "Recorded alias-parent timestamp differences; no actor or kernel mechanism attribution.",
+  "prior_failure_review_sha256": "e49cf904f3c3dc842a21b2830e6aad26dde5ce52ffa8d3dcb2ad1db0d5c676f4",
+  "prior_first_attempt_after_snapshot_absent": true,
+  "prior_four_archive_failures": [
+    {
+      "after_snapshots_saved": false,
+      "archive_recipe_exit": 1,
+      "archive_status": "FAILED_COMBINED_ALIAS_OR_TARGET_STABILITY_ASSERTION",
+      "attempt": 1,
+      "compiler_absence_proof": "ECHILD",
+      "compiler_exit": 0,
+      "compiler_outer_seconds": 1.3674623700790107,
+      "compiler_receipt_seconds": 1.3154900982044637,
+      "compiler_receipt_sha256": "a036af237d00fdae450808e2be8a15655adca422c9efab97688fe488ed6d67ff",
+      "compiler_request_sha256": "8185b0568633c6ccac012b39cece961f0ad87495be1d2c8eac91c363cd1c4cfa",
+      "exact_mismatch": null,
+      "parent_seconds": 4.260683972854167,
+      "parent_wait_returned": true,
+      "private_recipe_sha256": "b6ae97aae1b246719621c72a6387d18015b6697d6b7667a985edc08d13328014",
+      "reported_archive_bytes": 204774633,
+      "reported_archive_files": 43,
+      "reported_product_bytes_independently_read": false,
+      "source_dependencies": 46,
+      "success_admission": false
+    },
+    {
+      "after_snapshots_saved": true,
+      "archive_recipe_exit": 1,
+      "archive_status": "FAILED_ALIAS_DIRECTORY_STABILITY",
+      "attempt": 2,
+      "compiler_absence_proof": "ECHILD",
+      "compiler_exit": 0,
+      "compiler_outer_seconds": 0.2650881549343467,
+      "compiler_receipt_seconds": 0.18250795197673142,
+      "compiler_receipt_sha256": "1e607d0d6e3c520d1a4613f6cd2dd2712ec80c812438b9ae68f25c0e596c48b2",
+      "compiler_request_sha256": "e8190fe6ccd4a471df4daff0036cfba412cd4ec4d8512507cf0b391b88ab989d",
+      "exact_mismatch": {
+        "affected_alias_rows": 46,
+        "after_ctime_ns": 1793063001753308997,
+        "after_mtime_ns": 1793063001753308997,
+        "before_ctime_ns": 1793063000675043925,
+        "before_mtime_ns": 1793063000675043925,
+        "changed_scalar_fields": 92,
+        "directory": "${HOME_DIRECTORY_PARENT}",
+        "fields": [
+          "mtime_ns",
+          "ctime_ns"
+        ],
+        "remaining_source_alias_fields_equal": true,
+        "source_tools_configs_target_owner_records_equal": {
+          "configs": true,
+          "source": true,
+          "target-owners": true,
+          "tools": true
+        }
+      },
+      "parent_seconds": 3.2585596728604287,
+      "parent_wait_returned": true,
+      "private_recipe_sha256": "c3b58c2642487d8bddb49cc98efdf996af77c1dd1e15c532224e8de900c9b24c",
+      "reported_archive_bytes": 204774633,
+      "reported_archive_files": 43,
+      "reported_product_bytes_independently_read": false,
+      "source_dependencies": 46,
+      "success_admission": false
+    },
+    {
+      "after_snapshots_saved": true,
+      "archive_recipe_exit": 1,
+      "archive_status": "FAILED_ALIAS_DIRECTORY_STABILITY",
+      "attempt": 3,
+      "compiler_absence_proof": "ECHILD",
+      "compiler_exit": 0,
+      "compiler_outer_seconds": 0.21500870096497238,
+      "compiler_receipt_seconds": 0.17012174800038338,
+      "compiler_receipt_sha256": "87bd3aa93fb80cb74b19052144c6a7dc45ee38e4385869fc46a81bde34d80f75",
+      "compiler_request_sha256": "7218bdee74b51ac20e2d7090129391de85b5518155d7bed66e80c03075e3fa71",
+      "exact_mismatch": {
+        "affected_alias_rows": 46,
+        "after_ctime_ns": 1793063109522610881,
+        "after_mtime_ns": 1793063109522610881,
+        "before_ctime_ns": 1793063107517946130,
+        "before_mtime_ns": 1793063107517946130,
+        "changed_scalar_fields": 92,
+        "directory": "${HOME_DIRECTORY_PARENT}",
+        "fields": [
+          "mtime_ns",
+          "ctime_ns"
+        ],
+        "remaining_source_alias_fields_equal": true,
+        "source_tools_configs_target_owner_records_equal": {
+          "configs": true,
+          "source": true,
+          "target-owners": true,
+          "tools": true
+        }
+      },
+      "parent_seconds": 3.200356346089393,
+      "parent_wait_returned": true,
+      "private_recipe_sha256": "419eb45972ebce7509559874a9ba81054fd620f4b8fcf31335417a77decf87d0",
+      "reported_archive_bytes": 204774633,
+      "reported_archive_files": 43,
+      "reported_product_bytes_independently_read": false,
+      "source_dependencies": 46,
+      "success_admission": false
+    },
+    {
+      "after_snapshots_saved": true,
+      "archive_recipe_exit": 1,
+      "archive_status": "FAILED_ALIAS_DIRECTORY_STABILITY",
+      "attempt": 4,
+      "compiler_absence_proof": "ECHILD",
+      "compiler_exit": 0,
+      "compiler_outer_seconds": 0.21516157500445843,
+      "compiler_receipt_seconds": 0.1649438061285764,
+      "compiler_receipt_sha256": "3e2c7767d07a89870a1d4365c62a67327241a964ec23c56f31425f3b862acfbc",
+      "compiler_request_sha256": "aaaf68d87e7c9ee8522ae44ce979a5f8062b97346dd49825b3e1da89074af67e",
+      "exact_mismatch": {
+        "affected_alias_rows": 46,
+        "after_ctime_ns": 1793063365197514366,
+        "after_mtime_ns": 1793063365197514366,
+        "before_ctime_ns": 1793063364486514681,
+        "before_mtime_ns": 1793063364486514681,
+        "changed_scalar_fields": 92,
+        "directory": "${HOME_DIRECTORY_PARENT}",
+        "fields": [
+          "mtime_ns",
+          "ctime_ns"
+        ],
+        "remaining_source_alias_fields_equal": true,
+        "source_tools_configs_target_owner_records_equal": {
+          "configs": true,
+          "source": true,
+          "target-owners": true,
+          "tools": true
+        }
+      },
+      "parent_seconds": 3.0847883948590606,
+      "parent_wait_returned": true,
+      "private_recipe_sha256": "23e72599cce39029fd6fb5b3a4dba1c4f7d21acb5fcb5e7c2d98c136512322ad",
+      "reported_archive_bytes": 204774633,
+      "reported_archive_files": 43,
+      "reported_product_bytes_independently_read": false,
+      "source_dependencies": 46,
+      "success_admission": false
+    }
+  ],
+  "producer_limits": {
+    "cpu_seconds": 120,
+    "file_bytes": 134217728,
+    "kill_after_seconds": 10,
+    "outer_seconds": 190,
+    "parent_seconds": 205,
+    "wall_seconds": 180
+  },
+  "receipt_inputs_unchanged_scope": "Request/helper bytes only; separate saved source/private-tree checks retain their own exact scope.",
+  "receipts": {
+    "v1": {
+      "compiler": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 2.2730038459412754,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "8710260a917024fe69b13820b90217801bd664e524d8767e29aa36f2e241b826",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "compiler_parent": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "elapsed_seconds": 2.321927710901946,
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "exit": 0,
+        "parent_timeout": false,
+        "parent_timeout_seconds": 115,
+        "parent_wait_returned": true,
+        "pid": 1770206,
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v1/compiler_entry.py",
+            "--job",
+            "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compiler-job.json",
+            "--job-sha256",
+            "2fd5319ea3b368b1c3e95a2d3ef1b1c6910a22772be3f0eabb783e927ab118e2"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "file_bytes": 134217728,
+          "stderr": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/stderr.txt",
+          "stdout": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v1/compile/stdout.txt",
+          "wall_seconds": 90
+        }
+      },
+      "namespace_parent": {
+        "exit": 1,
+        "operational_seconds": 5.450957402121276,
+        "parent_wait_returned": true,
+        "pid": 1766402,
+        "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "b565686ed0ecf74c33e75975bd176637758f4f842505f43369bacbb490b0cca1"
+      },
+      "producer": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 5.335135915083811,
+        "exit": 1,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "39e369492bb65b1e653be45690546c2ec8cf626331e4c9b0f6568f2cafffe4ea",
+        "stderr_sha256": "c75d5c472a2921357d603b4b59130bdae2c5a50d543ba847cc583ceda8034c12",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "root_parent": {
+        "exit": 1,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 1766367,
+        "seconds": 5.52619690913707,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "32c7aea5162b5b53c384550f95a189a99e5d4f2c9ef31f27df3a1f4ab3937bb9"
+      }
+    },
+    "v2": {
+      "compiler": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 2.43114479794167,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "10868f72a99e0ec9ec08f3eb21e6bfae6613287b5416f8cf3d032a92951ac021",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "compiler_parent": {
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/request.json",
+          "--receipt",
+          "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/receipt.json"
+        ],
+        "cwd": "${REPO}",
+        "elapsed_seconds": 2.5249716870021075,
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "exit": 0,
+        "parent_timeout": false,
+        "parent_timeout_seconds": 115,
+        "parent_wait_returned": true,
+        "pid": 2234660,
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-proposal-v2/compiler_entry.py",
+            "--job",
+            "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compiler-job.json",
+            "--job-sha256",
+            "df169778bcefe96dc437efb2aec374001ff00f452ca5351748e47d8a3e0e6f63"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "file_bytes": 134217728,
+          "stderr": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/stderr.txt",
+          "stdout": "${REPO}/ignored/a3/common-native-epoch-v1/core-verifier-canonical-build-v2/compile/stdout.txt",
+          "wall_seconds": 90
+        }
+      },
+      "namespace_parent": {
+        "exit": 0,
+        "operational_seconds": 6.58498035883531,
+        "parent_wait_returned": true,
+        "pid": 2231712,
+        "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "producer": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 6.416439010063186,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "acf486ad857ff98fd390747f5f7c2cf24dd85fa04c125f9d3e8e98d3a70cacc6",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "2493afa5b87eca1c03d206cf770879a6718ae769e451eaa82ef879bff6f38178",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "root_parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 2231644,
+        "seconds": 8.13276534085162,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "3aad967cf0eb79d0b8e18516be9bd7efbd140d3a7705fe2915a70a4a2d09398f"
+      }
+    }
+  },
+  "reproduction_scope": "Exact source export and historical commands; fresh prerequisite build, reference/caller/runtime/capacity epochs required. No automatic end-to-end admission or promise to reproduce the timestamp failure.",
+  "root_byte_check": {
+    "artifact_byte_authority": "Root executed byte verification in the recorded keeper; independent reviewer and this projection read source/saved metadata only.",
+    "bounded_helper_receipt_present": false,
+    "checks": {
+      "application_or_verifier_executions": 0,
+      "copied_libraries": 38,
+      "exact_depfile_rules": true,
+      "original_dependency_products": 43,
+      "output_archive_bytes_equal": true,
+      "prior_failed_attempts_unchanged": true,
+      "private_directories_unchanged": true,
+      "private_leaves": 41,
+      "qualification_complete": false,
+      "raw_files": 72,
+      "revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a",
+      "source_files": 1839,
+      "source_transform": "whole_inverse",
+      "status": "PASS_CURRENT_BYTES_AND_SAVED_OWNER_CHECKS"
+    },
+    "join_sha256": "203dd86df8fc57d5c1c8114f1224a6593f7c62c00d7241a88660066dd206add8",
+    "parent": {
+      "exit": 0,
+      "operational_seconds": 1.24816178297624,
+      "parent_wait_returned": true,
+      "pid": 2331109,
+      "scope": "actual command parent wait; recipe helper descendant closure remains separate",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "6c3d0b2d274d928fb75a7dc4b550c1c0eec523f97355a1bf60dbf07e1c0b50a5"
+    },
+    "source_sha256": "7e2d4ce930bb60ce22db5d989ca95c408ffd3f731950f0cde61a5b2f75c0551e"
+  },
+  "schema": 1,
+  "scope": "Compiler/archive evidence only; no verifier-consumer admission or verifier/native execution.",
+  "source_delta": "Only --out-dir and the existing raw/output argument were added to v2 compiler argv; --emit, all checks and limits unchanged.",
+  "source_hashes": {
+    "v1": {
+      "Cargo.lock": {
+        "bytes": 5065,
+        "mode": "100644",
+        "sha256": "03219ed869deb61b7bf28250b13a61a458a61962dfc9dea0576facff9cfd6333"
+      },
+      "evaluation/e9-common-app/build_inventory.py": {
+        "bytes": 35639,
+        "mode": "100644",
+        "sha256": "31545ba44b5cb3b055a96269c689b9235957ec3dab0cfd3e65ba86efbdde71ed"
+      },
+      "evaluation/e9-common-app/run_candidates.py": {
+        "bytes": 52452,
+        "mode": "100644",
+        "sha256": "523ce6007068c5764be6bf007d67f8093aaedf4054b1beb3b7465bed95f1196f"
+      },
+      "tests/support/e9_common_seed.instructions.tsv": {
+        "bytes": 7950,
+        "mode": "100644",
+        "sha256": "74afc406acb8eb7742695afdf0e610a7e77afbaa6fb1498463a9e8ae85901fcd"
+      },
+      "tests/support/e9_common_seed.rs": {
+        "bytes": 43874,
+        "mode": "100644",
+        "sha256": "df1678dc0d0a5eede05d76d592048d5065d983fa44ba42c6d5dd7da9d297c2e3"
+      },
+      "tools/elf-rewrite/examples/verify_common_core.rs": {
+        "bytes": 85225,
+        "mode": "100644",
+        "sha256": "e7bbccbe54e4b3827afc40bed119c9f39009de31f5ee1a71876a135c666ef189"
+      },
+      "tools/unwind-oracle/bounded_command.py": {
+        "bytes": 7710,
+        "mode": "100644",
+        "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+      }
+    },
+    "v2": {
+      "Cargo.lock": {
+        "bytes": 5065,
+        "mode": "100644",
+        "sha256": "03219ed869deb61b7bf28250b13a61a458a61962dfc9dea0576facff9cfd6333"
+      },
+      "evaluation/e9-common-app/build_inventory.py": {
+        "bytes": 35639,
+        "mode": "100644",
+        "sha256": "31545ba44b5cb3b055a96269c689b9235957ec3dab0cfd3e65ba86efbdde71ed"
+      },
+      "evaluation/e9-common-app/run_candidates.py": {
+        "bytes": 52452,
+        "mode": "100644",
+        "sha256": "523ce6007068c5764be6bf007d67f8093aaedf4054b1beb3b7465bed95f1196f"
+      },
+      "tests/support/e9_common_seed.instructions.tsv": {
+        "bytes": 7950,
+        "mode": "100644",
+        "sha256": "74afc406acb8eb7742695afdf0e610a7e77afbaa6fb1498463a9e8ae85901fcd"
+      },
+      "tests/support/e9_common_seed.rs": {
+        "bytes": 43874,
+        "mode": "100644",
+        "sha256": "df1678dc0d0a5eede05d76d592048d5065d983fa44ba42c6d5dd7da9d297c2e3"
+      },
+      "tools/elf-rewrite/examples/verify_common_core.rs": {
+        "bytes": 85225,
+        "mode": "100644",
+        "sha256": "e7bbccbe54e4b3827afc40bed119c9f39009de31f5ee1a71876a135c666ef189"
+      },
+      "tools/unwind-oracle/bounded_command.py": {
+        "bytes": 7710,
+        "mode": "100644",
+        "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+      }
+    }
+  },
+  "source_recipes_available": true,
+  "status": "CANONICAL_V1_FAILED_V2_PRODUCED_AND_BYTE_CHECKED",
+  "tested_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a",
+  "timing_scope": "Operational wall durations, not a benchmark.",
+  "tools": {
+    "v1": {
+      "${TOOLCHAIN}/bin/cargo": {
+        "bytes": 42839824,
+        "resolved": "${TOOLCHAIN}/bin/cargo",
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "${TOOLCHAIN}/bin/clippy-driver": {
+        "bytes": 22412784,
+        "resolved": "${TOOLCHAIN}/bin/clippy-driver",
+        "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373"
+      },
+      "${TOOLCHAIN}/bin/rustc": {
+        "bytes": 645000,
+        "resolved": "${TOOLCHAIN}/bin/rustc",
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "${TOOLCHAIN}/bin/rustdoc": {
+        "bytes": 13680928,
+        "resolved": "${TOOLCHAIN}/bin/rustdoc",
+        "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+      },
+      "${TOOLCHAIN}/bin/rustfmt": {
+        "bytes": 5268472,
+        "resolved": "${TOOLCHAIN}/bin/rustfmt",
+        "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8"
+      },
+      "/usr/bin/git": {
+        "bytes": 4397400,
+        "resolved": "/usr/bin/git",
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "/usr/bin/python3.9": {
+        "bytes": 15448,
+        "resolved": "/usr/bin/python3.9",
+        "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+      },
+      "/usr/bin/timeout": {
+        "bytes": 36848,
+        "resolved": "/usr/bin/timeout",
+        "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+      }
+    },
+    "v2": {
+      "${TOOLCHAIN}/bin/cargo": {
+        "bytes": 42839824,
+        "resolved": "${TOOLCHAIN}/bin/cargo",
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "${TOOLCHAIN}/bin/clippy-driver": {
+        "bytes": 22412784,
+        "resolved": "${TOOLCHAIN}/bin/clippy-driver",
+        "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373"
+      },
+      "${TOOLCHAIN}/bin/rustc": {
+        "bytes": 645000,
+        "resolved": "${TOOLCHAIN}/bin/rustc",
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "${TOOLCHAIN}/bin/rustdoc": {
+        "bytes": 13680928,
+        "resolved": "${TOOLCHAIN}/bin/rustdoc",
+        "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+      },
+      "${TOOLCHAIN}/bin/rustfmt": {
+        "bytes": 5268472,
+        "resolved": "${TOOLCHAIN}/bin/rustfmt",
+        "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8"
+      },
+      "/usr/bin/git": {
+        "bytes": 4397400,
+        "resolved": "/usr/bin/git",
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "/usr/bin/python3.9": {
+        "bytes": 15448,
+        "resolved": "/usr/bin/python3.9",
+        "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+      },
+      "/usr/bin/timeout": {
+        "bytes": 36848,
+        "resolved": "/usr/bin/timeout",
+        "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+      }
+    }
+  },
+  "v2_archived_verifier": {
+    "product_bytes": 31395296,
+    "product_sha256": "387fc1e7333717a880b3bc47a96c863a83b83f605120a821707e286b42fdc30b"
+  },
+  "v2_depfile": {
+    "bytes": 571,
+    "sha256": "7109182f3754b7af7a70f7910386580acfc5eb9f74ac382a259eced8f81a9d9c"
+  },
+  "verifier_or_application_executions": 0
+}

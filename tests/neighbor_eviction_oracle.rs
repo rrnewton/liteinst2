@@ -1731,3 +1731,7 @@ fn rejects_jz_lookalike_whose_target_coincides_with_native_fallthrough() {
     );
     fixture.assert_entry(fixture.selected);
 }
+
+// Additive two-owner artifact execution; shared oracle/callback stay unchanged.
+#[path = "support/cross_function_neighbor_oracle.rs"]
+mod cross_function_native;
