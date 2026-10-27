@@ -4,6 +4,10 @@ use super::super::super::super::bootstrap::Request;
 use super::*;
 use std::mem::size_of;
 use std::os::fd::{FromRawFd, OwnedFd};
+#[cfg(test)]
+mod native_oracle;
+#[cfg(test)]
+pub(in crate::linux::remote::dynamic::owner) use native_oracle::CetRetainedSnapshot;
 
 #[derive(Clone, Copy)]
 pub(in crate::linux::remote::dynamic::owner) struct CetQuery {
@@ -57,6 +61,39 @@ pub(in crate::linux::remote::dynamic::owner) struct BoundedCet {
     proof: Option<DisabledProof>,
 }
 impl BoundedCet {
+    /// Fixed default construction values used by ordinary-native profile boxing.
+    /// Every status/query field remains retained in the actual profile owner.
+    /// This is a conservative source envelope, not compiler stack measurement.
+    pub(in crate::linux::remote::dynamic::owner) fn construction_temporary_bytes()
+    -> Result<usize, LaunchError> {
+        let terms = [
+            size_of::<Self>(),
+            size_of::<[Option<CetQuery>; 7]>(),
+            size_of::<[CetStatus; 2]>(),
+            size_of::<CetStatus>(),
+            size_of::<[u8; MAX_STATUS_BYTES + 1]>(),
+            size_of::<[Option<Request>; 3]>(),
+            size_of::<Option<i64>>(),
+            size_of::<usize>(),
+            size_of::<bool>(),
+            size_of::<Option<DisabledProof>>(),
+        ];
+        type Calculator = (
+            [usize; 10],
+            std::array::IntoIter<usize, 10>,
+            [usize; 5],
+            Option<usize>,
+            Result<usize, LaunchError>,
+        );
+        let mut total = size_of::<Calculator>();
+        for item in terms {
+            total = total.checked_add(item).ok_or(LaunchError::Invalid(
+                "bounded CET construction temporary overflow",
+            ))?;
+        }
+        Ok(total)
+    }
+
     /// Conservative named source-value peak of the unchanged bounded adapter.
     /// The retained status arrays/query records already belong to Self. This
     /// is neither a compiler stack-layout nor a process-RSS assertion.

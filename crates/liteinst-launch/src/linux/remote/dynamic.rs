@@ -988,3 +988,6 @@ impl Drop for DynamicSession {
 
 #[cfg(feature = "dev-exec-backing-cleanup")]
 pub(crate) use owner::exec_backing_cleanup_main;
+
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(crate) use owner::owned_stack_consumer_oracle_main;

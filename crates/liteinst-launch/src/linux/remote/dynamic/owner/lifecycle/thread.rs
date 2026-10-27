@@ -178,4 +178,6 @@ impl NativeLifecycle {
     }
 }
 
+#[cfg(test)]
+pub(in crate::linux::remote::dynamic::owner) use cet::CetRetainedSnapshot;
 pub(in crate::linux::remote::dynamic::owner) use cet::{BoundedCet, certify_bounded_cet};

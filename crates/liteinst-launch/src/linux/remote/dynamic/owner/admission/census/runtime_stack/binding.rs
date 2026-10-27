@@ -39,6 +39,22 @@ pub(in crate::linux::remote::dynamic::owner::admission::census) struct SourceRec
     bytes_address: usize,
 }
 impl SourceRecord {
+    #[cfg(feature = "dev-owned-stack-consumer-oracle")]
+    pub(in crate::linux::remote::dynamic::owner::admission::census) fn consumer_view(
+        &self,
+    ) -> super::consumer_oracle::storage::ConsumerSourceView {
+        super::consumer_oracle::storage::ConsumerSourceView {
+            id: self.id,
+            initial: self.initial,
+            range: self.range,
+            target: self.target,
+            before: self.before,
+            after: self.after,
+            writes: self.writes,
+            snapshot_address: self.snapshot_address,
+            bytes_address: self.bytes_address,
+        }
+    }
     pub(in crate::linux::remote::dynamic::owner::admission::census) fn capture(
         window: &WindowView<'_>,
     ) -> Self {

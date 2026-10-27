@@ -6085,19 +6085,23 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 703
+        "tests": 737
       }
     },
     "workspace_tests": {
       "doc/liteinst2": {
         "ignored": 0,
-        "tests": 0
+        "tests": 6
       },
       "doc/liteinst_admission": {
         "ignored": 0,
         "tests": 0
       },
       "doc/liteinst_artifact": {
+        "ignored": 0,
+        "tests": 0
+      },
+      "doc/liteinst_inprocess": {
         "ignored": 0,
         "tests": 0
       },
@@ -6111,11 +6115,11 @@
       },
       "doc/rapid_profiler": {
         "ignored": 0,
-        "tests": 10
+        "tests": 11
       },
       "test/a2_oracle": {
         "ignored": 0,
-        "tests": 40
+        "tests": 43
       },
       "test/arena_fork": {
         "ignored": 0,
@@ -6139,7 +6143,7 @@
       },
       "test/boundary_signal_oracle": {
         "ignored": 0,
-        "tests": 27
+        "tests": 30
       },
       "test/bounded_proc_stat": {
         "ignored": 0,
@@ -6151,7 +6155,7 @@
       },
       "test/call_return_oracle": {
         "ignored": 0,
-        "tests": 27
+        "tests": 30
       },
       "test/checkpoint": {
         "ignored": 0,
@@ -6175,11 +6179,15 @@
       },
       "test/controlled_oracle": {
         "ignored": 0,
-        "tests": 27
+        "tests": 30
       },
       "test/core_bridge": {
         "ignored": 0,
         "tests": 3
+      },
+      "test/cross_function_neighbor": {
+        "ignored": 0,
+        "tests": 9
       },
       "test/dynamic_admission": {
         "ignored": 0,
@@ -6227,7 +6235,7 @@
       },
       "test/entry_paths_oracle": {
         "ignored": 0,
-        "tests": 27
+        "tests": 30
       },
       "test/eviction_chain_contract": {
         "ignored": 0,
@@ -6235,7 +6243,7 @@
       },
       "test/eviction_chain_extensions": {
         "ignored": 0,
-        "tests": 28
+        "tests": 31
       },
       "test/eviction_chain_grouping_contract": {
         "ignored": 0,
@@ -6243,7 +6251,7 @@
       },
       "test/eviction_chain_oracle": {
         "ignored": 0,
-        "tests": 29
+        "tests": 32
       },
       "test/exact_syscall": {
         "ignored": 0,
@@ -6251,7 +6259,11 @@
       },
       "test/exception_landing": {
         "ignored": 0,
-        "tests": 27
+        "tests": 30
+      },
+      "test/foreign_neighbor_engine": {
+        "ignored": 0,
+        "tests": 9
       },
       "test/frontend_native_calibrations": {
         "ignored": 0,
@@ -6263,7 +6275,7 @@
       },
       "test/integration": {
         "ignored": 0,
-        "tests": 14
+        "tests": 19
       },
       "test/lifecycle": {
         "ignored": 0,
@@ -6287,7 +6299,7 @@
       },
       "test/mandatory_prefix_oracle": {
         "ignored": 0,
-        "tests": 28
+        "tests": 31
       },
       "test/model": {
         "ignored": 0,
@@ -6311,7 +6323,7 @@
       },
       "test/neighbor_eviction_oracle": {
         "ignored": 0,
-        "tests": 70
+        "tests": 74
       },
       "test/oracle": {
         "ignored": 0,
@@ -6335,7 +6347,7 @@
       },
       "test/parked_context_oracle": {
         "ignored": 0,
-        "tests": 27
+        "tests": 30
       },
       "test/pc_relative": {
         "ignored": 0,
@@ -6347,7 +6359,7 @@
       },
       "test/prefixed_pun_oracle": {
         "ignored": 0,
-        "tests": 27
+        "tests": 30
       },
       "test/quiescent_contract": {
         "ignored": 0,
@@ -6355,11 +6367,11 @@
       },
       "test/quiescent_oracle": {
         "ignored": 0,
-        "tests": 30
+        "tests": 33
       },
       "test/rel32_endpoint_oracle": {
         "ignored": 0,
-        "tests": 27
+        "tests": 30
       },
       "test/replace_first_cet": {
         "ignored": 0,
@@ -6399,7 +6411,7 @@
       },
       "test/successor_eviction_oracle": {
         "ignored": 0,
-        "tests": 31
+        "tests": 34
       },
       "test/sync_core_capability": {
         "ignored": 0,
@@ -6423,7 +6435,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 213
+        "tests": 227
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6437,13 +6449,21 @@
         "ignored": 0,
         "tests": 20
       },
+      "unit/liteinst_inprocess/lib": {
+        "ignored": 0,
+        "tests": 10
+      },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 703
+        "tests": 737
+      },
+      "unit/liteinst_preempt/main": {
+        "ignored": 0,
+        "tests": 2
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 76
+        "tests": 79
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
@@ -6451,7 +6471,7 @@
       },
       "unit/rapid_profiler/lib": {
         "ignored": 0,
-        "tests": 106
+        "tests": 160
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,
@@ -6459,7 +6479,7 @@
       },
       "unit/verify_common_core/verify_common_core": {
         "ignored": 0,
-        "tests": 3
+        "tests": 16
       }
     }
   },
@@ -7480,8 +7500,33 @@
       "cohort": "b3_owned_stack",
       "harness": "unit/liteinst_launch/lib",
       "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_installed_allocation_failures_settle_before_cleanup"
+    },
+    {
+      "cohort": "b3_ordinary_allocation_custody",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_errors_retain_actual_pending_custody"
+    },
+    {
+      "cohort": "b3_ordinary_allocation_custody",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_unwinds_retain_actual_pending_custody"
+    },
+    {
+      "cohort": "b3_ordinary_allocation_custody",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_transfer_copy_conversion_failures_retain_actual_custody"
+    },
+    {
+      "cohort": "b3_ordinary_allocation_custody",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_growth_failures_preserve_prior_completed_custody"
+    },
+    {
+      "cohort": "b3_runtime_ordinary",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::thirtytwo::runtime_ordinary_thirty_two_nops_fit_default_budget_and_retain_exact_history"
     }
   ],
-  "recorder_tests": 305,
+  "recorder_tests": 330,
   "schema_version": 1
 }

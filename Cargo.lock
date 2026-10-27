@@ -105,6 +105,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "liteinst-inprocess"
+version = "0.1.0"
+dependencies = [
+ "iced-x86",
+ "libc",
+ "liteinst2",
+]
+
+[[package]]
 name = "liteinst-launch"
 version = "0.1.0"
 dependencies = [
@@ -113,6 +122,7 @@ dependencies = [
  "liteinst-admission",
  "liteinst-launch",
  "liteinst2",
+ "sha2",
 ]
 
 [[package]]

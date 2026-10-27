@@ -349,7 +349,10 @@ fn owned_native_storage_reserves_all_raw_waits_and_never_grants_empty_completion
             .unwrap();
     assert_eq!(
         shape.reservation_bytes().unwrap(),
-        size_of::<PreparedInstructionAttempt>() + 9 * MAX_XSTATE + 6 * MAP_BYTES
+        size_of::<PreparedInstructionAttempt>()
+            + 9 * MAX_XSTATE
+            + 6 * MAP_BYTES
+            + size_of::<ControlProfile>()
     );
     assert!(attempt.allocated_bytes().unwrap() <= shape.reservation_bytes().unwrap());
     assert_eq!(attempt.states.len(), 9);

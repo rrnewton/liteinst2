@@ -1141,3 +1141,6 @@ impl Owner {
 
 #[cfg(feature = "dev-exec-backing-cleanup")]
 pub(crate) use admission::exec_backing_cleanup_main;
+
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(crate) use admission::owned_stack_consumer_oracle_main;

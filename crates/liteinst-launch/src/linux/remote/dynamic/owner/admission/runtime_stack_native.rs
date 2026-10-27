@@ -20,6 +20,8 @@ use crate::linux::remote::{MAX_XSTATE, NT_X86_XSTATE, STUB, SYNC_CORE};
 use std::mem::size_of;
 
 pub(super) mod acquire;
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(super) mod consumer_oracle;
 mod io;
 mod runner;
 mod storage;

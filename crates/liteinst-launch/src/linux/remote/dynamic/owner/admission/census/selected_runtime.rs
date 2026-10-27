@@ -186,6 +186,7 @@ impl ResumeCensus {
                     returned: lineage.returned,
                     parent: Some(origin),
                 }),
+                ordinary_history: None,
             }),
             committed: None,
         });

@@ -33,6 +33,8 @@ pub(in super::super) use super::io::PagemapAccess as ModelPagemapAccess;
 #[cfg(test)]
 pub(in super::super) use super::io::{RawIoFault, RawIoRecord, RawStoppedIo};
 pub(super) use word::{FailedHeldStackRead, SettledStackRead, TraceStackRead};
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(in crate::linux::remote::dynamic::owner::admission) mod consumer_oracle;
 #[cfg(test)]
 mod tests;
 

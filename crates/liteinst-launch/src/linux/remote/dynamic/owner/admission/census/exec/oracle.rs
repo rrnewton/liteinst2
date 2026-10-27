@@ -13,6 +13,7 @@ impl ResumeCensus {
         let space = self.space;
         let limits = self.limits;
         let state = self.state.clone();
+        let history = self.history_snapshot().unwrap();
         let allocations = (
             self.state.origins.as_ptr() as usize,
             self.state.origins.capacity(),
@@ -20,6 +21,8 @@ impl ResumeCensus {
             self.state.history.capacity(),
         );
         Box::new(move |retired, live, initial| {
+            let retired_history = retired.history_snapshot().unwrap();
+            assert_eq!(retired_history, history);
             assert_eq!(retired.retirement.binding.census, identity);
             assert_eq!(
                 (
@@ -55,13 +58,17 @@ impl ResumeCensus {
                     Err(InspectionField::CensusOrigins)
                 );
             }
-            let mut changed = retired.history.clone();
+            let mut changed = retired_history.rows().to_vec();
             changed.pop();
             assert_eq!(
-                inspect(InspectionField::CensusHistory, &state.history, &changed),
+                inspect(
+                    InspectionField::CensusHistory,
+                    history.rows(),
+                    changed.as_slice()
+                ),
                 Err(InspectionField::CensusHistory)
             );
-            let mut changed = retired.history.clone();
+            let mut changed = retired_history.rows().to_vec();
             let after = changed
                 .iter_mut()
                 .find_map(|row| match row {
@@ -71,7 +78,11 @@ impl ResumeCensus {
                 .expect("actual native refresh history");
             after.registers.rax ^= 1;
             assert_eq!(
-                inspect(InspectionField::CensusHistory, &state.history, &changed),
+                inspect(
+                    InspectionField::CensusHistory,
+                    history.rows(),
+                    changed.as_slice()
+                ),
                 Err(InspectionField::CensusHistory)
             );
             assert_eq!(

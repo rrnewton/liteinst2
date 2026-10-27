@@ -1,6 +1,7 @@
 //! Exact model lineage for inherited original-syscall register bookkeeping.
 //! A number alone is never sufficient: a retained, sealed-return consumption
 //! and each intervening selected transition must bind the complete origin rows.
+use super::super::ordinary::shared::ObservationView;
 use super::*;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -9,7 +10,7 @@ pub(in super::super) struct KernelOriginLineage {
     pub(in super::super) parent: Option<OriginId>,
 }
 
-fn same_architecture(left: &ObservedStop, right: &ObservedStop) -> bool {
+fn same_architecture(left: ObservationView<'_>, right: ObservationView<'_>) -> bool {
     left.task == right.task
         && left.token.session == right.token.session
         && left.token.tid == right.token.tid
@@ -21,7 +22,7 @@ fn same_architecture(left: &ObservedStop, right: &ObservedStop) -> bool {
         && left.signal == right.signal
 }
 fn selected_initial(initial: &ObservedStop, successor: &ObservedStop) -> bool {
-    same_architecture(initial, successor)
+    same_architecture(ObservationView::of(initial), ObservationView::of(successor))
         && initial.token == successor.token
         && initial.phase == StopPhase::UserCheckpoint
         && initial.signal.is_none()
@@ -49,17 +50,18 @@ impl ResumeCensus {
     }
     fn lineage_row(&self, id: OriginId) -> Result<&StoredOrigin, CensusError> {
         let row = self.lineage_origin(id)?;
-        let mut previous = &row.row.initial;
+        let mut previous = ObservationView::of(&row.row.initial);
         for record in &self.state.history {
-            let HistoryRecord::Refreshed {
+            // Resolve first, including rows that this origin filter will skip.
+            let HistoryView::Refreshed {
                 origin,
                 before,
                 after,
-            } = record
+            } = self.history_view(record)?
             else {
                 continue;
             };
-            if *origin != id {
+            if origin != id {
                 continue;
             }
             if before != previous
@@ -72,48 +74,64 @@ impl ResumeCensus {
             }
             previous = after;
         }
-        if previous != &row.current {
+        if previous != ObservationView::of(&row.current) {
             return Err(CensusError::StaleObservation);
         }
         Ok(row)
     }
 
-    fn unique_consumption(&self, origin: OriginId) -> Result<&OwnerConsumption, CensusError> {
-        let mut records = self.state.history.iter().filter_map(|record| match record {
-            HistoryRecord::Consumed {
+    fn unique_consumption(&self, origin: OriginId) -> Result<ConsumptionView<'_>, CensusError> {
+        let mut found = None;
+        for record in &self.state.history {
+            let HistoryView::Consumed {
                 origin: candidate,
                 evidence,
-            } if *candidate == origin => Some(evidence),
-            _ => None,
-        });
-        let evidence = records.next().ok_or(CensusError::InvalidConsumption)?;
-        if records.next().is_some() {
-            return Err(CensusError::InvalidConsumption);
+            } = self.history_view(record)?
+            else {
+                continue;
+            };
+            if candidate != origin {
+                continue;
+            }
+            if found.is_some() {
+                return Err(CensusError::InvalidConsumption);
+            }
+            found = Some(evidence);
         }
-        Ok(evidence)
+        found.ok_or(CensusError::InvalidConsumption)
     }
 
     fn returned_lineage(&self, row: &StoredOrigin, number: u64) -> Result<(), CensusError> {
-        let mut records = self.state.history.iter().filter_map(|record| match record {
-            HistoryRecord::Consumed { origin, evidence } => match &evidence.evidence {
-                Consumption::RuntimeKernel(values) if values.len() == 1 => {
-                    let value = &values[0];
-                    value
-                        .outcome
-                        .as_ref()
-                        .and_then(|outcome| outcome.returned)
-                        .filter(|(id, _)| *id == row.row.id)
-                        .map(|(_, trace)| (*origin, evidence, value, trace))
-                }
-                _ => None,
-            },
-            _ => None,
-        });
-        let (old_id, evidence, value, trace) =
-            records.next().ok_or(CensusError::InvalidConsumption)?;
-        if records.next().is_some() {
-            return Err(CensusError::InvalidConsumption);
+        let mut found = None;
+        for record in &self.state.history {
+            let HistoryView::Consumed { origin, evidence } = self.history_view(record)? else {
+                continue;
+            };
+            // A shared ordinary row is a real resolved consumption, but cannot
+            // be the sealed kernel return searched for here.
+            let ConsumptionEvidenceView::Owned(evidence) = evidence.evidence else {
+                continue;
+            };
+            let Consumption::RuntimeKernel(values) = &evidence.evidence else {
+                continue;
+            };
+            if values.len() != 1 {
+                continue;
+            }
+            let value = &values[0];
+            let Some((id, trace)) = value.outcome.as_ref().and_then(|outcome| outcome.returned)
+            else {
+                continue;
+            };
+            if id != row.row.id {
+                continue;
+            }
+            if found.is_some() {
+                return Err(CensusError::InvalidConsumption);
+            }
+            found = Some((origin, evidence, value, trace));
         }
+        let (old_id, evidence, value, trace) = found.ok_or(CensusError::InvalidConsumption)?;
         // The kernel seal independently bound this full pre-syscall state.
         // Its earlier origin may be an ordinary #DB record with a consumed
         // control signal; it is not part of the inherited-kernel refresh chain.
@@ -203,20 +221,21 @@ impl ResumeCensus {
         {
             return Err(CensusError::InvalidConsumption);
         }
-        let opening = self.state.history.iter().filter_map(|record| match record {
-            HistoryRecord::Refreshed {
+        let mut count = 0;
+        let mut previous = None;
+        for record in &self.state.history {
+            let HistoryView::Refreshed {
                 origin,
                 before,
                 after,
-            } if *origin == old_id && before.token.sequence >= identity.pending().stop.sequence => {
-                Some((before, after))
+            } = self.history_view(record)?
+            else {
+                continue;
+            };
+            if origin != old_id || before.token.sequence < identity.pending().stop.sequence {
+                continue;
             }
-            _ => None,
-        });
-        let mut count = 0;
-        let mut previous = None;
-        for (before, after) in opening {
-            if (count == 0 && before.token != identity.pending().stop)
+            if (count == 0 && before.token != &identity.pending().stop)
                 || previous.is_some_and(|value| value != before)
                 || !same_architecture(before, after)
                 || before.signal.is_some()
@@ -229,17 +248,31 @@ impl ResumeCensus {
             previous = Some(after);
             count += 1;
         }
-        if count != 3 || previous != Some(&evidence.before) {
+        if count != 3 || previous != Some(ObservationView::of(&evidence.before)) {
             return Err(CensusError::InvalidConsumption);
         }
-        let mut refreshes = self.state.history.iter().filter_map(|record| match record {
-            HistoryRecord::Refreshed { origin, after, .. } if *origin == row.row.id => Some(after),
-            _ => None,
-        });
-        let bridge = refreshes.next().ok_or(CensusError::InvalidConsumption)?;
-        let closed = refreshes.nth(2).ok_or(CensusError::InvalidConsumption)?;
-        if trace.bridge != KernelStopIdentity::from(&bridge.token)
-            || trace.closed != KernelStopIdentity::from(&closed.token)
+        let mut bridge = None;
+        let mut closed = None;
+        let mut ordinal = 0;
+        for record in &self.state.history {
+            let HistoryView::Refreshed { origin, after, .. } = self.history_view(record)? else {
+                continue;
+            };
+            if origin != row.row.id {
+                continue;
+            }
+            if ordinal == 0 {
+                bridge = Some(after);
+            }
+            if ordinal == 3 {
+                closed = Some(after);
+            }
+            ordinal += 1;
+        }
+        let bridge = bridge.ok_or(CensusError::InvalidConsumption)?;
+        let closed = closed.ok_or(CensusError::InvalidConsumption)?;
+        if trace.bridge != KernelStopIdentity::from(bridge.token)
+            || trace.closed != KernelStopIdentity::from(closed.token)
         {
             return Err(CensusError::InvalidConsumption);
         }
@@ -289,7 +322,10 @@ impl ResumeCensus {
                         return Err(CensusError::InvalidConsumption);
                     }
                     let prior = self.lineage_row(parent)?;
-                    let evidence = self.unique_consumption(parent)?;
+                    let resolved = self.unique_consumption(parent)?;
+                    let ConsumptionEvidenceView::Owned(evidence) = resolved.evidence else {
+                        return Err(CensusError::InvalidConsumption);
+                    };
                     let Consumption::Selected {
                         invocation,
                         input,
@@ -327,4 +363,84 @@ impl ResumeCensus {
         }
         Err(CensusError::InvalidConsumption)
     }
+}
+
+// Actual tuple retained by returned_lineage's search and destructuring. This
+// alias names its complete copied trace in the source-level temporary bound.
+type ReturnedLineageObservation<'a> = (
+    OriginId,
+    &'a OwnerConsumption,
+    &'a KernelEvidence,
+    NativeKernelReturnTrace,
+);
+
+/// Locals of runtime_register_provenance and its nested lineage helpers only.
+/// The history adapter/resolver is composed separately, exactly once per
+/// applicable operation. Sequential loop iterations do not multiply this peak.
+pub(in crate::linux::remote::dynamic::owner::admission::census) fn lineage_caller_temporary_bytes()
+-> Result<usize, CensusError> {
+    let terms = [
+        size_of::<[ObservationView<'_>; 12]>(),
+        size_of::<[HistoryView<'_>; 5]>(),
+        size_of::<[ConsumptionView<'_>; 4]>(),
+        size_of::<[Option<ConsumptionView<'_>>; 2]>(),
+        size_of::<[Option<ReturnedLineageObservation<'_>>; 2]>(),
+        size_of::<[std::slice::Iter<'_, HistoryRecord>; 5]>(),
+        size_of::<[OriginId; 8]>(),
+        size_of::<[KernelOriginLineage; 4]>(),
+        size_of::<[Result<HistoryView<'_>, CensusError>; 4]>(),
+        size_of::<[Result<ConsumptionView<'_>, CensusError>; 2]>(),
+        size_of::<[Result<Option<KernelOriginLineage>, CensusError>; 2]>(),
+        size_of::<[Option<ObservationView<'_>>; 4]>(),
+        size_of::<[Option<KernelOriginLineage>; 2]>(),
+        size_of::<[std::slice::Iter<'_, StoredOrigin>; 2]>(),
+        size_of::<[Option<&StoredOrigin>; 4]>(),
+        size_of::<[Result<&StoredOrigin, CensusError>; 2]>(),
+        size_of::<Result<&ObservedStop, CensusError>>(),
+        size_of::<[std::ops::Range<usize>; 2]>(),
+        size_of::<[&StoredOrigin; 8]>(),
+        size_of::<[&ObservedStop; 4]>(),
+        size_of::<[&HistoryRecord; 4]>(),
+        size_of::<[&OwnerConsumption; 2]>(),
+        size_of::<[&KernelEvidence; 2]>(),
+        size_of::<[NativeKernelReturnTrace; 2]>(),
+        size_of::<[KernelStopIdentity; 3]>(),
+        size_of::<[RegisterSnapshot; 2]>(),
+        size_of::<[u64; 6]>(),
+        size_of::<KernelAttemptId>(),
+        size_of::<Request>(),
+        size_of::<StopPhase>(),
+        size_of::<[Result<(), CensusError>; 8]>(),
+        size_of::<[Result<usize, CensusError>; 4]>(),
+        size_of::<[Option<usize>; 4]>(),
+        size_of::<[Result<usize, crate::gate::GateError>; 2]>(),
+        size_of::<[usize; 32]>(),
+        size_of::<[bool; 32]>(),
+    ];
+    let mut total = add(
+        std::mem::size_of_val(&terms),
+        size_of::<std::array::IntoIter<usize, 36>>(),
+    )?;
+    total = add(
+        total,
+        size_of::<(
+            [usize; 6],
+            [Option<usize>; 2],
+            [Result<usize, CensusError>; 2],
+        )>(),
+    )?;
+    for term in terms {
+        total = add(total, term)?;
+    }
+    Ok(total)
+}
+
+/// Per-operation sum; this is neither a reusable global credit nor retained
+/// bytes. The actual root operation reserves it before any lineage scan.
+pub(in crate::linux::remote::dynamic::owner::admission) fn runtime_lineage_temporary_bytes()
+-> Result<usize, CensusError> {
+    add(
+        super::super::history_view_temporary_bytes()?,
+        lineage_caller_temporary_bytes()?,
+    )
 }

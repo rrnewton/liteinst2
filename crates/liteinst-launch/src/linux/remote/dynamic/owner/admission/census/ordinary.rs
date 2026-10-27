@@ -10,12 +10,26 @@ use liteinst2::contracts::CodeIdentity;
 use std::mem::size_of;
 use std::time::Instant;
 
+pub(super) mod shared;
+mod shared_commit;
+#[cfg(test)]
+pub(in super::super) use shared_commit::OrdinaryPreparationHistorySnapshot;
+pub(super) use shared_commit::SharedOrdinaryOwner;
+pub(in super::super) use shared_commit::{
+    SharedOrdinaryPreparation, ordinary_shared_census_charge,
+};
+
 // The separately manifested calls.rs is deliberately not declared here. Its
 // production integration waits for native operand/stack custody support.
 #[cfg(test)]
+mod allocation_oracle;
+#[cfg(test)]
 mod tests;
+#[cfg(test)]
+pub(in crate::linux::remote::dynamic::owner::admission) use allocation_oracle::AllocationCensusSnapshot;
 
 const PRIVATE_PER_SIDE: usize = 3;
+#[cfg(test)]
 const NEW_STATES: usize = 16;
 const WITNESSES: usize = 7;
 const TRACE_DR6: u64 = 0xffff0ff0 ^ 0x4000;
@@ -73,13 +87,14 @@ struct Binding {
 
 /// Immutable description retained after the one-use native capability is gone.
 #[derive(Clone, Debug, Eq, PartialEq)]
-pub(super) struct OrdinaryEvidence {
+pub(in super::super) struct OrdinaryEvidence {
     binding: Binding,
     trace: Option<NativeTrace>,
 }
 
 /// Non-Clone pre-effect storage. Its header remains retained after all payload
 /// transfers. Allocation/debit happens before effects, including unused MAX.
+#[cfg(test)]
 pub(in super::super) struct PreparedOrdinaryCensus {
     binding: Binding,
     before: ObservedStop,
@@ -100,6 +115,7 @@ fn add(a: usize, b: usize) -> Result<usize, CensusError> {
 fn mul(a: usize, b: usize) -> Result<usize, CensusError> {
     a.checked_mul(b).ok_or(CensusError::Capacity)
 }
+#[cfg(test)]
 fn fixed_commit_bytes() -> Result<usize, CensusError> {
     // Exactly the existing logical refresh/consumption/insertion header
     // convention: 7 before +9 after observations, six refresh wrappers, one
@@ -112,6 +128,7 @@ fn fixed_commit_bytes() -> Result<usize, CensusError> {
         add(size_of::<OwnerConsumption>(), size_of::<StoredOrigin>())?,
     )
 }
+#[cfg(test)]
 fn preparation_bytes(capacities: usize) -> Result<usize, CensusError> {
     add(
         add(size_of::<PreparedOrdinaryCensus>(), capacities)?,
@@ -121,6 +138,7 @@ fn preparation_bytes(capacities: usize) -> Result<usize, CensusError> {
 
 /// Six private refreshes, one original consumption and one new register origin.
 /// No epoch/report/plan is fabricated. MAX is deliberately not an extent guess.
+#[cfg(test)]
 pub(in super::super) fn ordinary_census_charge() -> Result<BudgetCharge, CensusError> {
     Ok(BudgetCharge {
         origins: 1,
@@ -133,6 +151,7 @@ pub(in super::super) fn ordinary_census_charge() -> Result<BudgetCharge, CensusE
     })
 }
 
+#[cfg(test)]
 fn buffer() -> Result<Vec<u8>, CensusError> {
     let mut result = Vec::new();
     result
@@ -143,6 +162,7 @@ fn buffer() -> Result<Vec<u8>, CensusError> {
     }
     Ok(result)
 }
+#[cfg(test)]
 fn copy_observed(source: &ObservedStop, mut bytes: Vec<u8>) -> ObservedStop {
     bytes.extend_from_slice(&source.xstate);
     ObservedStop {
@@ -156,6 +176,7 @@ fn copy_observed(source: &ObservedStop, mut bytes: Vec<u8>) -> ObservedStop {
         signal: source.signal.clone(),
     }
 }
+#[cfg(test)]
 fn copy_checkpoint(
     source: NativeCheckpoint<'_>,
     mut bytes: Vec<u8>,
@@ -226,6 +247,7 @@ fn validate_candidate(
     Ok(encoding)
 }
 
+#[cfg(test)]
 impl PreparedOrdinaryCensus {
     /// Current storage owned by preparation only. Moved census payload remains
     /// charged in the same account; this accessor is not a refund calculation.
@@ -257,7 +279,8 @@ impl PreparedOrdinaryCensus {
 }
 
 /// Borrowed descriptive projection, not a native capability. Production may
-/// construct this only inside commit_ordinary from the consumed real seal.
+/// construct this only inside the consuming shared adapter or its archive
+/// copy from the borrowed genuine seal. Pure model controls remain cfg(test).
 struct CompletionModel<'a> {
     source: SourceRecord,
     origin: OriginId,
@@ -286,35 +309,7 @@ impl ResumeCensus {
         Ok(&stored.current)
     }
 
-    pub(in super::super) fn prepare_ordinary(
-        &mut self,
-        reservation: Reservation,
-        actual: &RuntimeInstructionBinding<'_>,
-    ) -> Result<PreparedOrdinaryCensus, CensusError> {
-        let before = self.current_observation(actual.origin())?;
-        if actual.before() != before
-            || actual.stop().token != before.token
-            || actual.stop().identity != before.task
-            || actual.stop().signal.is_some()
-            || !matches!(
-                actual.stop().phase,
-                AdmissionPhase::EntryReady | AdmissionPhase::Restored
-            )
-        {
-            return Err(CensusError::StaleObservation);
-        }
-        let source = SourceRecord::from(actual.source_id());
-        let encoding = validate_candidate(source, actual.candidate(), before)?;
-        self.prepare_model(
-            reservation,
-            actual.origin(),
-            actual.execution(),
-            source,
-            encoding,
-            actual.until(),
-        )
-    }
-
+    #[cfg(test)]
     fn prepare_model(
         &mut self,
         reservation: Reservation,
@@ -408,27 +403,7 @@ impl ResumeCensus {
         Ok(prepared)
     }
 
-    pub(in super::super) fn commit_ordinary(
-        &mut self,
-        reservation: Reservation,
-        actual: OwnedInstructionCompletion<'_>,
-        prepared: &mut PreparedOrdinaryCensus,
-    ) -> Result<OrdinaryCensusResult, CensusError> {
-        let model = CompletionModel {
-            source: actual.source_id().into(),
-            origin: actual.origin(),
-            execution: actual.execution(),
-            until: actual.until(),
-            encoding: actual.encoding(),
-            logical: actual.logical_before(),
-            opening: actual.opening(),
-            step: actual.step(),
-            closing: actual.closing(),
-            trace: actual.trace(),
-        };
-        self.commit_model(reservation, &model, prepared)
-    }
-
+    #[cfg(test)]
     fn validate_model(
         &self,
         reservation: Reservation,
@@ -542,6 +517,7 @@ impl ResumeCensus {
         Ok((index, next, remaining, used))
     }
 
+    #[cfg(test)]
     fn commit_model(
         &mut self,
         reservation: Reservation,
@@ -644,6 +620,7 @@ impl ResumeCensus {
             active: true,
             frame: None,
             runtime_kernel: None,
+            ordinary_history: None,
         });
         for index in 0..PRIVATE_PER_SIDE {
             let before = if index == 0 {
@@ -680,6 +657,7 @@ impl ResumeCensus {
     }
 }
 
+#[cfg(test)]
 fn next_buffer(buffers: &mut [Vec<u8>; NEW_STATES - 1], slot: &mut usize) -> Vec<u8> {
     let index = *slot;
     *slot += 1;

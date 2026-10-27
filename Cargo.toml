@@ -55,7 +55,7 @@ test = false
 # Make the tools/ crates part of the workspace so, e.g.,
 # `cargo run --release -p rapid-profiler` works from the repository root.
 [workspace]
-members = ["tools/rapid-profiler", "tools/exception-oracle", "crates/liteinst-admission", "crates/liteinst-launch", "crates/liteinst-artifact", "tools/elf-rewrite"]
+members = ["tools/rapid-profiler", "tools/exception-oracle", "crates/liteinst-admission", "crates/liteinst-launch", "crates/liteinst-artifact", "tools/elf-rewrite", "crates/liteinst-inprocess"]
 
 [dependencies]
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "encoder", "block_encoder", "code_asm", "instr_info"] }

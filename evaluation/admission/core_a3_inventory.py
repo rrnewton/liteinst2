@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+from runtime_stack_consumer_inventory import before_runtime_stack_consumer_python
 
 PRE_CORE_A3_CORPUS_SHA256 = '9fa263ff4f52fadfbb3f9a2d010d58846a52bb25ce28d9c1b22fee6bdb331a0c'
 OLD_PYTHON305_SHA256 = 'b48c3f3f5c2e33915767d3f31e0032fbd79ccafa23138cfa624e7520adcd8089'
@@ -84,6 +85,7 @@ def require_current_core_a3_sources():
                                       and method.name.startswith("test_"))
     except (OSError, UnicodeError, SyntaxError):
         require(False, "core_a3_source_inventory_differs")
+    identities = before_runtime_stack_consumer_python(identities)
     require(len(identities) == 305 and len(set(identities)) == 305
             and digest(identities) == OLD_PYTHON305_SHA256, "core_a3_source_inventory_differs")
 

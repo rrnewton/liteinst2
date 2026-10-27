@@ -306,6 +306,8 @@ pub(super) fn disabled(tid: libc::pid_t) -> Result<DisabledProof, LaunchError> {
 }
 
 mod bounded;
+#[cfg(test)]
+pub(in crate::linux::remote::dynamic::owner) use bounded::CetRetainedSnapshot;
 pub(in crate::linux::remote::dynamic::owner) use bounded::{BoundedCet, certify_bounded_cet};
 
 #[cfg(test)]

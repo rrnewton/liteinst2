@@ -748,6 +748,9 @@ impl Elf {
 #[cfg(feature = "dev-exec-backing-cleanup")]
 pub(crate) use remote::exec_backing_cleanup_main;
 
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(crate) use remote::owned_stack_consumer_oracle_main;
+
 #[cfg(test)]
 mod tests {
     use super::*;

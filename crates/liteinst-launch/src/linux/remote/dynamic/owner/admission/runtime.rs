@@ -77,6 +77,9 @@ pub(in crate::linux::remote::dynamic::owner) struct RuntimeOwner {
     control_lineage: Option<super::runtime_native::ControlLineage>,
     next_execution: u64,
     ordinary_attempts: Vec<Box<ordinary::RuntimeOrdinaryAttempt>>,
+    ordinary_preparation: Option<ordinary::PendingOrdinaryPreparation>,
+    #[cfg(test)]
+    ordinary_allocation_fault: Option<ordinary::OrdinaryAllocationFault>,
     selected_attempts: Vec<Box<selected::RuntimeSelectedAttempt>>,
     selected_pending: Option<usize>,
     kernel_profile: super::super::super::admission::RuntimeKernelProfile,
@@ -206,6 +209,9 @@ impl RuntimeOwner {
             control_lineage: None,
             next_execution: 1,
             ordinary_attempts: Vec::new(),
+            ordinary_preparation: None,
+            #[cfg(test)]
+            ordinary_allocation_fault: None,
             selected_attempts: Vec::new(),
             selected_pending: None,
             kernel_profile: options.kernel,
@@ -615,3 +621,6 @@ fn initial_maps_prefix<'a>(
     }
     Ok(&bytes[..progress.copied_bytes])
 }
+
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(crate) use stack::owned_stack_consumer_oracle_main;

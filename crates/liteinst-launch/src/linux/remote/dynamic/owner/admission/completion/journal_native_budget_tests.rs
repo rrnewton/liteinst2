@@ -129,7 +129,7 @@ fn body(
         .admission_current(provider.token.task.task)
         .unwrap();
     let rows = admission.census.rows().cloned().collect::<Vec<_>>();
-    let history = admission.census.history().to_vec();
+    let history = admission.census.history_snapshot().unwrap();
     let origins = admission.origins.clone();
     let generation = admission.census.generation();
     owner.admission = retained.take();
@@ -163,7 +163,7 @@ fn body(
     assert_eq!(admission.census.charged(), charged);
     assert_eq!(admission.census.used(), used);
     assert_eq!(admission.census.rows().cloned().collect::<Vec<_>>(), rows);
-    assert_eq!(admission.census.history(), history);
+    assert_eq!(admission.census.history_snapshot().unwrap(), history);
     assert_eq!(admission.census.generation(), generation);
     assert_eq!(admission.origins, origins);
     let pending = admission.pending.as_ref().unwrap();

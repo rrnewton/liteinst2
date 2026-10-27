@@ -109,8 +109,10 @@ fn terminal(
     assert_eq!(census.rows().count(), before.rows.len());
     assert_eq!(census.rows().cloned().collect::<Vec<_>>(), before.rows);
     assert_eq!(
-        &census.history()[..before.history.len()],
-        before.history.as_slice()
+        census
+            .history_snapshot_prefix(before.history.len())
+            .unwrap(),
+        before.history
     );
     assert_eq!(census.history().len(), before.history.len() + 4);
     assert_eq!(census.used().origins, before.used.origins);

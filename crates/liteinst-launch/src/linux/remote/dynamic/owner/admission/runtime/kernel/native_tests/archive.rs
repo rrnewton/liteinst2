@@ -144,7 +144,7 @@ type JournalPayload = (
 );
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) struct Retained {
-    history: Vec<crate::linux::remote::dynamic::owner::admission::census::HistoryRecord>,
+    history: crate::linux::remote::dynamic::owner::admission::census::HistorySnapshot,
     rows: Vec<crate::linux::remote::dynamic::owner::admission::census::OriginRow>,
     current: Option<ObservedStop>,
     charged: BudgetCharge,
@@ -158,7 +158,7 @@ pub(super) fn retained(owner: &Owner) -> Retained {
     let runtime = owner.runtime.as_ref().unwrap();
     let census = runtime.census.as_ref().unwrap();
     Retained {
-        history: census.history().to_vec(),
+        history: census.history_snapshot().unwrap(),
         rows: census.rows().cloned().collect(),
         current: runtime
             .initial_origin

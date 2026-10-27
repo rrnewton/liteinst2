@@ -41,6 +41,7 @@ pub(in crate::linux::remote::dynamic::owner::admission) struct StackCensusSnapsh
     space: AddressSpaceId,
     limits: Limits,
     state: State,
+    history: HistorySnapshot,
     origins_address: usize,
     origins_capacity: usize,
     history_address: usize,
@@ -316,6 +317,9 @@ impl ResumeCensus {
         assert!(original.signal.is_none());
         assert_eq!(self.state.history.len(), input.start + 7);
         let history = &self.state.history[input.start..];
+        for record in history {
+            self.history_view(record).unwrap();
+        }
         let phase = StopPhase::OwnedStackComplete {
             execution: identity.execution(),
         };
@@ -500,6 +504,7 @@ impl ResumeCensus {
     ) -> StackCensusSnapshot {
         let mut stack_payloads = Vec::new();
         for (index, record) in self.state.history.iter().enumerate() {
+            self.history_view(record).unwrap();
             match record {
                 HistoryRecord::Refreshed { before, after, .. } => {
                     stack_payloads.push((
@@ -529,6 +534,7 @@ impl ResumeCensus {
             space: self.space,
             limits: self.limits,
             state: self.state.clone(),
+            history: self.history_snapshot().unwrap(),
             origins_address: self.state.origins.as_ptr() as usize,
             origins_capacity: self.state.origins.capacity(),
             history_address: self.state.history.as_ptr() as usize,

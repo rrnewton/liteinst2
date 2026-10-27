@@ -205,6 +205,13 @@ fn budget(window_bytes: usize, history_growth: usize) -> Result<BudgetCharge, Ga
         )?,
     )?;
     payload = add(payload, size_of::<CompletedInstruction>() + 15)?;
+    // Both census prepare and commit may scan inherited kernel lineage. They
+    // share this operation's prepaid peak, with no global/recycled credit.
+    payload = add(
+        payload,
+        crate::linux::remote::dynamic::owner::admission::census::runtime_lineage_temporary_bytes()
+            .map_err(census_error)?,
+    )?;
     let prepared = PreparedRuntimeSelected::reservation_charge().map_err(census_error)?;
     Ok(BudgetCharge {
         source_fact_bytes: add(payload, prepared.source_fact_bytes)?,

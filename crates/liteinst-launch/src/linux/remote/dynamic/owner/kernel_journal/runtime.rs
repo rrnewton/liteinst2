@@ -15,6 +15,8 @@ use crate::linux::remote::dynamic::admission::RuntimePendingToken;
 use liteinst2::contracts::CodeIdentity;
 use std::mem::size_of;
 
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(in crate::linux::remote::dynamic::owner) mod consumer_oracle;
 mod finish;
 mod observation;
 mod storage;

@@ -236,7 +236,7 @@ pub(super) fn run() {
                         let census = runtime.census.as_ref().unwrap();
                         let old_used = census.used();
                         let old_charged = census.charged();
-                        let old_history = census.history().to_vec();
+                        let old_history = census.history_snapshot().unwrap();
                         let old_origin = runtime.initial_origin;
                         let charge = storage::attempt_charge(
                             runtime.sources.window(0).unwrap().snapshot.bytes().len(),
@@ -305,7 +305,7 @@ pub(super) fn run() {
                         expected_used.source_fact_bytes += actual;
                         assert_eq!(census.used(), expected_used);
                         assert_eq!(census.charged(), support::sum(old_charged, charge));
-                        assert_eq!(census.history(), old_history);
+                        assert_eq!(census.history_snapshot().unwrap(), old_history);
                         assert_eq!(runtime.initial_origin, old_origin);
                         assert_eq!(support::observe_state(owner, until), before);
                         assert_eq!(

@@ -1,0 +1,68 @@
+{
+  "aggregate_qualified": false,
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "environment_delta": {
+        "LITEINST_EVALUATION": "1"
+      },
+      "id": "serial_launch",
+      "status": "not_run",
+      "timeout_seconds": 180
+    }
+  ],
+  "configuration_unchanged": null,
+  "environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "target",
+    "CARGO_TERM_COLOR": "never",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RLIMIT_CORE": 0,
+    "RUSTC_WORKSPACE_WRAPPER": "",
+    "RUSTC_WRAPPER": "",
+    "RUSTDOCFLAGS": "",
+    "RUSTFLAGS": "",
+    "RUST_TEST_THREADS": "4",
+    "TMPDIR": "private_run/tmp"
+  },
+  "error": "untracked_input",
+  "expected_revision": "40d520a453cabde29a1fcceeef8da30b96a72e9b",
+  "log_limit_bytes_per_command": 8388608,
+  "prior_failed_aggregate": {
+    "path": "evaluation/inprocess/results/20261027T123050.994258Z-checks-40d520a453ca.json",
+    "sha256": "f860f64a7fc46506b945636bd0f27d5f0b46b977ee4a75a67c2095732925e8af"
+  },
+  "profile": "inprocess-serial-only-v1",
+  "reproduce_full_driver": [
+    "python3",
+    "evaluation/inprocess/checks.py",
+    "--expect-revision",
+    "40d520a453cabde29a1fcceeef8da30b96a72e9b"
+  ],
+  "reproduce_subset": [
+    "python3",
+    "target/run-serial-40d.py"
+  ],
+  "reproduction_python": "#!/usr/bin/env python3\n\"\"\"One unchanged 180-second serial command; no aggregate retry or relabel.\"\"\"\nfrom datetime import datetime, timezone\nimport json\nimport os\nfrom pathlib import Path\nimport platform\nimport resource\nimport sys\n\nROOT = Path(__file__).resolve().parents[1]\nsys.path.insert(0, str(ROOT / 'evaluation/inprocess'))\nimport checks\n\na = checks.admission\nREV = '40d520a453cabde29a1fcceeef8da30b96a72e9b'\nPRIOR = 'evaluation/inprocess/results/20261027T123050.994258Z-checks-40d520a453ca.json'\nPRIOR_HASH = 'f860f64a7fc46506b945636bd0f27d5f0b46b977ee4a75a67c2095732925e8af'\nos.chdir(ROOT)\nname = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ') + '-serial-' + REV[:12]\nprivate = ROOT / 'target/evaluation/inprocess' / name\nprivate.mkdir(parents=True, exist_ok=False)\n(private / 'tmp').mkdir()\npublic = ROOT / 'evaluation/inprocess/results' / (name + '.json')\nidentity, argv, seconds = next(row for row in a.COMMANDS if row[0] == 'serial_launch')\ncommand = {'id': identity, 'argv': argv, 'timeout_seconds': seconds, 'status': 'not_run',\n           'environment_delta': {'LITEINST_EVALUATION': '1'}}\nrecord = {'schema_version': 1, 'profile': 'inprocess-serial-only-v1', 'scope': 'serial_only',\n          'aggregate_qualified': False, 'status': 'preflight', 'expected_revision': REV,\n          'source': None, 'source_unchanged': None, 'configuration_unchanged': None,\n          'prior_failed_aggregate': {'path': PRIOR, 'sha256': PRIOR_HASH},\n          'runner_sha256': checks.file_digest(Path(__file__)),\n          'tracked_driver_sha256': checks.file_digest(ROOT / 'evaluation/inprocess/checks.py'),\n          'reproduce_full_driver': ['python3', 'evaluation/inprocess/checks.py', '--expect-revision', REV],\n          'reproduce_subset': ['python3', 'target/run-serial-40d.py'],\n          'reproduction_python': Path(__file__).read_text(), 'started_utc': name.split('-serial-')[0],\n          'environment': a.ENV | {'CARGO_TARGET_DIR': 'target', 'TMPDIR': 'private_run/tmp',\n                                  'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8', 'RLIMIT_CORE': 0},\n          'log_limit_bytes_per_command': 8 * 1024 * 1024, 'commands': [command]}\ntry:\n    a.require(seconds == 180 and len(os.sched_getaffinity(0)) == 8, 'changed_serial_limits')\n    a.require(checks.file_digest(ROOT / PRIOR) == PRIOR_HASH, 'prior_receipt_changed')\n    record['source'] = checks.source()\n    a.require(record['source']['revision'] == REV, 'revision_differs')\n    env = a.controlled_environment(os.environ, private / 'tmp')\n    record['configuration'] = a.cargo_configuration(env)\n    record['hardware'] = checks.hardware(min(os.sched_getaffinity(0)))\n    record['toolchain'] = {tool: a.tool_version(tool, env) for tool in ('rustc', 'cargo')}\n    data = (ROOT / 'evaluation/admission/corpus.json').read_bytes()\n    record['corpus_sha256'] = a.sha(data)\n    corpus = json.loads(data)\n    a.backing_cleanup.require_inventory(corpus)\n    expected = corpus['harness_test_counts'][identity]\n    a.require(len(expected) == 27 and sum(row['tests'] for row in expected.values()) == 1029\n              and sum(row['ignored'] for row in expected.values()) == 0\n              and len(corpus['native_validation_fixtures']) == 108, 'changed_serial_corpus')\n    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))\n    log = private / 'serial_launch.log'\n    command.update(a.run_command(argv, env | command['environment_delta'], log, seconds))\n    command['status'] = ('passed' if command['exit_code'] == 0 and command['termination'] is None\n                         and command['cleanup_complete'] else 'failed')\n    a.command_evidence(command, log.read_text(errors='replace'), corpus)\n    record['source_unchanged'] = checks.source() == record['source']\n    record['configuration_unchanged'] = a.cargo_configuration(env) == record['configuration']\n    rows = command.get('backing_cleanup_harnesses', [])\n    complete = (command['status'] == 'passed' and command.get('evidence_status') == 'complete'\n                and record['source_unchanged'] and record['configuration_unchanged']\n                and len(rows) == 1 and a.backing_cleanup.is_complete(rows[0]))\n    a.require(checks.file_digest(ROOT / PRIOR) == PRIOR_HASH, 'prior_receipt_changed')\n    record['status'] = 'passed' if complete else 'failed'\n    for field in checks.DETAILS:\n        for row in command.get(field, []):\n            row['qualified_run'] = complete and row.get('command_succeeded', False)\nexcept (Exception, KeyboardInterrupt) as error:\n    record['status'] = 'interrupted' if isinstance(error, KeyboardInterrupt) else 'failed'\n    record['error'] = str(error) if isinstance(error, (a.InvalidEvidence, checks.Refusal)) else type(error).__name__\nfinally:\n    checks.compact(command)\n    for field in checks.DETAILS:\n        counts = command.get(field + '_count')\n        if counts is not None:\n            counts['catalog_rows'] = counts.pop('observed')\n    text = json.dumps(record, indent=2, sort_keys=True, allow_nan=False) + '\\n'\n    (private / 'receipt.json').write_text(text)\n    if any(value and len(value) > 1 and value in text for value in (str(Path.home()), str(ROOT), platform.node())):\n        raise RuntimeError('public receipt contains private location data')\n    with public.open('x') as stream:\n        stream.write(text)\n    print(public.relative_to(ROOT), flush=True)\n    print(json.dumps({'status': record['status'], 'command': command}), flush=True)\nraise SystemExit(0 if record['status'] == 'passed' else 1)\n",
+  "runner_sha256": "808b393d1674687c281b1efd563bed5e0a5a6579dc681cfd4a3c4c32a4aa7e6d",
+  "schema_version": 1,
+  "scope": "serial_only",
+  "source": null,
+  "source_unchanged": null,
+  "started_utc": "20261027T124624.021258Z",
+  "status": "failed",
+  "tracked_driver_sha256": "ede2d09466a5afac3566b39d7d2936a1a6cec42f85b2b5355eb462cdbf472192"
+}

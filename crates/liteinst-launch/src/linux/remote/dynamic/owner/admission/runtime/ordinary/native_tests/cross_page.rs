@@ -460,29 +460,42 @@ fn runtime_ordinary_cross_page_move_preserves_exact_two_page_fetch() {
                     assert_eq!(original_stop.token.session, owner.session);
                     assert_eq!(original_stop.token.tid, owner.pid);
                     assert_eq!(original_stop.token.task, Some(original_stop.identity.task));
-                    let same_identity = |observed: &census::ObservedStop| {
+                    let same_identity = |observed: census::ObservationView<'_>| {
                         assert_eq!(observed.token.session, original_stop.token.session);
                         assert_eq!(observed.token.tid, original_stop.token.tid);
                         assert_eq!(observed.token.task, original_stop.token.task);
                         assert_eq!(observed.task, original_stop.identity);
                     };
-                    same_identity(&attempt.before);
+                    same_identity(census::ObservationView::of(&attempt.before));
                     for row in census.rows() {
-                        same_identity(&row.initial);
+                        same_identity(census::ObservationView::of(&row.initial));
                     }
-                    same_identity(active.current);
+                    same_identity(census::ObservationView::of(active.current));
                     assert_ne!(old.id, active.row.id);
                     assert_eq!(Some(active.row.id), runtime.initial_origin);
                     let mut prior = attempt.stop.token.clone();
                     for (index, history) in census.history().iter().enumerate() {
+                        let history = census.history_view(history).unwrap();
                         if index == 3 {
                             assert!(
-                                matches!(history, census::HistoryRecord::Consumed { origin, .. } if *origin == old.id)
+                                matches!(&history, census::HistoryView::Consumed { origin, .. } if *origin == old.id)
+                            );
+                            let census::HistoryView::Consumed { evidence, .. } = history else {
+                                unreachable!("checked resolved consumption");
+                            };
+                            assert_eq!(evidence.before.token, &prior);
+                            same_identity(evidence.before);
+                            assert_eq!(*evidence.before.registers, before.registers);
+                            assert_eq!(evidence.before.xstate, before.xstate.as_slice());
+                            assert_eq!(evidence.before.signal_mask, before.mask);
+                            assert_eq!(
+                                evidence.successor,
+                                census::ObservationView::of(&active.row.initial)
                             );
                             assert!(active.row.initial.token.sequence > prior.sequence);
                             prior = active.row.initial.token.clone();
                         } else {
-                            let census::HistoryRecord::Refreshed {
+                            let census::HistoryView::Refreshed {
                                 before: from,
                                 after: to,
                                 ..
@@ -493,16 +506,16 @@ fn runtime_ordinary_cross_page_move_preserves_exact_two_page_fetch() {
                             let expected_state = if index < 3 { before } else { &expected };
                             for observed in [from, to] {
                                 same_identity(observed);
-                                assert_eq!(observed.registers, expected_state.registers);
-                                assert_eq!(observed.xstate, expected_state.xstate);
+                                assert_eq!(*observed.registers, expected_state.registers);
+                                assert_eq!(observed.xstate, expected_state.xstate.as_slice());
                                 assert_eq!(observed.signal_mask, expected_state.mask);
                                 assert_eq!(observed.task, attempt.stop.identity);
                             }
-                            assert_eq!(from.token, prior);
+                            assert_eq!(from.token, &prior);
                             assert!(to.token.sequence > prior.sequence);
                             assert_eq!(to.phase, StopPhase::UserCheckpoint);
                             assert_eq!(to.signal, None);
-                            prior = to.token.clone();
+                            prior = (*to.token).clone();
                         }
                     }
                     for observed in [&active.row.initial, active.current] {

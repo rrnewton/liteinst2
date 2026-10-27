@@ -227,6 +227,7 @@ impl ResumeCensus {
             active: true,
             frame: Some(frame),
             runtime_kernel: None,
+            ordinary_history: None,
         });
         self.state.next_serial = next;
         self.commit_debit(token, remaining, used);
@@ -693,6 +694,7 @@ impl ResumeCensus {
             active: true,
             frame: None,
             runtime_kernel: None,
+            ordinary_history: None,
         });
         self.state.next_serial = next;
         self.commit_debit(token, remaining, used);

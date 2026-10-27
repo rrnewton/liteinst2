@@ -16,6 +16,14 @@ fn same_architecture(observed: &ObservedStop, expected: &TaskStateSnapshot) {
     assert_eq!(observed.signal_mask, expected.mask);
 }
 
+// Full resolved header/bytes; this borrowed view grants no native authority.
+fn same_history_architecture(observed: census::ObservationView<'_>, expected: &TaskStateSnapshot) {
+    assert_eq!(observed.logical_pc, expected.registers.rip);
+    assert_eq!(*observed.registers, expected.registers);
+    assert_eq!(observed.xstate, expected.xstate.as_slice());
+    assert_eq!(observed.signal_mask, expected.mask);
+}
+
 fn complete(slot: &StateSlot) {
     assert!(slot.complete);
     for query in [
@@ -214,9 +222,19 @@ pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn check(
     same_architecture(&old_row.initial, before);
     let mut prior_token = attempt.stop.token.clone();
     for (i, record) in history.iter().enumerate() {
+        let record = census.history_view(record).unwrap();
         if i == 3 {
             assert!(
-                matches!(record, census::HistoryRecord::Consumed { origin, .. } if *origin == old_row.id)
+                matches!(&record, census::HistoryView::Consumed { origin, .. } if *origin == old_row.id)
+            );
+            let census::HistoryView::Consumed { evidence, .. } = record else {
+                unreachable!("checked resolved consumption");
+            };
+            assert_eq!(evidence.before.token, &prior_token);
+            same_history_architecture(evidence.before, before);
+            assert_eq!(
+                evidence.successor,
+                census::ObservationView::of(&next_row.initial)
             );
             assert!(next_row.initial.token.sequence > prior_token.sequence);
             assert_eq!(next_row.initial.task, attempt.stop.identity);
@@ -225,7 +243,7 @@ pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn check(
             prior_token = next_row.initial.token.clone();
             continue;
         }
-        let census::HistoryRecord::Refreshed {
+        let census::HistoryView::Refreshed {
             before: from,
             after: to,
             ..
@@ -234,11 +252,11 @@ pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn check(
             panic!("missing actual private checkpoint");
         };
         if i < 3 {
-            same_architecture(from, before);
-            same_architecture(to, before);
+            same_history_architecture(from, before);
+            same_history_architecture(to, before);
         } else {
-            same_architecture(from, expected);
-            same_architecture(to, expected);
+            same_history_architecture(from, expected);
+            same_history_architecture(to, expected);
         }
         assert_eq!(from.task, attempt.stop.identity);
         assert_eq!(to.task, attempt.stop.identity);
@@ -247,9 +265,9 @@ pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn check(
         assert_eq!(from.token.task, attempt.stop.token.task);
         assert_eq!(to.token.task, attempt.stop.token.task);
         assert_eq!(to.token.session, owner.session);
-        assert_eq!(from.token, prior_token);
+        assert_eq!(from.token, &prior_token);
         assert!(to.token.sequence > prior_token.sequence);
-        prior_token = to.token.clone();
+        prior_token = (*to.token).clone();
         assert_eq!(to.phase, StopPhase::UserCheckpoint);
         assert_eq!(to.signal, None);
     }

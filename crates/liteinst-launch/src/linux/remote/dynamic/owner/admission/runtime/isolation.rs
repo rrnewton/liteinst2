@@ -1,4 +1,4 @@
-//! Test-process isolation for the forty-six actual runtime controls. This removes
+//! Test-process isolation for the fifty-one actual runtime controls. This removes
 //! unrelated libtest cases from the tracer mm, not the real public API threads.
 //! A child result and a separately owned post-body receipt are both mandatory.
 use std::fs::File;
@@ -22,7 +22,7 @@ const PROCESS_TIMEOUT: Duration = Duration::from_secs(120);
 const CLEANUP_TIMEOUT: Duration = Duration::from_secs(3);
 static NONCE: AtomicU64 = AtomicU64::new(1);
 
-const CASES: [&str; 46] = [
+const CASES: [&str; 51] = [
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_expired_original_deadline_keeps_pristine_exec",
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec",
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_owner_refuses_raw_bypass_and_repeated_start",
@@ -69,6 +69,11 @@ const CASES: [&str; 46] = [
     "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_late_failure_and_unwind_retain_call_custody",
     "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_budget_deadline_and_stale_source_refuse_before_effects",
     "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_installed_allocation_failures_settle_before_cleanup",
+    "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_errors_retain_actual_pending_custody",
+    "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_unwinds_retain_actual_pending_custody",
+    "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_transfer_copy_conversion_failures_retain_actual_custody",
+    "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_growth_failures_preserve_prior_completed_custody",
+    "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::thirtytwo::runtime_ordinary_thirty_two_nops_fit_default_budget_and_retain_exact_history",
 ];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
