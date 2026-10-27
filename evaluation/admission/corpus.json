@@ -6181,6 +6181,10 @@
         "ignored": 0,
         "tests": 3
       },
+      "test/cross_function_neighbor": {
+        "ignored": 0,
+        "tests": 9
+      },
       "test/dynamic_admission": {
         "ignored": 0,
         "tests": 15
@@ -6252,6 +6256,10 @@
       "test/exception_landing": {
         "ignored": 0,
         "tests": 27
+      },
+      "test/foreign_neighbor_engine": {
+        "ignored": 0,
+        "tests": 9
       },
       "test/frontend_native_calibrations": {
         "ignored": 0,

@@ -10,6 +10,8 @@ from core_a3_inventory import (ADDED_HARNESSES as A3_ADDED, CHANGED_HARNESSES as
                                RUST_METHODS as A3_METHODS, SOURCE_WIRING as A3_WIRING,
                                PRE_CORE_A3_CORPUS_SHA256, before_core_a3,
                                validate_core_a3_source)
+import core_719519_inventory as core719
+from core_719519_inventory import before_core_719519
 from owned_stack_inventory import before_owned_stack
 from runtime_stack_consumer_inventory import before_runtime_stack_consumer
 from core_main_inventory import (ADDED_HARNESSES, CHANGED_HARNESSES, RUST_METHODS,
@@ -100,6 +102,29 @@ class CoreMergeInventoryTests(unittest.TestCase):
                                       {"test/e9_common_core_pages_contract": counts(9)}, 0)[0]
         self.assertEqual(row["outer"]["passed"], 9)
 
+        # The two new root integration targets use the unchanged Cargo grammar.
+        for name in ("cross_function_neighbor", "foreign_neighbor_engine"):
+            expected = {"test/" + name: counts(9)}
+            first = header(name, unit=False)
+            valid = "\n".join((first, "running 9 tests", summary(9)))
+            row = parsing.parse_harnesses(valid, expected, 0)[0]
+            self.assertEqual(row["id"], "test/" + name)
+            self.assertEqual(row["outer"]["passed"], 9)
+            self.assertEqual(row["nested"], [])
+            for text in (valid + "\n" + valid, first + "\nrunning 9 tests\n",
+                         valid.replace("running 9 tests", "running 8 tests"),
+                         valid.replace("running 9 tests", "running 10 tests"),
+                         valid.replace(summary(9), summary(8, failed=1)),
+                         valid.replace(summary(9), summary(8, ignored=1)),
+                         valid.replace(summary(9), summary(9, filtered=1)),
+                         valid.replace(name + "-123abc", "unknown-123abc"),
+                         valid.replace("target/debug/deps/", "/PRIVATE_SENTINEL/"),
+                         valid.replace(name + "-123abc", name + "-NOTHEX")):
+                with self.subTest(core719=name, text=text), self.assertRaises(parsing.InvalidEvidence) as caught:
+                    parsing.parse_harnesses(text, expected, 0)
+                self.assertNotIn("PRIVATE_SENTINEL", json.dumps(caught.exception.partial))
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+
     def test_new_core_cohort_retains_exact_child_shape_without_generalizing_it(self):
         for total in (176, 184, 208):
             valid = "\n".join((header("liteinst2"), f"running {total} tests", "running 1 test",
@@ -133,7 +158,88 @@ class CoreMergeInventoryTests(unittest.TestCase):
                 parsing.parse_harnesses(text, {f"unit/{name}/lib": counts(total, ignored)}, 0)
 
     def test_catalog_preserves_all_old_harnesses_and_native_collection_identities(self):
-        actual = before_runtime_stack_consumer(json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        # Authenticate the complete merged core corpus before exposing the
+        # exact old fixture to every historical assertion below.
+        merged = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        untouched = copy.deepcopy(merged)
+        historical = before_core_719519(merged)
+        self.assertEqual(merged, untouched)
+        self.assertEqual(core719.digest(merged), core719.CURRENT_CORE_719519_CORPUS_SHA256)
+        self.assertEqual(core719.digest(historical), core719.PRE_CORE_719519_CORPUS_SHA256)
+        self.assertEqual(sum(map(len, core719.RUST_METHODS.values())), 18)
+        workspace719 = merged["harness_test_counts"]["workspace_tests"]
+        self.assertEqual(len(workspace719), 95)
+        self.assertEqual(sum(row["tests"] for row in workspace719.values()), 2166)
+        self.assertEqual(sum(row["ignored"] for row in workspace719.values()), 4)
+        self.assertEqual(workspace719["unit/liteinst2/lib"], counts(213, 1))
+        self.assertEqual(workspace719["unit/liteinst_launch/lib"], counts(703))
+        self.assertEqual(merged["harness_test_counts"]["serial_launch"],
+                         historical["harness_test_counts"]["serial_launch"])
+        self.assertEqual(merged["native_validation_fixtures"], historical["native_validation_fixtures"])
+        self.assertEqual(len(merged["native_validation_fixtures"]), 103)
+        self.assertEqual(merged["recorder_tests"], 330)
+        self.assertEqual({key: value for key, value in workspace719.items()
+                          if key not in core719.ADDED_HARNESSES},
+                         historical["harness_test_counts"]["workspace_tests"])
+        with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_719519_inventory_differs$"):
+            before_core_719519(historical)
+        for identity in core719.ADDED_HARNESSES:
+            for mode in ("missing", "rename", "count_low", "count_high", "ignored", "float", "extra"):
+                changed = copy.deepcopy(merged)
+                group = changed["harness_test_counts"]["workspace_tests"]
+                if mode == "missing": del group[identity]
+                elif mode == "rename": group[identity + "_PRIVATE_SENTINEL"] = group.pop(identity)
+                elif mode == "count_low": group[identity]["tests"] = 8
+                elif mode == "count_high": group[identity]["tests"] = 10
+                elif mode == "ignored": group[identity]["ignored"] = 1
+                elif mode == "float": group[identity]["tests"] = 9.0
+                else: group[identity]["extra"] = "PRIVATE_SENTINEL"
+                with self.subTest(core719=identity, mode=mode), self.assertRaisesRegex(
+                        parsing.InvalidEvidence, "^core_719519_inventory_differs$") as caught:
+                    before_core_719519(changed)
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+        for field in merged:
+            for mode in ("missing", "changed"):
+                changed = copy.deepcopy(merged)
+                if mode == "missing": del changed[field]
+                else: changed[field] = "PRIVATE_SENTINEL /private/source"
+                with self.subTest(core719_field=field, mode=mode), self.assertRaisesRegex(
+                        parsing.InvalidEvidence, "^core_719519_inventory_differs$") as caught:
+                    before_core_719519(changed)
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+        changed = copy.deepcopy(merged)
+        changed["extra"] = "PRIVATE_SENTINEL"
+        with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_719519_inventory_differs$"):
+            before_core_719519(changed)
+        read_bytes = Path.read_bytes
+        for target in core719.SOURCE_SHA256:
+            for mode in ("missing", "changed"):
+                def altered719(path, *args, **kwargs):
+                    if path.as_posix().endswith(target):
+                        if mode == "missing": raise OSError("PRIVATE_SENTINEL /private/source")
+                        return read_bytes(path, *args, **kwargs) + b"\n// PRIVATE_SENTINEL\n"
+                    return read_bytes(path, *args, **kwargs)
+                with self.subTest(core719_source=target, mode=mode), patch(
+                        "core_719519_inventory.Path.read_bytes", altered719):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_719519_source_inventory_differs$") as caught:
+                        before_core_719519(merged)
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+        for target, names in core719.RUST_METHODS.items():
+            for mode in ("rename", "extra", "ignored"):
+                def altered_method719(path, *args, **kwargs):
+                    if path.as_posix().endswith(target):
+                        data = read_bytes(path, *args, **kwargs)
+                        if mode == "rename": return data.replace(names[0].encode(), b"PRIVATE_SENTINEL", 1)
+                        if mode == "extra": return data + b"\n#[test]\nfn PRIVATE_SENTINEL() {}\n"
+                        return data.replace(b"#[test]", b"#[test]\n#[ignore]", 1)
+                    return read_bytes(path, *args, **kwargs)
+                with self.subTest(core719_method=target, mode=mode), patch(
+                        "core_719519_inventory.Path.read_bytes", altered_method719):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_719519_source_inventory_differs$") as caught:
+                        core719.require_current_core_719519_sources()
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+
+        actual = before_runtime_stack_consumer(before_core_719519(json.loads(Path(__file__).with_name("corpus.json").read_text())))
         unchanged_actual = copy.deepcopy(actual)
         prior_a3 = before_core_a3(actual)
         self.assertEqual(actual, unchanged_actual)
@@ -199,7 +305,7 @@ class CoreMergeInventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_a3_source_inventory_differs$") as caught:
                         before_core_a3(actual)
                 self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
-        current = before_owned_stack(before_core_a3(before_runtime_stack_consumer(json.loads(Path(__file__).with_name("corpus.json").read_text()))))
+        current = before_owned_stack(before_core_a3(before_runtime_stack_consumer(before_core_719519(json.loads(Path(__file__).with_name("corpus.json").read_text())))))
         unchanged = copy.deepcopy(current)
         previous = before_core_main(current)
         self.assertEqual(current, unchanged)

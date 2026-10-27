@@ -8,11 +8,12 @@ from unittest.mock import patch
 
 from parsing import InvalidEvidence
 import runtime_stack_consumer_inventory as inventory
+from core_719519_inventory import before_core_719519
 
 
 class RuntimeStackConsumerInventoryTests(unittest.TestCase):
     def test_current_corpus_and_methods_reconstruct_exact_old_history(self):
-        declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_core_719519(json.loads(Path(__file__).with_name("corpus.json").read_text()))
         unchanged = copy.deepcopy(declared)
         previous = inventory.before_runtime_stack_consumer(declared)
         self.assertEqual(declared, unchanged)
@@ -46,7 +47,7 @@ class RuntimeStackConsumerInventoryTests(unittest.TestCase):
             inventory.before_runtime_stack_consumer_python(old)
 
     def test_projection_refuses_changed_fields_counts_and_identities(self):
-        declared = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        declared = before_core_719519(json.loads(Path(__file__).with_name("corpus.json").read_text()))
         for count in (305, 327, 329, 331, 330.0, True, None):
             changed = copy.deepcopy(declared)
             changed["recorder_tests"] = count
