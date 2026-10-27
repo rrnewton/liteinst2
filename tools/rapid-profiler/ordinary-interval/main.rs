@@ -87,7 +87,24 @@ fn single_main() {
     assert_eq!(tasks, [std::ffi::OsString::from(pid.to_string())]);
 }
 
+#[inline(never)]
+fn establish_callback_stack() {
+    // Grow the main thread's actual Linux stack mapping before observing it.
+    // A reservation or an untouched large array does not prove mapped headroom.
+    const BYTES: usize = 256 * 1024;
+    let mut storage = std::mem::MaybeUninit::<[u8; BYTES]>::uninit();
+    let bytes = storage.as_mut_ptr().cast::<u8>();
+    for offset in (0..BYTES).step_by(4096) {
+        // SAFETY: each write lies inside this live stack allocation. Volatile
+        // writes force actual page touches; no uninitialized byte is read.
+        unsafe { bytes.add(offset).write_volatile(0) };
+    }
+    unsafe { bytes.add(BYTES - 1).write_volatile(0) };
+    std::hint::black_box(storage.as_mut_ptr());
+}
+
 fn stack() -> ReadableStack {
+    establish_callback_stack();
     let rsp: u64;
     // SAFETY: observe the actual stack pointer, not the pthread reservation.
     unsafe {
