@@ -1,0 +1,365 @@
+{
+  "added_tests": [
+    "tests::unsupported_backedge_and_call_are_refused_before_publication",
+    "tests::whole_authored_corpus_has_one_exact_near_backward_site"
+  ],
+  "allocation_regressions": [
+    "trampoline::tests::dropping_staged_image_releases_its_exact_mapping",
+    "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners",
+    "native_state_covers_every_prefixed_pun_and_original_successor"
+  ],
+  "attempts": [
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "attempt": "v3",
+      "cleanup_complete": true,
+      "command": [
+        "python3",
+        "evaluation/required-gates.py",
+        "--repo",
+        "CHECKOUT",
+        "--output",
+        "NEW_IGNORED_OUTPUT"
+      ],
+      "driver_seconds": 34.30308361793868,
+      "exit": 1,
+      "gates": [
+        {
+          "argv": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "exit": 0,
+          "name": "fmt",
+          "seconds": 5.036302526947111,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit": 0,
+          "name": "clippy",
+          "seconds": 0.16464560804888606,
+          "sha256": "9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c",
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "--workspace"
+          ],
+          "exit": 101,
+          "name": "test",
+          "seconds": 28.843316118931398,
+          "sha256": "e610f733a4c7549415ed6da1afdf206c1585d407219ee59df153556ca6a0e696",
+          "timeout_seconds": 360
+        }
+      ],
+      "log_sha256": "52e4b904dbf77be07c69c99be9f3c59d52c961178947c874b71346e47415d15e",
+      "max_log_bytes": 8388608,
+      "outer_timeout_seconds": 1000,
+      "parent_seconds": 35.21131431683898,
+      "parent_sha256": "4ab6f4a78161172ee01976b5cf3e1cee1bedd9992780f3d820cffa17b96d531f",
+      "phase": "required",
+      "reaped_descendants": 3,
+      "status": "FAILED"
+    },
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "attempt": "v4",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--test",
+        "b3_exec_admission",
+        "--",
+        "--nocapture"
+      ],
+      "driver_seconds": 3.1882550208829343,
+      "exit": 0,
+      "gates": null,
+      "log_sha256": "d2b630d6744be545a2d4f9da2de2585a28ece906f4a26fd5447078e13fdbd43c",
+      "max_log_bytes": 8388608,
+      "outer_timeout_seconds": 180,
+      "parent_seconds": 4.073562395060435,
+      "parent_sha256": "3b5e858da65789449fa26b387d7faa73009f90e3582b03ad1bcb7e4a235f08f1",
+      "phase": "b3-abort-repro",
+      "reaped_descendants": 0,
+      "status": "PASS"
+    },
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "attempt": "v4",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "driver_seconds": 122.81929293600842,
+      "exit": 0,
+      "gates": null,
+      "log_sha256": "dd425b75d89bcd80e538b7f3f349c9e8a3145c7d1971ee7917df3685cf1688f4",
+      "max_log_bytes": 8388608,
+      "outer_timeout_seconds": 180,
+      "parent_seconds": 123.80134866200387,
+      "parent_sha256": "4a885af5dc1ad5124eb34b8af2fe94869f1891eaa94d71a17b936dbc9543c637",
+      "phase": "serial",
+      "reaped_descendants": 0,
+      "status": "PASS"
+    },
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "attempt": "v5",
+      "cleanup_complete": true,
+      "command": [
+        "python3",
+        "evaluation/required-gates.py",
+        "--repo",
+        "CHECKOUT",
+        "--output",
+        "NEW_IGNORED_OUTPUT"
+      ],
+      "driver_seconds": 340.17067794618197,
+      "exit": 0,
+      "gates": [
+        {
+          "argv": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "exit": 0,
+          "name": "fmt",
+          "seconds": 5.476988133974373,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit": 0,
+          "name": "clippy",
+          "seconds": 0.16526486910879612,
+          "sha256": "a11a1de8037a032bda7e33f88e31dc898d0129cfe94956add639cd289d2ce985",
+          "timeout_seconds": 180
+        },
+        {
+          "argv": [
+            "cargo",
+            "test",
+            "--workspace"
+          ],
+          "exit": 0,
+          "name": "test",
+          "seconds": 312.71456734789535,
+          "sha256": "0dfeb9607f838644692c99517db3445d80f7c9a75786d82ca16279dee1132d43",
+          "timeout_seconds": 360
+        },
+        {
+          "argv": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "exit": 0,
+          "name": "check",
+          "seconds": 21.415515820961446,
+          "sha256": "a4c9bb1cf78c80148ee45cec26c8e0c13f7358823f72186372ec2a0574fd0954",
+          "timeout_seconds": 180
+        }
+      ],
+      "log_sha256": "f67245957595e0b37a528032fe2844a00555b5ff4403e989fa82613dda7b5e97",
+      "max_log_bytes": 8388608,
+      "outer_timeout_seconds": 1000,
+      "parent_seconds": 341.2584811700508,
+      "parent_sha256": "1e84f821481d9bcfbcd571d9182ceb746802f72e7c557ada73ebc6b53e7e3a7a",
+      "phase": "required",
+      "reaped_descendants": 0,
+      "status": "PASS"
+    },
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "attempt": "v5",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib"
+      ],
+      "driver_seconds": 2.049285921966657,
+      "exit": 0,
+      "gates": null,
+      "log_sha256": "8ddd2bf0c6804adab086fe0bbc69bd1f272efff86a906a47b6ede0f7aea5da20",
+      "max_log_bytes": 8388608,
+      "outer_timeout_seconds": 360,
+      "parent_seconds": 3.0866924019064754,
+      "parent_sha256": "e467459838808ec309ebc0f4548a52023cf09af99056064f1568eb7149ac1498",
+      "phase": "parallel-library",
+      "reaped_descendants": 0,
+      "status": "PASS"
+    },
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "attempt": "v5",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "driver_seconds": 2.0559050410520285,
+      "exit": 0,
+      "gates": null,
+      "log_sha256": "85a5958c247c2793ada7f7566e19ff3b55afc95a93bd5cf1f11770d3f41dc6c7",
+      "max_log_bytes": 8388608,
+      "outer_timeout_seconds": 360,
+      "parent_seconds": 3.9406796898692846,
+      "parent_sha256": "07f8238efce0aeba8ee1d910a276a62b18b74b097845db2b778ae6632249d873",
+      "phase": "parallel-prefixed",
+      "reaped_descendants": 0,
+      "status": "PASS"
+    },
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "attempt": "v5",
+      "cleanup_complete": true,
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "neighbor_eviction_oracle"
+      ],
+      "driver_seconds": 130.47935347096063,
+      "exit": 0,
+      "gates": null,
+      "log_sha256": "42770ea8e44448ad87edec92de6e7dda0705c635fc4b14146a4496c37ca49adb",
+      "max_log_bytes": 8388608,
+      "outer_timeout_seconds": 360,
+      "parent_seconds": 132.15811263700016,
+      "parent_sha256": "831d19c7420a746126dfba645fae7bcd984963bda35467276a7789d69ce14207",
+      "phase": "parallel-neighbor",
+      "reaped_descendants": 0,
+      "status": "PASS"
+    }
+  ],
+  "case_status_digest": "507150e83828d67ee331e84f5cf740042fa6186742d306235eee4b56590d7fb9",
+  "earlier_failure": "First workspace attempt aborted with SIGABRT in b3_exec_admission before any of its five test terminals. Case identities unknown. Direct parallel reproduction, full serial launch and unchanged workspace rerun passed. Cause unresolved; no test, assertion, timeout or concurrency setting was changed.",
+  "environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_PROFILE_DEV_DEBUG": "0",
+    "CARGO_PROFILE_TEST_DEBUG": "0",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "LITEINST_EVALUATION": "1",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RUSTC_WORKSPACE_WRAPPER": "",
+    "RUSTC_WRAPPER": "",
+    "RUSTDOCFLAGS": "",
+    "RUSTFLAGS": ""
+  },
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "harness_concurrency": "Required dispatcher sets RUST_TEST_THREADS=4; serial has --test-threads=1; direct parallel commands use libtest default on their eight-CPU affinity.",
+  "outer_libtest_groups": 96,
+  "parallel_library_ignored": 1,
+  "parallel_library_tests": 218,
+  "parallel_neighbor_tests": 74,
+  "parallel_prefixed_tests": 30,
+  "prior_cases_retained": 2297,
+  "recipe": "At the recorded clean revision, run evaluation/required-gates.py --repo CHECKOUT --output NEW_IGNORED_OUTPUT, then the listed direct Cargo commands. Use the recorded environment and each phase CPU affinity. Detailed outer-parent recipes are retained privately; their durations and cleanup outcomes are included here.",
+  "revision": "c7a3e1eaad43fa11fa85be7970af05da35112c97",
+  "schema": 1,
+  "serial_tests": 995,
+  "timing_scope": "Validation durations are operational, not throughput measurements.",
+  "toolchain": "Rust stable 1.97.1; toolchain bin directory precedes /usr/bin:/bin; one CHECKOUT/target directory",
+  "workspace_counts": {
+    "failed": 0,
+    "ignored": 4,
+    "passed": 2295
+  }
+}
