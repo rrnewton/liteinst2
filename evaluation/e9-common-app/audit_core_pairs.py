@@ -73,6 +73,94 @@ PROFILE_SOURCES = (
 )
 
 
+# This is orthogonal to allocation/planning/router profiles. Absence is legacy.
+DEBUG0_BUILD_PROFILE = 'dev-debug0-v1'
+DEBUG0_PROFILE = dict(opt_level='0', debuginfo=0, debug_assertions=True, overflow_checks=True, test=False)
+DEBUG0_ENV = dict(CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+    CARGO_PROFILE_DEV_OPT_LEVEL='0', CARGO_PROFILE_TEST_OPT_LEVEL='0',
+    CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+    CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+
+
+def same_build_profile(*records):
+    assert records
+    if 'build_profile' not in records[0]:
+        assert all('build_profile' not in row for row in records), 'legacy build profile must be absent'
+        return None
+    assert all(row['build_profile'] == DEBUG0_BUILD_PROFILE for row in records), 'explicit build profile mismatch'
+    return DEBUG0_BUILD_PROFILE
+
+
+def build_input_profile(admission, root, bound):
+    # Authenticate the builder's actual input identity before either profile.
+    # This also rejects an isolated new-profile label in a legacy envelope.
+    inputs = loads(bound(str(root / 'inputs.json')))
+    summary = loads(bound(str(root / 'summary.json')))
+    archives = loads(bound(str(root / 'artifacts.json')))
+    keys = {'schema', 'preparation', 'collector_binding', 'files'}
+    if 'build_profile' in admission:
+        keys = keys | {'build_profile'}
+    assert set(inputs) == keys and type(inputs['schema']) is int and inputs['schema'] == 1
+    assert archives.keys() == {'native-compile', 'common-sites-compile'}
+    return same_build_profile(admission, inputs, summary, *archives.values())
+
+
+
+def debug0_build_profile(admission, root, bound):
+    # All reads go through the caller's existing complete watched catalog.
+    summary = loads(bound(str(root / 'summary.json')))
+    inputs = loads(bound(str(root / 'inputs.json')))
+    assert inputs.keys() == {'schema', 'preparation', 'collector_binding', 'files', 'build_profile'}
+    assert type(inputs['schema']) is int and inputs['schema'] == 1
+    assert same_build_profile(admission, summary, inputs) == DEBUG0_BUILD_PROFILE
+    assert summary['completed'] is True and summary['failure'] is None
+    assert summary['observed_stages'] == len(summary['planned_stages']) == 12
+    assert summary['cells_complete'] == 8 and summary['unrun_stages'] == []
+    if 'source_revision' in admission:
+        assert admission['source_revision'] == summary['revision']
+    if 'revision' in admission:
+        assert admission['revision'] == summary['revision']
+    archives = loads(bound(str(root / 'artifacts.json')))
+    assert archives.keys() == {'native-compile', 'common-sites-compile'}
+    for phase, archive in archives.items():
+        assert loads(bound(str(root / phase / 'artifact-archive.json'))) == archive
+        assert same_build_profile(admission, archive) == DEBUG0_BUILD_PROFILE
+        assert archive['source_revision'] == summary['revision']
+        assert archive['selected'].keys() == ({'elf-exec-oracle', 'liteinst-rewrite'} if phase == 'native-compile' else {'common_sites'})
+        for selected in archive['selected'].values():
+            assert selected['cargo']['profile'] == DEBUG0_PROFILE and selected['cargo']['features'] == []
+            assert all(type(selected['cargo']['profile'][k]) is type(v) for k, v in DEBUG0_PROFILE.items())
+    if 'products' in admission:
+        assert admission['products'] == dict(core=archives['native-compile']['selected']['liteinst-rewrite']['product']['path'], common_sites=archives['common-sites-compile']['selected']['common_sites']['product']['path'])
+        assert admission['required_products'] == sorted({row['path'] for archive in archives.values() for row in archive['artifacts'].values()})
+    environments = []
+    for phase in ('required', 'native-compile', 'common-sites-compile'):
+        command = loads(bound(str(root / phase / 'command.json')))
+        env = dict(command['env'])
+        assert env.pop('TMPDIR') == str(root / phase / 'tmp')
+        assert {k: v for k, v in env.items() if k.startswith('CARGO_PROFILE_')} == DEBUG0_ENV
+        assert env.keys() == {'CARGO_BUILD_JOBS', 'CARGO_INCREMENTAL', 'CARGO_NET_OFFLINE',
+            'CARGO_TARGET_DIR', 'CARGO_HOME', 'HOME', 'RUSTC', 'RUSTDOC', 'RUSTC_WORKSPACE_WRAPPER',
+            'RUSTC_WRAPPER', 'RUST_TEST_THREADS', 'LC_ALL', 'PATH', 'PYTHONDONTWRITEBYTECODE'} | DEBUG0_ENV.keys()
+        assert env['CARGO_BUILD_JOBS'] == env['RUST_TEST_THREADS'] == '4'
+        assert env['CARGO_INCREMENTAL'] == '0' and env['CARGO_NET_OFFLINE'] == 'true'
+        assert env['RUSTC_WORKSPACE_WRAPPER'] == env['RUSTC_WRAPPER'] == ''
+        assert env['LC_ALL'] == 'C' and env['PYTHONDONTWRITEBYTECODE'] == '1'
+        assert Path(command['cwd']).is_absolute() and root.is_relative_to(Path(command['cwd']) / 'ignored')
+        assert env['CARGO_TARGET_DIR'] == str(Path(command['cwd']) / 'target')
+        tool = Path(env['RUSTC']).parent
+        assert Path(env['RUSTC']).is_absolute() and Path(env['RUSTC']).name == 'rustc'
+        assert env['RUSTDOC'] == str(tool / 'rustdoc') and env['PATH'] == str(tool) + ':/usr/bin:/bin'
+        assert all(Path(env[k]).is_absolute() for k in ('CARGO_TARGET_DIR', 'CARGO_HOME', 'HOME'))
+        if phase != 'required':
+            request = loads(bound(str(root / phase / 'request.json')))
+            assert command['request'] == request and request['env'] == command['env']
+        environments.append(env)
+    assert environments[0] == environments[1] == environments[2]
+    return DEBUG0_BUILD_PROFILE
+
+
+
 def profile_arguments(profiles):
     assert set(profiles) == {'planning_profile', 'entry_router'}
     p, r = profiles['planning_profile'], profiles['entry_router']
@@ -888,6 +976,15 @@ def audit(saved,envelope,heads,pins,report,profile=None):
     v,r=(q['argv'] for q in requests);assert len(v)==7 and len(r)==8 and r[1]=='replay-common-core'
     assert v[1:4]==r[2:5] and v[5:]==r[5:7] and r[7]==str(cap) and r[6]==str(run/'core-witness.tsv')
     cell=saved.json(inputs['cell_admission']);verifier=saved.json(inputs['verifier_admission']);runtime=saved.json(inputs['runtime_admission'])
+    build=saved.json(inputs['build_admission'])
+    build_input_profile(build,Path(build['directory']),saved.read)
+    same_build_profile(build,summary,cell,verifier)
+    if 'build_profile' in build:
+        assert verifier['scope']=='direct-rustc-canonical-input-epoch-dev-debug0-v1'
+        debug0_build_profile(build,Path(build['directory']),saved.read)
+        report['build_profile']=DEBUG0_BUILD_PROFILE
+    else:
+        assert verifier['scope']!='direct-rustc-canonical-input-epoch-dev-debug0-v1'
     if profile is None:
         assert cell['authority']=='CALLER_ADMITTED_CORE_NULL_PAIR_INPUTS' and cell['source_revision']==REVISION and cell['eligible'] is True
     else:

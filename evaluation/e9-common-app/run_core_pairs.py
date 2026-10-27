@@ -462,11 +462,25 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
     if CANONICAL_PRODUCER_SHA is None or CANONICAL_EPOCH_RELATIVE is None:
         raise SystemExit('canonical verifier admission awaits a reviewed final producer source pin')
     assert re.fullmatch('[0-9a-f]{64}', CANONICAL_PRODUCER_SHA)
-    c.admitted(admission, 'CALLER_ADMITTED_COMMON_CORE_VERIFIER',
-               'direct-rustc-canonical-input-epoch', REVISION, bound)
-    assert set(admission) == {'schema', 'authority', 'scope', 'source_revision', 'verifier',
-        'compiler_directory', 'producer_source', 'entry_source', 'producer_caller',
-        'producer_references', 'producer_launch', 'review_binding', 'review_references', 'evidence_files'}
+    c.build_input_profile(admission, build_root, bound)
+    debug0 = admission['scope'] == 'direct-rustc-canonical-input-epoch-dev-debug0-v1'
+    build_summary = c.loads(bound(str(build_root / 'summary.json')))
+    if debug0:
+        c.admitted(admission, 'CALLER_ADMITTED_COMMON_CORE_VERIFIER',
+                   'direct-rustc-canonical-input-epoch-dev-debug0-v1', REVISION, bound)
+        assert c.same_build_profile(admission, build_summary) == c.DEBUG0_BUILD_PROFILE
+    else:
+        assert c.same_build_profile(admission, build_summary) is None
+        c.admitted(admission, 'CALLER_ADMITTED_COMMON_CORE_VERIFIER',
+                   'direct-rustc-canonical-input-epoch', REVISION, bound)
+    if not debug0:
+        assert set(admission) == {'schema', 'authority', 'scope', 'source_revision', 'verifier',
+            'compiler_directory', 'producer_source', 'entry_source', 'producer_caller',
+            'producer_references', 'producer_launch', 'review_binding', 'review_references', 'evidence_files'}
+    else:
+        assert set(admission) == {'schema', 'authority', 'scope', 'source_revision', 'verifier',
+            'compiler_directory', 'producer_source', 'entry_source', 'producer_caller',
+            'producer_references', 'producer_launch', 'review_binding', 'review_references', 'evidence_files', 'build_profile'}
     epoch = canonical_epoch(repo, CANONICAL_EPOCH_RELATIVE)
     assert epoch.resolve(strict=True) == epoch
     compiler = c.path(admission['compiler_directory']); raw = canonical_epoch_member(epoch, compiler.parent)
@@ -481,6 +495,7 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
     review_path = c.path(admission['review_binding']); review = c.loads(bound(str(review_path)))
     assert review['verdict'] == 'CLOSED_DIRECT_RUSTC_VERIFIER_PRODUCTION_METADATA_AND_ROOT_BYTE_CHECK_VERIFIED'
     assert review['revision'] == REVISION and review['findings'] == []
+    c.same_build_profile(admission, review)
     assert review['epoch_root'] == str(epoch) and review['build_directory'] == str(build_root)
     assert review['producer_sha256'] == CANONICAL_PRODUCER_SHA and review['entry_sha256'] == CANONICAL_ENTRY_SHA
     assert review['consumer_admission_created'] is False and review['qualification_complete'] is False
@@ -520,10 +535,17 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
         p = str(raw / name); assert p in index
         return evidence(p)
     complete = c.loads(record('complete.json'))
-    assert set(complete) == {'schema', 'revision', 'status', 'compiler_status', 'archive_status',
-        'dependency_archive_records', 'dependency_copies', 'direct_source_dependencies', 'source_transform',
-        'products', 'application_or_verifier_executions', 'prior_four_archive_attempts',
-        'existing_cargo_admission_compatible', 'qualification_complete'}
+    c.same_build_profile(admission, complete)
+    if not debug0:
+        assert set(complete) == {'schema', 'revision', 'status', 'compiler_status', 'archive_status',
+            'dependency_archive_records', 'dependency_copies', 'direct_source_dependencies', 'source_transform',
+            'products', 'application_or_verifier_executions', 'prior_four_archive_attempts',
+            'existing_cargo_admission_compatible', 'qualification_complete'}
+    else:
+        assert set(complete) == {'schema', 'revision', 'status', 'compiler_status', 'archive_status',
+            'dependency_archive_records', 'dependency_copies', 'direct_source_dependencies', 'source_transform',
+            'products', 'application_or_verifier_executions', 'prior_four_archive_attempts',
+            'existing_cargo_admission_compatible', 'qualification_complete', 'build_profile'}
     assert type(complete['schema']) is int and complete['schema'] == 1 and complete['revision'] == REVISION
     assert complete['status'] == 'DIRECT_RUSTC_VERIFIER_PRODUCED_REVIEW_REQUIRED'
     assert complete['compiler_status'] == 'PASS_STRICT_RECEIPT' and complete['archive_status'] == 'PASS_FRESH_DIRECT_ARCHIVE'
@@ -541,8 +563,13 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
         assert c.loads(record(kind + '.json')) == c.loads(bound(str(build_root / (kind + '.json'))))
     caller_bytes = evidence(admission['producer_caller']); caller = c.loads(caller_bytes)
     assert record('caller.json') == caller_bytes
-    assert set(caller) == {'schema', 'authority', 'revision', 'raw', 'producer_sha256', 'entry_sha256',
-                           'references_sha256', 'linker', 'capacity_record'}
+    c.same_build_profile(admission, caller)
+    if not debug0:
+        assert set(caller) == {'schema', 'authority', 'revision', 'raw', 'producer_sha256', 'entry_sha256',
+                               'references_sha256', 'linker', 'capacity_record'}
+    else:
+        assert set(caller) == {'schema', 'authority', 'revision', 'raw', 'producer_sha256', 'entry_sha256',
+                               'references_sha256', 'linker', 'capacity_record', 'build_profile'}
     assert type(caller['schema']) is int and caller['schema'] == 1
     assert caller['authority'] == 'ROOT_AUTHORIZED_DIRECT_RUSTC_VERIFIER_PRODUCTION'
     assert caller['revision'] == REVISION and caller['raw'] == str(raw)
@@ -643,6 +670,9 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
         '-C', 'codegen-units=4', '-C', 'linker=' + linker['path'],
         '--emit=link=' + str(raw / 'output/verify_common_core') + ',dep-info=' + str(raw / 'output/verify_common_core.d'),
         '--out-dir', str(raw / 'output'), '-L', 'dependency=deps']
+    if debug0:
+        assert expected_argv[7:9] == ['-C', 'debuginfo=2']
+        expected_argv[8] = 'debuginfo=0'
     for name, path in sorted(externs.items()): expected_argv += ['--extern', name + '=' + path]
     expected_argv += ['src/verify_common_core.rs']
     env = dict(base['env']); del env['CARGO_TARGET_DIR']; env['TMPDIR'] = str(raw / 'tmp')
@@ -760,6 +790,7 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
     assert check_command['cwd'] == str(repo) and check_command['env'] == c.ENV
     assert join['root_executed_byte_verification'] is True and join['synthetic_helper_receipt_created'] is False
     assert checks['status'] == 'PASS_CURRENT_BYTES_AND_SAVED_OWNER_CHECKS' and checks['revision'] == REVISION
+    c.same_build_profile(admission, checks)
     assert checks['original_dependency_products'] == len(originals) and checks['copied_libraries'] == len(expected_copies)
     assert checks['private_leaves'] == len(private_files) and checks['raw_files'] == len(index) and checks['source_files'] == len(tracked['files'])
     assert checks['source_transform'] == 'whole_inverse' and checks['application_or_verifier_executions'] == 0
@@ -778,6 +809,13 @@ def canonical_verifier_product(c, admission, tracked, repo, bound, build_root, t
 
 
 def admitted_verifier_product(c, admission, tracked, repo, bound, build_root, tools):
+    c.build_input_profile(admission, build_root, bound)
+    summary = c.loads(bound(str(build_root / 'summary.json')))
+    if 'build_profile' in summary:
+        assert summary['build_profile'] == c.DEBUG0_BUILD_PROFILE
+        assert admission['scope'] == 'direct-rustc-canonical-input-epoch-dev-debug0-v1'
+        return canonical_verifier_product(c, admission, tracked, repo, bound, build_root, tools)
+    assert 'build_profile' not in admission
     if admission['scope'] == 'direct-rustc-canonical-input-epoch':
         return canonical_verifier_product(c, admission, tracked, repo, bound, build_root, tools)
     if admission['scope'] == 'fresh-verifier-build-and-archive-epoch':
@@ -967,12 +1005,14 @@ def main():
     originals = {v: bound(p) for v, p in prep['originals'].items()}
     assert all(ps['artifacts'][v] == dict(sha256=c.sha(b), bytes=len(b)) for v, b in originals.items())
     build = c.loads(bound(inputs['build_admission'])); build_root, products = c.build_inputs(build, tracked, repo, bound)
+    build_extra = {} if 'build_profile' not in build else dict(build_profile=c.DEBUG0_BUILD_PROFILE)
     cells = c.loads(bound(str(build_root / 'cells.json')))
     inv = c.inventories(cells, originals, products['common_sites'], bound)
     datasets = c.loads(bound(str(repo / 'evaluation/e9-common-app/datasets.json')))['datasets']
     assert [d['name'] for d in datasets] == list(c.DATASETS) and [d['id'] for d in datasets] == list(range(8))
     observation, _ = c.observed_streams(c.loads(bound(inputs['observation_content_admission'])), tracked, build_root, cells, inv, datasets, bound)
     producer, bundle, production_summary, production_rows = production(c, c.loads(bound(inputs['production_admission'])), tracked, products, inv, originals, args.cell, bound, args.planning_profile, profiled)
+    c.same_build_profile(build, production_summary, c.loads(bound(inputs['production_admission'])))
     ordinary_root = None
     if profiled:
         pr, ps, rows, artifacts = c.production_inputs(c.loads(bound(inputs['production_admission'])),
@@ -989,6 +1029,7 @@ def main():
         else:
             assert ordinary_admission['planning_profile'] == args.planning_profile
             assert ordinary_summary['planning_profile'] == c.profile_record(args.planning_profile)
+        c.same_build_profile(build, ordinary_summary, ordinary_admission, c.loads(bound(ordinary_inputs['build_admission'])))
         assert ordinary_summary['production_successful'] == production_summary['successful']
         ordinary_status = 'CLOSED_REVIEWED' if ordinary_summary['ordinary_cases_complete'] else 'FAILED'
         assert o == dict(denominator=192, status=ordinary_status, record=inputs['obligations']['ordinary']['record'])
@@ -1004,6 +1045,7 @@ def main():
         assert cell['profiles'] == profiles and cell['source_binding_sha256'] == PROFILE_SOURCE_BINDING_SHA
     assert cell['production_admission_sha256'] == c.sha(bound(inputs['production_admission']))
     assert cell['driver_sha256'] == c.sha(bound(driver)) and cell['verifier_sha256'] == c.sha(bound(verifier))
+    c.same_build_profile(build, cell, verifier_info)
     variant = args.cell.rsplit('-', 1)[1]; original = prep['originals'][variant]
     directory = inv[args.cell]['directory']; instructions = directory + '/instructions.tsv'
     assert cell['original'] == original and cell['inventory'] == directory
@@ -1028,6 +1070,7 @@ def main():
         if profiled:
             assert a['profiles'] == summary['profiles'] == profiles
             assert a['source_binding_sha256'] == summary['source_binding_sha256'] == PROFILE_SOURCE_BINDING_SHA
+        c.same_build_profile(build, a, summary)
         assert a['capture_index_sha256'] == c.sha(bound(a['capture_index']))
         prior.append(a)
     assert inputs['obligations'].keys() == DENOMINATORS.keys()
@@ -1233,7 +1276,7 @@ def main():
             production_successful=production_summary['successful'], qualification_complete=False, full_a3=False,
             normal_loader_validation=False, E9_pairs='MANDATORY_SEPARATE', recording_pairs='MANDATORY_SEPARATE',
             ordinary_cases=192, parent_closure='Separate caller observation required', operational_timings_not_performance=True,
-            **(dict(profiles=profiles, source_binding_sha256=PROFILE_SOURCE_BINDING_SHA) if profiled else {})))
+            **(dict(profiles=profiles, source_binding_sha256=PROFILE_SOURCE_BINDING_SHA) if profiled else {}), **build_extra))
         index = {}
         for directory_name, dirs, files in os.walk(raw, followlinks=False):
             assert all(not (Path(directory_name) / n).is_symlink() for n in dirs + files)

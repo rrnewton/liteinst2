@@ -156,3 +156,29 @@ The producer's input envelope then pins that record and every listed file.
 Do not silently patch an old admission or treat executable hashes alone as
 proof of compilation. Broader qualification and rewritten/native comparisons
 remain separate; `qualification_complete` is false.
+
+
+## Explicit debug-info=0 build profile
+
+The historical command above keeps the development debug-info=2 profile. A
+separate `--build-profile dev-debug0-v1` invocation requires the same literal
+`build_profile` in its input envelope. New summaries, both artifact archives
+and caller build admissions must retain that identity. Consumers refuse a
+missing/mismatched identity or a Cargo row from the other profile.
+
+This branch sets DEV and TEST profile DEBUG=0, OPT_LEVEL=0,
+DEBUG_ASSERTIONS=true and OVERFLOW_CHECKS=true through the corresponding eight
+`CARGO_PROFILE_*` environment variables. Selected executable Cargo profiles
+must be exactly opt_level=0, debuginfo=0, debug_assertions=true,
+overflow_checks=true and test=false. The required-gates script inherits these
+settings; every existing command, case, stage, limit, archive and owner check
+remains mandatory. No Cargo.toml profile or RUSTFLAGS override is introduced.
+
+The allocation and planning/router profiles are independent. Fresh actual
+source/build/tool/archive review and caller admissions are required; neither
+historical debug-info=2 results nor prior native-only builds transfer. The
+direct-rustc verifier uses the separate admission scope
+`direct-rustc-canonical-input-epoch-dev-debug0-v1` and exact `-C debuginfo=0`
+with all other compiler options and limits retained. Storage savings are
+unmeasured. The historical build reporter must not be used unchanged for this
+new command/environment/profile.

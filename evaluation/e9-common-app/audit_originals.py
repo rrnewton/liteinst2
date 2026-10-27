@@ -614,6 +614,96 @@ def snapshot(saved, value, source, runtime):
             assert provider(r['fdinfo'].encode(),o['provider']['mount_record'].encode(),o['descriptor_stat'][1])==o['provider']
 
 
+# This is orthogonal to allocation/planning/router profiles. Absence is legacy.
+DEBUG0_BUILD_PROFILE = 'dev-debug0-v1'
+DEBUG0_PROFILE = dict(opt_level='0', debuginfo=0, debug_assertions=True, overflow_checks=True, test=False)
+DEBUG0_ENV = dict(CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+    CARGO_PROFILE_DEV_OPT_LEVEL='0', CARGO_PROFILE_TEST_OPT_LEVEL='0',
+    CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+    CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+
+DEBUG0_SOURCE_PINS = {'evaluation/e9-common-app/BUILD.md': 'cc903b637786b317211ce510e8b1569a7d887d6fe4bba2a3e2a8e1719d6779ae', 'evaluation/e9-common-app/PREPARATION.md': '2f1d0b8264c311dc987f1f053ec675bfb58bc62d52de5ed61ad8626f7de0ed99', 'evaluation/e9-common-app/PRODUCTION.md': 'b897a8fde384412dd238898f6c440ce0c5f39f499c50260edeac3ec437696d8e', 'evaluation/e9-common-app/README.md': '52222b130c915cccf4bae5b78247dc55f700fe7c3d18219a3477ddfe93eb6865', 'evaluation/e9-common-app/build_inventory.py': '3414588bcc7dd3f2bd27e5a43228f379ef5df84131406f4eecb8962fa60a2c8a', 'evaluation/e9-common-app/contract.json': 'c3817d7c206e3ab2433f4752891334a3194f82c3ac56f55cddf5ffc64f20b271', 'evaluation/e9-common-app/datasets.h': '4dff04a7d1f3bc245daf9037eca58d7fc59913063c49348eef5a3eeee0839ea6', 'evaluation/e9-common-app/datasets.json': '4da40a6ddbf7a5330cdab9ae63e7800cdf2f72908c1c24f55319e75320e43334', 'evaluation/e9-common-app/e9_hook.c': 'df39130ffdb17cb07e7b279aafb543dbbfa8d501be84744407dec788c10579e7', 'evaluation/e9-common-app/expected/duplicates-17.stdout': 'f1712298c1a43edbb177339b90254305fec91ae6614068b5e5f69be662e18048', 'evaluation/e9-common-app/expected/empty.stdout': '8cce7ab10bb13d2966c58b14f213f8d57e714c814f95d145e69a7d2056832bb1', 'evaluation/e9-common-app/expected/equal-17.stdout': 'ef6622e734312559059272cba7fb180189b9de4a6e36ddc5a7469172a2f33040', 'evaluation/e9-common-app/expected/mixed-64.stdout': '7843961fdbf66c50c2f5821f7fc812678dc0282baa59ab7bc6fbb3053b2394eb', 'evaluation/e9-common-app/expected/pair-reverse.stdout': 'f25c5af943d7693b7884e06a965d3216390429e7f5dd2996dca0d42deeb1b170', 'evaluation/e9-common-app/expected/reverse-17.stdout': '233ede9f9c673cfb92f906a2352170142a2a085c8fe8d4127e0e983a7a1c065f', 'evaluation/e9-common-app/expected/singleton.stdout': '9b4999e24e893018cb4c8a1aa2f1465c27002fc81870d620a7ece24e19f2e147', 'evaluation/e9-common-app/expected/sorted-17.stdout': '82c7d0f0e9d4fe3043642894680dee06774431e88b58ad2463af63967b060d04', 'evaluation/e9-common-app/heap_sort.c': '62ae1639206838d5471fb27b54281d4262e6542973a4259066250cd9add2c902', 'evaluation/e9-common-app/journal.h': '3d27763501ff98748d69edcae2e6d12e1a0a2b0ef5c31777c194fa6a1fe8cca8', 'evaluation/e9-common-app/observe_originals.py': '17b8b9164d485b60b71ddcb85e9173d31d99a360ba3cb23305334d33c562af05', 'evaluation/e9-common-app/prepare_subject.py': '79945a0bfdc7ffa9b1ea2ed265669709e278bb6d82c5676731dab547eadc278c', 'evaluation/e9-common-app/produce.py': 'd528896f9485367fa10582f7a88bb09dfac95757555982f6d268af469d0011a0', 'tests/support/e9_common_app.rs': 'faec58111347cc1c0d41c0fa47862207ae8938f7b4caddad98b4afc3043699ae', 'tests/support/e9_common_app_data.rs': '92bca80e47c0d20825a4ec278f0de47a178dd1f11b0062bf01b2bbfa12659bf4', 'tests/support/elf_exec_driver.rs': '25f5ba3d2b47b7ffd525f3a5398b93d83f5e06ea14ceaecddd45b16dceae6130', 'tests/support/elf_exec_oracle.rs': '1302da90836b31f9346cff5c20a458f4e5b3134b0f529e21f5027f78e4764c6b', 'tests/support/elf_exec_provider.rs': '9b5562034fc6bbdc32f889ab64df7f414e96ee5d9a99c06e39bf6728f128e730', 'tools/elf-rewrite/examples/common_sites.rs': '3dd3074b35f037109af696904dbed8ae13168c11f009bf65924ecd9f7c7289b5', 'tools/unwind-oracle/bounded_command.py': 'c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44'}
+
+
+def same_build_profile(*records):
+    assert records
+    if 'build_profile' not in records[0]:
+        assert all('build_profile' not in row for row in records), 'legacy build profile must be absent'
+        return None
+    assert all(row['build_profile'] == DEBUG0_BUILD_PROFILE for row in records), 'explicit build profile mismatch'
+    return DEBUG0_BUILD_PROFILE
+
+
+def build_input_profile(admission, root, bound):
+    # Authenticate the builder's actual input identity before either profile.
+    # This also rejects an isolated new-profile label in a legacy envelope.
+    inputs = loads(bound(str(root / 'inputs.json')))
+    summary = loads(bound(str(root / 'summary.json')))
+    archives = loads(bound(str(root / 'artifacts.json')))
+    keys = {'schema', 'preparation', 'collector_binding', 'files'}
+    if 'build_profile' in admission:
+        keys = keys | {'build_profile'}
+    assert set(inputs) == keys and type(inputs['schema']) is int and inputs['schema'] == 1
+    assert archives.keys() == {'native-compile', 'common-sites-compile'}
+    return same_build_profile(admission, inputs, summary, *archives.values())
+
+
+
+def debug0_build_profile(admission, root, bound):
+    # All reads go through the caller's existing complete watched catalog.
+    summary = loads(bound(str(root / 'summary.json')))
+    inputs = loads(bound(str(root / 'inputs.json')))
+    assert inputs.keys() == {'schema', 'preparation', 'collector_binding', 'files', 'build_profile'}
+    assert type(inputs['schema']) is int and inputs['schema'] == 1
+    assert same_build_profile(admission, summary, inputs) == DEBUG0_BUILD_PROFILE
+    assert summary['completed'] is True and summary['failure'] is None
+    assert summary['observed_stages'] == len(summary['planned_stages']) == 12
+    assert summary['cells_complete'] == 8 and summary['unrun_stages'] == []
+    if 'source_revision' in admission:
+        assert admission['source_revision'] == summary['revision']
+    if 'revision' in admission:
+        assert admission['revision'] == summary['revision']
+    archives = loads(bound(str(root / 'artifacts.json')))
+    assert archives.keys() == {'native-compile', 'common-sites-compile'}
+    for phase, archive in archives.items():
+        assert loads(bound(str(root / phase / 'artifact-archive.json'))) == archive
+        assert same_build_profile(admission, archive) == DEBUG0_BUILD_PROFILE
+        assert archive['source_revision'] == summary['revision']
+        assert archive['selected'].keys() == ({'elf-exec-oracle', 'liteinst-rewrite'} if phase == 'native-compile' else {'common_sites'})
+        for selected in archive['selected'].values():
+            assert selected['cargo']['profile'] == DEBUG0_PROFILE and selected['cargo']['features'] == []
+            assert all(type(selected['cargo']['profile'][k]) is type(v) for k, v in DEBUG0_PROFILE.items())
+    if 'products' in admission:
+        assert admission['products'] == dict(core=archives['native-compile']['selected']['liteinst-rewrite']['product']['path'], common_sites=archives['common-sites-compile']['selected']['common_sites']['product']['path'])
+        assert admission['required_products'] == sorted({row['path'] for archive in archives.values() for row in archive['artifacts'].values()})
+    environments = []
+    for phase in ('required', 'native-compile', 'common-sites-compile'):
+        command = loads(bound(str(root / phase / 'command.json')))
+        env = dict(command['env'])
+        assert env.pop('TMPDIR') == str(root / phase / 'tmp')
+        assert {k: v for k, v in env.items() if k.startswith('CARGO_PROFILE_')} == DEBUG0_ENV
+        assert env.keys() == {'CARGO_BUILD_JOBS', 'CARGO_INCREMENTAL', 'CARGO_NET_OFFLINE',
+            'CARGO_TARGET_DIR', 'CARGO_HOME', 'HOME', 'RUSTC', 'RUSTDOC', 'RUSTC_WORKSPACE_WRAPPER',
+            'RUSTC_WRAPPER', 'RUST_TEST_THREADS', 'LC_ALL', 'PATH', 'PYTHONDONTWRITEBYTECODE'} | DEBUG0_ENV.keys()
+        assert env['CARGO_BUILD_JOBS'] == env['RUST_TEST_THREADS'] == '4'
+        assert env['CARGO_INCREMENTAL'] == '0' and env['CARGO_NET_OFFLINE'] == 'true'
+        assert env['RUSTC_WORKSPACE_WRAPPER'] == env['RUSTC_WRAPPER'] == ''
+        assert env['LC_ALL'] == 'C' and env['PYTHONDONTWRITEBYTECODE'] == '1'
+        assert Path(command['cwd']).is_absolute() and root.is_relative_to(Path(command['cwd']) / 'ignored')
+        assert env['CARGO_TARGET_DIR'] == str(Path(command['cwd']) / 'target')
+        tool = Path(env['RUSTC']).parent
+        assert Path(env['RUSTC']).is_absolute() and Path(env['RUSTC']).name == 'rustc'
+        assert env['RUSTDOC'] == str(tool / 'rustdoc') and env['PATH'] == str(tool) + ':/usr/bin:/bin'
+        assert all(Path(env[k]).is_absolute() for k in ('CARGO_TARGET_DIR', 'CARGO_HOME', 'HOME'))
+        if phase != 'required':
+            request = loads(bound(str(root / phase / 'request.json')))
+            assert command['request'] == request and request['env'] == command['env']
+        environments.append(env)
+    assert environments[0] == environments[1] == environments[2]
+    return DEBUG0_BUILD_PROFILE
+
+
+
 def audit(saved, envelope, out):
     raw=Path(envelope['observation']);repo=saved.repo
     summary=saved.json(raw/'summary.json');source=saved.json(raw/'source.json');obs_inputs=saved.json(raw/'inputs.json')
@@ -638,8 +728,17 @@ def audit(saved, envelope, out):
         data=saved.read(repo/name);owner=saved.seen[str(repo/name)]
         assert row==dict(sha256=sha(data),bytes=len(data),mode=row['mode']) and row['mode'] in ('100644','100755')
         assert bool(owner['stat'][2]&0o111)==(row['mode']=='100755') and owner==source['owners'][name]
-    for name,digest in SOURCE_PINS.items():
-        assert source['files'][name]['sha256']==digest and sha(saved.read(repo/name))==digest
+    build_input_profile(build, Path(build['directory']), saved.read)
+    if 'build_profile' not in build:
+        same_build_profile(build, summary)
+        for name,digest in SOURCE_PINS.items():
+            assert source['files'][name]['sha256']==digest and sha(saved.read(repo/name))==digest
+    else:
+        assert same_build_profile(build, summary) == DEBUG0_BUILD_PROFILE
+        debug0_build_profile(build, Path(build['directory']), saved.read)
+        assert DEBUG0_SOURCE_PINS.keys() == SOURCE_PINS.keys()
+        for name,digest in DEBUG0_SOURCE_PINS.items():
+            assert source['files'][name]['sha256']==digest and sha(saved.read(repo/name))==digest
     assert sha(saved.read(build['driver']))==runtime['observer_sha256']
     build_dir=Path(build['directory']);build_summary=saved.json(build_dir/'summary.json')
     assert build_summary['revision']==source['revision'] and build_summary['completed'] is True and build_summary['failure'] is None
@@ -681,6 +780,8 @@ def audit(saved, envelope, out):
     names=list(CASE_NAMES)
     assert saved.json(raw/'stage-inventory.json')==names and set(results)==set(names)
     out.update(schema=1,status='INCOMPLETE',completed=False,observation_revision=source['revision'],build_revision=build_summary['revision'],preparation_revision=PREPARED,observer_origin_revision=OBSERVER_ORIGIN,recipe_sha256=SOURCE_PINS['evaluation/e9-common-app/observe_originals.py'],observer_source_sha256=SOURCE_PINS['tests/support/e9_common_app.rs'],source_files_sha256=sha(encode(source['files'])),observation_summary_sha256=sha(saved.read(raw/'summary.json')),hardware_sha256=sha(saved.read(raw/'hardware.json')),runtime_admission_sha256=sha(saved.read(obs_inputs['runtime_admission'])),build_admission_sha256=sha(saved.read(obs_inputs['build_admission'])),cases={n:dict(status=results[n]['status'] if results[n]['status'] in ('FAILED','UNRUN') else 'UNCHECKED',recipe_result=results[n]) for n in names},static_inventories={k:dict(directory=str(v['directory']),complete_sha256=v['complete_sha256']) for k,v in invs.items()},source_attested_not_independently_saved=LIVE_ONLY,caller_evidence={k:{p:sha(saved.read(p)) for p in paths} for k,paths in envelope['evidence'].items()},caller_evidence_adjudication='Named records only; caller separately authenticates parent closure, source/build review and this audit execution/review. No authority is synthesized.',full_architectural_equivalence=False,qualification_complete=False)
+    if 'build_profile' in build:
+        out.update(build_profile=DEBUG0_BUILD_PROFILE, recipe_sha256=DEBUG0_SOURCE_PINS['evaluation/e9-common-app/observe_originals.py'], observer_source_sha256=DEBUG0_SOURCE_PINS['tests/support/e9_common_app.rs'])
     first=saved.json(raw/'before.json');snapshot(saved,first,source,runtime)
     extra=set(first['owners'])-set(obs_inputs['files'])
     assert set(obs_inputs['files'])<=set(first['owners']) and len(extra)==1
