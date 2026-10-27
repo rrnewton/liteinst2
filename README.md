@@ -235,6 +235,15 @@ then handles first-touch admission on a guarded signal stack. The caller owns
 the immutable region and certifies complete entries and instruction extents.
 Its release probe separates publication, first touch and steady-state cost.
 
+[The first-entry launcher](tools/page-entry/README.md) uses a freestanding ELF
+interpreter bridge to run the original dynamic linker and application under an
+in-process NX gate. Its explicit sealed dependency namespace supports real
+mapping, relocation and TLS initialization. This backend uses kernel traps for
+CPUID, timestamps and syscalls, with `source_patches=0`; the owned-region library
+above supplies actual source patches. The launcher currently requires a
+singleton process and refuses unsupported signal, process and mapping
+operations. Its documented identity and loader-search restrictions apply.
+
 [liteinst-launch](crates/liteinst-launch/README.md) captures an ELF process at
 its exec stop before the executable/interpreter's first instruction. Its
 restricted controller gates initial executable mappings and admits scanned
