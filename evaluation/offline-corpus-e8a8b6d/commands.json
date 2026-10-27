@@ -1,0 +1,79 @@
+{
+  "controls_parent": {
+    "argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "25s",
+      "/usr/bin/python3.9",
+      "-B",
+      "$REPO/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "$LAUNCH_RAW/controls/request.json",
+      "--receipt",
+      "$LAUNCH_RAW/controls/receipt.json"
+    ],
+    "env": {
+      "LC_ALL": "C.UTF-8",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "parent_wall_seconds": 40
+  },
+  "controls_request": {
+    "argv": [
+      "/usr/bin/python3.9",
+      "-B",
+      "$REPO/evaluation/offline-corpus/controls.py",
+      "--repo",
+      "$REPO",
+      "--raw",
+      "$RUN_RAW",
+      "--out",
+      "$CONTROL_RAW"
+    ],
+    "cpu_seconds": 10,
+    "cwd": "$REPO",
+    "env": {
+      "LC_ALL": "C.UTF-8",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "TMPDIR": "$LAUNCH_RAW/controls/tmp"
+    },
+    "file_bytes": 16777216,
+    "stderr": "$LAUNCH_RAW/controls/stderr.txt",
+    "stdout": "$LAUNCH_RAW/controls/stdout.txt",
+    "wall_seconds": 15
+  },
+  "reproduce": {
+    "argv": [
+      "/usr/bin/python3.9",
+      "-B",
+      "$REPO/evaluation/offline-corpus/reproduce.py",
+      "--repo",
+      "$REPO",
+      "--raw",
+      "$RUN_RAW",
+      "--toolchain",
+      "$TOOLCHAIN",
+      "--user-home",
+      "$USER_HOME",
+      "--cargo-home",
+      "$CARGO_HOME",
+      "--e9-stock-dir",
+      "$E9_STOCK",
+      "--e9-transport",
+      "$E9_TRANSPORT",
+      "--e9-abi-dir",
+      "$E9_ABI"
+    ],
+    "env": {
+      "LC_ALL": "C.UTF-8",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "parent_wall_seconds": 750,
+    "source_sha256": "55f43d2a46e0dd512c2d55f048c6b1d59bc67bdce3244fde8de90874b3136811"
+  }
+}

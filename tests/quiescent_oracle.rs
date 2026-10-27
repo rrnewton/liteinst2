@@ -155,9 +155,27 @@ fn native_no_op_oracle_covers_same_site_upstream_and_every_entry() {
         });
     }
     assert_eq!(puzzles.len(), 20);
+    for (name, prefix) in [
+        ("nop-prefix-operand-segment", [0x66, 0x2e]),
+        ("nop-prefix-segment-operand", [0x2e, 0x66]),
+    ] {
+        let mut bytes = prefix.to_vec();
+        bytes.extend_from_slice(&[0x0f, 0x1f, 0x84, 0, 0, 0, 0, 0, 0xc3]);
+        puzzles.push(Puzzle {
+            name: name.into(),
+            bytes,
+            heads: vec![0, 10],
+            logical: 0,
+            physical: 0,
+            block_len: 11,
+            expected_marker: None,
+        });
+    }
+    assert_eq!(puzzles.len(), 22);
+    let mut prefix_order_executions = 0;
     let mut executions = 0;
     let mut routed_entries = 0;
-    // Keep the 20 small private application images alive throughout the corpus:
+    // Keep the 22 small private application images alive throughout the corpus:
     // address reuse must not make one layout inherit another layout's retained
     // generated-mapping collisions. Total fixture storage stays below 2 MiB.
     let mut retained_fixtures = Vec::new();
@@ -246,6 +264,15 @@ fn native_no_op_oracle_covers_same_site_upstream_and_every_entry() {
             );
         }
         let boundaries = prepared.image().instruction_boundaries().to_vec();
+        if index >= 20 {
+            let body = boundaries.iter().find(|(pc, _)| *pc == base).unwrap().1;
+            let at = usize::try_from(body - prepared.image().address()).unwrap();
+            assert_eq!(
+                &prepared.image().bytes()[at..at + 10],
+                &puzzle.bytes[..10],
+                "native image must retain the exact ten-byte NOP encoding"
+            );
+        }
         let owned_sigill: Vec<_> = prepared
             .plan()
             .parts()
@@ -323,7 +350,11 @@ fn native_no_op_oracle_covers_same_site_upstream_and_every_entry() {
         oracle.assert_publication(&edits);
         for (entry, baseline) in &baselines {
             oracle.assert_patched(baseline, *entry, &boundaries, &owned_sigill);
-            executions += 1;
+            if index < 20 {
+                executions += 1;
+            } else {
+                prefix_order_executions += 1;
+            }
         }
         {
             // SAFETY: all patched children have been reaped, so this exclusive
@@ -360,8 +391,13 @@ fn native_no_op_oracle_covers_same_site_upstream_and_every_entry() {
         routed_entries, 35,
         "every interior head must have an executed route"
     );
+    assert_eq!(
+        prefix_order_executions, 8,
+        "both prefix orders, two entries, two seeds"
+    );
+    assert_eq!(executions + prefix_order_executions, 168);
     eprintln!(
-        "native oracle: 20 required positive puzzles (all 16 five-byte layouts); 160 entry/seed executions; {routed_entries} routed heads; zero mismatches"
+        "native oracle: 22 required positive puzzles (all 16 five-byte layouts plus two NOP prefix orders); 168 entry/seed executions; {routed_entries} routed heads; zero mismatches"
     );
 }
 

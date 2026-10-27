@@ -272,3 +272,22 @@ The native summary copies the measured results, exact source/hardware and reprod
 
 - [Native results and per-class counts](results/20261027T175910.211918Z-integer-summary-9c7ada5c39b7.json)
 - [Required checks, recorder and serial](results/20261027T180123.253835Z-checks-9c7ada5c39b7.json)
+
+## Actual alternate entry into embedded CPUID (claims 2 and 4)
+
+Source `eeae25e563be5e9288416979ac73c431f2d34dd3` adds two original-entry programs that first consume CPUID bytes as part of a MOV immediate, then actually CALL those same bytes as instructions. One uses a direct CALL; the other uses an indirect CALL with CPUID crossing a page boundary. Both finish under the in-process selected controller with zero source patches and return the complete native 40-byte result, including all four CPUID outputs, the MOV result, and the original CALL return address (`0x40102b` or `0x402030`). The existing twenty streams remain unchanged.
+
+All 22 streams satisfy their required outcomes: 19 complete and three retain their required refusals. The runner completes all 119 build/cohort commands, with no timeout, capture error or cleanup failure. Independent replay authenticates the saved inputs, binaries and captures and reproduces the public receipt. This closes the concrete embedded-entry example; the independent explicit-trap/strict-block reference and full B2/B3/B4 coverage remain open. The real system linker's diagnostic still stops at unsupported REP STOSQ after 1,805 generic steps, 44 older steps and two RDTSC callbacks.
+
+The optimized native run used GCC 11.5.0 and Rust 1.97.1 on CPU 2, AMD EPYC 9D85, microcode `0xb101066`, Linux 7.1.3, with no effective capabilities. This is correctness evidence, not a performance measurement. Reproduce the native cohort on one externally reserved CPU and checks on four:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_embedded.py --expect-revision eeae25e563be5e9288416979ac73c431f2d34dd3
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/checks.py --expect-revision eeae25e563be5e9288416979ac73c431f2d34dd3
+```
+
+All four required checks pass, including 2,350 workspace tests with four previously ignored across 98 harnesses. Recorder passes 330 tests; serial passes 1,029 across 27 harnesses, including 50 native fixtures, 15 dynamic fixtures, 388 matrix cases, 108 validation fixtures and backing cleanup. Workspace takes 306.561 seconds within its unchanged 900-second bound; serial takes 129.608 seconds within its unchanged 180-second bound. Source and configuration remain unchanged. An earlier preflight correctly rejected an untracked Python import cache before executing any check; its failed receipt remains failed. Removing that generated cache from the source directory and disabling parent-process bytecode generation resolved the invocation error without changing source or assertions.
+
+- [Native embedded-entry results](results/20261027T182224.247893Z-page-selected-embedded-eeae25e563be.json)
+- [Required checks, recorder and serial](results/20261027T182556.716129Z-checks-eeae25e563be.json)
+- [Retained preflight failure](results/20261027T182313.312067Z-checks-eeae25e563be.json)

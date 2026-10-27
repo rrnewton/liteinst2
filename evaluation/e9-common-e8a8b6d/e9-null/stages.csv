@@ -1,0 +1,17 @@
+stage,status,reason,child_exit,seconds
+native-stock-algorithm-null-heap-write-unstripped-witness,PASS,,0,0.20178833696991205
+native-stock-algorithm-null-heap-write-unstripped-replay,PASS,,0,4.909779202891514
+native-bootstrap-patched-reference-null-heap-write-unstripped-witness,PASS,,0,0.19977107900194824
+native-bootstrap-patched-reference-null-heap-write-unstripped-replay,PASS,,0,4.962156581925228
+native-stock-algorithm-null-heap-write-stripped-witness,PASS,,0,0.20179782109335065
+native-stock-algorithm-null-heap-write-stripped-replay,PASS,,0,5.113502026069909
+native-bootstrap-patched-reference-null-heap-write-stripped-witness,PASS,,0,0.2031624410301447
+native-bootstrap-patched-reference-null-heap-write-stripped-replay,PASS,,0,4.966070264810696
+native-stock-algorithm-null-jump-site-unstripped-witness,PASS,,0,0.20377484592609107
+native-stock-algorithm-null-jump-site-unstripped-replay,PASS,,0,5.514932460151613
+native-bootstrap-patched-reference-null-jump-site-unstripped-witness,PASS,,0,0.20089237787760794
+native-bootstrap-patched-reference-null-jump-site-unstripped-replay,PASS,,0,5.465051301056519
+native-stock-algorithm-null-jump-site-stripped-witness,PASS,,0,0.20194364502094686
+native-stock-algorithm-null-jump-site-stripped-replay,PASS,,0,5.664223739877343
+native-bootstrap-patched-reference-null-jump-site-stripped-witness,PASS,,0,0.20102040912024677
+native-bootstrap-patched-reference-null-jump-site-stripped-replay,PASS,,0,5.866391731891781

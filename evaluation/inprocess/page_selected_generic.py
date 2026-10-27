@@ -121,7 +121,10 @@ def publish(path, receipt, private, aliases):
         output.write(text)
 
 
-def main():
+def main(*, embedded=False):
+    need(type(embedded) is bool, 'closed embedded profile selector')
+    if embedded:
+        import page_selected_embedded as addition
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--expect-revision', required=True)
     ap.add_argument('--library-root', action='append', type=Path)
@@ -131,7 +134,7 @@ def main():
     cpu = next(iter(os.sched_getaffinity(0)))
     os.chdir(ROOT)
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    name = stamp+'-page-selected-generic-'+args.expect_revision[:12]
+    name = stamp+('-page-selected-embedded-' if embedded else '-page-selected-generic-')+args.expect_revision[:12]
     output = ROOT/'target/evaluation/inprocess'/name
     output.mkdir(parents=True, exist_ok=False)
     public = HERE/'results'/(name+'.json')
@@ -143,6 +146,12 @@ def main():
         cpu=cpu, environment=ENV, commands=[], cases=[], error=None, final_errors=[], ls_diagnostic=None,
         bounds=PROFILES, cohort_command_count=0, reproduce=['python3', 'evaluation/inprocess/page_selected_generic.py',
                                                           '--expect-revision', args.expect_revision])
+    if embedded:
+        receipt.update(profile='page-selected-embedded-v1',
+            scope='22 finite streams, including two actual embedded entries; separate real-ls diagnostic; no explicit-trap/strict-block reference or full ABI/B2/B3/performance claim',
+            finite_command_count=None,
+            reproduce=['python3', 'evaluation/inprocess/page_selected_embedded.py',
+                       '--expect-revision', args.expect_revision])
     for i, path in enumerate(args.library_root or [Path('/usr/lib64')]):
         aliases.append((str(path.resolve()), '${LIBRARY_ROOT_'+str(i)+'}'))
         if args.library_root:
@@ -204,13 +213,20 @@ def main():
         need(hw['cpu'] == cpu, 'actual CPU')
         receipt['hardware_observer'] = hw
         images = output/'images'
-        run('images', [python, HERE/'page_selected_generic_images.py', images])
+        generator = 'page_selected_embedded_images.py' if embedded else 'page_selected_generic_images.py'
+        run('images', [python, HERE/generator, images])
         specs = json.loads(binary(images/'images.json').read_bytes())
+        additions = []
+        if embedded:
+            need(len(specs) == 22 and [item['name'] for item in specs[20:]] ==
+                 ['embedded_cpuid_direct', 'embedded_cpuid_cross_indirect'], 'closed two-case embedded extension')
+            specs, additions = specs[:20], specs[20:]
         need(len(specs) == 20 and [s['name'] for s in specs[:15]] ==
              ['rdrand16', 'rdrand32', 'rdrand64', 'rdseed16', 'rdseed32', 'rdseed64', 'rdpid64', 'mov_exit',
               'prefix_random', 'cross_mov', 'cross_selected', 'rsp_refusal', 'query_trap', 'query_trap_highbits', 'query_usr1'] and
              [s['name'] for s in specs[-5:]] ==
              ['branch_memory_stack', 'boundary_call_ret', 'cpuid0', 'rdtsc', 'rdtscp'], 'closed 15+5 cohort')
+        specs += additions
         for i, spec in enumerate(specs):
             name = spec['name']
             case = dict(name=name, accepted=False)
@@ -251,15 +267,28 @@ def main():
                 _, decoded_out, decoded_err = run('decode-last-'+name, [observe, 'decode', str(last['pc']), last['bytes']])
                 need(not decoded_err, 'exact native decoder observer stderr')
                 decoded = json.loads(decoded_out)
-                case['outcome'] = compare.check_connected(spec, row, command, out, native, before, after, decoded)
+                if i < 20:
+                    case['outcome'] = compare.check_connected(spec, row, command, out, native, before, after, decoded)
+                else:
+                    need(embedded, 'extra case requires explicit embedded profile')
+                    case['outcome'] = addition.check(spec, row, command, out, native, before, after, decoded,
+                                                     original, observe, run)
             ns = json.loads(binary(namespace/'namespace.json').read_bytes())
             binary(namespace/'launch.json')
             need(len(ns['objects']) == 1 and ns['objects'][0]['sha256'] == spec['interpreter_sha256'] and
                  ns['objects'][0]['seals'] == 15, 'actual immutable interpreter dependency')
             case.update(accepted=True, result=row, native_exit=None if native is None else native['exit'],
                         namespace={n: fact(namespace/n) for n in ('namespace.json', 'launch.json')})
-        need(len(receipt['cases']) == 20 and all(x['accepted'] for x in receipt['cases']) and
-             len(receipt['commands'])-cohort_start == 76, 'all finite cases and exact command cohort')
+            if embedded and i == 19:
+                need(len(receipt['cases']) == 20 and all(x['accepted'] for x in receipt['cases']) and
+                     len(receipt['commands'])-cohort_start == 76, 'all finite cases and exact command cohort')
+        if embedded:
+            receipt['finite_command_count'] = len(receipt['commands'])-cohort_start
+            need(len(receipt['cases']) == 22 and all(x['accepted'] for x in receipt['cases']) and
+                 receipt['finite_command_count'] == 98, 'all 22 finite cases and exact 76+22 commands')
+        else:
+            need(len(receipt['cases']) == 20 and all(x['accepted'] for x in receipt['cases']) and
+                 len(receipt['commands'])-cohort_start == 76, 'all finite cases and exact command cohort')
 
         # Optional-progress workload is still a real native/gated pair. Its
         # first unsupported request is retained exactly; it is never ls success.
@@ -311,7 +340,9 @@ def main():
         binary(namespace/'launch.json')
         for item in ns['objects']:
             need(item['seals'] == 15 and fact(pin(item['source']))['sha256'] == item['sha256'], 'immutable actual ls dependency')
-        need(len(receipt['commands'])-cohort_start == (79 if diagnostic['status'] == 'completed_actual_ls' else 80),
+        expected_commands = ((101 if diagnostic['status'] == 'completed_actual_ls' else 102) if embedded else
+                             (79 if diagnostic['status'] == 'completed_actual_ls' else 80))
+        need(len(receipt['commands'])-cohort_start == expected_commands,
              'complete exact diagnostic command cohort')
         diagnostic['namespace'] = {n: fact(namespace/n) for n in ('namespace.json', 'launch.json')}
         receipt['status'] = 'passed_finite_cohort'
@@ -320,6 +351,8 @@ def main():
     finally:
         if cohort_start is not None:
             receipt['cohort_command_count'] = len(receipt['commands'])-cohort_start
+            if embedded and receipt['finite_command_count'] is None:
+                receipt['finite_command_count'] = receipt['cohort_command_count']
         try:
             receipt['final_errors'] += builder.finish()
         except BaseException as exc:
@@ -341,7 +374,10 @@ def main():
         if receipt['error'] or receipt['final_errors'] or receipt['build']['status'] != 'passed':
             receipt['status'] = 'failed'
         save(output/'receipt.json', receipt)
-        publish(public, receipt, output, aliases)
+        if embedded:
+            addition.publish(public, receipt, output, aliases)
+        else:
+            publish(public, receipt, output, aliases)
     print(json.dumps(dict(status=receipt['status'], cases=len(receipt['cases']), commands=len(receipt['commands']),
                           receipt=str(public.relative_to(ROOT)))))
     return 0 if receipt['status'] == 'passed_finite_cohort' else 1
