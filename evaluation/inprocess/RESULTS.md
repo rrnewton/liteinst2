@@ -105,3 +105,23 @@ Receipts retain numeric observations, command/revision/hardware identities and c
 [Required checks](results/20261027T132714.815648Z-checks-6f779d0ba8f5.json) all passed: fmt, strict workspace/all-target/all-feature Clippy, workspace tests (2,339 passed, four ignored across 98 harnesses), and workspace/all-feature/all-target check. Recorder observed 330 tests. Serial observed all 1,029 tests in 27 harnesses, 50 native cases, 15 dynamic fixtures, 388 matrix records, 108 required native fixtures and complete backing cleanup. Workspace took 327.814 seconds; serial took 128.954 seconds within its unchanged 180-second bound. All command exits were zero, source/configuration remained unchanged and cleanup completed. The five receipts total 447,446 bytes.
 
 Independent audit authenticated all 354 release captures and six required-check logs. Saved command logs replayed through the unchanged strict parsers and reproduced the receipt totals. No workloads were rerun for this audit. The results commit changes documentation and numeric receipts only; executable sources remain the tested revision.
+
+## Qualification after merging the inline clock
+
+Revision `8ff8b1ac0ff2dd0a7d2c33745137b72149e5e605` (tree `b3bd653fa9d3ce975eb8d50d7774dfad37e69d14`) includes core `7ab79270767a2b1fcf817f05dfec61ef01d5f38f`. The merge preserves the selected patch and mapping lifecycle capabilities above, and incorporates core's inline software preemption and complete ELF tactic corpus. The only reconciliation changes authenticate the eleven added tests and preserve exact historical assertions; no runtime contract or prior negative case was relaxed.
+
+All four required Cargo checks pass, with 2,350 passed and four previously ignored workspace tests across 98 harnesses. Recorder controls pass all 330 cases. Serial validation passes all 1,029 tests across 27 harnesses, including the required native collections and backing cleanup. Workspace took 378.706 seconds and serial 129.299 seconds, within their existing 900/180-second bounds. Source and configuration stayed unchanged. Reproduce with the five commands in the preceding section, substituting this revision for the checks argument.
+
+The four release runners also pass: 118 selected native cases and 13 preparation refusals; the genuine mapping lifecycle and twelve negative processes; ten existing owned-region probes; and fifteen dynamic pairs. Selected counters record 2,006,236 actual completions, 779,710 carry-clear outcomes, 118 admission faults and 126 admitted pages, with no additional steady-batch faults. Lifecycle counts remain 15 successful mappings, 52 generations all retired, 14 admissions/sync-core operations and zero live pages.
+
+Release hardware/toolchains match the preceding experiment, with fresh children pinned to CPU 5. Numeric listing has 98 first-touch faults over 575 pages, 34 forwarded calls, median handler service 196.387 microseconds, and native/instrumented full-process medians 1.752199/2.557789 milliseconds. The warmed 1,000-scan interval has no further admission faults and 4,002 forwarded calls; medians are 27.698314/31.925207 milliseconds (1.153x). The same timing, random-outcome and post-constructor scope qualifications apply. These runs validate admission compatibility after the merge; core's separate inline-clock experiment supplies its performance evidence.
+
+The five compact receipts total 447,601 bytes; raw captures remain private:
+
+- [Required checks](results/20261027T135642.092658Z-checks-8ff8b1ac0ff2.json)
+- [Selected instructions](results/20261027T140648.476121Z-selected-8ff8b1ac0ff2.json)
+- [Mapping lifecycles](results/20261027T140658.041231Z-lifecycle-8ff8b1ac0ff2.json)
+- [Owned-region probes](results/20261027T140700.387482Z-8ff8b1ac0ff2.json)
+- [Dynamic pairs](results/20261027T140706.935685Z-dynamic-8ff8b1ac0ff2.json)
+
+Independent audit authenticated all 354 release captures (177 commands), actual binaries and source bindings, and replayed all six check logs to the exact receipt totals. All four release runners remain byte-identical to the preceding tested revision. This results commit changes only documentation and numeric receipts.
