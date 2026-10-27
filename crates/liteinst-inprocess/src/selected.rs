@@ -1,4 +1,4 @@
-//! Eager, generation-bound replacement of three exact selected instructions.
+//! Eager, generation-bound replacement of selected instructions with actual native outputs.
 //!
 //! Planning and publication allocate and use the ordinary core publisher. They
 //! must finish under real exclusion before a lazy execution gate is armed.
@@ -16,11 +16,19 @@ use liteinst2::quiescent::{
 use liteinst2::trampoline::TrampolineImage;
 
 mod callbacks;
+mod encoding;
+mod metrics;
+
+pub use encoding::{SelectedDestination, SelectedInstruction, SelectedWidth, decode_selected};
+pub use metrics::{SelectedClassCounters, selected_counters};
+
+#[cfg(test)]
+mod tests;
 
 /// Exit status used when the closed syscall callback refuses an operation.
 pub const REJECTED_SYSCALL_EXIT_STATUS: i32 = 126;
 
-/// Exact two-byte instruction replaced by its class-specific native callback.
+/// Selected class replaced by its native callback, independent of CPUID feature reports.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum SelectedKind {
     /// `0f a2`: actual CPUID using the saved low EAX and ECX inputs.
@@ -29,15 +37,39 @@ pub enum SelectedKind {
     Rdtsc,
     /// `0f 05`: the closed returning Linux read/write/getpid/gettid profile.
     Syscall,
+    /// RDRAND with one 16-, 32- or 64-bit register result and architectural flags.
+    Rdrand,
+    /// RDSEED with one 16-, 32- or 64-bit register result and architectural flags.
+    Rdseed,
+    /// RDPID with one zero-extended TSC_AUX register result.
+    Rdpid,
+    /// RDTSCP with actual EDX:EAX timestamp and independent ECX TSC_AUX.
+    Rdtscp,
 }
 
 impl SelectedKind {
-    /// Required original opcode, with no prefixes or alternate encoding.
-    pub const fn encoding(self) -> [u8; 2] {
+    /// Canonical complete encoding for operand-free classes. Register-output
+    /// encodings depend on their operand and therefore return `None`.
+    /// `decode_selected` remains authoritative for the complete instruction.
+    pub const fn encoding(self) -> Option<&'static [u8]> {
         match self {
-            Self::Cpuid => [0x0f, 0xa2],
-            Self::Rdtsc => [0x0f, 0x31],
-            Self::Syscall => [0x0f, 0x05],
+            Self::Cpuid => Some(&[0x0f, 0xa2]),
+            Self::Rdtsc => Some(&[0x0f, 0x31]),
+            Self::Syscall => Some(&[0x0f, 0x05]),
+            Self::Rdtscp => Some(&[0x0f, 0x01, 0xf9]),
+            Self::Rdrand | Self::Rdseed | Self::Rdpid => None,
+        }
+    }
+
+    const fn counter_index(self) -> usize {
+        match self {
+            Self::Cpuid => 0,
+            Self::Rdtsc => 1,
+            Self::Syscall => 2,
+            Self::Rdrand => 3,
+            Self::Rdseed => 4,
+            Self::Rdpid => 5,
+            Self::Rdtscp => 6,
         }
     }
 }
@@ -73,7 +105,7 @@ pub struct SelectedSite<'a> {
 
 /// Prepared core plan plus all buffers used for post-publication observations.
 pub struct PreparedSelected {
-    kind: SelectedKind,
+    instruction: SelectedInstruction,
     core: PlannedInstall,
     expected_source: Vec<u8>,
     observed_source: Vec<u8>,
@@ -88,15 +120,11 @@ impl PreparedSelected {
             .checked_sub(site.base_address)
             .and_then(|value| usize::try_from(value).ok())
             .ok_or(Refusal::InvalidRange)?;
-        let end = offset.checked_add(2).ok_or(Refusal::InvalidRange)?;
-        site.logical_pc
-            .checked_add(2)
-            .ok_or(Refusal::InvalidRange)?;
-        if site.code.get(offset..end) != Some(site.kind.encoding().as_slice()) {
-            return Err(Refusal::UnsupportedSemantics(
-                "selected site is not the exact two-byte encoding".into(),
-            ));
-        }
+        let instruction = decode_selected(
+            site.kind,
+            site.logical_pc,
+            site.code.get(offset..).ok_or(Refusal::InvalidRange)?,
+        )?;
         let core = plan_install(&InstallRequest {
             identity: site.identity,
             code: site.code,
@@ -105,7 +133,7 @@ impl PreparedSelected {
             block: site.block,
             logical_pc: site.logical_pc,
             entries: site.entries,
-            hook: callbacks::for_kind(site.kind),
+            hook: callbacks::for_instruction(&instruction)?,
             semantics: HookSemantics::ReplaceFirst,
             allocation: site.allocation,
             search: site.search,
@@ -141,12 +169,17 @@ impl PreparedSelected {
         let observed_source = vec![0; expected_source.len()];
         let observed_generated = vec![0; core.image().bytes().len()];
         Ok(Self {
-            kind: site.kind,
+            instruction,
             core,
             expected_source,
             observed_source,
             observed_generated,
         })
+    }
+
+    /// Exact original operation, length, prefixes and register operand.
+    pub const fn instruction(&self) -> &SelectedInstruction {
+        &self.instruction
     }
 
     /// Exact core plan, including actual tactic, dependencies and entry routes.
@@ -248,7 +281,12 @@ pub struct InstalledSelected {
 impl InstalledSelected {
     /// Selected instruction class.
     pub const fn kind(&self) -> SelectedKind {
-        self.prepared.kind
+        self.prepared.instruction.kind()
+    }
+
+    /// Exact original operation, including its actual logical instruction head.
+    pub const fn instruction(&self) -> &SelectedInstruction {
+        self.prepared.instruction()
     }
 
     /// Exact core source/generated-byte plan.

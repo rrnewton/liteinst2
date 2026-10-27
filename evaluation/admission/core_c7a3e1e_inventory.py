@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+from selected_inventory import peel_current
 
 PRE_CORE_C7A3E1E_CORPUS_SHA256 = '25b48766c6213887ac19e799fc0329ef01973d2ade44e2a9cf8e4e722d4fdbd5'
 CURRENT_CORE_C7A3E1E_CORPUS_SHA256 = 'f748315064e4590ee4a2721c97f3b05717d271405d03271f9429bdaf5cc55d25'
@@ -149,6 +150,7 @@ def require_current_core_c7a3e1e_sources():
 
 
 def before_core_c7a3e1e(declared):
+    declared = peel_current(declared)
     require(type(declared) is dict and digest(declared) == CURRENT_CORE_C7A3E1E_CORPUS_SHA256,
             "core_c7a3e1e_inventory_differs")
     previous = copy.deepcopy(declared)

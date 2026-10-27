@@ -9,10 +9,18 @@ description = "Caller-owned in-process NX first-touch gate"
 [dependencies]
 liteinst2 = { path = "../.." }
 libc = "0.2.186"
+iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder"] }
 
 [[example]]
 name = "native_probe"
 path = "examples/native_probe.rs"
+test = false
+bench = false
+doc = false
+
+[[example]]
+name = "selected_probe"
+path = "examples/selected_probe.rs"
 test = false
 bench = false
 doc = false

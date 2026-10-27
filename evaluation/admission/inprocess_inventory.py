@@ -11,6 +11,7 @@ import re
 
 from parsing import require
 from core_c7a3e1e_inventory import before_core_c7a3e1e, source_before_core_c7a3e1e
+from selected_inventory import source_before_selected
 
 PRE_INPROCESS_CORPUS_SHA256 = 'ccc0d245bd3d006e7ac64f039f1725e8d538aae33c972d49b722626899146b57'
 CURRENT_INPROCESS_CORPUS_SHA256 = '25b48766c6213887ac19e799fc0329ef01973d2ade44e2a9cf8e4e722d4fdbd5'
@@ -29,6 +30,7 @@ def digest(value):
 def source_before_inprocess(path, data, error):
     """Authenticate each exact new Cargo file before its one literal inverse."""
     data = source_before_core_c7a3e1e(path, data, error)
+    data = source_before_selected(path, data, error)
     if path not in SOURCE_PROJECTIONS:
         return data
     row = SOURCE_PROJECTIONS[path]
@@ -52,6 +54,7 @@ def before_inprocess_baseline(declared):
     for path, expected in NEW_SOURCE_SHA256.items():
         try:
             data = (root / path).read_bytes()
+            data = source_before_selected(path, data, "inprocess_source_inventory_differs")
             source = data.decode("utf-8")
         except (OSError, UnicodeError):
             require(False, "inprocess_source_inventory_differs")

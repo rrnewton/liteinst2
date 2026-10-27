@@ -6451,7 +6451,7 @@
       },
       "unit/liteinst_inprocess/lib": {
         "ignored": 0,
-        "tests": 6
+        "tests": 10
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,

@@ -23,6 +23,7 @@ from inprocess_inventory import before_inprocess_baseline as before_inprocess
 import core_c7a3e1e_inventory as corec7
 import core_041bd4a_inventory as core041
 import inprocess_inventory as inprocess
+import selected_inventory as selected
 from owned_stack_inventory import before_owned_stack
 from runtime_stack_consumer_inventory import before_runtime_stack_consumer
 from core_main_inventory import (ADDED_HARNESSES, CHANGED_HARNESSES, RUST_METHODS,
@@ -303,15 +304,57 @@ class CoreMergeInventoryTests(unittest.TestCase):
 
     def test_catalog_preserves_all_old_harnesses_and_native_collection_identities(self):
         current041 = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        selected_current = copy.deepcopy(current041)
+        current041 = selected.before_selected(current041)
+        self.assertEqual(selected_current, json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        self.assertEqual(selected.digest(selected_current), selected.CURRENT)
+        self.assertEqual(selected.digest(current041), selected.PREVIOUS)
+        self.assertEqual(selected.PREVIOUS, corec7.CURRENT_CORE_C7A3E1E_CORPUS_SHA256)
+        selected_rows = selected_current['harness_test_counts']['workspace_tests']
+        self.assertEqual(selected_rows['unit/liteinst_inprocess/lib'], counts(10))
+        self.assertEqual((len(selected_rows), sum(row['tests'] for row in selected_rows.values()),
+                          sum(row['ignored'] for row in selected_rows.values())), (98, 2343, 4))
+        self.assertEqual(len(selected.METHODS), 4)
+        restored = copy.deepcopy(selected_current)
+        restored['harness_test_counts']['workspace_tests']['unit/liteinst_inprocess/lib'] = counts(6)
+        self.assertEqual(restored, current041)
+        for mode in ('missing', 'low', 'high', 'ignored', 'float', 'extra'):
+            changed = copy.deepcopy(selected_current)
+            rows = changed['harness_test_counts']['workspace_tests']
+            identity = 'unit/liteinst_inprocess/lib'
+            if mode == 'missing': del rows[identity]
+            elif mode == 'low': rows[identity]['tests'] -= 1
+            elif mode == 'high': rows[identity]['tests'] += 1
+            elif mode == 'ignored': rows[identity]['ignored'] += 1
+            elif mode == 'float': rows[identity]['tests'] = float(rows[identity]['tests'])
+            else: rows[identity]['extra'] = 'PRIVATE_SENTINEL'
+            with self.subTest(selected_inventory=mode), self.assertRaisesRegex(
+                    parsing.InvalidEvidence, '^selected_inventory_differs$'):
+                selected.before_selected(changed)
+        selected_read = Path.read_bytes
+        for target in selected.SOURCES:
+            def altered_selected(path, *args, **kwargs):
+                data = selected_read(path, *args, **kwargs)
+                return data + b'\nPRIVATE_SENTINEL\n' if path.as_posix().endswith(target) else data
+            with self.subTest(selected_source=target), patch('selected_inventory.Path.read_bytes', altered_selected):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^selected_source_inventory_differs$'):
+                    selected.before_selected(selected_current)
+        for path, row in selected.PROJECTIONS.items():
+            data = (Path(__file__).resolve().parents[2] / path).read_bytes()
+            restored = selected.source_before_selected(path, data, 'selected_source_inventory_differs')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for bad in (restored, data + b'\nPRIVATE_SENTINEL\n'):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^selected_source_inventory_differs$'):
+                    selected.source_before_selected(path, bad, 'selected_source_inventory_differs')
         inprocess_current = copy.deepcopy(current041)
         current041 = corec7.before_core_c7a3e1e(current041)
         current041 = before_inprocess(current041)
-        self.assertEqual(inprocess_current, json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        self.assertEqual(inprocess_current, selected.before_selected(json.loads(Path(__file__).with_name("corpus.json").read_text())))
         # Preserve the literal raw-file equality above, then authenticate the
         # new outer layer before the unchanged historical in-process assertions.
         latest = copy.deepcopy(inprocess_current)
         inprocess_current = corec7.before_core_c7a3e1e(inprocess_current)
-        self.assertEqual(latest, json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        self.assertEqual(latest, selected.before_selected(json.loads(Path(__file__).with_name("corpus.json").read_text())))
         self.assertEqual(corec7.digest(latest), corec7.CURRENT_CORE_C7A3E1E_CORPUS_SHA256)
         self.assertEqual(corec7.digest(inprocess_current), corec7.PRE_CORE_C7A3E1E_CORPUS_SHA256)
         self.assertEqual(corec7.PRE_CORE_C7A3E1E_CORPUS_SHA256, inprocess.CURRENT_INPROCESS_CORPUS_SHA256)
