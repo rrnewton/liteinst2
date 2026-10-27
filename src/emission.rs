@@ -436,6 +436,11 @@ impl ArtifactPlan {
         result.record_router_requirement();
         result
     }
+    // Rewrap checked artifact diagnostics without changing steps, images or authority.
+    pub(crate) fn with_metrics(mut self, metrics: ArtifactMetrics) -> Self {
+        self.metrics = metrics;
+        self
+    }
     fn record_router_requirement(&mut self) {
         if self.steps.iter().any(|step| {
             step.parts().obligations.iter().any(|obligation| {

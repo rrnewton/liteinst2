@@ -658,6 +658,11 @@ fn compose_pair(
     )
 }
 
+// Explicit second-function artifact authority; existing same-function paths stay separate.
+#[path = "neighbor_cross_function.rs"]
+mod cross_function;
+pub use cross_function::plan_neighbor_with_emission_from;
+
 #[cfg(test)]
 mod tests {
     use super::*;
