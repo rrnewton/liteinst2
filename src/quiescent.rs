@@ -541,6 +541,9 @@ pub(crate) fn validated_source_core(
     request: &PlanningRequest<'_>,
 ) -> Result<(AddressRange, ScanResult), Refusal> {
     let source = AddressRange::new(request.base_address, request.code.len())?;
+    if request.original_code.len() != request.code.len() {
+        return Err(Refusal::InvalidRange);
+    }
     if request.entries.identity != request.identity {
         return Err(Refusal::StaleGeneration);
     }
@@ -557,8 +560,9 @@ pub(crate) fn validated_source_core(
         return Err(Refusal::InvalidRange);
     }
     request.emission.qualify()?;
+    // Original instruction identity is independent of authenticated prior edits.
     let scan = InstructionScanner::default()
-        .scan(request.code, request.base_address)
+        .scan(request.original_code, request.base_address)
         .map_err(|e| Refusal::Backend(e.to_string()))?;
     if scan.site(request.logical_pc).is_none()
         || scan.site(request.block.start()).is_none()
@@ -708,6 +712,11 @@ fn plan_pun_with_context_core(
         search_evidence.qualification(scope, &Refusal::NoPatchWindow);
         return Err(Refusal::NoPatchWindow);
     }
+    // Preserve prior hooks even for ReplaceFirst. Consumed successor and store
+    // padding bytes deliberately remain current-view inputs, not this guard.
+    request
+        .require_original(displaced)
+        .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
     let offset = (physical - source.start()) as usize;
     let mut fixed = [0_u8; 4];
     let free = len - prefixes - 1;
@@ -1041,6 +1050,11 @@ fn plan_at_with_controls(
             "CET IBT landing pad in displaced range".into(),
         ));
     }
+    // Guard each candidate's whole original window, including ReplaceFirst,
+    // before emission; the caller retains its existing bounded fallback order.
+    request
+        .require_original(displaced)
+        .inspect_err(|reason| search_evidence.qualification(scope, reason))?;
     let trampoline = match controls {
         Some(actions) => TrampolinePlan::from_controlled_actions(scan, physical, end, actions),
         None => request.emission.window(

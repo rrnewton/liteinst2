@@ -565,6 +565,8 @@ fn qualify_selected<'a>(
     }) {
         return Err(Refusal::NotInstructionHead);
     }
+    // ReplaceFirst also must not bypass a previously changed original operation.
+    request.require_original(displaced)?;
     Ok(selected)
 }
 

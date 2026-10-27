@@ -148,6 +148,9 @@ pub(crate) enum EmissionContext<'a> {
 #[derive(Clone, Copy)]
 pub(crate) struct PlanningRequest<'a> {
     pub(crate) site: PlanningSite<'a>,
+    // Instruction identity is immutable even when an earlier source edit is
+    // present in site.code. Only the latter is a current read expectation.
+    pub(crate) original_code: &'a [u8],
     pub(crate) emission: EmissionContext<'a>,
 }
 
@@ -162,20 +165,42 @@ impl<'a> PlanningRequest<'a> {
     pub(crate) fn live(request: &InstallRequest<'a>) -> Self {
         Self {
             site: request.into(),
+            original_code: request.code,
             emission: EmissionContext::Live(request.hook),
         }
     }
     pub(crate) fn artifact(request: &ArtifactRequest<'a>) -> Self {
         Self {
             site: request.site,
+            original_code: request.site.code,
             emission: EmissionContext::Artifact(request.emission),
         }
     }
     pub(crate) fn with_code<'b>(&'b self, code: &'b [u8]) -> PlanningRequest<'b> {
         PlanningRequest {
             site: PlanningSite { code, ..self.site },
+            original_code: self.original_code,
             emission: self.emission,
         }
+    }
+    /// A displaced original operation must not bypass an earlier redirect or
+    /// hook. Padding and consumed successor bytes use separate current reads.
+    pub(crate) fn require_original(&self, range: AddressRange) -> Result<(), Refusal> {
+        if self.code.len() != self.original_code.len() {
+            return Err(Refusal::InvalidRange);
+        }
+        let source = AddressRange::new(self.base_address, self.original_code.len())?;
+        if !source.covers(range) {
+            return Err(Refusal::InvalidRange);
+        }
+        let start =
+            usize::try_from(range.start() - source.start()).map_err(|_| Refusal::InvalidRange)?;
+        let end =
+            usize::try_from(range.end() - source.start()).map_err(|_| Refusal::InvalidRange)?;
+        if self.code[start..end] != self.original_code[start..end] {
+            return Err(Refusal::ExpectedBytesChanged);
+        }
+        Ok(())
     }
     pub(crate) fn with_search(&self, search: SearchPolicy) -> Self {
         Self {
