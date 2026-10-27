@@ -315,6 +315,60 @@ impl RapidTogglePlan {
         })
     }
 
+    /// Plans one observing control at the exact first-byte toggle head.
+    ///
+    /// This retains the supplied control in the existing controlled trampoline
+    /// path, including a managed callback's exact borrowed identity. The action
+    /// must name `execute_address`; a caller's separate installation/session
+    /// association is not inferred from its address or callback.
+    ///
+    /// All original scan, pun-window, target and entry requirements of
+    /// [`Self::from_scan`] remain. The ordinary constructor authenticates that
+    /// geometry first; its unallocated trampoline plan is then replaced by the
+    /// controlled plan over exactly the same complete instruction. No callback
+    /// is invoked and no executable memory is allocated during construction.
+    ///
+    /// A disabled control still executes the original instruction. This adds
+    /// neither exclusive code-toggle authority, synchronized visibility nor
+    /// callback drain. Managed control writers must remain with their owner;
+    /// the ordinary callback ABI and RapidProbe's eventual byte stores are
+    /// unchanged.
+    pub fn from_controlled_scan(
+        scanner: &InstructionScanner,
+        scan: &ScanResult,
+        code: &[u8],
+        region_base: u64,
+        execute_address: u64,
+        action: &crate::controls::ControlledAction,
+    ) -> Result<Self, RapidToggleError> {
+        let mut plan = Self::from_scan(
+            scanner,
+            scan,
+            code,
+            region_base,
+            execute_address,
+            action.control.callback(),
+        )?;
+        if action.logical_pc != execute_address {
+            return Err(TrampolineError::SiteNotFound {
+                address: action.logical_pc,
+            }
+            .into());
+        }
+        plan.trampoline = TrampolinePlan::from_controlled_actions(
+            scan,
+            execute_address,
+            plan.trampoline.return_address(),
+            core::slice::from_ref(action),
+        )?;
+        Ok(plan)
+    }
+
+    /// Exact managed point associations retained by the controlled constructor.
+    pub fn controlled_actions(&self) -> &[crate::controls::ControlledAction] {
+        self.trampoline.controlled_actions()
+    }
+
     /// Returns the executable opcode address.
     pub const fn execute_address(&self) -> u64 {
         self.execute_address
@@ -1018,6 +1072,8 @@ mod tests {
             }
             assert!(!probe.is_enabled());
         }
+
+        include!("rapid/managed_tests.rs");
 
         #[test]
         #[ignore = "release-mode latency benchmark"]

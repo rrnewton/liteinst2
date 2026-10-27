@@ -9,12 +9,11 @@
 //! process. The fork-shared trampoline arena therefore refuses controlled plans.
 
 use core::fmt;
+use core::marker::PhantomData;
 use core::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use crate::trampoline::HookCallback;
-#[cfg(any(test, all(target_os = "linux", target_arch = "x86_64")))]
-use crate::trampoline::HookContext;
+use crate::trampoline::{HookCallback, HookContext};
 
 /// One stable observing-callback identity, independent of executable storage.
 ///
@@ -29,6 +28,84 @@ pub struct ProbeControl {
 pub(crate) struct ControlBlock {
     callback: HookCallback,
     enabled: AtomicBool,
+    managed: bool,
+    bound_callback: Option<ManagedCallback>,
+}
+
+/// Opaque identity borrowed only for the active managed callback. The dispatch
+/// image retains the block for this lifetime. A token cannot be safely retained
+/// beyond that call, so an allocation reused later cannot match an escaped token.
+/// It conveys neither write authority nor a dereferenceable pointer.
+///
+/// ```compile_fail
+/// use liteinst2::controls::ControlIdentity;
+/// fn escape<'dispatch>(token: ControlIdentity<'dispatch>) -> ControlIdentity<'static> {
+///     token
+/// }
+/// ```
+///
+/// The higher-ranked callback also prevents storage in a static TLS slot:
+///
+/// ```compile_fail
+/// use std::cell::Cell;
+/// use liteinst2::controls::{ControlIdentity, ProbeControl};
+/// use liteinst2::trampoline::HookContext;
+/// thread_local! { static SAVED: Cell<Option<ControlIdentity<'static>>> = const { Cell::new(None) }; }
+/// unsafe extern "C" fn retain<'dispatch>(_: *mut HookContext, token: ControlIdentity<'dispatch>) {
+///     SAVED.with(|slot| slot.set(Some(token)));
+/// }
+/// let _ = ProbeControl::new_managed_bound(retain, false);
+/// ```
+#[repr(transparent)]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ControlIdentity<'dispatch> {
+    address: usize,
+    lifetime: PhantomData<&'dispatch ControlBlock>,
+}
+
+impl<'dispatch> ControlIdentity<'dispatch> {
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    fn from_control(control: &'dispatch ControlBlock) -> Self {
+        Self {
+            address: control as *const ControlBlock as usize,
+            lifetime: PhantomData,
+        }
+    }
+}
+
+/// Managed callback with a fresh borrow of the exact retained block. The token
+/// is one transparent machine word; the lifetime adds no runtime state.
+pub type ManagedCallback =
+    for<'dispatch> unsafe extern "C" fn(*mut HookContext, ControlIdentity<'dispatch>);
+
+unsafe extern "C" fn managed_requires_dispatch(_: *mut HookContext) {
+    // A managed action must retain its control and use the controlled emitter.
+    // Calling its static placeholder is an invariant violation, not observation.
+    std::process::abort();
+}
+
+/// A planner-readable managed control cannot be changed through its public handle.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ManagedControl;
+
+/// Unique write authority for one managed control. There is no Clone or
+/// conversion from a planner-readable ProbeControl back to this capability.
+///
+/// ```compile_fail,E0277
+/// use liteinst2::controls::ControlWriter;
+/// fn needs_clone<T: Clone>() {}
+/// fn duplicate() { needs_clone::<ControlWriter>(); }
+/// ```
+pub struct ControlWriter {
+    inner: Arc<ControlBlock>,
+}
+
+impl ControlWriter {
+    /// Make a release-store request for this exact control. Completion/drain
+    /// still belongs to the controller's admission protocol.
+    pub fn set_enabled(&mut self, enabled: bool) {
+        self.inner.enabled.store(enabled, Ordering::Release);
+    }
 }
 
 impl ProbeControl {
@@ -38,8 +115,57 @@ impl ProbeControl {
             inner: Arc::new(ControlBlock {
                 callback,
                 enabled: AtomicBool::new(enabled),
+                managed: false,
+                bound_callback: None,
             }),
         }
+    }
+
+    /// Create a managed control and its unique writer. Clones of the returned
+    /// ProbeControl remain suitable for planning but cannot change its Boolean.
+    /// Keep the writer private to the actual controller/publication authority.
+    pub fn new_managed(callback: HookCallback, enabled: bool) -> (Self, ControlWriter) {
+        Self::managed(callback, None, enabled)
+    }
+
+    /// Managed variant whose callback also receives the exact retained owner
+    /// identity. Ordinary callback ABI and ordinary controls are unchanged.
+    pub fn new_managed_bound(callback: ManagedCallback, enabled: bool) -> (Self, ControlWriter) {
+        Self::managed(managed_requires_dispatch, Some(callback), enabled)
+    }
+
+    fn managed(
+        callback: HookCallback,
+        bound_callback: Option<ManagedCallback>,
+        enabled: bool,
+    ) -> (Self, ControlWriter) {
+        let inner = Arc::new(ControlBlock {
+            callback,
+            enabled: AtomicBool::new(enabled),
+            managed: true,
+            bound_callback,
+        });
+        (
+            Self {
+                inner: Arc::clone(&inner),
+            },
+            ControlWriter { inner },
+        )
+    }
+
+    /// Compare this retained owner with a managed callback's opaque token.
+    /// The token cannot recover a writer or access an object after its lifetime.
+    pub fn has_identity(&self, identity: ControlIdentity<'_>) -> bool {
+        Arc::as_ptr(&self.inner) as usize == identity.address
+    }
+
+    /// Change an ordinary control, or refuse a managed handle before any store.
+    pub fn try_set_enabled(&self, enabled: bool) -> Result<(), ManagedControl> {
+        if self.inner.managed {
+            return Err(ManagedControl);
+        }
+        self.inner.enabled.store(enabled, Ordering::Release);
+        Ok(())
     }
 
     /// Updates the dispatch Boolean with a release store.
@@ -47,8 +173,13 @@ impl ProbeControl {
     /// This is a release store, not callback drainage: a dispatch that already
     /// observed `true` may invoke or finish its callback after this returns.
     /// Execution/lifetime exclusion remains a separate caller obligation.
+    ///
+    /// # Panics
+    /// A managed handle has no write authority and panics before any store.
+    /// Use try_set_enabled for an explicit refusal, or its unique ControlWriter.
     pub fn set_enabled(&self, enabled: bool) {
-        self.inner.enabled.store(enabled, Ordering::Release);
+        self.try_set_enabled(enabled)
+            .expect("managed control requires its unique writer");
     }
 
     /// Reads the observed control state with acquire ordering.
@@ -120,6 +251,12 @@ pub(crate) unsafe extern "C" fn dispatch(context: *mut HookContext, block: *cons
     // SAFETY: the emitter passes its retained stable block after frame capture.
     let control = unsafe { &*block };
     if control.enabled.load(Ordering::Acquire) {
+        if let Some(callback) = control.bound_callback {
+            // SAFETY: the retained block is the exact dispatcher owner; the
+            // managed callback has the same context/lifetime contract.
+            unsafe { callback(context, ControlIdentity::from_control(control)) };
+            return;
+        }
         // SAFETY: the generated frame satisfies the existing callback contract.
         unsafe { (control.callback)(context) };
     }
@@ -149,5 +286,51 @@ mod tests {
         assert_eq!(weak.strong_count(), 1);
         drop(clone);
         assert!(weak.upgrade().is_none(), "unused controls are not leaked");
+    }
+
+    #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+    #[test]
+    fn borrowed_token_has_one_word_layout_and_matches_only_its_live_owner() {
+        assert_eq!(
+            core::mem::size_of::<ControlIdentity<'_>>(),
+            core::mem::size_of::<usize>()
+        );
+        assert_eq!(
+            core::mem::align_of::<ControlIdentity<'_>>(),
+            core::mem::align_of::<usize>()
+        );
+        let first = ProbeControl::new(callback, false);
+        let second = ProbeControl::new(callback, false);
+        let identity = ControlIdentity::from_control(&first.inner);
+        assert!(first.has_identity(identity));
+        assert!(first.clone().has_identity(identity));
+        assert!(!second.has_identity(identity));
+    }
+
+    #[test]
+    fn managed_clones_refuse_both_setters_and_writer_is_exactly_bound() {
+        unsafe extern "C" fn managed(_: *mut HookContext, _: ControlIdentity<'_>) {}
+        let (first, mut writer) = ProbeControl::new_managed_bound(managed, false);
+        let clone = first.clone();
+        let (second, mut other) = ProbeControl::new_managed_bound(managed, true);
+        assert_eq!(clone.try_set_enabled(true), Err(ManagedControl));
+        let panic = std::panic::catch_unwind(|| clone.set_enabled(true));
+        assert!(
+            panic.is_err(),
+            "legacy setter must visibly refuse managed state"
+        );
+        assert!(!first.is_enabled());
+        assert!(second.is_enabled());
+        writer.set_enabled(true);
+        assert!(first.is_enabled() && clone.is_enabled());
+        other.set_enabled(false);
+        assert!(first.is_enabled());
+        assert!(!second.is_enabled());
+        drop(writer);
+        assert_eq!(first.try_set_enabled(false), Err(ManagedControl));
+        assert!(
+            first.is_enabled(),
+            "dropping authority does not grant it to readers"
+        );
     }
 }

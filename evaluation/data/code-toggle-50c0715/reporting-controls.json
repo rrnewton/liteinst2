@@ -1,0 +1,292 @@
+{
+  "compiler_native_executions": 0,
+  "controls": {
+    "actual_raw_mutations": 0,
+    "completed": true,
+    "controls": [
+      {
+        "assertion": "assert log is not None, 'PASS phase requires complete command.log'",
+        "message": "PASS phase requires complete command.log",
+        "name": "missing-pass-log",
+        "output_absent": true,
+        "private_traceback_sha256": "f59f297c35ffa5710d3416dde3946cae7d14dab9376106af2eace1fa246a10d0",
+        "source_line": 271,
+        "status": "EXPECTED_ASSERTION_REFUSAL"
+      },
+      {
+        "assertion": "assert exit_code != 0, 'successful tests require their complete reviewed inventory'",
+        "message": "successful tests require their complete reviewed inventory",
+        "name": "missing-pass-inventory",
+        "output_absent": true,
+        "private_traceback_sha256": "9d42a41a47a48b42d3654c3e57ee559de4f058b3b039edabaaec204a3eacb8a2",
+        "source_line": 165,
+        "status": "EXPECTED_ASSERTION_REFUSAL"
+      }
+    ],
+    "inputs_sha256": "1ee452012bbd951d45dd2cd1d9a2bd82a0b60ffbea8b1c8ab56d451da2c4cecb",
+    "scope": "synthetic reporting refusal controls only; no validation execution",
+    "source_sha256": "bafcf31d1dd7842c61604e4a08c10ae4120c4727c8689eaf10d12c9c11becf74"
+  },
+  "full_a4": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ]
+  },
+  "operational_durations_not_performance": true,
+  "operations": {
+    "collection": {
+      "closed.json": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 1910344,
+        "seconds": 0.665837368927896,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "command.json": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a4/code-toggle-report-integration-v1/launch/request.json",
+          "--receipt",
+          "${REPO}/ignored/a4/code-toggle-report-integration-v1/launch/receipt.json"
+        ],
+        "caller_sha256": "6241fe5883420d8a088c61a5c7e97817d32f5c58ce80c26620a5d4fcdac3b2a0",
+        "collector_sha256": "bafcf31d1dd7842c61604e4a08c10ae4120c4727c8689eaf10d12c9c11becf74",
+        "cwd": "${REPO}",
+        "env": {
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONNOUSERSITE": "1",
+          "TMPDIR": "${REPO}/ignored/a4/code-toggle-report-integration-v1/launch/tmp"
+        },
+        "inputs_sha256": "1ee452012bbd951d45dd2cd1d9a2bd82a0b60ffbea8b1c8ab56d451da2c4cecb",
+        "parent_timeout_seconds": 115
+      },
+      "receipt.json": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.6191871799528599,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "58f0de3606f599e8a913c92bc31a672d6d2799fca1b0ed9193bc4650bec8e8f8",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "cca7f2021d8cccc15b2e1702eb0163fef5497c25bed270304764b6babb82336c",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request.json": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-report-proposal-v1/payload/evaluation/collect-code-toggle.py",
+          "--inputs",
+          "${REPO}/ignored/a4/code-toggle-report-integration-v1/inputs.json",
+          "--inputs-sha256",
+          "1ee452012bbd951d45dd2cd1d9a2bd82a0b60ffbea8b1c8ab56d451da2c4cecb",
+          "--new-output",
+          "${REPO}/ignored/a4/code-toggle-report-integration-v1/collection"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONNOUSERSITE": "1",
+          "TMPDIR": "${REPO}/ignored/a4/code-toggle-report-integration-v1/launch/tmp"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${REPO}/ignored/a4/code-toggle-report-integration-v1/launch/stderr.txt",
+        "stdout": "${REPO}/ignored/a4/code-toggle-report-integration-v1/launch/stdout.txt",
+        "wall_seconds": 90
+      },
+      "started.json": {
+        "monotonic": 1190819.14897259,
+        "pid": 1910344
+      },
+      "summary.json": {
+        "immutable_inputs_equal": true,
+        "parent": {
+          "exit": 0,
+          "parent_error": null,
+          "parent_wait_returned": true,
+          "pid": 1910344,
+          "seconds": 0.665837368927896,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+        },
+        "qualification_complete": false,
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.6191871799528599,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "58f0de3606f599e8a913c92bc31a672d6d2799fca1b0ed9193bc4650bec8e8f8",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "cca7f2021d8cccc15b2e1702eb0163fef5497c25bed270304764b6babb82336c",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "scope": "saved-data reporting only",
+        "status": "PASS"
+      }
+    },
+    "controls": {
+      "closed.json": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 1917300,
+        "seconds": 0.41525030694901943,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "command.json": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/timeout",
+          "--signal=TERM",
+          "--kill-after=10s",
+          "100s",
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/tools/unwind-oracle/bounded_command.py",
+          "--request",
+          "${REPO}/ignored/a4/code-toggle-report-integration-v1/controls-launch/request.json",
+          "--receipt",
+          "${REPO}/ignored/a4/code-toggle-report-integration-v1/controls-launch/receipt.json"
+        ],
+        "caller_sha256": "d171a3012266eb062de98cb42c5e7a10b42262b6e7ddd732d978aada98a5cab6",
+        "collector_sha256": "bafcf31d1dd7842c61604e4a08c10ae4120c4727c8689eaf10d12c9c11becf74",
+        "cwd": "${REPO}",
+        "env": {
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONNOUSERSITE": "1",
+          "TMPDIR": "${REPO}/ignored/a4/code-toggle-report-integration-v1/controls-launch/tmp"
+        },
+        "inputs_sha256": "1ee452012bbd951d45dd2cd1d9a2bd82a0b60ffbea8b1c8ab56d451da2c4cecb",
+        "parent_timeout_seconds": 115
+      },
+      "receipt.json": {
+        "aborted": null,
+        "absence_proof": "ECHILD",
+        "cleanup_error": null,
+        "cleanup_events": [],
+        "elapsed_seconds": 0.36277417186647654,
+        "exit": 0,
+        "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+        "inputs_unchanged": true,
+        "request_sha256": "c6c041c7eb62b815ba652c4e76fe32eb592e5d1bd924c5a8b7471bb4f9c26619",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "e92fd3a730d87f64fb1c3ab568fceb58b499d30ad48e7ef5c28f40cb4aed683e",
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "request.json": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-report-proposal-v1/controls.py",
+          "--collector",
+          "${REPO}/ignored/a4/code-toggle-report-proposal-v1/payload/evaluation/collect-code-toggle.py",
+          "--inputs",
+          "${REPO}/ignored/a4/code-toggle-report-integration-v1/inputs.json",
+          "--inputs-sha256",
+          "1ee452012bbd951d45dd2cd1d9a2bd82a0b60ffbea8b1c8ab56d451da2c4cecb",
+          "--out",
+          "${REPO}/ignored/a4/code-toggle-report-integration-v1/controls"
+        ],
+        "cpu_seconds": 60,
+        "cwd": "${REPO}",
+        "env": {
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "PYTHONNOUSERSITE": "1",
+          "TMPDIR": "${REPO}/ignored/a4/code-toggle-report-integration-v1/controls-launch/tmp"
+        },
+        "file_bytes": 67108864,
+        "stderr": "${REPO}/ignored/a4/code-toggle-report-integration-v1/controls-launch/stderr.txt",
+        "stdout": "${REPO}/ignored/a4/code-toggle-report-integration-v1/controls-launch/stdout.txt",
+        "wall_seconds": 90
+      },
+      "started.json": {
+        "monotonic": 1190824.455718884,
+        "pid": 1917300
+      },
+      "summary.json": {
+        "immutable_inputs_equal": true,
+        "parent": {
+          "exit": 0,
+          "parent_error": null,
+          "parent_wait_returned": true,
+          "pid": 1917300,
+          "seconds": 0.41525030694901943,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+        },
+        "qualification_complete": false,
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.36277417186647654,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "c6c041c7eb62b815ba652c4e76fe32eb592e5d1bd924c5a8b7471bb4f9c26619",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "e92fd3a730d87f64fb1c3ab568fceb58b499d30ad48e7ef5c28f40cb4aed683e",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "scope": "saved-data reporting only",
+        "status": "PASS"
+      }
+    }
+  },
+  "revision": "50c0715e015107c92a8ecee03735645a83734220",
+  "schema": 1,
+  "scope": "saved-data reporting and synthetic omission controls only",
+  "validation_executions": 0
+}

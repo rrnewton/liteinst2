@@ -1,0 +1,37 @@
+#!/usr/bin/env python3
+"""Bound and retain the direct parent of one exact-revision validation phase."""
+import hashlib,json,os,signal,subprocess,sys,time
+from pathlib import Path
+repo=Path.cwd().resolve()
+phase=sys.argv[1]
+assert phase in ('targeted-profiler','targeted-doc','targeted','native-build','required','serial','parallel-library','parallel-prefixed','parallel-neighbor')
+revision='527962e72512993fa612cc4fbb507bef8fef1a8d'
+source=repo/'ignored/a4/code-toggle-integration-v1/validate.py'
+source_hash='25c0e3998ddac3c4b27c6692d0661d006f6c25f0276297d74c035c9b1f64d2d1'
+assert hashlib.sha256(source.read_bytes()).hexdigest()==source_hash
+base=repo/'ignored/a4/code-toggle-validation-v1'
+base.mkdir(exist_ok=True)
+out=base/phase
+launch=base/(phase+'-launch')
+launch.mkdir()
+argv=['/usr/bin/python3.9','-B',str(source),'--repo',str(repo),'--output',str(out),'--toolchain','${TOOLCHAIN}','--user-home','${USER_HOME}','--cargo-home','${CARGO_HOME}','--phase',phase]
+env={'LC_ALL':'C.UTF-8','PATH':'/usr/bin:/bin','PYTHONDONTWRITEBYTECODE':'1'}
+bound=1060 if phase=='required' else 420 if phase.startswith('parallel-') else 240
+def write(name,obj):
+ with (launch/name).open('x') as f: json.dump(obj,f,indent=2,sort_keys=True); f.write('\n')
+write('command.json',dict(argv=argv,cwd=str(repo),env=env,parent_timeout_seconds=bound,source_revision=revision,source_sha256=source_hash,parent_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest()))
+start=time.monotonic(); error=None
+with (launch/'stdout.txt').open('xb') as stdout, (launch/'stderr.txt').open('xb') as stderr:
+ child=subprocess.Popen(argv,cwd=repo,env=env,stdout=stdout,stderr=stderr,start_new_session=True)
+ write('started.json',dict(pid=child.pid,monotonic=start))
+ try: rc=child.wait(timeout=bound)
+ except subprocess.TimeoutExpired:
+  error='parent_timeout'
+  os.killpg(child.pid,signal.SIGKILL)
+  rc=child.wait(timeout=10)
+closed=dict(exit=rc,parent_error=error,parent_wait_returned=True,pid=child.pid,seconds=time.monotonic()-start,stdout_sha256=hashlib.sha256((launch/'stdout.txt').read_bytes()).hexdigest(),stderr_sha256=hashlib.sha256((launch/'stderr.txt').read_bytes()).hexdigest())
+write('closed.json',closed)
+print(json.dumps(closed,sort_keys=True),flush=True)
+print((launch/'stdout.txt').read_text()[-12000:],flush=True)
+print((launch/'stderr.txt').read_text()[-12000:],flush=True)
+raise SystemExit(0 if rc==0 and error is None else 1)
