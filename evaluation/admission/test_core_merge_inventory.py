@@ -316,9 +316,18 @@ class CoreMergeInventoryTests(unittest.TestCase):
         self.assertEqual(core223.PREVIOUS, inline.CURRENT)
         rows223 = core223_current['harness_test_counts']['workspace_tests']
         self.assertEqual((len(rows223), sum(row['tests'] for row in rows223.values()),
-                          sum(row['ignored'] for row in rows223.values())), (98, 2371, 4))
-        self.assertEqual(len(core223.COMPILED_METHODS), 17)
-        self.assertEqual(len({(row['harness'], row['test']) for row in core223.COMPILED_METHODS}), 17)
+                          sum(row['ignored'] for row in rows223.values())), (98, 2461, 4))
+        self.assertEqual(len(core223.COMPILED_METHODS), 107)
+        self.assertEqual(len({(row['harness'], row['test']) for row in core223.COMPILED_METHODS}), 107)
+        self.assertEqual(len({(row['source'], row['test'].rsplit('::', 1)[-1])
+                              for row in core223.COMPILED_METHODS}), 17)
+        self.assertEqual(len(core223.RECORDING_INCLUSIONS), 15)
+        self.assertEqual(len(core223.SOURCE_SHA256), 34)
+        for identity, (path, expected) in core223.RECORDING_INCLUSIONS.items():
+            self.assertEqual(core223.SOURCE_SHA256[path], expected)
+            self.assertEqual({row['test'] for row in core223.COMPILED_METHODS if row['harness'] == identity},
+                             {'oracle::elf_exec_oracle::common_image::recording::tests::' + method
+                              for method in core223.RUST_METHODS['tests/support/e9_common_recording.rs']})
         self.assertEqual(core223_current['recorder_tests'], 330)
         self.assertEqual(core223_current['harness_test_counts']['serial_launch'],
                          core223_previous['harness_test_counts']['serial_launch'])

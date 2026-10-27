@@ -1,4 +1,4 @@
-"""Authenticate main223e's 17 added tests before exact historical readers.
+"""Authenticate main223e's 17 declarations and 107 compiled test instances before exact historical readers.
 
 The current catalogue is complete. Sparse byte inverses require both complete
 blob hashes; no Git history or execution claims are used at runtime.
@@ -13,11 +13,26 @@ from parsing import require
 
 PREVIOUS = '3de828ebb4d057e7fad20da36e59a90ea9ab09dedf5a2cb6ff7cf66068118f61'
 
-CURRENT = '5b18d6518c18382248d9bfb8e9ec306f658d8a527ffa6bc809229e0cefb03296'
+CURRENT = '16a46b914968be06b73208c21ca085e7aaa23d546278eef99a2f5282e717498c'
 
 CHANGED_HARNESSES = {'unit/liteinst_rewrite/lib': (79, 86),
  'unit/verify_common_core/verify_common_core': (16, 23),
- 'test/e9_common_core_pages_contract': (9, 12)}
+ 'test/e9_common_core_pages_contract': (9, 12),
+ 'test/a2_oracle': (43, 49),
+ 'test/boundary_signal_oracle': (30, 36),
+ 'test/call_return_oracle': (30, 36),
+ 'test/controlled_oracle': (30, 36),
+ 'test/entry_paths_oracle': (30, 36),
+ 'test/eviction_chain_extensions': (31, 37),
+ 'test/eviction_chain_oracle': (32, 38),
+ 'test/mandatory_prefix_oracle': (31, 37),
+ 'test/neighbor_eviction_oracle': (74, 80),
+ 'test/parked_context_oracle': (30, 36),
+ 'test/prefixed_pun_oracle': (30, 36),
+ 'test/quiescent_oracle': (33, 39),
+ 'test/rel32_endpoint_oracle': (30, 36),
+ 'test/successor_eviction_oracle': (34, 40),
+ 'test/exception_landing': (30, 36)}
 
 SOURCE_SHA256 = {'tests/e9_common_core_pages_contract.rs': '376c4182651db051ef0906c6e7617c92121f79a1ab8c9ba0dad1fabc0b2cdfab',
  'tests/support/e9_common_core.rs': '0feda92bd5c0d5f0ae5cfb151fe39899f1afc3996ba9511fed99ed8526be3c32',
@@ -34,6 +49,44 @@ SOURCE_SHA256 = {'tests/e9_common_core_pages_contract.rs': '376c4182651db051ef09
  'tools/elf-rewrite/src/carrier/mod.rs': '835bc65d5a5537b2e51adf893525f81f992c82e55ef853f43740685a0eeadbac',
  'tools/elf-rewrite/src/lib.rs': '26844d6c499c2e5cfb7667f39fcdc2aa4b113d25f47118d38f9335a4fe3246a9',
  'tools/elf-rewrite/Cargo.toml': 'efa2528a5905f3a0d4d4424dfedff8d5fcba7365a03d63f969b4a613629e544f'}
+
+# Each complete source hash binds a distinct Cargo test inclusion.
+RECORDING_INCLUSIONS = {'test/a2_oracle': ('tests/a2_oracle.rs',
+                    '3dc3b782e8530f93129f22591c91db04c5ce76a2a15caa443022a7db9da97c50'),
+ 'test/boundary_signal_oracle': ('tests/boundary_signal_oracle.rs',
+                                 '44898d3621b5982f1d396f337299816934510c9796d3eec98c7a0b2567ed1a00'),
+ 'test/call_return_oracle': ('tests/call_return_oracle.rs',
+                             '54dd4a1c895ed7a71255b8c03b0edf525ada18dbf5a19dae8a05e2ab06077a93'),
+ 'test/controlled_oracle': ('tests/controlled_oracle.rs',
+                            'bb00ae7c089d3fa433506a0cf87cc33a7c0a64baefad8961b4d9287613380a7f'),
+ 'test/entry_paths_oracle': ('tests/entry_paths_oracle.rs',
+                             '05a95a08e9e2de68db391f6b3b50aa461748aef993854cb328e33a1176312b50'),
+ 'test/eviction_chain_extensions': ('tests/eviction_chain_extensions.rs',
+                                    '65bc955f0ab2a5653885a7844f3e97475aa80f42b8afa69c7ed7f3e85e80b33d'),
+ 'test/eviction_chain_oracle': ('tests/eviction_chain_oracle.rs',
+                                '841e2d0c1ed09c2373f0c616426392a81c3aa7a2001b43110c3e2d16a07b4d23'),
+ 'test/mandatory_prefix_oracle': ('tests/mandatory_prefix_oracle.rs',
+                                  'e093dd101451d136f73faee279365fa48fe48c89b560cb9b0ce65b03cff77b2b'),
+ 'test/neighbor_eviction_oracle': ('tests/neighbor_eviction_oracle.rs',
+                                   '5b1f6d6a001d92d0ebf96b7d3f0f679ddd0506a73971901c7898af68865255eb'),
+ 'test/parked_context_oracle': ('tests/parked_context_oracle.rs',
+                                'ef571fae32d7095f97b58dbec97ba10f77160fcb3098b7bae76703763d7f6341'),
+ 'test/prefixed_pun_oracle': ('tests/prefixed_pun_oracle.rs',
+                              'c1538a91a3c34f8e743c459867883402a7f235e1457490ada8c805f36a921296'),
+ 'test/quiescent_oracle': ('tests/quiescent_oracle.rs',
+                           'cd7ff42dd50da089f13ca538d09d8057f68dab93ff882ef24ed9b05825d1f8e2'),
+ 'test/rel32_endpoint_oracle': ('tests/rel32_endpoint_oracle.rs',
+                                'cf00e1bf1f17a1fd3d7c8a65e790d8c7db0f11162d95409bed5e466f9be35642'),
+ 'test/successor_eviction_oracle': ('tests/successor_eviction_oracle.rs',
+                                    'caa94cbd108de7b984057cb589c09dcb365977e7446e6f2632c8bbf1ac1b5ad5'),
+ 'test/exception_landing': ('tools/exception-oracle/tests/exception_landing.rs',
+                            '0218bd7bc9a45606e8d1a2531b3e457c394ef1fd86fa17efbe1812614be2548b')}
+
+SOURCE_SHA256.update({path: expected for path, expected in RECORDING_INCLUSIONS.values()})
+SOURCE_SHA256.update({'Cargo.toml': '3c2ad9f468f22b0e6a36dc1487e1a5f5972fa0c2dd6eaf0f72e97facabd33794',
+ 'tools/exception-oracle/Cargo.toml': '13fde0b76cea61d1caecf580626d185ee30286278f5da92b6c4bea4995f207ee',
+ 'tests/support/quiescent_oracle.rs': 'e8c17e5daaf6e9720d6c515fd5e6f986307eca9c12ce115cdd51b465406dc756',
+ 'tests/support/elf_exec_oracle.rs': '1302da90836b31f9346cff5c20a458f4e5b3134b0f529e21f5027f78e4764c6b'})
 
 RUST_METHODS = {'tests/e9_common_core_pages_contract.rs': ('mixed_load_order_retains_full_original_pages_and_generated_zero_tail',
                                             'half_open_original_window_preserves_high_only_and_both_adjacent_pages',
@@ -143,6 +196,13 @@ COMPILED_METHODS = [{'source': 'tests/e9_common_core_pages_contract.rs',
  {'source': 'tools/elf-rewrite/src/carrier/image_fixtures.rs',
   'harness': 'unit/liteinst_rewrite/lib',
   'test': 'carrier::image_fixtures::interleaved_above_only_output_is_byte_identical_to_legacy_append_profile'}]
+
+COMPILED_METHODS += [
+    {'source': 'tests/support/e9_common_recording.rs', 'harness': identity,
+     'test': 'oracle::elf_exec_oracle::common_image::recording::tests::' + method}
+    for identity in RECORDING_INCLUSIONS
+    for method in RUST_METHODS['tests/support/e9_common_recording.rs']
+]
 
 PROJECTIONS = {
     'tests/e9_common_core_pages_contract.rs': {
