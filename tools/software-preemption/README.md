@@ -78,3 +78,21 @@ python3 -B tools/software-preemption/evaluate.py --profile inline-clock-v1 \
 The default `--profile full-callback-v1` retains the existing five-command invocation and binding without an added profile field. Inline selection constructs the distinct inline authority plus exact profile field and passes `--profile inline-clock-v1` to `run.py`. Both use the same actual successful release build, whole source/tool/configuration continuity and exact binary owner; selecting a profile supplies no historical result or independent runtime admission.
 
 The build retains 120 CPU / 180 wall seconds / 128 MiB per file, outer 190 seconds / kill-after 10 and direct-parent 205 seconds. Every experimental command retains 60 CPU / 90 wall seconds / 1 MiB, outer 100 / kill-after 10, parent 115 / failure cleanup 10, and four-CPU affinity. Only the whole-experiment parent differs: legacy 650 seconds = five × 115 + 75; inline 765 seconds = six × 115 + the same 75-second caller allowance. A per-command failure is still failed, remaining commands stay UNRUN, and this outer allowance does not widen any measurement or oracle limit. The result receipt records the fresh evaluator invocation separately from the earlier failed fixture attempt; the failed attempt supplied no qualification or benchmark credit.
+
+### Owned-loop client
+
+`BackedgeClockAction::new_owned_loop` admits a copied, call-free integer region
+of at most 256 bytes with one supported near backedge. The
+[example](../../examples/owned_loop_clock.rs) binds managed control and owned
+clock storage, supplies complete entry facts, publishes before spawning, then
+uses an exclusive worker lease and matching stop/resume messages.
+
+On Linux x86-64, run `cargo run --example owned_loop_clock` without arguments.
+The fixed 64-byte XOR (`0x5a`) and sum checks produce checksum 8352, stops
+16/32/48, 63 taken edges, 64 encounters and three parked-buffer checks; join
+precedes Arc allocation release.
+
+Clients still own ABI, memory, entry exclusion and work bounds. Code remains
+process-lived. This adds no performance, full-XSAVE/whole-stack,
+arbitrary-ELF/general-ABI, asynchronous-cancellation or retirement claim.
+The four-literal profile and evidence remain unchanged.

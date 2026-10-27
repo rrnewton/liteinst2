@@ -348,3 +348,384 @@ fn inline_clock_image_retains_the_actual_data_owner_after_plan_drop() {
     drop(image);
     assert!(weak.upgrade().is_none());
 }
+
+fn owned_action(
+    bytes: &[u8],
+    offset: usize,
+    page: &BackedgeClock,
+    mode: ClockMode,
+) -> Result<BackedgeClockAction, ClockError> {
+    let base = page.address() + 0x10000;
+    BackedgeClockAction::new_owned_loop(
+        CodeIdentity {
+            source: crate::contracts::SourceIdentity([42; 32]),
+            mapping: base,
+            generation: 1,
+        },
+        base,
+        bytes,
+        base + offset as u64,
+        ProbeControl::new_managed_bound(callback, true),
+        page.clone(),
+        mode,
+    )
+}
+
+#[test]
+fn owned_loop_admits_separate_source_without_changing_literal_profile() {
+    let page = clock();
+    let before = unsafe { page.snapshot_parked() };
+    for kind in 0..4 {
+        for mode in [ClockMode::Counter, ClockMode::Stop] {
+            let (mut bytes, offset) = source(kind);
+            bytes[0] = 0x33; // Different XOR encoding: valid, outside every old literal.
+            let action = owned_action(&bytes, offset, &page, mode).unwrap();
+            assert_eq!(action.source, bytes);
+            assert_eq!(action.condition, [Some(5), Some(15), Some(2), None][kind]);
+            assert_eq!(action.clock(), &page);
+            assert_eq!(
+                action.control().try_set_enabled(false),
+                Err(crate::controls::ManagedControl)
+            );
+            assert_eq!(
+                BackedgeClockAction::new(
+                    action.identity,
+                    action.base,
+                    &bytes,
+                    action.logical_pc,
+                    ProbeControl::new_managed_bound(callback, true),
+                    page.clone(),
+                    mode,
+                )
+                .unwrap_err(),
+                ClockError::Source
+            );
+            let image = plan(&action).emit_at(page.address() + 0x20000).unwrap();
+            let gate = image.clock_gate().unwrap();
+            let end = usize::try_from(gate.observing_entry - image.address()).unwrap();
+            for instruction in Decoder::with_ip(
+                64,
+                &image.bytes()[..end],
+                image.address(),
+                DecoderOptions::NONE,
+            ) {
+                assert_eq!(instruction.rflags_modified(), 0);
+            }
+            let body = usize::try_from(gate.original_body - image.address()).unwrap();
+            let relocated = Decoder::with_ip(
+                64,
+                &image.bytes()[body..],
+                gate.original_body,
+                DecoderOptions::NONE,
+            )
+            .decode();
+            let original = Decoder::with_ip(
+                64,
+                &bytes[offset..],
+                action.logical_pc,
+                DecoderOptions::NONE,
+            )
+            .decode();
+            assert_eq!(relocated.code(), original.code());
+            assert_eq!(
+                relocated.near_branch_target(),
+                original.near_branch_target()
+            );
+        }
+    }
+    assert_eq!(unsafe { page.snapshot_parked() }, before);
+}
+
+#[test]
+fn owned_loop_bounded_whole_region_and_forward_exit_policy() {
+    let base = 0x10000;
+    for kind in 0..4 {
+        let (mut bytes, offset) = source(kind);
+        bytes.pop();
+        bytes.resize(255, 0x90);
+        bytes.push(0xc3);
+        assert!(owned_loop::admit(&bytes, base, base + offset as u64).is_ok());
+        bytes.insert(255, 0x90);
+        assert_eq!(
+            owned_loop::admit(&bytes, base, base + offset as u64),
+            Err(ClockError::Source)
+        );
+    }
+    // A forward near JZ skips the single unconditional backedge to final RET.
+    let bytes = [
+        0x90, 0x0f, 0x84, 5, 0, 0, 0, 0xe9, 0xf4, 0xff, 0xff, 0xff, 0xc3,
+    ];
+    assert_eq!(owned_loop::admit(&bytes, base, base + 7), Ok(None));
+    // Forward direct JMP is also legal when every head remains reachable.
+    let bytes = [0xeb, 0, 0x90, 0x0f, 0x85, 0xf9, 0xff, 0xff, 0xff, 0xc3];
+    assert_eq!(owned_loop::admit(&bytes, base, base + 3), Ok(Some(5)));
+}
+
+#[test]
+fn owned_loop_rejects_wrong_site_target_size_and_extra_cycles() {
+    let base = 0x10000;
+    let (bytes, offset) = source(0);
+    let pc = base + offset as u64;
+    for bad_pc in [base - 1, base, pc + 1, base + bytes.len() as u64] {
+        assert_eq!(
+            owned_loop::admit(&bytes, base, bad_pc),
+            Err(ClockError::Source)
+        );
+    }
+    for (bad, start, site) in [
+        (Vec::new(), base, pc),
+        (bytes.clone(), 0, offset as u64),
+        (bytes.clone(), u64::MAX, u64::MAX),
+    ] {
+        assert_eq!(
+            owned_loop::admit(&bad, start, site),
+            Err(ClockError::Source)
+        );
+    }
+    let mut bad = bytes.clone();
+    *bad.last_mut().unwrap() = 0x0f;
+    assert_eq!(owned_loop::admit(&bad, base, pc), Err(ClockError::Source));
+    // Targets: outside source, inside an instruction, self, and forward to RET.
+    for target_offset in [-1, 8, offset as i64, (offset + 6) as i64] {
+        let mut bad = bytes.clone();
+        let displacement = i32::try_from(target_offset - (offset + 6) as i64).unwrap();
+        bad[offset + 2..offset + 6].copy_from_slice(&displacement.to_le_bytes());
+        assert_eq!(owned_loop::admit(&bad, base, pc), Err(ClockError::Source));
+    }
+    for condition in (0..16).filter(|cc| ![5, 15, 2].contains(cc)) {
+        let mut bad = bytes.clone();
+        bad[offset + 1] = 0x80 + condition;
+        assert_eq!(owned_loop::admit(&bad, base, pc), Err(ClockError::Source));
+    }
+    let mut bad = bytes.clone();
+    drop(bad.splice(
+        offset..offset + 6,
+        [0x75, (7i32 - (offset + 2) as i32) as u8],
+    ));
+    assert_eq!(owned_loop::admit(&bad, base, pc), Err(ClockError::Source));
+    let mut bad = bytes.clone();
+    bad.pop();
+    let displacement = -((bad.len() + 5) as i32);
+    bad.push(0xe9);
+    bad.extend(displacement.to_le_bytes());
+    bad.push(0xc3);
+    assert_eq!(owned_loop::admit(&bad, base, pc), Err(ClockError::Source));
+    let (mut bad, direct) = source(3);
+    bad[direct - 1] = 1; // Forward target inside JMP.
+    assert_eq!(
+        owned_loop::admit(&bad, base, base + direct as u64),
+        Err(ClockError::Source)
+    );
+}
+
+#[test]
+fn owned_loop_rejects_calls_system_stack_and_unreachable_source() {
+    let base = 0x10000;
+    let (bytes, offset) = source(0);
+    let prefixes: &[&[u8]] = &[
+        &[0xe8, 0, 0, 0, 0], // Direct CALL.
+        &[0xff, 0xd0],
+        &[0xff, 0xe0], // Indirect CALL/JMP.
+        &[0x0f, 0x05],
+        &[0xcc, 0x90],       // SYSCALL/INT3.
+        &[0x0f, 0x22, 0xc0], // Privileged MOV to CR0.
+        &[0x8e, 0xd8],       // Non-GPR MOV to DS.
+        &[0x48, 0xf7, 0xe1],
+        &[0xd9, 0xe8], // Implicit MUL state / x87.
+        &[0x50],
+        &[0x58],
+        &[0xc9], // PUSH/POP/LEAVE.
+        &[0xfc],
+        &[0xe4, 0x80], // Direction flag / port input.
+        &[0x48, 0x89, 0xe0],
+        &[0x48, 0x8b, 0x04, 0x24], // RSP and [RSP].
+        &[0x40, 0xb4, 1],          // SPL alias.
+        &[0x64, 0x48, 0x8b, 0],    // Segment-based memory.
+        &[0xf0, 0x01, 0],          // Locked arithmetic.
+        &[0xc3, 0x90],             // Return before the final byte.
+    ];
+    for prefix in prefixes {
+        let mut bad = prefix.to_vec();
+        bad.extend(&bytes[2..]);
+        assert_eq!(
+            owned_loop::admit(&bad, base, base + (offset + prefix.len() - 2) as u64),
+            Err(ClockError::Source)
+        );
+    }
+    let mut bad = bytes.clone();
+    bad.pop();
+    bad.extend([0xc2, 0, 0]);
+    assert_eq!(
+        owned_loop::admit(&bad, base, base + offset as u64),
+        Err(ClockError::Source)
+    );
+    let mut bad = bytes.clone();
+    *bad.last_mut().unwrap() = 0x90;
+    assert_eq!(
+        owned_loop::admit(&bad, base, base + offset as u64),
+        Err(ClockError::Source)
+    );
+    let mut bad = vec![0xeb, 2, 0x90, 0x90];
+    bad.extend(bytes);
+    assert_eq!(
+        owned_loop::admit(&bad, base, base + offset as u64 + 4),
+        Err(ClockError::Source)
+    );
+    let (mut bad, direct) = source(3);
+    bad[direct - 2] = 0xe3; // Forward JRCXZ.
+    assert_eq!(
+        owned_loop::admit(&bad, base, base + direct as u64),
+        Err(ClockError::Source)
+    );
+}
+
+#[test]
+fn owned_loop_keeps_managed_control_identity_and_nonoverlap_checks() {
+    let page = clock();
+    let (bytes, offset) = source(0);
+    let good = owned_action(&bytes, offset, &page, ClockMode::Stop).unwrap();
+    let (control, _writer) = ProbeControl::new_managed_bound(callback, true);
+    let (_other, wrong) = ProbeControl::new_managed_bound(callback, true);
+    assert_eq!(
+        BackedgeClockAction::new_owned_loop(
+            good.identity,
+            good.base,
+            &bytes,
+            good.logical_pc,
+            (control, wrong),
+            page.clone(),
+            ClockMode::Stop
+        )
+        .unwrap_err(),
+        ClockError::Source
+    );
+    assert_eq!(
+        BackedgeClockAction::new_owned_loop(
+            good.identity,
+            good.base,
+            &bytes,
+            good.logical_pc,
+            ProbeControl::new_managed_bound(callback, false),
+            page.clone(),
+            ClockMode::Stop
+        )
+        .unwrap_err(),
+        ClockError::Source
+    );
+    for identity in [
+        CodeIdentity {
+            generation: 0,
+            ..good.identity
+        },
+        CodeIdentity {
+            mapping: good.base + 1,
+            ..good.identity
+        },
+    ] {
+        assert_eq!(
+            BackedgeClockAction::new_owned_loop(
+                identity,
+                good.base,
+                &bytes,
+                good.logical_pc,
+                ProbeControl::new_managed_bound(callback, true),
+                page.clone(),
+                ClockMode::Stop
+            )
+            .unwrap_err(),
+            ClockError::Source
+        );
+    }
+    let base = page.address();
+    assert_eq!(
+        BackedgeClockAction::new_owned_loop(
+            CodeIdentity {
+                mapping: base,
+                ..good.identity
+            },
+            base,
+            &bytes,
+            base + offset as u64,
+            ProbeControl::new_managed_bound(callback, true),
+            page,
+            ClockMode::Stop
+        )
+        .unwrap_err(),
+        ClockError::Source
+    );
+}
+
+#[test]
+fn owned_loop_does_not_replace_external_entry_admission() {
+    use crate::contracts::{
+        EntryCompleteness, EntryProvenance, LegalEntry, LegalEntrySet, ResumeObligation,
+    };
+    use crate::planner::HookSemantics;
+    use crate::quiescent::{AllocationPolicy, InstallRequest, SearchPolicy, TacticPolicy};
+    let page = clock();
+    let (bytes, offset) = source(0);
+    let action = owned_action(&bytes, offset, &page, ClockMode::Stop).unwrap();
+    let scope = AddressRange::new(action.base, bytes.len()).unwrap();
+    let facts = LegalEntrySet {
+        identity: action.identity,
+        scope,
+        provenance: EntryProvenance::Declared("synthetic ownership facts; no execution".into()),
+        completeness: EntryCompleteness::Complete,
+        entries: vec![LegalEntry {
+            address: action.base,
+            requires_endbr: false,
+        }],
+        resumes: ResumeObligation::NoneExist,
+    };
+    let allocation = AllocationPolicy::near(action.logical_pc).unwrap();
+    let validate = |entries: &LegalEntrySet, cet: bool| {
+        let request = InstallRequest {
+            identity: action.identity,
+            code: &bytes,
+            base_address: action.base,
+            function: scope,
+            block: AddressRange::new(action.logical_pc, 6).unwrap(),
+            logical_pc: action.logical_pc,
+            entries,
+            hook: unused_owned_hook,
+            semantics: HookSemantics::Observe,
+            allocation: &allocation,
+            search: SearchPolicy {
+                tactics: TacticPolicy::RelocationOnly,
+                max_upstream_bytes: 0,
+                max_displaced_bytes: 15,
+                max_sites: 1,
+            },
+        };
+        if cet {
+            crate::quiescent::plan_backedge_clock_detailed(&request, &action)
+                .map(|_| ())
+                .map_err(|e| e.reason)
+        } else {
+            crate::quiescent::validated_source(&request).map(|_| ())
+        }
+    };
+    assert!(validate(&facts, false).is_ok());
+    for case in 0..5 {
+        let mut bad = facts.clone();
+        match case {
+            0 => bad.completeness = EntryCompleteness::Incomplete,
+            1 => bad.resumes = ResumeObligation::Unresolved,
+            2 => bad.identity.generation += 1,
+            3 => bad.entries[0].address += 1,
+            _ => bad.entries[0].address = scope.end(),
+        }
+        assert!(validate(&bad, false).is_err());
+    }
+    let mut cet = facts;
+    cet.entries.push(LegalEntry {
+        address: action.logical_pc,
+        requires_endbr: true,
+    });
+    assert!(matches!(
+        validate(&cet, true),
+        Err(crate::contracts::Refusal::UnsupportedSemantics(_))
+    ));
+}
+
+unsafe extern "C" fn unused_owned_hook(_: *mut HookContext) {}
