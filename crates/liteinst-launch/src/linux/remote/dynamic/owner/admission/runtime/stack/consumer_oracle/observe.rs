@@ -6,8 +6,9 @@ use super::{
     dataflow::{self, FrameObservation},
 };
 use crate::linux::remote::dynamic::owner::admission::runtime_native::ControlProfile;
+use crate::linux::remote::dynamic::owner::admission::runtime_stack::StackError;
 use crate::linux::remote::dynamic::owner::admission::runtime_stack::access::{
-    CPUID_INPUTS, CpuidRecord, PagemapObservation, PkuLayoutEvidence, validate_state,
+    CPUID_INPUTS, CpuidRecord, PagemapObservation, PkuLayout, PkuLayoutEvidence, validate_state,
 };
 use crate::linux::remote::dynamic::owner::admission::runtime_stack::metadata::validate_smaps;
 use crate::linux::remote::dynamic::owner::admission::{exact_storage, source_identity};
@@ -16,6 +17,7 @@ use crate::linux::remote::dynamic::owner::{
     Owner,
     bootstrap::{self, StateSlot},
 };
+use crate::linux::remote::dynamic::{DynamicEvent, DynamicEventKind};
 use std::{mem::size_of, ops::Range, time::Instant};
 pub(super) mod io;
 use io::IoBuffer;
@@ -146,22 +148,57 @@ struct AccessCapture<'a> {
     pagemap: &'a mut IoBuffer,
     maps: &'a [u8],
 }
+/// Pure validation of a retained actual user-state read. It creates no held
+/// stop or stack authority; callers must independently bind the physical phase.
+pub(super) fn require_user_state(
+    state: &StateSlot,
+    cpuid: &PkuLayoutEvidence,
+) -> Result<(), OracleError> {
+    let layout = cpuid
+        .validate()
+        .map_err(|_| OracleError::Invalid("oracle PKU layout differs"))?;
+    validate_state(state, layout).map_err(|error| match error {
+        StackError::Request => OracleError::Invalid("oracle user-state request evidence differs"),
+        StackError::Xstate => OracleError::Invalid("oracle user-state XSTATE or PKRU differs"),
+        StackError::Mode => OracleError::Invalid("oracle user-state mode or flags differ"),
+        _ => OracleError::Invalid("oracle user-state validation differs"),
+    })?;
+    Ok(())
+}
 fn access(owner: &Owner, capture: AccessCapture<'_>, until: Instant) -> Result<(), OracleError> {
+    bootstrap::physical(owner, until)?;
+    *capture.cpuid = layout();
+    require_user_state(capture.state, capture.cpuid)?;
+    mapping_access(owner, capture, until)
+}
+/// EXEC is before the existing first-user INT3 bridge. Its full state remains
+/// retained and compared to exec EXIT, but is not a user-access qualification.
+fn exec_access(
+    owner: &Owner,
+    capture: AccessCapture<'_>,
+    until: Instant,
+) -> Result<(), OracleError> {
+    bootstrap::physical(owner, until)?;
+    *capture.cpuid = layout();
+    capture
+        .cpuid
+        .validate()
+        .map_err(|_| OracleError::Invalid("oracle PKU layout differs"))?;
+    mapping_access(owner, capture, until)
+}
+fn mapping_access(
+    owner: &Owner,
+    capture: AccessCapture<'_>,
+    until: Instant,
+) -> Result<(), OracleError> {
     let AccessCapture {
         stack,
-        state,
-        cpuid,
+        state: _,
+        cpuid: _,
         smaps,
         pagemap,
         maps,
     } = capture;
-    bootstrap::physical(owner, until)?;
-    *cpuid = layout();
-    let layout = cpuid
-        .validate()
-        .map_err(|_| OracleError::Invalid("oracle PKU layout differs"))?;
-    validate_state(state, layout)
-        .map_err(|_| OracleError::Invalid("oracle actual PKRU or AC state differs"))?;
     smaps.read_proc(owner, c"smaps", until)?;
     validate_smaps(smaps.prefix(), maps, stack.index)
         .map_err(|_| OracleError::Invalid("oracle actual stack smaps differs"))?;
@@ -199,6 +236,11 @@ fn access(owner: &Owner, capture: AccessCapture<'_>, until: Instant) -> Result<(
     bootstrap::physical(owner, until)?;
     Ok(())
 }
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum MetadataPhase {
+    ExecEvent,
+    RestoredUser,
+}
 pub(super) struct Metadata {
     pub(super) state: StateSlot,
     pub(super) maps: IoBuffer,
@@ -208,6 +250,8 @@ pub(super) struct Metadata {
     pub(super) layout: PkuLayoutEvidence,
     pub(super) profile: Option<Box<ControlProfile>>,
     pub(super) stack: Option<RawStackDescription>,
+    phase: Option<MetadataPhase>,
+    /// All observations for `phase` completed. ExecEvent is never user access.
     pub(super) complete: bool,
 }
 impl Metadata {
@@ -221,6 +265,7 @@ impl Metadata {
             layout: PkuLayoutEvidence::default(),
             profile: None,
             stack: None,
+            phase: None,
             complete: false,
         }
     }
@@ -242,13 +287,15 @@ impl Metadata {
         plan: &ArtifactPlan,
         file: &[u8],
         debug: DebugExpectation,
+        phase: MetadataPhase,
         until: Instant,
     ) -> Result<(), OracleError> {
-        if self.complete || self.maps.started || !self.allocated() {
+        if self.phase.is_some() || self.complete || self.maps.started || !self.allocated() {
             return Err(OracleError::Invalid(
                 "oracle metadata capture unallocated or reused",
             ));
         }
+        self.phase = Some(phase);
         state_capture(owner, &mut self.state, until)?;
         self.maps.read_proc(owner, c"maps", until)?;
         self.stack = Some(stack_description(
@@ -256,18 +303,18 @@ impl Metadata {
             self.state.state.registers.rsp,
         )?);
         let stack = self.stack.as_ref().unwrap();
-        access(
-            owner,
-            AccessCapture {
-                stack,
-                state: &self.state,
-                cpuid: &mut self.layout,
-                smaps: &mut self.smaps,
-                pagemap: &mut self.pagemap,
-                maps: self.maps.prefix(),
-            },
-            until,
-        )?;
+        let capture = AccessCapture {
+            stack,
+            state: &self.state,
+            cpuid: &mut self.layout,
+            smaps: &mut self.smaps,
+            pagemap: &mut self.pagemap,
+            maps: self.maps.prefix(),
+        };
+        match phase {
+            MetadataPhase::ExecEvent => exec_access(owner, capture, until)?,
+            MetadataPhase::RestoredUser => access(owner, capture, until)?,
+        }
         let profile = self
             .profile
             .as_mut()
@@ -279,6 +326,14 @@ impl Metadata {
         plan.require_image(file, self.source.prefix())?;
         self.complete = true;
         Ok(())
+    }
+    fn require_user_access(&self) -> Result<(), OracleError> {
+        if !self.complete || self.phase != Some(MetadataPhase::RestoredUser) {
+            return Err(OracleError::Invalid(
+                "oracle metadata is not restored user access",
+            ));
+        }
+        require_user_state(&self.state, &self.layout)
     }
     fn allocated(&self) -> bool {
         self.state.state.xstate.capacity() == MAX
@@ -393,6 +448,16 @@ impl LaneShape {
                     +2*size_of::<libc::statfs>()+size_of::<libc::iovec>()+2*size_of::<RegisterSnapshot>()
                     +2*48+10+size_of::<PagemapObservation>()+2*size_of::<PkuLayoutEvidence>()
                     +size_of::<AccessCapture<'static>>()
+                    // Additional phase/collector and nested pure-validator headers;
+                    // retained header growth is already in PreparedLane/Metadata.
+                    +size_of::<AccessCapture<'static>>()
+                    +2*size_of::<MetadataPhase>()+size_of::<Option<MetadataPhase>>()
+                    +size_of::<PkuLayout>()+size_of::<Result<PkuLayout, StackError>>()
+                    +size_of::<Result<u32, StackError>>()+size_of::<StackError>()
+                    +2*size_of::<Result<(), OracleError>>()+size_of::<OracleError>()
+                    +size_of::<&StateSlot>()+size_of::<&PkuLayoutEvidence>()
+                    +2*size_of::<&DynamicEvent>()
+                    +size_of::<Result<&DynamicEvent, crate::LaunchError>>()
                     +4*size_of::<crate::linux::remote::dynamic::owner::admission::mapping::maps::MapEntry<'static>>()
                     +2*size_of::<crate::linux::remote::dynamic::owner::admission::mapping::maps::ParsedMaps<'static>>()
                     +32*size_of::<usize>()))
@@ -442,7 +507,11 @@ impl PreparedLane {
         debug: DebugExpectation,
         until: Instant,
     ) -> Result<(), OracleError> {
-        self.metadata.capture(owner, plan, file, debug, until)?;
+        // Admitted observation is always the restored-user route. No caller
+        // can select EXEC here or use that phase to bypass user access.
+        self.metadata
+            .capture(owner, plan, file, debug, MetadataPhase::RestoredUser, until)?;
+        self.metadata.require_user_access()?;
         if self
             .shape
             .is_some_and(|shape| self.observed_shape(plan).ok() != Some(shape))
@@ -450,6 +519,38 @@ impl PreparedLane {
             return Err(OracleError::Invalid(
                 "oracle supplied stack shape differs from actual metadata",
             ));
+        }
+        Ok(())
+    }
+    pub(super) fn capture_exec_metadata(
+        &mut self,
+        owner: &Owner,
+        initial: &DynamicEvent,
+        plan: &ArtifactPlan,
+        file: &[u8],
+        until: Instant,
+    ) -> Result<(), OracleError> {
+        if initial.tid != owner.pid || !matches!(initial.kind, DynamicEventKind::Exec { .. }) {
+            return Err(OracleError::Invalid("oracle metadata is not actual EXEC"));
+        }
+        let token = initial
+            .stop_token()
+            .ok_or(OracleError::Invalid("oracle EXEC metadata token absent"))?;
+        if owner.require_stop(token)? != initial {
+            return Err(OracleError::Invalid("oracle EXEC metadata event differs"));
+        }
+        let result = self.metadata.capture(
+            owner,
+            plan,
+            file,
+            DebugExpectation::Initial,
+            MetadataPhase::ExecEvent,
+            until,
+        );
+        let held = owner.require_stop(token);
+        result?;
+        if held? != initial {
+            return Err(OracleError::Invalid("oracle EXEC metadata event changed"));
         }
         Ok(())
     }

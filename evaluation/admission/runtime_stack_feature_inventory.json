@@ -2023,7 +2023,17 @@
       "scope": "feature_pure"
     },
     {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::observe::tests::consumer_observer_exec_phase_does_not_grant_user_access",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
       "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::observe::tests::consumer_observer_rejects_nonowned_or_outside_initial_stack_models",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::observe::tests::consumer_observer_restored_user_state_keeps_request_xstate_mode_refusals",
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/tests.rs",
       "scope": "feature_pure"
     },
@@ -5304,7 +5314,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe.rs",
-      "sha256": "761291aa64fd1fd431fbfb7053124aea948e834bd4230cee23f5b76e579fa40a",
+      "sha256": "fe34f13c29658d70f260aa5e596b96fa4f40dfdbb60b097282ed33c2e4cfd064",
       "test_functions": []
     },
     {
@@ -5314,10 +5324,12 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/tests.rs",
-      "sha256": "433ccb80f70230b10b261d96c6b8aa79f1731302eff44923f0f1e2faca4f43c5",
+      "sha256": "ea4988e89f4e9d881cb45a020c9edb24cde28b3362420f48431521e5fa3b1ff3",
       "test_functions": [
         "consumer_observer_empty_state_and_requests_claim_no_completed_read",
+        "consumer_observer_exec_phase_does_not_grant_user_access",
         "consumer_observer_rejects_nonowned_or_outside_initial_stack_models",
+        "consumer_observer_restored_user_state_keeps_request_xstate_mode_refusals",
         "consumer_observer_shape_counts_all_full_frames_and_four_stack_payloads"
       ]
     },
@@ -5355,7 +5367,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw.rs",
-      "sha256": "afb3ef18f71c4a0130a3815fd28c52dc47ad99ab6c24fb330811a6300c59d4a3",
+      "sha256": "02fb43e4aeb6d3827200157ddc682ed2a95061143ad708f1060a4ae5ba80ac0a",
       "test_functions": []
     },
     {

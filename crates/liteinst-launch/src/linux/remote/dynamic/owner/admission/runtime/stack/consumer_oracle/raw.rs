@@ -190,13 +190,8 @@ impl PreparedRawLane {
                     .stop_token()
                     .ok_or(OracleError::Invalid("raw initial token absent"))?,
             )?;
-            self.lane.capture_metadata(
-                owner,
-                plan,
-                file.bytes()?,
-                DebugExpectation::Initial,
-                until,
-            )?;
+            self.lane
+                .capture_exec_metadata(owner, initial, plan, file.bytes()?, until)?;
             let state = &self.lane.metadata.state.state;
             if state.registers.rip != plan.entry
                 || state.registers.orig_rax != libc::SYS_execve as u64
@@ -400,6 +395,14 @@ impl PreparedRawLane {
                 "raw restored initial full state differs",
             ));
         }
+        // Frame0 is normally ordinary and has no stack payload. Its capture
+        // therefore does not run access(); validate the actual restored state
+        // unconditionally, after exact INT3 restoration and before readiness
+        // or the first original instruction. EXEC metadata remains pre-user.
+        observe::require_user_state(
+            &self.lane.frame(0, false)?.state,
+            &self.lane.metadata.layout,
+        )?;
         self.initialized = true;
         Ok(())
     }
@@ -699,6 +702,7 @@ pub(super) fn require_complete(
     contract: &DataflowContract,
 ) -> Result<(), OracleError> {
     if p.phase != RawPhase::Complete
+        || !p.initialized
         || p.first_failure.is_some()
         || !p.physical_reaped
         || p.next != plan.len()
