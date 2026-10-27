@@ -5,6 +5,7 @@ use super::{CASES, Case, single_main};
 use liteinst2::backedge_clock::{CLOCK_CANARY, ClockMode, ClockWords};
 use std::arch::x86_64::{__cpuid_count, _xgetbv};
 use std::cell::Cell;
+use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
 use std::path::Path;
 use std::time::{Duration, Instant};
 
@@ -436,79 +437,110 @@ struct Ready {
     image: u64,
     image_len: u64,
 }
+// Parent-side construction performs only stack operations and syscalls. In
+// particular no source decoding, /proc directory scan or capture allocation may
+// occur between sibling forks. Each pending owner closes its pipe and attempts
+// the unchanged bounded child cleanup on any subsequent failure.
+struct Spawned {
+    child: Tracee,
+    read_pipe: OwnedFd,
+}
 impl Tracee {
-    fn ready(case: Case, quantum: u64) -> (Self, Ready) {
-        single_main();
+    fn spawn(case: Case, quantum: u64) -> Spawned {
         let mut pipe = [-1; 2];
         assert_eq!(
             unsafe { libc::pipe2(pipe.as_mut_ptr(), libc::O_CLOEXEC) },
             0
         );
+        // SAFETY: pipe2 succeeded and these descriptors have no other owner.
+        let read_pipe = unsafe { OwnedFd::from_raw_fd(pipe[0]) };
+        let write_pipe = unsafe { OwnedFd::from_raw_fd(pipe[1]) };
         // The parent has exactly one thread; no core owner/lock/TLS has been
         // staged. Child constructs all clock/control/image authority afresh.
         let pid = unsafe { libc::fork() };
         assert!(pid >= 0);
         if pid == 0 {
-            unsafe {
-                libc::close(pipe[0]);
-            }
-            let program = InlineProgram::new(case, ClockMode::Stop);
-            let lease = unsafe { program.clock.acquire(quantum, 32768) }.unwrap();
-            let call = lease.begin_call().unwrap();
-            let ready = Ready {
-                native: program.inner.native.address,
-                source: program.inner.candidate.address,
-                source_len: program.inner.candidate.original.len() as u64,
-                site: program.inner.site.offset as u64,
-                clock: program.clock.address(),
-                gate: program.gate.entry,
-                fast: program.gate.original_body,
-                slow: program.gate.observing_entry,
-                image: program.image.0,
-                image_len: program.image.1 as u64,
-            };
-            // This fixed handoff fits PIPE_BUF. Parent reads only after SIGSTOP.
-            unsafe {
-                if libc::write(
-                    pipe[1],
-                    (&raw const ready).cast(),
-                    std::mem::size_of::<Ready>(),
-                ) != std::mem::size_of::<Ready>() as isize
-                {
-                    libc::_exit(120);
+            drop(read_pipe);
+            // A second child's setup failure must not unwind through inherited
+            // parent Tracee/pipe owners. Local setup still unwinds normally;
+            // then _exit closes this process without dropping inherited guards.
+            let _ = std::panic::catch_unwind(|| {
+                let program = InlineProgram::new(case, ClockMode::Stop);
+                let lease = unsafe { program.clock.acquire(quantum, 32768) }.unwrap();
+                let call = lease.begin_call().unwrap();
+                let ready = Ready {
+                    native: program.inner.native.address,
+                    source: program.inner.candidate.address,
+                    source_len: program.inner.candidate.original.len() as u64,
+                    site: program.inner.site.offset as u64,
+                    clock: program.clock.address(),
+                    gate: program.gate.entry,
+                    fast: program.gate.original_body,
+                    slow: program.gate.observing_entry,
+                    image: program.image.0,
+                    image_len: program.image.1 as u64,
+                };
+                // This fixed handoff fits PIPE_BUF. Parent reads only after SIGSTOP.
+                unsafe {
+                    if libc::write(
+                        write_pipe.as_raw_fd(),
+                        (&raw const ready).cast(),
+                        std::mem::size_of::<Ready>(),
+                    ) != std::mem::size_of::<Ready>() as isize
+                    {
+                        libc::_exit(120);
+                    }
+                    drop(write_pipe);
+                    if libc::ptrace(libc::PTRACE_TRACEME, 0, 0usize, 0usize) == -1 {
+                        libc::_exit(120);
+                    }
+                    libc::kill(libc::getpid(), libc::SIGSTOP);
+                    // Tracer seeds a branch state while both lexical guards live;
+                    // it always kills/reaps at a boundary, never returns here.
+                    std::hint::black_box((&program, &lease, &call));
+                    libc::_exit(121);
                 }
-                libc::close(pipe[1]);
-                if libc::ptrace(libc::PTRACE_TRACEME, 0, 0usize, 0usize) == -1 {
-                    libc::_exit(120);
-                }
-                libc::kill(libc::getpid(), libc::SIGSTOP);
-                // Tracer seeds a branch state while both lexical guards live;
-                // it always kills/reaps at a boundary, never returns here.
-                std::hint::black_box((&program, &lease, &call));
-                libc::_exit(121);
-            }
+            });
+            unsafe { libc::_exit(120) }
         }
-        unsafe {
-            libc::close(pipe[1]);
-        }
+        drop(write_pipe);
         let child = Self {
             pid,
             deadline: Instant::now() + CHILD_BUDGET,
             reaped: Cell::new(false),
         };
+        Spawned { child, read_pipe }
+    }
+    fn finish(self) {
+        assert_eq!(unsafe { libc::kill(self.pid, libc::SIGKILL) }, 0);
+        let status = self.wait();
+        assert!(libc::WIFSIGNALED(status) && libc::WTERMSIG(status) == libc::SIGKILL);
+        assert!(self.reaped.get());
+        let mut status = 0;
+        assert_eq!(
+            unsafe { libc::waitpid(self.pid, &mut status, libc::WNOHANG | libc::__WALL) },
+            -1
+        );
+        assert_eq!(
+            std::io::Error::last_os_error().raw_os_error(),
+            Some(libc::ECHILD)
+        );
+    }
+}
+impl Spawned {
+    fn ready(self, case: Case) -> (Tracee, Ready) {
+        let Self { child, read_pipe } = self;
         let status = child.wait();
         assert!(libc::WIFSTOPPED(status) && libc::WSTOPSIG(status) == libc::SIGSTOP);
         let mut ready = Ready::default();
         let n = unsafe {
             libc::read(
-                pipe[0],
+                read_pipe.as_raw_fd(),
                 (&raw mut ready).cast(),
                 std::mem::size_of::<Ready>(),
             )
         };
-        unsafe {
-            libc::close(pipe[0]);
-        }
+        drop(read_pipe);
         assert_eq!(n, std::mem::size_of::<Ready>() as isize);
         child.request(libc::PTRACE_SETOPTIONS, 0, libc::PTRACE_O_EXITKILL as usize);
         assert_eq!(ready.source_len, case.bytes().len() as u64);
@@ -530,21 +562,6 @@ impl Tracee {
             case.bytes()
         );
         (child, ready)
-    }
-    fn finish(self) {
-        assert_eq!(unsafe { libc::kill(self.pid, libc::SIGKILL) }, 0);
-        let status = self.wait();
-        assert!(libc::WIFSIGNALED(status) && libc::WTERMSIG(status) == libc::SIGKILL);
-        assert!(self.reaped.get());
-        let mut status = 0;
-        assert_eq!(
-            unsafe { libc::waitpid(self.pid, &mut status, libc::WNOHANG | libc::__WALL) },
-            -1
-        );
-        assert_eq!(
-            std::io::Error::last_os_error().raw_os_error(),
-            Some(libc::ECHILD)
-        );
     }
 }
 fn snapshot(child: &Tracee, arena: &Arena, logical_pc: u64) -> Snapshot {
@@ -577,8 +594,10 @@ fn pair(case: Case, taken: bool, remaining: u64, seed: u64) -> (usize, &'static 
     let arena = Arena::new(seed);
     // Fork both from the same pristine parent mapping topology, before any
     // XSAVE/data capture allocations. Never transplant a parent clock lease.
-    let (original, first) = Tracee::ready(case, remaining);
-    let (candidate, second) = Tracee::ready(case, remaining);
+    let original = Tracee::spawn(case, remaining);
+    let candidate = Tracee::spawn(case, remaining);
+    let (original, first) = original.ready(case);
+    let (candidate, second) = candidate.ready(case);
     assert_eq!(
         first, second,
         "exact sibling source/image/clock address geometry"
