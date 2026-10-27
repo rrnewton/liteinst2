@@ -267,6 +267,7 @@ impl Row {
     pub(super) fn initialized(&self) -> &[u8] {
         &self.bytes[..self.length]
     }
+    #[cfg(test)]
     pub(super) fn published(&self) -> Option<WriteOutcome> {
         self.published
     }

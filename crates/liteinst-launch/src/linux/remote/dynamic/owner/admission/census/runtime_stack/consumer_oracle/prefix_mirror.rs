@@ -204,7 +204,7 @@ pub(in crate::linux::remote::dynamic::owner::admission) fn stack_prefix_mirror_t
         4 * size_of::<ConsumerProgress>(),
         size_of::<std::ops::Range<usize>>(),
         size_of::<std::slice::Iter<'_, StatePrefix>>(),
-        8 * size_of::<usize>(),
+        size_of::<[usize; 8]>(),
         8 * size_of::<Result<(), CensusConsumerError>>(),
         2 * size_of::<Result<StackHeader, CensusConsumerError>>(),
         3 * size_of::<Result<usize, CensusConsumerError>>(),

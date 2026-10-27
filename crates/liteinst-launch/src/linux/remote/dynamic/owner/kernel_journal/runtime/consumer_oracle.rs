@@ -221,7 +221,9 @@ impl JournalAttemptView<'_> {
     }
 }
 pub(in crate::linux::remote::dynamic::owner) struct JournalPartialView<'a> {
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner) allocation: JournalAllocation,
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner) installed: Option<JournalAllocation>,
     pub(in crate::linux::remote::dynamic::owner) header: Option<&'a JournalArchiveHeader>,
     pub(in crate::linux::remote::dynamic::owner) progress: JournalObservationProgress,
@@ -452,7 +454,9 @@ impl PreparedKernelObservation {
     }
     pub(in crate::linux::remote::dynamic::owner) fn partial_view(&self) -> JournalPartialView<'_> {
         JournalPartialView {
+            #[cfg(test)]
             allocation: JournalAllocation::of(&self.attempts),
+            #[cfg(test)]
             installed: self.installed,
             header: self.header.as_ref(),
             progress: self.progress,

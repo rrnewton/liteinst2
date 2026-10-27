@@ -35,7 +35,7 @@ use raw::{PreparedRawLane, RawBoundary};
 use storage::ObserverReservation;
 
 #[derive(Debug)]
-pub(super) enum OracleError {
+enum OracleError {
     Invalid(&'static str),
     Io {
         operation: &'static str,

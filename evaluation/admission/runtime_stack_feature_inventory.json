@@ -4297,7 +4297,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/runtime_stack/consumer_oracle/prefix_mirror.rs",
-      "sha256": "da8a9b38e7258f3bd8a874a8c3d55eb564c6c0676a64b4f525fd9792f5a5521e",
+      "sha256": "b5d782ae7fb576f2a2698607f8b225d61ecc94202bfa2ac4881326536a70f4bf",
       "test_functions": []
     },
     {
@@ -4423,7 +4423,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/stack_calls/consumer_oracle.rs",
-      "sha256": "e00d1c60aab1248ded4929fff88900301602646fdfcf39c99e835630f11d78e8",
+      "sha256": "8749f9c081ddb84cff9f0c7ce0fbbfb370755e9d2d19f45414d711f00dbd29d6",
       "test_functions": []
     },
     {
@@ -5207,17 +5207,17 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle.rs",
-      "sha256": "86fb41b91e80b8fbe9ba9d3afb8fe4ad4fcb56990b7d9185a817764932e24dc0",
+      "sha256": "436f0b5ec7b73096de428cf64ffe91592b39d1479f70130687dbe5de5186bfe6",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/admitted.rs",
-      "sha256": "25b2339d020998bccb14cfd53be70aee2ff9e53f27974453b3b569a52d6d3568",
+      "sha256": "86320c10a5b56ee1592b17b4e63e7f8affc33d07736f880454bff1ef3c773ae0",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/admitted/checkpoints.rs",
-      "sha256": "58d6c86af759a4c0586b39de115397fd388c31585e6a64ae377fa0e0877218f7",
+      "sha256": "39ac36ef20fd23a70fdac8760264e84b5b08abdcf9391f7bc035e5b7938ad041",
       "test_functions": []
     },
     {
@@ -5227,7 +5227,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/artifact.rs",
-      "sha256": "08373de97065f822d09b4ab8d4ce95660b5ee0eedd550ed1a9f71d695b9154d6",
+      "sha256": "c813ef94ccddf602884d66a2db664878836767955e594e9ada7df5fe5eb15819",
       "test_functions": []
     },
     {
@@ -5333,17 +5333,17 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/owner.rs",
-      "sha256": "63c81a551e36a917f3105ef6da6722b9cea15691c19ad3794c9d63cb2c326583",
+      "sha256": "2307059f7e369165749b9c4fe7007ad6afcbff2456dd3d185960abc839f51a4c",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/prefix.rs",
-      "sha256": "00e35823ad1221b316f0064b07b5e3b44697c4c393d7621bd77089e77cb9ccc6",
+      "sha256": "dd1d5ca8dad1d8cdd98d389c2ddbae75cc9ca5d05f985a014e9efff375494cb5",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/protocol.rs",
-      "sha256": "ae5bf25287d57b8624038d40c73718424c8125f4d408225343befa54b4e52bb6",
+      "sha256": "417f23f1d1843b6025be8318315dfc29aa2f570ca36821df21bd2a399cba458d",
       "test_functions": [
         "consumer_protocol_accepts_only_three_closed_commands",
         "consumer_protocol_output_overflow_is_sticky_and_preserves_prefix",
@@ -5375,7 +5375,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/storage.rs",
-      "sha256": "3c459594c6ad256c4387622652c952030081ef24bc7e24777a358c7fc48061b7",
+      "sha256": "214218a5da6632e1e5abfbcdf81e3d747be34c38453a85102dddc20b71779468",
       "test_functions": [
         "consumer_oracle_q_checks_all_six_axes_actual_bytes_and_token_identity",
         "consumer_oracle_q_finishes_actual_token_before_next_reservation_without_refund",
@@ -6225,7 +6225,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/kernel_journal/runtime/consumer_oracle.rs",
-      "sha256": "61524e668de3d19568ed86c3f212751c9b1ba927cf137a33f0240be94b290ddb",
+      "sha256": "d1ad04cca6ebfe90d4286872a7cd2cf058e1b558eb2bfb2517d7685dbdd8742a",
       "test_functions": []
     },
     {

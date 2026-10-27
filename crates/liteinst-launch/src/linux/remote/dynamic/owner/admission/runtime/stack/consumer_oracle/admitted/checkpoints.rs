@@ -18,7 +18,7 @@ pub(super) fn temporary_bytes() -> usize {
         + size_of::<StackWordViews<'_>>()
         + size_of::<NativeTrace>()
         + size_of::<AdmissionStop>()
-        + 8 * size_of::<usize>()
+        + size_of::<[usize; 8]>()
 }
 pub(super) fn require_current(
     owner: &Owner,

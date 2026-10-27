@@ -129,11 +129,6 @@ impl PreparedCallObservation {
         self.allocation.abort();
         self.capture.abort();
     }
-    pub(in crate::linux::remote::dynamic::owner::admission) fn progress(
-        &self,
-    ) -> (&ConsumerProgress, &ConsumerProgress) {
-        (&self.allocation, &self.capture)
-    }
     pub(in crate::linux::remote::dynamic::owner::admission) fn call_id(
         &self,
     ) -> Option<PotentialCallId> {

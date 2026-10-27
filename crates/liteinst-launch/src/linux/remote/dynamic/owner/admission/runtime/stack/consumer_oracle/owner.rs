@@ -178,14 +178,10 @@ pub(super) struct ArtifactOwner {
 /// does not turn an absent/failed launch, pin proof or cleanup into completion.
 pub(super) struct OwnerView<'a> {
     pub(super) owner: Option<&'a Owner>,
-    pub(super) mask: Option<&'a launch::BlockedSignals>,
-    pub(super) initial: Option<&'a Ready>,
     pub(super) application: PinView,
     pub(super) helper: PinView,
     pub(super) launch_started: bool,
-    pub(super) cleanup_started: bool,
     pub(super) cleanup: Option<&'a Result<DynamicCleanup, LaunchError>>,
-    pub(super) cleanup_failure: Option<&'a OracleError>,
     pub(super) cleanup_complete: bool,
     pub(super) mask_restore: Option<&'a Result<(), LaunchError>>,
 }
@@ -295,14 +291,10 @@ impl ArtifactOwner {
     pub(super) fn partial_view(&self) -> OwnerView<'_> {
         OwnerView {
             owner: self.owner.as_ref(),
-            mask: self.mask.as_ref(),
-            initial: self.initial.as_ref(),
             application: self.application.view(),
             helper: self.helper.view(),
             launch_started: self.launch_started,
-            cleanup_started: self.cleanup_started,
             cleanup: self.cleanup.as_ref(),
-            cleanup_failure: self.cleanup_failure.as_ref(),
             cleanup_complete: self.cleanup_complete,
             mask_restore: self.mask_restore.as_ref(),
         }

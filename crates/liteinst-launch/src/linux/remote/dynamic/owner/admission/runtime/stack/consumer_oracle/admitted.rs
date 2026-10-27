@@ -108,13 +108,9 @@ pub(super) struct AdmittedView<'a> {
     pub(super) lane: &'a PreparedLane,
     pub(super) snapshots: &'a [PreparedStackObservation; 2],
     pub(super) sink: &'a CallSink,
-    pub(super) ready: Option<&'a AdmissionReply>,
     pub(super) providers: &'a [Option<Box<RuntimeProviderInput>>; 3],
     pub(super) completions: &'a [Option<AdmissionReply>; 3],
-    pub(super) shape: Option<AdmittedShape>,
     pub(super) deadlines: &'a [Option<Instant>; 3],
-    pub(super) steps: &'a [StepProgress; STEPS],
-    pub(super) frame: Option<FrameObservation>,
     pub(super) progress: Progress,
 }
 fn require(value: bool, message: &'static str) -> Result<(), OracleError> {
@@ -167,13 +163,9 @@ impl PreparedAdmitted {
             lane: &self.lane,
             snapshots: &self.snapshots,
             sink: &self.sink,
-            ready: self.ready.as_ref(),
             providers: &self.providers,
             completions: &self.completions,
-            shape: self.shape,
             deadlines: &self.deadlines,
-            steps: &self.steps,
-            frame: self.frame,
             progress: self.progress,
         }
     }

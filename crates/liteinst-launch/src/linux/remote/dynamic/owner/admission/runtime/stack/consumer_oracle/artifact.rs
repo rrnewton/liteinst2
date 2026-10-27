@@ -204,19 +204,6 @@ pub(super) struct PinnedArtifact {
     verification: RefCell<Verification>,
     complete: bool,
 }
-/// Borrowed, initialized prefix only; this view grants no file or task authority.
-pub(super) struct ArtifactView<'a> {
-    pub(super) owner: usize,
-    pub(super) fd: Option<i32>,
-    pub(super) identity: Option<FileIdentity>,
-    pub(super) opened: Option<Outcome>,
-    pub(super) closed: Option<Outcome>,
-    pub(super) initial: FileCheck,
-    pub(super) original: &'a [u8],
-    pub(super) original_capacity: usize,
-    pub(super) complete: bool,
-    pub(super) verification: std::cell::Ref<'a, Verification>,
-}
 impl PinnedArtifact {
     pub(super) fn empty() -> Self {
         Self {
@@ -234,11 +221,6 @@ impl PinnedArtifact {
             }),
             complete: false,
         }
-    }
-    pub(super) fn reservation_bytes() -> Result<usize, OracleError> {
-        size_of::<Self>()
-            .checked_add(2 * FILE_CAP)
-            .ok_or(OracleError::Invalid("artifact reservation overflow"))
     }
     pub(super) fn temporary_bytes() -> Result<usize, OracleError> {
         // Fixed input C-string storage, pinned-fd command text, actual stat records,
@@ -259,24 +241,6 @@ impl PinnedArtifact {
             + 32 * size_of::<u64>())
         .checked_add(super::dataflow::temporary_bytes()?)
         .ok_or(OracleError::Invalid("artifact temporary overflow"))
-    }
-    pub(super) fn partial_view(&self) -> Result<ArtifactView<'_>, OracleError> {
-        let verification = self
-            .verification
-            .try_borrow()
-            .map_err(|_| OracleError::Invalid("artifact diagnostics reentered"))?;
-        Ok(ArtifactView {
-            owner: self as *const Self as usize,
-            fd: self.fd.as_ref().map(AsRawFd::as_raw_fd),
-            identity: self.identity,
-            opened: self.opened,
-            closed: self.closed,
-            initial: self.initial,
-            original: &self.original,
-            original_capacity: self.original.capacity(),
-            complete: self.complete,
-            verification,
-        })
     }
     pub(super) fn open_in_place(&mut self, path: &Path) -> Result<(), OracleError> {
         if self.opened.is_some() || !self.original.is_empty() {

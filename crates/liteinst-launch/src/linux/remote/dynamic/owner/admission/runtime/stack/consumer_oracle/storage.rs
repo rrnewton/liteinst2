@@ -490,7 +490,7 @@ fn root_temporary_bytes() -> Result<usize, OracleError> {
         2 * size_of::<GateError>(), 2 * size_of::<OracleError>(),
         size_of::<Result<Result<(), OracleError>, Box<dyn std::any::Any + Send>>>(),
         2 * size_of::<std::panic::AssertUnwindSafe<&mut Experiment>>(),
-        8 * size_of::<usize>(),
+        size_of::<[usize; 8]>(),
         // New outer literal construction/moves and nested catch/result slots.
         // Retained owners are separate; this conservative value allowance does
         // not assert that the compiler materializes another whole stack copy.

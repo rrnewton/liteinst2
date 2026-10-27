@@ -135,7 +135,7 @@ impl PrefixMirrors {
             4 * size_of::<Result<(), OracleError>>(),
             // Four returned pairs of references to concrete sized progress values.
             8 * size_of::<&'static usize>(),
-            8 * size_of::<usize>(),
+            size_of::<[usize; 8]>(),
             8 * size_of::<&'static PreparedStackPrefixMirror>(),
             2 * size_of::<std::slice::Iter<'static, PreparedStackPrefixMirror>>(),
             2 * size_of::<std::slice::IterMut<'static, PreparedStackPrefixMirror>>(),
