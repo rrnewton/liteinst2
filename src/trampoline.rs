@@ -1110,7 +1110,7 @@ pub struct TrampolinePlan {
     hook: Option<HookCallback>,
     actions: Vec<(u64, HookCallback, bool)>,
     controls: Vec<ControlledAction>,
-    clock: Option<crate::backedge_clock::BackedgeClockAction>,
+    clock: Option<Box<crate::backedge_clock::BackedgeClockAction>>,
     instructions: Vec<Instruction>,
     logical_index: usize,
     relocated_start: usize,
@@ -1619,7 +1619,7 @@ impl TrampolinePlan {
                 control: action.control.clone(),
             }],
         )?;
-        plan.clock = Some(action.clone());
+        plan.clock = Some(Box::new(action.clone()));
         Ok(plan)
     }
 
