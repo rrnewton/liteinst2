@@ -16,12 +16,24 @@ import sys
 import time
 
 
+# Explicitly selected profile; legacy remains the original opt0/debug2 recipe.
+DEBUG0_BUILD_PROFILE = "dev-debug0-v1"
+DEBUG0_PROFILE = dict(opt_level="0", debuginfo=0, debug_assertions=True,
+                      overflow_checks=True, test=False)
+DEBUG0_ENV = dict(CARGO_PROFILE_DEV_DEBUG="0", CARGO_PROFILE_TEST_DEBUG="0",
+    CARGO_PROFILE_DEV_OPT_LEVEL="0", CARGO_PROFILE_TEST_OPT_LEVEL="0",
+    CARGO_PROFILE_DEV_DEBUG_ASSERTIONS="true", CARGO_PROFILE_TEST_DEBUG_ASSERTIONS="true",
+    CARGO_PROFILE_DEV_OVERFLOW_CHECKS="true", CARGO_PROFILE_TEST_OVERFLOW_CHECKS="true")
+
+
 def main():
     if sys.flags.optimize:
         raise SystemExit("Assertions required")
     parser = argparse.ArgumentParser()
     for name in ("raw", "toolchain", "user-home", "cargo-home"):
         parser.add_argument("--" + name, type=Path, required=True)
+    parser.add_argument("--build-profile", choices=("legacy", DEBUG0_BUILD_PROFILE),
+                        default="legacy")
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     raw = args.raw
@@ -62,6 +74,10 @@ def main():
         "RUST_TEST_THREADS": "4", "LC_ALL": "C",
         "PATH": str(tool) + ":/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1",
     }
+    if args.build_profile == DEBUG0_BUILD_PROFILE:
+        env.update(DEBUG0_ENV)
+        save("build-profile.json", dict(schema=1, build_profile=DEBUG0_BUILD_PROFILE,
+             cargo_profile=DEBUG0_PROFILE, cargo_env=DEBUG0_ENV))
     runtime_env = {"LC_ALL": "C", "PATH": "/usr/bin:/bin", "PYTHONDONTWRITEBYTECODE": "1"}
     tools = {}
     for name, executable, option in (
@@ -212,8 +228,12 @@ def main():
             item = selected[0]
             assert item["manifest_path"] == str(package_path / "Cargo.toml")
             assert item["target"]["kind"] == [kind] and item["target"]["crate_types"] == ["bin"]
-            assert item["profile"] == {"opt_level": "0", "debuginfo": 2, "debug_assertions": True,
-                                       "overflow_checks": True, "test": False}
+            if args.build_profile == "legacy":
+                assert item["profile"] == {"opt_level": "0", "debuginfo": 2, "debug_assertions": True,
+                                           "overflow_checks": True, "test": False}
+            else:
+                assert item["profile"] == DEBUG0_PROFILE
+                assert all(type(item["profile"][k]) is type(v) for k, v in DEBUG0_PROFILE.items())
             assert item["features"] == [] and type(item["fresh"]) is bool
             binary_parent = repo / "target/debug"
             if kind == "example":
