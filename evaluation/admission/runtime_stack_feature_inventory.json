@@ -5207,7 +5207,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle.rs",
-      "sha256": "436f0b5ec7b73096de428cf64ffe91592b39d1479f70130687dbe5de5186bfe6",
+      "sha256": "937954fff5150c853e8c208dee7edf074a208fa5d97c04b41c5d7204ba92b7cf",
       "test_functions": []
     },
     {
@@ -5375,7 +5375,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/storage.rs",
-      "sha256": "214218a5da6632e1e5abfbcdf81e3d747be34c38453a85102dddc20b71779468",
+      "sha256": "82986b1413e80a3cadb82cd62bdde282eeeb93ea9142475cfca6440c3ef86c9e",
       "test_functions": [
         "consumer_oracle_q_checks_all_six_axes_actual_bytes_and_token_identity",
         "consumer_oracle_q_finishes_actual_token_before_next_reservation_without_refund",

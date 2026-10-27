@@ -611,8 +611,110 @@ pub(super) fn run() -> ExitCode {
         std::panic::resume_unwind(payload);
     }
     if experiment.custody.failed() {
+        if let Some(custody::Outcome::Returned(Err(error))) = experiment.custody.first_outcome() {
+            write_failure_diagnostic(error);
+        }
         ExitCode::FAILURE
     } else {
         ExitCode::SUCCESS
     }
+}
+
+// Only static messages/operations and numeric errno are projected. Never
+// format the dynamic error, its payload, a path, a PID or a native address.
+fn failure_reason(error: &OracleError) -> (&'static str, &'static str, Option<i32>) {
+    match error {
+        OracleError::Invalid(reason) => ("invalid", reason, None),
+        OracleError::Io { operation, errno } => ("io", operation, *errno),
+        OracleError::Launch(LaunchError::Invalid(reason)) => ("launch_invalid", reason, None),
+        OracleError::Launch(LaunchError::System { operation, source }) => {
+            ("launch_system", operation, source.raw_os_error())
+        }
+        OracleError::Launch(LaunchError::Timeout(operation)) => ("launch_timeout", operation, None),
+        OracleError::Launch(LaunchError::Child { .. }) => ("launch_child", "child failure", None),
+        OracleError::Gate(GateError::Control(LaunchError::Invalid(reason))) => {
+            ("gate_control_invalid", reason, None)
+        }
+        OracleError::Gate(GateError::Control(LaunchError::System { operation, source })) => {
+            ("gate_control_system", operation, source.raw_os_error())
+        }
+        OracleError::Gate(GateError::Control(LaunchError::Timeout(operation))) => {
+            ("gate_control_timeout", operation, None)
+        }
+        OracleError::Gate(GateError::Control(LaunchError::Child { .. })) => {
+            ("gate_control_child", "child failure", None)
+        }
+        OracleError::Gate(GateError::Refused(reason)) => ("gate_refused", reason, None),
+        OracleError::Gate(GateError::Coverage(_)) => ("gate_coverage", "coverage refusal", None),
+        OracleError::Gate(GateError::Scan(_)) => ("gate_scan", "scan refusal", None),
+        OracleError::Gate(GateError::Core(_)) => ("gate_core", "core refusal", None),
+        OracleError::Gate(GateError::Selected(_)) => ("gate_selected", "selected refusal", None),
+        OracleError::Sink(_) => ("sink", "CALL observer refusal", None),
+        OracleError::Observer(_) => ("observer", "census observer refusal", None),
+    }
+}
+
+fn diagnostic_iovec(bytes: &[u8]) -> libc::iovec {
+    libc::iovec {
+        iov_base: bytes.as_ptr().cast_mut().cast(),
+        iov_len: bytes.len(),
+    }
+}
+
+// Called only for the original retained returned error after physical cleanup
+// is known and primary unwind handling has run. One best-effort write cannot
+// replace that error, change the typed stdout row, or make this run successful.
+fn write_failure_diagnostic(error: &OracleError) {
+    let (class, reason, errno) = failure_reason(error);
+    let reason = if reason.len() <= 256 && reason.bytes().all(|byte| matches!(byte, b' '..=b'~')) {
+        reason
+    } else {
+        "static reason is outside diagnostic bound"
+    };
+    let mut number = [0_u8; 12];
+    let errno_bytes: &[u8] = match errno {
+        Some(value) => {
+            // unsigned_abs handles i32::MIN without signed overflow. At most
+            // ten decimal digits and one minus sign occupy this twelve-byte buffer.
+            let mut magnitude = value.unsigned_abs();
+            let mut at = number.len();
+            loop {
+                at -= 1;
+                number[at] = b'0' + (magnitude % 10) as u8;
+                magnitude /= 10;
+                if magnitude == 0 {
+                    break;
+                }
+            }
+            if value < 0 {
+                at -= 1;
+                number[at] = b'-';
+            }
+            &number[at..]
+        }
+        None => b"none",
+    };
+    let vectors = [
+        diagnostic_iovec(b"runtime-stack-consumer failure "),
+        diagnostic_iovec(class.as_bytes()),
+        diagnostic_iovec(b": "),
+        diagnostic_iovec(reason.as_bytes()),
+        diagnostic_iovec(b" errno="),
+        diagnostic_iovec(errno_bytes),
+        diagnostic_iovec(b"\n"),
+    ];
+    let mut total = 0_usize;
+    for vector in &vectors {
+        let Some(next) = total.checked_add(vector.iov_len) else {
+            return;
+        };
+        total = next;
+    }
+    if total > 512 {
+        return;
+    }
+    // SAFETY: all seven initialized vectors borrow live immutable bytes for
+    // this one synchronous call; writev does not mutate their source buffers.
+    // No retry, allocation, formatting or tracee operation follows its result.
+    let _ = unsafe { libc::writev(libc::STDERR_FILENO, vectors.as_ptr(), 7) };
 }

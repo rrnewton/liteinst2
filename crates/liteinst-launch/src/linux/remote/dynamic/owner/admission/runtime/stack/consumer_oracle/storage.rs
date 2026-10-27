@@ -475,6 +475,43 @@ type RootCalculatorScratch = (
     Result<usize, OracleError>,
 );
 
+// Complete new diagnostic source values: decimal buffer; seven-vector array
+// and helper result; projection return/destructure; borrowed error/outcome and
+// static string/slice arguments; ASCII/length iterator controls; decimal and
+// checked-length scalar/Option controls; and the writev return. This is a
+// conservative source-value allowance, not an observed compiler frame size.
+type FailureDiagnosticScratch = (
+    [u8; 12],
+    [libc::iovec; 7],
+    libc::iovec,
+    [(&'static str, &'static str, Option<i32>); 2],
+    [&'static OracleError; 2],
+    &'static LaunchError,
+    &'static GateError,
+    &'static std::io::Error,
+    Option<&'static custody::Outcome>,
+    &'static custody::Outcome,
+    [&'static str; 4],
+    [&'static [u8]; 10],
+    std::str::Bytes<'static>,
+    std::slice::Iter<'static, libc::iovec>,
+    &'static libc::iovec,
+    [usize; 10],
+    [u32; 3],
+    [i32; 3],
+    [u8; 3],
+    [bool; 4],
+    Option<u8>,
+    Option<&'static u8>,
+    std::ops::ControlFlow<(), ()>,
+    [Option<i32>; 2],
+    [Option<usize>; 2],
+    *const libc::iovec,
+    *const u8,
+    *mut libc::c_void,
+    libc::ssize_t,
+);
+
 fn root_temporary_bytes() -> Result<usize, OracleError> {
     // Source-level allowances for the direct wrapper, classifier and outer
     // catches. These are bounds, not an assertion about a compiler stack frame.
@@ -510,7 +547,7 @@ fn root_temporary_bytes() -> Result<usize, OracleError> {
         2 * size_of::<libc::pollfd>(), 2 * size_of::<libc::siginfo_t>(),
         4 * size_of::<owner::RequestResult>(),
         size_of::<std::sync::atomic::AtomicU64>(),
-        size_of::<RootCalculatorScratch>(),
+        size_of::<(RootCalculatorScratch, FailureDiagnosticScratch)>(),
     ])
 }
 
