@@ -26,7 +26,10 @@ def main():
     parser.add_argument('--toolchain', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--cargo-home', type=Path, required=True)
-    parser.add_argument('--include-reachable-allocation', action='store_true',
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument('--checks-only', action='store_true',
+                      help='Run only the seven workspace and historical allocation checks after a merge.')
+    mode.add_argument('--include-reachable-allocation', action='store_true',
                         help='Also qualify trampoline allocation under forced and default-parallel contention.')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
@@ -78,7 +81,8 @@ def main():
         rustc=subprocess.check_output([env['RUSTC'], '--version'], env=env, timeout=10).decode().strip(),
         scope='Functional validation. Seconds are command wall durations, not throughput or profiler accuracy.',
         recipe='python3 -B evaluation/admission/check_exec_identity.py --toolchain "$TOOLCHAIN" --cargo-home "$CARGO_HOME" --output "$REPO/ignored/NEW_RUN"'
-               + (' --include-reachable-allocation' if args.include_reachable_allocation else ''))
+               + (' --include-reachable-allocation' if args.include_reachable_allocation else
+                  ' --checks-only' if args.checks_only else ''))
     steps = [
         ('fmt', ['fmt', '--check'], 180),
         ('clippy', ['clippy', '--workspace', '--all-targets', '--all-features', '--', '-D', 'warnings'], 180),
@@ -98,6 +102,13 @@ def main():
             ('reachable-contention', ['test', '-p', 'liteinst2', '--lib', 'trampoline::near_mapping::tests::', '--', '--nocapture'], 120),
             *[(f'core-default-{i:02}', ['test', '-p', 'liteinst2', '--lib'], 180) for i in range(1, 26)],
         ]
+    if args.checks_only:
+        required = {'fmt', 'clippy', 'check', 'workspace-default', 'serial-launch',
+                    'staged-allocation', 'prefixed-pun'}
+        steps = [step for step in steps if step[0] in required]
+        assert len(steps) == len(required)
+    result['scope'] += ' ' + ('Seven merge checks only; no repeated issue-specific campaign.'
+                              if args.checks_only else 'Complete executable-identity campaign.')
     def save():
         (out / 'receipt.json').write_text(json.dumps(result, indent=2, sort_keys=True) + '\n')
     save()
