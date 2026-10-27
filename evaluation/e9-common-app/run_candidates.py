@@ -30,6 +30,9 @@ INVENTORY_FILES = {'COMPLETE', 'instructions.tsv', 'sites.tsv', 'memory-writes.t
 CELLS = [(h, s, v) for h in ('null', 'journal') for s in ('jump-site', 'heap-write') for v in ('unstripped', 'stripped')]
 KEYS = ['-'.join(c) for c in CELLS]
 PROFILE = dict(opt_level='0', debuginfo=2, debug_assertions=True, overflow_checks=True, test=False)
+CORE_PROFILES = {'legacy': 'prepare', 'owned-foreign-neighbors-v1': 'prepare-owned-neighbors'}
+PLANNING_MARKER = 'planning-profile.tsv'
+PLANNING_MARKER_BYTES = b'LI2PLANNING\t1\nprofile\towned-foreign-neighbors-v1\nqualification_complete\tfalse\n'
 
 def sha(data):
     return hashlib.sha256(data).hexdigest()
@@ -468,7 +471,65 @@ def reference_candidate(directory, lane, cell_result, inv, original, bound):
                 comparison=cell_result.get('comparison'), production_cell_status=cell_result['status'])
 
 
-def production_inputs(admission, tracked, products, inv, originals, bound):
+def planning_profile(inputs, profile):
+    assert profile in CORE_PROFILES, 'unknown core planning profile'
+    if profile == 'legacy':
+        assert inputs.keys() == {'schema', 'source_epoch', 'preparation', 'build_admission', 'observation_content_admission', 'production_admission', 'runtime_admission', 'tools', 'files'}
+    else:
+        assert inputs.keys() == {'schema', 'source_epoch', 'preparation', 'build_admission', 'observation_content_admission', 'production_admission', 'runtime_admission', 'tools', 'files', 'planning_profile'}
+        assert inputs['planning_profile'] == profile, 'ordinary caller/CLI profile mismatch'
+
+
+def profile_record(profile):
+    assert profile == 'owned-foreign-neighbors-v1', 'only the explicit owned profile has a marker record'
+    return dict(schema=1, planning_profile=profile, core_subcommand=CORE_PROFILES[profile],
+        marker=PLANNING_MARKER, marker_sha256=sha(PLANNING_MARKER_BYTES), marker_bytes=len(PLANNING_MARKER_BYTES),
+        qualification_complete=False)
+
+
+def production_profile(admission, root, summary, inputs, index, profile, bound):
+    assert profile in CORE_PROFILES, 'unknown core planning profile'
+    keys = {'schema', 'preparation', 'build_admission', 'cells', 'products', 'tools', 'files'}
+    assert type(inputs['schema']) is int and inputs['schema'] == 1
+    if profile == 'legacy':
+        assert inputs.keys() == keys, 'legacy producer envelope has no planning profile'
+        assert 'planning_profile' not in admission and 'planning_profile' not in summary, 'legacy profile must be absent'
+        assert 'planning-profile.json' not in index
+        p = root / 'planning-profile.json'
+        assert not p.exists() and not p.is_symlink(), 'legacy profile record must be absent'
+    else:
+        assert inputs.keys() == keys | {'planning_profile'}
+        assert inputs['planning_profile'] == admission['planning_profile'] == profile, 'production admission/input profile mismatch'
+        expected = profile_record(profile)
+        assert summary['planning_profile'] == expected, 'production summary profile mismatch'
+        assert 'planning-profile.json' in index, 'profile record must be in the complete raw index'
+        assert loads(bound(str(root / 'planning-profile.json'))) == expected, 'watched production profile record mismatch'
+
+
+def core_profile_request(request, root, key, variant, inputs, products, inv, originals, profile, bound):
+    assert profile in CORE_PROFILES
+    assert inputs['cells'][key]['directory'] == inv[key]['directory'], 'same complete selected inventory'
+    original = inputs['preparation']['originals'][variant]
+    assert bound(original) == originals[variant], 'same whole original input'
+    expected = [products['liteinst-rewrite'], CORE_PROFILES[profile], original,
+        str(Path(inv[key]['directory']) / 'selection.txt'), str(root / key / 'core')]
+    assert request['argv'] == expected, 'exact core planning profile argv required'
+
+
+def profiled_core_candidate(directory, inv, original, bound, profile):
+    result = core_candidate(directory, inv, original, bound)
+    assert profile in CORE_PROFILES
+    rows = bound(str(directory / 'bundle-index.tsv')).decode().splitlines()
+    markers = [r for r in rows[4:] if r.split('\t')[1] == PLANNING_MARKER]
+    if profile == 'legacy':
+        assert markers == [], 'legacy candidate must not carry an owned-neighbor marker'
+    else:
+        assert markers == [f'file\t{PLANNING_MARKER}\t{len(PLANNING_MARKER_BYTES)}\t{sha(PLANNING_MARKER_BYTES)}'], 'exact complete indexed planning marker required'
+        assert bound(str(directory / PLANNING_MARKER)) == PLANNING_MARKER_BYTES
+    return result
+
+
+def production_inputs(admission, tracked, products, inv, originals, bound, planning='legacy'):
     admitted(admission, 'CALLER_ADMITTED_COMMON_PRODUCTION_ARTIFACTS', 'closed-production-artifacts-only', tracked['revision'], bound)
     assert admission['parent_closed_reaped'] is True and admission['parent_observation'] in admission['evidence_files']
     root = path(admission['directory'])
@@ -480,6 +541,7 @@ def production_inputs(admission, tracked, products, inv, originals, bound):
     assert loads(bound(str(root / 'source-before.json')))['files'] == tracked['files']
     index = loads(bound(str(root / 'raw-files.json'))); indexed(root, index, bound)
     inputs = loads(bound(str(root / 'inputs.json')))
+    production_profile(admission, root, summary, inputs, index, planning, bound)
     build = loads(bound(inputs['build_admission']))
     assert build['authority'] == 'CALLER_AUTHENTICATED_BUILD_PRODUCTS' and build['scope'] == 'core-cli-and-common-sites-build-only'
     assert build['source_revision'] == tracked['revision'] and build['source_files_sha256'] == sha(encode(tracked['files']))
@@ -509,13 +571,16 @@ def production_inputs(admission, tracked, products, inv, originals, bound):
     assert set(cells) <= set(KEYS)
     artifacts = {}
     for key, (_, _, variant) in zip(KEYS, CELLS):
+        if by_name[key + '-core']['status'] != 'UNRUN':
+            request = loads(bound(str(root / (key + '-core') / 'request.json')))
+            core_profile_request(request, root, key, variant, inputs, products, inv, originals, planning, bound)
         for lane in LANES:
             name = key + '-' + lane
             result = dict(eligible=False, candidate=None, reason='artifact prerequisite unavailable; no replacement inventory')
             if key in cells:
                 cell = cells[key]
                 if lane == 'core' and cell['core'] is not None:
-                    result = core_candidate(root / key / 'core', inv[key], originals[variant], bound)
+                    result = profiled_core_candidate(root / key / 'core', inv[key], originals[variant], bound, planning)
                     assert cell['core']['complete'] == result['eligible']
                     assert by_name[key + '-core']['exit'] == (0 if result['eligible'] else 2)
                 elif lane != 'core':
@@ -541,6 +606,7 @@ def main():
     parser.add_argument('--inputs', type=Path, required=True)
     parser.add_argument('--inputs-sha256', required=True)
     parser.add_argument('--raw', type=Path, required=True)
+    parser.add_argument('--planning-profile', choices=tuple(CORE_PROFILES), default='legacy')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     assert Path(__file__).resolve() == repo / 'evaluation/e9-common-app/run_candidates.py'
@@ -549,7 +615,7 @@ def main():
     input_bytes, input_owner = read(args.inputs)
     assert re.fullmatch('[0-9a-f]{64}', args.inputs_sha256) and sha(input_bytes) == args.inputs_sha256
     inputs = loads(input_bytes)
-    assert inputs.keys() == {'schema', 'source_epoch', 'preparation', 'build_admission', 'observation_content_admission', 'production_admission', 'runtime_admission', 'tools', 'files'}
+    planning_profile(inputs, args.planning_profile)
     assert type(inputs['schema']) is int and inputs['schema'] == 1
     watched = {str(args.inputs): input_owner}
     def bound(value):
@@ -603,7 +669,7 @@ def main():
     audit = loads(bound(inputs['observation_content_admission']))
     observation_root, streams = observed_streams(audit, tracked, build_root, cells, inv, datasets, bound)
     production = loads(bound(inputs['production_admission']))
-    production_root, production_summary, production_results, artifacts = production_inputs(production, tracked, products, inv, originals, bound)
+    production_root, production_summary, production_results, artifacts = production_inputs(production, tracked, products, inv, originals, bound, args.planning_profile)
     for old_root in (build_root, observation_root, production_root, Path(prep['summary']).parent):
         assert not raw.is_relative_to(old_root) and not old_root.is_relative_to(raw), 'separate new output owner'
 
@@ -655,6 +721,8 @@ def main():
     write(raw / 'artifact-prerequisites.json', artifacts)
     write(raw / 'production-status.json', dict(summary=production_summary, stages=production_results,
         note='Historical production status is retained even when an eligible independent reference runs.'))
+    if args.planning_profile != 'legacy':
+        write(raw / 'planning-profile.json', profile_record(args.planning_profile))
     for p in raw.iterdir():
         if p.is_file():
             freeze(p)
@@ -767,7 +835,8 @@ def main():
             qualification_complete=False, full_a3=False, architectural_equivalence=False, process_maps_attested=False,
             scope='Ordinary full-output and exact ordered journal only. Complete original selections retained. No state, performance or full loader closure claim.',
             parent_closed_reaped_authority='Separate caller observation required; never inferred by this recipe.',
-            timings='Operational diagnostics only, not performance measurements'))
+            timings='Operational diagnostics only, not performance measurements',
+            **({'planning_profile': profile_record(args.planning_profile)} if args.planning_profile != 'legacy' else {})))
         index = {}
         for directory, dirs, files in os.walk(raw, followlinks=False):
             assert all(not (Path(directory) / n).is_symlink() for n in dirs + files)
