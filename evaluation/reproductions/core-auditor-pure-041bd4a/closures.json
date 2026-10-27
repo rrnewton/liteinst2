@@ -1,0 +1,35 @@
+{
+  "bounded_child_receipt": {
+    "aborted": null,
+    "absence_proof": "ECHILD",
+    "cleanup_error": null,
+    "cleanup_events": [],
+    "elapsed_seconds": 0.2676824638620019,
+    "exit": 0,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "inputs_unchanged": true,
+    "request_sha256": "c7e270548ab26f0cdcd962f48c107a6df5af8f3f0c1ae267ad6b871922cb30ff",
+    "stderr_sha256": "3000d7576ba7a9cb0b3ab772566b07ffdb192ef63afb68f3d890a2f8977d9bce",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "unexpected_descendants": [],
+    "wall_timeout": false
+  },
+  "helper_parent": {
+    "exit": 0,
+    "parent_error": null,
+    "parent_wait_returned": true,
+    "pid": 3878182,
+    "seconds": 0.31616191007196903,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+  },
+  "receipt_inputs_unchanged_scope": "Request/helper bytes only; separate equal selected-file/tool snapshots are required.",
+  "root_tool_environment_recorded": false,
+  "root_tool_pid": null,
+  "root_tool_result": {
+    "exit_code": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "829e900c9cfb7b8102850086cabccdde50f2dd61a1c4dc514932a21f1ba6f986"
+  },
+  "root_tool_seconds": null
+}

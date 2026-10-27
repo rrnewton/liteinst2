@@ -1,0 +1,70 @@
+{
+  "controls.after.json": {
+    "bytes": 3521,
+    "sha256": "bb03966b3390e07b8fa845ead3d77b1db884fe585cc63ea6d78d3f702b780b66"
+  },
+  "controls.before.json": {
+    "bytes": 3521,
+    "sha256": "bb03966b3390e07b8fa845ead3d77b1db884fe585cc63ea6d78d3f702b780b66"
+  },
+  "controls.checks.json": {
+    "bytes": 1158,
+    "sha256": "d6144cc28875b0a596e3d3b8a314a3eb3b6b282f03dd497f7af64db0bb46a201"
+  },
+  "controls.closed.json": {
+    "bytes": 298,
+    "sha256": "c32978b35f869832e1ff80af5de10db40e9aac0329d9bfb24d983a208e4b0dba"
+  },
+  "controls.command.json": {
+    "bytes": 2272,
+    "sha256": "72356410aae96a99aba1d152177524d181282e09bcde2b1207e4411d7673c133"
+  },
+  "controls.controller.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "controls.controller.stdout": {
+    "bytes": 97,
+    "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+  },
+  "controls.receipt.json": {
+    "bytes": 588,
+    "sha256": "29e7eda9cb1a0ce5ce78cf50f38ca6b73a6ab6ca4eda4e2fdea82c037b95d891"
+  },
+  "controls.request.json": {
+    "bytes": 804,
+    "sha256": "c7e270548ab26f0cdcd962f48c107a6df5af8f3f0c1ae267ad6b871922cb30ff"
+  },
+  "controls.started.json": {
+    "bytes": 109,
+    "sha256": "7feb599966f4dff922729dca83f3830376a9ee23727733300adcc8ea0c62f7f8"
+  },
+  "controls.stderr.txt": {
+    "bytes": 730,
+    "sha256": "3000d7576ba7a9cb0b3ab772566b07ffdb192ef63afb68f3d890a2f8977d9bce"
+  },
+  "controls.stdout.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "root.binding.json": {
+    "bytes": 1355,
+    "sha256": "c64cf714be641e8a1290ecbfc993c03e172aef5ff501b2df7c67a25272b65904"
+  },
+  "root.root-command.json": {
+    "bytes": 287,
+    "sha256": "bf512337ee9af087548a9f1b0f07ae1652219e26d5028cc12d3c55372f978166"
+  },
+  "root.root-result.json": {
+    "bytes": 195,
+    "sha256": "10aa6bc0ee6f060dc2731b2bba49394db42ae02d0e99a6dfeb53f6147473c7ab"
+  },
+  "root.root.stderr": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "root.root.stdout": {
+    "bytes": 242,
+    "sha256": "829e900c9cfb7b8102850086cabccdde50f2dd61a1c4dc514932a21f1ba6f986"
+  }
+}
