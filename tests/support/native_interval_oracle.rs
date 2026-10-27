@@ -2005,3 +2005,6 @@ pub mod process_text;
 // Additive borrowed live DSO/persistent-cohort adapter; all old bodies are exact.
 #[path = "native_interval.rs"]
 pub mod native_interval;
+
+#[path = "native_ordinary.rs"]
+pub mod native_ordinary;

@@ -149,7 +149,8 @@ def main():
         assert product['executable'] == str(binary) and product['target']['kind'] == ['bin'] and product['target']['crate_types'] == ['bin'] and type(product['fresh']) is bool
         assert product['manifest_path'] == str(repo/'tools/rapid-profiler/Cargo.toml') and product['target']['src_path'] == str(repo/'tools/rapid-profiler/ordinary-interval/main.rs')
         profile = product['profile']; assert set(profile) == {'opt_level', 'debuginfo', 'test', 'debug_assertions', 'overflow_checks'}
-        assert profile['opt_level'] == '3' and profile['debuginfo'] == 0 and profile['test'] is False
+        assert type(profile['opt_level']) is str and profile['opt_level'] == '3'
+        assert type(profile['debuginfo']) is int and profile['debuginfo'] == 0 and profile['test'] is False
         assert profile['debug_assertions'] is True and profile['overflow_checks'] is True
         result['build'].update(cargo_fresh=product['fresh'], profile=profile); result['binary'] = digest(binary); result['dso'] = trusted_hash
         assert digest(trusted) == digest(candidate) == trusted_hash and trusted.read_bytes() == candidate.read_bytes()

@@ -6,6 +6,7 @@ mod branch;
 #[allow(dead_code)]
 #[path = "../../../tests/support/native_interval_oracle.rs"]
 mod oracle;
+mod ordinary;
 
 use liteinst2::contracts::*;
 use liteinst2::controls::{ControlledAction, ProbeControl};
@@ -853,6 +854,21 @@ fn permission_refusals(leaf: &mut LoadedLeaf, output: &Path) {
 
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
+    if args.get(1).and_then(|s| s.to_str()) == Some("ordinary-state") {
+        assert_eq!(
+            args.len(),
+            5,
+            "ordinary-state CANDIDATE_ELF TRUSTED_EXPECTED_ELF NEW_OUTPUT_DIRECTORY"
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[4]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        ordinary::run(&subject, &expected, &output);
+        return;
+    }
     assert_eq!(args.len(), 4);
     let mode = args[1].to_str().unwrap();
     assert!(
