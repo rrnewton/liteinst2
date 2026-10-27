@@ -300,3 +300,16 @@ enabled-CET execution or general CET support.
 including the observed loader transfer, with full-state and genuine fault
 comparisons. The earlier MOVD suite explicitly retains and positively checks
 the two newly admitted neighbors; its other refusal cases remain.
+
+Canonical RIP-relative LOCK ADD/SUB m32 with sign-extended imm8 execute on the
+CPU at their original addresses. Only the exact `f0 83 05 disp32 imm8` and
+`f0 83 2d disp32 imm8` forms receive this prefix exception. Run
+`page_selected_lock_add.py` and `page_selected_lock_sub.py` with
+`--expect-revision REVISION` on one reserved CPU. Both share the full native/TF
+state comparator and retain actual no-access/read-only failed RMW controls.
+Their finite qualification covers aligned four-byte operands within one cache
+line; it does not establish concurrent atomicity, split-lock or device behavior.
+
+The real-program and legacy diagnostic failures remain visible in the numeric
+receipts. Current instruction coverage still does not complete the tested
+dynamically linked programs; their performance fields remain null.
