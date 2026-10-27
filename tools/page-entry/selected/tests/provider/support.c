@@ -1,6 +1,6 @@
 /* Freestanding support for the prototype link, not target libc. Compile with
    -fno-builtin -fno-tree-loop-distribute-patterns -mgeneral-regs-only. */
-#include "../page-entry-selected-provider/decoder.h"
+#include "../../decoder.h"
 
 static long raw3(long n,long a,long b,long c) {
     long result;

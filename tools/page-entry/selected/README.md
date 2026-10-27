@@ -115,3 +115,8 @@ The current real-linker control requires its first register MOV to complete
 then its next CALL to refuse precisely; that case is never reported as a
 successful gated program. Component evaluation preserves the larger independent
 state and refusal cohorts.
+
+Run the complete component suite on one reserved CPU with
+`python3 evaluation/inprocess/page_selected_components.py --expect-revision REVISION`.
+It builds the sealed archive afresh and retains exact native records privately;
+its public JSON contains totals, source/tool identities and record hashes.
