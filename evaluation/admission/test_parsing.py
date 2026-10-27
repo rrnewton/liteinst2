@@ -55,7 +55,7 @@ class HarnessParsingTests(unittest.TestCase):
         self.assertEqual(len({row["id"] for row in rows}), 2)
 
     def test_nested_summaries_and_reviewed_unmatched_child_are_not_outer_counts(self):
-        for declared in (176, 184):
+        for declared in (176, 184, 227):
             with self.subTest(declared=declared):
                 text = "\n".join([header("liteinst2"), f"running {declared} tests", "running 1 test",
                                    summary(1, filtered=declared - 1), "running 1 test",
@@ -73,7 +73,9 @@ class HarnessParsingTests(unittest.TestCase):
         for name, child, declared in [("example", 1, 176), ("liteinst2", 2, 176),
                                       ("liteinst2", 1, 175), ("example", 1, 184),
                                       ("liteinst2", 2, 184), ("liteinst2", 1, 183),
-                                      ("liteinst2", 1, 185)]:
+                                      ("liteinst2", 1, 185), ("liteinst2", 1, 226),
+                                      ("liteinst2", 1, 228), ("liteinst2", 2, 227),
+                                      ("example", 1, 227)]:
             text = "\n".join([header(name), f"running {declared} tests", f"running {child} tests",
                                summary(declared - 1, ignored=1)])
             with self.subTest(name=name, child=child, declared=declared), self.assertRaises(

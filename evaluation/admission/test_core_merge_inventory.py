@@ -24,6 +24,7 @@ import core_c7a3e1e_inventory as corec7
 import core_041bd4a_inventory as core041
 import inprocess_inventory as inprocess
 import selected_inventory as selected
+import inline_clock_inventory as inline
 from owned_stack_inventory import before_owned_stack
 from runtime_stack_consumer_inventory import before_runtime_stack_consumer
 from core_main_inventory import (ADDED_HARNESSES, CHANGED_HARNESSES, RUST_METHODS,
@@ -304,9 +305,49 @@ class CoreMergeInventoryTests(unittest.TestCase):
 
     def test_catalog_preserves_all_old_harnesses_and_native_collection_identities(self):
         current041 = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        inline_current = copy.deepcopy(current041)
+        current041 = inline.before_inline(current041)
+        self.assertEqual(inline_current, json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        self.assertEqual(inline.digest(inline_current), inline.CURRENT)
+        self.assertEqual(inline.digest(current041), inline.PREVIOUS)
+        self.assertEqual(inline.PREVIOUS, selected.CURRENT)
+        inline_rows = inline_current['harness_test_counts']['workspace_tests']
+        self.assertEqual(inline_rows['unit/liteinst2/lib'], counts(227, 1))
+        self.assertEqual(inline_rows['doc/liteinst2'], counts(6))
+        self.assertEqual((len(inline_rows), sum(row['tests'] for row in inline_rows.values()),
+                          sum(row['ignored'] for row in inline_rows.values())), (98, 2354, 4))
+        self.assertEqual(len(inline.METHODS), 8)
+        for identity in ('unit/liteinst2/lib', 'doc/liteinst2'):
+            for mode in ('missing', 'low', 'high', 'ignored', 'float', 'extra'):
+                changed = copy.deepcopy(inline_current)
+                rows = changed['harness_test_counts']['workspace_tests']
+                if mode == 'missing': del rows[identity]
+                elif mode == 'low': rows[identity]['tests'] -= 1
+                elif mode == 'high': rows[identity]['tests'] += 1
+                elif mode == 'ignored': rows[identity]['ignored'] += 1
+                elif mode == 'float': rows[identity]['tests'] = float(rows[identity]['tests'])
+                else: rows[identity]['extra'] = 'PRIVATE_SENTINEL'
+                with self.subTest(inline_inventory=(identity, mode)), self.assertRaisesRegex(
+                        parsing.InvalidEvidence, '^inline_inventory_differs$'):
+                    inline.before_inline(changed)
+        inline_read = Path.read_bytes
+        for target in inline.SOURCES:
+            def altered_inline(path, *args, **kwargs):
+                data = inline_read(path, *args, **kwargs)
+                return data + b'\nPRIVATE_SENTINEL\n' if path.as_posix().endswith(target) else data
+            with self.subTest(inline_source=target), patch('inline_clock_inventory.Path.read_bytes', altered_inline):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^inline_source_inventory_differs$'):
+                    inline.before_inline(inline_current)
+        for path, row in inline.PROJECTIONS.items():
+            data = (Path(__file__).resolve().parents[2] / path).read_bytes()
+            restored = inline.source_before_inline(path, data, 'inline_source_inventory_differs')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for bad in (restored, data + b'\nPRIVATE_SENTINEL\n'):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^inline_source_inventory_differs$'):
+                    inline.source_before_inline(path, bad, 'inline_source_inventory_differs')
         selected_current = copy.deepcopy(current041)
         current041 = selected.before_selected(current041)
-        self.assertEqual(selected_current, json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        self.assertEqual(selected_current, inline.before_inline(json.loads(Path(__file__).with_name("corpus.json").read_text())))
         self.assertEqual(selected.digest(selected_current), selected.CURRENT)
         self.assertEqual(selected.digest(current041), selected.PREVIOUS)
         self.assertEqual(selected.PREVIOUS, corec7.CURRENT_CORE_C7A3E1E_CORPUS_SHA256)

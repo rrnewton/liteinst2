@@ -12,6 +12,7 @@ import re
 
 from parsing import require
 from selected_inventory import peel_current
+from inline_clock_inventory import source_before_inline
 
 PRE_CORE_C7A3E1E_CORPUS_SHA256 = '25b48766c6213887ac19e799fc0329ef01973d2ade44e2a9cf8e4e722d4fdbd5'
 CURRENT_CORE_C7A3E1E_CORPUS_SHA256 = 'f748315064e4590ee4a2721c97f3b05717d271405d03271f9429bdaf5cc55d25'
@@ -138,6 +139,7 @@ def require_current_core_c7a3e1e_sources():
     for path, expected in SOURCE_SHA256.items():
         try:
             data = (root / path).read_bytes()
+            data = source_before_inline(path, data, "core_c7a3e1e_source_inventory_differs")
             source = data.decode("utf-8")
         except (OSError, UnicodeError):
             require(False, "core_c7a3e1e_source_inventory_differs")

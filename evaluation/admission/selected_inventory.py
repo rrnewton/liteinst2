@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+from inline_clock_inventory import peel_current as peel_inline, source_before_inline
 
 PREVIOUS = 'f748315064e4590ee4a2721c97f3b05717d271405d03271f9429bdaf5cc55d25'
 CURRENT = '5722a63804e587b2bc6c9b9330e9a610feeedc5838916409d652fc5ea0b76668'
@@ -57,6 +58,7 @@ def digest(value):
 
 
 def source_before_selected(path, data, error):
+    data = source_before_inline(path, data, error)
     if path not in PROJECTIONS:
         return data
     row = PROJECTIONS[path]
@@ -69,6 +71,7 @@ def source_before_selected(path, data, error):
 
 
 def before_selected(declared):
+    declared = peel_inline(declared)
     require(type(declared) is dict and digest(declared) == CURRENT, 'selected_inventory_differs')
     previous = copy.deepcopy(declared)
     rows = previous['harness_test_counts']['workspace_tests']
@@ -92,4 +95,5 @@ def before_selected(declared):
 
 def peel_current(declared):
     """Permit only this exact new layer; corrupt catalogs hit the old strict gate."""
+    declared = peel_inline(declared)
     return before_selected(declared) if type(declared) is dict and digest(declared) == CURRENT else declared
