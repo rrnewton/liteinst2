@@ -144,6 +144,10 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
             [0xf3, 0x48 | 0x49, 0x0f, 0x1e, m] if (*m & 0xf8) == 0xc8) { return Ok(out); }
     } else if matches!(instruction.code(), Code::Movq_xmm_rm64 | Code::Movq_rm64_xmm) {
         if !canonical_movq_integer(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vpbroadcastb_zmm_k1z_r32 {
+        // Only the observed unmasked EVEX.512 register form, ZMM16 <- RSI[7:0].
+        // This exact gate grants no other EVEX, masking, width or register form.
+        if source[..instruction.len()] != [0x62, 0xe2, 0x7d, 0x48, 0x7a, 0xc6] { return Ok(out); }
     } else if instruction.code() == Code::Pmaxud_xmm_xmmm128 {
         if !canonical_pmaxud(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Xgetbv {
@@ -427,6 +431,8 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::Pminub_xmm_xmmm128 | Code::Pmaxub_xmm_xmmm128
         // Exact SSE4.1 PMAXUD palette is checked before this Code arm.
         | Code::Pmaxud_xmm_xmmm128
+        // Exact unmasked EVEX512 broadcast, checked before this Code arm.
+        | Code::EVEX_Vpbroadcastb_zmm_k1z_r32
         | Code::Pmovmskb_r32_xmm
         // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.
         | Code::Movlpd_xmm_m64 | Code::Movlpd_m64_xmm

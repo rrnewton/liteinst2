@@ -240,10 +240,10 @@
       "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
     },
     {
-      "bytes": 26497,
-      "origin": "521531b49fd1 plus reviewed BND composition bb65588a",
+      "bytes": 26954,
+      "origin": "c3c42b67b35a plus reviewed exact VPBROADCASTB composition 2a599b1f",
       "path": "tools/page-entry/selected/decoder/src/tf.rs",
-      "sha256": "c5dc9b012bed6b8670a0ed74c4790185033f8bc067c305698aeeb2715e50d328"
+      "sha256": "dd04b58857ded7fc8e2dfb55f14928518c0099bea11f1f1bb8f1693a2a1d2b35"
     },
     {
       "bytes": 2900,
