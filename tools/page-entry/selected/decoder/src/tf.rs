@@ -108,6 +108,17 @@ fn canonical_lock_sub_rip(instruction: &Instruction, bytes: &[u8]) -> bool {
         && matches!(bytes, [0xf0, 0x83, 0x2d, _, _, _, _, _])
 }
 
+// Five exact legacy SSE4.1 PMAXUD forms qualified by the finite oracle.
+// No ignored REX bits, other address modes, prefix aliases or VEX/EVEX.
+// Memory alignment/faults remain CPU effects at the original source PC.
+fn canonical_pmaxud(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::Pmaxud_xmm_xmmm128
+        && matches!(bytes,
+            [0x66, 0x0f, 0x38, 0x3f, 0xc1 | 0xff | 0x06] |
+            [0x66, 0x45, 0x0f, 0x38, 0x3f, 0xe1] |
+            [0x66, 0x44, 0x0f, 0x38, 0x3f, 0x26])
+}
+
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
@@ -126,6 +137,8 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
             [0xf3, 0x48 | 0x49, 0x0f, 0x1e, m] if (*m & 0xf8) == 0xc8) { return Ok(out); }
     } else if matches!(instruction.code(), Code::Movq_xmm_rm64 | Code::Movq_rm64_xmm) {
         if !canonical_movq_integer(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if instruction.code() == Code::Pmaxud_xmm_xmmm128 {
+        if !canonical_pmaxud(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Xgetbv {
         // The actual ECX=0 restriction is enforced on the genuine NX frame
         // before either instruction page opens; decoding grants no RX permit.
@@ -404,6 +417,8 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::Pcmpeqb_xmm_xmmm128 | Code::Pcmpeqw_xmm_xmmm128 | Code::Pcmpeqd_xmm_xmmm128
         | Code::Pcmpgtb_xmm_xmmm128 | Code::Pcmpgtw_xmm_xmmm128 | Code::Pcmpgtd_xmm_xmmm128
         | Code::Pminub_xmm_xmmm128 | Code::Pmaxub_xmm_xmmm128
+        // Exact SSE4.1 PMAXUD palette is checked before this Code arm.
+        | Code::Pmaxud_xmm_xmmm128
         | Code::Pmovmskb_r32_xmm
         // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.
         | Code::Movlpd_xmm_m64 | Code::Movlpd_m64_xmm
