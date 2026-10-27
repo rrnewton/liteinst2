@@ -1,0 +1,37 @@
+[
+  {
+    "command": "targeted",
+    "log_sha256": "a44b2706da888060a314f16ebedc6f916e54b076ccd582693b8c88e69ee279f2",
+    "public_parser": "COMPLETE",
+    "review_sha256": "053a4e5b905060939482fc6ec6b283f203b1bd44e16d35fc51d562a17b5b2e3b",
+    "reviewed_inventory": true
+  },
+  {
+    "command": "required/test",
+    "log_sha256": "a53419f84c1788183e6f08902c4ad9afcf6be33d01af5e602105053842e0bd60",
+    "public_parser": "unexpected_or_duplicate_harness",
+    "review_sha256": "356eb07086ab526b74b386d5fac5d6abf96c1b472fabc57cb86c44e6f7b46c48",
+    "reviewed_inventory": true
+  },
+  {
+    "command": "serial",
+    "log_sha256": "481cac2e453a2251367740c0783f0b8c75e72e70e01be331a504a56ce5c4d0ad",
+    "public_parser": "unexpected_or_duplicate_harness",
+    "review_sha256": "513b59195b1caa791031b18201db3f25212c6d3d181efb4a4d167e4708dc10cd",
+    "reviewed_inventory": true
+  },
+  {
+    "command": "parallel-library",
+    "log_sha256": "3937d5455e196612e75bdbb7dd5dc39221ba8425be5e357da03d0d21a435e6ee",
+    "public_parser": "COMPLETE",
+    "review_sha256": "990c4fec98ef2d30769a959f280ce9c9ab3e2f7e9a80f427cf386216e4b3b446",
+    "reviewed_inventory": true
+  },
+  {
+    "command": "parallel-prefixed",
+    "log_sha256": "7f69a28237692390c33b61ec544c5d35000c5dc3cc97bd3063a511e45fc53e74",
+    "public_parser": "COMPLETE",
+    "review_sha256": "94b440b84badb2ea04d9cd2e2f0132a1e2f97aaee9e68ba45038a9149e0e810a",
+    "reviewed_inventory": true
+  }
+]

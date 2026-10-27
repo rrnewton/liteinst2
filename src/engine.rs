@@ -198,6 +198,11 @@ pub fn plan_with_emission_after(
     plan_core(&original.with_code(&current), victim_allocation, policy).map(artifact_plan)
 }
 
+// Explicit artifact-only continuation; all existing engine entry points stay literal.
+#[path = "engine_foreign.rs"]
+mod foreign;
+pub use foreign::plan_with_emission_after_with_foreign;
+
 fn artifact_plan(plan: EnginePlan) -> ArtifactPlan {
     ArtifactPlan::bundle(
         plan.bundle(),

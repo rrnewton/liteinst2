@@ -1,0 +1,22 @@
+[
+  {
+    "attempt": "initial-audit",
+    "cell": "null-heap-write-unstripped-stock-algorithm",
+    "content_result": null,
+    "exit": -9,
+    "operational_seconds": 60.61889094603248,
+    "review_sha256": "94281ee4d7dfee5556165a5abf52c927650af717a89e088aa5d8613b4a02b854",
+    "signal_origin_established": false,
+    "status": "FAILED"
+  },
+  {
+    "attempt": "initial-audit",
+    "cell": "null-jump-site-unstripped-bootstrap-patched-reference",
+    "content_result": null,
+    "exit": -9,
+    "operational_seconds": 62.44414222310297,
+    "review_sha256": "a0a049301e43873a7278fcf8b060617b0975a7d9377fb2bb0687cf62baef376d",
+    "signal_origin_established": false,
+    "status": "FAILED"
+  }
+]

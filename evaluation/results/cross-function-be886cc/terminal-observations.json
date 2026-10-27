@@ -1,0 +1,812 @@
+[
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1219,
+    "command": "targeted",
+    "text": "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 2139,
+    "command": "targeted",
+    "text": "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 2411,
+    "command": "targeted",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 2949,
+    "command": "targeted",
+    "text": "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1515,
+    "command": "required/test",
+    "text": "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1959,
+    "command": "required/test",
+    "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 3234,
+    "command": "required/test",
+    "text": "test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 4256,
+    "command": "required/test",
+    "text": "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 6144,
+    "command": "required/test",
+    "text": "test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 7503,
+    "command": "required/test",
+    "text": "test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 9446,
+    "command": "required/test",
+    "text": "test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 110485,
+    "command": "required/test",
+    "text": "test result: ok. 703 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 111162,
+    "command": "required/test",
+    "text": "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 111770,
+    "command": "required/test",
+    "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 112412,
+    "command": "required/test",
+    "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 112959,
+    "command": "required/test",
+    "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 114827,
+    "command": "required/test",
+    "text": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 115268,
+    "command": "required/test",
+    "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 116286,
+    "command": "required/test",
+    "text": "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 117736,
+    "command": "required/test",
+    "text": "test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 118577,
+    "command": "required/test",
+    "text": "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 119453,
+    "command": "required/test",
+    "text": "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 120181,
+    "command": "required/test",
+    "text": "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 120730,
+    "command": "required/test",
+    "text": "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 121932,
+    "command": "required/test",
+    "text": "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 124921,
+    "command": "required/test",
+    "text": "test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 125616,
+    "command": "required/test",
+    "text": "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 126711,
+    "command": "required/test",
+    "text": "test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 127195,
+    "command": "required/test",
+    "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 127824,
+    "command": "required/test",
+    "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 128520,
+    "command": "required/test",
+    "text": "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 130091,
+    "command": "required/test",
+    "text": "test result: ok. 50 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 130845,
+    "command": "required/test",
+    "text": "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 131292,
+    "command": "required/test",
+    "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 132867,
+    "command": "required/test",
+    "text": "test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 135067,
+    "command": "required/test",
+    "text": "test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 136618,
+    "command": "required/test",
+    "text": "test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 138121,
+    "command": "required/test",
+    "text": "test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 146051,
+    "command": "required/test",
+    "text": "test result: ok. 76 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 146254,
+    "command": "required/test",
+    "text": "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 147591,
+    "command": "required/test",
+    "text": "test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 149639,
+    "command": "required/test",
+    "text": "test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 150169,
+    "command": "required/test",
+    "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 162697,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 212 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 163546,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 212 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 170515,
+    "command": "required/test",
+    "text": "test result: ok. 212 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 170755,
+    "command": "required/test",
+    "text": "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 174555,
+    "command": "required/test",
+    "text": "test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 175191,
+    "command": "required/test",
+    "text": "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 178139,
+    "command": "required/test",
+    "text": "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 178738,
+    "command": "required/test",
+    "text": "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 178973,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 181931,
+    "command": "required/test",
+    "text": "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 182917,
+    "command": "required/test",
+    "text": "test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 183204,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 186274,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 26 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 186568,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 26 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 186935,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 26 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 187074,
+    "command": "required/test",
+    "text": "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 188003,
+    "command": "required/test",
+    "text": "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 188837,
+    "command": "required/test",
+    "text": "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 189268,
+    "command": "required/test",
+    "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 189894,
+    "command": "required/test",
+    "text": "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 190151,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 193089,
+    "command": "required/test",
+    "text": "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 194260,
+    "command": "required/test",
+    "text": "test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 197268,
+    "command": "required/test",
+    "text": "test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 197888,
+    "command": "required/test",
+    "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 200973,
+    "command": "required/test",
+    "text": "test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 201684,
+    "command": "required/test",
+    "text": "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 202604,
+    "command": "required/test",
+    "text": "test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 202870,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 205908,
+    "command": "required/test",
+    "text": "test result: ok. 28 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 206181,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 211996,
+    "command": "required/test",
+    "text": "test result: ok. 70 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 212280,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 215242,
+    "command": "required/test",
+    "text": "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 215492,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 215749,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 218894,
+    "command": "required/test",
+    "text": "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 219143,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 222320,
+    "command": "required/test",
+    "text": "test result: ok. 30 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 225279,
+    "command": "required/test",
+    "text": "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 225624,
+    "command": "required/test",
+    "text": "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 226162,
+    "command": "required/test",
+    "text": "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 227005,
+    "command": "required/test",
+    "text": "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 227347,
+    "command": "required/test",
+    "text": "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 228094,
+    "command": "required/test",
+    "text": "test result: ok. 4 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 228369,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 231622,
+    "command": "required/test",
+    "text": "test result: ok. 31 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 231878,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 232120,
+    "command": "required/test",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 232750,
+    "command": "required/test",
+    "text": "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 235706,
+    "command": "required/test",
+    "text": "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 245224,
+    "command": "required/test",
+    "text": "test result: ok. 106 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 245627,
+    "command": "required/test",
+    "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 245945,
+    "command": "required/test",
+    "text": "test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 248849,
+    "command": "required/test",
+    "text": "test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 248995,
+    "command": "required/test",
+    "text": "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 249139,
+    "command": "required/test",
+    "text": "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 249281,
+    "command": "required/test",
+    "text": "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 249424,
+    "command": "required/test",
+    "text": "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 249560,
+    "command": "required/test",
+    "text": "test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 250727,
+    "command": "required/test",
+    "text": "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 208787,
+    "command": "serial",
+    "text": "test result: ok. 703 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 209464,
+    "command": "serial",
+    "text": "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1231877,
+    "command": "serial",
+    "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1232806,
+    "command": "serial",
+    "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1233353,
+    "command": "serial",
+    "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1235849,
+    "command": "serial",
+    "text": "test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1236732,
+    "command": "serial",
+    "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1238029,
+    "command": "serial",
+    "text": "test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1333236,
+    "command": "serial",
+    "text": "test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1334077,
+    "command": "serial",
+    "text": "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1334953,
+    "command": "serial",
+    "text": "test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1335681,
+    "command": "serial",
+    "text": "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1336230,
+    "command": "serial",
+    "text": "test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1337711,
+    "command": "serial",
+    "text": "test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1340700,
+    "command": "serial",
+    "text": "test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1341395,
+    "command": "serial",
+    "text": "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1342490,
+    "command": "serial",
+    "text": "test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1342974,
+    "command": "serial",
+    "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1343603,
+    "command": "serial",
+    "text": "test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1344299,
+    "command": "serial",
+    "text": "test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1365031,
+    "command": "serial",
+    "text": "test result: ok. 50 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1365785,
+    "command": "serial",
+    "text": "test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1366232,
+    "command": "serial",
+    "text": "test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1368072,
+    "command": "serial",
+    "text": "test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1370541,
+    "command": "serial",
+    "text": "test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1372092,
+    "command": "serial",
+    "text": "test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 1373595,
+    "command": "serial",
+    "text": "test result: ok. 16 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 13315,
+    "command": "parallel-library",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 212 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 13902,
+    "command": "parallel-library",
+    "text": "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 212 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 20312,
+    "command": "parallel-library",
+    "text": "test result: ok. 212 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out;"
+  },
+  {
+    "attribution": "literal observation; not additive",
+    "byte_offset": 3111,
+    "command": "parallel-prefixed",
+    "text": "test result: ok. 27 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out;"
+  }
+]
