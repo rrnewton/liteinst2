@@ -27,6 +27,10 @@ static void selected_run_failure(void *unused,const struct li2_run_owner *owner)
     (void)unused;report(125,owner->first_error,owner->first_detail);
 }
 static _Noreturn void selected_run_abort(unsigned code,long detail) {
+#ifdef LI2_MAPS_PHASE_REUSE
+    li2_maps_phase_fail();
+#endif
+
     if(selected_run_failing) {
         /* A secondary event during cleanup must never restart that cleanup. */
         (void)li2_run_cache_interrupt(selected_run_cache,code,detail);
@@ -40,6 +44,10 @@ static _Noreturn void selected_run_abort(unsigned code,long detail) {
     (void)raw(SYS_exit_group,125,0,0,0,0,0);__builtin_trap();
 }
 static _Noreturn void selected_run_unexpected(int sig,siginfo_t *si,ucontext_t *uc) {
+#ifdef LI2_MAPS_PHASE_REUSE
+    li2_maps_phase_fail();
+#endif
+
     if(!selected_run_interrupted.event.observed) {
         struct li2_run_nested *n=&selected_run_interrupted;
         n->event.observed=1;n->event.number=sig;
