@@ -163,3 +163,24 @@ Seven numeric receipts total 363,119 bytes; raw captures and ABI records remain 
 - [Earlier preparation failure](results/20261027T143141.869332Z-first-entry-874c6958f21e.json)
 
 Independent audit authenticates all 152 commands and 304 captures in the four new passing native cohorts, including seven ABI records, and replays all six required-check logs to their exact totals. Source, input, binary and namespace bindings agree; raw logs are not published. Earlier receipts retain their original statuses.
+
+
+## Page admission after raw fork
+
+Source `315b2712115f71631fddd37dd61303018b0abc7a` adds opt-in `exec-fork`: one actual raw `SYS_fork` and at most eight `wait4` calls for its child. The child authenticates inherited mappings, sealed owners, admission generations and its copied alternate-stack frame, then reestablishes CPUID/TSC controls, sync-core registration and syscall dispatch before returning to the original application PC/RSP. The default loader still refuses fork. Original syscall arguments and kernel results are preserved, including kernel-width aliases, WNOHANG and EFAULT copyout that can already reap the child. See the [profile contract](../../tools/page-entry/README.md).
+
+The optimized native/gated cohort passes 39 commands: 24 fork/wait/default-refusal cases, six continuation commands and nine supervisor controls. Parent and child continuation records check all sixteen GPRs, full RFLAGS, FS/GS/selectors, the 128-byte redzone and qualified architectural XSTATE. Both actual corruption pairs retain eight rejected records, and all thirty supplied mutations are rejected. Timeout, SIGINT, close, reap and parser controls retain their actual failures; three cleanup-operation failures retain `cleanup_complete=false` while separate checks establish terminal ownership. This covers two singleton address spaces using NX admission and kernel traps (`source_patches=0`), not libc fork/atfork, clone, exec, threads, general application signals or complete B3. Child counters explicitly inherit the parent's pre-fork prefix.
+
+Reproduce with `python3 evaluation/inprocess/fork.py --expect-revision 315b2712115f71631fddd37dd61303018b0abc7a`. The receipt records the exact source, ten binary hashes, toolchain and bounded command recipe. The run used one reserved CPU (3), AMD EPYC 9D85, Linux 7.1.3 and GCC 11.5.0 `-O2`; no fork performance claim is made. Exact binaries, captures and full state records are retained privately for replay.
+
+The four prior native profiles also pass unchanged at this source: 65 first-entry commands, 35 ABI commands, 21 lifecycle commands/twenty rows and 31 dynamic commands/fifteen pairs. Independent saved-data replay authenticates all 152 commands and 304 captures, seven ABI records, 84 supplied ABI mutations and twelve resource controls. Lifecycle records fifteen mappings, 52 generations all retired, fourteen admissions and zero live pages. With fresh children on CPU 15 and the same hardware/compiler, first-entry native/gated whole-launch medians are 2.320342/59.770358 ms for directory listing and 2.560522/62.477130 ms for numeric listing. Gated launches include Python namespace copying/sealing. The existing post-constructor warmed 1,000-scan medians are 28.688874/33.426514 ms, with 4,002 forwarded calls and no further NX faults. These retain the preceding profiles' timing and coverage qualifications; the compact regression summary preserves raw timing arrays, hashes and reproduction commands.
+
+All four required checks pass: formatting, strict all-feature/all-target Clippy, workspace tests (2,350 passed, four previously ignored, 98 harnesses), and all-feature/all-target check. Recorder passes 330 controls; serial passes 1,029 tests/27 harnesses and every required native collection in 149.787 seconds, within its unchanged 180-second bound. Workspace takes 388.844 seconds within the existing 900-second profile. Source and configuration remain unchanged. Reproduce with `python3 evaluation/inprocess/checks.py --expect-revision 315b2712115f71631fddd37dd61303018b0abc7a`.
+
+Independent replay authenticates all ten preserved binaries and 176 fork captures, reproduces every continuation/supervisor result, and strictly reconstructs all six check logs. Expected failure rows remain failed.
+
+The results commit adds documentation and three numeric receipts totaling 106,316 bytes. Full old-profile receipts and raw captures remain private; their original hashes are bound in the regression summary.
+
+- [Raw-fork and continuation cohort](results/20261027T153503.221425Z-fork-315b2712115f.json)
+- [Existing native regression summary](results/20261027T152247.353033Z-regressions-315b2712115f.json)
+- [Required checks](results/20261027T152326.379750Z-checks-315b2712115f.json)
