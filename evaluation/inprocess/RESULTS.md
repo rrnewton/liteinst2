@@ -63,3 +63,45 @@ The 900-second workspace profile is explicitly new; the observed workspace comma
 - [Focused-run preflight refusal](results/20261027T124624.021258Z-serial-40d520a453ca.json): generated Python bytecode caused an untracked-input refusal before Cargo ran. The corrected wrapper disabled bytecode generation; no source-cleanliness predicate changed.
 
 In the earlier aggregate receipt, detail fields named `*_count.observed` count catalog rows, including incomplete rows; they are not completed-case counts. Its qualified counts remain zero. Later summaries use `catalog_rows` for this quantity. The explicit harness observed totals retain their actual meaning.
+
+## Selected instructions and mapping lifecycles
+
+Exact source revision `6f779d0ba8f58473d2b414ae49532d1faab2a5ea` (tree `a4e01ae0739670709c29ed21fc2d207c98c37390`) adds real RDRAND/RDSEED/RDPID/RDTSCP source patches and opt-in executable mapping lifecycles. Hardware and release toolchains match those above; fresh native children were pinned to CPU 3. Reproduce from this committed source:
+
+```sh
+python3 evaluation/inprocess/selected.py --iterations 1000
+python3 evaluation/inprocess/lifecycle.py
+python3 evaluation/inprocess/run.py --iterations 1000
+python3 evaluation/inprocess/dynamic.py --repeats 5
+python3 evaluation/inprocess/checks.py --expect-revision 6f779d0ba8f58473d2b414ae49532d1faab2a5ea
+```
+
+All 118 selected native cases pass: 90 random-instruction width/destination combinations, 15 RDPID destinations, RDTSCP, four actual CPUID-masked dispatch cases and eight accepted-prefix/cross-page cases. Each checks one native and two patched machine states, including 17 register words, 2,287 qualified XSTATE bytes and 128 red-zone bytes. Actual counter records total 2,006,236 completed replacements and 781,409 carry-clear random outcomes. The random oracle checks architectural outcomes and preserved state, not equality with a separate random sample. Seven RSP-destination and six invalid-encoding preparation controls refuse before executing and leave source unchanged. RSP output remains unsupported; this is not complete B2 coverage.
+
+Median nanoseconds per call, from 17 batches of 1,000 calls including fixture-loop overhead:
+
+| Case | Native | Patched + admitted |
+|---|---:|---:|
+| RDRAND r64/rax | 28.162 | 256.165 |
+| RDSEED r64/rax | 810.667 | 1,031.348 |
+| RDPID rax | 6.390 | 220.851 |
+| RDTSCP | 26.480 | 242.633 |
+
+RDSEED availability varies: 16,210 of this case's 17,002 patched calls returned carry clear. These timings do not compare equal random outcomes or equal success mixes. First calls including the fixture wrappers ranged 10.336–19.209 µs. There was one admission fault per case, admitting 126 pages in total; all measured steady batches caused no additional admission faults. Source patches are published eagerly before NX arming, using the existing qualified core publisher.
+
+The optimized C lifecycle probe performs genuine sealed-DSO dlopen/call/dlclose twice, partial sealed-VMA protection changes, private RW→RX JIT rewrites/address reuse (17→29→41), cross-page fetch and boundary CALL/RET, and actual partial-ENOMEM mprotect cases. Its output equals native. It observes 15 successful mappings, 52 generations all retired, 14 executable admissions and 14 sync-core operations, with zero owned pages left. Twelve separate negative processes require exact failure identities, including a writable alias after partial failure and brk shrink over an owned JIT page. No lifecycle throughput claim is made from this validation run.
+
+The lifecycle backend remains post-constructor, singleton and `source_patches=0`. Original syscalls retain their arguments/results; trusted-handler RX windows are revoked before application return. This demonstrates no application fetch before admission within the stated profile, not literal NX throughout mapping creation. Ordinary unsealed DSOs, original loader startup, threads/process lifecycle and general application signals remain open. See [the lifecycle contract](../../tools/page-mode/LIFECYCLE.md).
+
+All ten prior owned-region probes and 15 dynamic pairs also pass on this revision. Numeric `/bin/ls -ln --color=never .` again observes 98 first-touch faults over 575 gated pages and 34 forwarded syscalls. Its full-process median is 1.349406 ms native versus 2.162245 ms instrumented; observed ranges are 1.315284–1.389926 and 2.123767–2.335635 ms. Median total NX-handler service is 186.992 µs (range 176.542–217.889 µs), excluding signal delivery/return. The warmed 1,000-directory-scan interval has exactly 4,002 forwarded calls and no further admission faults: 27.589144 ms native versus 31.471250 ms instrumented median, a 1.141x ratio. Ranges are 27.208092–27.687572 and 31.160534–32.150590 ms. These remain shared-host observations with filesystem/cache effects, not universal overhead bounds.
+
+Receipts retain numeric observations, command/revision/hardware identities and capture hashes; raw captures stay under target. Four release receipts total 436,479 bytes:
+
+- [Selected instructions](results/20261027T132655.289429Z-selected-6f779d0ba8f5.json)
+- [Mapping lifecycles](results/20261027T132704.378460Z-lifecycle-6f779d0ba8f5.json)
+- [Existing owned-region probes](results/20261027T132706.724838Z-6f779d0ba8f5.json)
+- [Existing dynamic pairs](results/20261027T132708.192893Z-dynamic-6f779d0ba8f5.json)
+
+[Required checks](results/20261027T132714.815648Z-checks-6f779d0ba8f5.json) all passed: fmt, strict workspace/all-target/all-feature Clippy, workspace tests (2,339 passed, four ignored across 98 harnesses), and workspace/all-feature/all-target check. Recorder observed 330 tests. Serial observed all 1,029 tests in 27 harnesses, 50 native cases, 15 dynamic fixtures, 388 matrix records, 108 required native fixtures and complete backing cleanup. Workspace took 327.814 seconds; serial took 128.954 seconds within its unchanged 180-second bound. All command exits were zero, source/configuration remained unchanged and cleanup completed. The five receipts total 447,446 bytes.
+
+Independent audit authenticated all 354 release captures and six required-check logs. Saved command logs replayed through the unchanged strict parsers and reproduced the receipt totals. No workloads were rerun for this audit. The results commit changes documentation and numeric receipts only; executable sources remain the tested revision.
