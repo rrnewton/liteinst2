@@ -83,6 +83,37 @@ impl Composition {
         self.identity
     }
 
+    /// Authenticates an immutable source view and projects its complete current
+    /// overlay. Adjacent snapshots may supply the range; gaps never do.
+    pub(crate) fn planning_overlay(
+        &self,
+        identity: CodeIdentity,
+        address: u64,
+        original: &[u8],
+    ) -> Result<Vec<u8>, Refusal> {
+        if identity != self.identity {
+            return Err(Refusal::StaleGeneration);
+        }
+        if !bytes_match(&self.originals, address, original)? {
+            return Err(Refusal::ExpectedBytesChanged);
+        }
+        let wanted = byte_range(address, original)?;
+        let mut current = Vec::with_capacity(original.len());
+        for snapshot in &self.final_bytes {
+            if let Some(shared) =
+                intersection(byte_range(snapshot.address, &snapshot.bytes)?, wanted)
+            {
+                current.extend_from_slice(bytes_at(snapshot.address, &snapshot.bytes, shared));
+            }
+        }
+        // append preserves the originals' extents, whose complete coverage was
+        // authenticated above. Keep the projection fail-closed as well.
+        if current.len() != original.len() {
+            return Err(Refusal::DependencyNotHeld);
+        }
+        Ok(current)
+    }
+
     fn append_inner(&mut self, plan: &PatchPlan) -> Result<(), Refusal> {
         let parts = plan.parts();
         if parts.identity != self.identity {

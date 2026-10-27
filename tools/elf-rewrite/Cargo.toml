@@ -26,3 +26,8 @@ iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "d
 name = "common_sites"
 path = "examples/common_sites.rs"
 test = true
+
+[[example]]
+name = "verify_common_core"
+path = "examples/verify_common_core.rs"
+test = true

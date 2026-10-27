@@ -172,6 +172,18 @@ pub(crate) fn plan_successor_core(
         {
             return Err(Refusal::NoPatchWindow);
         }
+        // Replacing the selected operation must not bypass an inherited hook.
+        request
+            .require_original(AddressRange::new(selected.address(), len)?)
+            .inspect_err(|reason| {
+                search_evidence.qualification(
+                    SearchScope {
+                        physical_pc: Some(selected.address()),
+                        ..SearchScope::default()
+                    },
+                    reason,
+                );
+            })?;
         let victim_pc = selected.address() + len as u64;
         let victim = scan
             .instructions()
@@ -408,6 +420,8 @@ pub(crate) fn qualify_victim_core(
         }
     }
     quiescent::qualify_instruction(victim.instruction())?;
+    // Authenticate the whole victim before creating its local redirect.
+    request.require_original(displaced)?;
     Ok(displaced)
 }
 

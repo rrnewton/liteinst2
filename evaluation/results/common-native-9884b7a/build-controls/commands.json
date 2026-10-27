@@ -1,0 +1,3312 @@
+{
+  "callers": {
+    "build": {
+      "closed": {
+        "exit": 0,
+        "operational_seconds": 367.45019836188294,
+        "parent_wait_returned": true,
+        "pid": 2555518,
+        "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "d02e82172561f8f6640e9e7d9066b41caecdfe915b846124ec0b5bea6e6f19aa"
+      },
+      "command": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "$REPO/evaluation/e9-common-app/build_inventory.py",
+          "--raw",
+          "$BUILD_RAW",
+          "--toolchain",
+          "$TOOLCHAIN",
+          "--user-home",
+          "$USER_HOME",
+          "--cargo-home",
+          "$CARGO_HOME",
+          "--inputs",
+          "$REPO/ignored/a3/e9-common-build-inputs-v1/inputs.json",
+          "--inputs-sha256",
+          "957fab84e46b91e9a07cf1c1e80a456e66ac46265c0631095b81be59f16e4e51",
+          "--allocation-profile",
+          "original-derived-v1"
+        ],
+        "cpu_affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "cwd": "$REPO",
+        "env": {
+          "LC_ALL": "C",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "inner_limits_unchanged": true,
+        "parent_wait": "blocking wait on the one recipe child; fixed finite stage waits remain in the reviewed recipe",
+        "recipe_sha256": "31545ba44b5cb3b055a96269c689b9235957ec3dab0cfd3e65ba86efbdde71ed",
+        "scope": "Fresh integrated native compatibility epoch; unchanged twelve-stage original-derived-v1 build/inventory recipe. Source reviewed separately; no execution result yet.",
+        "source_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a"
+      }
+    },
+    "controls": {
+      "complete": {
+        "cases": 13,
+        "passed": 13,
+        "revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a",
+        "source_after_equal": true
+      },
+      "scope": "Root tool completion plus thirteen separate parent waits/strict receipts; no separate global launcher receipt.",
+      "terminal": {
+        "exit_code": 0,
+        "observed_utc": "2026-10-27T00:47:37.982676+00:00",
+        "scope": "Root observed unified exec session completion. No independent overall launcher stdout archive or strict launcher descendant receipt is claimed; each of the thirteen helper children has its own closed.json and strict receipt.",
+        "session_id": 77742,
+        "tool": "write_stdin"
+      }
+    }
+  },
+  "commands": [
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/evaluation/required-gates.py",
+            "--repo",
+            "$REPO",
+            "--output",
+            "$BUILD_RAW/required/gates"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "$CARGO_HOME",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "$REPO/target",
+            "HOME": "$USER_HOME",
+            "LC_ALL": "C",
+            "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "$TOOLCHAIN/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "$BUILD_RAW/required/tmp"
+          },
+          "name": "required",
+          "outer_argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/evaluation/required-gates.py",
+            "--repo",
+            "$REPO",
+            "--output",
+            "$BUILD_RAW/required/gates"
+          ],
+          "outer_env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "$CARGO_HOME",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "$REPO/target",
+            "HOME": "$USER_HOME",
+            "LC_ALL": "C",
+            "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "$TOOLCHAIN/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "$BUILD_RAW/required/tmp"
+          },
+          "parent_timeout_seconds": 1000
+        },
+        "receipt": null,
+        "result": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/evaluation/required-gates.py",
+            "--repo",
+            "$REPO",
+            "--output",
+            "$BUILD_RAW/required/gates"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 360.6260113520548,
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "$CARGO_HOME",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "$REPO/target",
+            "HOME": "$USER_HOME",
+            "LC_ALL": "C",
+            "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "$TOOLCHAIN/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "$BUILD_RAW/required/tmp"
+          },
+          "exit": 0,
+          "name": "required",
+          "outer_argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/evaluation/required-gates.py",
+            "--repo",
+            "$REPO",
+            "--output",
+            "$BUILD_RAW/required/gates"
+          ],
+          "outer_env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "$CARGO_HOME",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "$REPO/target",
+            "HOME": "$USER_HOME",
+            "LC_ALL": "C",
+            "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "$TOOLCHAIN/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "$BUILD_RAW/required/tmp"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 1000
+        }
+      },
+      "id": "required",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "$TOOLCHAIN/bin/cargo",
+            "build",
+            "-p",
+            "liteinst2",
+            "-p",
+            "liteinst-rewrite",
+            "--bin",
+            "elf-exec-oracle",
+            "--bin",
+            "liteinst-rewrite",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "$CARGO_HOME",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "$REPO/target",
+            "HOME": "$USER_HOME",
+            "LC_ALL": "C",
+            "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "$TOOLCHAIN/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "$BUILD_RAW/native-compile/tmp"
+          },
+          "name": "native-compile",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/native-compile/request.json",
+            "--receipt",
+            "$BUILD_RAW/native-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "$TOOLCHAIN/bin/cargo",
+              "build",
+              "-p",
+              "liteinst2",
+              "-p",
+              "liteinst-rewrite",
+              "--bin",
+              "elf-exec-oracle",
+              "--bin",
+              "liteinst-rewrite",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "$REPO",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "$CARGO_HOME",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "$REPO/target",
+              "HOME": "$USER_HOME",
+              "LC_ALL": "C",
+              "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "$TOOLCHAIN/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "$BUILD_RAW/native-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "$BUILD_RAW/native-compile/stderr.txt",
+            "stdout": "$BUILD_RAW/native-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.24912015604786575,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "734bfb72403d65af2dc417770ce6666ef20f50bbee26bc202530ebad909428cd",
+          "stderr_sha256": "ee1d3fffa2022e962e63e0dbe4d35c9c198450a20c29fc09030f635dbb38bfcd",
+          "stdout_sha256": "f5da8ed77e8af7841464ceea18fb9e3016ddf0514767b145dcbe79bef1f4083c",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "result": {
+          "argv": [
+            "$TOOLCHAIN/bin/cargo",
+            "build",
+            "-p",
+            "liteinst2",
+            "-p",
+            "liteinst-rewrite",
+            "--bin",
+            "elf-exec-oracle",
+            "--bin",
+            "liteinst-rewrite",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 0.3173742131330073,
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "$CARGO_HOME",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "$REPO/target",
+            "HOME": "$USER_HOME",
+            "LC_ALL": "C",
+            "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "$TOOLCHAIN/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "$BUILD_RAW/native-compile/tmp"
+          },
+          "exit": 0,
+          "name": "native-compile",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/native-compile/request.json",
+            "--receipt",
+            "$BUILD_RAW/native-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "$TOOLCHAIN/bin/cargo",
+              "build",
+              "-p",
+              "liteinst2",
+              "-p",
+              "liteinst-rewrite",
+              "--bin",
+              "elf-exec-oracle",
+              "--bin",
+              "liteinst-rewrite",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "$REPO",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "$CARGO_HOME",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "$REPO/target",
+              "HOME": "$USER_HOME",
+              "LC_ALL": "C",
+              "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "$TOOLCHAIN/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "$BUILD_RAW/native-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "$BUILD_RAW/native-compile/stderr.txt",
+            "stdout": "$BUILD_RAW/native-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        }
+      },
+      "id": "native-compile",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "$TOOLCHAIN/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "common_sites",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "$CARGO_HOME",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "$REPO/target",
+            "HOME": "$USER_HOME",
+            "LC_ALL": "C",
+            "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "$TOOLCHAIN/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "$BUILD_RAW/common-sites-compile/tmp"
+          },
+          "name": "common-sites-compile",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/common-sites-compile/request.json",
+            "--receipt",
+            "$BUILD_RAW/common-sites-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "$TOOLCHAIN/bin/cargo",
+              "build",
+              "-p",
+              "liteinst-rewrite",
+              "--example",
+              "common_sites",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "$REPO",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "$CARGO_HOME",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "$REPO/target",
+              "HOME": "$USER_HOME",
+              "LC_ALL": "C",
+              "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "$TOOLCHAIN/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "$BUILD_RAW/common-sites-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "$BUILD_RAW/common-sites-compile/stderr.txt",
+            "stdout": "$BUILD_RAW/common-sites-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 1.4107629540376365,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "b86d116feaadff7781bedd61b2c8f5c470073f918e7e32dce84e5cc07039ed36",
+          "stderr_sha256": "efe081ba48996234d52f72378d1abc13ae6472d8580229399816379bd8ad0217",
+          "stdout_sha256": "438392316ee92453c329573273f5b9daea9af9de601ef404bf50a83cd89c874f",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "result": {
+          "argv": [
+            "$TOOLCHAIN/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "common_sites",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 1.4871675570029765,
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "$CARGO_HOME",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "$REPO/target",
+            "HOME": "$USER_HOME",
+            "LC_ALL": "C",
+            "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "$TOOLCHAIN/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "$BUILD_RAW/common-sites-compile/tmp"
+          },
+          "exit": 0,
+          "name": "common-sites-compile",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/common-sites-compile/request.json",
+            "--receipt",
+            "$BUILD_RAW/common-sites-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "$TOOLCHAIN/bin/cargo",
+              "build",
+              "-p",
+              "liteinst-rewrite",
+              "--example",
+              "common_sites",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "$REPO",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "$CARGO_HOME",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "$REPO/target",
+              "HOME": "$USER_HOME",
+              "LC_ALL": "C",
+              "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "$TOOLCHAIN/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "$BUILD_RAW/common-sites-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "$BUILD_RAW/common-sites-compile/stderr.txt",
+            "stdout": "$BUILD_RAW/common-sites-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        }
+      },
+      "id": "common-sites-compile",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "$BUILD_RAW/artifacts/native-compile/product-39",
+            "target"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/target/tmp"
+          },
+          "name": "target",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/target/request.json",
+            "--receipt",
+            "$BUILD_RAW/target/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/native-compile/product-39",
+              "target"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/target/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/target/stderr.txt",
+            "stdout": "$BUILD_RAW/target/stdout.txt",
+            "wall_seconds": 30
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.10508193587884307,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "b1bd9d2ca9aee978e191a07b66fd81a5328c4f28a6307506d26c85b137a06421",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "6ac466f4721cc43cbecd450cd3f37cb75cfc8d372e22f1295ae6d2ba2182788c",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "result": {
+          "argv": [
+            "$BUILD_RAW/artifacts/native-compile/product-39",
+            "target"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 0.16647387202829123,
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/target/tmp"
+          },
+          "exit": 0,
+          "name": "target",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/target/request.json",
+            "--receipt",
+            "$BUILD_RAW/target/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/native-compile/product-39",
+              "target"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/target/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/target/stderr.txt",
+            "stdout": "$BUILD_RAW/target/stdout.txt",
+            "wall_seconds": 30
+          }
+        }
+      },
+      "id": "target",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "$BUILD_RAW/policies/unstripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "jump-site",
+            "null",
+            "$BUILD_RAW/inventories/null-jump-site-unstripped"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-null-jump-site-unstripped/tmp"
+          },
+          "name": "inventory-null-jump-site-unstripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-null-jump-site-unstripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-null-jump-site-unstripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+              "$BUILD_RAW/policies/unstripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "jump-site",
+              "null",
+              "$BUILD_RAW/inventories/null-jump-site-unstripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-null-jump-site-unstripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-null-jump-site-unstripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-null-jump-site-unstripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.1237801369279623,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "71f05c68c79a9f166cd26791dba2fc0344b2aa8d83db6c37220409c45f364d44",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "662b3ff3bc98e29fe202061ac10dd88e1ed7b2456e111aef8eea1f4326d84279",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "result": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "$BUILD_RAW/policies/unstripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "jump-site",
+            "null",
+            "$BUILD_RAW/inventories/null-jump-site-unstripped"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 0.21685680001974106,
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-null-jump-site-unstripped/tmp"
+          },
+          "exit": 0,
+          "name": "inventory-null-jump-site-unstripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-null-jump-site-unstripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-null-jump-site-unstripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+              "$BUILD_RAW/policies/unstripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "jump-site",
+              "null",
+              "$BUILD_RAW/inventories/null-jump-site-unstripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-null-jump-site-unstripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-null-jump-site-unstripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-null-jump-site-unstripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        }
+      },
+      "id": "inventory-null-jump-site-unstripped",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "$BUILD_RAW/policies/stripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "jump-site",
+            "null",
+            "$BUILD_RAW/inventories/null-jump-site-stripped"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-null-jump-site-stripped/tmp"
+          },
+          "name": "inventory-null-jump-site-stripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-null-jump-site-stripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-null-jump-site-stripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+              "$BUILD_RAW/policies/stripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "jump-site",
+              "null",
+              "$BUILD_RAW/inventories/null-jump-site-stripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-null-jump-site-stripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-null-jump-site-stripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-null-jump-site-stripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.14176605897955596,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "38b2a7913b75ee511c87ce87a18daca40a0bde10246f184e3ea6e5e4522216ec",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "662b3ff3bc98e29fe202061ac10dd88e1ed7b2456e111aef8eea1f4326d84279",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "result": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "$BUILD_RAW/policies/stripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "jump-site",
+            "null",
+            "$BUILD_RAW/inventories/null-jump-site-stripped"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 0.2174464361742139,
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-null-jump-site-stripped/tmp"
+          },
+          "exit": 0,
+          "name": "inventory-null-jump-site-stripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-null-jump-site-stripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-null-jump-site-stripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+              "$BUILD_RAW/policies/stripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "jump-site",
+              "null",
+              "$BUILD_RAW/inventories/null-jump-site-stripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-null-jump-site-stripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-null-jump-site-stripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-null-jump-site-stripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        }
+      },
+      "id": "inventory-null-jump-site-stripped",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "$BUILD_RAW/policies/unstripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "heap-write",
+            "null",
+            "$BUILD_RAW/inventories/null-heap-write-unstripped"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-null-heap-write-unstripped/tmp"
+          },
+          "name": "inventory-null-heap-write-unstripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-null-heap-write-unstripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-null-heap-write-unstripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+              "$BUILD_RAW/policies/unstripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "heap-write",
+              "null",
+              "$BUILD_RAW/inventories/null-heap-write-unstripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-null-heap-write-unstripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-null-heap-write-unstripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-null-heap-write-unstripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.13357049389742315,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "4467348512c1e50d32729030a56a449a6b6b584f861302bdfb2e52e550e81501",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "95abaf0ddb1b757fed8cc9378b7cea809bf9f8e3b515ad6a9264f1bccae8f371",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "result": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "$BUILD_RAW/policies/unstripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "heap-write",
+            "null",
+            "$BUILD_RAW/inventories/null-heap-write-unstripped"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 0.216170720057562,
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-null-heap-write-unstripped/tmp"
+          },
+          "exit": 0,
+          "name": "inventory-null-heap-write-unstripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-null-heap-write-unstripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-null-heap-write-unstripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+              "$BUILD_RAW/policies/unstripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "heap-write",
+              "null",
+              "$BUILD_RAW/inventories/null-heap-write-unstripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-null-heap-write-unstripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-null-heap-write-unstripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-null-heap-write-unstripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        }
+      },
+      "id": "inventory-null-heap-write-unstripped",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "$BUILD_RAW/policies/stripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "heap-write",
+            "null",
+            "$BUILD_RAW/inventories/null-heap-write-stripped"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-null-heap-write-stripped/tmp"
+          },
+          "name": "inventory-null-heap-write-stripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-null-heap-write-stripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-null-heap-write-stripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+              "$BUILD_RAW/policies/stripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "heap-write",
+              "null",
+              "$BUILD_RAW/inventories/null-heap-write-stripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-null-heap-write-stripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-null-heap-write-stripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-null-heap-write-stripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.1293532340787351,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "92fdc699dbc0917d431321b51cf5362b63f5b2e5c8236898f45ad447661e85de",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "95abaf0ddb1b757fed8cc9378b7cea809bf9f8e3b515ad6a9264f1bccae8f371",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "result": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "$BUILD_RAW/policies/stripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "heap-write",
+            "null",
+            "$BUILD_RAW/inventories/null-heap-write-stripped"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 0.21720851794816554,
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-null-heap-write-stripped/tmp"
+          },
+          "exit": 0,
+          "name": "inventory-null-heap-write-stripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-null-heap-write-stripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-null-heap-write-stripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+              "$BUILD_RAW/policies/stripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "heap-write",
+              "null",
+              "$BUILD_RAW/inventories/null-heap-write-stripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-null-heap-write-stripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-null-heap-write-stripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-null-heap-write-stripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        }
+      },
+      "id": "inventory-null-heap-write-stripped",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "$BUILD_RAW/policies/unstripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "jump-site",
+            "journal",
+            "$BUILD_RAW/inventories/journal-jump-site-unstripped"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-journal-jump-site-unstripped/tmp"
+          },
+          "name": "inventory-journal-jump-site-unstripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-journal-jump-site-unstripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-journal-jump-site-unstripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+              "$BUILD_RAW/policies/unstripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "jump-site",
+              "journal",
+              "$BUILD_RAW/inventories/journal-jump-site-unstripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-journal-jump-site-unstripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-journal-jump-site-unstripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-journal-jump-site-unstripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.1658621239475906,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "9977f5531a3528bdf4a9af0f411998ac5107dc0bf0f9e09ba8bea81605ec0acd",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "5702acc00f23a651996e8c50d6457807a5ea42f6903567b72ec79e67ed427825",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "result": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "$BUILD_RAW/policies/unstripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "jump-site",
+            "journal",
+            "$BUILD_RAW/inventories/journal-jump-site-unstripped"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 0.26744696986861527,
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-journal-jump-site-unstripped/tmp"
+          },
+          "exit": 0,
+          "name": "inventory-journal-jump-site-unstripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-journal-jump-site-unstripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-journal-jump-site-unstripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+              "$BUILD_RAW/policies/unstripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "jump-site",
+              "journal",
+              "$BUILD_RAW/inventories/journal-jump-site-unstripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-journal-jump-site-unstripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-journal-jump-site-unstripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-journal-jump-site-unstripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        }
+      },
+      "id": "inventory-journal-jump-site-unstripped",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "$BUILD_RAW/policies/stripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "jump-site",
+            "journal",
+            "$BUILD_RAW/inventories/journal-jump-site-stripped"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-journal-jump-site-stripped/tmp"
+          },
+          "name": "inventory-journal-jump-site-stripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-journal-jump-site-stripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-journal-jump-site-stripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+              "$BUILD_RAW/policies/stripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "jump-site",
+              "journal",
+              "$BUILD_RAW/inventories/journal-jump-site-stripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-journal-jump-site-stripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-journal-jump-site-stripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-journal-jump-site-stripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.15971749019809067,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "fd5e836988325617c0be4dce1a652a3fa03fa28e82dcff7ebb6cdaed9013f245",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "5702acc00f23a651996e8c50d6457807a5ea42f6903567b72ec79e67ed427825",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "result": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "$BUILD_RAW/policies/stripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "jump-site",
+            "journal",
+            "$BUILD_RAW/inventories/journal-jump-site-stripped"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 0.2176207872107625,
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-journal-jump-site-stripped/tmp"
+          },
+          "exit": 0,
+          "name": "inventory-journal-jump-site-stripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-journal-jump-site-stripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-journal-jump-site-stripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+              "$BUILD_RAW/policies/stripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "jump-site",
+              "journal",
+              "$BUILD_RAW/inventories/journal-jump-site-stripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-journal-jump-site-stripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-journal-jump-site-stripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-journal-jump-site-stripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        }
+      },
+      "id": "inventory-journal-jump-site-stripped",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "$BUILD_RAW/policies/unstripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "heap-write",
+            "journal",
+            "$BUILD_RAW/inventories/journal-heap-write-unstripped"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-journal-heap-write-unstripped/tmp"
+          },
+          "name": "inventory-journal-heap-write-unstripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-journal-heap-write-unstripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-journal-heap-write-unstripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+              "$BUILD_RAW/policies/unstripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "heap-write",
+              "journal",
+              "$BUILD_RAW/inventories/journal-heap-write-unstripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-journal-heap-write-unstripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-journal-heap-write-unstripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-journal-heap-write-unstripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.12378420284949243,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "26c3cc06175e97cb374ed5fa9f0da44a4831b299c0330abf82b868f8f638ff51",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "9d13439c13b65b82127eef0ac59c13e610f142c8d53696a757fbb8b7b4c75a31",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "result": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+            "$BUILD_RAW/policies/unstripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "heap-write",
+            "journal",
+            "$BUILD_RAW/inventories/journal-heap-write-unstripped"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 0.21758538391441107,
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-journal-heap-write-unstripped/tmp"
+          },
+          "exit": 0,
+          "name": "inventory-journal-heap-write-unstripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-journal-heap-write-unstripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-journal-heap-write-unstripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-unstripped",
+              "$BUILD_RAW/policies/unstripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "heap-write",
+              "journal",
+              "$BUILD_RAW/inventories/journal-heap-write-unstripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-journal-heap-write-unstripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-journal-heap-write-unstripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-journal-heap-write-unstripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        }
+      },
+      "id": "inventory-journal-heap-write-unstripped",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "$BUILD_RAW/policies/stripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "heap-write",
+            "journal",
+            "$BUILD_RAW/inventories/journal-heap-write-stripped"
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-journal-heap-write-stripped/tmp"
+          },
+          "name": "inventory-journal-heap-write-stripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-journal-heap-write-stripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-journal-heap-write-stripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+              "$BUILD_RAW/policies/stripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "heap-write",
+              "journal",
+              "$BUILD_RAW/inventories/journal-heap-write-stripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-journal-heap-write-stripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-journal-heap-write-stripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-journal-heap-write-stripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.12438258179463446,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "b4cf777c39c84e9793e62f851bdc9fafee5e822f2877892858e8a8692ca0c2bb",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "9d13439c13b65b82127eef0ac59c13e610f142c8d53696a757fbb8b7b4c75a31",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "result": {
+          "argv": [
+            "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+            "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+            "$BUILD_RAW/policies/stripped.txt",
+            "$BUILD_RAW/target/stdout.txt",
+            "heap-write",
+            "journal",
+            "$BUILD_RAW/inventories/journal-heap-write-stripped"
+          ],
+          "cwd": "$REPO",
+          "elapsed_seconds": 0.21723288483917713,
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "$BUILD_RAW/inventory-journal-heap-write-stripped/tmp"
+          },
+          "exit": 0,
+          "name": "inventory-journal-heap-write-stripped",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "40s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$BUILD_RAW/inventory-journal-heap-write-stripped/request.json",
+            "--receipt",
+            "$BUILD_RAW/inventory-journal-heap-write-stripped/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 55,
+          "request": {
+            "argv": [
+              "$BUILD_RAW/artifacts/common-sites-compile/product-41",
+              "$REPO/ignored/a3/e9-common-app-preparation-ab443af-v1/original-stripped",
+              "$BUILD_RAW/policies/stripped.txt",
+              "$BUILD_RAW/target/stdout.txt",
+              "heap-write",
+              "journal",
+              "$BUILD_RAW/inventories/journal-heap-write-stripped"
+            ],
+            "cpu_seconds": 20,
+            "cwd": "$REPO",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "$BUILD_RAW/inventory-journal-heap-write-stripped/tmp"
+            },
+            "file_bytes": 16777216,
+            "stderr": "$BUILD_RAW/inventory-journal-heap-write-stripped/stderr.txt",
+            "stdout": "$BUILD_RAW/inventory-journal-heap-write-stripped/stdout.txt",
+            "wall_seconds": 30
+          }
+        }
+      },
+      "id": "inventory-journal-heap-write-stripped",
+      "kind": "build_stage",
+      "parent": "build_caller"
+    },
+    {
+      "context": {
+        "cwd": "$REPO",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "$CARGO_HOME",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "$REPO/target",
+          "HOME": "$USER_HOME",
+          "LC_ALL": "C",
+          "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "$TOOLCHAIN/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "$BUILD_RAW/required/gates"
+        },
+        "environment_authority": "Exact required-gates.py fixed overrides on saved required-stage environment",
+        "record": {
+          "argv": [
+            "cargo",
+            "fmt",
+            "--check"
+          ],
+          "exit": 0,
+          "log": "ignored/a3/common-native-epoch-v1/build-v1/required/gates/fmt.log",
+          "name": "fmt",
+          "seconds": 4.42454217094928,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "start_utc": "2026-10-27T00:45:58.136661+00:00",
+          "timeout_seconds": 180
+        }
+      },
+      "id": "required/fmt",
+      "kind": "nested_required_gate",
+      "parent": "required"
+    },
+    {
+      "context": {
+        "cwd": "$REPO",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "$CARGO_HOME",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "$REPO/target",
+          "HOME": "$USER_HOME",
+          "LC_ALL": "C",
+          "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "$TOOLCHAIN/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "$BUILD_RAW/required/gates"
+        },
+        "environment_authority": "Exact required-gates.py fixed overrides on saved required-stage environment",
+        "record": {
+          "argv": [
+            "cargo",
+            "clippy",
+            "--workspace",
+            "--all-targets",
+            "--all-features",
+            "--",
+            "-D",
+            "warnings"
+          ],
+          "exit": 0,
+          "log": "ignored/a3/common-native-epoch-v1/build-v1/required/gates/clippy.log",
+          "name": "clippy",
+          "seconds": 11.05427711084485,
+          "sha256": "d28641fbdf88d0e3b45fd0e35d4547645afb3e2e747b2bac6f576f8831a549b7",
+          "start_utc": "2026-10-27T00:46:02.563227+00:00",
+          "timeout_seconds": 180
+        }
+      },
+      "id": "required/clippy",
+      "kind": "nested_required_gate",
+      "parent": "required"
+    },
+    {
+      "context": {
+        "cwd": "$REPO",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "$CARGO_HOME",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "$REPO/target",
+          "HOME": "$USER_HOME",
+          "LC_ALL": "C",
+          "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "$TOOLCHAIN/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "$BUILD_RAW/required/gates"
+        },
+        "environment_authority": "Exact required-gates.py fixed overrides on saved required-stage environment",
+        "record": {
+          "argv": [
+            "cargo",
+            "test",
+            "--workspace"
+          ],
+          "exit": 0,
+          "log": "ignored/a3/common-native-epoch-v1/build-v1/required/gates/test.log",
+          "name": "test",
+          "seconds": 335.4873763648793,
+          "sha256": "f476d86830ee26fa5dbc4b4f59797f5e40c492de39b68a66b9faf05470d29c8a",
+          "start_utc": "2026-10-27T00:46:13.620704+00:00",
+          "timeout_seconds": 360
+        }
+      },
+      "id": "required/test",
+      "kind": "nested_required_gate",
+      "parent": "required"
+    },
+    {
+      "context": {
+        "cwd": "$REPO",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "$CARGO_HOME",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_TARGET_DIR": "$REPO/target",
+          "HOME": "$USER_HOME",
+          "LC_ALL": "C",
+          "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC": "$TOOLCHAIN/bin/rustc",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+          "RUST_TEST_THREADS": "4",
+          "TMPDIR": "$BUILD_RAW/required/gates"
+        },
+        "environment_authority": "Exact required-gates.py fixed overrides on saved required-stage environment",
+        "record": {
+          "argv": [
+            "cargo",
+            "check",
+            "--workspace",
+            "--all-features",
+            "--all-targets"
+          ],
+          "exit": 0,
+          "log": "ignored/a3/common-native-epoch-v1/build-v1/required/gates/check.log",
+          "name": "check",
+          "seconds": 9.367716988082975,
+          "sha256": "c65918efd2bfba6337afe34ea4c8ced15e392c2fa8439bcd7cb6cb87016563fb",
+          "start_utc": "2026-10-27T00:51:49.112034+00:00",
+          "timeout_seconds": 180
+        }
+      },
+      "id": "required/check",
+      "kind": "nested_required_gate",
+      "parent": "required"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/witness/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/witness/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/witness/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 0,
+          "parent_wait_returned": true,
+          "seconds": 0.265225995099172,
+          "start_utc": "2026-10-27T00:46:57.230403+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.21207740111276507,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "cb7bd0b03947762907f118590c1037bebcea6c605cf336f04f559fd85da43d0c",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "30d6876297f486ffb29aba4c81006b99952fcf1ee0b364debc13aec9d3c11de4",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/evaluation/e9-witness-controls/controls.py",
+            "--reader",
+            "$REPO/tools/elf-rewrite/e9-null-witness.py",
+            "--new-output",
+            "$CONTROLS_RAW/witness/output"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/witness/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/witness/stderr.txt",
+          "stdout": "$CONTROLS_RAW/witness/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 0,
+          "clean": true,
+          "expected_exit": 0,
+          "name": "witness",
+          "outer_exit": 0,
+          "output_matches": true,
+          "receipt_sha256": "edaf55419b9a2b0165d6685e38c63973a2e0782944a8898816738c726d79f4cd",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/witness",
+      "kind": "pure_witness_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/observe-help/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/observe-help/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/observe-help/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 0,
+          "parent_wait_returned": true,
+          "seconds": 0.2649423300754279,
+          "start_utc": "2026-10-27T00:46:57.497060+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.18859050190076232,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "c45219f20c0e023fff1f194b274e3f09f0ca9718ce20c51c9e35a771ddb0050e",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "d3b557e5a8094947761a35e3145dd528e6b8888d33573ccb4e96a208685012e6",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/evaluation/e9-common-app/observe_originals.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/observe-help/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/observe-help/stderr.txt",
+          "stdout": "$CONTROLS_RAW/observe-help/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 0,
+          "clean": true,
+          "expected_exit": 0,
+          "name": "observe-help",
+          "outer_exit": 0,
+          "output_matches": true,
+          "receipt_sha256": "2abf446fe5afeef8bd3231601f06b7137a3abc538fe2cb2c512a25405deab865",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/observe-help",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/observe-O/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/observe-O/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/observe-O/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 1,
+          "parent_wait_returned": true,
+          "seconds": 0.21482672705315053,
+          "start_utc": "2026-10-27T00:46:57.763222+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.1615106521639973,
+          "exit": 1,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "590b88b4b3512aa7a15a74109707f5f17a0aebb441614ca5cd4b71a4b2c4cb19",
+          "stderr_sha256": "b748de6d4de027c1be75923d2bbb004079c4b7736fb78278f9d652feee925a5e",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-O",
+            "-B",
+            "$REPO/evaluation/e9-common-app/observe_originals.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/observe-O/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/observe-O/stderr.txt",
+          "stdout": "$CONTROLS_RAW/observe-O/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 1,
+          "clean": true,
+          "expected_exit": 1,
+          "name": "observe-O",
+          "outer_exit": 1,
+          "output_matches": true,
+          "receipt_sha256": "c4a52ef9272655cf7e61ab83effd384cc2aec0563e9b5c90ad3269a41b38579c",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/observe-O",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/observe-OO/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/observe-OO/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/observe-OO/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 1,
+          "parent_wait_returned": true,
+          "seconds": 0.26474012713879347,
+          "start_utc": "2026-10-27T00:46:57.979096+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.18973640212789178,
+          "exit": 1,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "42e8e720bfc55dd55a855d6b4ffc18bc8ce3d758f517f3ec8c989967cd02c5ed",
+          "stderr_sha256": "b748de6d4de027c1be75923d2bbb004079c4b7736fb78278f9d652feee925a5e",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-OO",
+            "-B",
+            "$REPO/evaluation/e9-common-app/observe_originals.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/observe-OO/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/observe-OO/stderr.txt",
+          "stdout": "$CONTROLS_RAW/observe-OO/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 1,
+          "clean": true,
+          "expected_exit": 1,
+          "name": "observe-OO",
+          "outer_exit": 1,
+          "output_matches": true,
+          "receipt_sha256": "56349e8dbd42ca830c98930924a1b70605b08ddee7d0b5aa685ff6d3db286a77",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/observe-OO",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/audit-help/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/audit-help/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/audit-help/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 0,
+          "parent_wait_returned": true,
+          "seconds": 0.21481614094227552,
+          "start_utc": "2026-10-27T00:46:58.244847+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.16091855289414525,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "16dfc4690a2eb2716432bc92b540a43b3e72822af7a2dcdb72ed2e5ca01be304",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "8a92bc025eb4f5ac3a75c4ad251da6c99e469f270cfeeae4c2c44a016eed738a",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/evaluation/e9-common-app/audit_originals.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/audit-help/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/audit-help/stderr.txt",
+          "stdout": "$CONTROLS_RAW/audit-help/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 0,
+          "clean": true,
+          "expected_exit": 0,
+          "name": "audit-help",
+          "outer_exit": 0,
+          "output_matches": true,
+          "receipt_sha256": "9596fd2fe38f69b8694821bd07f97e4e91546862fb6f24c2b95a2ee1b81c849e",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/audit-help",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/audit-O/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/audit-O/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/audit-O/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 1,
+          "parent_wait_returned": true,
+          "seconds": 0.21462153899483383,
+          "start_utc": "2026-10-27T00:46:58.460648+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.16190449194982648,
+          "exit": 1,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "9686832165d488688d1a3486d2b0e9022e62d96336aaff6ed9623656c81e69c7",
+          "stderr_sha256": "6659156780c75635ce65fa84abf2da7ab89073ef184dccb368cf363ccb84412e",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-O",
+            "-B",
+            "$REPO/evaluation/e9-common-app/audit_originals.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/audit-O/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/audit-O/stderr.txt",
+          "stdout": "$CONTROLS_RAW/audit-O/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 1,
+          "clean": true,
+          "expected_exit": 1,
+          "name": "audit-O",
+          "outer_exit": 1,
+          "output_matches": true,
+          "receipt_sha256": "328347e904597dedc851f9e767955a379a89fa1d4a454813f59f3ddc1e0dcc0e",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/audit-O",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/audit-OO/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/audit-OO/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/audit-OO/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 1,
+          "parent_wait_returned": true,
+          "seconds": 0.21519983699545264,
+          "start_utc": "2026-10-27T00:46:58.676239+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.16177878389135003,
+          "exit": 1,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "ce07991d552bb873691bbeaac39f1d8a8a6a957d9e5225027d409671cdaeeced",
+          "stderr_sha256": "6659156780c75635ce65fa84abf2da7ab89073ef184dccb368cf363ccb84412e",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-OO",
+            "-B",
+            "$REPO/evaluation/e9-common-app/audit_originals.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/audit-OO/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/audit-OO/stderr.txt",
+          "stdout": "$CONTROLS_RAW/audit-OO/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 1,
+          "clean": true,
+          "expected_exit": 1,
+          "name": "audit-OO",
+          "outer_exit": 1,
+          "output_matches": true,
+          "receipt_sha256": "c652f11d5bf98093ce1ce498b12804f4f5f4b21b1039bf41aaa13bcba4148449",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/audit-OO",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/reader-help/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/reader-help/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/reader-help/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 0,
+          "parent_wait_returned": true,
+          "seconds": 0.2148007380310446,
+          "start_utc": "2026-10-27T00:46:58.892402+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.16368672717362642,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "95abb236a46ec568971a6a8692dae2cc2d894acbf1912df62ca8f8aded927a33",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "c80d85685a006d708770b94656e340621d9f4be35f0816364067a3936e6d31b4",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/elf-rewrite/e9-null-witness.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/reader-help/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/reader-help/stderr.txt",
+          "stdout": "$CONTROLS_RAW/reader-help/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 0,
+          "clean": true,
+          "expected_exit": 0,
+          "name": "reader-help",
+          "outer_exit": 0,
+          "output_matches": true,
+          "receipt_sha256": "0f874b30acfcb151603e5cde3386b527818ed3e1f10cbe8434d4b0496ae2e4cb",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/reader-help",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/reader-O/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/reader-O/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/reader-O/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 1,
+          "parent_wait_returned": true,
+          "seconds": 0.21487734303809702,
+          "start_utc": "2026-10-27T00:46:59.108332+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.1493454750161618,
+          "exit": 1,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "324061219fed1ea626d414271a60a9426e1a8d33d6fce1a7ebf1bb96be6f80e4",
+          "stderr_sha256": "ff8c9b941493380c4e0c1c9e13330699adf3802af3377e732905780f571fc4f8",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-O",
+            "-B",
+            "$REPO/tools/elf-rewrite/e9-null-witness.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/reader-O/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/reader-O/stderr.txt",
+          "stdout": "$CONTROLS_RAW/reader-O/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 1,
+          "clean": true,
+          "expected_exit": 1,
+          "name": "reader-O",
+          "outer_exit": 1,
+          "output_matches": true,
+          "receipt_sha256": "8d80a71c4f48ad0b256ac4a5276be88797e5f73b73326ce4ad3f0c288a6a089f",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/reader-O",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/reader-OO/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/reader-OO/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/reader-OO/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 1,
+          "parent_wait_returned": true,
+          "seconds": 0.2146918149664998,
+          "start_utc": "2026-10-27T00:46:59.324300+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.16232186905108392,
+          "exit": 1,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "89ac6aa2e741f5e668e5a8187cfa5e1d6dd68c000eefee1847b364035d5f4064",
+          "stderr_sha256": "ff8c9b941493380c4e0c1c9e13330699adf3802af3377e732905780f571fc4f8",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-OO",
+            "-B",
+            "$REPO/tools/elf-rewrite/e9-null-witness.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/reader-OO/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/reader-OO/stderr.txt",
+          "stdout": "$CONTROLS_RAW/reader-OO/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 1,
+          "clean": true,
+          "expected_exit": 1,
+          "name": "reader-OO",
+          "outer_exit": 1,
+          "output_matches": true,
+          "receipt_sha256": "71a0f2331eb3bdbe4846f3c034ea3fdb27dad24999538c6bd0895f4d3f33d58c",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/reader-OO",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/controls-help/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/controls-help/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/controls-help/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 0,
+          "parent_wait_returned": true,
+          "seconds": 0.2146214391104877,
+          "start_utc": "2026-10-27T00:46:59.540018+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.1640852759592235,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "0e4d447d7a66addb59fcf7d4b163e0af2871dbd46ceaeed2436b0d0ceaf403cd",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "1aca8fbff7bbc650b2feb7a0756ce38a9d16203f6bc92e63798e7ca95f2e980a",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/evaluation/e9-witness-controls/controls.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/controls-help/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/controls-help/stderr.txt",
+          "stdout": "$CONTROLS_RAW/controls-help/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 0,
+          "clean": true,
+          "expected_exit": 0,
+          "name": "controls-help",
+          "outer_exit": 0,
+          "output_matches": true,
+          "receipt_sha256": "4eb6281c42f4b092124ed2464bc446e5a8310c0dd8eea8026f5479dd1af19368",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/controls-help",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/controls-O/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/controls-O/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/controls-O/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 1,
+          "parent_wait_returned": true,
+          "seconds": 0.2146341979969293,
+          "start_utc": "2026-10-27T00:46:59.755672+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.1384594168048352,
+          "exit": 1,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "4482476cc475496e67f68f2a5ae7b1c9df1ce55c71782bfbbd24e2cb5b356d49",
+          "stderr_sha256": "b748de6d4de027c1be75923d2bbb004079c4b7736fb78278f9d652feee925a5e",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-O",
+            "-B",
+            "$REPO/evaluation/e9-witness-controls/controls.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/controls-O/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/controls-O/stderr.txt",
+          "stdout": "$CONTROLS_RAW/controls-O/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 1,
+          "clean": true,
+          "expected_exit": 1,
+          "name": "controls-O",
+          "outer_exit": 1,
+          "output_matches": true,
+          "receipt_sha256": "120f8a056797fbd3deb338cff024b1075f91ad493df7218d4ca1060d8b645c27",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/controls-O",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    },
+    {
+      "context": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=5s",
+            "25s",
+            "/usr/bin/python3.9",
+            "-B",
+            "$REPO/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "$CONTROLS_RAW/controls-OO/request.json",
+            "--receipt",
+            "$CONTROLS_RAW/controls-OO/receipt.json"
+          ],
+          "cpu_affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/controls-OO/tmp"
+          },
+          "parent_backstop_seconds": 40
+        },
+        "parent": {
+          "exit": 1,
+          "parent_wait_returned": true,
+          "seconds": 0.21869133692234755,
+          "start_utc": "2026-10-27T00:46:59.971388+00:00"
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.174423259915784,
+          "exit": 1,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "0916ecc221cf30d2f1dce49e0c20e9da958c0a905017477dc933c11e684c0f2f",
+          "stderr_sha256": "b748de6d4de027c1be75923d2bbb004079c4b7736fb78278f9d652feee925a5e",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-OO",
+            "-B",
+            "$REPO/evaluation/e9-witness-controls/controls.py",
+            "--help"
+          ],
+          "cpu_seconds": 10,
+          "cwd": "$REPO",
+          "env": {
+            "HOME": "$USER_HOME",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONHASHSEED": "0",
+            "PYTHONNOUSERSITE": "1",
+            "TMPDIR": "$CONTROLS_RAW/controls-OO/tmp"
+          },
+          "file_bytes": 2097152,
+          "stderr": "$CONTROLS_RAW/controls-OO/stderr.txt",
+          "stdout": "$CONTROLS_RAW/controls-OO/stdout.txt",
+          "wall_seconds": 15
+        },
+        "result": {
+          "child_exit": 1,
+          "clean": true,
+          "expected_exit": 1,
+          "name": "controls-OO",
+          "outer_exit": 1,
+          "output_matches": true,
+          "receipt_sha256": "60d166492a8f3e349d72f6b4da8ac027a148281095c5387f0c45ef6257b1026f",
+          "status": "PASS"
+        }
+      },
+      "id": "controls/controls-OO",
+      "kind": "cli_control",
+      "parent": "controls_caller"
+    }
+  ],
+  "roles": [
+    "$BUILD_RAW",
+    "$BUILD_LAUNCH",
+    "$CONTROLS_RAW",
+    "$TOOLCHAIN",
+    "$CARGO_HOME",
+    "$USER_HOME",
+    "$REPO"
+  ],
+  "schema": 1,
+  "tested_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a",
+  "timings": "Operational diagnostics only; nested and enclosing durations are not additive."
+}

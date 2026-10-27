@@ -8,8 +8,9 @@ selection or substitutes modeled results for the original hardware reference.
 Actual candidate identities and outcomes are unknown until production closes.
 
 The original-reference mode, seed module, Tracee, canonical XSAVE conversion and
-full comparator remain unchanged. The only original support factoring returns
-the two snapshots already captured by `reference`; its original CLI, assertions,
+full comparator remain unchanged. Original support factoring shares the fixed
+image constants and returns the two snapshots already captured by `reference`;
+its original CLI, assertions,
 files and stdout remain literal. Its local `paired_replay=UNIMPLEMENTED_UNRUN`
 field still describes that original-only child. The new pair and root records
 separately describe the new mode. Neither record supplies E9 or loader credit.
@@ -38,8 +39,13 @@ the complete LI2TARGET record, while the inventory's compact target line is
 checked as its exact projection. INVENTORY_DIRECTORY must be the complete,
 indexed common_sites null-hook output for the whole jump-site or heap-write
 selection. No visited-site filtering or individually replanned selection is
-accepted. The original fixed application limits and allocation/search policy
-are checked literally.
+accepted. The fixed application limits and search policy are checked literally.
+The verifier authenticates the complete `LI2COMMON 1` fixed allocation policy
+or the explicit `LI2COMMON 2` original-derived policy. For the latter it derives
+all selected/victim permits independently from the original bytes and complete
+head table. Its four-byte displacement ceiling uses a separate algorithm from
+the selector. Neutral permits retain otherwise unplaceable sites; they do not
+make a refused complete candidate eligible for replay.
 
 The read-only example checks the complete inventory, indexed bundle, metadata,
 sparse transaction, ordered source reads/writes, whole carrier bytes, every
@@ -83,6 +89,12 @@ array and stack with MAP_FIXED_NOREPLACE. It never searches another address or
 clobbers an existing mapping. Page installation happens with no live child,
 uses writable non-executable preparation, then exact final permissions. The
 original parent view is restored before the next case.
+
+The shared pure page reader retains the four exact original LOAD owners and
+all 37 original pages. Generated pages may lie below or above the half-open
+original image interval. Full page bytes, LOAD order, nonoverlap, permissions,
+page count and span limits remain checked. Its standalone byte-array tests do
+not substitute for actual emitted-image replay.
 
 Candidate execution has three comparisons: seeded original-PC entry; the exact
 restored boundary immediately before its original operation; and the exact

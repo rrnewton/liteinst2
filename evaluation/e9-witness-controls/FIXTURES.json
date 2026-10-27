@@ -1,0 +1,192 @@
+{
+  "all_call_words": [
+    4200568,
+    4200582,
+    4200706,
+    4200743,
+    4200757,
+    4200770
+  ],
+  "branch_states": {
+    "state0": {
+      "Jae": true,
+      "Jb": false,
+      "Jbe": false,
+      "Jne": true,
+      "rflags": 514
+    },
+    "state1": {
+      "Jae": false,
+      "Jb": true,
+      "Jbe": true,
+      "Jne": false,
+      "rflags": 2775
+    }
+  },
+  "fault_cases": [
+    {
+      "address": 105553116266504,
+      "case": 174,
+      "code": 2,
+      "head_id": 1,
+      "signal": 11,
+      "state": 0
+    },
+    {
+      "address": 105553116266520,
+      "case": 175,
+      "code": 2,
+      "head_id": 1,
+      "signal": 11,
+      "state": 1
+    }
+  ],
+  "fixture_semantics": "Independent byte arithmetic; no actual candidate or whole structural envelope.",
+  "gateway_prefixes_hex": [
+    "",
+    "48",
+    "4826",
+    "482636",
+    "4826363e"
+  ],
+  "operations": [
+    {
+      "body_pc": 65536,
+      "expected_call_word": null,
+      "name": "copied-store",
+      "operation_end": 65540,
+      "operation_hex": [
+        "488914f7"
+      ],
+      "ordinary_continue_hex": "e93b183f00",
+      "original_hex": "488914f7",
+      "original_next": 4200516,
+      "original_pc": 4200512,
+      "original_target": null,
+      "scope": "SYNTHETIC_PURE_BYTE_FIXTURE_NOT_A_PRODUCED_IMAGE"
+    },
+    {
+      "body_pc": 69632,
+      "expected_call_word": null,
+      "name": "jb",
+      "operation_end": 69638,
+      "operation_hex": [
+        "0f8288083f00"
+      ],
+      "ordinary_continue_hex": "e961083f00",
+      "original_hex": "7222",
+      "original_next": 4200556,
+      "original_pc": 4200554,
+      "original_target": 4200590,
+      "scope": "SYNTHETIC_PURE_BYTE_FIXTURE_NOT_A_PRODUCED_IMAGE"
+    },
+    {
+      "body_pc": 73728,
+      "expected_call_word": null,
+      "name": "jae",
+      "operation_end": 73734,
+      "operation_hex": [
+        "0f83c0f83e00"
+      ],
+      "ordinary_continue_hex": "e980f83e00",
+      "original_hex": "733b",
+      "original_next": 4200587,
+      "original_pc": 4200585,
+      "original_target": 4200646,
+      "scope": "SYNTHETIC_PURE_BYTE_FIXTURE_NOT_A_PRODUCED_IMAGE"
+    },
+    {
+      "body_pc": 77824,
+      "expected_call_word": null,
+      "name": "jbe",
+      "operation_end": 77830,
+      "operation_hex": [
+        "0f86b6e83e00"
+      ],
+      "ordinary_continue_hex": "e9abe83e00",
+      "original_hex": "7606",
+      "original_next": 4200630,
+      "original_pc": 4200628,
+      "original_target": 4200636,
+      "scope": "SYNTHETIC_PURE_BYTE_FIXTURE_NOT_A_PRODUCED_IMAGE"
+    },
+    {
+      "body_pc": 81920,
+      "expected_call_word": null,
+      "name": "jne",
+      "operation_end": 81926,
+      "operation_hex": [
+        "0f85ead83e00"
+      ],
+      "ordinary_continue_hex": "e9fcd83e00",
+      "original_hex": "75e9",
+      "original_next": 4200711,
+      "original_pc": 4200709,
+      "original_target": 4200688,
+      "scope": "SYNTHETIC_PURE_BYTE_FIXTURE_NOT_A_PRODUCED_IMAGE"
+    },
+    {
+      "body_pc": 86016,
+      "expected_call_word": null,
+      "name": "jump",
+      "operation_end": 86021,
+      "operation_hex": [
+        "e9c1c83e00"
+      ],
+      "ordinary_continue_hex": "e964c83e00",
+      "original_hex": "eb58",
+      "original_next": 4200558,
+      "original_pc": 4200556,
+      "original_target": 4200646,
+      "scope": "SYNTHETIC_PURE_BYTE_FIXTURE_NOT_A_PRODUCED_IMAGE"
+    },
+    {
+      "body_pc": 90112,
+      "expected_call_word": 4200568,
+      "name": "call",
+      "operation_end": 90122,
+      "operation_hex": [
+        "6878184000",
+        "e936b83e00"
+      ],
+      "ordinary_continue_hex": "e969b83e00",
+      "original_hex": "e8c8ffffff",
+      "original_next": 4200568,
+      "original_pc": 4200563,
+      "original_target": 4200512,
+      "scope": "SYNTHETIC_PURE_BYTE_FIXTURE_NOT_A_PRODUCED_IMAGE"
+    },
+    {
+      "body_pc": 94208,
+      "expected_call_word": null,
+      "name": "ret",
+      "operation_end": 94209,
+      "operation_hex": [
+        "c3"
+      ],
+      "ordinary_continue_hex": "e93fa83e00",
+      "original_hex": "c3",
+      "original_next": 4200517,
+      "original_pc": 4200516,
+      "original_target": null,
+      "scope": "SYNTHETIC_PURE_BYTE_FIXTURE_NOT_A_PRODUCED_IMAGE"
+    },
+    {
+      "body_pc": 98304,
+      "expected_call_word": null,
+      "name": "unreachable-nop",
+      "operation_end": 98307,
+      "operation_hex": [
+        "0f1f00"
+      ],
+      "ordinary_continue_hex": "e948993e00",
+      "original_hex": "0f1f00",
+      "original_next": 4200784,
+      "original_pc": 4200781,
+      "original_target": null,
+      "scope": "SYNTHETIC_PURE_BYTE_FIXTURE_NOT_A_PRODUCED_IMAGE"
+    }
+  ],
+  "schema": 1,
+  "status": "UNEXECUTED_PURE_CONTROL_DATA"
+}

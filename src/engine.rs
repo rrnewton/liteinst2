@@ -6,6 +6,7 @@
 //! exact-byte toggle interface.
 
 use crate::bundle::{BundleBudget, PlannedBundle};
+use crate::composition::Composition;
 use crate::contracts::{ExpectedBytes, Refusal};
 use crate::emission::{ArtifactMetrics, ArtifactPlan, ArtifactRequest, PlanningRequest};
 use crate::eviction::{self, EvictionAttempt, EvictionMetrics};
@@ -161,16 +162,51 @@ pub fn plan_with_emission(
         victim_allocation,
         policy,
     )
-    .map(|plan| {
-        ArtifactPlan::bundle(
-            plan.bundle(),
-            ArtifactMetrics::Engine(
-                plan.tactic(),
-                plan.metrics().clone(),
-                plan.attempts().to_vec(),
-            ),
+    .map(artifact_plan)
+}
+
+/// Plans an artifact step after previously composed source edits.
+///
+/// The request still supplies immutable original bytes and original entry,
+/// function and block facts. They must match the predecessor's identity and
+/// complete original snapshots. Decoding and relocated operations use that
+/// original view; read expectations, padding and pun suffixes use the current
+/// overlay. Each candidate refuses to displace an already changed original
+/// instruction, including when replacing rather than observing it.
+///
+/// This does not append to the predecessor. The caller must transactionally
+/// append every returned step to enforce inherited byte locks, physical-site
+/// uniqueness and allocation ownership, and enforce its aggregate budgets.
+/// An inherited conflict may therefore still refuse a selected bundle.
+pub fn plan_with_emission_after(
+    request: &ArtifactRequest<'_>,
+    predecessor: &Composition,
+    victim_allocation: &AllocationPolicy,
+    policy: EnginePolicy,
+) -> Result<ArtifactPlan, EngineFailure> {
+    let current = predecessor
+        .planning_overlay(
+            request.site.identity,
+            request.site.base_address,
+            request.site.code,
         )
-    })
+        .map_err(|reason| EngineFailure {
+            reason,
+            attempts: Vec::new(),
+        })?;
+    let original = PlanningRequest::artifact(request);
+    plan_core(&original.with_code(&current), victim_allocation, policy).map(artifact_plan)
+}
+
+fn artifact_plan(plan: EnginePlan) -> ArtifactPlan {
+    ArtifactPlan::bundle(
+        plan.bundle(),
+        ArtifactMetrics::Engine(
+            plan.tactic(),
+            plan.metrics().clone(),
+            plan.attempts().to_vec(),
+        ),
+    )
 }
 
 fn plan_core(

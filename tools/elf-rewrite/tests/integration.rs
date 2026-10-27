@@ -418,3 +418,6 @@ fn original_rx_is_required_independently_for_source_and_hook() {
     assert_eq!(refused.stage, "source-protection");
     assert_eq!(refused.detail, "requires original RX");
 }
+
+#[path = "support/composition_overlay.rs"]
+mod composition_overlay;

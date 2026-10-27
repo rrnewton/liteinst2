@@ -1,0 +1,128 @@
+{
+  "cases": [
+    {
+      "construction": "Nine fixture records above: literal ordinary operation, all four Jcc conditions, short JMP promotion, PUSH-original-return/JMP CALL, RET and unreachable NOP; compare every literal byte/physical endpoint.",
+      "name": "positive-copy",
+      "required_result": "byte witness only"
+    },
+    {
+      "construction": "Every original head remains byte-identical at its own source PC, including every CALL; operation is one original instruction with both frozen seeds.",
+      "name": "positive-direct",
+      "required_result": "87 heads/176 cases retained"
+    },
+    {
+      "construction": "Reach an exact operation through each pinned redundant-prefix E9 spelling plus EB/relay E9; validate every edge and owner.",
+      "name": "positive-prefixes",
+      "required_result": "complete fixed edge list"
+    },
+    {
+      "construction": "Exact continuation points beyond the following original JMP, with exact recorded bypass and byte route; current operation ends before continuation.",
+      "name": "positive-bypass",
+      "required_result": "no second original operation consumed"
+    },
+    {
+      "construction": "Change one original ELF byte and rebind caller hash.",
+      "name": "wrong-original",
+      "required_result": "refuse closed original hash"
+    },
+    {
+      "construction": "Delete, append or duplicate a row; also change one length/flow/target/offset while preserving row count.",
+      "name": "table-missing-extra-duplicate",
+      "required_result": "refuse whole table hash"
+    },
+    {
+      "construction": "Drop a requested jump or heap site while keeping table complete; independently alter site ID, original PC, length or file offset.",
+      "name": "selection-subset",
+      "required_result": "refuse complete static selection"
+    },
+    {
+      "construction": "Exchange stock and bootstrap backend/loader, alter producer common argv or receipt/statistic.",
+      "name": "producer-lane",
+      "required_result": "unchanged structural refusal"
+    },
+    {
+      "construction": "Provide the structurally valid trap template/outcome.",
+      "name": "trap-site",
+      "required_result": "required unresolved; never eligible"
+    },
+    {
+      "construction": "Keep a failed per-site debug outcome in otherwise closed producer output.",
+      "name": "refused-site",
+      "required_result": "required unresolved, outcome retained"
+    },
+    {
+      "construction": "Mutate full LI2TARGET component size or mask without its exact compact selection projection.",
+      "name": "bad-target",
+      "required_result": "refuse full/compact join"
+    },
+    {
+      "construction": "Reorder overlay before trampoline mapping, overlap owner intervals or change emitted mmap bytes.",
+      "name": "mapping-order",
+      "required_result": "unchanged structural refusal"
+    },
+    {
+      "construction": "Change final file offset/page bytes, add RWX generated owner, change original global/journal/BSS byte or permission.",
+      "name": "mapping-owner",
+      "required_result": "refuse or required unresolved; never eligible"
+    },
+    {
+      "construction": "Place any initial LOAD or overlay in A/E including adjacent guard pages.",
+      "name": "seed-collision",
+      "required_result": "refuse seed owner collision"
+    },
+    {
+      "construction": "Change a displacement so the predicted target has no exact same-head operation; do not scan nearby bytes.",
+      "name": "wrong-gateway",
+      "required_result": "required unresolved"
+    },
+    {
+      "construction": "Create a self/2-cycle or33-edge prefix chain with no earlier operation.",
+      "name": "gateway-cycle",
+      "required_result": "required unresolved at fixed prefix bound"
+    },
+    {
+      "construction": "Change one byte of PUSH immediate or use relocated E8 that pushes generated return PC.",
+      "name": "wrong-call-word",
+      "required_result": "required unresolved"
+    },
+    {
+      "construction": "Retain original return immediate but change JMP destination.",
+      "name": "wrong-call-callee",
+      "required_result": "required unresolved"
+    },
+    {
+      "construction": "Exchange Jb/Jae or one target displacement while preserving length.",
+      "name": "wrong-condition",
+      "required_result": "required unresolved"
+    },
+    {
+      "construction": "Keep operation exact but corrupt continuation opcode/target or omit its exact bypass owner.",
+      "name": "wrong-continuation",
+      "required_result": "required unresolved"
+    },
+    {
+      "construction": "Append a structurally parsed bypass record that no resolved template accounts for.",
+      "name": "unaccounted-bypass",
+      "required_result": "required unresolved; no extra record discarded"
+    },
+    {
+      "construction": "Modify text outside the three kernel ranges, even if an RPC row names it.",
+      "name": "unowned-source-change",
+      "required_result": "refuse or required unresolved, never new source write authority"
+    },
+    {
+      "construction": "Compare fixture cases174/175 with normal store completion: fault PC must not advance and address staysA+8/A+24.",
+      "name": "fault-preservation",
+      "required_result": "no fault-to-pass conversion"
+    },
+    {
+      "construction": "Change a held input owner/byte or use an existing output directory.",
+      "name": "drift-and-output",
+      "required_result": "refuse without replacing prior evidence"
+    }
+  ],
+  "execution_count": 0,
+  "notes": "Pure fixtures do not satisfy whole-product structural prerequisites or native authority. Controls may be run later only by an authorized caller; no malformed candidate is executed. Both negative report statuses and assertion refusals are non-admission.",
+  "schema": 1,
+  "status": "SOURCE_ONLY_UNEXECUTED"
+}

@@ -31,11 +31,11 @@ LIVE_ONLY = [
  'Single-task membership and live proc-exe/FD/path identity checks are source-attested; saved provider/map records permit the joins reported separately.',
  'No architectural state equivalence, manual replay, rewritten/E9 execution, performance or full-A3 qualification follows.'
 ]
-SOURCE_PINS = {'evaluation/e9-common-app/BUILD.md': '0fc9c7f1a7cd0ec0dbf4a4be15a8eefdfb6530acdef6235d4b11f6f44fdf4ad9',
+SOURCE_PINS = {'evaluation/e9-common-app/BUILD.md': '8098120de36e34420d5134d569dbb230e7b25ae02d6939084c998f96e47bc9d2',
  'evaluation/e9-common-app/PREPARATION.md': '2f1d0b8264c311dc987f1f053ec675bfb58bc62d52de5ed61ad8626f7de0ed99',
- 'evaluation/e9-common-app/PRODUCTION.md': '32d4cb61361c717d0353d19c99a4d901070739e64af01c807f8570f959068bd6',
+ 'evaluation/e9-common-app/PRODUCTION.md': '7a95cb752f0402a1a1cf3f715429f9749ae3695cfa570474994b1908a51f1f73',
  'evaluation/e9-common-app/README.md': '52222b130c915cccf4bae5b78247dc55f700fe7c3d18219a3477ddfe93eb6865',
- 'evaluation/e9-common-app/build_inventory.py': '01a500aa807b131c94d158efb95a625eb777b11846013cd14fbddf33f63ee1b9',
+ 'evaluation/e9-common-app/build_inventory.py': '31545ba44b5cb3b055a96269c689b9235957ec3dab0cfd3e65ba86efbdde71ed',
  'evaluation/e9-common-app/contract.json': 'c3817d7c206e3ab2433f4752891334a3194f82c3ac56f55cddf5ffc64f20b271',
  'evaluation/e9-common-app/datasets.h': '4dff04a7d1f3bc245daf9037eca58d7fc59913063c49348eef5a3eeee0839ea6',
  'evaluation/e9-common-app/datasets.json': '4da40a6ddbf7a5330cdab9ae63e7800cdf2f72908c1c24f55319e75320e43334',
@@ -50,15 +50,15 @@ SOURCE_PINS = {'evaluation/e9-common-app/BUILD.md': '0fc9c7f1a7cd0ec0dbf4a4be15a
  'evaluation/e9-common-app/expected/sorted-17.stdout': '82c7d0f0e9d4fe3043642894680dee06774431e88b58ad2463af63967b060d04',
  'evaluation/e9-common-app/heap_sort.c': '62ae1639206838d5471fb27b54281d4262e6542973a4259066250cd9add2c902',
  'evaluation/e9-common-app/journal.h': '3d27763501ff98748d69edcae2e6d12e1a0a2b0ef5c31777c194fa6a1fe8cca8',
- 'evaluation/e9-common-app/observe_originals.py': '3edebec0e1444412c9bce4877f1690beeb4bb8b85fb8140584b817b6216da4f7',
+ 'evaluation/e9-common-app/observe_originals.py': 'f84d4246e1b25032fb7ba7244d74f4c4a41d7d4049be52d2ed7ace6fdc18769d',
  'evaluation/e9-common-app/prepare_subject.py': '79945a0bfdc7ffa9b1ea2ed265669709e278bb6d82c5676731dab547eadc278c',
- 'evaluation/e9-common-app/produce.py': '62642769cf14c5a8baccd887942403d5e5b313b1060d823b5bc240d7261fd59c',
+ 'evaluation/e9-common-app/produce.py': '55683ce0f9d1c401b327552d1d385cb7db93a2e18659f67ea34489728ba09c71',
  'tests/support/e9_common_app.rs': 'faec58111347cc1c0d41c0fa47862207ae8938f7b4caddad98b4afc3043699ae',
  'tests/support/e9_common_app_data.rs': '92bca80e47c0d20825a4ec278f0de47a178dd1f11b0062bf01b2bbfa12659bf4',
- 'tests/support/elf_exec_driver.rs': 'f898bea1da083535ece4a2daa5fc7f794d94e1c0a99e9cc8f123a3f2476c21f7',
+ 'tests/support/elf_exec_driver.rs': 'ec93bf0f948f8b2c303839adf99c6e6b39c8211c65c94ec3c966d983d82d662a',
  'tests/support/elf_exec_oracle.rs': '1302da90836b31f9346cff5c20a458f4e5b3134b0f529e21f5027f78e4764c6b',
  'tests/support/elf_exec_provider.rs': '9b5562034fc6bbdc32f889ab64df7f414e96ee5d9a99c06e39bf6728f128e730',
- 'tools/elf-rewrite/examples/common_sites.rs': '838c795e3a107bee340a0d29c349b1f6f3c05123b3c6e4d14d5a850973ae8831',
+ 'tools/elf-rewrite/examples/common_sites.rs': '3dd3074b35f037109af696904dbed8ae13168c11f009bf65924ecd9f7c7289b5',
  'tools/unwind-oracle/bounded_command.py': 'c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44'}
 HEADS = [
     (4200512, '488914f7', 'li2_array_store', 'Next', None, 0),
@@ -741,7 +741,8 @@ def audit(saved, envelope, out):
 
 
 def main():
-    assert not sys.flags.optimize
+    if sys.flags.optimize:
+        raise SystemExit('assertions required')
     ap=argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--inputs',required=True);ap.add_argument('--inputs-sha256',required=True);ap.add_argument('--raw',required=True)
     args=ap.parse_args();data,owner=read_file(args.inputs)

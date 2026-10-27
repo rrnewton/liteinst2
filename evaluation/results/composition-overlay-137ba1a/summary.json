@@ -1,0 +1,293 @@
+{
+  "attempts": [
+    {
+      "additional_child_starts": 0,
+      "attempt": 1,
+      "closure_scope": "Dispatcher waited each Cargo child; caller waited dispatcher. No bounded_command/ECHILD receipt or whole-descendant claim is invented.",
+      "command_receipt_sha256": "bcbfbde4cd7070990ae644d66f812a8f350de82ffc5f2c3adc8aa77106a5bce1",
+      "gate_counts": {
+        "FAILED": 1,
+        "PASS": 2,
+        "UNRUN": 1
+      },
+      "nested_completed_summaries": 0,
+      "nested_passes_aggregated": false,
+      "new_cases": [
+        {
+          "name": "artifact_overlay_tests::five_tactics_decode_originals_and_keep_inherited_full_reads",
+          "source_declaration": {
+            "path": "src/artifact_overlay_tests.rs",
+            "source_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+          },
+          "status": "UNRUN"
+        },
+        {
+          "name": "artifact_overlay_tests::generalized_and_prefixed_puns_preserve_inherited_suffix_and_store_padding",
+          "source_declaration": {
+            "path": "src/artifact_overlay_tests.rs",
+            "source_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+          },
+          "status": "UNRUN"
+        },
+        {
+          "name": "artifact_overlay_tests::all_five_tactics_refuse_changed_selected_bytes_even_when_replacing",
+          "source_declaration": {
+            "path": "src/artifact_overlay_tests.rs",
+            "source_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+          },
+          "status": "UNRUN"
+        },
+        {
+          "name": "artifact_overlay_tests::successor_and_neighbor_refuse_changed_original_victims",
+          "source_declaration": {
+            "path": "src/artifact_overlay_tests.rs",
+            "source_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+          },
+          "status": "UNRUN"
+        },
+        {
+          "name": "artifact_overlay_tests::changed_same_site_window_keeps_the_bounded_upstream_candidate",
+          "source_declaration": {
+            "path": "src/artifact_overlay_tests.rs",
+            "source_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+          },
+          "status": "UNRUN"
+        },
+        {
+          "group": "Running tests/integration.rs (target/debug/deps/integration)",
+          "line": 1287,
+          "name": "composition_overlay::independent_original_mov_probes_compose_current_full_reads_and_original_sparse_edits",
+          "source_declaration": {
+            "path": "tools/elf-rewrite/tests/support/composition_overlay.rs",
+            "source_sha256": "3edadbf4b2fd9e0099b15866d22275407cdc2335d70c8cad9c9435895cbd2fb8"
+          },
+          "status": "ok"
+        },
+        {
+          "group": "Running tests/integration.rs (target/debug/deps/integration)",
+          "line": 1282,
+          "name": "composition_overlay::overlapping_later_original_window_refuses_complete_selection_and_keeps_first_step",
+          "source_declaration": {
+            "path": "tools/elf-rewrite/tests/support/composition_overlay.rs",
+            "source_sha256": "3edadbf4b2fd9e0099b15866d22275407cdc2335d70c8cad9c9435895cbd2fb8"
+          },
+          "status": "FAILED"
+        },
+        {
+          "group": "Running tests/integration.rs (target/debug/deps/integration)",
+          "line": 1281,
+          "name": "composition_overlay::predecessor_authentication_requires_exact_identity_originals_and_complete_coverage",
+          "source_declaration": {
+            "path": "tools/elf-rewrite/tests/support/composition_overlay.rs",
+            "source_sha256": "3edadbf4b2fd9e0099b15866d22275407cdc2335d70c8cad9c9435895cbd2fb8"
+          },
+          "status": "ok"
+        }
+      ],
+      "outer_counts": {
+        "failed": 1,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 1042
+      },
+      "outer_groups": 37,
+      "outer_named_cases": 1043,
+      "prior_case_retention": {
+        "prior_cases_unrun": 958,
+        "retained_reached_prior_cases": 1040
+      },
+      "review_binding_sha256": "a5dbee104d204721bb61d8884de655e8f2edc9ab2e2ff34484c212c24560b803",
+      "revision": "054e9aef7489c166e6cdf166c16a11ee0b6396a3",
+      "source_after": "UNRUN: dispatcher stopped at failed test gate",
+      "source_at_start": "Whole hash map matched historical Git in the independent review.",
+      "source_files": 1820,
+      "status": "FAILED",
+      "strict_helper_receipt": false,
+      "test_log_sha256": "372c317f3ec1f21710c393614ae828b9f3750b3ee541ac7e9047cb0130116fa8",
+      "unsummarized_child_starts": 0
+    },
+    {
+      "additional_child_starts": 10,
+      "attempt": 2,
+      "closure_scope": "Dispatcher waited each Cargo child; caller waited dispatcher. No bounded_command/ECHILD receipt or whole-descendant claim is invented.",
+      "command_receipt_sha256": "443709efb46d53328310ff339b7ea3b1e8c33abde6e2b7a6f3f41cc4b589ee95",
+      "gate_counts": {
+        "FAILED": 0,
+        "PASS": 4,
+        "UNRUN": 0
+      },
+      "nested_completed_summaries": 5,
+      "nested_passes_aggregated": false,
+      "new_cases": [
+        {
+          "group": "Running tests/integration.rs (target/debug/deps/integration)",
+          "line": 1258,
+          "name": "composition_overlay::predecessor_authentication_requires_exact_identity_originals_and_complete_coverage",
+          "source_declaration": {
+            "path": "tools/elf-rewrite/tests/support/composition_overlay.rs",
+            "source_sha256": "0fa02a7930deed71ca1b1fb30e8e3568cd7122e2eed425176584c1980db80f7e"
+          },
+          "status": "ok"
+        },
+        {
+          "group": "Running tests/integration.rs (target/debug/deps/integration)",
+          "line": 1261,
+          "name": "composition_overlay::independent_original_mov_probes_compose_current_full_reads_and_original_sparse_edits",
+          "source_declaration": {
+            "path": "tools/elf-rewrite/tests/support/composition_overlay.rs",
+            "source_sha256": "0fa02a7930deed71ca1b1fb30e8e3568cd7122e2eed425176584c1980db80f7e"
+          },
+          "status": "ok"
+        },
+        {
+          "group": "Running tests/integration.rs (target/debug/deps/integration)",
+          "line": 1263,
+          "name": "composition_overlay::overlapping_later_original_window_refuses_complete_selection_and_keeps_first_step",
+          "source_declaration": {
+            "path": "tools/elf-rewrite/tests/support/composition_overlay.rs",
+            "source_sha256": "0fa02a7930deed71ca1b1fb30e8e3568cd7122e2eed425176584c1980db80f7e"
+          },
+          "status": "ok"
+        },
+        {
+          "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+          "line": 1326,
+          "name": "artifact_overlay_tests::all_five_tactics_refuse_changed_selected_bytes_even_when_replacing",
+          "source_declaration": {
+            "path": "src/artifact_overlay_tests.rs",
+            "source_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+          },
+          "status": "ok"
+        },
+        {
+          "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+          "line": 1327,
+          "name": "artifact_overlay_tests::changed_same_site_window_keeps_the_bounded_upstream_candidate",
+          "source_declaration": {
+            "path": "src/artifact_overlay_tests.rs",
+            "source_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+          },
+          "status": "ok"
+        },
+        {
+          "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+          "line": 1328,
+          "name": "artifact_overlay_tests::generalized_and_prefixed_puns_preserve_inherited_suffix_and_store_padding",
+          "source_declaration": {
+            "path": "src/artifact_overlay_tests.rs",
+            "source_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+          },
+          "status": "ok"
+        },
+        {
+          "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+          "line": 1329,
+          "name": "artifact_overlay_tests::five_tactics_decode_originals_and_keep_inherited_full_reads",
+          "source_declaration": {
+            "path": "src/artifact_overlay_tests.rs",
+            "source_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+          },
+          "status": "ok"
+        },
+        {
+          "group": "Running unittests src/lib.rs (target/debug/deps/liteinst2)",
+          "line": 1336,
+          "name": "artifact_overlay_tests::successor_and_neighbor_refuse_changed_original_victims",
+          "source_declaration": {
+            "path": "src/artifact_overlay_tests.rs",
+            "source_sha256": "990ade97df5758b5ea4f5c5689e230afa92a1de96e818a603f9c8a3bb94c571e"
+          },
+          "status": "ok"
+        }
+      ],
+      "outer_counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 4,
+        "measured": 0,
+        "passed": 2002
+      },
+      "outer_groups": 91,
+      "outer_named_cases": 2006,
+      "prior_case_retention": {
+        "added_named_cases": 8,
+        "removed_or_status_changed_cases": 0,
+        "retained_prior_cases": 1998,
+        "retained_prior_revision": "41a236dff00295a70b5c4cf2982eb91359e5b2c1"
+      },
+      "review_binding_sha256": "2e7a84bef10eb9f816f83e3ffc706ac6e71624d6ec00d385541d6802ab67888b",
+      "revision": "137ba1a816634028d20ded6ccf8a2c57e03e6fe4",
+      "source_after": "Dispatcher completed final hash/head/clean-diff assertions; current read independently matches historical Git. Historical per-file mode/owner epochs were not serialized.",
+      "source_at_start": "Whole hash map matched historical Git in the independent review.",
+      "source_files": 1820,
+      "status": "PASS",
+      "strict_helper_receipt": false,
+      "test_log_sha256": "082568471e6b5ab78b1311a0aa0157d8c8aad65120b07b988d8785a6b6345fa0",
+      "unsummarized_child_starts": 5
+    }
+  ],
+  "fixture_fix_revision": "137ba1a816634028d20ded6ccf8a2c57e03e6fe4",
+  "full_a3": false,
+  "hardware_and_tools": {
+    "hardware": {
+      "Architecture": "x86_64",
+      "CPU family": "26",
+      "CPU(s)": "316",
+      "Core(s) per socket": "158",
+      "Model": "17",
+      "Model name": "AMD EPYC 9D85 158-Core Processor",
+      "Socket(s)": "1",
+      "Stepping": "0",
+      "Thread(s) per core": "2",
+      "Vendor ID": "AuthenticAMD",
+      "continuous_attestation": false,
+      "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+      "label": "AMD EPYC Zen 5 dev host"
+    },
+    "observed_utc": "2026-10-27T00:19:14.707022+00:00",
+    "phase": "during required workspace test compilation",
+    "tools": [
+      {
+        "argv": [
+          "$TOOLCHAIN/bin/rustc",
+          "-Vv"
+        ],
+        "stderr": "",
+        "stdout": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n"
+      },
+      {
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "-V"
+        ],
+        "stderr": "",
+        "stdout": "cargo 1.97.1 (c980f4866 2026-06-30)\n"
+      },
+      {
+        "argv": [
+          "/usr/bin/python3.9",
+          "--version"
+        ],
+        "stderr": "",
+        "stdout": "Python 3.9.25\n"
+      }
+    ]
+  },
+  "historical_common_production_failures": "Unchanged; not rerun or reclassified by these gate results.",
+  "implementation_revision": "054e9aef7489c166e6cdf166c16a11ee0b6396a3",
+  "limits": [
+    "Hardware/tools are one saved version observation, not continuous tool/host attestation.",
+    "The original dispatcher records direct Cargo waits and caller wait only; no bounded_command receipt, ECHILD or complete descendant claim.",
+    "Historical source mode/owner epochs are not captured by required-gates.py."
+  ],
+  "new_common_corpus_or_native_comparison_credit": false,
+  "qualification_complete": false,
+  "reproducer": {
+    "path": "evaluation/required-gates.py",
+    "sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b"
+  },
+  "schema": 1,
+  "scope": "Required workspace validation and finite source-composition regressions only.",
+  "times": "Operational wall durations only, not performance benchmarks; CPU time is not measured."
+}

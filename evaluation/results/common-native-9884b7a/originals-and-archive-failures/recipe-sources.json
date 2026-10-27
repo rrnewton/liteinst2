@@ -1,0 +1,52 @@
+{
+  "files": [
+    {
+      "actual_attempt": 1,
+      "bytes": 15311,
+      "destination": "ignored/a3/common-native-epoch-v1/verifier-producer-v2/build-verifier.py",
+      "mode": 420,
+      "role": "compiler-and-archive-recipe",
+      "sha256": "b6ae97aae1b246719621c72a6387d18015b6697d6b7667a985edc08d13328014",
+      "source": "recipe-sources/build-verifier-v2.py"
+    },
+    {
+      "actual_attempt": 2,
+      "bytes": 15311,
+      "destination": "ignored/a3/common-native-epoch-v1/verifier-producer-v3/build-verifier.py",
+      "mode": 420,
+      "role": "compiler-and-archive-recipe",
+      "sha256": "c3b58c2642487d8bddb49cc98efdf996af77c1dd1e15c532224e8de900c9b24c",
+      "source": "recipe-sources/build-verifier-v3.py"
+    },
+    {
+      "actual_attempt": 3,
+      "bytes": 15311,
+      "destination": "ignored/a3/common-native-epoch-v1/verifier-producer-v4/build-verifier.py",
+      "mode": 420,
+      "role": "compiler-and-archive-recipe",
+      "sha256": "419eb45972ebce7509559874a9ba81054fd620f4b8fcf31335417a77decf87d0",
+      "source": "recipe-sources/build-verifier-v4.py"
+    },
+    {
+      "actual_attempt": 4,
+      "bytes": 15310,
+      "destination": "ignored/a3/common-native-epoch-v1/verifier-producer-v5/build-verifier.py",
+      "mode": 420,
+      "role": "compiler-and-archive-recipe",
+      "sha256": "23e72599cce39029fd6fb5b3a4dba1c4f7d21acb5fcb5e7c2d98c136512322ad",
+      "source": "recipe-sources/build-verifier-v5.py"
+    },
+    {
+      "actual_attempt": null,
+      "bytes": 15633,
+      "destination": "ignored/a3/e9-common-verifier-archive-admission-proposal-v1/successor-v2/admit.py",
+      "mode": 420,
+      "role": "hash-only-provenance-dependency-not-executed-by-the-four-recipes",
+      "sha256": "133690b51ec1cba4f887d79bf4303c00f263817b36c1ac0d3c41034cff5896a5",
+      "source": "recipe-sources/admit-v2.py"
+    }
+  ],
+  "schema": 1,
+  "scope": "Byte-identical historical source packet; materialization copies only, never compiles or executes these recipes.",
+  "tested_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a"
+}

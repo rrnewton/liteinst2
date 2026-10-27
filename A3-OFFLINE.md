@@ -25,6 +25,17 @@ B2, B1, T1, T2 or T3, or honors an explicitly forced tactic. A bounded search
 failure remains a search failure. A conflicting selected site makes the whole
 candidate incomplete and remains in the report.
 
+For successive sites, the tool calls `engine::plan_with_emission_after` with
+the original snapshot and the preceding `Composition`. The core authenticates
+that snapshot against the composition's immutable originals, then uses current
+overlay bytes for read expectations, pun suffixes and store padding. Instruction
+heads, entries and relocated operations still come from the original decode.
+Each candidate refuses to displace an instruction whose bytes an earlier step
+changed, including for a replacing hook. The tool appends all returned steps to
+a temporary composition and retains the existing byte-lock, allocation and
+whole-selection checks before accepting them. Sparse expectations remain
+relative to the original ELF.
+
 ## Three outputs from one plan
 
 `candidate.elf` preserves the original entry and LOAD mappings, applies the

@@ -176,8 +176,9 @@ pub fn prepare(original: &[u8], manifest: &[u8]) -> Result<Product, Error> {
                 },
                 emission: &emission,
             };
-            let result = engine::plan_with_emission(
+            let result = engine::plan_with_emission_after(
                 &request,
+                &composition,
                 &site.victim_allocation,
                 EnginePolicy {
                     forced: site.forced,
