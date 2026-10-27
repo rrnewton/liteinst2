@@ -390,3 +390,19 @@ PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/checks.py --expect-revisi
 - [Integer group zero](results/20261027T195950.279353Z-page-selected-integer-0-52bb8423ede1.json)
 - [Integer group one](results/20261027T195958.438387Z-page-selected-integer-1-52bb8423ede1.json)
 - [Complete components](results/20261027T200006.957765Z-page-selected-components-52bb8423ede1.json)
+
+## Legacy SSE2 comparisons and movemasks (claims 2 and 4)
+
+Source `e3e3c792292ececff1d6da4c9f566d9db649f653` adds nine exact legacy XMM Codes for PCMPEQB/W/D, PCMPGTB/W/D, PMINUB, PMAXUB and r32 PMOVMSKB. The previous 535 Codes, prefix policy and original-address owners remain unchanged. Two bounded cohorts pass 36 new full-state comparisons plus two startup comparisons: sixteen register-vector cases, sixteen aligned-memory cases and four movemasks, with fourteen page endings and twenty-two crossing fetches. Independent literal lane/mask checks supplement exact GPR, flags, kernel-FP, live-XSAVE, selector, FS/GS, stack and data comparisons. All 47 old and 27 new encoding refusals pass in each of three processes. An inaccessible-memory load retains its actual native and stepped faults and exit 125; it is not completed instruction support.
+
+All nine native suites pass, totaling 772 build/native commands with no timeout or cleanup error. The connected cohort retains 32 outcomes: 28 completed programs and four required refusals. The actual system linker completes four additional generic instructions, reaching 7,472 generic and 725 original steps, 38 CPUID callbacks, two RDTSC callbacks, two source syscalls and 8,241 NX faults. It then refuses `0fbcc2`, BSF eax,edx (code 2119), before effect. Selected-profile `ls` remains incomplete. The canonical REP still completes all 52 iterations.
+
+All four required checks pass at this source: formatting, strict workspace/all-feature/all-target Clippy, workspace tests (2,457 passed, four previously ignored across 98 harnesses), and workspace/all-feature/all-target check. Recorder passes 330; serial passes 1,029 across 27 harnesses, including 50 native, 15 dynamic, 388 matrix and 108 validation cases plus backing cleanup. Workspace takes 372.895 seconds within its unchanged 900-second bound; serial takes 129.937 seconds within its unchanged 180-second bound. Source/configuration remain unchanged. Independent native saved-data review passes 18,598 checks; the connected replay and its adaptation also pass.
+
+These are optimized correctness runs, not performance measurements. Hardware is AMD EPYC 9D85, microcode `0xb101066`, Linux 7.1.3, GCC 11.5.0 and Rust/Cargo 1.97.1, with no effective capabilities. Each native run uses one reserved CPU; checks use four. Exact commands, hardware, numeric outcomes and hashes of the ten original receipts are in the [consolidated receipt](results/20261027-sse2-milestone.json), totaling 50,779 bytes instead of publishing 154,571 bytes of repeated per-run records. Original evaluators and their qualification rules are unchanged; complete logs and state captures remain private.
+
+Reproduce each `runs[].reproduce` command in that receipt at the source revision. The additional [summary script](summarize_selected.py) only projects those generated receipts; it preserves failure labels and does not perform validation. Its actual projection and mixed-revision/duplicate/failure controls were checked separately after the source tests. Recreate the publication with:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/summarize_selected.py --revision e3e3c792292ececff1d6da4c9f566d9db649f653 --output target/sse2-milestone-reproduced.json evaluation/inprocess/results/*e3e3c792292e.json
+```

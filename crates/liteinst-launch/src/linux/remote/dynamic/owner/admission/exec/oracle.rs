@@ -15,6 +15,8 @@ pub(in crate::linux::remote::dynamic::owner) enum ExecFault {
     #[cfg(test)]
     BeforeWriteStub,
     MapsRead,
+    MapsQuery,
+    MapsQueryUnsupported,
     AfterMapPanic,
     MunmapUnaligned,
 }

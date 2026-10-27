@@ -5,6 +5,7 @@
 use super::super::exec::oracle::{ExecFault, Probe, ProbeFd};
 use super::*;
 use std::os::fd::IntoRawFd;
+pub(in crate::linux::remote::dynamic::owner) mod query;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(in crate::linux::remote::dynamic::owner) struct DescriptorIdentity {
@@ -28,6 +29,12 @@ pub(in crate::linux::remote::dynamic::owner::admission) fn temporary_bytes() -> 
         + 2 * size_of::<libc::stat>()
         + size_of::<libc::statfs>()
         + 2 * size_of::<ExecutableIdentity>()
+        + size_of::<query::Query>()
+        + if cfg!(any(test, feature = "dev-exec-backing-cleanup")) {
+            size_of::<query::Query>() // before-image retained only by the native observer
+        } else {
+            0
+        }
 }
 
 struct Descriptor {
@@ -187,7 +194,11 @@ fn descriptor(file: &Descriptor) -> Result<DescriptorIdentity, GateError> {
     descriptor_value(&stat)
 }
 
-fn self_maps(context: &SourceReadContext<'_>, storage: &mut [u8]) -> Result<usize, GateError> {
+fn self_projection(
+    context: &SourceReadContext<'_>,
+    storage: &mut [u8],
+    address: u64,
+) -> Result<FileIdentity, GateError> {
     let fd = unsafe {
         libc::open(
             c"/proc/self/maps".as_ptr(),
@@ -204,7 +215,7 @@ fn self_maps(context: &SourceReadContext<'_>, storage: &mut [u8]) -> Result<usiz
         file.probe = Probe::current(context.owner).map(|probe| (probe, ProbeFd::Maps));
         file
     };
-    let read: Result<usize, GateError> = (|| {
+    let read: Result<FileIdentity, GateError> = (|| {
         let mut stat: libc::statfs = unsafe { std::mem::zeroed() };
         if unsafe { libc::fstatfs(file.raw(), &mut stat) } != 0 {
             return Err(system("stat exec identity self maps").into());
@@ -212,20 +223,79 @@ fn self_maps(context: &SourceReadContext<'_>, storage: &mut [u8]) -> Result<usiz
         if stat.f_type != libc::PROC_SUPER_MAGIC as libc::__fsword_t {
             return Err(refused("exec identity self maps is not procfs"));
         }
+        // The held page, not every mapping of this multithreaded tracer, is
+        // the authority being observed. A single query is internally consistent.
+        // Only an older kernel's ENOTTY enables the original bounded text path.
+        #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+        let force_read_error = context.owner.take_exec_fault(ExecFault::MapsRead);
+        #[cfg(not(any(test, feature = "dev-exec-backing-cleanup")))]
+        let force_read_error = false;
+        if !force_read_error {
+            context
+                .owner
+                .time_left(context.until, "exec identity map query")?;
+            let mut query = query::Query::new(address, storage);
+            #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+            let before = query;
+            let request = query::REQUEST;
+            #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+            let request = if context
+                .owner
+                .take_exec_fault(ExecFault::MapsQueryUnsupported)
+            {
+                0 // Real unknown ioctl -> ENOTTY; exercises the unchanged fallback.
+            } else {
+                request
+            };
+            let argument = &raw mut query;
+            #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+            let argument = if context.owner.take_exec_fault(ExecFault::MapsQuery) {
+                std::ptr::null_mut()
+            } else {
+                argument
+            };
+            // SAFETY: live fd and initialized UAPI structure; its output name
+            // points into the caller's exclusive reserved scratch. The test
+            // fault's null pointer is deliberately rejected by the kernel.
+            let result = unsafe { libc::ioctl(file.raw(), request, argument) };
+            let error = (result != 0).then(|| system("query exec identity self map"));
+            #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+            if let Some((probe, _)) = &file.probe {
+                probe.maps_query(
+                    (file.raw(), request, argument as usize as u64),
+                    result,
+                    &error,
+                    &before,
+                    &query,
+                    storage,
+                );
+            }
+            context
+                .owner
+                .time_left(context.until, "exec identity map query")?;
+            if result == 0 {
+                return query.identity(address, storage);
+            }
+            match error {
+                Some(LaunchError::System { source, .. })
+                    if source.raw_os_error() == Some(libc::ENOTTY) => {}
+                Some(error) => return Err(error.into()),
+                None => unreachable!("failed query has an error"),
+            }
+        }
         let mut length = 0;
         loop {
             context
                 .owner
                 .time_left(context.until, "exec identity maps capture")?;
             let mut extra = 0_u8;
-            let (address, count) = if length == storage.len() {
+            let (destination, count) = if length == storage.len() {
                 (&mut extra as *mut u8, 1)
             } else {
                 (storage[length..].as_mut_ptr(), storage.len() - length)
             };
-            let destination = address;
             #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
-            let destination = if context.owner.take_exec_fault(ExecFault::MapsRead) {
+            let destination = if force_read_error {
                 std::ptr::null_mut()
             } else {
                 destination
@@ -245,7 +315,7 @@ fn self_maps(context: &SourceReadContext<'_>, storage: &mut [u8]) -> Result<usiz
                 .owner
                 .time_left(context.until, "exec identity maps capture")?;
             if count == 0 {
-                return Ok(length);
+                return projection(&storage[..length], address);
             }
             if length == storage.len() || count as usize > storage.len() - length {
                 return Err(refused("exec identity self maps exceed fixed capture"));
@@ -255,9 +325,9 @@ fn self_maps(context: &SourceReadContext<'_>, storage: &mut [u8]) -> Result<usiz
     })();
     let close = file.close();
     // Preserve an earlier read error; either error prevents a certificate.
-    let length = read?;
+    let identity = read?;
     close?;
-    Ok(length)
+    Ok(identity)
 }
 
 pub(in crate::linux::remote::dynamic::owner::admission) fn projection(
@@ -337,8 +407,7 @@ pub(super) fn observe(
     context
         .owner
         .time_left(context.until, "exec identity probe mapping")?;
-    let length = self_maps(context, storage)?;
-    let vma = projection(&storage[..length], page.address())?;
+    let vma = self_projection(context, storage, page.address())?;
     if descriptor(&file)? != opened {
         return Err(refused("exec identity descriptor changed during mapping"));
     }

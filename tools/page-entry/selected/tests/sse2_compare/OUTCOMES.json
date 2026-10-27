@@ -1,0 +1,154 @@
+{
+  "schema_version": 1,
+  "prospective_only": true,
+  "scope": "Additive legacy SSE2 comparison/minmax/r32 movemask source candidate; no execution or loader completion claim",
+  "record_header_format": "<17Q",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_extent": "header_bytes + 22 * actual_DWARF_sample_bytes + 40; positive samples[0..18], unused samples[19..20] zero; failed control retains samples[0] and negative_sample",
+  "record_limit_bytes": 16777216,
+  "commands": [
+    {
+      "name": "group0",
+      "argv": [
+        "sse2-compare-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "stdout": "LI2_SSE2_TF_PASS group=0 pairs=19 sse2=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=27 full_state=19 full_memory=19 live_endpoints=19\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 19,
+        "refusals": 74,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 19,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "completed finite native/TF pair cohort"
+    },
+    {
+      "name": "group1",
+      "argv": [
+        "sse2-compare-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "stdout": "LI2_SSE2_TF_PASS group=1 pairs=19 sse2=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=27 full_state=19 full_memory=19 live_endpoints=19\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 19,
+        "refusals": 74,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 19,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "completed finite native/TF pair cohort"
+    },
+    {
+      "name": "load-fault",
+      "argv": [
+        "sse2-compare-0"
+      ],
+      "environment_delta": {
+        "LI2_SSE2_CONTROL": "load-fault"
+      },
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 19,
+        "refusals": 74,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 1,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 7,
+        "owner_detail_abs": 11
+      },
+      "process_outcome": "failed original-PC memory instruction; actual native and stepped fault records plus revoke/held-borrow prefix verified separately",
+      "required_record": {
+        "native_fault": 1,
+        "native_complete": 0,
+        "step_endpoint_seen": 0,
+        "negative_verified": 1,
+        "owner_phase": 6,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "owner_continuation_started": 0,
+        "owner_continuation_complete": 0,
+        "native_after_TRAPNO": 14,
+        "native_after_ERR": 4,
+        "owner_signal_number": 11,
+        "owner_signal_code": 2,
+        "owner_signal_errno": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_revoke_sync_started": 1,
+        "owner_revoke_sync": 0,
+        "fetch_held": 1
+      }
+    }
+  ],
+  "bounds": {
+    "cpu_seconds": 5,
+    "address_space_bytes": 536870912,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15,
+    "cpu_affinity_count": 1
+  },
+  "literal_effects": "Full old native-vs-TF comparator plus independently retained literal vector input/output and GPR mask tables. Complete kernel FP and actual standard XSAVE may differ only in the 16 destination-XMM bytes for vector cases; movemask changes only its zero-extended GPR. Upper vector state, every other GPR/RSP, logical flags, FS/GS, all live selectors, stack and data are exact.",
+  "native_pairs_per_group": 19,
+  "new_sse2_pairs_total": 36,
+  "old_refusal_count": 47,
+  "new_refusal_count": 27,
+  "case_table": "CASES.json and source cases.inc; group0 includes exact observed 660f74e0",
+  "old_cohorts": "All original generic, integer, padding, XGETBV and REP sources/commands/predicates remain separately required.",
+  "negative_endpoint": "The crossing native load faults before its planned INT3. Actual native fault EFLAGS retains RF and must equal the retained native-before flags. Only the separately derived logical seed clears RF; the raw fault frames are never normalized or marked complete."
+}

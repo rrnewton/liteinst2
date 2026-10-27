@@ -271,6 +271,14 @@ accepted replacement receives a fresh source binding, with prior plans and
 source versions retained. This unsafe interface still requires complete caller
 head facts and excludes signals, aliases, thread creation and later exec.
 
+Executable backing identity uses a temporary, non-executable file mapping in
+the tracer. On Linux 6.11 and later, `PROCMAP_QUERY` observes that one owned
+mapping atomically, independently of the tracer's thread count or unrelated
+mapping changes. Exact mapping geometry, permissions, offset, backing identity,
+name and descriptor stability remain required. Only `ENOTTY` selects the older
+whole-map reader, whose 64 KiB / 512-row limits remain. The stopped child's
+source-inventory bounds and complete-map validation are unchanged.
+
 The [mapping validation protocol](../../evaluation/admission/mapping-lifecycle.md)
 uses an independent raw tracer for an original RW→RX→RW→RX→unmap trajectory,
 including two different generated CPUID sites, stale replies, callback failures

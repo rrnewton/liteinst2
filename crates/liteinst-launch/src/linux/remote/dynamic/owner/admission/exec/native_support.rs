@@ -587,9 +587,12 @@ fn owner_body(
             until,
             retired: None,
         }));
-        if let Some(scenario) =
-            backing.filter(|scenario| *scenario != backing_cleanup::Scenario::Complete)
-        {
+        if let Some(scenario) = backing.filter(|scenario| {
+            !matches!(
+                scenario,
+                backing_cleanup::Scenario::Complete | backing_cleanup::Scenario::Legacy
+            )
+        }) {
             backing_cleanup::failed_attempt(
                 &mut owner,
                 exec,
@@ -604,6 +607,9 @@ fn owner_body(
                 },
             );
             return;
+        }
+        if backing == Some(backing_cleanup::Scenario::Legacy) {
+            owner.exec_fault.set(Some(ExecFault::MapsQueryUnsupported));
         }
         let reply = owner.execute_admission(
             AdmissionRequest::Complete {
@@ -829,7 +835,13 @@ fn owner_body(
             1
         );
         if let Some(inspection) = &inspection {
-            inspection.check(6, until, None);
+            assert_eq!(owner.exec_fault.get(), None);
+            inspection.check(
+                6,
+                until,
+                (backing == Some(backing_cleanup::Scenario::Legacy))
+                    .then_some(ExecFault::MapsQueryUnsupported),
+            );
         }
         owner.exec_oracle = None;
         let next_until = Instant::now() + TIMEOUT;
@@ -902,6 +914,8 @@ pub(crate) fn backing_child(role: crate::exec_cleanup_support::Role, receipt: &s
     let scenario = match role {
         Role::Complete => backing_cleanup::Scenario::Complete,
         Role::ReadError => backing_cleanup::Scenario::ReadError,
+        Role::QueryError => backing_cleanup::Scenario::QueryError,
+        Role::Legacy => backing_cleanup::Scenario::Legacy,
         Role::Unwind => backing_cleanup::Scenario::Unwind,
         Role::InvalidUnmap => unreachable!(),
     };
