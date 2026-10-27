@@ -25,7 +25,7 @@ and its output names remain unchanged. A caller can explicitly use
 and the existing sealed-namespace `exec-loader` command with that carrier.
 
 Canonical NOP and register/immediate MOV retain their original typed owner.
-A separate owner executes a closed set of 301 decoder instruction codes at
+A separate owner executes a closed set of 302 decoder instruction codes at
 their original addresses: integer arithmetic and memory access, stack operations,
 near branches/CALL/RET, and selected SSE2 data operations. The CPU supplies the
 actual register, flags, memory and FP results. The runtime validates the actual
@@ -34,9 +34,10 @@ predict indirect targets or emulate ordinary instructions.
 
 The classifier explicitly checks prefixes and refuses every unlisted code.
 TF-affecting, repeated-string, privileged and transaction instructions remain
-unsupported. ENDBR64 is also outside this initial profile: a measured real
-linker completed its initial MOV and CALL before refusing that instruction.
-This result is not a completed gated `ls` run. Random/ID instructions targeting
+unsupported. Canonical ENDBR64 (`f3 0f 1e fa`) is admitted only under the
+existing no-CET profile; additional or ignored prefixes and ENDBR32 still refuse.
+The prior measured linker refusal remains a historical failed continuation;
+this source addition does not establish a completed gated `ls` run. Random/ID instructions targeting
 SP/ESP/RSP still refuse through their separate selected-instruction policy.
 
 The selected inventory describes CPUID, RDRAND, RDSEED, RDPID, RDTSC, RDTSCP and
@@ -133,7 +134,7 @@ reports actual completion or an exact classifier refusal. The older
 `page_selected.py` command reproduces the earlier NOP/MOV profile at its recorded
 revision; its component helpers and all15 stream predicates remain in use.
 
-`tests/generic` adds20 same-address native/stepped pairs with complete GPR, flags,
+`tests/generic` adds21 same-address native/stepped pairs with complete GPR, flags,
 selectors, FS/GS, kernel FP, live XSAVE, stack/data and continuation comparisons.
 It also retains47 supplied-byte refusals and three actual negative processes:
 memory fault, unowned branch target and out-of-domain RSP. The finite connected

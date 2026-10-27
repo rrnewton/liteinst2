@@ -85,7 +85,7 @@ def main():
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
     record = {'schema_version': 1, 'profile': 'page-selected-generic-oracle-v1', 'status': 'failed',
-        'scope': 'Finite component: 20 original-address native/TF full-state and memory pairs, 47 supplied classifier refusals, three actual failed operations. No loader, performance or full-B2 claim.',
+        'scope': 'Finite component: 21 original-address native/TF full-state and memory pairs, 47 supplied classifier refusals, three actual failed operations. No loader, performance or full-B2 claim.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
@@ -158,12 +158,12 @@ def main():
             header = dict(zip(names, struct.unpack_from('<17Q', data)))
             result.update(header=header, record=fact(private/(name+'.record')))
             need(all(header[key] == value for key, value in case['header_equals'].items()), 'exact header outcome: '+name)
-            need(header['sample_bytes'] > 0 and len(data) == header['header_bytes']+21*header['sample_bytes']+40,
+            need(header['sample_bytes'] > 0 and len(data) == header['header_bytes']+22*header['sample_bytes']+40,
                  'complete actual record extent')
             need(576 <= header['xsave_bytes'] <= 65536 and header['xcr0'] & 3 == 3, 'qualified XSAVE extent')
             result['accepted'] = True
             if name == 'positive':
-                record['totals'].update(positive_pairs=20, generic_pairs=19, positive_selftest_pairs=1,
+                record['totals'].update(positive_pairs=21, generic_pairs=20, positive_selftest_pairs=1,
                                         supplied_refusal_encodings=47)
             else:
                 record['totals']['verified_failed_operations'] += 1

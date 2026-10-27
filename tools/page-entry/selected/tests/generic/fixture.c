@@ -340,6 +340,30 @@ static void compare(struct sample *s) {
         for(size_t i=0;i<16;i++)need(s->actual_fp[1][160+i]==
             (unsigned char)(s->actual_fp[0][160+i]^s->actual_fp[0][160+7*16+i]),94);
         need(memcmp(s->actual_fp[0]+160,s->actual_fp[1]+160,16)!=0,95);break;
+    case 20: {
+        const unsigned char endbr64[]={0xf3,0x0f,0x1e,0xfa};
+        need(s->length==sizeof(endbr64)&&!memcmp(s->decoded.bytes,endbr64,sizeof(endbr64))&&
+             s->owner.classification.policy==1&&s->owner.classification.flow==LI2_TF_FALLTHROUGH&&
+             s->owner.classification.family==LI2_TF_INTEGER&&s->expected_post==s->pc+4,134);
+        /* Architectural no-op within each actual lane, in addition to the
+           unchanged independent native/stepped comparison above. */
+        for(unsigned i=0;i<16;i++)need(
+            s->native_before.frame.greg[regs[i]]==s->native_after.frame.greg[regs[i]]&&
+            s->step_before.frame.greg[regs[i]]==o->after.greg[regs[i]]&&
+            s->step_before.frame.greg[regs[i]]==s->step_endpoint.frame.greg[regs[i]],135);
+        need(s->initial_flags==s->post_flags,136);
+        compare_memory(&s->native_before,&s->native_after,137);
+        compare_memory(&s->step_before,&s->step_endpoint,138);
+        need(!memcmp(frames[0]->fp,frames[1]->fp,frames[0]->fp_bytes)&&
+             !memcmp(frames[2]->fp,frames[5]->fp,frames[2]->fp_bytes)&&
+             !memcmp(frames[3]->fp,frames[4]->fp,frames[3]->fp_bytes),139);
+        need(!memcmp(s->actual_fp[0],s->actual_fp[1],xsave_bytes)&&
+             !memcmp(s->actual_fp[2],s->actual_fp[3],xsave_bytes),140);
+        need(!memcmp(s->live[0].gpr,s->live[1].gpr,sizeof(s->live[0].gpr))&&
+             !memcmp(s->live[2].gpr,s->live[3].gpr,sizeof(s->live[2].gpr))&&
+             s->live[0].rflags==s->live[1].rflags&&s->live[2].rflags==s->live[3].rflags,141);
+        break;
+    }
     default:break;
     }
     s->checked=1;
@@ -403,8 +427,9 @@ static void prepare_case(struct sample *s,unsigned id) {
         {0x48,0x8d,0x64,0x24,0xf0},{0x50},{0x5b},
         {0x0f,0x84,0,0,0,0},{0x0f,0x85,0,0,0,0},{0xff,0xe0},
         {0xe8,0,0,0,0},{0xff,0x16},{0xc3},{0xc2,0x10,0},
-        {0x49,0xbc,0x88,0x77,0x66,0x55,0x44,0x33,0x22,0x11},{0x66,0x0f,0xef,0xc7}};
-    static const unsigned char sizes[PAIRS]={1,3,2,3,1,3,3,4,5,1,1,6,6,2,5,2,1,3,10,4};
+        {0x49,0xbc,0x88,0x77,0x66,0x55,0x44,0x33,0x22,0x11},{0x66,0x0f,0xef,0xc7},
+        {0xf3,0x0f,0x1e,0xfa}};
+    static const unsigned char sizes[PAIRS]={1,3,2,3,1,3,3,4,5,1,1,6,6,2,5,2,1,3,10,4,4};
     need(id<PAIRS,111);s->id=id;s->selftest=id==0;s->length=sizes[id];
     long reserved=dispatch(SYS_mmap,0,5*PAGE,PROT_NONE,MAP_PRIVATE|MAP_ANONYMOUS,-1,0);
     need(reserved>0,112);s->mapping=(uintptr_t)reserved+PAGE;
@@ -488,6 +513,6 @@ int fixture_main(unsigned long *stack) {
     if(control){prepare_negative();run_pair(&negative_sample);die(132);}
     for(unsigned i=1;i<PAIRS;i++){prepare_case(&samples[i],i);run_pair(&samples[i]);}
     need(result.completed==PAIRS&&dump(),133);
-    output("LI2_GENERIC_TF_PASS pairs=20 generic=19 selftest=1 refusal_bytes=47 full_state=20 full_memory=20 live_endpoints=20\n");
+    output("LI2_GENERIC_TF_PASS pairs=21 generic=20 selftest=1 refusal_bytes=47 full_state=21 full_memory=21 live_endpoints=21\n");
     return 0;
 }

@@ -21,7 +21,7 @@
     "owner_detail_abs",
     "owner_detail_negative"
   ],
-  "record_extent": "header_bytes + 21 * sample_bytes + 40; actual DWARF defines sample layout",
+  "record_extent": "header_bytes + 22 * sample_bytes + 40; actual DWARF defines sample layout",
   "record_limit_bytes": 16777216,
   "requires": [
     "exact source/archive/binary binding",
@@ -38,12 +38,12 @@
         "generic-tf-fixture"
       ],
       "exit": 0,
-      "stdout": "LI2_GENERIC_TF_PASS pairs=20 generic=19 selftest=1 refusal_bytes=47 full_state=20 full_memory=20 live_endpoints=20\n",
+      "stdout": "LI2_GENERIC_TF_PASS pairs=21 generic=20 selftest=1 refusal_bytes=47 full_state=21 full_memory=21 live_endpoints=21\n",
       "stderr": "",
       "header_equals": {
         "version": 1,
         "header_bytes": 136,
-        "pairs": 20,
+        "pairs": 21,
         "refusals": 47,
         "failed_refusal": 18446744073709551615,
         "decoder_result": 0,
@@ -51,7 +51,7 @@
         "owner_detail_negative": 0,
         "magic": 3550605999948051020,
         "control": 0,
-        "completed": 20,
+        "completed": 21,
         "expected_failure_verified": 0,
         "owner_failure": 0,
         "owner_detail_abs": 0
@@ -70,7 +70,7 @@
       "header_equals": {
         "version": 1,
         "header_bytes": 136,
-        "pairs": 20,
+        "pairs": 21,
         "refusals": 47,
         "failed_refusal": 18446744073709551615,
         "decoder_result": 0,
@@ -97,7 +97,7 @@
       "header_equals": {
         "version": 1,
         "header_bytes": 136,
-        "pairs": 20,
+        "pairs": 21,
         "refusals": 47,
         "failed_refusal": 18446744073709551615,
         "decoder_result": 0,
@@ -124,7 +124,7 @@
       "header_equals": {
         "version": 1,
         "header_bytes": 136,
-        "pairs": 20,
+        "pairs": 21,
         "refusals": 47,
         "failed_refusal": 18446744073709551615,
         "decoder_result": 0,

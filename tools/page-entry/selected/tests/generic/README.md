@@ -1,10 +1,10 @@
 # Generic-TF native endpoint oracle
 
-This finite component compares 20 same-address native/stepped pairs: the real
+This finite component compares 21 same-address native/stepped pairs: the real
 NOP startup selftest, followed by ADD64, ADC32, XOR8, STD, load64, store64,
 memory ADD64, LEA RSP, PUSH, POP, taken JZ, not-taken JNZ, indirect JMP,
 direct CALL, indirect-memory CALL, RET, RET-immediate, a crossing MOV64 and
-XMM PXOR. It uses the product decoder, owner and lifecycle implementations.
+XMM PXOR, then canonical ENDBR64. It uses the product decoder, owner and lifecycle implementations.
 Both lanes execute the original bytes; operands and results come from the CPU.
 
 Every pair compares all 16 GPRs including RSP, exact logical flags with the
@@ -50,7 +50,7 @@ without cleanup errors. There are no retries or widened comparators.
 
 Compact public JSON contains numeric results and hashes. Full private records,
 preparation, argv, environments, tools, binaries and DWARF stay under `target`.
-Each binary record contains the 17-u64 header, 20 samples, one negative sample
+Each binary record contains the 17-u64 header, 21 samples, one negative sample
 and the final 40-byte classification. The record's actual sample size and the
 retained binary's DWARF support independent field replay; no historical layout
 is assumed. `OUTCOMES.json` is the expected protocol, never observed results.
@@ -59,3 +59,15 @@ a separate copied after-image in the failed record. SIGBUS/SIGILL are terminal
 under the closed profile, with no claimed explicit captured-frame/revoke proof.
 This oracle does not establish loader, arbitrary-program, signal transparency,
 performance or complete B2 coverage.
+
+The appended ENDBR64 pair uses exactly `f3 0f 1e fa`. It retains every old
+pair and supplements the complete native/stepped comparison with explicit
+within-lane before/after equality of GPRs, logical flags, initialized kernel
+FP bytes, live qualified XSAVE, full stack/data and live post-sigreturn GPRs/
+flags. Only RIP advances by four. This is the existing no-CET profile: both
+user shadow stacks and user indirect-branch tracking must be disabled. The
+existing ARCH_SHSTK_STATUS check observes shadow stacks; it is not an independent
+IBT measurement. CPUID feature advertising or an ELF ENDBR property is not
+evidence that user IBT is enabled or disabled. No CET tracker/suppression state
+comparison or CET-enabled continuation is claimed. The original strict preflight
+remains unchanged.

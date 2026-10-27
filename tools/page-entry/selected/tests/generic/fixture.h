@@ -7,7 +7,7 @@
 #define FP_CAPACITY 65536
 #define SUBJECT_BYTES 8192
 #define DATA_BYTES 4096
-#define PAIRS 20
+#define PAIRS 21
 #ifndef __ASSEMBLER__
 #include <stddef.h>
 #include <stdint.h>
