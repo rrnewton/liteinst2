@@ -1,0 +1,16 @@
+{
+  "argv": [
+    "python3",
+    "-B",
+    "collect.py",
+    "--repo",
+    "$REPO",
+    "--inputs",
+    "$PRIVATE_INPUTS",
+    "--inputs-sha256",
+    "e576e853bd4350e58ac1d086a156291cd67894b9b31899c1697976aa8a97ed42",
+    "--out",
+    "$REPO/ignored/common-partial-report"
+  ],
+  "purpose": "Regenerate the stopped historical report from retained private metadata; does not execute native cases."
+}

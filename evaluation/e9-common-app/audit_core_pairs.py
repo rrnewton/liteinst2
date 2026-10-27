@@ -530,7 +530,7 @@ def router_trace(data, routes, walk, trap, body, finish, operation, before, comp
             xstate_size = struct.unpack_from('<I',fp,480)[0]
             assert magic == 0x46505853 and extended == len(fp) and 576 <= xstate_size <= extended-4
             assert struct.unpack_from('<I',fp,len(fp)-4)[0] == 0x46505845
-            assert canonical(fp,components) == before['canonical']
+            assert canonical(fp,components) == signal_frame_expected(before['canonical'],fp,components)
             after_fp = take('router-fp-after',3)
             assert num(after_fp[1]) == fp_address and trace_hex(after_fp[2]) == fp
             assert take('trap-prefix',4)[1:] == [str(pc),str(dest),fetch.hex()]
@@ -573,7 +573,7 @@ def read_file(value):
     with os.fdopen(os.open(p, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK), 'rb') as f:
         a = os.fstat(f.fileno())
         assert stat.S_ISREG(a.st_mode) and 0 <= a.st_size <= 128 * MIB
-        b = f.read(128 * MIB + 1)
+        b = f.read(a.st_size + 1)
         assert six(a) == six(os.fstat(f.fileno())) == six(p.lstat()) and len(b) == a.st_size
     return b, dict(path=value, resolved=value, sha256=sha(b), stat=six(a))
 
@@ -586,7 +586,7 @@ class Saved:
         value = str(value)
         assert value in self.pins and not Path(value).is_relative_to(self.repo / 'target')
         b, owner = read_file(value)
-        assert self.pins[value] == dict(sha256=sha(b), bytes=len(b), stat=owner['stat']), ('pin/owner', value)
+        assert self.pins[value] == dict(sha256=owner['sha256'], bytes=len(b), stat=owner['stat']), ('pin/owner', value)
         if value in self.seen:
             assert self.seen[value] == owner, ('drift', value)
         self.seen[value] = owner
@@ -679,7 +679,9 @@ def image(data):
             if ms > fs and page + 4096 > va + fs:
                 start = max(0, va + fs - page); b[start:] = bytes(4096 - start)
             pages[page] = (flags, bytes(b))
-    assert loads_[:4] == LOADS and set(range(LO, HI, 4096)) <= pages.keys()
+    original_addresses = {row[1] for row in LOADS}
+    assert [row for row in loads_ if row[1] in original_addresses] == LOADS
+    assert set(range(LO, HI, 4096)) <= pages.keys()
     assert len(loads_) <= 261 and len(pages) <= 37 + 2048 and max(pages) + 4096 - min(pages) <= 1073741824
     assert all(flags != 6 for p, (flags, _) in pages.items() if not LO <= p < HI)
     base = b''.join(pages[p][1] for p in range(LO, HI, 4096))
@@ -716,6 +718,23 @@ def canonical(raw, components):
         out += struct.pack('<IQ', bit, size) + (raw[off:off+size] if used & (1 << bit) else bytes(size))
     assert len(out) == 2287
     return out
+
+
+def signal_frame_expected(expected, frame, components):
+    """Exact supported Linux signal-frame representation, not a PKRU exemption.
+
+    Component 9 is a 32-bit PKRU plus four padding bytes (Linux v6.12
+    asm/fpu/types.h). update_pkru_in_sigframe writes only unsigned int.
+    This router initializes every alternate-stack byte to 0xa6. Require
+    that exact saved padding, and still compare all 32 architectural bits.
+    Ptrace canonicalization and full before/after frame equality stay intact.
+    """
+    assert components == [(2,576,256),(5,832,64),(6,896,512),(7,1408,1024),(9,2432,8)]
+    assert len(expected) == 2287 and expected[-20:-8] == struct.pack('<IQ',9,8)
+    assert expected[-4:] == bytes(4)
+    assert len(frame) >= 2440 and struct.unpack_from('<Q',frame,512)[0] & (1 << 9)
+    assert frame[2436:2440] == b'\xa6' * 4
+    return expected[:-4] + b'\xa6' * 4
 
 
 def seeded_xstate(seed, components):

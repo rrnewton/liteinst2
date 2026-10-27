@@ -28,7 +28,15 @@ pub(super) fn materialize_load_pages(
     elf: &[u8],
     loads: Vec<(u64, u64, u64, u64, u32)>,
 ) -> (Vec<u8>, Vec<Page>) {
-    assert_eq!(&loads[..4], &LOADS);
+    assert!(loads.len() >= LOADS.len());
+    // Preserve each complete original tuple in its original relative order.
+    // Generated LOADs may precede or interleave them; do not sort page output.
+    let original_loads: Vec<_> = loads
+        .iter()
+        .filter(|row| LOADS.iter().any(|old| old.1 == row.1))
+        .copied()
+        .collect();
+    assert_eq!(&original_loads[..original_loads.len().min(4)], &LOADS);
     assert!(loads.len() <= 261);
     let mut pages = Vec::new();
     let mut seen = BTreeSet::new();
@@ -69,6 +77,9 @@ pub(super) fn materialize_load_pages(
             }
         }
     }
+    // Nonempty repeated originals already refuse at seen.insert(page).
+    // Also reject a repeated original address with an empty page interval.
+    assert_eq!(original_loads.len(), LOADS.len());
     assert!(pages.len() <= 2048);
     assert!(seen.last().unwrap() + 4096 - seen.first().unwrap() <= 1_073_741_824);
     (base, pages)

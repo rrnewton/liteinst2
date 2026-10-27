@@ -218,9 +218,13 @@ def load_plan(original, candidate):
         assert struct.unpack_from('<H', data, 16)[0] == 2
         return [r for r in elf_rows(data) if r[0] == 1]
     old, new = loads(original), loads(candidate)
-    assert len(old) == 4 and 5 <= len(new) <= 261 and new[:4] == old
+    assert len(old) == 4 and 5 <= len(new) <= 261
+    original_addresses = {r[3] for r in old}
+    assert len(original_addresses) == 4
+    # Original full ELF tuples retain their relative order; generated LOADs may interleave.
+    assert [r for r in new if r[3] in original_addresses] == old
     pages, old_pages = set(), set()
-    for i, r in enumerate(new):
+    for r in new:
         _, flags, off, va, _, size, memory, align = r
         assert flags in (4, 5, 6) and 0 < memory and size <= memory
         assert align == 4096 and off % 4096 == va % 4096
@@ -229,7 +233,7 @@ def load_plan(original, candidate):
         selected = set(range(lo, hi, 4096))
         assert not pages & selected
         pages |= selected
-        if i < 4:
+        if va in original_addresses:
             old_pages |= selected
     assert len(old_pages) == 37 and 0 < len(pages - old_pages) <= 2048
     assert max(pages) + 4096 - min(pages) <= 1073741824
