@@ -683,3 +683,5 @@ fn ordinary_native_concurrent_arm_remove_and_old_owner() {
         "concurrent-native PASS originals=6 calls=6 entries=6 returns=6 sampled=4 closed=1 removed=1 reports=2+2 writer_contentions=2 registry_contentions=0 inflight_rearm=1 joined=true"
     );
 }
+
+mod retirement_native;
