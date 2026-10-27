@@ -420,6 +420,13 @@ impl Drop for ChildOwner {
 }
 
 fn run_parent(name: &str) {
+    // Each body retains its original operation deadline. Queue independent
+    // tracer processes before either watchdog starts, so default libtest
+    // parallelism cannot make them compete for the same assigned CPUs.
+    // This is separate from the short file/fork lock and is never taken in
+    // run_body; the exec child keeps its genuine application/broker threads.
+    static RUNTIME_PROCESS: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let _runtime_process = RUNTIME_PROCESS.lock().unwrap();
     let until = Instant::now() + PROCESS_TIMEOUT;
     let stdout = anonymous_file(c"liteinst-runtime-out").unwrap();
     let stderr = anonymous_file(c"liteinst-runtime-err").unwrap();
