@@ -433,6 +433,106 @@
       "scope": "default"
     },
     {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_allocation_error_and_unwind_retain_every_installed_prefix",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_box_move_preserves_bytes_and_historical_owner_resolution",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_complete_storage_refuses_reuse_without_overwriting_records",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_equal_bytes_do_not_substitute_for_canonical_provenance",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_incomplete_and_corrupted_payload_extents_cannot_resolve",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_invalid_prior_extent_and_binding_keep_first_error",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_prior_is_the_single_pre_effect_payload_owner",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_resolver_rejects_foreign_identity_role_and_endpoint",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_row_grammar_is_exact_and_resolution_failure_is_not_skipped",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_semantic_rows_preserve_all_headers_and_role_aliases",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_snapshot_compares_every_byte_and_header_separately_from_identity",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared::tests::ordinary_shared_stage_errors_and_unwinds_retain_every_initialized_prefix",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared_commit::tests::ordinary_shared_allocation_prefixes_settle_once_on_error_and_unwind",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared_commit::tests::ordinary_shared_canonical_capture_and_copy_prefixes_are_required",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared_commit::tests::ordinary_shared_final_checks_precede_every_publication",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared_commit::tests::ordinary_shared_full_validator_rejects_changed_binding_state_trace_and_sequence",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared_commit::tests::ordinary_shared_history_snapshots_keep_bytes_ids_and_checked_prefixes",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared_commit::tests::ordinary_shared_model_publishes_exact_seven_rows_and_full_states",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared_commit::tests::ordinary_shared_resolver_rejects_wrong_owner_evidence_and_endpoints",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::census::ordinary::shared_commit::tests::ordinary_shared_shape_has_five_exact_distinct_payloads",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/tests.rs",
+      "scope": "default"
+    },
+    {
       "name": "linux::remote::dynamic::owner::admission::census::ordinary::tests::ordinary_after_sealed_kernel_return_resets_only_at_actual_trace_model",
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/tests.rs",
       "scope": "default"
@@ -1833,6 +1933,26 @@
       "scope": "default"
     },
     {
+      "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_errors_retain_actual_pending_custody",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/allocation.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_unwinds_retain_actual_pending_custody",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/allocation.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_growth_failures_preserve_prior_completed_custody",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/allocation.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_transfer_copy_conversion_failures_retain_actual_custody",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/allocation.rs",
+      "scope": "default"
+    },
+    {
       "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::cross_page::runtime_ordinary_cross_page_move_preserves_exact_two_page_fetch",
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/cross_page.rs",
       "scope": "default"
@@ -1860,6 +1980,41 @@
     {
       "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::runtime_ordinary_single_step_stops_before_same_page_marker",
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::thirtytwo::runtime_ordinary_thirty_two_nops_fit_default_budget_and_retain_exact_history",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/thirtytwo.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::storage::tests::ordinary_root_every_allocation_error_keeps_exact_installed_prefix",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/storage/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::storage::tests::ordinary_root_every_post_install_unwind_keeps_exact_payload_and_debit",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/storage/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::storage::tests::ordinary_root_no_growth_and_two_generations_preserve_all_box_owners",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/storage/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::storage::tests::ordinary_root_reuse_and_slot_shape_refusal_do_not_discard_owner",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/storage/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::storage::tests::ordinary_root_secondary_settlement_and_finish_keep_original_error_and_unwind",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/storage/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::ordinary::storage::tests::ordinary_root_transfer_copy_and_native_conversion_boundaries_retain_progress",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/storage/tests.rs",
       "scope": "default"
     },
     {
@@ -2110,6 +2265,26 @@
     {
       "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::protocol::tests::consumer_protocol_sha256_matches_independent_known_vectors",
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/protocol.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::raw::projection::tests::consumer_raw_projection_keeps_distinct_descriptor_and_vma_identities",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw/projection/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::raw::projection::tests::consumer_raw_projection_preserves_exact_row_geometry_alias_and_count_refusals",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw/projection/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::raw::projection::tests::consumer_raw_projection_rejects_each_opened_descriptor_field_change",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw/projection/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::raw::projection::tests::consumer_raw_projection_rejects_each_vma_identity_field_change",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw/projection/tests.rs",
       "scope": "feature_pure"
     },
     {
@@ -2650,6 +2825,21 @@
     {
       "name": "linux::remote::dynamic::owner::admission::runtime_native::profile::tests::owned_native_profile_requires_all_rseq_bytes_exact_count_and_cet_completion",
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/profile/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime_native::storage::tests::ordinary_pending_native_conversion_is_move_only_and_does_not_complete_instruction",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/storage/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime_native::storage::tests::ordinary_pending_native_failure_reuse_and_capacity_guards_retain_owners",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/storage/tests.rs",
+      "scope": "default"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime_native::storage::tests::ordinary_pending_native_missing_owner_conversion_retains_every_present_byte",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/storage/tests.rs",
       "scope": "default"
     },
     {
@@ -4189,17 +4379,17 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census.rs",
-      "sha256": "f2be2d8a311aae8247c3037c6c0d4231614fc3c67974ed339042dce428395f19",
+      "sha256": "8501e500ea611283263013c76688886ef2bc3a2aa71ce1455214f7920477f52e",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/exec.rs",
-      "sha256": "e4d3d5bf655b2cea8a82981db152e260bc8666d28384952648621f2b6246da76",
+      "sha256": "888d3ac0395194534245b00886bb14af25464d39fcde1e2bd02f2879bbe738c3",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/exec/oracle.rs",
-      "sha256": "27b4bc555c4bc6eec6bb214004ac466a0101220ef35ae5133d2b99fce8ac9715",
+      "sha256": "c2dc762bde4033cae0d35cadac72e1e09c76d0f773e307c10f26ec56bfcf4ff7",
       "test_functions": []
     },
     {
@@ -4220,9 +4410,106 @@
       ]
     },
     {
-      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary.rs",
-      "sha256": "188a1cb5110a8c4e6795af0f174448b5e16c18a3ec8a78cdeb6b2ca6b19c43d7",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/history.rs",
+      "sha256": "e7d1d74f4eef260488eab10ce13edb8b3d7b2483038a6e7a5f18cec799a7f143",
       "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/history/snapshot.rs",
+      "sha256": "0dd9a47bbf8a4e5f687b92cfef5b718bb4c4072b65cd88c30f7a815c5df8d46a",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary.rs",
+      "sha256": "215132b4729e9f45e5ba026569724d379e8b4583f6d27b4bc293ae72a425054d",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/allocation_oracle.rs",
+      "sha256": "5eda03ea6abbcbaac613626ac5ee48a35792b539e5dac50fe222a00ccdb8b622",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared.rs",
+      "sha256": "dadb1cbf54bdf0e166e2e873371c2c9b4862a6097e9f8bd1b8c09fb4e955a17f",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/capture.rs",
+      "sha256": "a362d6f18d728a00fc6e6691b362cb3aa3283697b4951d9e9545d1f2dd440984",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/clone.rs",
+      "sha256": "5bcfda1cca116e6bc5d7645e2fab0a9e28428402034ff5314b8b23f1f5bb65be",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/snapshot.rs",
+      "sha256": "cd3619cae3f304401a7b0ab1a939435a6e79dc4f77cf35578faeb7555c5c786b",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/storage.rs",
+      "sha256": "76a58fc2b45510969ba02bb34ba1641b640cf56bb7adc482638746996524f578",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs",
+      "sha256": "fe92af341a15bc241c95b1da228a801eb6bbe89c2ebb393e85f50e5d655ff074",
+      "test_functions": [
+        "ordinary_shared_allocation_error_and_unwind_retain_every_installed_prefix",
+        "ordinary_shared_box_move_preserves_bytes_and_historical_owner_resolution",
+        "ordinary_shared_complete_storage_refuses_reuse_without_overwriting_records",
+        "ordinary_shared_equal_bytes_do_not_substitute_for_canonical_provenance",
+        "ordinary_shared_incomplete_and_corrupted_payload_extents_cannot_resolve",
+        "ordinary_shared_invalid_prior_extent_and_binding_keep_first_error",
+        "ordinary_shared_prior_is_the_single_pre_effect_payload_owner",
+        "ordinary_shared_resolver_rejects_foreign_identity_role_and_endpoint",
+        "ordinary_shared_row_grammar_is_exact_and_resolution_failure_is_not_skipped",
+        "ordinary_shared_semantic_rows_preserve_all_headers_and_role_aliases",
+        "ordinary_shared_snapshot_compares_every_byte_and_header_separately_from_identity",
+        "ordinary_shared_stage_errors_and_unwinds_retain_every_initialized_prefix"
+      ]
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/view.rs",
+      "sha256": "40d4750f503ce4f96457e6128b586106867d89627ec50af22f2757760138d6b5",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit.rs",
+      "sha256": "afe82896d6f1bd646977139737bd1de0c67fa83cc6aaefe42445c9cf8cca10b9",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/allocation.rs",
+      "sha256": "ca4d29259b318e3b20b38fa7e4d0bfeb7369b7ab59db274a3bb670c89e441af5",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/commit.rs",
+      "sha256": "1fc03d5934c7c1772dff15c88d754c82ed81a9430da0ee49d4e7e92fcf143719",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/snapshot.rs",
+      "sha256": "e5e56f653c3832d00c0283d3f48c07b367bb16be2ba57f201263864c892f9225",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/tests.rs",
+      "sha256": "c36d2d1536d279ba9b664785b7dbab97a38ac0e518dd5e8f25cf4113d9e52c60",
+      "test_functions": [
+        "ordinary_shared_allocation_prefixes_settle_once_on_error_and_unwind",
+        "ordinary_shared_canonical_capture_and_copy_prefixes_are_required",
+        "ordinary_shared_final_checks_precede_every_publication",
+        "ordinary_shared_full_validator_rejects_changed_binding_state_trace_and_sequence",
+        "ordinary_shared_history_snapshots_keep_bytes_ids_and_checked_prefixes",
+        "ordinary_shared_model_publishes_exact_seven_rows_and_full_states",
+        "ordinary_shared_resolver_rejects_wrong_owner_evidence_and_endpoints",
+        "ordinary_shared_shape_has_five_exact_distinct_payloads"
+      ]
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/tests.rs",
@@ -4251,7 +4538,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/panic_custody.rs",
-      "sha256": "30a41609d983d570bbda3887cfbdbc0deb0d80569119231fac30f3b0bd38a28e",
+      "sha256": "98f66cd2bd7696a656e10d00e5ea74f4abf9a49d850f9e9fcb571056f3e0e13c",
       "test_functions": []
     },
     {
@@ -4266,22 +4553,22 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/runtime_kernel.rs",
-      "sha256": "8b086e45048ff056365ce9961275936c4540c8f1cb0c65080c9a8b8547fd20f0",
+      "sha256": "28a0a73cf72cfbf9be887eb18ca2bc4de199a7e5609bfcb6e77614dfa2650990",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/runtime_kernel/commit.rs",
-      "sha256": "edad9b1ac9065212d06d8b6af73a1f8f167b7cffbc00ab6513687772bb2451e9",
+      "sha256": "7bee9f099eaf08c9289c45c9d007d442149631d04d5bfee0975ec134e6f85fc8",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/runtime_kernel/lineage.rs",
-      "sha256": "7d0d1d5fd7a1322a6cca49f300e2225b989acda73a6a9a7f855966e8835b8be0",
+      "sha256": "1327a29d5b5e7051667a21a01c8b3e97b977163f3075d5aa03988196cc61190d",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/runtime_kernel/native_oracle.rs",
-      "sha256": "f16581af8cda4effac1f0eab0a93e3a311f63da22ed38ad6d21631bda285745d",
+      "sha256": "72c3d28977e2d516c673bde4ea83da41bb8de06802041705c3efbfae18b4a979",
       "test_functions": []
     },
     {
@@ -4312,7 +4599,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/runtime_stack.rs",
-      "sha256": "d63cdd388d39c452bc522d89a75fdeb48948392bdcfb930b9748c42b79fa9cab",
+      "sha256": "11d1f037660bed615054d5415cc6f77e579c13001423043f31abdd5bfe705176",
       "test_functions": []
     },
     {
@@ -4322,7 +4609,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/runtime_stack/consumer_oracle.rs",
-      "sha256": "e2d7abe2380613a950ff4148605a9b1f63d1148a5fb2866e7384a6cfff521bfd",
+      "sha256": "0babf1a2d9cb40cc683e9a9d507015682f8a047b1163a888db50f5592707de59",
       "test_functions": []
     },
     {
@@ -4365,7 +4652,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/runtime_stack/native_oracle.rs",
-      "sha256": "352e454d3f483c65ce8eb2165d2bc07df8081f1b8da5160df5c6b81f9a9ae6a6",
+      "sha256": "9683d39f4dfc6a0a7cadf1b165109e594b0e22fc2d1c303458896312b5fbdfbc",
       "test_functions": []
     },
     {
@@ -4403,7 +4690,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/selected_runtime.rs",
-      "sha256": "a74bbaeab3d581e9cab196bc67d713118710d79f0899c24a1891cd2cd96b603e",
+      "sha256": "7937caab021b431d47b14c6991432c1fb27350f8e2112a2d215da99b9b653554",
       "test_functions": []
     },
     {
@@ -4420,7 +4707,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/signal.rs",
-      "sha256": "5835b8c591e5864748a1f1dbc66ee1834c5254ec1026dee0362f7af415490f31",
+      "sha256": "25e67d9c02443958e17158ad84d84cb740dbb05e0f705ce6539b433e470dcc96",
       "test_functions": []
     },
     {
@@ -4537,7 +4824,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/completion/journal_native_budget_tests.rs",
-      "sha256": "f40428e10c0c9738fff49662f0245f3b2bf170524bfb98fdf379a7caa80a1f1b",
+      "sha256": "a7dff0c1cdfe868ae9145195367c1fb85a7c02e2eac6f2c28d3dd26469ced4cc",
       "test_functions": [
         "actual_held_journal_prefix_capacity_refusal_precedes_attachment_and_release"
       ]
@@ -4632,7 +4919,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/exact_storage.rs",
-      "sha256": "29f2e3eb06ad38a509eea1c5e53e327c1b96a17399787db58f0f614ba7096f03",
+      "sha256": "740fb40552b147d45b5b5609adb1d81908d8a023bcf1fef3c4aa45196372d85c",
       "test_functions": []
     },
     {
@@ -4772,7 +5059,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/exec/tests/native/failures.rs",
-      "sha256": "4243074a824f29e3b8bd0c409a84d7e51349691161c9da55d9f60f93aaac8144",
+      "sha256": "9c8037a0cb55ec94248e23e5f4502662263c65f0517ef955a8e0069278188060",
       "test_functions": [
         "admitted_exec_native_bootstrap_failure_retains_first_user_prefix",
         "admitted_exec_native_getregs_capture_failure_retains_other_reads",
@@ -4947,7 +5234,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime.rs",
-      "sha256": "3a158875c4da55e02ea0702bcca396688223589aef730d72fd4a1725d034b953",
+      "sha256": "7d7efcab9a2bc553a1dec45db6ab9ba678484229664a265dc4cc5795239f77fa",
       "test_functions": []
     },
     {
@@ -5011,12 +5298,12 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/isolation.rs",
-      "sha256": "8df56f244d489327ef589fcfc10a281bcc08d2d088942b3883fccbbcd62ec4c4",
+      "sha256": "c323e377e67a1ee6f9b2c347d8dea1da2cdf820a8a6786734542307403c4d1cf",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/isolation/tests.rs",
-      "sha256": "604b00e2a5f3b5b61bc412f9084ec1e1ddf021082ee4dc17e2c0a5ad31136657",
+      "sha256": "f6bfa57b93be33f518a6b82e56d186e233ff9bb529cf82dbe204fd45e665caaa",
       "test_functions": [
         "runtime_isolation_receipt_requires_complete_exact_body_identity",
         "runtime_isolation_result_requires_one_exact_successful_test",
@@ -5054,7 +5341,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/kernel/native_tests.rs",
-      "sha256": "39ae077743bcd79b7123511cffe2234cb430c39ed9a38f6a54d221f1a365bfba",
+      "sha256": "13fac50eef4aaeb3609bdaa89289a6f6dca89c4a2cbc6fce4edbd159ad660bd0",
       "test_functions": [
         "runtime_kernel_cross_page_syscall_preserves_exact_fetch",
         "runtime_kernel_default_native_and_cpu_refusals_keep_current_state",
@@ -5066,7 +5353,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/kernel/native_tests/archive.rs",
-      "sha256": "e5bd3e8c802f2fcf938b56b6ce83b9176f31db4b6722841d5360e908708341dd",
+      "sha256": "1958655dfe11f890d8b3e68581f5c2c798dbbd71d33545c64d11393fa64110cf",
       "test_functions": []
     },
     {
@@ -5076,7 +5363,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/kernel/native_tests/support.rs",
-      "sha256": "cdd48e524b6667da5eb0cabc814ba0a9bbabb96f40fca58c96f9a6ea10f469e6",
+      "sha256": "b1f46b298741583f32bba7b6ecb94e0204c4429caaa0cc5b7755a2e5033843cd",
       "test_functions": []
     },
     {
@@ -5086,7 +5373,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/kernel/storage.rs",
-      "sha256": "c2b18f59da5082c96c10941aa18c6af16d4e511bb3f8bc1328506da429649b5c",
+      "sha256": "779165c39eb19abe975701301c193f47ec2c4903aed9ed79672f85742f3cfb69",
       "test_functions": []
     },
     {
@@ -5142,12 +5429,12 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary.rs",
-      "sha256": "0bbb6a9f21ff8016d14778ab172e024b91d309630e8581a5e8bec74457916e39",
+      "sha256": "1cead7f4ef86936651717e223ec7625f7e0ab6f098d70f72481577f48b9d6e7d",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests.rs",
-      "sha256": "da6b1a36f58bf02072188aecd5334353977bd399e7b8e35e7b05ceaff943463a",
+      "sha256": "828598ae114f61df73ce811e2693769afeb383995d037eac5950626bfda6c213",
       "test_functions": [
         "runtime_ordinary_conditional_branch_preserves_complete_state",
         "runtime_ordinary_literal_moves_and_add_preserve_exact_checkpoints",
@@ -5157,13 +5444,33 @@
       ]
     },
     {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/allocation.rs",
+      "sha256": "161f60a5919c4a75f26d23354909d3cf7121b267a6d88fe64756b5c1d865435b",
+      "test_functions": [
+        "runtime_ordinary_allocation_errors_retain_actual_pending_custody",
+        "runtime_ordinary_allocation_unwinds_retain_actual_pending_custody",
+        "runtime_ordinary_growth_failures_preserve_prior_completed_custody",
+        "runtime_ordinary_transfer_copy_conversion_failures_retain_actual_custody"
+      ]
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/allocation/capacity.rs",
+      "sha256": "305b16044a83eafaf2bb4599a6ab8a7cc56462893edb2c7d92887e79d2694818",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/allocation/observe.rs",
+      "sha256": "921d0f2952164c3aa8253e723d2517de02dd55cb8afe31f9496e9148be46b393",
+      "test_functions": []
+    },
+    {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/coalescence.rs",
-      "sha256": "9e3c03feb3fbb5b9c7f9daca9166a3a006dfbf581bbdc6715a65e5d625d9eb48",
+      "sha256": "2c1da2870b65bb4292f02bfd19a0edf2653a748aa4f92e3f3acb107658d33115",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/cross_page.rs",
-      "sha256": "abfea3e07c3a3d48f5d39d13f553f3496471358bf2a792eb77955c68131eef36",
+      "sha256": "576b366443e5683f27475e7a17df8b6b67f693633ab33eebf4d4e4af949af229",
       "test_functions": [
         "runtime_ordinary_cross_page_move_preserves_exact_two_page_fetch"
       ]
@@ -5175,12 +5482,41 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/support.rs",
-      "sha256": "2cfaa88e1c4150f62bb102782ac3f1a940a1c67f16c9d1cf68351fc6b7ecbbb4",
+      "sha256": "e4f576e230570b5648defa0e38b232bb9742a9c09c16ec15465a64e6dbd5d71d",
       "test_functions": []
     },
     {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/thirtytwo.rs",
+      "sha256": "ea474d9f54592ba0b65f2abf52f9c42a1f587ebad31a95d7a905d66e570792ec",
+      "test_functions": [
+        "runtime_ordinary_thirty_two_nops_fit_default_budget_and_retain_exact_history"
+      ]
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/storage.rs",
+      "sha256": "9cf8dd6290b2caf530875dd74198c0dd7fb29e4b9178d6f76f7bed1e68da23e7",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/storage/native_oracle.rs",
+      "sha256": "eb3eb8f595ab57890b7fa2ff5e57714b2bff9cf24ff7da53efbd25e319d97059",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/storage/tests.rs",
+      "sha256": "0b288aacdd834c44867a6234553b69b29a0124ee1bbb1687e15024eddf5ec867",
+      "test_functions": [
+        "ordinary_root_every_allocation_error_keeps_exact_installed_prefix",
+        "ordinary_root_every_post_install_unwind_keeps_exact_payload_and_debit",
+        "ordinary_root_no_growth_and_two_generations_preserve_all_box_owners",
+        "ordinary_root_reuse_and_slot_shape_refusal_do_not_discard_owner",
+        "ordinary_root_secondary_settlement_and_finish_keep_original_error_and_unwind",
+        "ordinary_root_transfer_copy_and_native_conversion_boundaries_retain_progress"
+      ]
+    },
+    {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/selected.rs",
-      "sha256": "70b47653ed4bb39d6e1c35c4160627bfd1450750581eba0386ba4a5c5beac8e3",
+      "sha256": "34dea4a0b21b13bafd9db2c6e1748b25b5b6b46ddc72ac644c097beb5ccb725a",
       "test_functions": []
     },
     {
@@ -5198,7 +5534,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/selected/native/native_tests.rs",
-      "sha256": "e155290dc7216572b6d9f048469607135bba4c77dee5e4cb5504ba443c5134ca",
+      "sha256": "63feaef7e30034ff53b2d9b8942a11523f3edd3af93e180fd03d3c79e2fadcf0",
       "test_functions": [
         "runtime_actual_dr7_refuses_before_original_release",
         "runtime_ordinary_memory_and_stack_refuse_before_effects",
@@ -5402,13 +5738,28 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw.rs",
-      "sha256": "9690a57b3d96f6912e42a611791d82bd440b15b63dfc8a4502ccebe1d3f62b4f",
+      "sha256": "03b0cc6cb25eacc8e2eafc7303f3661c83bbf71c4e46fa83bd1cc257a206b9b4",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw/namespace.rs",
       "sha256": "47faaef4be2594c00e78f152737f0ae7547124680b2164b2d462dbcd5f950bdb",
       "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw/projection.rs",
+      "sha256": "60d171630bf8bb4ae642568dc27488e976129202168dc6bc24bb22060f751be8",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw/projection/tests.rs",
+      "sha256": "b2500abf3cb887827e77845437d31d30b760d3c0d28372f170c766b97d90dc0f",
+      "test_functions": [
+        "consumer_raw_projection_keeps_distinct_descriptor_and_vma_identities",
+        "consumer_raw_projection_preserves_exact_row_geometry_alias_and_count_refusals",
+        "consumer_raw_projection_rejects_each_opened_descriptor_field_change",
+        "consumer_raw_projection_rejects_each_vma_identity_field_change"
+      ]
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw/tests.rs",
@@ -5461,7 +5812,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/native_tests/allocation.rs",
-      "sha256": "f83e40bdf57ec608151e61e954c5f386f554a9c1262be17a0735b9919369c7cb",
+      "sha256": "9a48d21c7a14e1af9e77e924150146413d83add628678e14d0429175baac1c0a",
       "test_functions": []
     },
     {
@@ -5471,12 +5822,12 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/native_tests/connected.rs",
-      "sha256": "dc92ba1fb9f8169171e7871babc986eb87cb51616a42af6d5a592488fa78d057",
+      "sha256": "f98d4a8805b6ae1467a2a3b115d7662f0a3bf5efd98e1a6988414440a1d151d9",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/native_tests/fault.rs",
-      "sha256": "e1b493db443a2fe0c87a838cd4b417ba18fe01ec07c8af2a0c27c67644f32ee5",
+      "sha256": "13224540dd3d22f82506d71d8c5bbe995a38bbcc73db95fe3d61143dfc2315a8",
       "test_functions": []
     },
     {
@@ -5531,7 +5882,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/storage.rs",
-      "sha256": "10983c3fb5c15bc96fdb06a034529863754bbc21572515de7d21371c8d8ac00f",
+      "sha256": "40175b1e5428b4e8a830a106775994c73ffbc36572361177189a47dca4b66cf1",
       "test_functions": []
     },
     {
@@ -5721,12 +6072,17 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native.rs",
-      "sha256": "73472f1f4a9bcc9b1e9908cdb927e600396a5947ef783ce0eb96fe57e5e8addd",
+      "sha256": "ac9c42c45d3242afad088a96b226f786f503debf85037eac0bbb2d269f3a4372",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/profile.rs",
-      "sha256": "7469f416f54a1c596a7f279398550b6d4df5aa265621810cfdf70dedfc56f183",
+      "sha256": "ab25a7fc6a01f2972b38071910684d8ade1ecb889300ac8eee24538ad39bd743",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/profile/native_oracle.rs",
+      "sha256": "6d02cdda610d463833c2d897e6f05073c5b8187680bd6fd109fbb22ca964dcb1",
       "test_functions": []
     },
     {
@@ -5751,8 +6107,27 @@
       "test_functions": []
     },
     {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/storage.rs",
+      "sha256": "a166d63c685e0a4f93fa9edfb9eb2cb3a5c3968b34c2aeb22453613a244af235",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/storage/native_oracle.rs",
+      "sha256": "f94acb026d0006c686fe33b931060cea9e63373e8945ab97eff24ffd7f3c285d",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/storage/tests.rs",
+      "sha256": "be12d331ea6e71740e4023e6cc94b7d2715ebcc400ff6185fa1d55c5b6ae36f2",
+      "test_functions": [
+        "ordinary_pending_native_conversion_is_move_only_and_does_not_complete_instruction",
+        "ordinary_pending_native_failure_reuse_and_capacity_guards_retain_owners",
+        "ordinary_pending_native_missing_owner_conversion_retains_every_present_byte"
+      ]
+    },
+    {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/tests.rs",
-      "sha256": "bd5c4406ca0486c6fbb6edfd5cc2771ee1a05ae2cc9604159df8fd13f9361dc5",
+      "sha256": "361451ebf219ec1ca68e39bb108763672b100fa983f4b3102191871e6bd7b728",
       "test_functions": [
         "owned_native_capability_accepts_only_nonaccessing_literal_families",
         "owned_native_capability_refuses_memory_stack_indirect_and_selected",
@@ -6162,7 +6537,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/bootstrap/initial/io.rs",
-      "sha256": "dab4eed4db9c4467ae5f35f69c296be703cb2a0eedea42cd1381805f56beef65",
+      "sha256": "626dd4d41aff66f2a42b584fe762da14a0193e90036494479b150502ac5f4512",
       "test_functions": []
     },
     {
@@ -6383,7 +6758,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/lifecycle.rs",
-      "sha256": "d6663784d3edc6ea83683c8ce90551be0fc0a7cf7ba3d7a8b13f60ef9cf7e216",
+      "sha256": "83608b2380ca4a447083defc297e14de9f0a99f05587841a8ac05d5fa6a8f21b",
       "test_functions": []
     },
     {
@@ -6427,12 +6802,12 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/lifecycle/thread.rs",
-      "sha256": "4948cf309b150035c41b19a2cd407f6a49a61da3060cb6c635f5892a03b3b242",
+      "sha256": "add8b89bcfaf3a4cc498dc78d4ccc56fef09c164dc31ff31c780d7577937104b",
       "test_functions": []
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/lifecycle/thread/cet.rs",
-      "sha256": "c477bf9222374edd4ea22e8c2131e0489b608596a6b3c9b643d681b02cbbf9bd",
+      "sha256": "4deddc00b4fc078cf95eec660043b756bf7a1b2069854e42fa693dfabb910709",
       "test_functions": [
         "exact_absence_requires_both_native_interfaces_inside_the_filter_bracket",
         "late_filter_or_any_register_change_prevents_absence_certification",
@@ -6446,7 +6821,12 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/lifecycle/thread/cet/bounded.rs",
-      "sha256": "950b1420366d98e303aae19012a586470739ecc636ba33abc9d2c17fa56144dd",
+      "sha256": "a7911f2adbeac1ba8f22a9fc13dd8c39adfbb162546cef9b5147782ea6bd9ce6",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/lifecycle/thread/cet/bounded/native_oracle.rs",
+      "sha256": "c9514cbf21b01a381473227a9e84dc3b401ab0cedcece6db6f2d68dadc8bbb6c",
       "test_functions": []
     },
     {
