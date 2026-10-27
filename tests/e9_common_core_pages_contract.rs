@@ -110,7 +110,7 @@ fn half_open_original_window_preserves_high_only_and_both_adjacent_pages() {
 #[test]
 fn missing_changed_reordered_or_extra_original_owners_refuse() {
     let elf = fixture();
-    refuses(&elf, LOADS[..3].to_vec(), "range end index 4");
+    refuses(&elf, LOADS[..3].to_vec(), "loads.len() >= LOADS.len()");
     let mut swapped = LOADS.to_vec();
     swapped.swap(0, 1);
     refuses(&elf, swapped, "assertion `left == right` failed");
@@ -272,4 +272,106 @@ fn file_geometry_and_address_endpoint_refusals_remain() {
         );
     }
     refuses(&elf, loads(&[(0x26000, 1 << 47, 1, 1, 5)]), "hi <= 1 << 47");
+}
+
+#[test]
+fn interleaved_original_owners_keep_full_bytes_bss_and_generated_order() {
+    let elf = fixture();
+    let low = (0x26000, 0x10000, 0x1000, 0x1000, 5);
+    let high = (0x27000, 0x440000, 0x1010, 0x1080, 4);
+    for all in [
+        vec![low, LOADS[0], LOADS[1], high, LOADS[2], LOADS[3]],
+        vec![LOADS[0], high, LOADS[1], LOADS[2], low, LOADS[3]],
+        vec![high, low, LOADS[0], LOADS[1], LOADS[2], LOADS[3]],
+    ] {
+        let expected_order: Vec<_> = all
+            .iter()
+            .filter(|row| row.1 == low.1 || row.1 == high.1)
+            .map(|row| row.1)
+            .collect();
+        let (base, extra) = materialize_load_pages(&elf, all);
+        original(&elf, &base);
+        assert_eq!(extra.len(), 3);
+        let mut i = 0;
+        for address in expected_order {
+            if address == low.1 {
+                view(&extra[i], low.1, 5, &elf[0x26000..0x27000]);
+                i += 1;
+            } else {
+                view(&extra[i], high.1, 4, &elf[0x27000..0x28000]);
+                let mut tail = vec![0; PAGE];
+                tail[..16].copy_from_slice(&elf[0x28000..0x28010]);
+                view(&extra[i + 1], high.1 + 4096, 4, &tail);
+                i += 2;
+            }
+        }
+        assert_eq!(i, extra.len());
+    }
+}
+
+#[test]
+fn interleaved_missing_changed_reordered_duplicate_originals_refuse() {
+    let elf = fixture();
+    let all = vec![
+        (0x26000, 0x10000, 1, 1, 5),
+        LOADS[0],
+        LOADS[1],
+        LOADS[2],
+        LOADS[3],
+    ];
+    for i in 1..5 {
+        let mut missing = all.clone();
+        missing.remove(i);
+        refuses(&elf, missing, "assertion `left == right` failed");
+        for field in 0..5 {
+            let mut changed = all.clone();
+            let row = &mut changed[i];
+            match field {
+                0 => row.0 += 4096,
+                1 => row.1 += 4096,
+                2 => row.2 += 1,
+                3 => row.3 += 1,
+                4 => row.4 ^= 1,
+                _ => unreachable!(),
+            }
+            refuses(&elf, changed, "assertion `left == right` failed");
+        }
+    }
+    let mut swapped = all.clone();
+    swapped.swap(1, 2);
+    refuses(&elf, swapped, "assertion `left == right` failed");
+    let mut duplicate = all.clone();
+    duplicate.push(LOADS[3]);
+    refuses(&elf, duplicate, "seen.insert(page)");
+    let mut empty_duplicate = all;
+    empty_duplicate.push((0, LOADS[0].1, 0, 0, 4));
+    refuses(&elf, empty_duplicate, "assertion `left == right` failed");
+}
+
+#[test]
+fn interleaved_old_bss_generated_overlap_and_writable_pages_refuse() {
+    let elf = fixture();
+    let low = (0x26000, 0x10000, 1, 1, 5);
+    for extra in [
+        (0x27000, 0x424000, 0x1000, 0x1000, 4),
+        (0x27800, 0x3ff800, 0x801, 0x801, 5),
+        (0x27000, 0x10000, 1, 1, 4),
+    ] {
+        refuses(
+            &elf,
+            vec![low, LOADS[0], LOADS[1], extra, LOADS[2], LOADS[3]],
+            "seen.insert(page)",
+        );
+    }
+    refuses(
+        &elf,
+        vec![
+            (0x26000, 0x10000, 1, 1, 6),
+            LOADS[0],
+            LOADS[1],
+            LOADS[2],
+            LOADS[3],
+        ],
+        "flags != 6",
+    );
 }

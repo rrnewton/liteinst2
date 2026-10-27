@@ -29,6 +29,15 @@ PROFILE = dict(opt_level='0', debuginfo=2, debug_assertions=True, overflow_check
 CAP = 128 * 1024 * 1024
 
 
+# This is orthogonal to allocation/planning/router profiles. Absence is legacy.
+DEBUG0_BUILD_PROFILE = 'dev-debug0-v1'
+DEBUG0_PROFILE = dict(opt_level='0', debuginfo=0, debug_assertions=True, overflow_checks=True, test=False)
+DEBUG0_ENV = dict(CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+    CARGO_PROFILE_DEV_OPT_LEVEL='0', CARGO_PROFILE_TEST_OPT_LEVEL='0',
+    CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+    CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+
+
 def sha(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -218,6 +227,7 @@ def main():
         parser.add_argument('--' + name, type=Path, required=True)
     parser.add_argument('--inputs-sha256', required=True)
     parser.add_argument('--allocation-profile', choices=('fixed-v1', 'original-derived-v1'), default='fixed-v1')
+    parser.add_argument('--build-profile', choices=('legacy', DEBUG0_BUILD_PROFILE), default='legacy')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     assert git(repo, 'rev-parse', '--show-toplevel').decode().strip() == str(repo)
@@ -232,7 +242,13 @@ def main():
     input_bytes, input_owner = read(args.inputs)
     assert re.fullmatch('[0-9a-f]{64}', args.inputs_sha256) and sha(input_bytes) == args.inputs_sha256
     inputs = loads(input_bytes)
-    assert inputs.keys() == {'schema', 'preparation', 'collector_binding', 'files'} and inputs['schema'] == 1
+    if args.build_profile == 'legacy':
+        assert inputs.keys() == {'schema', 'preparation', 'collector_binding', 'files'} and inputs['schema'] == 1
+    else:
+        assert inputs.keys() == {'schema', 'preparation', 'collector_binding', 'files', 'build_profile'}
+        assert type(inputs['schema']) is int and inputs['schema'] == 1
+        assert inputs['build_profile'] == args.build_profile == DEBUG0_BUILD_PROFILE
+    build_extra = {} if args.build_profile == 'legacy' else dict(build_profile=DEBUG0_BUILD_PROFILE)
     watched = {str(args.inputs): (input_bytes, input_owner)}
     def bound(name):
         expected = inputs['files'][name]
@@ -282,6 +298,8 @@ def main():
     geometry = original_geometry(originals['unstripped'], originals['stripped'])
     tool = args.toolchain / 'bin'
     env = dict(CARGO_BUILD_JOBS='4', CARGO_INCREMENTAL='0', CARGO_NET_OFFLINE='true', CARGO_TARGET_DIR=str(repo / 'target'), CARGO_HOME=str(args.cargo_home), HOME=str(args.user_home), RUSTC=str(tool / 'rustc'), RUSTDOC=str(tool / 'rustdoc'), RUSTC_WORKSPACE_WRAPPER='', RUSTC_WRAPPER='', RUST_TEST_THREADS='4', LC_ALL='C', PATH=str(tool) + ':/usr/bin:/bin', PYTHONDONTWRITEBYTECODE='1')
+    if build_extra:
+        env.update(DEBUG0_ENV)
     tool_paths = [tool / n for n in ('cargo', 'rustc', 'rustdoc', 'rustfmt', 'clippy-driver')] + [Path('/usr/bin') / n for n in ('python3.9', 'timeout', 'git')]
     def tool_snapshot():
         result = {}
@@ -420,7 +438,11 @@ def main():
             assert row['target']['kind'] == [kind] and row['target']['crate_types'] == ['bin']
             assert row['target']['edition'] == '2024'
             assert row['target']['src_path'] == str(repo / relative_source)
-            assert row['profile'] == PROFILE and row['features'] == []
+            if not build_extra:
+                assert row['profile'] == PROFILE and row['features'] == []
+            else:
+                assert row['profile'] == DEBUG0_PROFILE and row['features'] == []
+                assert all(type(row['profile'][k]) is type(v) for k, v in DEBUG0_PROFILE.items())
             assert row['filenames'] == [str(expected)] and row['executable'] == str(expected)
             product = copy(expected)
             assert product['original_owner'][2] & 0o111
@@ -442,6 +464,7 @@ def main():
             products[name] = product['path']
         report = dict(schema=1, source_revision=revision, source_files_sha256=sha(encode(before['files'])), command_result_sha256=sha(read(compilation / 'result.json')[0]), cargo_stdout_sha256=sha(read(compilation / 'stdout.txt')[0]), artifacts=copied, selected=chosen,
                       scope='Complete Cargo-reported products and exact selected Cargo alias depfiles/source members; not a whole target, system-header, configuration or loader closure.')
+        report.update(build_extra)
         write(compilation / 'artifact-archive.json', report)
         archives[compilation.name] = report
 
@@ -563,11 +586,11 @@ def main():
             for row in archive_record['artifacts'].values():
                 data, owner = read(row['path'])
                 assert sha(data) == row['sha256'] and owner == row['archive_owner']
-        write(raw / 'summary.json', dict(schema=1, revision=revision, completed=completed, failure=failure, last_phase=phase, planned_stages=stages, observed_stages=len(results), unrun_stages=stages[len(results):], cells_complete=len(cells), preparation_revision=PREPARED, original_execution_credit=False, rewriting_runs=0, native_application_runs=0, target_observation_only=True, qualification_complete=False, source_before_after_equal=True, selected_tools_before_after_equal=True, source_scope='Current exact clean committed build and static inventory; prior original preparation remains a separate revision.', archive_scope='Cargo-reported files and selected depfile/source joins only; full archive review and caller admission remain separate.'))
+        write(raw / 'summary.json', dict(schema=1, revision=revision, completed=completed, failure=failure, last_phase=phase, planned_stages=stages, observed_stages=len(results), unrun_stages=stages[len(results):], cells_complete=len(cells), preparation_revision=PREPARED, original_execution_credit=False, rewriting_runs=0, native_application_runs=0, target_observation_only=True, qualification_complete=False, source_before_after_equal=True, selected_tools_before_after_equal=True, source_scope='Current exact clean committed build and static inventory; prior original preparation remains a separate revision.', archive_scope='Cargo-reported files and selected depfile/source joins only; full archive review and caller admission remain separate.', **build_extra))
     assert completed
     evidence = [str(p) for p in sorted(raw.rglob('*')) if p.is_file() and not p.is_relative_to(raw / 'artifacts')]
     required_products = sorted({r['path'] for a in archives.values() for r in a['artifacts'].values()})
-    write(raw / 'build-admission-proposal.json', dict(schema=1, authority='CALLER_AUTHENTICATED_BUILD_PRODUCTS', source_revision=revision, source_files_sha256=sha(encode(before['files'])), products=dict(core=products['liteinst-rewrite'], common_sites=products['common_sites']), required_products=required_products, evidence_files=evidence, scope='core-cli-and-common-sites-build-only'))
+    write(raw / 'build-admission-proposal.json', dict(schema=1, authority='CALLER_AUTHENTICATED_BUILD_PRODUCTS', source_revision=revision, source_files_sha256=sha(encode(before['files'])), products=dict(core=products['liteinst-rewrite'], common_sites=products['common_sites']), required_products=required_products, evidence_files=evidence, scope='core-cli-and-common-sites-build-only', **(dict(directory=str(raw), **build_extra) if build_extra else {})))
     print('PASS common build and eight complete original inventories; no rewrite or native application execution')
 
 

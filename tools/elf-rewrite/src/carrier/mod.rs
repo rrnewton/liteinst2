@@ -23,7 +23,7 @@ pub struct CarrierPolicy {
     pub max_output_file_bytes: u64,
     /// Maximum complete output program-header count.
     pub max_program_headers: usize,
-    /// Maximum span from the lowest original load page to the new carrier end.
+    /// Maximum mapped-page span. The interleaved ET_EXEC profile includes lower new images.
     pub max_virtual_span: u64,
 }
 
@@ -233,6 +233,7 @@ pub fn append_read_only_carrier(
             max_new_load_pages: u64::MAX,
         },
         false,
+        false,
     )
 }
 
@@ -250,7 +251,25 @@ pub fn append_carrier_with_images(
     edits: &[DeclaredEdit],
     policy: ImagePolicy,
 ) -> Result<CarrierOutput, Error> {
-    append_internal(input, request, edits, policy, true)
+    append_internal(input, request, edits, policy, true, false)
+}
+
+/// Explicit ET_EXEC profile for independently backed RX images below or between
+/// original LOADs. The R-only carrier must still follow every original LOAD.
+/// Original headers retain their relative order; new LOAD headers are merged by
+/// virtual address, after the original PHDR/INTERP prefix. All original and new
+/// page ownership, metadata, source-edit and configured limits remain mandatory.
+/// This byte layout does not qualify execution or an ET_DYN load bias.
+pub fn append_exec_carrier_with_interleaved_images(
+    input: &Elf64<'_>,
+    request: ImageRequest<'_>,
+    edits: &[DeclaredEdit],
+    policy: ImagePolicy,
+) -> Result<CarrierOutput, Error> {
+    if input.header().object_type != ObjectType::Executable {
+        return Err(Error::UnsupportedObjectType);
+    }
+    append_internal(input, request, edits, policy, true, true)
 }
 
 fn append_internal(
@@ -259,6 +278,7 @@ fn append_internal(
     edits: &[DeclaredEdit],
     image_policy: ImagePolicy,
     extended: bool,
+    interleaved: bool,
 ) -> Result<CarrierOutput, Error> {
     let ImageRequest {
         carrier_vaddr,
@@ -481,10 +501,11 @@ fn append_internal(
     for (index, image) in images.iter().enumerate() {
         let start = align_down(image.entry.0, policy.page_size);
         if image.bytes.is_empty()
-            || start < last_page_end
-            || input
-                .segments(SegmentType::Load)
-                .any(|old| old.vaddr.0 > start)
+            || (!interleaved
+                && (start < last_page_end
+                    || input
+                        .segments(SegmentType::Load)
+                        .any(|old| old.vaddr.0 > start)))
         {
             return Err(Error::InvalidImage { index });
         }
@@ -493,6 +514,18 @@ fn append_internal(
         let page_end = align_up(add(start, size, "image virtual extent")?, policy.page_size)?;
         if page_end > policy.user_address_limit {
             return Err(Error::AddressLimit { index: None });
+        }
+        if interleaved {
+            // Check the entire page mapping, including the generated prefix and
+            // tail, against every original file/BSS page. Exact-byte disjointness
+            // alone cannot authorize replacing an original mapped page.
+            for old in &loads {
+                let original_start = align_down(old.vaddr.0, policy.page_size);
+                let original_end = align_up(old.memory_range()?.end().0, policy.page_size)?;
+                if start < original_end && original_start < page_end {
+                    return Err(Error::InvalidImage { index });
+                }
+            }
         }
         let offset = align_up(output_len, policy.page_size)?;
         let file = FileRange::checked(
@@ -557,15 +590,20 @@ fn append_internal(
         output_len,
         policy.max_output_file_bytes,
     )?;
+    let span_start = if interleaved {
+        lowest_page.min(added.first().ok_or(Error::OutputInvariant)?.vaddr)
+    } else {
+        lowest_page
+    };
     budget(
         "virtual span",
-        added.last().ok_or(Error::OutputInvariant)?.page_end - lowest_page,
+        added.last().ok_or(Error::OutputInvariant)?.page_end - span_start,
         policy.max_virtual_span,
     )?;
     let output_len = host_index(output_len)?;
-    let phdr_index = old_phdrs.first().map_or(0, |item| item.index);
+    let mut phdr_index = old_phdrs.first().map_or(0, |item| item.index);
     let header_base = old_count + usize::from(insert_phdr);
-    let carrier_index = header_base
+    let mut carrier_index = header_base
         + added
             .iter()
             .position(|load| load.image.is_none())
@@ -577,54 +615,124 @@ fn append_internal(
     bytes.extend_from_slice(input.bytes());
     bytes.resize(output_len, 0);
     let mut original_to_output_header = Vec::with_capacity(old_count);
-    if insert_phdr {
-        encode_phdr(
-            &mut bytes,
-            carrier_offset,
-            table_header(carrier_offset, carrier_vaddr.0, new_table_len),
-        )?;
-    }
-    for item in input.program_headers() {
-        let new_index = item.index + usize::from(insert_phdr);
-        original_to_output_header.push(new_index);
-        let old_offset = add(
-            old_table.start().0,
-            item.index as u64 * 56,
-            "old program-header offset",
-        )?;
-        let new_offset = add(
-            carrier_offset,
-            new_index as u64 * 56,
-            "new program-header offset",
-        )?;
-        if item.kind == SegmentType::ProgramHeaders {
+    if interleaved {
+        let order = interleaved_header_order(input, &added, insert_phdr);
+        if order.len() != new_count {
+            return Err(Error::OutputInvariant);
+        }
+        original_to_output_header.resize(old_count, usize::MAX);
+        for (index, header) in order.into_iter().enumerate() {
+            let to = add(carrier_offset, index as u64 * 56, "interleaved header")?;
+            match header {
+                HeaderSource::InsertedPhdr => {
+                    phdr_index = index;
+                    encode_phdr(
+                        &mut bytes,
+                        to,
+                        table_header(carrier_offset, carrier_vaddr.0, new_table_len),
+                    )?;
+                }
+                HeaderSource::Original(old_index) => {
+                    let item = &input.program_headers()[old_index];
+                    original_to_output_header[old_index] = index;
+                    if item.kind == SegmentType::ProgramHeaders {
+                        phdr_index = index;
+                        encode_phdr(
+                            &mut bytes,
+                            to,
+                            table_header(carrier_offset, carrier_vaddr.0, new_table_len),
+                        )?;
+                    } else {
+                        let from = add(
+                            old_table.start().0,
+                            old_index as u64 * 56,
+                            "original interleaved header",
+                        )?;
+                        let source = &input.bytes()[host_index(from)?..host_index(from + 56)?];
+                        bytes[host_index(to)?..host_index(to + 56)?].copy_from_slice(source);
+                    }
+                }
+                HeaderSource::Added(added_index) => {
+                    let load = &added[added_index];
+                    encode_phdr(
+                        &mut bytes,
+                        to,
+                        EncodedHeader {
+                            kind: 1,
+                            flags: load.flags,
+                            offset: load.offset,
+                            vaddr: load.vaddr,
+                            file_size: load.size,
+                            memory_size: load.size,
+                            alignment: policy.page_size,
+                        },
+                    )?;
+                    if let Some(image) = load.image {
+                        image_placements[image].program_header = index;
+                    } else {
+                        carrier_index = index;
+                    }
+                }
+            }
+        }
+        if original_to_output_header.contains(&usize::MAX)
+            || original_to_output_header
+                .windows(2)
+                .any(|pair| pair[0] >= pair[1])
+        {
+            return Err(Error::OutputInvariant);
+        }
+    } else {
+        if insert_phdr {
             encode_phdr(
                 &mut bytes,
-                new_offset,
+                carrier_offset,
                 table_header(carrier_offset, carrier_vaddr.0, new_table_len),
             )?;
-        } else {
-            let source = &input.bytes()[host_index(old_offset)?..host_index(old_offset + 56)?];
-            bytes[host_index(new_offset)?..host_index(new_offset + 56)?].copy_from_slice(source);
         }
-    }
-    for (position, load) in added.iter().enumerate() {
-        let index = header_base + position;
-        encode_phdr(
-            &mut bytes,
-            add(carrier_offset, index as u64 * 56, "appended load header")?,
-            EncodedHeader {
-                kind: 1,
-                flags: load.flags,
-                offset: load.offset,
-                vaddr: load.vaddr,
-                file_size: load.size,
-                memory_size: load.size,
-                alignment: policy.page_size,
-            },
-        )?;
-        if let Some(image) = load.image {
-            image_placements[image].program_header = index;
+        for item in input.program_headers() {
+            let new_index = item.index + usize::from(insert_phdr);
+            original_to_output_header.push(new_index);
+            let old_offset = add(
+                old_table.start().0,
+                item.index as u64 * 56,
+                "old program-header offset",
+            )?;
+            let new_offset = add(
+                carrier_offset,
+                new_index as u64 * 56,
+                "new program-header offset",
+            )?;
+            if item.kind == SegmentType::ProgramHeaders {
+                encode_phdr(
+                    &mut bytes,
+                    new_offset,
+                    table_header(carrier_offset, carrier_vaddr.0, new_table_len),
+                )?;
+            } else {
+                let source = &input.bytes()[host_index(old_offset)?..host_index(old_offset + 56)?];
+                bytes[host_index(new_offset)?..host_index(new_offset + 56)?]
+                    .copy_from_slice(source);
+            }
+        }
+        for (position, load) in added.iter().enumerate() {
+            let index = header_base + position;
+            encode_phdr(
+                &mut bytes,
+                add(carrier_offset, index as u64 * 56, "appended load header")?,
+                EncodedHeader {
+                    kind: 1,
+                    flags: load.flags,
+                    offset: load.offset,
+                    vaddr: load.vaddr,
+                    file_size: load.size,
+                    memory_size: load.size,
+                    alignment: policy.page_size,
+                },
+            )?;
+            if let Some(image) = load.image {
+                image_placements[image].program_header = index;
+            }
         }
     }
     bytes[host_index(payload_offset)?..host_index(payload_range.end().0)?].copy_from_slice(payload);
@@ -668,6 +776,17 @@ fn append_internal(
         },
     )?;
     reparsed.check_load_page_congruence(policy.page_size)?;
+    if interleaved {
+        let first_load = reparsed
+            .segments(SegmentType::Load)
+            .next()
+            .ok_or(Error::OutputInvariant)?
+            .index;
+        if phdr_index >= first_load {
+            return Err(Error::OutputInvariant);
+        }
+        validate_interpreter(&reparsed, first_load)?;
+    }
     let mapping = reparsed.file_to_virtual(FileOffset(carrier_offset), new_table_len)?;
     if mapping.program_header != carrier_index
         || mapping.virtual_range.start() != carrier_vaddr
@@ -701,6 +820,41 @@ fn append_internal(
         new_load_pages,
         dynamic,
     })
+}
+
+enum HeaderSource {
+    InsertedPhdr,
+    Original(usize),
+    Added(usize),
+}
+
+fn interleaved_header_order(
+    input: &Elf64<'_>,
+    added: &[AddedLoad],
+    insert_phdr: bool,
+) -> Vec<HeaderSource> {
+    let mut order =
+        Vec::with_capacity(input.program_headers().len() + added.len() + usize::from(insert_phdr));
+    if insert_phdr {
+        order.push(HeaderSource::InsertedPhdr);
+    }
+    let mut next = 0;
+    for old in input.program_headers() {
+        if old.kind == SegmentType::Load {
+            // Include zero-size LOADs in ordering. Original records win equal-VA
+            // ties; nonempty page aliases have already been refused.
+            while next < added.len() && added[next].vaddr < old.vaddr.0 {
+                order.push(HeaderSource::Added(next));
+                next += 1;
+            }
+        }
+        order.push(HeaderSource::Original(old.index));
+    }
+    while next < added.len() {
+        order.push(HeaderSource::Added(next));
+        next += 1;
+    }
+    order
 }
 
 struct AddedLoad {

@@ -34,6 +34,15 @@ CORE_PROFILES = {'legacy': 'prepare', 'owned-foreign-neighbors-v1': 'prepare-own
 PLANNING_MARKER = 'planning-profile.tsv'
 PLANNING_MARKER_BYTES = b'LI2PLANNING\t1\nprofile\towned-foreign-neighbors-v1\nqualification_complete\tfalse\n'
 
+# This is orthogonal to allocation/planning/router profiles. Absence is legacy.
+DEBUG0_BUILD_PROFILE = 'dev-debug0-v1'
+DEBUG0_PROFILE = dict(opt_level='0', debuginfo=0, debug_assertions=True, overflow_checks=True, test=False)
+DEBUG0_ENV = dict(CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+    CARGO_PROFILE_DEV_OPT_LEVEL='0', CARGO_PROFILE_TEST_OPT_LEVEL='0',
+    CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+    CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+
+
 def sha(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -302,6 +311,12 @@ def build_inputs(build, tracked, repo, bound):
     assert built['revision'] == tracked['revision'] and built['files'] == tracked['files']
     archives = loads(bound(str(root / 'artifacts.json')))
     assert archives.keys() == {'native-compile', 'common-sites-compile'}
+    build_input_profile(build, root, bound)
+    build_profile = None
+    if 'build_profile' in build:
+        build_profile = debug0_build_profile(build, root, bound)
+    else:
+        same_build_profile(build, summary, *archives.values())
     products = {}
     for phase, archive in archives.items():
         assert loads(bound(str(root / phase / 'artifact-archive.json'))) == archive
@@ -314,7 +329,10 @@ def build_inputs(build, tracked, repo, bound):
             assert all(tracked['files'][p] == row for p, row in selected['source_bindings'].items())
             assert sha(bound(selected['product']['path'])) == selected['product']['sha256']
             assert sha(bound(selected['depfile']['path'])) == selected['depfile']['sha256']
-            assert selected['cargo']['profile'] == PROFILE and selected['cargo']['features'] == []
+            if build_profile is None:
+                assert selected['cargo']['profile'] == PROFILE and selected['cargo']['features'] == []
+            else:
+                assert selected['cargo']['profile'] == DEBUG0_PROFILE and selected['cargo']['features'] == []
             products[name] = selected['product']['path']
     assert products.keys() == {'elf-exec-oracle', 'liteinst-rewrite', 'common_sites'}
     for name, phase, package, kind, source_path in (
@@ -357,6 +375,10 @@ def observed_streams(audit, tracked, build_root, cells, inv, datasets, bound):
     observation_inputs = loads(bound(str(root / 'inputs.json')))
     observer_build = loads(bound(observation_inputs['build_admission']))
     assert observer_build['directory'] == str(build_root) and observer_build['source_revision'] == tracked['revision']
+    build_input_profile(observer_build, build_root, bound)
+    same_build_profile(observer_build, summary, audit, loads(bound(str(build_root / 'summary.json'))))
+    if 'build_profile' in observer_build:
+        debug0_build_profile(observer_build, build_root, bound)
     assert loads(bound(str(build_root / 'cells.json'))) == cells
     streams = {}
     for variant in ('unstripped', 'stripped'):
@@ -546,6 +568,10 @@ def production_inputs(admission, tracked, products, inv, originals, bound, plann
     assert build['authority'] == 'CALLER_AUTHENTICATED_BUILD_PRODUCTS' and build['scope'] == 'core-cli-and-common-sites-build-only'
     assert build['source_revision'] == tracked['revision'] and build['source_files_sha256'] == sha(encode(tracked['files']))
     assert build['products'] == dict(core=products['liteinst-rewrite'], common_sites=products['common_sites'])
+    product_build_input_profile(build, bound)
+    same_build_profile(build, admission, summary)
+    if 'build_profile' in build:
+        debug0_build_profile(build, path(build['directory']), bound)
     for p in build['required_products'] + build['evidence_files']:
         bound(p)
     expected = []
@@ -597,6 +623,108 @@ def production_inputs(admission, tracked, products, inv, originals, bound, plann
                         result['comparison_stage'] = by_name[name + '-compare']
             artifacts[name] = result
     return root, summary, results, artifacts
+
+
+def same_build_profile(*records):
+    assert records
+    if 'build_profile' not in records[0]:
+        assert all('build_profile' not in row for row in records), 'legacy build profile must be absent'
+        return None
+    assert all(row['build_profile'] == DEBUG0_BUILD_PROFILE for row in records), 'explicit build profile mismatch'
+    return DEBUG0_BUILD_PROFILE
+
+
+def build_input_profile(admission, root, bound):
+    # Authenticate the builder's actual input identity before either profile.
+    # This also rejects an isolated new-profile label in a legacy envelope.
+    inputs = loads(bound(str(root / 'inputs.json')))
+    summary = loads(bound(str(root / 'summary.json')))
+    archives = loads(bound(str(root / 'artifacts.json')))
+    keys = {'schema', 'preparation', 'collector_binding', 'files'}
+    if 'build_profile' in admission:
+        keys = keys | {'build_profile'}
+    assert set(inputs) == keys and type(inputs['schema']) is int and inputs['schema'] == 1
+    assert archives.keys() == {'native-compile', 'common-sites-compile'}
+    return same_build_profile(admission, inputs, summary, *archives.values())
+
+
+
+def product_build_input_profile(admission, bound):
+    # Legacy product admissions have no directory field. Preserve that schema;
+    # use the existing exact archive layout and authenticated evidence list.
+    core = Path(admission['products']['core'])
+    common = Path(admission['products']['common_sites'])
+    assert core.is_absolute() and '..' not in core.parts
+    assert core.parent.name == 'native-compile' and core.parent.parent.name == 'artifacts'
+    root = core.parent.parent.parent
+    assert common.parent == root / 'artifacts/common-sites-compile'
+    if 'directory' in admission:
+        assert admission['directory'] == str(root)
+    for name in ('inputs.json', 'summary.json', 'artifacts.json',
+                 'native-compile/artifact-archive.json', 'common-sites-compile/artifact-archive.json'):
+        assert str(root / name) in admission['evidence_files']
+    archives = loads(bound(str(root / 'artifacts.json')))
+    assert loads(bound(str(root / 'native-compile/artifact-archive.json'))) == archives['native-compile']
+    assert loads(bound(str(root / 'common-sites-compile/artifact-archive.json'))) == archives['common-sites-compile']
+    assert archives['native-compile']['selected']['liteinst-rewrite']['product']['path'] == str(core)
+    assert archives['common-sites-compile']['selected']['common_sites']['product']['path'] == str(common)
+    return build_input_profile(admission, root, bound)
+
+
+
+def debug0_build_profile(admission, root, bound):
+    # All reads go through the caller's existing complete watched catalog.
+    summary = loads(bound(str(root / 'summary.json')))
+    inputs = loads(bound(str(root / 'inputs.json')))
+    assert inputs.keys() == {'schema', 'preparation', 'collector_binding', 'files', 'build_profile'}
+    assert type(inputs['schema']) is int and inputs['schema'] == 1
+    assert same_build_profile(admission, summary, inputs) == DEBUG0_BUILD_PROFILE
+    assert summary['completed'] is True and summary['failure'] is None
+    assert summary['observed_stages'] == len(summary['planned_stages']) == 12
+    assert summary['cells_complete'] == 8 and summary['unrun_stages'] == []
+    if 'source_revision' in admission:
+        assert admission['source_revision'] == summary['revision']
+    if 'revision' in admission:
+        assert admission['revision'] == summary['revision']
+    archives = loads(bound(str(root / 'artifacts.json')))
+    assert archives.keys() == {'native-compile', 'common-sites-compile'}
+    for phase, archive in archives.items():
+        assert loads(bound(str(root / phase / 'artifact-archive.json'))) == archive
+        assert same_build_profile(admission, archive) == DEBUG0_BUILD_PROFILE
+        assert archive['source_revision'] == summary['revision']
+        assert archive['selected'].keys() == ({'elf-exec-oracle', 'liteinst-rewrite'} if phase == 'native-compile' else {'common_sites'})
+        for selected in archive['selected'].values():
+            assert selected['cargo']['profile'] == DEBUG0_PROFILE and selected['cargo']['features'] == []
+            assert all(type(selected['cargo']['profile'][k]) is type(v) for k, v in DEBUG0_PROFILE.items())
+    if 'products' in admission:
+        assert admission['products'] == dict(core=archives['native-compile']['selected']['liteinst-rewrite']['product']['path'], common_sites=archives['common-sites-compile']['selected']['common_sites']['product']['path'])
+        assert admission['required_products'] == sorted({row['path'] for archive in archives.values() for row in archive['artifacts'].values()})
+    environments = []
+    for phase in ('required', 'native-compile', 'common-sites-compile'):
+        command = loads(bound(str(root / phase / 'command.json')))
+        env = dict(command['env'])
+        assert env.pop('TMPDIR') == str(root / phase / 'tmp')
+        assert {k: v for k, v in env.items() if k.startswith('CARGO_PROFILE_')} == DEBUG0_ENV
+        assert env.keys() == {'CARGO_BUILD_JOBS', 'CARGO_INCREMENTAL', 'CARGO_NET_OFFLINE',
+            'CARGO_TARGET_DIR', 'CARGO_HOME', 'HOME', 'RUSTC', 'RUSTDOC', 'RUSTC_WORKSPACE_WRAPPER',
+            'RUSTC_WRAPPER', 'RUST_TEST_THREADS', 'LC_ALL', 'PATH', 'PYTHONDONTWRITEBYTECODE'} | DEBUG0_ENV.keys()
+        assert env['CARGO_BUILD_JOBS'] == env['RUST_TEST_THREADS'] == '4'
+        assert env['CARGO_INCREMENTAL'] == '0' and env['CARGO_NET_OFFLINE'] == 'true'
+        assert env['RUSTC_WORKSPACE_WRAPPER'] == env['RUSTC_WRAPPER'] == ''
+        assert env['LC_ALL'] == 'C' and env['PYTHONDONTWRITEBYTECODE'] == '1'
+        assert Path(command['cwd']).is_absolute() and root.is_relative_to(Path(command['cwd']) / 'ignored')
+        assert env['CARGO_TARGET_DIR'] == str(Path(command['cwd']) / 'target')
+        tool = Path(env['RUSTC']).parent
+        assert Path(env['RUSTC']).is_absolute() and Path(env['RUSTC']).name == 'rustc'
+        assert env['RUSTDOC'] == str(tool / 'rustdoc') and env['PATH'] == str(tool) + ':/usr/bin:/bin'
+        assert all(Path(env[k]).is_absolute() for k in ('CARGO_TARGET_DIR', 'CARGO_HOME', 'HOME'))
+        if phase != 'required':
+            request = loads(bound(str(root / phase / 'request.json')))
+            assert command['request'] == request and request['env'] == command['env']
+        environments.append(env)
+    assert environments[0] == environments[1] == environments[2]
+    return DEBUG0_BUILD_PROFILE
+
 
 
 def main():
@@ -664,12 +792,14 @@ def main():
         assert bound(str(repo / 'evaluation/e9-common-app/expected' / (d['name'] + '.stdout'))) == d['expected_stdout'].encode()
     build = loads(bound(inputs['build_admission']))
     build_root, products = build_inputs(build, tracked, repo, bound)
+    build_extra = {} if 'build_profile' not in build else dict(build_profile=DEBUG0_BUILD_PROFILE)
     cells = loads(bound(str(build_root / 'cells.json')))
     inv = inventories(cells, originals, build['common_sites'], bound)
     audit = loads(bound(inputs['observation_content_admission']))
     observation_root, streams = observed_streams(audit, tracked, build_root, cells, inv, datasets, bound)
     production = loads(bound(inputs['production_admission']))
     production_root, production_summary, production_results, artifacts = production_inputs(production, tracked, products, inv, originals, bound, args.planning_profile)
+    same_build_profile(build, production, production_summary)
     for old_root in (build_root, observation_root, production_root, Path(prep['summary']).parent):
         assert not raw.is_relative_to(old_root) and not old_root.is_relative_to(raw), 'separate new output owner'
 
@@ -836,7 +966,7 @@ def main():
             scope='Ordinary full-output and exact ordered journal only. Complete original selections retained. No state, performance or full loader closure claim.',
             parent_closed_reaped_authority='Separate caller observation required; never inferred by this recipe.',
             timings='Operational diagnostics only, not performance measurements',
-            **({'planning_profile': profile_record(args.planning_profile)} if args.planning_profile != 'legacy' else {})))
+            **({'planning_profile': profile_record(args.planning_profile)} if args.planning_profile != 'legacy' else {}), **build_extra))
         index = {}
         for directory, dirs, files in os.walk(raw, followlinks=False):
             assert all(not (Path(directory) / n).is_symlink() for n in dirs + files)

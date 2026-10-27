@@ -362,7 +362,14 @@ fn prepare_mode(original: &[u8], manifest: &[u8], owned_neighbors: bool) -> Resu
                 bytes: i.bytes().to_vec(),
             })
             .collect();
-        let result = carrier::append_carrier_with_images(
+        let write_carrier = if owned_neighbors
+            && elf.header().object_type == carrier::elf64::ObjectType::Executable
+        {
+            carrier::append_exec_carrier_with_interleaved_images
+        } else {
+            carrier::append_carrier_with_images
+        };
+        let result = write_carrier(
             &elf,
             carrier::ImageRequest {
                 carrier_vaddr: ElfVaddr(s.carrier_pc),

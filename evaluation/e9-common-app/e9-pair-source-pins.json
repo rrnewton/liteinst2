@@ -1,0 +1,21 @@
+{
+  "activation": "Actual committed revision/full source map and caller review are required by the runner activation; this support file supplies no actual execution or host epoch.",
+  "files": {
+    "evaluation/e9-common-app/run_candidates.py": "523ce6007068c5764be6bf007d67f8093aaedf4054b1beb3b7465bed95f1196f",
+    "evaluation/e9-common-app/run_e9_pairs.py": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+    "tests/support/e9_common_core_pages.rs": "6debc5e44d6526f1e2987ae2afbaa75d6d540047c95a55ca46aec65a5c88e353",
+    "tests/support/e9_common_e9.rs": "29884b51d63e23e804cde2c9e3c9c70afc28c47c159bd7217ec61cd8fce4864f",
+    "tests/support/e9_common_image.rs": "99a4c285c1335a399800f692d63b03053c0b43d844b608e03236308d47f3d525",
+    "tests/support/e9_common_seed.instructions.tsv": "74afc406acb8eb7742695afdf0e610a7e77afbaa6fb1498463a9e8ae85901fcd",
+    "tests/support/e9_common_seed.rs": "df1678dc0d0a5eede05d76d592048d5065d983fa44ba42c6d5dd7da9d297c2e3",
+    "tests/support/elf_exec_driver.rs": "ec93bf0f948f8b2c303839adf99c6e6b39c8211c65c94ec3c966d983d82d662a",
+    "tests/support/elf_exec_oracle.rs": "1302da90836b31f9346cff5c20a458f4e5b3134b0f529e21f5027f78e4764c6b",
+    "tests/support/quiescent_oracle.rs": "e8c17e5daaf6e9720d6c515fd5e6f986307eca9c12ce115cdd51b465406dc756",
+    "tools/elf-rewrite/e9-null-witness.py": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "tools/elf-rewrite/e9-sites.py": "5904a13ec1fcb8b6801dcff12ac1fe5a1154b884555bbd9fbc24521f9bc6949f",
+    "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+  },
+  "reviewed_source_commit": null,
+  "runner_sha256": "3feea2da3dbc4455af5133caebc87441709a8342caa068f215640d3e3b2a6973",
+  "schema": 1
+}

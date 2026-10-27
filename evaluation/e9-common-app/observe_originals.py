@@ -28,6 +28,15 @@ INVENTORY_FILES = {'COMPLETE', 'instructions.tsv', 'sites.tsv', 'memory-writes.t
 PROFILE = dict(opt_level='0', debuginfo=2, debug_assertions=True, overflow_checks=True, test=False)
 
 
+# This is orthogonal to allocation/planning/router profiles. Absence is legacy.
+DEBUG0_BUILD_PROFILE = 'dev-debug0-v1'
+DEBUG0_PROFILE = dict(opt_level='0', debuginfo=0, debug_assertions=True, overflow_checks=True, test=False)
+DEBUG0_ENV = dict(CARGO_PROFILE_DEV_DEBUG='0', CARGO_PROFILE_TEST_DEBUG='0',
+    CARGO_PROFILE_DEV_OPT_LEVEL='0', CARGO_PROFILE_TEST_OPT_LEVEL='0',
+    CARGO_PROFILE_DEV_DEBUG_ASSERTIONS='true', CARGO_PROFILE_TEST_DEBUG_ASSERTIONS='true',
+    CARGO_PROFILE_DEV_OVERFLOW_CHECKS='true', CARGO_PROFILE_TEST_OVERFLOW_CHECKS='true')
+
+
 def sha(data):
     return hashlib.sha256(data).hexdigest()
 
@@ -331,6 +340,85 @@ def capture_schema(directory, dataset, inv, owners):
                 zero_visit_heads=sum(r['visits'] == '0' for r in coverage), content_audit_required=True)
 
 
+def same_build_profile(*records):
+    assert records
+    if 'build_profile' not in records[0]:
+        assert all('build_profile' not in row for row in records), 'legacy build profile must be absent'
+        return None
+    assert all(row['build_profile'] == DEBUG0_BUILD_PROFILE for row in records), 'explicit build profile mismatch'
+    return DEBUG0_BUILD_PROFILE
+
+
+def build_input_profile(admission, root, bound):
+    # Authenticate the builder's actual input identity before either profile.
+    # This also rejects an isolated new-profile label in a legacy envelope.
+    inputs = loads(bound(str(root / 'inputs.json')))
+    summary = loads(bound(str(root / 'summary.json')))
+    archives = loads(bound(str(root / 'artifacts.json')))
+    keys = {'schema', 'preparation', 'collector_binding', 'files'}
+    if 'build_profile' in admission:
+        keys = keys | {'build_profile'}
+    assert set(inputs) == keys and type(inputs['schema']) is int and inputs['schema'] == 1
+    assert archives.keys() == {'native-compile', 'common-sites-compile'}
+    return same_build_profile(admission, inputs, summary, *archives.values())
+
+
+
+def debug0_build_profile(admission, root, bound):
+    # All reads go through the caller's existing complete watched catalog.
+    summary = loads(bound(str(root / 'summary.json')))
+    inputs = loads(bound(str(root / 'inputs.json')))
+    assert inputs.keys() == {'schema', 'preparation', 'collector_binding', 'files', 'build_profile'}
+    assert type(inputs['schema']) is int and inputs['schema'] == 1
+    assert same_build_profile(admission, summary, inputs) == DEBUG0_BUILD_PROFILE
+    assert summary['completed'] is True and summary['failure'] is None
+    assert summary['observed_stages'] == len(summary['planned_stages']) == 12
+    assert summary['cells_complete'] == 8 and summary['unrun_stages'] == []
+    if 'source_revision' in admission:
+        assert admission['source_revision'] == summary['revision']
+    if 'revision' in admission:
+        assert admission['revision'] == summary['revision']
+    archives = loads(bound(str(root / 'artifacts.json')))
+    assert archives.keys() == {'native-compile', 'common-sites-compile'}
+    for phase, archive in archives.items():
+        assert loads(bound(str(root / phase / 'artifact-archive.json'))) == archive
+        assert same_build_profile(admission, archive) == DEBUG0_BUILD_PROFILE
+        assert archive['source_revision'] == summary['revision']
+        assert archive['selected'].keys() == ({'elf-exec-oracle', 'liteinst-rewrite'} if phase == 'native-compile' else {'common_sites'})
+        for selected in archive['selected'].values():
+            assert selected['cargo']['profile'] == DEBUG0_PROFILE and selected['cargo']['features'] == []
+            assert all(type(selected['cargo']['profile'][k]) is type(v) for k, v in DEBUG0_PROFILE.items())
+    if 'products' in admission:
+        assert admission['products'] == dict(core=archives['native-compile']['selected']['liteinst-rewrite']['product']['path'], common_sites=archives['common-sites-compile']['selected']['common_sites']['product']['path'])
+        assert admission['required_products'] == sorted({row['path'] for archive in archives.values() for row in archive['artifacts'].values()})
+    environments = []
+    for phase in ('required', 'native-compile', 'common-sites-compile'):
+        command = loads(bound(str(root / phase / 'command.json')))
+        env = dict(command['env'])
+        assert env.pop('TMPDIR') == str(root / phase / 'tmp')
+        assert {k: v for k, v in env.items() if k.startswith('CARGO_PROFILE_')} == DEBUG0_ENV
+        assert env.keys() == {'CARGO_BUILD_JOBS', 'CARGO_INCREMENTAL', 'CARGO_NET_OFFLINE',
+            'CARGO_TARGET_DIR', 'CARGO_HOME', 'HOME', 'RUSTC', 'RUSTDOC', 'RUSTC_WORKSPACE_WRAPPER',
+            'RUSTC_WRAPPER', 'RUST_TEST_THREADS', 'LC_ALL', 'PATH', 'PYTHONDONTWRITEBYTECODE'} | DEBUG0_ENV.keys()
+        assert env['CARGO_BUILD_JOBS'] == env['RUST_TEST_THREADS'] == '4'
+        assert env['CARGO_INCREMENTAL'] == '0' and env['CARGO_NET_OFFLINE'] == 'true'
+        assert env['RUSTC_WORKSPACE_WRAPPER'] == env['RUSTC_WRAPPER'] == ''
+        assert env['LC_ALL'] == 'C' and env['PYTHONDONTWRITEBYTECODE'] == '1'
+        assert Path(command['cwd']).is_absolute() and root.is_relative_to(Path(command['cwd']) / 'ignored')
+        assert env['CARGO_TARGET_DIR'] == str(Path(command['cwd']) / 'target')
+        tool = Path(env['RUSTC']).parent
+        assert Path(env['RUSTC']).is_absolute() and Path(env['RUSTC']).name == 'rustc'
+        assert env['RUSTDOC'] == str(tool / 'rustdoc') and env['PATH'] == str(tool) + ':/usr/bin:/bin'
+        assert all(Path(env[k]).is_absolute() for k in ('CARGO_TARGET_DIR', 'CARGO_HOME', 'HOME'))
+        if phase != 'required':
+            request = loads(bound(str(root / phase / 'request.json')))
+            assert command['request'] == request and request['env'] == command['env']
+        environments.append(env)
+    assert environments[0] == environments[1] == environments[2]
+    return DEBUG0_BUILD_PROFILE
+
+
+
 def main():
     if sys.flags.optimize:
         raise SystemExit('optimized Python is unsupported; assertions are required')
@@ -396,7 +484,14 @@ def main():
     # The caller must authenticate the actual compiler/archive review. The
     # production admission of core/common_sites alone grants no driver authority.
     build = loads(bound(inputs['build_admission']))
-    assert build.keys() == {'schema', 'authority', 'scope', 'source_revision', 'source_files_sha256', 'driver', 'common_sites', 'directory', 'review_binding', 'evidence_files'}
+    build_input_profile(build, path(build['directory']), bound)
+    build_extra = {}
+    if 'build_profile' not in build:
+        assert build.keys() == {'schema', 'authority', 'scope', 'source_revision', 'source_files_sha256', 'driver', 'common_sites', 'directory', 'review_binding', 'evidence_files'}
+    else:
+        assert build.keys() == {'schema', 'authority', 'scope', 'source_revision', 'source_files_sha256', 'driver', 'common_sites', 'directory', 'review_binding', 'evidence_files', 'build_profile'}
+        assert debug0_build_profile(build, path(build['directory']), bound) == DEBUG0_BUILD_PROFILE
+        build_extra = dict(build_profile=DEBUG0_BUILD_PROFILE)
     assert type(build['schema']) is int and build['schema'] == 1 and build['authority'] == 'CALLER_AUTHENTICATED_OBSERVER_BUILD'
     assert build['scope'] == 'original-common-app-observer-build-only'
     assert build['source_revision'] == tracked['revision'] and build['source_files_sha256'] == sha(encode(tracked['files']))
@@ -406,6 +501,7 @@ def main():
     root = path(build['directory'])
     assert not raw.is_relative_to(root) and not raw.is_relative_to(Path(prep['summary']).parent), 'new run cannot be nested in prior evidence'
     build_summary = loads(bound(str(root / 'summary.json')))
+    same_build_profile(build, build_summary)
     assert build_summary['revision'] == tracked['revision'] and build_summary['completed'] is True and build_summary['failure'] is None
     assert build_summary['observed_stages'] == len(build_summary['planned_stages']) == 12 and build_summary['cells_complete'] == 8
     assert build_summary['unrun_stages'] == [] and build_summary['qualification_complete'] is False
@@ -430,7 +526,10 @@ def main():
         cargo = selected['cargo']
         assert cargo['target']['name'] == name and cargo['target']['kind'] == [kind] and cargo['target']['crate_types'] == ['bin']
         assert cargo['target']['src_path'] == str(repo / source_path) and cargo['target']['edition'] == '2024'
-        assert cargo['manifest_path'] == str(repo / package / 'Cargo.toml') and cargo['profile'] == PROFILE and cargo['features'] == []
+        if not build_extra:
+            assert cargo['manifest_path'] == str(repo / package / 'Cargo.toml') and cargo['profile'] == PROFILE and cargo['features'] == []
+        else:
+            assert cargo['manifest_path'] == str(repo / package / 'Cargo.toml') and cargo['profile'] == DEBUG0_PROFILE and cargo['features'] == []
         package_name = 'liteinst2' if not package else 'liteinst-rewrite'
         assert cargo['package_id'] == 'path+' + (repo / package).as_uri() + '#' + package_name + '@0.1.0'
         assert sha(bound(product)) == selected['product']['sha256'] and path(product).stat().st_mode & 0o111
@@ -590,7 +689,7 @@ def main():
             parent_closed_reaped_authority='Separate caller observation required; this script does not infer it.',
             capture_content_audit_required=True, full_architectural_equivalence=False, rewritten_application_runs=0,
             e9_application_runs=0, qualification_complete=False,
-            scope='Original application command/receipt and capture schema only; no state equivalence. Caller-selected runtime owners, not full loader/configuration closure.'))
+            scope='Original application command/receipt and capture schema only; no state equivalence. Caller-selected runtime owners, not full loader/configuration closure.', **build_extra))
     assert complete, 'all sixteen mandatory observations and final owners must pass'
     print('PASS sixteen original common-app command/capture schemas; independent capture-content audit required')
 

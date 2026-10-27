@@ -9,6 +9,11 @@ use liteinst2::scanner::InstructionScanner;
 #[path = "e9_common_seed.rs"]
 mod seed;
 
+#[path = "e9_common_recording.rs"]
+mod recording;
+#[path = "e9_common_recording_native.rs"]
+mod recording_native;
+
 #[path = "e9_common_core.rs"]
 pub mod core_pair;
 

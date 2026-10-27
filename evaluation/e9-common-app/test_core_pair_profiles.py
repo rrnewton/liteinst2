@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Prospective pure saved-data controls. No ptrace, application or audit main.
 
-These tests are authored but UNRUN in this proposal. Generated observations are
-synthetic values, never a claim that a kernel produced a signal or syscall.
+Generated observations are synthetic values, never a claim that a kernel
+produced a signal or syscall.
 """
 import copy
 import importlib.util
@@ -83,6 +83,8 @@ def fixture(index=0,count=1,trap=True):
   struct.pack_into('<Q',frame,200,6);fp_address=usable+16384;struct.pack_into('<Q',frame,224,fp_address)
   after=bytearray(frame);struct.pack_into('<Q',after,168,dest)
   fp=bytearray(2444);fp[:2]=b'\x7f\x03';struct.pack_into('<I',fp,24,0x1f80)
+  # Actual signal-frame representation: PKRU present; untouched reserved bytes retain the stack fill.
+  struct.pack_into('<Q',fp,512,1<<9);fp[2436:2440]=b'\xa6'*4
   struct.pack_into('<II',fp,464,0x46505853,len(fp));struct.pack_into('<I',fp,480,2440);struct.pack_into('<I',fp,len(fp)-4,0x46505845)
   rows += [['router-restorer',reghex(pre),reghex(post),ins[38][1].hex(),signal(5,2,syscall).hex()],
    ['router-syscall-entry',(133<<8)|127,reghex(enter)],['router-syscall-exit',(133<<8)|127,reghex(exited)],
@@ -102,6 +104,32 @@ def mutate_hex(value,offset):
  b=bytearray.fromhex(value);b[offset]^=1;return b.hex()
 
 class TraceControls(unittest.TestCase):
+ def test_signal_pkru_all_32_bits_exact(self):
+  for bit in range(32):
+   f=fixture();fp=bytearray.fromhex(row(f,'router-frame')[5]);fp[2432+bit//8]^=1<<(bit%8)
+   row(f,'router-frame')[5]=row(f,'router-fp-after')[2]=fp.hex()
+   with self.subTest(bit=bit):
+    with self.assertRaises(AssertionError):check(f)
+    f['before']['canonical']=f['before']['canonical'][:-8]+fp[2432:2436]+bytes(4)
+    self.assertEqual(check(f),34)
+ def test_signal_padding_and_present_bit_are_exact(self):
+  self.assertEqual(check(fixture()),34)
+  for offset in range(2436,2440):
+   for wrong in (0,0xa7):
+    f=fixture();fp=bytearray.fromhex(row(f,'router-frame')[5]);fp[offset]=wrong
+    row(f,'router-frame')[5]=row(f,'router-fp-after')[2]=fp.hex()
+    with self.assertRaises(AssertionError):check(f)
+  # Retain the old all-zero synthetic representation as an explicit refusal.
+  f=fixture();fp=bytearray.fromhex(row(f,'router-frame')[5]);fp[512:520]=bytes(8);fp[2436:2440]=bytes(4)
+  row(f,'router-frame')[5]=row(f,'router-fp-after')[2]=fp.hex()
+  with self.assertRaises(AssertionError):check(f)
+ def test_signal_other_architectural_components_remain_compared(self):
+  for bit,offset in ((0,0),(0,32),(1,160),(2,576),(5,832),(6,896),(7,1408)):
+   f=fixture();fp=bytearray.fromhex(row(f,'router-frame')[5]);struct.pack_into('<Q',fp,512,(1<<9)|(1<<bit))
+   row(f,'router-frame')[5]=row(f,'router-fp-after')[2]=fp.hex();self.assertEqual(check(f),34)
+   fp[offset]^=1;row(f,'router-frame')[5]=row(f,'router-fp-after')[2]=fp.hex()
+   with self.assertRaises(AssertionError):check(f)
+
  def test_complete_first_last_and_nontrap(self):
   self.assertEqual(check(fixture()),34)
   self.assertEqual(check(fixture(86,87)),464)

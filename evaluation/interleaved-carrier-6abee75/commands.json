@@ -1,0 +1,251 @@
+[
+  {
+    "name": "build",
+    "parent_argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "190s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/build/request.json",
+      "--receipt",
+      "${RAW}/build/receipt.json"
+    ],
+    "parent_env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "parent_wall_seconds": 205,
+    "request": {
+      "argv": [
+        "${TOOLCHAIN}/bin/cargo",
+        "build",
+        "--locked",
+        "--offline",
+        "-p",
+        "liteinst-rewrite",
+        "--example",
+        "emit_interleaved_carrier",
+        "--message-format=json"
+      ],
+      "cpu_seconds": 120,
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+        "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+        "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "HOME": "${USER_HOME}",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC": "${TOOLCHAIN}/bin/rustc"
+      },
+      "file_bytes": 134217728,
+      "stderr": "${RAW}/build/stderr",
+      "stdout": "${RAW}/build/stdout",
+      "wall_seconds": 180
+    }
+  },
+  {
+    "name": "emit",
+    "parent_argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "15s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/emit/request.json",
+      "--receipt",
+      "${RAW}/emit/receipt.json"
+    ],
+    "parent_env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "parent_wall_seconds": 30,
+    "request": {
+      "argv": [
+        "${REPO}/target/debug/examples/emit_interleaved_carrier",
+        "${RAW}/fixtures"
+      ],
+      "cpu_seconds": 2,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${RAW}/emit/stderr",
+      "stdout": "${RAW}/emit/stdout",
+      "wall_seconds": 5
+    }
+  },
+  {
+    "name": "run-original",
+    "parent_argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "15s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/run-original/request.json",
+      "--receipt",
+      "${RAW}/run-original/receipt.json"
+    ],
+    "parent_env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "parent_wall_seconds": 30,
+    "request": {
+      "argv": [
+        "${RAW}/fixtures/original.elf"
+      ],
+      "cpu_seconds": 2,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${RAW}/run-original/stderr",
+      "stdout": "${RAW}/run-original/stdout",
+      "wall_seconds": 5
+    }
+  },
+  {
+    "name": "run-below",
+    "parent_argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "15s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/run-below/request.json",
+      "--receipt",
+      "${RAW}/run-below/receipt.json"
+    ],
+    "parent_env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "parent_wall_seconds": 30,
+    "request": {
+      "argv": [
+        "${RAW}/fixtures/below.elf"
+      ],
+      "cpu_seconds": 2,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${RAW}/run-below/stderr",
+      "stdout": "${RAW}/run-below/stdout",
+      "wall_seconds": 5
+    }
+  },
+  {
+    "name": "run-gap",
+    "parent_argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "15s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/run-gap/request.json",
+      "--receipt",
+      "${RAW}/run-gap/receipt.json"
+    ],
+    "parent_env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "parent_wall_seconds": 30,
+    "request": {
+      "argv": [
+        "${RAW}/fixtures/gap.elf"
+      ],
+      "cpu_seconds": 2,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${RAW}/run-gap/stderr",
+      "stdout": "${RAW}/run-gap/stdout",
+      "wall_seconds": 5
+    }
+  },
+  {
+    "name": "run-above",
+    "parent_argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "15s",
+      "/usr/bin/python3.9",
+      "-B",
+      "${REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "${RAW}/run-above/request.json",
+      "--receipt",
+      "${RAW}/run-above/receipt.json"
+    ],
+    "parent_env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "parent_wall_seconds": 30,
+    "request": {
+      "argv": [
+        "${RAW}/fixtures/above.elf"
+      ],
+      "cpu_seconds": 2,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${RAW}/run-above/stderr",
+      "stdout": "${RAW}/run-above/stdout",
+      "wall_seconds": 5
+    }
+  }
+]

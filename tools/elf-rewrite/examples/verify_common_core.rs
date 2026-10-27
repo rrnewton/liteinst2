@@ -30,6 +30,31 @@ use router_contract::RouterMode;
 const INPUT: usize = 1_048_576;
 const OUTPUT: usize = 16_777_216;
 const HOOK: u64 = 0x401960;
+#[allow(dead_code)]
+#[path = "../../../tests/support/e9_common_recording.rs"]
+mod recording;
+fn recording_helper(pc: u64, logical: u64, state: SavedExtendedStateLayout) -> Vec<u8> {
+    let mut code = helper(pc, logical, state);
+    let marker = [0xfc, 0x4c, 0x89, 0xe7, 0xe8];
+    let offsets: Vec<_> = code
+        .windows(marker.len())
+        .enumerate()
+        .filter_map(|(i, b)| (b == marker).then_some(i + marker.len()))
+        .collect();
+    assert_eq!(offsets.len(), 1);
+    let at = offsets[0];
+    let next = pc + at as u64 + 4;
+    assert_eq!(
+        i128::from(next) + i128::from(i32::from_le_bytes(code[at..at + 4].try_into().unwrap())),
+        i128::from(HOOK)
+    );
+    code[at..at + 4].copy_from_slice(
+        &i32::try_from(i128::from(recording::CORE_HOOK) - i128::from(next))
+            .unwrap()
+            .to_le_bytes(),
+    );
+    code
+}
 const IMAGE_END: u64 = 0x425000;
 
 fn hash(bytes: &[u8]) -> String {
@@ -363,6 +388,91 @@ fn carrier(
     }
     expected[32..40].copy_from_slice(&offset.to_le_bytes());
     expected[56..58].copy_from_slice(&(count as u16).to_le_bytes());
+    expected
+}
+
+// Independent explicit owned-neighbor layout: use the unchanged byte/backing
+// reconstruction, then merge only its new LOAD records into the original table.
+// This does not call the producer or infer the mode from candidate addresses.
+fn carrier_interleaved(
+    original: &[u8],
+    overlay: &[u8],
+    old: &Elf64<'_>,
+    images: &[Image],
+    metadata: &[u8],
+    plan: &[u8],
+    carrier_pc: u64,
+) -> Vec<u8> {
+    assert_eq!(
+        old.header().object_type,
+        liteinst_rewrite::carrier::elf64::ObjectType::Executable
+    );
+    let mut expected = carrier(original, overlay, old, images, metadata, plan, carrier_pc);
+    let offset = end(original.len() as u64) as usize;
+    let insert = usize::from(old.segments(SegmentType::ProgramHeaders).next().is_none());
+    let original_count = old.program_headers().len();
+    let new_count = 1 + images.len();
+    let count = original_count + insert + new_count;
+    let table = expected[offset..offset + count * 56].to_vec();
+    let old_records = &table[insert * 56..(insert + original_count) * 56];
+    let new_records: Vec<_> = table[(insert + original_count) * 56..]
+        .chunks_exact(56)
+        .collect();
+    assert_eq!(new_records.len(), new_count);
+    let address = |raw: &[u8]| u64::from_le_bytes(raw[16..24].try_into().unwrap());
+    let kind = |raw: &[u8]| u32::from_le_bytes(raw[..4].try_into().unwrap());
+    assert!(new_records.iter().all(|raw| kind(raw) == 1));
+    assert!(
+        new_records
+            .windows(2)
+            .all(|pair| address(pair[0]) < address(pair[1]))
+    );
+    let mut result = Vec::with_capacity(count * 56);
+    if insert == 1 {
+        result.extend_from_slice(&table[..56]);
+    }
+    let mut remaining = new_records.iter().peekable();
+    let mut original_indices = Vec::with_capacity(original_count);
+    for (ph, raw) in old
+        .program_headers()
+        .iter()
+        .zip(old_records.chunks_exact(56))
+    {
+        if ph.kind == SegmentType::Load {
+            while remaining
+                .peek()
+                .is_some_and(|next| address(next) < ph.vaddr.0)
+            {
+                result.extend_from_slice(remaining.next().unwrap());
+            }
+        }
+        original_indices.push(result.len() / 56);
+        result.extend_from_slice(raw);
+    }
+    for raw in remaining {
+        result.extend_from_slice(raw);
+    }
+    assert_eq!(result.len(), table.len());
+    assert!(original_indices.windows(2).all(|pair| pair[0] < pair[1]));
+    let first_load = result
+        .chunks_exact(56)
+        .position(|raw| kind(raw) == 1)
+        .unwrap();
+    let phdr: Vec<_> = result
+        .chunks_exact(56)
+        .enumerate()
+        .filter(|(_, raw)| kind(raw) == 6)
+        .collect();
+    assert_eq!(phdr.len(), 1);
+    assert!(phdr[0].0 < first_load);
+    assert!(
+        result
+            .chunks_exact(56)
+            .enumerate()
+            .filter(|(_, raw)| kind(raw) == 3)
+            .all(|(index, _)| index < first_load)
+    );
+    expected[offset..offset + table.len()].copy_from_slice(&result);
     expected
 }
 
@@ -919,6 +1029,8 @@ fn derived_permits(original: &[(u64, u64)], pcs: &[u64]) -> Vec<[Permit; 2]> {
 
 fn main() {
     let mut args: Vec<_> = std::env::args_os().collect();
+    let record = recording::arguments(&mut args);
+    let hook_pc = if record { recording::CORE_HOOK } else { HOOK };
     let router = RouterMode::arguments(&mut args);
     let planning = PlanningProfile::arguments(&mut args, 7);
     assert_eq!(
@@ -1010,7 +1122,7 @@ fn main() {
         ("policy_sha256", hash(&inventory_inputs["policy.txt"].bytes)),
         ("target_sha256", hash(&inventory_inputs["target.txt"].bytes)),
         ("selection_sha256", hash(&selection.bytes)),
-        ("hook", "null".to_owned()),
+        ("hook", (if record { "journal" } else { "null" }).to_owned()),
         ("instruction_heads", "87".to_owned()),
         ("complete_static_policy", "true".to_owned()),
         ("qualification_complete", "false".to_owned()),
@@ -1054,8 +1166,16 @@ fn main() {
     };
     assert_eq!(inventory_inputs["target.txt"].bytes, compact.as_bytes());
     let h = &s.hooks[0];
-    assert_eq!((h.id, h.pc, h.length), (2, HOOK, 1));
-    assert_eq!(h.expected, ContentId::of(&[0xc3]));
+    if record {
+        assert_eq!(
+            (h.id, h.pc, h.length),
+            (3, recording::CORE_HOOK, recording::CORE_HOOK_BYTES)
+        );
+        assert_eq!(h.expected, ContentId::of(&original.bytes[0x1970..0x1a43]));
+    } else {
+        assert_eq!((h.id, h.pc, h.length), (2, HOOK, 1));
+        assert_eq!(h.expected, ContentId::of(&[0xc3]));
+    }
     let ranges: Vec<_> = seed::ORIGINAL_RANGES
         .iter()
         .map(|r| seed::SourceRange {
@@ -1124,7 +1244,11 @@ fn main() {
         assert_eq!(x.id, ordinal as u64 + 1);
         assert_eq!((x.block.start(), x.block.end()), original_block(head));
         assert_eq!(x.length, head.length);
-        assert_eq!(x.hook, 2);
+        if record {
+            assert_eq!(x.hook, 3);
+        } else {
+            assert_eq!(x.hook, 2);
+        }
         assert_eq!(x.completeness, EntryCompleteness::Complete);
         assert_eq!(x.resumes, ResumeObligation::NoneExist);
         assert_eq!(x.semantics, li2core::planner::HookSemantics::Observe);
@@ -1330,6 +1454,26 @@ fn main() {
     assert_eq!(elf.header().object_type, old.header().object_type);
     assert_eq!(old.executable_bytes(ElfVaddr(HOOK), 1).unwrap(), [0xc3]);
     assert_eq!(elf.executable_bytes(ElfVaddr(HOOK), 1).unwrap(), [0xc3]);
+    let record_bytes = if record {
+        old.executable_bytes(
+            ElfVaddr(recording::CORE_HOOK),
+            recording::CORE_HOOK_BYTES as u64,
+        )
+        .unwrap()
+        .to_vec()
+    } else {
+        Vec::new()
+    };
+    if record {
+        assert_eq!(
+            elf.executable_bytes(
+                ElfVaddr(recording::CORE_HOOK),
+                recording::CORE_HOOK_BYTES as u64
+            )
+            .unwrap(),
+            record_bytes
+        );
+    }
     let plan = &files["plan-ledger.tsv"].bytes;
     let full = &files["ledger.tsv"].bytes;
     assert!(full.starts_with(plan));
@@ -1345,10 +1489,18 @@ fn main() {
         *one(&r, "hook"),
         [
             "hook".to_owned(),
-            "2".to_owned(),
-            HOOK.to_string(),
-            "1".to_owned(),
-            hash(&[0xc3])
+            (if record { "3" } else { "2" }).to_owned(),
+            hook_pc.to_string(),
+            if record {
+                recording::CORE_HOOK_BYTES.to_string()
+            } else {
+                "1".to_owned()
+            },
+            if record {
+                hash(&record_bytes)
+            } else {
+                hash(&[0xc3])
+            }
         ]
         .iter()
         .map(String::as_str)
@@ -1547,6 +1699,18 @@ fn main() {
         .unwrap()])
         .collect();
     dynamic.check_source_ranges(&kernel_dependencies).unwrap();
+    if record {
+        let hook_range = liteinst_rewrite::carrier::elf64::FileRange::checked(
+            liteinst_rewrite::carrier::elf64::FileOffset(file_at(
+                &old,
+                recording::CORE_HOOK,
+                recording::CORE_HOOK_BYTES,
+            ) as u64),
+            recording::CORE_HOOK_BYTES as u64,
+        )
+        .unwrap();
+        dynamic.check_source_ranges(&[hook_range]).unwrap();
+    }
     let mut dynamic_rows = Vec::new();
     for v in &dynamic.writes {
         dynamic_rows.push(format!(
@@ -1719,7 +1883,11 @@ fn main() {
             assert!(entry <= body && body < address + bytes.len() as u64);
             let mut walk = Vec::new();
             if selected.contains_key(&logical) {
-                let expected = helper(entry, logical, s.target);
+                let expected = if record {
+                    recording_helper(entry, logical, s.target)
+                } else {
+                    helper(entry, logical, s.target)
+                };
                 assert_eq!(body, entry + expected.len() as u64);
                 assert_eq!(
                     &bytes[(entry - address) as usize..(body - address) as usize],
@@ -1741,7 +1909,7 @@ fn main() {
                     let next = at + i.len() as u64;
                     let raw = bytes[(at - address) as usize..(next - address) as usize].to_vec();
                     if i.flow_control() == FlowControl::Call {
-                        assert_eq!(i.near_branch_target(), HOOK);
+                        assert_eq!(i.near_branch_target(), hook_pc);
                         assert_eq!(raw.len(), 5);
                         assert_eq!(raw[0], 0xe8);
                         expected_fields.push(field(
@@ -1749,12 +1917,17 @@ fn main() {
                             4,
                             "Relative",
                             next - address,
-                            HOOK,
+                            hook_pc,
                             "HookCall",
                             &bytes,
                         ));
-                        walk.push((at, HOOK, raw));
-                        walk.push((HOOK, next, vec![0xc3]));
+                        if record {
+                            walk.push((at, hook_pc, raw));
+                            walk.push((hook_pc, next, record_bytes.clone()));
+                        } else {
+                            walk.push((at, HOOK, raw));
+                            walk.push((HOOK, next, vec![0xc3]));
+                        }
                     } else {
                         assert_eq!(i.flow_control(), FlowControl::Next);
                         walk.push((at, next, raw));
@@ -1855,7 +2028,11 @@ fn main() {
                 .collect::<Vec<_>>(),
             expected_pc_ranges
         );
-        common_core_router::requirements(&r, id, hooks, router, &router_declarations);
+        if record {
+            common_core_router::requirements_recording(&r, id, hooks, router, &router_declarations);
+        } else {
+            common_core_router::requirements(&r, id, hooks, router, &router_declarations);
+        }
         images.push(Image { address, bytes });
     }
     assert_eq!(
@@ -1863,7 +2040,11 @@ fn main() {
         expected_names
     );
     for pair in &foreign_pairs {
-        pair.images(&all_heads, &images);
+        if record {
+            pair.images_recording(&all_heads, &images);
+        } else {
+            pair.images(&all_heads, &images);
+        }
     }
     assert!(!images.is_empty());
     assert!(images.iter().map(|i| i.bytes.len()).sum::<usize>() <= 8_388_608);
@@ -1874,7 +2055,7 @@ fn main() {
         assert_eq!(
             head.walk
                 .iter()
-                .filter(|(_, next, _)| *next == HOOK)
+                .filter(|(_, next, _)| *next == hook_pc)
                 .count(),
             1
         );
@@ -1892,8 +2073,17 @@ fn main() {
             assert!(n(row[1]) < images.len() as u64);
         }
     }
+    let reconstruct = match planning {
+        PlanningProfile::OwnedForeignNeighbors
+            if old.header().object_type
+                == liteinst_rewrite::carrier::elf64::ObjectType::Executable =>
+        {
+            carrier_interleaved
+        }
+        PlanningProfile::Legacy | PlanningProfile::OwnedForeignNeighbors => carrier,
+    };
     assert_eq!(
-        carrier(
+        reconstruct(
             &original.bytes,
             &sparse_view,
             &old,
@@ -1955,6 +2145,13 @@ fn main() {
         hash(&selection.bytes),
         hash(candidate)
     );
+    if record {
+        assert!(witness.contains("STRUCTURAL_CORE_NULL_WITNESSES_ONLY"));
+        witness = witness.replace(
+            "STRUCTURAL_CORE_NULL_WITNESSES_ONLY",
+            "STRUCTURAL_CORE_RECORDING_WITNESSES_ONLY",
+        );
+    }
     for (name, f) in &files {
         writeln!(
             &mut witness,
@@ -2133,7 +2330,15 @@ fn main() {
         )
         .unwrap();
         for (pc, next, b) in head.walk {
-            if router_routes.iter().any(|route| route.pc == pc) {
+            if record && pc == recording::CORE_HOOK {
+                writeln!(
+                    &mut witness,
+                    "record-hook\t{}\t{pc}\t{next}\t{}",
+                    src.pc,
+                    hex(&b)
+                )
+                .unwrap();
+            } else if router_routes.iter().any(|route| route.pc == pc) {
                 writeln!(&mut witness, "trap\t{}\t{pc}\t{next}\t{}", src.pc, hex(&b)).unwrap();
             } else {
                 writeln!(&mut witness, "walk\t{}\t{pc}\t{next}\t{}", src.pc, hex(&b)).unwrap();
@@ -2188,9 +2393,15 @@ fn main() {
         .unwrap();
     file.write_all(witness.as_bytes()).unwrap();
     file.sync_all().unwrap();
-    println!(
-        "core null witness complete: heads=87 normal=174 faults=2 execution=false qualification_complete=false"
-    );
+    if record {
+        println!(
+            "core recording witness complete: heads=87 normal=174 faults=2 execution=false qualification_complete=false"
+        );
+    } else {
+        println!(
+            "core null witness complete: heads=87 normal=174 faults=2 execution=false qualification_complete=false"
+        );
+    }
 }
 
 #[cfg(test)]
@@ -2436,5 +2647,92 @@ mod placement_tests {
                 assert!(owners.iter().all(|&r| disjoint(r, permit.range)));
             }
         }
+    }
+
+    #[test]
+    fn interleaved_full_carrier_reconstruction_matches_literal_header_ownership() {
+        use liteinst_rewrite::carrier::{self, CarrierPolicy, ImagePolicy, ImageRequest, RxImage};
+        let (original, _) = policy_fixture(true);
+        let old = Elf64::parse(&original, ParseLimits::default()).unwrap();
+        let images = vec![
+            Image {
+                address: 0x500003,
+                bytes: vec![0x90, 0xc3],
+            },
+            Image {
+                address: 0x10005,
+                bytes: vec![0xc3],
+            },
+        ];
+        let rx: Vec<_> = images
+            .iter()
+            .map(|image| RxImage {
+                entry: ElfVaddr(image.address),
+                bytes: image.bytes.clone(),
+            })
+            .collect();
+        let metadata = b"synthetic-metadata";
+        let plan = b"synthetic-plan";
+        let mut payload = b"LI2TOOL-CANDIDATE-UNREADY-V1\0".to_vec();
+        payload.extend_from_slice(&ContentId::of(metadata).0);
+        payload.extend_from_slice(&ContentId::of(plan).0);
+        let request = || ImageRequest {
+            carrier_vaddr: ElfVaddr(0x20000000),
+            payload: &payload,
+            images: &rx,
+            source_dependencies: &[],
+        };
+        let policy = ImagePolicy {
+            layout: CarrierPolicy {
+                page_size: 4096,
+                user_address_limit: 1 << 47,
+                max_added_file_bytes: 1_048_576,
+                max_output_file_bytes: 1_048_576,
+                max_program_headers: 512,
+                max_virtual_span: 1 << 30,
+            },
+            dynamic: carrier::dynamic::Limits::default(),
+            max_images: 2,
+            max_new_load_pages: 3,
+        };
+        assert!(matches!(
+            carrier::append_carrier_with_images(&old, request(), &[], policy),
+            Err(carrier::Error::InvalidImage { index: 1 })
+        ));
+        let output =
+            carrier::append_exec_carrier_with_interleaved_images(&old, request(), &[], policy)
+                .unwrap();
+        let expected = carrier_interleaved(
+            &original, &original, &old, &images, metadata, plan, 0x20000000,
+        );
+        assert_eq!(output.bytes(), expected);
+        let parsed = Elf64::parse(output.bytes(), ParseLimits::default()).unwrap();
+        assert_eq!(
+            parsed
+                .segments(SegmentType::Load)
+                .map(|ph| ph.vaddr.0)
+                .collect::<Vec<_>>(),
+            [
+                0x10000, 0x400000, 0x401000, 0x402000, 0x403e00, 0x500000, 0x20000000
+            ]
+        );
+        assert_eq!(output.original_to_output_header, [2, 3, 4, 5]);
+        assert_eq!(output.phdr_index, 0);
+        assert_eq!(output.carrier_index, 7);
+        assert_eq!(
+            output
+                .images
+                .iter()
+                .map(|image| image.program_header)
+                .collect::<Vec<_>>(),
+            [6, 1]
+        );
+        assert_eq!(output.new_load_pages, 3);
+        assert_ne!(
+            carrier(
+                &original, &original, &old, &images, metadata, plan, 0x20000000
+            ),
+            expected
+        );
     }
 }

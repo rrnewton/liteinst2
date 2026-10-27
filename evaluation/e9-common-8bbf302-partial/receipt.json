@@ -1,0 +1,128 @@
+{
+  "E9_null": {
+    "denominator": 1408,
+    "status": "UNRUN_CURRENT_EPOCH"
+  },
+  "admitted_children": 704,
+  "admitted_comparisons": 1056,
+  "admitted_core_cells": 2,
+  "admitted_core_pairs": 352,
+  "auditor_sha256": "48fe701eae2574eb84bdd0c575ca4af66cd50ddc07e9cd912bb26f9fe068225d",
+  "build_profile": "dev-debug0-v1",
+  "cells": [
+    {
+      "admission_sha256": "aa4cafbcdbaf4e238046e584a8991a85fa2d7b476890d76074b5b2c10d54e441",
+      "audit_parent_sha256": "5ede1d5cb71bc31e25efc7fd9301a266be03085491beae050d1c71778cc8868c",
+      "audit_sha256": "ea639b8c3a477fc9fccc6727c2faf043e15f5100fc71c00329cd4b9beb4d0abb",
+      "cell": "null-heap-write-unstripped",
+      "native_parent_sha256": "abd1966d4892d179fc80f9a38f873eea1881cdfbd8c5fbc5ce1a262eb2e03fc3",
+      "read_inputs_sha256": "30545461eb044f3b833a318332abd544a2c3ed7c5dd36f0e2a7dd72fd47ebccd",
+      "reference_map_sha256": "bbfd0dfd246987c3053ae8e146e59d15cac5fa6924402d107a363186f2da1a4b",
+      "review_sha256": "ddde38e9d122b91705a0a5d1476b1042a7b771d280bb73bbaeba78e7cd6ec977",
+      "strict_receipt_sha256": "8babb995b118edde291a2d5e01a952c537abc715f09a91f7ad0849792e23ffe3",
+      "summary_sha256": "7e93766210f4908bda58488ee4347084f13780debaf328dc4cd35ea57f0acda4"
+    },
+    {
+      "admission_sha256": "e1afd4eb7dc5e64cc662ce68a6aa613ea09639c02e320fe1bbd094d4d9f64f9b",
+      "audit_parent_sha256": "4cd625105b2591d1c119eae871028aac45889431841fabd6f5e0fcfa35ca4cde",
+      "audit_sha256": "260e7417412a4c629909fe2fde9deef6cba429ce39529d0e8bdf5fbf60d1728c",
+      "cell": "null-heap-write-stripped",
+      "native_parent_sha256": "526653f38f975e082638ccce614d1bdf894222f8a027adbcafaf81ab956f82e7",
+      "read_inputs_sha256": "c4fa21ae94368c273af3e24c2d8702a7fc39f30dcea93d7c80664b16e19dbbae",
+      "reference_map_sha256": "599b331f7273607e8acf99ac352441e8c05cb5526fa9ab6c02bcd219cfe9b551",
+      "review_sha256": "06797d2416e21669101aac0e5ce85525ad0115ea4bd2731cc4c1984a7987548c",
+      "strict_receipt_sha256": "7c920c40b4a9fa9d4233081809bf3b550a032ac671dd4d1a567f5fbe9eeb7bb2",
+      "summary_sha256": "5fedc05bae59fb1c2780ee22b6392bf39dc1e808b71464e1d4ce729af294a002"
+    }
+  ],
+  "core_null": {
+    "completed_pairs": 352,
+    "denominator": 704,
+    "status": "PARTIAL"
+  },
+  "failed_attempts": [
+    {
+      "comparisons": null,
+      "completed_cases": null,
+      "exit": -9,
+      "record_role": "failed-attempt-1",
+      "sha256": "26c69d67bffb8f14b5f9928e57bce6f7d5b5d95ca75e30b85bb95f0bd60079c9",
+      "signal_origin": "UNPROVEN",
+      "status": "FAILED_AUDIT_NO_VERDICT"
+    },
+    {
+      "comparisons": 522,
+      "completed_cases": 174,
+      "exit": 1,
+      "record_role": "failed-attempt-2",
+      "sha256": "e2f9a306af777803d543be24cf42fb9cfdfaee04977cf7d97b65d32d900450b0",
+      "signal_origin": null,
+      "status": "CONTENT_FAILURE"
+    },
+    {
+      "comparisons": null,
+      "completed_cases": null,
+      "exit": 1,
+      "record_role": "failed-attempt-3",
+      "sha256": "d84114978078dc2a9d8e8b751385b0d9e5eec1d6c7a809cacf238d33f0e8c6aa",
+      "signal_origin": null,
+      "status": "FAILED_PRELAUNCH"
+    },
+    {
+      "comparisons": null,
+      "completed_cases": null,
+      "exit": 1,
+      "record_role": "failed-attempt-4",
+      "sha256": "5e33776bbde7f74b54e971d5ee79161285f7fa25faf52d2195e7932ac4b766a0",
+      "signal_origin": null,
+      "status": "FAILED_PRELAUNCH"
+    }
+  ],
+  "full_a3": false,
+  "generator_executed_native": false,
+  "generator_opened_capture_bodies": false,
+  "generator_refreshed_external_owners": false,
+  "generator_sha256": "38729244a11515aad81526613d960ee9884bbe192bf902d55ae06c4a5015d491",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "hardware_authority": "Same-host confirmation; not sampled by this generator",
+  "historical_ordinary_failed": {
+    "FAILED": 1,
+    "PASS_ORDINARY_OUTPUT_AND_JOURNAL": 14,
+    "UNRUN": 177
+  },
+  "historical_ordinary_partial": {
+    "attempted": 160,
+    "failed": 0,
+    "passed": 160,
+    "planned": 192,
+    "unrun": 32
+  },
+  "input_manifest_sha256": "e576e853bd4350e58ac1d086a156291cd67894b9b31899c1697976aa8a97ed42",
+  "normal_loader_validation": false,
+  "ordinary": {
+    "attempted": 192,
+    "failed": 0,
+    "passed": 192,
+    "planned": 192,
+    "unrun": 0
+  },
+  "ordinary_admission_sha256": "e2e329992db1db224f272e7716a507833524d2c7aeba46298c3036808c87c688",
+  "performance_measurement": false,
+  "production": {
+    "FAILED": 0,
+    "PASS": 74,
+    "UNRUN": 0,
+    "successful": true
+  },
+  "qualification_complete": false,
+  "recording_pairs": {
+    "completed_pairs": 0,
+    "denominator": 2112,
+    "status": "UNRUN"
+  },
+  "runner_sha256": "587888965a9729978ed3df9f8f5c9325cb92af64fe502c14ae8ac1e203653486",
+  "schema": 1,
+  "scope": "Stopped historical validation cohort. Report regeneration is not native reproduction. Fresh public native-V2 recipes require their own new tested source pins and use a different metadata route without historical custody authority.",
+  "source_revision": "8bbf302e25d3af99dcba0adf465a691204d2ee0c",
+  "status": "PARTIAL_STOPPED_8BB_COHORT"
+}

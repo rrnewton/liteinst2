@@ -1,6 +1,7 @@
-//! Controlled core-null pairs. Structural witness/hash authority is external;
-//! every consumed byte, route, state, memory owner and completion is checked here.
-//! No normal-loader, E9, recording-hook or whole-A3 qualification is inferred.
+//! Controlled core pairs: legacy null or the exact opt-in recording profile.
+//! Structural witness/hash authority is external; every consumed byte, route,
+//! state, memory owner and completion is checked here. No normal-loader, E9
+//! or whole-A3 qualification is inferred from this finite native cohort.
 use super::core_pages::{Page, materialize_load_pages};
 use super::*;
 #[path = "e9_common_planning_profile.rs"]
@@ -69,6 +70,7 @@ fn read_empty(path: &Path) -> Input {
 #[derive(Clone)]
 struct Walk {
     trap: bool,
+    record_hook: bool,
     pc: u64,
     next: u64,
     bytes: Vec<u8>,
@@ -86,6 +88,7 @@ struct Candidate {
     pages: Vec<Page>,
     base: Vec<u8>,
     routes: Vec<Route>,
+    journal: Option<recording::Journal>,
 }
 impl Candidate {
     fn read(
@@ -95,6 +98,7 @@ impl Candidate {
         target: &Input,
         planning: PlanningProfile,
         router: RouterMode,
+        record: bool,
     ) -> Self {
         assert!(directory.is_absolute());
         assert_eq!(
@@ -108,10 +112,17 @@ impl Candidate {
             .collect();
         assert!(rows.len() <= 40000);
         assert_eq!(rows[0], vec!["LI2COMMONCORE", "1"]);
-        assert_eq!(
-            rows[1],
-            vec!["scope", "STRUCTURAL_CORE_NULL_WITNESSES_ONLY"]
-        );
+        if record {
+            assert_eq!(
+                rows[1],
+                vec!["scope", "STRUCTURAL_CORE_RECORDING_WITNESSES_ONLY"]
+            );
+        } else {
+            assert_eq!(
+                rows[1],
+                vec!["scope", "STRUCTURAL_CORE_NULL_WITNESSES_ONLY"]
+            );
+        }
         for (r, key) in rows[2..7].iter().zip([
             "original_sha256",
             "instructions_sha256",
@@ -222,7 +233,19 @@ impl Candidate {
             cursor += 1;
         }
         assert_eq!(loads, declared);
-        let (base, pages) = materialize_load_pages(elf, loads);
+        let (mut base, pages) = materialize_load_pages(elf, loads);
+        let journal = record.then(|| {
+            let original_base = original_pages(&original.bytes);
+            let j = recording::Journal::locate(
+                &original_base,
+                IMAGE_START,
+                LOADS[3].1,
+                LOADS[3].1 + LOADS[3].3,
+            );
+            assert_eq!(j.journal(&base), j.journal(&original_base));
+            j.seed(&mut base);
+            j
+        });
         let mut routes = Vec::new();
         if router.enabled() {
             assert_eq!(
@@ -298,14 +321,25 @@ impl Candidate {
             cursor += 1;
             let mut walk = Vec::new();
             let mut pc = src.pc;
-            while rows[cursor][0] == "walk" || (router.enabled() && rows[cursor][0] == "trap") {
+            while rows[cursor][0] == "walk"
+                || (router.enabled() && rows[cursor][0] == "trap")
+                || (record && rows[cursor][0] == "record-hook")
+            {
                 let r = &rows[cursor];
                 assert_eq!(r.len(), 5);
                 assert_eq!(number(r[1]), src.pc);
                 assert_eq!(number(r[2]), pc);
                 let next = number(r[3]);
                 let b = bytes(r[4]);
-                assert!(!b.is_empty() && b.len() <= 15);
+                let record_hook = r[0] == "record-hook";
+                if record_hook {
+                    assert_eq!(pc, recording::CORE_HOOK);
+                    assert_eq!(b.len(), recording::CORE_HOOK_BYTES);
+                    assert_eq!(&original.bytes[0x1970..0x1a43], b);
+                    assert_eq!(walk.last().map(|w: &Walk| w.next), Some(pc));
+                } else {
+                    assert!(!b.is_empty() && b.len() <= 15);
+                }
                 let trap = r[0] == "trap";
                 if trap {
                     assert_eq!(pc, src.pc);
@@ -316,6 +350,7 @@ impl Candidate {
                 }
                 walk.push(Walk {
                     trap,
+                    record_hook,
                     pc,
                     next,
                     bytes: b,
@@ -349,6 +384,7 @@ impl Candidate {
             pages,
             base,
             routes,
+            journal,
         };
         for route in &out.routes {
             assert!(out.pages.iter().any(|p| p.flags == 5
@@ -491,10 +527,20 @@ impl<'a> Versions<'a> {
         );
         assert_eq!(target(), self.original.target);
         xstate_ready(&raw, &self.original.target);
-        assert_eq!(
-            base, self.candidate.base,
-            "all candidate original pages including globals/journal remain exact"
-        );
+        if let Some(j) = self.candidate.journal {
+            let h = &self.candidate.heads[spec.head_index];
+            let recorded = stem != "before" && h.walk.iter().any(|w| w.record_hook);
+            assert_eq!(
+                base,
+                j.expected(&self.candidate.base, recorded.then_some(h.pc)),
+                "entire LOAD image; only exact prescribed journal append differs"
+            );
+        } else {
+            assert_eq!(
+                base, self.candidate.base,
+                "all candidate original pages including globals/journal remain exact"
+            );
+        }
         let maps = std::fs::read_to_string(dir.join(format!("{stem}.maps"))).unwrap();
         for (index, p) in self.candidate.pages.iter().enumerate() {
             assert_eq!(&generated[index * PAGE..(index + 1) * PAGE], p.bytes);
@@ -555,7 +601,7 @@ fn pair(
 ) {
     let head = &versions.candidate.heads[spec.head_index];
     let finish = endpoint(head, spec);
-    let has_hook = head.walk.iter().any(|w| w.next == HOOK);
+    let has_hook = head.walk.iter().any(|w| w.next == HOOK || w.record_hook);
     let s = spec.registers.get(seed::Reg::Rsp);
     let l = versions.original.target.len();
     let alignment = if versions.original.target.format() == SavedExtendedStateFormat::FXSAVE64 {
@@ -615,7 +661,21 @@ fn pair(
                 "literal hook return word"
             );
         }
-        if w.trap {
+        if w.record_hook {
+            assert!(versions.candidate.journal.is_some());
+            recording_native::callback(
+                &child,
+                recording_native::Callback {
+                    start: w.pc,
+                    code: &w.bytes,
+                    return_pc: w.next,
+                    logical: head.pc,
+                    core: true,
+                },
+                &mut steps,
+                &mut trace,
+            );
+        } else if w.trap {
             let route = versions
                 .candidate
                 .routes
@@ -723,6 +783,7 @@ fn pair(
 
 pub fn main() {
     let mut args: Vec<_> = std::env::args_os().collect();
+    let record = recording::arguments(&mut args);
     let router = RouterMode::arguments(&mut args);
     let planning = PlanningProfile::arguments(&mut args, 8);
     assert_eq!(
@@ -750,9 +811,13 @@ pub fn main() {
         &requested_target,
         planning,
         router,
+        record,
     );
     let inventory = admit(&original.bytes, &instructions.bytes);
-    let original_view = original_pages(&original.bytes);
+    let mut original_view = original_pages(&original.bytes);
+    if let Some(j) = candidate.journal {
+        j.seed(&mut original_view);
+    }
     let anchors = seed::Anchors::new(ARRAY, FRAME).unwrap();
     let specs: Vec<_> = (0..seed::CASE_COUNT)
         .map(|i| inventory.case(i, anchors).unwrap())
@@ -924,6 +989,13 @@ pub fn main() {
         write_new(&case.join("pair.tsv"),format!("LI2COREPAIR\t1\ncase\t{}\ncomparisons\t3\nchildren\t2\nE9\tUNIMPLEMENTED_UNRUN\nnormal_loader_validation\tfalse\nqualification_complete\tfalse\n",spec.case_index).as_bytes());
     }
     drop(bootstrap);
+    if record {
+        write_new(&dir.join("complete.tsv"),b"LI2COMMONCORERECORDINGPAIRS\t1\nheads\t87\nnormal_pairs\t174\nfault_pairs\t2\nchildren\t352\ncomparisons\t528\nfiles\t8636\nrecording_profile\tbounded-journal-v1\nnormal_loader_validation\tfalse\nqualification_complete\tfalse\n");
+        println!(
+            "core recording pairs complete: heads=87 normal=174 faults=2 comparisons=528 qualification_complete=false"
+        );
+        return;
+    }
     write_new(&dir.join("complete.tsv"),b"LI2COMMONCOREPAIRS\t1\nheads\t87\nnormal_pairs\t174\nfault_pairs\t2\nchildren\t352\ncomparisons\t528\nfiles\t8636\nE9\tUNIMPLEMENTED_UNRUN\nrecording_hooks\tUNIMPLEMENTED_UNRUN\nnormal_loader_validation\tfalse\nqualification_complete\tfalse\n");
     println!(
         "core null pairs complete: heads=87 normal=174 faults=2 comparisons=528 E9=UNIMPLEMENTED_UNRUN qualification_complete=false"

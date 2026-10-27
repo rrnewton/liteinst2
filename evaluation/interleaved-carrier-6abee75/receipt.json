@@ -1,0 +1,30 @@
+{
+  "affinity": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "build_profile": "dev-debug0-opt0",
+  "cases": 4,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "kernel": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "label": "AMD EPYC Zen 5 dev host"
+  },
+  "performance_claim": false,
+  "producer_sha256": "2d83c4906bdb4053b858cd88772adb0eb5f01d3f2ea9bc0685be0fc84938185d",
+  "revision": "6abee75266792d2977e48da8a05ac683e08665cc",
+  "rewritten_cases": 3,
+  "scope": "Finite freestanding ET_EXEC kernel loading and exact stdout/exit; no general loader or state-equivalence claim.",
+  "source_sha256": "0526afbad88c80ca7c7467817960e8a88118fcb827e9163fbb850333745154aa",
+  "status": "PASS",
+  "strict_receipts": 6,
+  "tools_sha256": {
+    "cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+    "python": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+    "rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+    "timeout": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+  }
+}
