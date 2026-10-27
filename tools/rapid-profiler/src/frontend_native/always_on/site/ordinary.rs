@@ -10,10 +10,13 @@ use super::{
 };
 use crate::frontend_native::LoadedIntegerLeaf;
 use liteinst2::bundle::{BundleBudget, BundleReceipt, InstalledBundle, PlannedBundle};
+use liteinst2::composition::Composition;
 use liteinst2::contracts::*;
 use liteinst2::controls::{ControlledAction, ProbeControl};
 use liteinst2::planner::HookSemantics;
-use liteinst2::quiescent::{InstallRequest, SearchPolicy, TacticPolicy, plan_coalesced_detailed};
+use liteinst2::quiescent::{
+    InstallRequest, SearchPolicy, TacticPolicy, plan_coalesced_detailed_after,
+};
 use std::sync::Arc;
 
 /// Owns one admitted DSO and all mandatory entry/RET plans. No publication occurs
@@ -193,6 +196,13 @@ impl OrdinarySitePreparation {
             entries: certificate.entries().iter().map(|&address| LegalEntry { address, requires_endbr: false }).collect(),
             resumes: ResumeObligation::NoneExist,
         };
+        let mut predecessor = Composition::new(
+            identity,
+            vec![ExpectedBytes {
+                address: source_start,
+                bytes: owner.original_source().to_vec(),
+            }],
+        )?;
         let mut overlay = owner.code().to_vec();
         let mut full_overlay = owner.original_source().to_vec();
         let mut reserved = vec![source];
@@ -216,10 +226,10 @@ impl OrdinarySitePreparation {
             for &prior in &reserved {
                 exclude(&mut allocation.ranges, prior)?;
             }
-            let member = plan_coalesced_detailed(
+            let member = plan_coalesced_detailed_after(
                 &InstallRequest {
                     identity,
-                    code: &overlay,
+                    code: owner.code(),
                     base_address: entry,
                     function: scope,
                     block: group.block,
@@ -236,6 +246,7 @@ impl OrdinarySitePreparation {
                     },
                 },
                 &actions,
+                &predecessor,
             )
             .map_err(SiteError::Planning)?;
             let p = member.plan().parts();
@@ -275,6 +286,7 @@ impl OrdinarySitePreparation {
             {
                 return Err(SiteError::Correspondence);
             }
+            predecessor.append(member.plan())?;
             for request in &p.allocations {
                 if reserved.iter().any(|r| r.overlaps(request.range)) {
                     return Err(SiteError::Correspondence);
@@ -329,6 +341,7 @@ impl OrdinarySitePreparation {
             },
         )?;
         if planned.images().len() != groups.len()
+            || planned.plan().final_bytes() != predecessor.final_bytes()
             || planned.plan().final_bytes()
                 != [ExpectedBytes {
                     address: source_start,
