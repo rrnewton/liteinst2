@@ -4,6 +4,7 @@
 pub mod carrier;
 mod ledger;
 pub mod model;
+mod neighbor_catalogue;
 pub mod selection;
 
 use carrier::elf64::{Elf64, ElfVaddr, FileRange, ParseLimits, SegmentType, Storage};
@@ -45,6 +46,20 @@ impl Product {
 /// placement and carrier result also produces candidate ELF/sparse/image files.
 /// All inputs remain borrowed immutable bytes. Caller must keep output gated.
 pub fn prepare(original: &[u8], manifest: &[u8]) -> Result<Product, Error> {
+    prepare_mode(original, manifest, false)
+}
+
+/// Opt-in structural preparation with separately declared foreign T3 owners.
+/// The input selection must provide agreeing complete function/head/resume
+/// declarations and finite direct-control-flow blocks. Foreign victims remain
+/// auxiliary operations, never additional requested hooks. The same engine,
+/// original budgets and final all-sites carrier transaction remain mandatory.
+/// Qualification is still incomplete: this does not authorize execution.
+pub fn prepare_with_owned_neighbors(original: &[u8], manifest: &[u8]) -> Result<Product, Error> {
+    prepare_mode(original, manifest, true)
+}
+
+fn prepare_mode(original: &[u8], manifest: &[u8], owned_neighbors: bool) -> Result<Product, Error> {
     let selection = selection::parse(manifest)?;
     let s = &selection;
     if original.len() > s.limits.input_bytes {
@@ -176,27 +191,40 @@ pub fn prepare(original: &[u8], manifest: &[u8]) -> Result<Product, Error> {
                 },
                 emission: &emission,
             };
-            let result = engine::plan_with_emission_after(
-                &request,
-                &composition,
-                &site.victim_allocation,
-                EnginePolicy {
-                    forced: site.forced,
-                    successor_puns: TacticPolicy::PreferGeneralizedPun,
-                    neighbor: NeighborSearch {
-                        forced_victim: site.forced_victim,
-                        max_victims: site.max_victims,
-                        max_pairs: site.max_pairs,
-                    },
-                    bundle: li2core::bundle::BundleBudget {
-                        max_steps: 2,
-                        max_mappings: s.limits.images,
-                        max_virtual_bytes: s.limits.new_load_pages.saturating_mul(4096),
-                        max_backing_bytes: s.limits.new_load_pages.saturating_mul(4096),
-                        max_virtual_span: s.limits.virtual_span,
-                    },
+            let policy = EnginePolicy {
+                forced: site.forced,
+                successor_puns: TacticPolicy::PreferGeneralizedPun,
+                neighbor: NeighborSearch {
+                    forced_victim: site.forced_victim,
+                    max_victims: site.max_victims,
+                    max_pairs: site.max_pairs,
                 },
-            );
+                bundle: li2core::bundle::BundleBudget {
+                    max_steps: 2,
+                    max_mappings: s.limits.images,
+                    max_virtual_bytes: s.limits.new_load_pages.saturating_mul(4096),
+                    max_backing_bytes: s.limits.new_load_pages.saturating_mul(4096),
+                    max_virtual_span: s.limits.virtual_span,
+                },
+            };
+            let result = if owned_neighbors {
+                let owners = neighbor_catalogue::collect(&elf, s, identity, site)?;
+                let foreign: Vec<_> = owners.iter().map(|owner| owner.site(site)).collect();
+                engine::plan_with_emission_after_with_foreign(
+                    &request,
+                    &composition,
+                    &site.victim_allocation,
+                    policy,
+                    &foreign,
+                )
+            } else {
+                engine::plan_with_emission_after(
+                    &request,
+                    &composition,
+                    &site.victim_allocation,
+                    policy,
+                )
+            };
             let plan = match result {
                 Ok(plan) => plan,
                 Err(failure) => {
@@ -299,6 +327,13 @@ pub fn prepare(original: &[u8], manifest: &[u8]) -> Result<Product, Error> {
         }
     }
     let mut files = BTreeMap::new();
+    if owned_neighbors {
+        files.insert(
+            "planning-profile.tsv".into(),
+            b"LI2PLANNING\t1\nprofile\towned-foreign-neighbors-v1\nqualification_complete\tfalse\n"
+                .to_vec(),
+        );
+    }
     let profile = ledger::target(s);
     files.insert("target.tsv".into(), profile.clone());
     files.insert("selection.txt".into(), s.manifest.clone());

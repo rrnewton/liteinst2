@@ -16,6 +16,7 @@ name = "liteinst-rewrite"
 path = "src/main.rs"
 
 [dependencies]
+iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder", "instr_info"] }
 li2core = { package = "liteinst2", path = "../.." }
 formats = { package = "liteinst-artifact", path = "../../crates/liteinst-artifact" }
 
