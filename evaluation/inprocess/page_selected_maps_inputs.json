@@ -61,9 +61,9 @@
       "sha256": "64688455305f942c11251dbb37e3e2d53a9f41f1f16ef70c2919c8aa9e2a7649"
     },
     {
-      "bytes": 2989,
+      "bytes": 3014,
       "path": "tools/page-entry/selected/build.sh",
-      "sha256": "5f05202b61674d13d9a46f5fa6c2a245f32b249b9f8cbfb8a67ad76e65329895"
+      "sha256": "e453596f873279e5de1ccb6ecc78141fdcf365ae78fb781ab0ba7bd3386a5ab6"
     },
     {
       "bytes": 2900,
