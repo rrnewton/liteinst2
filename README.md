@@ -228,6 +228,13 @@ a standalone all-start instruction scanner, versioned entry facts and a mock
 page/dependency ledger. It exports facts through `liteinst2::contracts`. The
 model never changes executable memory and is not a live admission gate.
 
+[liteinst-inprocess](crates/liteinst-inprocess/README.md) provides a singleton
+in-process NX page gate with no ptrace supervisor. It prepares genuine core
+CPUID, RDTSC and returning read/write/getpid/gettid replacements before execution,
+then handles first-touch admission on a guarded signal stack. The caller owns
+the immutable region and certifies complete entries and instruction extents.
+Its release probe separates publication, first touch and steady-state cost.
+
 [liteinst-launch](crates/liteinst-launch/README.md) captures an ELF process at
 its exec stop before the executable/interpreter's first instruction. Its
 restricted controller gates initial executable mappings and admits scanned

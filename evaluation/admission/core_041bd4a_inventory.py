@@ -12,6 +12,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+from inprocess_inventory import source_before_inprocess
 
 PRE_CORE_041BD4A_CORPUS_SHA256 = 'b330c13e03db56ff7c6a34c121cd41e91d58c92928f71441b4427a771ecfbe3d'
 CURRENT_CORE_041BD4A_CORPUS_SHA256 = 'ccc0d245bd3d006e7ac64f039f1725e8d538aae33c972d49b722626899146b57'
@@ -200,6 +201,7 @@ def require_current_core_041bd4a_sources():
     for path, expected_hash in SOURCE_SHA256.items():
         try:
             data = (root / path).read_bytes()
+            data = source_before_inprocess(path, data, "core_041bd4a_source_inventory_differs")
             source = data.decode("utf-8")
         except (OSError, UnicodeError):
             require(False, "core_041bd4a_source_inventory_differs")

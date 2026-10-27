@@ -105,6 +105,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "liteinst-inprocess"
+version = "0.1.0"
+dependencies = [
+ "libc",
+ "liteinst2",
+]
+
+[[package]]
 name = "liteinst-launch"
 version = "0.1.0"
 dependencies = [

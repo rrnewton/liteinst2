@@ -1,0 +1,18 @@
+[package]
+name = "liteinst-inprocess"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.85"
+license = "BSD-2-Clause"
+description = "Caller-owned in-process NX first-touch gate"
+
+[dependencies]
+liteinst2 = { path = "../.." }
+libc = "0.2.186"
+
+[[example]]
+name = "native_probe"
+path = "examples/native_probe.rs"
+test = false
+bench = false
+doc = false
