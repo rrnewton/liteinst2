@@ -685,3 +685,5 @@ fn ordinary_native_concurrent_arm_remove_and_old_owner() {
 }
 
 mod retirement_native;
+
+mod drain_native;
