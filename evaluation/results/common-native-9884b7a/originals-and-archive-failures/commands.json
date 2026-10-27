@@ -1,0 +1,3380 @@
+{
+  "contexts": [
+    {
+      "kind": "private-input-preparation",
+      "name": "original-input-assembly",
+      "record_hashes": {
+        "command": {
+          "bytes": 716,
+          "sha256": "eafcb2896ffb28cf02d527fc67743defb32f0b101b1b106b17793c9bd7807ab3"
+        },
+        "parent": {
+          "bytes": 267,
+          "sha256": "8f397e15044e5da998c6e3bc562f5b5992948ac9dd1f00aa743deaa541d23852"
+        }
+      },
+      "records": {
+        "command": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${ORIGINAL_INPUTS}/prepare-inputs.py"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 60,
+          "source_review": {
+            "actual_assembler_excluded_from_its_runtime_file_enumeration": true,
+            "admission_checks_preserved": true,
+            "assembler_bound_by_this_command": true,
+            "whole_six_replacement_inverse": true
+          },
+          "source_sha256": "23b81a009913c517f70f4a255c2bc3bb3414bee13982a0520bf896497e418781"
+        },
+        "parent": {
+          "exit": 0,
+          "operational_seconds": 1.9671367090195417,
+          "parent_wait_returned": true,
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "0802bd300f3e3967db8e22c14f304884e406b5dfd235dd541f18dcfc0d56f976"
+        }
+      }
+    },
+    {
+      "kind": "committed-observer-recipe-caller",
+      "name": "original-recipe",
+      "record_hashes": {
+        "command": {
+          "bytes": 923,
+          "sha256": "06ec46523c24b562d3602446ed58adfc5e80a9d9817669e1103b13a6fea3b60f"
+        },
+        "parent": {
+          "bytes": 387,
+          "sha256": "d8589e563cbd866ac4f02017f38cdfae2f2ee6e0067578d1579e161928f7d06f"
+        }
+      },
+      "records": {
+        "command": {
+          "affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/evaluation/e9-common-app/observe_originals.py",
+            "--inputs",
+            "${ORIGINAL_INPUTS}/inputs.json",
+            "--inputs-sha256",
+            "86a654dc5534294272c3c48a4115e8aafb006d2f9c591036a3323090e2b92773",
+            "--raw",
+            "${ORIGINAL_RAW}"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "recipe_sha256": "f84d4246e1b25032fb7ba7244d74f4c4a41d7d4049be52d2ed7ace6fdc18769d",
+          "source_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a"
+        },
+        "parent": {
+          "exit": 0,
+          "operational_seconds": 68.20951651898213,
+          "parent_wait_returned": true,
+          "pid": 749901,
+          "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "59a8d842152084251dd1640eac5262624fbc3c40d828056b3253f8023a50aca1"
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-unstripped-empty",
+      "record_hashes": {
+        "command": {
+          "bytes": 2863,
+          "sha256": "f78c3ae3196e5b172924e1a8057df783356938b31cceb22d9470b2367174eb30"
+        },
+        "outer": {
+          "bytes": 89,
+          "sha256": "7471fa11378332cc6303a8991d2bf47aabe07c0aa11b5ee7ccbd67cec8557cd3"
+        },
+        "receipt": {
+          "bytes": 589,
+          "sha256": "b958394e04b21f006f94ddf0e83fc01798d2ae82af7a8e718bef3655f12890bb"
+        },
+        "request": {
+          "bytes": 1989,
+          "sha256": "4f4b517b481869fd27328bd49c24043dcd2a9e5052b0ef6b31bae0f13d96e5a7"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-unstripped-empty/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-unstripped-empty/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-unstripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+              "empty",
+              "${ORIGINAL_RAW}/observe-unstripped-empty/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-empty/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-unstripped-empty/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-unstripped-empty/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.31577131105586886,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.23056348599493504,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "4f4b517b481869fd27328bd49c24043dcd2a9e5052b0ef6b31bae0f13d96e5a7",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "840a1b4684b445caa11ee0089c27b235b95b11969576a31044f08fbf6c84738c",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-unstripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+            "empty",
+            "${ORIGINAL_RAW}/observe-unstripped-empty/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-empty/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-unstripped-empty/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-unstripped-empty/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-unstripped-singleton",
+      "record_hashes": {
+        "command": {
+          "bytes": 2891,
+          "sha256": "fe7c9118055674f3d278e76ff2502b908e680a1eead30496ae171655ab92325d"
+        },
+        "outer": {
+          "bytes": 87,
+          "sha256": "83cf054300304d137cbfab8cfc5d1391ec5af362e3cac03405c5b53247504c0e"
+        },
+        "receipt": {
+          "bytes": 589,
+          "sha256": "f6dfffef1cf81ae8c8ee2f7312d843f7c94829dc0f4fcf4d947c6973aa9acb72"
+        },
+        "request": {
+          "bytes": 2009,
+          "sha256": "c8a34cd21627e31114f1d1e96766518defed74c29b3afbdb1d7f6a1f05c4a240"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-unstripped-singleton/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-unstripped-singleton/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-unstripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+              "singleton",
+              "${ORIGINAL_RAW}/observe-unstripped-singleton/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-singleton/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-unstripped-singleton/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-unstripped-singleton/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.316577180987224,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.23262661509215832,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "c8a34cd21627e31114f1d1e96766518defed74c29b3afbdb1d7f6a1f05c4a240",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "561ab3c5c3356870e381252931678ea18083d2fa4bbb69a5daf0796c156a34f1",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-unstripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+            "singleton",
+            "${ORIGINAL_RAW}/observe-unstripped-singleton/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-singleton/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-unstripped-singleton/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-unstripped-singleton/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-unstripped-pair-reverse",
+      "record_hashes": {
+        "command": {
+          "bytes": 2912,
+          "sha256": "7a1b7a641c6fbfd6d011629543056c766e9d945cff95dd3ffce811b370217e40"
+        },
+        "outer": {
+          "bytes": 89,
+          "sha256": "ec4d24e3156ceab4c98e3880623501259d300bff191950529841ad01aee97f2c"
+        },
+        "receipt": {
+          "bytes": 589,
+          "sha256": "812397a6633c6b9d15e7da8502af7498513dc9b83f2e983ea3d706a4c6fdde53"
+        },
+        "request": {
+          "bytes": 2024,
+          "sha256": "6053237ed6cce2017dc164e0527ce7b29b8da0ffeeea97df54a593f7966c3591"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-unstripped-pair-reverse/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-unstripped-pair-reverse/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-unstripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+              "pair-reverse",
+              "${ORIGINAL_RAW}/observe-unstripped-pair-reverse/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-pair-reverse/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-unstripped-pair-reverse/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-unstripped-pair-reverse/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.31738518201746047,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.23200930398888886,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "6053237ed6cce2017dc164e0527ce7b29b8da0ffeeea97df54a593f7966c3591",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "731acd10f96cd40816ef01e2956f1f08aa97ab983a947e24c642c2585ecf26d9",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-unstripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+            "pair-reverse",
+            "${ORIGINAL_RAW}/observe-unstripped-pair-reverse/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-pair-reverse/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-unstripped-pair-reverse/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-unstripped-pair-reverse/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-unstripped-equal-17",
+      "record_hashes": {
+        "command": {
+          "bytes": 2884,
+          "sha256": "37d395da678981736fd8e7b29434097f46dbdf645dd7d46091be695e6ed113b2"
+        },
+        "outer": {
+          "bytes": 88,
+          "sha256": "c994887b0c5c0e8e8165cf21b1b02efa330de40d498c0dd5f38f0a0bc4467c4a"
+        },
+        "receipt": {
+          "bytes": 589,
+          "sha256": "e6dcc713ca34bf5123f4716bd567e7299da66fbf09ad901ac4152e35fa612c56"
+        },
+        "request": {
+          "bytes": 2004,
+          "sha256": "46b67dfd233232ea889a4a7910a962e7561084c76ea7f61067f9d988c12ec029"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-unstripped-equal-17/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-unstripped-equal-17/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-unstripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+              "equal-17",
+              "${ORIGINAL_RAW}/observe-unstripped-equal-17/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-equal-17/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-unstripped-equal-17/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-unstripped-equal-17/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.5180137560237199,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.43113279808312654,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "46b67dfd233232ea889a4a7910a962e7561084c76ea7f61067f9d988c12ec029",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "6601d47f3c515bb5de235e002b279c0adfc6fe64e4553c86690829cf944f5e21",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-unstripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+            "equal-17",
+            "${ORIGINAL_RAW}/observe-unstripped-equal-17/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-equal-17/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-unstripped-equal-17/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-unstripped-equal-17/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-unstripped-sorted-17",
+      "record_hashes": {
+        "command": {
+          "bytes": 2891,
+          "sha256": "88fc3b9e52370fa4d6fba09bcba76134f3aaf8dff70e27196854c14ceb890242"
+        },
+        "outer": {
+          "bytes": 88,
+          "sha256": "699c5daf3237cfb87cc4f81847b6300c4f4f39976b39b1dfb0a5f41967d78994"
+        },
+        "receipt": {
+          "bytes": 588,
+          "sha256": "a9d8f293ff87bfb1eac18ead2eb3280f25de97bf418151ce5d2568c793e07706"
+        },
+        "request": {
+          "bytes": 2009,
+          "sha256": "aecb158adf65255371856af67316e0d6181190d4175f7aa83376dd1e892e6e9a"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-unstripped-sorted-17/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-unstripped-sorted-17/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-unstripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+              "sorted-17",
+              "${ORIGINAL_RAW}/observe-unstripped-sorted-17/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-sorted-17/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-unstripped-sorted-17/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-unstripped-sorted-17/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.7172600729390979,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.6339948892127723,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "aecb158adf65255371856af67316e0d6181190d4175f7aa83376dd1e892e6e9a",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "d0d02f2576c9f7fe160551f3bc90e9fd5082d4f3c6ebf24d8a40c0cb99282a17",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-unstripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+            "sorted-17",
+            "${ORIGINAL_RAW}/observe-unstripped-sorted-17/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-sorted-17/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-unstripped-sorted-17/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-unstripped-sorted-17/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-unstripped-reverse-17",
+      "record_hashes": {
+        "command": {
+          "bytes": 2898,
+          "sha256": "a5b5b811c3e037849a0a613b72294c05e660346b54a197d1cf10ae8895e553fd"
+        },
+        "outer": {
+          "bytes": 88,
+          "sha256": "66ff39f60904cee53fcb7467cf9c3a73c0c97aca8722c7dbc0ff2b1ce6377471"
+        },
+        "receipt": {
+          "bytes": 588,
+          "sha256": "76c41e3302fc0ef75995acb7518680dc79e6b28b37b8b6d5668e8f4dcc605f1b"
+        },
+        "request": {
+          "bytes": 2014,
+          "sha256": "7c9c14c10155d2495d6c74a207da60a2b9a0b7140fc6b9bed373aba15f7886d4"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-unstripped-reverse-17/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-unstripped-reverse-17/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-unstripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+              "reverse-17",
+              "${ORIGINAL_RAW}/observe-unstripped-reverse-17/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-reverse-17/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-unstripped-reverse-17/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-unstripped-reverse-17/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.6172318567987531,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.5280178508255631,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "7c9c14c10155d2495d6c74a207da60a2b9a0b7140fc6b9bed373aba15f7886d4",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "ddff2217dfbcc37b25d5cfa470f8a33113a85acfd05e51ba035c107f345dbd5d",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-unstripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+            "reverse-17",
+            "${ORIGINAL_RAW}/observe-unstripped-reverse-17/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-reverse-17/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-unstripped-reverse-17/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-unstripped-reverse-17/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-unstripped-duplicates-17",
+      "record_hashes": {
+        "command": {
+          "bytes": 2919,
+          "sha256": "fe757bf6991c82b278041b7ca5230e493534fbc08292cd7bf92a75cdcef6b5b9"
+        },
+        "outer": {
+          "bytes": 88,
+          "sha256": "3afc8b248f694ed3d4c3df1bf53bb0cf5e37adf0d31bce2de0d843ff7e38ff8e"
+        },
+        "receipt": {
+          "bytes": 587,
+          "sha256": "3070cc90290ab5181b1c329dc67a4d66d26d33087e4f3f0b07821f0e6ad59ed4"
+        },
+        "request": {
+          "bytes": 2029,
+          "sha256": "0825e1b835764804eb1893ff6d99f5532da71f69181965fcaef2e7de7d7b4793"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-unstripped-duplicates-17/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-unstripped-duplicates-17/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-unstripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+              "duplicates-17",
+              "${ORIGINAL_RAW}/observe-unstripped-duplicates-17/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-duplicates-17/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-unstripped-duplicates-17/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-unstripped-duplicates-17/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.6173148900270462,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.529663773952052,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "0825e1b835764804eb1893ff6d99f5532da71f69181965fcaef2e7de7d7b4793",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "b0be71ea0cc33abb61a1548e7e44efdeb7f40b9e6cfd2a52d523fd1f0bb2bc4c",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-unstripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+            "duplicates-17",
+            "${ORIGINAL_RAW}/observe-unstripped-duplicates-17/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-duplicates-17/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-unstripped-duplicates-17/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-unstripped-duplicates-17/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-unstripped-mixed-64",
+      "record_hashes": {
+        "command": {
+          "bytes": 2884,
+          "sha256": "70d23f0eb3a20414d73f18d035cde8395c5bd59b8c5bc5a6aed4f6bddffbe0cc"
+        },
+        "outer": {
+          "bytes": 87,
+          "sha256": "6d4770e32aea816c1f4d96a5e35847a5de6897a2ea56d5fc61cff2c0c5a2363e"
+        },
+        "receipt": {
+          "bytes": 588,
+          "sha256": "1ba896b991b2da21a693e1f27a556e2f7c0835c2684b1d2fd832227708cb4827"
+        },
+        "request": {
+          "bytes": 2004,
+          "sha256": "fddf1d009dc03b25207e0f9236f72c774aa61faef6764ac8dd3c4cd3a2bc4ce0"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-unstripped-mixed-64/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-unstripped-mixed-64/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-unstripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+              "mixed-64",
+              "${ORIGINAL_RAW}/observe-unstripped-mixed-64/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-mixed-64/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-unstripped-mixed-64/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-unstripped-mixed-64/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 2.220266453921795,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 2.1290218180511147,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "fddf1d009dc03b25207e0f9236f72c774aa61faef6764ac8dd3c4cd3a2bc4ce0",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "29888a582332c17ca76e8628c09b33dc6af7c04c50e868849b495474463c8c7f",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-unstripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-unstripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-unstripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/unstripped-owners.tsv",
+            "mixed-64",
+            "${ORIGINAL_RAW}/observe-unstripped-mixed-64/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-unstripped-mixed-64/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-unstripped-mixed-64/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-unstripped-mixed-64/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-stripped-empty",
+      "record_hashes": {
+        "command": {
+          "bytes": 2841,
+          "sha256": "974b403e3d231f94a3e2ba65d77dea572d0be3a10161ce2e538fbbc3c00dea38"
+        },
+        "outer": {
+          "bytes": 89,
+          "sha256": "0a3a18084dc346120d214d6a223132311e67f26e0a257563d3658d796bd9b1c2"
+        },
+        "receipt": {
+          "bytes": 589,
+          "sha256": "6ea8fe48fcce1a47701008ce900161725a877c900eb115a20d455a8f34081789"
+        },
+        "request": {
+          "bytes": 1971,
+          "sha256": "a34d3ddeb5a84d633aeafdebd26e4cb8d406f70a1819d6058a1770516515155b"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-stripped-empty/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-stripped-empty/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-stripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+              "empty",
+              "${ORIGINAL_RAW}/observe-stripped-empty/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-empty/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-stripped-empty/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-stripped-empty/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.31661970098502934,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.22999277408234775,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "a34d3ddeb5a84d633aeafdebd26e4cb8d406f70a1819d6058a1770516515155b",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "840a1b4684b445caa11ee0089c27b235b95b11969576a31044f08fbf6c84738c",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-stripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+            "empty",
+            "${ORIGINAL_RAW}/observe-stripped-empty/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-empty/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-stripped-empty/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-stripped-empty/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-stripped-singleton",
+      "record_hashes": {
+        "command": {
+          "bytes": 2869,
+          "sha256": "66e11546567e3aa2161e6bf1ca88f5ee61044677eb92c8ae25996e369e6c48bb"
+        },
+        "outer": {
+          "bytes": 88,
+          "sha256": "f91fa1fa23b67babddd9fc2056b6b21d6222dbfe20853b308e6e30043030647e"
+        },
+        "receipt": {
+          "bytes": 589,
+          "sha256": "b426e282bfbc2eec177a4dc64bd00afcea0e70ac6c1f5a4a5ce632f41cd173c7"
+        },
+        "request": {
+          "bytes": 1991,
+          "sha256": "1fce9f0e81cb92fcc9a5547cdf97cfaaca00dcbc728bd132c31c09946ce4c24b"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-stripped-singleton/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-stripped-singleton/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-stripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+              "singleton",
+              "${ORIGINAL_RAW}/observe-stripped-singleton/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-singleton/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-stripped-singleton/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-stripped-singleton/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.3165965739171952,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.22794446581974626,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "1fce9f0e81cb92fcc9a5547cdf97cfaaca00dcbc728bd132c31c09946ce4c24b",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "561ab3c5c3356870e381252931678ea18083d2fa4bbb69a5daf0796c156a34f1",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-stripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+            "singleton",
+            "${ORIGINAL_RAW}/observe-stripped-singleton/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-singleton/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-stripped-singleton/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-stripped-singleton/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-stripped-pair-reverse",
+      "record_hashes": {
+        "command": {
+          "bytes": 2890,
+          "sha256": "d6037572d54a4dc556d0179570659e2d5a49ae945ff224173fb4906e9c3d722f"
+        },
+        "outer": {
+          "bytes": 89,
+          "sha256": "18b41391713cb5409f2065ddb3dc6c74e9950ebe4653bae57893fc8b9de498ce"
+        },
+        "receipt": {
+          "bytes": 589,
+          "sha256": "b89c1b7ce97538b7f479959c30347eccec4d41be2cd3c53ff730f4e34fc3365b"
+        },
+        "request": {
+          "bytes": 2006,
+          "sha256": "8ec354b3c76d24ad08d66d66c147cbe76aca667396cd8ff7a92ea87c672b2840"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-stripped-pair-reverse/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-stripped-pair-reverse/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-stripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+              "pair-reverse",
+              "${ORIGINAL_RAW}/observe-stripped-pair-reverse/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-pair-reverse/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-stripped-pair-reverse/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-stripped-pair-reverse/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.31660734000615776,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.22896146401762962,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "8ec354b3c76d24ad08d66d66c147cbe76aca667396cd8ff7a92ea87c672b2840",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "731acd10f96cd40816ef01e2956f1f08aa97ab983a947e24c642c2585ecf26d9",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-stripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+            "pair-reverse",
+            "${ORIGINAL_RAW}/observe-stripped-pair-reverse/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-pair-reverse/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-stripped-pair-reverse/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-stripped-pair-reverse/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-stripped-equal-17",
+      "record_hashes": {
+        "command": {
+          "bytes": 2862,
+          "sha256": "4145f28f84da33602e6fc9e56c369cf9dca1078b83d26c4a1c542920f2213b8b"
+        },
+        "outer": {
+          "bytes": 88,
+          "sha256": "b9cf5bb2f01b0cc95d488d9594a8eccdc9acc7fa5843416f50d218f5d023626a"
+        },
+        "receipt": {
+          "bytes": 588,
+          "sha256": "8645d5830e716d503ce0ae7564c08ad195c542c1eb7fca692ac621de44a5fada"
+        },
+        "request": {
+          "bytes": 1986,
+          "sha256": "503453ce880915510c28d841ef79532f5b9a0bd155503013cca1ee9224a21400"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-stripped-equal-17/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-stripped-equal-17/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-stripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+              "equal-17",
+              "${ORIGINAL_RAW}/observe-stripped-equal-17/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-equal-17/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-stripped-equal-17/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-stripped-equal-17/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.5172807550989091,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.4291082189884037,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "503453ce880915510c28d841ef79532f5b9a0bd155503013cca1ee9224a21400",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "6601d47f3c515bb5de235e002b279c0adfc6fe64e4553c86690829cf944f5e21",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-stripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+            "equal-17",
+            "${ORIGINAL_RAW}/observe-stripped-equal-17/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-equal-17/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-stripped-equal-17/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-stripped-equal-17/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-stripped-sorted-17",
+      "record_hashes": {
+        "command": {
+          "bytes": 2869,
+          "sha256": "5edf3fac906c17ce4a0868a81a54ad04f47583a42673e3db447f9c3dcdeb3835"
+        },
+        "outer": {
+          "bytes": 88,
+          "sha256": "f32157843657bafdf9e14448146d6010546f85c7ab8494d93dc07c0d9fb09fd6"
+        },
+        "receipt": {
+          "bytes": 588,
+          "sha256": "0006b1077f10ae9ebfe100e04b742656bb0dd04f12790098ead2d1819f6b55e9"
+        },
+        "request": {
+          "bytes": 1991,
+          "sha256": "e69a69670fe1afc6adc970a46c0fa2dee198b3eea30298e11c64b700608291c8"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-stripped-sorted-17/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-stripped-sorted-17/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-stripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+              "sorted-17",
+              "${ORIGINAL_RAW}/observe-stripped-sorted-17/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-sorted-17/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-stripped-sorted-17/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-stripped-sorted-17/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.6676892922259867,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.5750582879409194,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "e69a69670fe1afc6adc970a46c0fa2dee198b3eea30298e11c64b700608291c8",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "d0d02f2576c9f7fe160551f3bc90e9fd5082d4f3c6ebf24d8a40c0cb99282a17",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-stripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+            "sorted-17",
+            "${ORIGINAL_RAW}/observe-stripped-sorted-17/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-sorted-17/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-stripped-sorted-17/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-stripped-sorted-17/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-stripped-reverse-17",
+      "record_hashes": {
+        "command": {
+          "bytes": 2876,
+          "sha256": "5fb0ff4a41988aa0cdde061f68ac2afb20003f725121a3262058d5cf4b89375e"
+        },
+        "outer": {
+          "bytes": 88,
+          "sha256": "dff9bd96e7aafc96120fbc7609e11a32382913246bc5269082a316ab1529c5db"
+        },
+        "receipt": {
+          "bytes": 587,
+          "sha256": "27e5e4e9ca2458974c6757b3e94683c3f43817e432986190523f2c08a86ba28e"
+        },
+        "request": {
+          "bytes": 1996,
+          "sha256": "07463493786395f05cd2d7fde4026aff65a3d2ff68ad7cdedf1afc65eb73a841"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-stripped-reverse-17/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-stripped-reverse-17/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-stripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+              "reverse-17",
+              "${ORIGINAL_RAW}/observe-stripped-reverse-17/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-reverse-17/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-stripped-reverse-17/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-stripped-reverse-17/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.6179561619646847,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.525160962017253,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "07463493786395f05cd2d7fde4026aff65a3d2ff68ad7cdedf1afc65eb73a841",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "ddff2217dfbcc37b25d5cfa470f8a33113a85acfd05e51ba035c107f345dbd5d",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-stripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+            "reverse-17",
+            "${ORIGINAL_RAW}/observe-stripped-reverse-17/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-reverse-17/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-stripped-reverse-17/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-stripped-reverse-17/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-stripped-duplicates-17",
+      "record_hashes": {
+        "command": {
+          "bytes": 2897,
+          "sha256": "46bb0dccb8dbabd3c684a16cade535c3d57bf16e6653c0d8d2b8e5362de601cd"
+        },
+        "outer": {
+          "bytes": 88,
+          "sha256": "782706fc6e45af22d0d6d606fee14007084788e46841217f0f1ce51e455c98a6"
+        },
+        "receipt": {
+          "bytes": 588,
+          "sha256": "a958cb377e67fcce2e5bc252b61d3bbff24fb4bfc3e76b650eb1abf7ab1671d7"
+        },
+        "request": {
+          "bytes": 2011,
+          "sha256": "78cabb276bdd3ba022f6af214936fc10c070302a8c47a7cda34e9a1880e67b81"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-stripped-duplicates-17/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-stripped-duplicates-17/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-stripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+              "duplicates-17",
+              "${ORIGINAL_RAW}/observe-stripped-duplicates-17/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-duplicates-17/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-stripped-duplicates-17/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-stripped-duplicates-17/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 0.6683611110784113,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.5733349600341171,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "78cabb276bdd3ba022f6af214936fc10c070302a8c47a7cda34e9a1880e67b81",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "b0be71ea0cc33abb61a1548e7e44efdeb7f40b9e6cfd2a52d523fd1f0bb2bc4c",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-stripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+            "duplicates-17",
+            "${ORIGINAL_RAW}/observe-stripped-duplicates-17/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-duplicates-17/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-stripped-duplicates-17/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-stripped-duplicates-17/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "original-application-observation",
+      "name": "observe-stripped-mixed-64",
+      "record_hashes": {
+        "command": {
+          "bytes": 2862,
+          "sha256": "f1182bada0475ba1f278606aba76c3a6e7b506a6e40b64b41119da9a48d60f25"
+        },
+        "outer": {
+          "bytes": 88,
+          "sha256": "9997c3d9bcb8438bc7d1b0f2af42157dcfca84cce7bb549aed63dfe6897b6d16"
+        },
+        "receipt": {
+          "bytes": 587,
+          "sha256": "81d76b940e9e551ccfc5ab27a34875bf1be84284271f985cf8b653773bfe2bd9"
+        },
+        "request": {
+          "bytes": 1986,
+          "sha256": "2ef8aab761c60043c8438c544995ad1197d243b37414de8b03f589d06570f882"
+        }
+      },
+      "records": {
+        "command": {
+          "cwd": "${REPO}",
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${ORIGINAL_RAW}/observe-stripped-mixed-64/request.json",
+            "--receipt",
+            "${ORIGINAL_RAW}/observe-stripped-mixed-64/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${BUILD_RAW}/artifacts/native-compile/product-39",
+              "observe-common-app",
+              "${PREPARATION}/original-stripped",
+              "${BUILD_RAW}/observer-layout.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+              "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+              "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+              "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+              "mixed-64",
+              "${ORIGINAL_RAW}/observe-stripped-mixed-64/captures"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "LC_ALL": "C",
+              "PATH": "/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-mixed-64/tmp"
+            },
+            "file_bytes": 67108864,
+            "stderr": "${ORIGINAL_RAW}/observe-stripped-mixed-64/stderr.txt",
+            "stdout": "${ORIGINAL_RAW}/observe-stripped-mixed-64/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "outer": {
+          "exit": 0,
+          "operational_seconds": 2.1703118989244103,
+          "parent_timeout": false
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 2.078044621972367,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "2ef8aab761c60043c8438c544995ad1197d243b37414de8b03f589d06570f882",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "29888a582332c17ca76e8628c09b33dc6af7c04c50e868849b495474463c8c7f",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${BUILD_RAW}/artifacts/native-compile/product-39",
+            "observe-common-app",
+            "${PREPARATION}/original-stripped",
+            "${BUILD_RAW}/observer-layout.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/instructions.tsv",
+            "${BUILD_RAW}/inventories/null-jump-site-stripped/sites.tsv",
+            "${BUILD_RAW}/inventories/null-heap-write-stripped/sites.tsv",
+            "${ORIGINAL_INPUTS}/stripped-owners.tsv",
+            "mixed-64",
+            "${ORIGINAL_RAW}/observe-stripped-mixed-64/captures"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "TMPDIR": "${ORIGINAL_RAW}/observe-stripped-mixed-64/tmp"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${ORIGINAL_RAW}/observe-stripped-mixed-64/stderr.txt",
+          "stdout": "${ORIGINAL_RAW}/observe-stripped-mixed-64/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "offline-envelope-assembly",
+      "name": "content-assembly",
+      "record_hashes": {
+        "command": {
+          "bytes": 876,
+          "sha256": "02a82686d37a4d013a2cf46f995876f07406b166520204a0badcac153acbfdf8"
+        },
+        "parent": {
+          "bytes": 93,
+          "sha256": "e0ac697adca1cc625119cba1ba500041ec6f4db46c0385a7d5c6224d7a4c4329"
+        },
+        "receipt": {
+          "bytes": 587,
+          "sha256": "78b8f064ed5abed8edfe4312eecd3a864246bdd8498fdb876ed6bf0ada5893b5"
+        },
+        "request": {
+          "bytes": 758,
+          "sha256": "6c18d5c16ad47102e4245c1dd8b2a78eae863f287bf878d4b998c44d6ff23979"
+        }
+      },
+      "records": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "55s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${AUDIT_LAUNCH}/assembly/request.json",
+            "--receipt",
+            "${AUDIT_LAUNCH}/assembly/receipt.json"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 70,
+          "request_sha256": "6c18d5c16ad47102e4245c1dd8b2a78eae863f287bf878d4b998c44d6ff23979"
+        },
+        "parent": {
+          "exit": 0,
+          "operational_seconds": 4.5731199809815735,
+          "parent_wait_returned": true
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 4.506415468174964,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "6c18d5c16ad47102e4245c1dd8b2a78eae863f287bf878d4b998c44d6ff23979",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "2b0460a733c67ebde04d8fea8a470f0ad1439540e8d2c953babfadb231ec5241",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${AUDIT_INPUTS}/assemble.py"
+          ],
+          "cpu_seconds": 30,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "file_bytes": 16777216,
+          "stderr": "${AUDIT_LAUNCH}/assembly/stderr.txt",
+          "stdout": "${AUDIT_LAUNCH}/assembly/stdout.txt",
+          "wall_seconds": 45
+        }
+      }
+    },
+    {
+      "kind": "committed-saved-content-audit",
+      "name": "content-audit",
+      "record_hashes": {
+        "command": {
+          "bytes": 872,
+          "sha256": "3bca9518cfeb290143a7cf32a237c317157aca28a927bbdcc0e65c3850e51748"
+        },
+        "parent": {
+          "bytes": 92,
+          "sha256": "ddb94d63b78007fafb695ec15d5bb082f055d8ddfe5872f576d4fae343293965"
+        },
+        "receipt": {
+          "bytes": 587,
+          "sha256": "5a68f5edebf688c2b500b41160f7fcc50b1558c4bbbff8029ec3e681c0159588"
+        },
+        "request": {
+          "bytes": 1113,
+          "sha256": "cf9033d4b42632eac19ffd4034723c0c3cc890fabfaea14c88caf6dbcf693333"
+        }
+      },
+      "records": {
+        "command": {
+          "argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${AUDIT_LAUNCH}/audit/request.json",
+            "--receipt",
+            "${AUDIT_LAUNCH}/audit/receipt.json"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request_sha256": "cf9033d4b42632eac19ffd4034723c0c3cc890fabfaea14c88caf6dbcf693333"
+        },
+        "parent": {
+          "exit": 0,
+          "operational_seconds": 59.48008985398337,
+          "parent_wait_returned": true
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 59.41307145287283,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "cf9033d4b42632eac19ffd4034723c0c3cc890fabfaea14c88caf6dbcf693333",
+          "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "stdout_sha256": "c86859306d72fdf40399fddc60d7cac2ab4a1f89fd52edc1626a5f6b4e7c79ca",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/evaluation/e9-common-app/audit_originals.py",
+            "--inputs",
+            "${AUDIT_INPUTS}/inputs.json",
+            "--inputs-sha256",
+            "f151804d436b73e5f94f1129c053d7e7d8380dd414f2bd61150d133fa3fe92c1",
+            "--raw",
+            "${AUDIT_RAW}"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "file_bytes": 67108864,
+          "stderr": "${AUDIT_LAUNCH}/audit/stderr.txt",
+          "stdout": "${AUDIT_LAUNCH}/audit/stdout.txt",
+          "wall_seconds": 90
+        }
+      }
+    },
+    {
+      "kind": "historical-archive-recipe-with-published-source",
+      "name": "verifier-archive-attempt-1",
+      "record_hashes": {
+        "command": {
+          "bytes": 570,
+          "sha256": "85669ac1d775c6f02b103b27642310c3b308e959f242e197f6a30cffbbd4e8ae"
+        },
+        "parent": {
+          "bytes": 388,
+          "sha256": "978d54a302ecca0deb40f128a5a4767a1682d8f92943f67a000ef7bde943cc9c"
+        }
+      },
+      "records": {
+        "command": {
+          "affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${VERIFIER_PRIVATE_RECIPE_1}"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "recipe_sha256": "b6ae97aae1b246719621c72a6387d18015b6697d6b7667a985edc08d13328014",
+          "source_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a"
+        },
+        "parent": {
+          "exit": 1,
+          "operational_seconds": 4.260683972854167,
+          "parent_wait_returned": true,
+          "pid": 1224279,
+          "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+          "stderr_sha256": "8563543f1a1dc9ed15ce1c4721073a5d57183a95377ecbbb058fd3ecf548bc7d",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "kind": "compiler-command-only-no-archive-admission",
+      "name": "verifier-compiler-attempt-1",
+      "record_hashes": {
+        "command": {
+          "bytes": 3541,
+          "sha256": "77048e7ea6303b9afef957cd97a8f4b27f7c0e6c573f6dbb58928bdf71bc44f2"
+        },
+        "receipt": {
+          "bytes": 588,
+          "sha256": "a036af237d00fdae450808e2be8a15655adca422c9efab97688fe488ed6d67ff"
+        },
+        "request": {
+          "bytes": 1560,
+          "sha256": "8185b0568633c6ccac012b39cece961f0ad87495be1d2c8eac91c363cd1c4cfa"
+        },
+        "result": {
+          "bytes": 3622,
+          "sha256": "a92f4ca40d29e8edaa024ed0060c34828bb256a442ded27f5cbfe89900aa8048"
+        }
+      },
+      "records": {
+        "command": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_1}/verifier-compile/tmp"
+          },
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${VERIFIER_RAW_1}/verifier-compile/request.json",
+            "--receipt",
+            "${VERIFIER_RAW_1}/verifier-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${TOOLCHAIN}/bin/cargo",
+              "build",
+              "-p",
+              "liteinst-rewrite",
+              "--example",
+              "verify_common_core",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "${CARGO_HOME}",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "${REPO}/target",
+              "HOME": "${USER_HOME}",
+              "LC_ALL": "C",
+              "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "${TOOLCHAIN}/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "${VERIFIER_RAW_1}/verifier-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "${VERIFIER_RAW_1}/verifier-compile/stderr.txt",
+            "stdout": "${VERIFIER_RAW_1}/verifier-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 1.3154900982044637,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "8185b0568633c6ccac012b39cece961f0ad87495be1d2c8eac91c363cd1c4cfa",
+          "stderr_sha256": "2cc3a477bf7e992ab04b20d4917b0bdcc11c21e2a34a7e73142be65dc856a941",
+          "stdout_sha256": "e7f17f61e0a87738b41b6c430c4d970659e3b892a24e92e0895814be8f4acdbf",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_1}/verifier-compile/tmp"
+          },
+          "file_bytes": 134217728,
+          "stderr": "${VERIFIER_RAW_1}/verifier-compile/stderr.txt",
+          "stdout": "${VERIFIER_RAW_1}/verifier-compile/stdout.txt",
+          "wall_seconds": 90
+        },
+        "result": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "${REPO}",
+          "elapsed_seconds": 1.3674623700790107,
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_1}/verifier-compile/tmp"
+          },
+          "exit": 0,
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${VERIFIER_RAW_1}/verifier-compile/request.json",
+            "--receipt",
+            "${VERIFIER_RAW_1}/verifier-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${TOOLCHAIN}/bin/cargo",
+              "build",
+              "-p",
+              "liteinst-rewrite",
+              "--example",
+              "verify_common_core",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "${CARGO_HOME}",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "${REPO}/target",
+              "HOME": "${USER_HOME}",
+              "LC_ALL": "C",
+              "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "${TOOLCHAIN}/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "${VERIFIER_RAW_1}/verifier-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "${VERIFIER_RAW_1}/verifier-compile/stderr.txt",
+            "stdout": "${VERIFIER_RAW_1}/verifier-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        }
+      }
+    },
+    {
+      "kind": "historical-archive-recipe-with-published-source",
+      "name": "verifier-archive-attempt-2",
+      "record_hashes": {
+        "command": {
+          "bytes": 570,
+          "sha256": "107f22c841752af731e2abb506fc83fc63fa915784c328231e38ffe177e3c366"
+        },
+        "parent": {
+          "bytes": 389,
+          "sha256": "66a082b73e65387986cdf991098fc6c60711912f8eefe017918f54ed5c197ec1"
+        }
+      },
+      "records": {
+        "command": {
+          "affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${VERIFIER_PRIVATE_RECIPE_2}"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "recipe_sha256": "c3b58c2642487d8bddb49cc98efdf996af77c1dd1e15c532224e8de900c9b24c",
+          "source_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a"
+        },
+        "parent": {
+          "exit": 1,
+          "operational_seconds": 3.2585596728604287,
+          "parent_wait_returned": true,
+          "pid": 1601467,
+          "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+          "stderr_sha256": "536ff9f3472df07a730e68ef7334b3835797f41e86ba38fe7ce9ea1d82760556",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "kind": "compiler-command-only-no-archive-admission",
+      "name": "verifier-compiler-attempt-2",
+      "record_hashes": {
+        "command": {
+          "bytes": 3541,
+          "sha256": "35bcf212cbfc93947d3b037b8c8feb272c8501127e9918e7ee5c767703f166da"
+        },
+        "receipt": {
+          "bytes": 589,
+          "sha256": "1e607d0d6e3c520d1a4613f6cd2dd2712ec80c812438b9ae68f25c0e596c48b2"
+        },
+        "request": {
+          "bytes": 1560,
+          "sha256": "e8190fe6ccd4a471df4daff0036cfba412cd4ec4d8512507cf0b391b88ab989d"
+        },
+        "result": {
+          "bytes": 3622,
+          "sha256": "02ebd702ff49fc28691bdca92b12d9cb5da06bd093fcfc2e9946d47e507a036c"
+        }
+      },
+      "records": {
+        "command": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_2}/verifier-compile/tmp"
+          },
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${VERIFIER_RAW_2}/verifier-compile/request.json",
+            "--receipt",
+            "${VERIFIER_RAW_2}/verifier-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${TOOLCHAIN}/bin/cargo",
+              "build",
+              "-p",
+              "liteinst-rewrite",
+              "--example",
+              "verify_common_core",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "${CARGO_HOME}",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "${REPO}/target",
+              "HOME": "${USER_HOME}",
+              "LC_ALL": "C",
+              "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "${TOOLCHAIN}/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "${VERIFIER_RAW_2}/verifier-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "${VERIFIER_RAW_2}/verifier-compile/stderr.txt",
+            "stdout": "${VERIFIER_RAW_2}/verifier-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.18250795197673142,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "e8190fe6ccd4a471df4daff0036cfba412cd4ec4d8512507cf0b391b88ab989d",
+          "stderr_sha256": "02db5a66fa0c60ca8618bd08aac556eac4f3ec863e8630a0d353dba6a0f6e126",
+          "stdout_sha256": "754b518c6d3fc90a028e3307c4ef9ef5e92095ed19f24fdade8f876652572ca3",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_2}/verifier-compile/tmp"
+          },
+          "file_bytes": 134217728,
+          "stderr": "${VERIFIER_RAW_2}/verifier-compile/stderr.txt",
+          "stdout": "${VERIFIER_RAW_2}/verifier-compile/stdout.txt",
+          "wall_seconds": 90
+        },
+        "result": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "${REPO}",
+          "elapsed_seconds": 0.2650881549343467,
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_2}/verifier-compile/tmp"
+          },
+          "exit": 0,
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${VERIFIER_RAW_2}/verifier-compile/request.json",
+            "--receipt",
+            "${VERIFIER_RAW_2}/verifier-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${TOOLCHAIN}/bin/cargo",
+              "build",
+              "-p",
+              "liteinst-rewrite",
+              "--example",
+              "verify_common_core",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "${CARGO_HOME}",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "${REPO}/target",
+              "HOME": "${USER_HOME}",
+              "LC_ALL": "C",
+              "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "${TOOLCHAIN}/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "${VERIFIER_RAW_2}/verifier-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "${VERIFIER_RAW_2}/verifier-compile/stderr.txt",
+            "stdout": "${VERIFIER_RAW_2}/verifier-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        }
+      }
+    },
+    {
+      "kind": "historical-archive-recipe-with-published-source",
+      "name": "verifier-archive-attempt-3",
+      "record_hashes": {
+        "command": {
+          "bytes": 570,
+          "sha256": "8d27d441c01ef7a9092b289069fbde69660cb4e1b052d27e36e2b0b813ef82e5"
+        },
+        "parent": {
+          "bytes": 388,
+          "sha256": "596564eed40197ea11a2cf694d52e9003a99630803837bfa33456e1b7f1fccb8"
+        }
+      },
+      "records": {
+        "command": {
+          "affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${VERIFIER_PRIVATE_RECIPE_3}"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "recipe_sha256": "419eb45972ebce7509559874a9ba81054fd620f4b8fcf31335417a77decf87d0",
+          "source_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a"
+        },
+        "parent": {
+          "exit": 1,
+          "operational_seconds": 3.200356346089393,
+          "parent_wait_returned": true,
+          "pid": 1822032,
+          "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+          "stderr_sha256": "aacc3c054cebc27b563e4149272d26c1e54b752f88ffec9cc2f6c657e0b4d30f",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "kind": "compiler-command-only-no-archive-admission",
+      "name": "verifier-compiler-attempt-3",
+      "record_hashes": {
+        "command": {
+          "bytes": 3541,
+          "sha256": "893aef85f610f00d3dbac09dc198666f709e599fcd4ce7d7b1cb8f604bed3dd3"
+        },
+        "receipt": {
+          "bytes": 589,
+          "sha256": "87bd3aa93fb80cb74b19052144c6a7dc45ee38e4385869fc46a81bde34d80f75"
+        },
+        "request": {
+          "bytes": 1560,
+          "sha256": "7218bdee74b51ac20e2d7090129391de85b5518155d7bed66e80c03075e3fa71"
+        },
+        "result": {
+          "bytes": 3623,
+          "sha256": "df45a8b735a04c6c4336b5a6a9b3c0f987166983b14e0ab2b28cdaeb0591c905"
+        }
+      },
+      "records": {
+        "command": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_3}/verifier-compile/tmp"
+          },
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${VERIFIER_RAW_3}/verifier-compile/request.json",
+            "--receipt",
+            "${VERIFIER_RAW_3}/verifier-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${TOOLCHAIN}/bin/cargo",
+              "build",
+              "-p",
+              "liteinst-rewrite",
+              "--example",
+              "verify_common_core",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "${CARGO_HOME}",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "${REPO}/target",
+              "HOME": "${USER_HOME}",
+              "LC_ALL": "C",
+              "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "${TOOLCHAIN}/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "${VERIFIER_RAW_3}/verifier-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "${VERIFIER_RAW_3}/verifier-compile/stderr.txt",
+            "stdout": "${VERIFIER_RAW_3}/verifier-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.17012174800038338,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "7218bdee74b51ac20e2d7090129391de85b5518155d7bed66e80c03075e3fa71",
+          "stderr_sha256": "02db5a66fa0c60ca8618bd08aac556eac4f3ec863e8630a0d353dba6a0f6e126",
+          "stdout_sha256": "ab2b6b86a1c9a3374f409b451ffe37094bd7a6df32ce132b80e18797e0e3f95b",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_3}/verifier-compile/tmp"
+          },
+          "file_bytes": 134217728,
+          "stderr": "${VERIFIER_RAW_3}/verifier-compile/stderr.txt",
+          "stdout": "${VERIFIER_RAW_3}/verifier-compile/stdout.txt",
+          "wall_seconds": 90
+        },
+        "result": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "${REPO}",
+          "elapsed_seconds": 0.21500870096497238,
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_3}/verifier-compile/tmp"
+          },
+          "exit": 0,
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${VERIFIER_RAW_3}/verifier-compile/request.json",
+            "--receipt",
+            "${VERIFIER_RAW_3}/verifier-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${TOOLCHAIN}/bin/cargo",
+              "build",
+              "-p",
+              "liteinst-rewrite",
+              "--example",
+              "verify_common_core",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "${CARGO_HOME}",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "${REPO}/target",
+              "HOME": "${USER_HOME}",
+              "LC_ALL": "C",
+              "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "${TOOLCHAIN}/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "${VERIFIER_RAW_3}/verifier-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "${VERIFIER_RAW_3}/verifier-compile/stderr.txt",
+            "stdout": "${VERIFIER_RAW_3}/verifier-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        }
+      }
+    },
+    {
+      "kind": "historical-archive-recipe-with-published-source",
+      "name": "verifier-archive-attempt-4",
+      "record_hashes": {
+        "command": {
+          "bytes": 570,
+          "sha256": "3b65d1ead508ccd89d5f65fb36f1bdf499ce1a7fa041069041378fc9e9b59bf7"
+        },
+        "parent": {
+          "bytes": 389,
+          "sha256": "a4baae91b52bb54efe32798bf6ef69deecf23a6f385721b0ac232ae37141926a"
+        }
+      },
+      "records": {
+        "command": {
+          "affinity": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "argv": [
+            "/usr/bin/python3.9",
+            "-B",
+            "${VERIFIER_PRIVATE_RECIPE_4}"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "recipe_sha256": "23e72599cce39029fd6fb5b3a4dba1c4f7d21acb5fcb5e7c2d98c136512322ad",
+          "source_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a"
+        },
+        "parent": {
+          "exit": 1,
+          "operational_seconds": 3.0847883948590606,
+          "parent_wait_returned": true,
+          "pid": 2295391,
+          "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+          "stderr_sha256": "80566d5927608912538f8e418260712814c4b8f470db9777b758e3d577da7af8",
+          "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "kind": "compiler-command-only-no-archive-admission",
+      "name": "verifier-compiler-attempt-4",
+      "record_hashes": {
+        "command": {
+          "bytes": 3541,
+          "sha256": "ff99a6fcc0e244ed8dea74d0db9d4a1044575a0cb4be91cc3cfb058bc98cbc1a"
+        },
+        "receipt": {
+          "bytes": 588,
+          "sha256": "3e2c7767d07a89870a1d4365c62a67327241a964ec23c56f31425f3b862acfbc"
+        },
+        "request": {
+          "bytes": 1560,
+          "sha256": "aaaf68d87e7c9ee8522ae44ce979a5f8062b97346dd49825b3e1da89074af67e"
+        },
+        "result": {
+          "bytes": 3623,
+          "sha256": "8c006232085b05884f12ca2d4e7b2be258c79bb37056e06884bdf15974e87188"
+        }
+      },
+      "records": {
+        "command": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "${REPO}",
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_4}/verifier-compile/tmp"
+          },
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${VERIFIER_RAW_4}/verifier-compile/request.json",
+            "--receipt",
+            "${VERIFIER_RAW_4}/verifier-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${TOOLCHAIN}/bin/cargo",
+              "build",
+              "-p",
+              "liteinst-rewrite",
+              "--example",
+              "verify_common_core",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "${CARGO_HOME}",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "${REPO}/target",
+              "HOME": "${USER_HOME}",
+              "LC_ALL": "C",
+              "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "${TOOLCHAIN}/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "${VERIFIER_RAW_4}/verifier-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "${VERIFIER_RAW_4}/verifier-compile/stderr.txt",
+            "stdout": "${VERIFIER_RAW_4}/verifier-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        },
+        "receipt": {
+          "aborted": null,
+          "absence_proof": "ECHILD",
+          "cleanup_error": null,
+          "cleanup_events": [],
+          "elapsed_seconds": 0.1649438061285764,
+          "exit": 0,
+          "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+          "inputs_unchanged": true,
+          "request_sha256": "aaaf68d87e7c9ee8522ae44ce979a5f8062b97346dd49825b3e1da89074af67e",
+          "stderr_sha256": "736e2582f563605dd272e5fb977840b0c0767377d27b6940c440caf75eec7157",
+          "stdout_sha256": "446ff908cdd4783db6777cdb747abef1f1d07495cf059f7628cbe30b86244801",
+          "unexpected_descendants": [],
+          "wall_timeout": false
+        },
+        "request": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cpu_seconds": 60,
+          "cwd": "${REPO}",
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_4}/verifier-compile/tmp"
+          },
+          "file_bytes": 134217728,
+          "stderr": "${VERIFIER_RAW_4}/verifier-compile/stderr.txt",
+          "stdout": "${VERIFIER_RAW_4}/verifier-compile/stdout.txt",
+          "wall_seconds": 90
+        },
+        "result": {
+          "argv": [
+            "${TOOLCHAIN}/bin/cargo",
+            "build",
+            "-p",
+            "liteinst-rewrite",
+            "--example",
+            "verify_common_core",
+            "--offline",
+            "--locked",
+            "--message-format=json"
+          ],
+          "cwd": "${REPO}",
+          "elapsed_seconds": 0.21516157500445843,
+          "env": {
+            "CARGO_BUILD_JOBS": "4",
+            "CARGO_HOME": "${CARGO_HOME}",
+            "CARGO_INCREMENTAL": "0",
+            "CARGO_NET_OFFLINE": "true",
+            "CARGO_TARGET_DIR": "${REPO}/target",
+            "HOME": "${USER_HOME}",
+            "LC_ALL": "C",
+            "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "RUSTC": "${TOOLCHAIN}/bin/rustc",
+            "RUSTC_WORKSPACE_WRAPPER": "",
+            "RUSTC_WRAPPER": "",
+            "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+            "RUST_TEST_THREADS": "4",
+            "TMPDIR": "${VERIFIER_RAW_4}/verifier-compile/tmp"
+          },
+          "exit": 0,
+          "outer_argv": [
+            "/usr/bin/timeout",
+            "--signal=TERM",
+            "--kill-after=10s",
+            "100s",
+            "/usr/bin/python3.9",
+            "-B",
+            "${REPO}/tools/unwind-oracle/bounded_command.py",
+            "--request",
+            "${VERIFIER_RAW_4}/verifier-compile/request.json",
+            "--receipt",
+            "${VERIFIER_RAW_4}/verifier-compile/receipt.json"
+          ],
+          "outer_env": {
+            "LC_ALL": "C",
+            "PATH": "/usr/bin:/bin",
+            "PYTHONDONTWRITEBYTECODE": "1"
+          },
+          "parent_timeout": false,
+          "parent_timeout_seconds": 115,
+          "request": {
+            "argv": [
+              "${TOOLCHAIN}/bin/cargo",
+              "build",
+              "-p",
+              "liteinst-rewrite",
+              "--example",
+              "verify_common_core",
+              "--offline",
+              "--locked",
+              "--message-format=json"
+            ],
+            "cpu_seconds": 60,
+            "cwd": "${REPO}",
+            "env": {
+              "CARGO_BUILD_JOBS": "4",
+              "CARGO_HOME": "${CARGO_HOME}",
+              "CARGO_INCREMENTAL": "0",
+              "CARGO_NET_OFFLINE": "true",
+              "CARGO_TARGET_DIR": "${REPO}/target",
+              "HOME": "${USER_HOME}",
+              "LC_ALL": "C",
+              "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+              "PYTHONDONTWRITEBYTECODE": "1",
+              "RUSTC": "${TOOLCHAIN}/bin/rustc",
+              "RUSTC_WORKSPACE_WRAPPER": "",
+              "RUSTC_WRAPPER": "",
+              "RUSTDOC": "${TOOLCHAIN}/bin/rustdoc",
+              "RUST_TEST_THREADS": "4",
+              "TMPDIR": "${VERIFIER_RAW_4}/verifier-compile/tmp"
+            },
+            "file_bytes": 134217728,
+            "stderr": "${VERIFIER_RAW_4}/verifier-compile/stderr.txt",
+            "stdout": "${VERIFIER_RAW_4}/verifier-compile/stdout.txt",
+            "wall_seconds": 90
+          }
+        }
+      }
+    }
+  ],
+  "normalization": "Whole decoded records roundtrip through private role replacements; no argv/env/limits/status fields omitted.",
+  "roles": {
+    "AUDIT_INPUTS": "caller-supplied coordinate; private inverse retained",
+    "AUDIT_LAUNCH": "caller-supplied coordinate; private inverse retained",
+    "AUDIT_RAW": "caller-supplied coordinate; private inverse retained",
+    "BUILD_RAW": "caller-supplied coordinate; private inverse retained",
+    "CARGO_HOME": "caller-supplied coordinate; private inverse retained",
+    "EPOCH": "caller-supplied coordinate; private inverse retained",
+    "HOME_DIRECTORY_PARENT": "caller-supplied coordinate; private inverse retained",
+    "ORIGINAL_ASSEMBLY": "caller-supplied coordinate; private inverse retained",
+    "ORIGINAL_INPUTS": "caller-supplied coordinate; private inverse retained",
+    "ORIGINAL_LAUNCH": "caller-supplied coordinate; private inverse retained",
+    "ORIGINAL_RAW": "caller-supplied coordinate; private inverse retained",
+    "PREPARATION": "caller-supplied coordinate; private inverse retained",
+    "REPO": "caller-supplied coordinate; private inverse retained",
+    "TOOLCHAIN": "caller-supplied coordinate; private inverse retained",
+    "USER_HOME": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_LAUNCH_1": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_LAUNCH_2": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_LAUNCH_3": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_LAUNCH_4": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_PRIVATE_RECIPE_1": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_PRIVATE_RECIPE_2": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_PRIVATE_RECIPE_3": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_PRIVATE_RECIPE_4": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_RAW_1": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_RAW_2": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_RAW_3": "caller-supplied coordinate; private inverse retained",
+    "VERIFIER_RAW_4": "caller-supplied coordinate; private inverse retained"
+  },
+  "schema": 1,
+  "tested_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a"
+}

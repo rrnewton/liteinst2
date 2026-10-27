@@ -1,0 +1,146 @@
+{
+  "allocation_profile": "original-derived-v1",
+  "archive_bytes": 433748142,
+  "archive_files": 88,
+  "build_parent_operational_seconds": 367.45019836188294,
+  "build_stages": 12,
+  "command_rows": 29,
+  "common_application_execution_credit": 0,
+  "common_architectural_equivalence": false,
+  "controls_review_sha256": "a6d2b816fbb7d2284d6035bea72acdc88e240e5f027d8e4b325b33ac7a65c18a",
+  "cpu_affinity": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ],
+    "logical_cpus": 316
+  },
+  "heap_sites_per_heap_inventory": 1,
+  "instruction_heads_per_inventory": 87,
+  "inventory_cells": 8,
+  "jump_sites_per_jump_inventory": 9,
+  "limitations": [
+    "This build/control cohort gives no original, rewritten, E9 or paired application result.",
+    "Recorded configuration denials remain denials, not proof of contents or Cargo consumption.",
+    "Full tool/dependency/loader closure and hardware qualification are not established.",
+    "Later fresh-verifier archive failures remain separate; compiler success does not admit those archives."
+  ],
+  "nested_required_gates": 4,
+  "nested_tests": {
+    "added_to_outer_totals": false,
+    "completed_summaries": 5,
+    "extra_starts": 10,
+    "starts_without_own_terminal": 5
+  },
+  "outer_tests": {
+    "allocation_regressions_passed": 3,
+    "failed": 0,
+    "filtered": 0,
+    "groups": 93,
+    "identities": 2018,
+    "ignored": 4,
+    "new_page_tests": 9,
+    "new_verifier_tests": 3,
+    "passed": 2014,
+    "previous_identities_retained": 2006
+  },
+  "performance_claim": false,
+  "pure_controls": {
+    "categories": 24,
+    "cli_commands": 12,
+    "expected_refusal_exit": 1,
+    "normal_help_accepts": 4,
+    "optimized_required_refusals": 8,
+    "witness_commands": 1,
+    "witness_vectors": 93
+  },
+  "qualification_complete": false,
+  "review_sha256": "e7a552db103e07531219b06107625bd0d2d950a86c74461235fc0697550f12f6",
+  "row_scope": "12 build stages + 4 separately nested gates + 13 control commands; no timing aggregation.",
+  "schema": 1,
+  "scope": "Partial claim 4 preparation: build/static inventory and pure controls only.",
+  "source_before_after_equal": true,
+  "source_files": 1839,
+  "source_files_sha256": "517062a165906c6825dd86a29c7ea975c048d8651b8a10723dd24818edb5cfef",
+  "source_pins": {
+    "evaluation/e9-common-app/audit_originals.py": "20c869183662f0afc178f38206d42881227a1fa7fd6b2d9ff40e4b05560d1fa3",
+    "evaluation/e9-common-app/build_inventory.py": "31545ba44b5cb3b055a96269c689b9235957ec3dab0cfd3e65ba86efbdde71ed",
+    "evaluation/e9-common-app/observe_originals.py": "f84d4246e1b25032fb7ba7244d74f4c4a41d7d4049be52d2ed7ace6fdc18769d",
+    "evaluation/e9-witness-controls/controls.py": "e3b421f88df77ed90f3aa1da44d22a668c0396218953fd67b693ad6005db20b2",
+    "evaluation/required-gates.py": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+    "tools/elf-rewrite/e9-null-witness.py": "562dc107c3aca9fa92a92973934eb01fc852981dd72743168b4701bbed08a081",
+    "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+  },
+  "status": "PASS_BUILD_STATIC_INVENTORY_AND_PURE_CONTROLS",
+  "strict_build_helper_receipts": 11,
+  "tested_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a",
+  "toolchain_coordinate": "1.97.1-x86_64-unknown-linux-gnu",
+  "tools": [
+    {
+      "bytes": 42839824,
+      "name": "cargo",
+      "path": "$TOOLCHAIN/bin/cargo",
+      "resolved": "$TOOLCHAIN/bin/cargo",
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    {
+      "bytes": 22412784,
+      "name": "clippy-driver",
+      "path": "$TOOLCHAIN/bin/clippy-driver",
+      "resolved": "$TOOLCHAIN/bin/clippy-driver",
+      "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373"
+    },
+    {
+      "bytes": 645000,
+      "name": "rustc",
+      "path": "$TOOLCHAIN/bin/rustc",
+      "resolved": "$TOOLCHAIN/bin/rustc",
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    {
+      "bytes": 13680928,
+      "name": "rustdoc",
+      "path": "$TOOLCHAIN/bin/rustdoc",
+      "resolved": "$TOOLCHAIN/bin/rustdoc",
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    },
+    {
+      "bytes": 5268472,
+      "name": "rustfmt",
+      "path": "$TOOLCHAIN/bin/rustfmt",
+      "resolved": "$TOOLCHAIN/bin/rustfmt",
+      "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8"
+    },
+    {
+      "bytes": 4397400,
+      "name": "git",
+      "path": "/usr/bin/git",
+      "resolved": "/usr/bin/git",
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    {
+      "bytes": 15448,
+      "name": "python3.9",
+      "path": "/usr/bin/python3.9",
+      "resolved": "/usr/bin/python3.9",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    {
+      "bytes": 36848,
+      "name": "timeout",
+      "path": "/usr/bin/timeout",
+      "resolved": "/usr/bin/timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+    }
+  ]
+}

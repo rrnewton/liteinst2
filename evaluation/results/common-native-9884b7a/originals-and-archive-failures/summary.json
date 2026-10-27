@@ -1,0 +1,287 @@
+{
+  "architectural_equivalence": false,
+  "command_contexts": 28,
+  "directory_timestamp_cause": "UNRESOLVED: recorded mismatch is exact, but responsible actor, syscall and kernel/autofs mechanism are not established.",
+  "driver_archived_identity": {
+    "authority": "reviewed build metadata; product bytes not reread by this projection",
+    "bytes": 30937464,
+    "sha256": "41200e70953c4b4450efdb4c91282857859d28a7a391a7a272750c1aaae77b5d"
+  },
+  "first_archive_attempt_scope": "After snapshots absent; only the combined alias-or-target assertion failure is established. No later timestamp diagnosis is transferred.",
+  "full_a3": false,
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ],
+    "logical_cpus": 316
+  },
+  "hardware_source": {
+    "bytes": 246,
+    "sha256": "efd21582e7821282517d86428a8d743ee3d6414df5cf6dcc201a4119540331e9"
+  },
+  "limitations": [
+    "Full RX mapping bytes, bytes read at each executed instruction PC, and the actual eight-byte breakpoint restoration were asserted live, not serialized.",
+    "Intermediate complete registers, actual RSP, actual stack return words, and call argument register values were asserted live, not serialized.",
+    "Recorded callee RSP and store register values are observer reports; this audit rechecks their saved arithmetic and stream relationships, not absent raw registers.",
+    "Single-task membership and live proc-exe/FD/path identity checks are source-attested; saved provider/map records permit the joins reported separately.",
+    "No architectural state equivalence, manual replay, rewritten/E9 execution, performance or full-A3 qualification follows."
+  ],
+  "original_review_sha256": "cc12610fb5f894ab95c37a7874d43a2550d4a9c8f9e7bfc900ebabe2c6dadd46",
+  "originals": {
+    "audit_input_bytes": 748206713,
+    "audit_input_files": 3960,
+    "audit_input_sha256": "f151804d436b73e5f94f1129c053d7e7d8380dd414f2bd61150d133fa3fe92c1",
+    "audit_sha256": "2c95ad66825018812ab127e2b5274955a5512e80054b268e14212acb8a21676a",
+    "audited_totals": {
+      "calls": 2426,
+      "events": 35950,
+      "jump_visits": 4186,
+      "steps": 35886,
+      "stores": 2024
+    },
+    "captures": 912,
+    "command_status": "PASS_COMMAND_AND_CAPTURE_SCHEMA",
+    "content_status": "PASS_SAVED_CONTENT",
+    "files": 1128,
+    "input_bytes": 598448637,
+    "input_files": 2732,
+    "mandatory_cases": 16,
+    "parent": {
+      "exit": 0,
+      "operational_seconds": 68.20951651898213,
+      "parent_wait_returned": true,
+      "pid": 749901,
+      "scope": "Actual caller wait on recipe child; helper descendant closure remains separately required.",
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "59a8d842152084251dd1640eac5262624fbc3c40d828056b3253f8023a50aca1"
+    },
+    "postprocessing": {
+      "assembly": {
+        "elapsed_seconds": 4.506415468174964,
+        "parent": {
+          "exit": 0,
+          "operational_seconds": 4.5731199809815735,
+          "parent_wait_returned": true
+        },
+        "receipt_sha256": "78b8f064ed5abed8edfe4312eecd3a864246bdd8498fdb876ed6bf0ada5893b5"
+      },
+      "audit": {
+        "elapsed_seconds": 59.41307145287283,
+        "parent": {
+          "exit": 0,
+          "operational_seconds": 59.48008985398337,
+          "parent_wait_returned": true
+        },
+        "receipt_sha256": "5a68f5edebf688c2b500b41160f7fcc50b1558c4bbbff8029ec3e681c0159588"
+      }
+    },
+    "raw_bytes": 147333492,
+    "static_heads_each": 87,
+    "static_heap_sites_each": 1,
+    "static_jump_sites_each": 9,
+    "successful_cases": 16
+  },
+  "performance_claim": false,
+  "preparation_revision": "ab443afc2f4d9b62a9d04d56c4ca78a10e48ec05",
+  "verifier_recipe_sources_available": true,
+  "verifier_reproduction_scope": "Byte-identical source recipes are published in recipe-sources.json; fresh exact-revision build/caller epochs remain required. The hash-only admit.py dependency is copied but never executed by these four recipes. Nondeterministic directory timestamp failures need not recur.",
+  "source_materializer_execution": "UNRUN; copy-only implementation supplied for review",
+  "projection_scope": "Saved-data projection of independent actual reviews; no new content audit, product validation or workload.",
+  "receipt_inputs_unchanged_scope": "The strict helper field covers its request/helper bytes; separate saved source/input/runtime joins establish their own stated scopes.",
+  "recorded_caller_affinity": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "rewritten_or_e9_application_credit": 0,
+  "schema": 1,
+  "scope": "Original application observations and saved-content checks; failed verifier archival records remain separate.",
+  "source_files": 1839,
+  "source_hashes": {
+    "evaluation/e9-common-app/audit_originals.py": {
+      "bytes": 57136,
+      "mode": "100644",
+      "sha256": "20c869183662f0afc178f38206d42881227a1fa7fd6b2d9ff40e4b05560d1fa3"
+    },
+    "evaluation/e9-common-app/observe_originals.py": {
+      "bytes": 37320,
+      "mode": "100644",
+      "sha256": "f84d4246e1b25032fb7ba7244d74f4c4a41d7d4049be52d2ed7ace6fdc18769d"
+    },
+    "tests/support/e9_common_app.rs": {
+      "bytes": 50670,
+      "mode": "100644",
+      "sha256": "faec58111347cc1c0d41c0fa47862207ae8938f7b4caddad98b4afc3043699ae"
+    },
+    "tests/support/elf_exec_driver.rs": {
+      "bytes": 1162,
+      "mode": "100644",
+      "sha256": "ec93bf0f948f8b2c303839adf99c6e6b39c8211c65c94ec3c966d983d82d662a"
+    },
+    "tests/support/elf_exec_oracle.rs": {
+      "bytes": 46370,
+      "mode": "100644",
+      "sha256": "1302da90836b31f9346cff5c20a458f4e5b3134b0f529e21f5027f78e4764c6b"
+    },
+    "tools/unwind-oracle/bounded_command.py": {
+      "bytes": 7710,
+      "mode": "100644",
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    }
+  },
+  "status": "ORIGINAL_CONTENT_PASS_WITH_FOUR_RETAINED_ARCHIVE_FAILURES",
+  "successful_fresh_verifier_archives": 0,
+  "tested_revision": "9884b7a259b4e0ea80d2cca6d726abab4594807a",
+  "timing_scope": "Operational wall durations only, not benchmarks.",
+  "verifier_attempts": [
+    {
+      "after_snapshots_saved": false,
+      "archive_recipe_exit": 1,
+      "archive_status": "FAILED_COMBINED_ALIAS_OR_TARGET_STABILITY_ASSERTION",
+      "attempt": 1,
+      "compiler_absence_proof": "ECHILD",
+      "compiler_exit": 0,
+      "compiler_outer_seconds": 1.3674623700790107,
+      "compiler_receipt_seconds": 1.3154900982044637,
+      "compiler_receipt_sha256": "a036af237d00fdae450808e2be8a15655adca422c9efab97688fe488ed6d67ff",
+      "compiler_request_sha256": "8185b0568633c6ccac012b39cece961f0ad87495be1d2c8eac91c363cd1c4cfa",
+      "exact_mismatch": null,
+      "parent_seconds": 4.260683972854167,
+      "parent_wait_returned": true,
+      "private_recipe_sha256": "b6ae97aae1b246719621c72a6387d18015b6697d6b7667a985edc08d13328014",
+      "reported_archive_bytes": 204774633,
+      "reported_archive_files": 43,
+      "reported_product_bytes_independently_read": false,
+      "source_dependencies": 46,
+      "success_admission": false
+    },
+    {
+      "after_snapshots_saved": true,
+      "archive_recipe_exit": 1,
+      "archive_status": "FAILED_ALIAS_DIRECTORY_STABILITY",
+      "attempt": 2,
+      "compiler_absence_proof": "ECHILD",
+      "compiler_exit": 0,
+      "compiler_outer_seconds": 0.2650881549343467,
+      "compiler_receipt_seconds": 0.18250795197673142,
+      "compiler_receipt_sha256": "1e607d0d6e3c520d1a4613f6cd2dd2712ec80c812438b9ae68f25c0e596c48b2",
+      "compiler_request_sha256": "e8190fe6ccd4a471df4daff0036cfba412cd4ec4d8512507cf0b391b88ab989d",
+      "exact_mismatch": {
+        "affected_alias_rows": 46,
+        "after_ctime_ns": 1793063001753308997,
+        "after_mtime_ns": 1793063001753308997,
+        "before_ctime_ns": 1793063000675043925,
+        "before_mtime_ns": 1793063000675043925,
+        "changed_scalar_fields": 92,
+        "directory": "${HOME_DIRECTORY_PARENT}",
+        "fields": [
+          "mtime_ns",
+          "ctime_ns"
+        ],
+        "remaining_source_alias_fields_equal": true,
+        "source_tools_configs_target_owner_records_equal": {
+          "configs": true,
+          "source": true,
+          "target-owners": true,
+          "tools": true
+        }
+      },
+      "parent_seconds": 3.2585596728604287,
+      "parent_wait_returned": true,
+      "private_recipe_sha256": "c3b58c2642487d8bddb49cc98efdf996af77c1dd1e15c532224e8de900c9b24c",
+      "reported_archive_bytes": 204774633,
+      "reported_archive_files": 43,
+      "reported_product_bytes_independently_read": false,
+      "source_dependencies": 46,
+      "success_admission": false
+    },
+    {
+      "after_snapshots_saved": true,
+      "archive_recipe_exit": 1,
+      "archive_status": "FAILED_ALIAS_DIRECTORY_STABILITY",
+      "attempt": 3,
+      "compiler_absence_proof": "ECHILD",
+      "compiler_exit": 0,
+      "compiler_outer_seconds": 0.21500870096497238,
+      "compiler_receipt_seconds": 0.17012174800038338,
+      "compiler_receipt_sha256": "87bd3aa93fb80cb74b19052144c6a7dc45ee38e4385869fc46a81bde34d80f75",
+      "compiler_request_sha256": "7218bdee74b51ac20e2d7090129391de85b5518155d7bed66e80c03075e3fa71",
+      "exact_mismatch": {
+        "affected_alias_rows": 46,
+        "after_ctime_ns": 1793063109522610881,
+        "after_mtime_ns": 1793063109522610881,
+        "before_ctime_ns": 1793063107517946130,
+        "before_mtime_ns": 1793063107517946130,
+        "changed_scalar_fields": 92,
+        "directory": "${HOME_DIRECTORY_PARENT}",
+        "fields": [
+          "mtime_ns",
+          "ctime_ns"
+        ],
+        "remaining_source_alias_fields_equal": true,
+        "source_tools_configs_target_owner_records_equal": {
+          "configs": true,
+          "source": true,
+          "target-owners": true,
+          "tools": true
+        }
+      },
+      "parent_seconds": 3.200356346089393,
+      "parent_wait_returned": true,
+      "private_recipe_sha256": "419eb45972ebce7509559874a9ba81054fd620f4b8fcf31335417a77decf87d0",
+      "reported_archive_bytes": 204774633,
+      "reported_archive_files": 43,
+      "reported_product_bytes_independently_read": false,
+      "source_dependencies": 46,
+      "success_admission": false
+    },
+    {
+      "after_snapshots_saved": true,
+      "archive_recipe_exit": 1,
+      "archive_status": "FAILED_ALIAS_DIRECTORY_STABILITY",
+      "attempt": 4,
+      "compiler_absence_proof": "ECHILD",
+      "compiler_exit": 0,
+      "compiler_outer_seconds": 0.21516157500445843,
+      "compiler_receipt_seconds": 0.1649438061285764,
+      "compiler_receipt_sha256": "3e2c7767d07a89870a1d4365c62a67327241a964ec23c56f31425f3b862acfbc",
+      "compiler_request_sha256": "aaaf68d87e7c9ee8522ae44ce979a5f8062b97346dd49825b3e1da89074af67e",
+      "exact_mismatch": {
+        "affected_alias_rows": 46,
+        "after_ctime_ns": 1793063365197514366,
+        "after_mtime_ns": 1793063365197514366,
+        "before_ctime_ns": 1793063364486514681,
+        "before_mtime_ns": 1793063364486514681,
+        "changed_scalar_fields": 92,
+        "directory": "${HOME_DIRECTORY_PARENT}",
+        "fields": [
+          "mtime_ns",
+          "ctime_ns"
+        ],
+        "remaining_source_alias_fields_equal": true,
+        "source_tools_configs_target_owner_records_equal": {
+          "configs": true,
+          "source": true,
+          "target-owners": true,
+          "tools": true
+        }
+      },
+      "parent_seconds": 3.0847883948590606,
+      "parent_wait_returned": true,
+      "private_recipe_sha256": "23e72599cce39029fd6fb5b3a4dba1c4f7d21acb5fcb5e7c2d98c136512322ad",
+      "reported_archive_bytes": 204774633,
+      "reported_archive_files": 43,
+      "reported_product_bytes_independently_read": false,
+      "source_dependencies": 46,
+      "success_admission": false
+    }
+  ],
+  "verifier_hardware_scope": "Same epoch host context; no independent hardware record per verifier attempt.",
+  "verifier_review_sha256": "e49cf904f3c3dc842a21b2830e6aad26dde5ce52ffa8d3dcb2ad1db0d5c676f4"
+}
