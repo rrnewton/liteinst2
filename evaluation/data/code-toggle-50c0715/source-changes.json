@@ -1,0 +1,48 @@
+[
+  {
+    "after_attempt": "3947966",
+    "after_revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "before_attempt": "527962e",
+    "before_revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "files": [
+      {
+        "after": {
+          "bytes": 31153,
+          "mode": "100644",
+          "sha256": "e639f5b8de01f5251e8f7da7f17a07d4312e292456cccb65bbf080583226b426"
+        },
+        "before": {
+          "bytes": 31126,
+          "mode": "100644",
+          "sha256": "07d92b5bc8d1585abb338a7c90999108cb2da5dbec64411bd26e49a5e6f293ae"
+        },
+        "corrected_git_object": "3947966c0230344a17d8f05e8479483b8328246c:tools/rapid-profiler/src/data_flag/code_toggle.rs",
+        "original_git_object": "527962e72512993fa612cc4fbb507bef8fef1a8d:tools/rapid-profiler/src/data_flag/code_toggle.rs",
+        "path": "tools/rapid-profiler/src/data_flag/code_toggle.rs"
+      }
+    ]
+  },
+  {
+    "after_attempt": "50c0715",
+    "after_revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "before_attempt": "3947966",
+    "before_revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "files": [
+      {
+        "after": {
+          "bytes": 19981,
+          "mode": "100644",
+          "sha256": "7d0a7219e8344cf00c5c4edf862579d5ef26767eb694fce28b06d398131ca02f"
+        },
+        "before": {
+          "bytes": 19800,
+          "mode": "100644",
+          "sha256": "779486c831d4f33ccc9f1a005a56554cc41f26b7272052ce6d17376b36fbc0f3"
+        },
+        "corrected_git_object": "50c0715e015107c92a8ecee03735645a83734220:tools/rapid-profiler/src/data_flag.rs",
+        "original_git_object": "3947966c0230344a17d8f05e8479483b8328246c:tools/rapid-profiler/src/data_flag.rs",
+        "path": "tools/rapid-profiler/src/data_flag.rs"
+      }
+    ]
+  }
+]

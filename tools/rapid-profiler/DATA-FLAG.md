@@ -1,6 +1,6 @@
 # Generation-bound point controls
 
-`data_flag::DataFlagSession` is an additive Linux x86-64 point-observation adapter. It connects actual managed `ProbeControl` flags and generated observing callbacks to the existing bounded `Session`, generation reservations and thread-local completion owners. It does not implement application entry/return intervals or complete A4 qualification. All new tests in this proposal are unexecuted.
+`data_flag::DataFlagSession` is an additive Linux x86-64 point-observation adapter. It connects actual managed `ProbeControl` flags and generated observing callbacks to the existing bounded `Session`, generation reservations and thread-local completion owners. It does not implement application entry/return intervals or complete A4 qualification. Validation results for this adapter are recorded in [the revision-pinned A4 report](../../evaluation/code-toggle-50c0715.md).
 
 The controller constructs its controls internally. `actions()` returns planner-readable clones for the existing `TrampolinePlan::from_controlled_actions`; the trusted publisher must preserve the PC/control association and satisfy its existing ISA, entry, code-publication and process-lifetime image obligations. The adapter never writes executable bytes. The generated observer still saves full state before testing a flag, so this is not an early cheap gate. Generalized pun remains a separate install-once tactic, not RapidProbe.
 
@@ -32,7 +32,7 @@ Callbacks must obey the existing state-preserving, non-unwinding hook contract. 
 
 The native interval-pair path is deliberately unsupported. Its entry creates bookkeeping even on `FunctionClosed`, and its exit requires that pair. Simply gating those callbacks could create an unmatched exit or strand an old frame. Always-on pairing/bookkeeping needs a separate implementation before interval toggling can be admitted.
 
-## Prospective correctness checks
+## Correctness checks
 
 One generated MOV/NOP/NOP/RET image test uses three real controlled callbacks and four deterministic cohorts. Channel waits are bounded at five seconds; errors/panics are not converted to success. The caller's existing bounded test command remains the execution authority.
 
@@ -41,4 +41,4 @@ One generated MOV/NOP/NOP/RET image test uses three real controlled callbacks an
 3. Pause the second coalesced member, close only the first through the real bounded scan, retain the second and mandatory callback, then verify stale-true admission refusal, explicit closure and mandatory work after disarm.
 4. Attach a different controller at identical PCs/install number, execute the old live image, and require two binding refusals while the unchanged mandatory callback runs.
 
-All cohorts retain the original return value and compare the entire emitted code bytes before/after updates. Control tests additionally cover both managed-setter refusals, exact distinct writer identity and transparent token layout; compile-fail examples cover writer duplication, token escape/static storage and private Session access. These tests do not replace the existing full-state controlled-emitter or generation/TLS suites. No performance, full architectural equivalence, completed physical visibility, interval-pair support, code reclamation or overall A4 result is claimed by this source proposal.
+All cohorts retain the original return value and compare the entire emitted code bytes before/after updates. Control tests additionally cover both managed-setter refusals, exact distinct writer identity and transparent token layout; compile-fail examples cover writer duplication, token escape/static storage and private Session access. These tests do not replace the existing full-state controlled-emitter or generation/TLS suites. No performance, full architectural equivalence, completed physical visibility, interval-pair support, code reclamation or overall A4 result is claimed here.

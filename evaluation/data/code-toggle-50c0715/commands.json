@@ -1,0 +1,2130 @@
+[
+  {
+    "attempt": "527962e",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v1/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_527962E}/targeted-profiler",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "targeted-profiler"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "1998c4f7a0ae869484289ebcfa499e56c1d68f35fa0b09d25f87b4bdf5e9494e",
+        "parent_timeout_seconds": 240,
+        "source_revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+        "source_sha256": "25c0e3998ddac3c4b27c6692d0661d006f6c25f0276297d74c035c9b1f64d2d1"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "rapid-profiler",
+          "--all-targets"
+        ],
+        "caller_sha256": "25c0e3998ddac3c4b27c6692d0661d006f6c25f0276297d74c035c9b1f64d2d1",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_527962E}/targeted-profiler/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+        "timeout_seconds": 180
+      },
+      "parent": {
+        "exit": 1,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 3676841,
+        "seconds": 4.022533135954291,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "3073520120b21b53066855447382755b18567e92cc5a5ae764aaad43ca009a2f"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 101,
+        "private_log_sha256": "4e43fb0c2a07b509a4fc8be3ea7e23d32dfdde48164a5213802c612131d5bf12",
+        "reaped_descendants": 0,
+        "seconds": 3.1279818611219525,
+        "start_utc": "2026-10-27T09:32:37.452830+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1189503.754526477,
+        "pid": 3676841
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 101,
+          "private_log_sha256": "4e43fb0c2a07b509a4fc8be3ea7e23d32dfdde48164a5213802c612131d5bf12",
+          "reaped_descendants": 0,
+          "seconds": 3.1279818611219525,
+          "start_utc": "2026-10-27T09:32:37.452830+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "targeted-profiler",
+        "qualification_complete": false,
+        "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+        "source_tools_configs_equal": true,
+        "status": "FAILED"
+      }
+    },
+    "counts": null,
+    "exit": 101,
+    "id": "527962e/targeted-profiler",
+    "log_sha256": "4e43fb0c2a07b509a4fc8be3ea7e23d32dfdde48164a5213802c612131d5bf12",
+    "parent_seconds": 4.022533135954291,
+    "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "scope": "validation",
+    "seconds": 3.1279818611219525,
+    "status": "FAILED"
+  },
+  {
+    "attempt": "527962e",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "527962e/targeted-doc",
+    "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "scope": "validation",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "527962e",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "527962e/required",
+    "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "scope": "required-dispatch",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "527962e",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "527962e/required/fmt",
+    "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "scope": "required-gate",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "527962e",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "527962e/required/clippy",
+    "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "scope": "required-gate",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "527962e",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "527962e/required/test",
+    "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "scope": "required-gate",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "527962e",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "527962e/required/check",
+    "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "scope": "required-gate",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "527962e",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "527962e/serial",
+    "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "scope": "validation",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "527962e",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "527962e/parallel-library",
+    "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "scope": "validation",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "527962e",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "527962e/parallel-prefixed",
+    "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "scope": "validation",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "527962e",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "527962e/parallel-neighbor",
+    "revision": "527962e72512993fa612cc4fbb507bef8fef1a8d",
+    "scope": "validation",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "3947966",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v2/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_3947966}/targeted-profiler",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "targeted-profiler"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "4d16157cfce8a408f7f8ef20a9d25bb04c34ea16b3eeead5ef00199d831885c8",
+        "parent_timeout_seconds": 240,
+        "source_revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "source_sha256": "d40cec84f10ddb54b55ff613820630d5dfc9a5a7d3ab440355236a5bebc3eb5d"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "rapid-profiler",
+          "--all-targets"
+        ],
+        "caller_sha256": "d40cec84f10ddb54b55ff613820630d5dfc9a5a7d3ab440355236a5bebc3eb5d",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_3947966}/targeted-profiler/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "timeout_seconds": 180
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 3824677,
+        "seconds": 3.379205753095448,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "8d5342f12c2cfedddf23ae691241300eb8d05440f21cdaf19d60ef2545a65169"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "9e23bde117552b6b536ba4144022ca785c433e4bce66c9225290a41e05d1d1b6",
+        "reaped_descendants": 0,
+        "seconds": 2.4768540889490396,
+        "start_utc": "2026-10-27T09:34:34.788838+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1189621.03068528,
+        "pid": 3824677
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "9e23bde117552b6b536ba4144022ca785c433e4bce66c9225290a41e05d1d1b6",
+          "reaped_descendants": 0,
+          "seconds": 2.4768540889490396,
+          "start_utc": "2026-10-27T09:34:34.788838+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "targeted-profiler",
+        "qualification_complete": false,
+        "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "source_tools_configs_equal": true,
+        "status": "PASS"
+      }
+    },
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 176
+    },
+    "exit": 0,
+    "id": "3947966/targeted-profiler",
+    "log_sha256": "9e23bde117552b6b536ba4144022ca785c433e4bce66c9225290a41e05d1d1b6",
+    "parent_seconds": 3.379205753095448,
+    "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "scope": "validation",
+    "seconds": 2.4768540889490396,
+    "status": "PASS"
+  },
+  {
+    "attempt": "3947966",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v2/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_3947966}/targeted-doc",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "targeted-doc"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "4d16157cfce8a408f7f8ef20a9d25bb04c34ea16b3eeead5ef00199d831885c8",
+        "parent_timeout_seconds": 240,
+        "source_revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "source_sha256": "d40cec84f10ddb54b55ff613820630d5dfc9a5a7d3ab440355236a5bebc3eb5d"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "-p",
+          "rapid-profiler",
+          "--doc"
+        ],
+        "caller_sha256": "d40cec84f10ddb54b55ff613820630d5dfc9a5a7d3ab440355236a5bebc3eb5d",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_3947966}/targeted-doc/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "timeout_seconds": 180
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 3875377,
+        "seconds": 1.3676080631557852,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "c401effe55983cf35de3e845b369a2c3d7c12b3d4e8a09bec63184a7dc00f0c8"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "02826f3adf3456d394754073e0a6ef4308d2fa1895fa436545c496a580345f11",
+        "reaped_descendants": 0,
+        "seconds": 0.49728549690917134,
+        "start_utc": "2026-10-27T09:35:09.924881+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1189656.243874742,
+        "pid": 3875377
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "02826f3adf3456d394754073e0a6ef4308d2fa1895fa436545c496a580345f11",
+          "reaped_descendants": 0,
+          "seconds": 0.49728549690917134,
+          "start_utc": "2026-10-27T09:35:09.924881+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "targeted-doc",
+        "qualification_complete": false,
+        "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "source_tools_configs_equal": true,
+        "status": "PASS"
+      }
+    },
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 14
+    },
+    "exit": 0,
+    "id": "3947966/targeted-doc",
+    "log_sha256": "02826f3adf3456d394754073e0a6ef4308d2fa1895fa436545c496a580345f11",
+    "parent_seconds": 1.3676080631557852,
+    "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "scope": "validation",
+    "seconds": 0.49728549690917134,
+    "status": "PASS"
+  },
+  {
+    "attempt": "3947966",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v2/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_3947966}/required",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "required"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "4d16157cfce8a408f7f8ef20a9d25bb04c34ea16b3eeead5ef00199d831885c8",
+        "parent_timeout_seconds": 1060,
+        "source_revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "source_sha256": "d40cec84f10ddb54b55ff613820630d5dfc9a5a7d3ab440355236a5bebc3eb5d"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/evaluation/required-gates.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_3947966}/required/gates"
+        ],
+        "caller_sha256": "d40cec84f10ddb54b55ff613820630d5dfc9a5a7d3ab440355236a5bebc3eb5d",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_3947966}/required/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "timeout_seconds": 1000
+      },
+      "parent": {
+        "exit": 1,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 3900496,
+        "seconds": 17.204936344875023,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "588d993d0e2e194a7e58858bf6a59e7467b65d0b4da71f3b745057ea0ad044d2"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "6275058e93bdc9a95a1c7f135b0c5df6fa93ca1ff735c3b3bf0a1de5fe1d5271",
+        "reaped_descendants": 0,
+        "seconds": 16.355062248185277,
+        "start_utc": "2026-10-27T09:35:23.040887+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1189669.360804538,
+        "pid": 3900496
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 1,
+          "private_log_sha256": "6275058e93bdc9a95a1c7f135b0c5df6fa93ca1ff735c3b3bf0a1de5fe1d5271",
+          "reaped_descendants": 0,
+          "seconds": 16.355062248185277,
+          "start_utc": "2026-10-27T09:35:23.040887+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "required",
+        "qualification_complete": false,
+        "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "source_tools_configs_equal": true,
+        "status": "FAILED"
+      }
+    },
+    "counts": null,
+    "exit": 1,
+    "id": "3947966/required",
+    "log_sha256": "6275058e93bdc9a95a1c7f135b0c5df6fa93ca1ff735c3b3bf0a1de5fe1d5271",
+    "parent_seconds": 17.204936344875023,
+    "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "scope": "required-dispatch",
+    "seconds": 16.355062248185277,
+    "status": "FAILED"
+  },
+  {
+    "attempt": "3947966",
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "LITEINST_EVALUATION": "1",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "",
+        "RUSTFLAGS": "",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_3947966}/required/gates"
+      },
+      "record": {
+        "argv": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "exit": 0,
+        "log": "ignored/a4/code-toggle-validation-v2/required/gates/fmt.log",
+        "name": "fmt",
+        "seconds": 5.279526883037761,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "start_utc": "2026-10-27T09:35:23.208583+00:00",
+        "timeout_seconds": 180
+      }
+    },
+    "counts": null,
+    "exit": 0,
+    "id": "3947966/required/fmt",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "scope": "required-gate",
+    "seconds": 5.279526883037761,
+    "status": "PASS"
+  },
+  {
+    "attempt": "3947966",
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "LITEINST_EVALUATION": "1",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "",
+        "RUSTFLAGS": "",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_3947966}/required/gates"
+      },
+      "record": {
+        "argv": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit": 101,
+        "log": "ignored/a4/code-toggle-validation-v2/required/gates/clippy.log",
+        "name": "clippy",
+        "seconds": 10.893863053061068,
+        "sha256": "b073819a1d172630df64e18f81756c011e3d93435d546ff13d9e0e8958d82926",
+        "start_utc": "2026-10-27T09:35:28.491823+00:00",
+        "timeout_seconds": 180
+      }
+    },
+    "counts": null,
+    "exit": 101,
+    "id": "3947966/required/clippy",
+    "log_sha256": "b073819a1d172630df64e18f81756c011e3d93435d546ff13d9e0e8958d82926",
+    "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "scope": "required-gate",
+    "seconds": 10.893863053061068,
+    "status": "FAILED"
+  },
+  {
+    "attempt": "3947966",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "3947966/required/test",
+    "log_sha256": null,
+    "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "scope": "required-gate",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "3947966",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "3947966/required/check",
+    "log_sha256": null,
+    "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "scope": "required-gate",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "3947966",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "3947966/serial",
+    "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "scope": "validation",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "3947966",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v2/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_3947966}/parallel-library",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "parallel-library"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "4d16157cfce8a408f7f8ef20a9d25bb04c34ea16b3eeead5ef00199d831885c8",
+        "parent_timeout_seconds": 420,
+        "source_revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "source_sha256": "d40cec84f10ddb54b55ff613820630d5dfc9a5a7d3ab440355236a5bebc3eb5d"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--lib"
+        ],
+        "caller_sha256": "d40cec84f10ddb54b55ff613820630d5dfc9a5a7d3ab440355236a5bebc3eb5d",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_3947966}/parallel-library/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "timeout_seconds": 360
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 3843270,
+        "seconds": 6.176937764044851,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "19cb27e6914ff9c060a5aa4cf7d03c067d779da0f376f8480d25deb0e5ce30c1"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "74eed5d4b7219f9739042cdd55609ba680a21e9df49f1788edd189f3ddb306ea",
+        "reaped_descendants": 0,
+        "seconds": 5.317796190036461,
+        "start_utc": "2026-10-27T09:34:49.101946+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1189635.408089048,
+        "pid": 3843270
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "74eed5d4b7219f9739042cdd55609ba680a21e9df49f1788edd189f3ddb306ea",
+          "reaped_descendants": 0,
+          "seconds": 5.317796190036461,
+          "start_utc": "2026-10-27T09:34:49.101946+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "parallel-library",
+        "qualification_complete": false,
+        "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+        "source_tools_configs_equal": true,
+        "status": "PASS"
+      }
+    },
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 1,
+      "measured": 0,
+      "passed": 218
+    },
+    "exit": 0,
+    "id": "3947966/parallel-library",
+    "log_sha256": "74eed5d4b7219f9739042cdd55609ba680a21e9df49f1788edd189f3ddb306ea",
+    "parent_seconds": 6.176937764044851,
+    "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "scope": "validation",
+    "seconds": 5.317796190036461,
+    "status": "PASS"
+  },
+  {
+    "attempt": "3947966",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "3947966/parallel-prefixed",
+    "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "scope": "validation",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "3947966",
+    "context": null,
+    "counts": null,
+    "exit": null,
+    "id": "3947966/parallel-neighbor",
+    "revision": "3947966c0230344a17d8f05e8479483b8328246c",
+    "scope": "validation",
+    "seconds": null,
+    "status": "UNRUN"
+  },
+  {
+    "attempt": "50c0715",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v3/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_50C0715}/targeted-profiler",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "targeted-profiler"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "8c9f2e1e38525081ce67a1e47afc86aa1f0b9dba5ab7579d0d0cd50a85532562",
+        "parent_timeout_seconds": 240,
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "rapid-profiler",
+          "--all-targets"
+        ],
+        "caller_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_50C0715}/targeted-profiler/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "timeout_seconds": 180
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 759058,
+        "seconds": 1.9686840591020882,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "6b7231540d33ee32b30456ca6e7daeb445428f79f814f8ae821b20c580b54f47"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "987e351427e3f21a23731e58a84e94195c61f261e38bc6e05537e7a745740454",
+        "reaped_descendants": 0,
+        "seconds": 1.0381601550616324,
+        "start_utc": "2026-10-27T09:44:15.145164+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1190201.419534528,
+        "pid": 759058
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "987e351427e3f21a23731e58a84e94195c61f261e38bc6e05537e7a745740454",
+          "reaped_descendants": 0,
+          "seconds": 1.0381601550616324,
+          "start_utc": "2026-10-27T09:44:15.145164+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "targeted-profiler",
+        "qualification_complete": false,
+        "revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_tools_configs_equal": true,
+        "status": "PASS"
+      }
+    },
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 176
+    },
+    "exit": 0,
+    "id": "50c0715/targeted-profiler",
+    "log_sha256": "987e351427e3f21a23731e58a84e94195c61f261e38bc6e05537e7a745740454",
+    "parent_seconds": 1.9686840591020882,
+    "revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "scope": "validation",
+    "seconds": 1.0381601550616324,
+    "status": "PASS"
+  },
+  {
+    "attempt": "50c0715",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v3/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_50C0715}/targeted-doc",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "targeted-doc"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "8c9f2e1e38525081ce67a1e47afc86aa1f0b9dba5ab7579d0d0cd50a85532562",
+        "parent_timeout_seconds": 240,
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "-p",
+          "rapid-profiler",
+          "--doc"
+        ],
+        "caller_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_50C0715}/targeted-doc/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "timeout_seconds": 180
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 821170,
+        "seconds": 1.569860473042354,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "8a955397da45b2c864424e9e4509a7cdd51014f5804725e9a70e7e12398eac00"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "d8fffd7e1718574b6c847e11da0b363be99dc62c66b74b0d2c2a2b560885e5ce",
+        "reaped_descendants": 0,
+        "seconds": 0.49509964301250875,
+        "start_utc": "2026-10-27T09:44:51.367967+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1190237.482168152,
+        "pid": 821170
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "d8fffd7e1718574b6c847e11da0b363be99dc62c66b74b0d2c2a2b560885e5ce",
+          "reaped_descendants": 0,
+          "seconds": 0.49509964301250875,
+          "start_utc": "2026-10-27T09:44:51.367967+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "targeted-doc",
+        "qualification_complete": false,
+        "revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_tools_configs_equal": true,
+        "status": "PASS"
+      }
+    },
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 14
+    },
+    "exit": 0,
+    "id": "50c0715/targeted-doc",
+    "log_sha256": "d8fffd7e1718574b6c847e11da0b363be99dc62c66b74b0d2c2a2b560885e5ce",
+    "parent_seconds": 1.569860473042354,
+    "revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "scope": "validation",
+    "seconds": 0.49509964301250875,
+    "status": "PASS"
+  },
+  {
+    "attempt": "50c0715",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v3/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_50C0715}/required",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "required"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "8c9f2e1e38525081ce67a1e47afc86aa1f0b9dba5ab7579d0d0cd50a85532562",
+        "parent_timeout_seconds": 1060,
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/evaluation/required-gates.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_50C0715}/required/gates"
+        ],
+        "caller_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_50C0715}/required/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "timeout_seconds": 1000
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 4162863,
+        "seconds": 379.8193287081085,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "d40721416238dfdacd47743a08b06d89604fc0c44fc6a1e7ee1419eee5779a11"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "4bf57a4fe28d46eff5848ee5be0d69a1efe1ea1a68af969e5cec2f51cf39e562",
+        "reaped_descendants": 0,
+        "seconds": 378.8687987229787,
+        "start_utc": "2026-10-27T09:37:52.187534+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1189818.440983576,
+        "pid": 4162863
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "4bf57a4fe28d46eff5848ee5be0d69a1efe1ea1a68af969e5cec2f51cf39e562",
+          "reaped_descendants": 0,
+          "seconds": 378.8687987229787,
+          "start_utc": "2026-10-27T09:37:52.187534+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "required",
+        "qualification_complete": false,
+        "revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_tools_configs_equal": true,
+        "status": "PASS"
+      }
+    },
+    "counts": null,
+    "exit": 0,
+    "id": "50c0715/required",
+    "log_sha256": "4bf57a4fe28d46eff5848ee5be0d69a1efe1ea1a68af969e5cec2f51cf39e562",
+    "parent_seconds": 379.8193287081085,
+    "revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "scope": "required-dispatch",
+    "seconds": 378.8687987229787,
+    "status": "PASS"
+  },
+  {
+    "attempt": "50c0715",
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "LITEINST_EVALUATION": "1",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "",
+        "RUSTFLAGS": "",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_50C0715}/required/gates"
+      },
+      "record": {
+        "argv": [
+          "cargo",
+          "fmt",
+          "--check"
+        ],
+        "exit": 0,
+        "log": "ignored/a4/code-toggle-validation-v3/required/gates/fmt.log",
+        "name": "fmt",
+        "seconds": 5.275481673888862,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "start_utc": "2026-10-27T09:37:52.367414+00:00",
+        "timeout_seconds": 180
+      }
+    },
+    "counts": null,
+    "exit": 0,
+    "id": "50c0715/required/fmt",
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "scope": "required-gate",
+    "seconds": 5.275481673888862,
+    "status": "PASS"
+  },
+  {
+    "attempt": "50c0715",
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "LITEINST_EVALUATION": "1",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "",
+        "RUSTFLAGS": "",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_50C0715}/required/gates"
+      },
+      "record": {
+        "argv": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit": 0,
+        "log": "ignored/a4/code-toggle-validation-v3/required/gates/clippy.log",
+        "name": "clippy",
+        "seconds": 24.22180294105783,
+        "sha256": "5a4c6b33ec2b9b4155cb91cf6841ce7da88a335c5e0089ed122cd1dc40d83118",
+        "start_utc": "2026-10-27T09:37:57.646226+00:00",
+        "timeout_seconds": 180
+      }
+    },
+    "counts": null,
+    "exit": 0,
+    "id": "50c0715/required/clippy",
+    "log_sha256": "5a4c6b33ec2b9b4155cb91cf6841ce7da88a335c5e0089ed122cd1dc40d83118",
+    "revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "scope": "required-gate",
+    "seconds": 24.22180294105783,
+    "status": "PASS"
+  },
+  {
+    "attempt": "50c0715",
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "LITEINST_EVALUATION": "1",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "",
+        "RUSTFLAGS": "",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_50C0715}/required/gates"
+      },
+      "record": {
+        "argv": [
+          "cargo",
+          "test",
+          "--workspace"
+        ],
+        "exit": 0,
+        "log": "ignored/a4/code-toggle-validation-v3/required/gates/test.log",
+        "name": "test",
+        "seconds": 327.36077915900387,
+        "sha256": "b3000e06016a24fc107dd748a271c64f64208d1c703fc9fe4e03e23c0d32a8e0",
+        "start_utc": "2026-10-27T09:38:21.875372+00:00",
+        "timeout_seconds": 360
+      }
+    },
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 4,
+      "measured": 0,
+      "passed": 2252
+    },
+    "exit": 0,
+    "id": "50c0715/required/test",
+    "log_sha256": "b3000e06016a24fc107dd748a271c64f64208d1c703fc9fe4e03e23c0d32a8e0",
+    "revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "scope": "required-gate",
+    "seconds": 327.36077915900387,
+    "status": "PASS"
+  },
+  {
+    "attempt": "50c0715",
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "LITEINST_EVALUATION": "1",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "",
+        "RUSTFLAGS": "",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW_50C0715}/required/gates"
+      },
+      "record": {
+        "argv": [
+          "cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "exit": 0,
+        "log": "ignored/a4/code-toggle-validation-v3/required/gates/check.log",
+        "name": "check",
+        "seconds": 21.661637928104028,
+        "sha256": "593c1362c521f033b8dba454a87ea7fce06b123bdf1c113004687b95d5772a4a",
+        "start_utc": "2026-10-27T09:43:49.240862+00:00",
+        "timeout_seconds": 180
+      }
+    },
+    "counts": null,
+    "exit": 0,
+    "id": "50c0715/required/check",
+    "log_sha256": "593c1362c521f033b8dba454a87ea7fce06b123bdf1c113004687b95d5772a4a",
+    "revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "scope": "required-gate",
+    "seconds": 21.661637928104028,
+    "status": "PASS"
+  },
+  {
+    "attempt": "50c0715",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v3/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_50C0715}/serial",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "serial"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "8c9f2e1e38525081ce67a1e47afc86aa1f0b9dba5ab7579d0d0cd50a85532562",
+        "parent_timeout_seconds": 240,
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--tests",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "caller_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_50C0715}/serial/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "timeout_seconds": 180
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 1075022,
+        "seconds": 125.4364884600509,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "2be78fea97dcf1d422d1b7fb9bd75fe98f54618352d7dc554acb2d2e77853f91"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "32c3572ae97ed91f857b57bdd2a35b0bd434bbff794749403c282989855cc70d",
+        "reaped_descendants": 0,
+        "seconds": 124.56837417697534,
+        "start_utc": "2026-10-27T09:46:46.347539+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1190352.650348498,
+        "pid": 1075022
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "32c3572ae97ed91f857b57bdd2a35b0bd434bbff794749403c282989855cc70d",
+          "reaped_descendants": 0,
+          "seconds": 124.56837417697534,
+          "start_utc": "2026-10-27T09:46:46.347539+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "serial",
+        "qualification_complete": false,
+        "revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_tools_configs_equal": true,
+        "status": "PASS"
+      }
+    },
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 995
+    },
+    "exit": 0,
+    "id": "50c0715/serial",
+    "log_sha256": "32c3572ae97ed91f857b57bdd2a35b0bd434bbff794749403c282989855cc70d",
+    "parent_seconds": 125.4364884600509,
+    "revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "scope": "validation",
+    "seconds": 124.56837417697534,
+    "status": "PASS"
+  },
+  {
+    "attempt": "50c0715",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v3/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_50C0715}/parallel-library",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "parallel-library"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "8c9f2e1e38525081ce67a1e47afc86aa1f0b9dba5ab7579d0d0cd50a85532562",
+        "parent_timeout_seconds": 420,
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--lib"
+        ],
+        "caller_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_50C0715}/parallel-library/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "timeout_seconds": 360
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 824126,
+        "seconds": 2.6696153320372105,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "43864602f97f20131e4f6652bc8756c0e62fc8104bf49a4d13976e2b7030ff1b"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "7058bad16c748ba55df38bf0721ee4bb2ae6bf45e6f7df9729718fb22dafd8aa",
+        "reaped_descendants": 0,
+        "seconds": 1.737798847956583,
+        "start_utc": "2026-10-27T09:44:52.826171+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1190239.087830981,
+        "pid": 824126
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "7058bad16c748ba55df38bf0721ee4bb2ae6bf45e6f7df9729718fb22dafd8aa",
+          "reaped_descendants": 0,
+          "seconds": 1.737798847956583,
+          "start_utc": "2026-10-27T09:44:52.826171+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "parallel-library",
+        "qualification_complete": false,
+        "revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_tools_configs_equal": true,
+        "status": "PASS"
+      }
+    },
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 1,
+      "measured": 0,
+      "passed": 218
+    },
+    "exit": 0,
+    "id": "50c0715/parallel-library",
+    "log_sha256": "7058bad16c748ba55df38bf0721ee4bb2ae6bf45e6f7df9729718fb22dafd8aa",
+    "parent_seconds": 2.6696153320372105,
+    "revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "scope": "validation",
+    "seconds": 1.737798847956583,
+    "status": "PASS"
+  },
+  {
+    "attempt": "50c0715",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v3/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_50C0715}/parallel-prefixed",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "parallel-prefixed"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "8c9f2e1e38525081ce67a1e47afc86aa1f0b9dba5ab7579d0d0cd50a85532562",
+        "parent_timeout_seconds": 420,
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--test",
+          "prefixed_pun_oracle"
+        ],
+        "caller_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_50C0715}/parallel-prefixed/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "timeout_seconds": 360
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 829704,
+        "seconds": 2.2687293509952724,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "32f45442c4eec9af44633d8ec667efb884e1c7b87443353a1e50386adeae131f"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "3cd7884d9585d8261c4d5e066c1371776cf635c523ec42d58742b0c3dc94bc95",
+        "reaped_descendants": 0,
+        "seconds": 1.3287556720897555,
+        "start_utc": "2026-10-27T09:44:55.521185+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1190241.795451085,
+        "pid": 829704
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "3cd7884d9585d8261c4d5e066c1371776cf635c523ec42d58742b0c3dc94bc95",
+          "reaped_descendants": 0,
+          "seconds": 1.3287556720897555,
+          "start_utc": "2026-10-27T09:44:55.521185+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "parallel-prefixed",
+        "qualification_complete": false,
+        "revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_tools_configs_equal": true,
+        "status": "PASS"
+      }
+    },
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 30
+    },
+    "exit": 0,
+    "id": "50c0715/parallel-prefixed",
+    "log_sha256": "3cd7884d9585d8261c4d5e066c1371776cf635c523ec42d58742b0c3dc94bc95",
+    "parent_seconds": 2.2687293509952724,
+    "revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "scope": "validation",
+    "seconds": 1.3287556720897555,
+    "status": "PASS"
+  },
+  {
+    "attempt": "50c0715",
+    "context": {
+      "caller": {
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/ignored/a4/code-toggle-integration-v3/validate.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW_50C0715}/parallel-neighbor",
+          "--toolchain",
+          "${TOOLCHAIN}",
+          "--user-home",
+          "${USER_HOME}",
+          "--cargo-home",
+          "${CARGO_HOME}",
+          "--phase",
+          "parallel-neighbor"
+        ],
+        "cwd": "${REPO}",
+        "env": {
+          "LC_ALL": "C.UTF-8",
+          "PATH": "/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1"
+        },
+        "parent_source_sha256": "8c9f2e1e38525081ce67a1e47afc86aa1f0b9dba5ab7579d0d0cd50a85532562",
+        "parent_timeout_seconds": 420,
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18"
+      },
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--test",
+          "neighbor_eviction_oracle"
+        ],
+        "caller_sha256": "240d0f9154a154adb88213d36d0ab49d20ec3332fa93cfe1a724c68a96cf9e18",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW_50C0715}/parallel-neighbor/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "timeout_seconds": 360
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 833638,
+        "seconds": 108.51625333796255,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "b0972058221c31c99fdae685c0ddfca9693187f4100abd2d8303e4835ad46784"
+      },
+      "process_result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "4897ecc5338fe61d200fa506e460e7d943a80dbe5f71dbed3e9f0eba9b25b47a",
+        "reaped_descendants": 0,
+        "seconds": 107.626575140981,
+        "start_utc": "2026-10-27T09:44:57.840292+00:00",
+        "termination": null
+      },
+      "started": {
+        "monotonic": 1190244.100759307,
+        "pid": 833638
+      },
+      "summary": {
+        "command": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "4897ecc5338fe61d200fa506e460e7d943a80dbe5f71dbed3e9f0eba9b25b47a",
+          "reaped_descendants": 0,
+          "seconds": 107.626575140981,
+          "start_utc": "2026-10-27T09:44:57.840292+00:00",
+          "termination": null
+        },
+        "durations": "operational, not performance measurements",
+        "phase": "parallel-neighbor",
+        "qualification_complete": false,
+        "revision": "50c0715e015107c92a8ecee03735645a83734220",
+        "source_tools_configs_equal": true,
+        "status": "PASS"
+      }
+    },
+    "counts": {
+      "failed": 0,
+      "filtered_out": 0,
+      "ignored": 0,
+      "measured": 0,
+      "passed": 74
+    },
+    "exit": 0,
+    "id": "50c0715/parallel-neighbor",
+    "log_sha256": "4897ecc5338fe61d200fa506e460e7d943a80dbe5f71dbed3e9f0eba9b25b47a",
+    "parent_seconds": 108.51625333796255,
+    "revision": "50c0715e015107c92a8ecee03735645a83734220",
+    "scope": "validation",
+    "seconds": 107.626575140981,
+    "status": "PASS"
+  }
+]
