@@ -26,6 +26,8 @@ def main():
     parser.add_argument('--toolchain', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--cargo-home', type=Path, required=True)
+    parser.add_argument('--include-reachable-allocation', action='store_true',
+                        help='Also qualify trampoline allocation under forced and default-parallel contention.')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     out = args.output.absolute()
@@ -75,7 +77,8 @@ def main():
         kernel_version=os.uname().release.split('-', 1)[0],
         rustc=subprocess.check_output([env['RUSTC'], '--version'], env=env, timeout=10).decode().strip(),
         scope='Functional validation. Seconds are command wall durations, not throughput or profiler accuracy.',
-        recipe='python3 -B evaluation/admission/check_exec_identity.py --toolchain "$TOOLCHAIN" --cargo-home "$CARGO_HOME" --output "$REPO/ignored/NEW_RUN"')
+        recipe='python3 -B evaluation/admission/check_exec_identity.py --toolchain "$TOOLCHAIN" --cargo-home "$CARGO_HOME" --output "$REPO/ignored/NEW_RUN"'
+               + (' --include-reachable-allocation' if args.include_reachable_allocation else ''))
     steps = [
         ('fmt', ['fmt', '--check'], 180),
         ('clippy', ['clippy', '--workspace', '--all-targets', '--all-features', '--', '-D', 'warnings'], 180),
@@ -89,6 +92,12 @@ def main():
         ('staged-allocation', ['test', '-p', 'liteinst2', '--lib', 'staged'], 180),
         ('prefixed-pun', ['test', '-p', 'liteinst2', '--test', 'prefixed_pun_oracle'], 180),
     ]
+    if args.include_reachable_allocation:
+        steps[3:3] = [
+            ('build-tests', ['test', '--workspace', '--no-run'], 180),
+            ('reachable-contention', ['test', '-p', 'liteinst2', '--lib', 'trampoline::near_mapping::tests::', '--', '--nocapture'], 120),
+            *[(f'core-default-{i:02}', ['test', '-p', 'liteinst2', '--lib'], 180) for i in range(1, 26)],
+        ]
     def save():
         (out / 'receipt.json').write_text(json.dumps(result, indent=2, sort_keys=True) + '\n')
     save()
@@ -108,6 +117,23 @@ def main():
             print(name, closed['exit_code'], flush=True)
             assert closed['exit_code'] == 0 and closed['termination'] is None
             assert closed['cleanup_complete'] and closed['reaped_descendants'] == 0
+            if name == 'reachable-contention':
+                expected = [
+                    'reachable_mapping_gap_walk_is_complete_aligned_and_below_first',
+                    'reachable_mapping_full_extent_and_address_boundaries_are_exact',
+                    'reachable_mapping_occupied_exhaustion_and_errno_early_stop',
+                    'reachable_mapping_native_stale_gap_retains_competitor',
+                ]
+                assert terminals == [dict(result='ok', passed=len(expected), failed=0, ignored=0)]
+                for case in expected:
+                    assert data.count(('test trampoline::near_mapping::tests::' + case + ' ... ok').encode()) == 1
+            if name.startswith('core-default-'):
+                for case in [
+                    'observing_control_executable_drop_keeps_code_dependencies_alive',
+                    'observing_control_arena_refusal_preserves_slots_bytes_and_static_support',
+                    'observing_control_staged_drop_unmaps_before_releasing_last_owners',
+                ]:
+                    assert data.count(('test trampoline::observing_control_tests::' + case + ' ... ok').encode()) == 1
             if name == 'projection-pressure':
                 measurements = re.findall(r'native_query profile=ATOMIC queries=128 baseline_queries=1 maps_rows=(\d+) owned_rows=(\d+) churn_cycles=(\d+) strict_text_refusal=true', data.decode())
                 assert len(measurements) == 1

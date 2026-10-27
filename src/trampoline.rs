@@ -4423,6 +4423,11 @@ impl Drop for PendingReservation {
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod near_mapping;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+use near_mapping::{NearCandidates, NearGap, claim_near_candidate, near_start_bounds};
+
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 struct PendingMapping {
     fd: libc::c_int,
     writable: *mut libc::c_void,
@@ -4498,7 +4503,7 @@ impl PendingMapping {
         Ok(mapping)
     }
 
-    fn try_map_executable(&mut self, address: usize) -> bool {
+    fn try_map_executable(&mut self, address: usize) -> Result<bool, TrampolineError> {
         // SAFETY: MAP_FIXED_NOREPLACE never replaces an existing VMA.
         let executable = unsafe {
             libc::mmap(
@@ -4511,15 +4516,38 @@ impl PendingMapping {
             )
         };
         if executable == libc::MAP_FAILED {
-            return false;
+            let error = os_error("mmap executable alias");
+            return match error {
+                TrampolineError::BackingStore {
+                    errno: libc::EEXIST,
+                    ..
+                } => Ok(false),
+                other => Err(other),
+            };
         }
+        self.accept_executable_mapping(address, executable)
+    }
+
+    fn accept_executable_mapping(
+        &mut self,
+        address: usize,
+        executable: *mut libc::c_void,
+    ) -> Result<bool, TrampolineError> {
+        // Hold the returned mapping through any cleanup error. In particular,
+        // an old kernel ignoring NOREPLACE cannot publish a different address.
+        self.executable = executable;
         if executable as usize != address {
             // SAFETY: executable is the mapping just returned by mmap.
-            unsafe { libc::munmap(executable, self.len) };
-            return false;
+            if unsafe { libc::munmap(executable, self.len) } != 0 {
+                return Err(os_error("munmap unexpected executable alias"));
+            }
+            self.executable = core::ptr::null_mut();
+            return Err(TrampolineError::BackingStore {
+                operation: "mmap executable alias returned a different address",
+                errno: libc::EADDRNOTAVAIL,
+            });
         }
-        self.executable = executable;
-        true
+        Ok(true)
     }
 
     fn allocate_exact(
@@ -4528,7 +4556,7 @@ impl PendingMapping {
         entry_address: u64,
     ) -> Result<Self, TrampolineError> {
         let mut mapping = Self::new(len)?;
-        if !mapping.try_map_executable(mapping_start) {
+        if !matches!(mapping.try_map_executable(mapping_start), Ok(true)) {
             return Err(TrampolineError::ExactAddressUnavailable {
                 address: entry_address,
             });
@@ -4554,12 +4582,10 @@ impl PendingMapping {
             .ok_or(TrampolineError::AddressNotRepresentable {
                 address: execute_address,
             })?;
-        for candidate in near_candidates(next_ip, len, page_size)? {
-            if mapping.try_map_executable(candidate) {
-                return Ok(mapping);
-            }
-        }
-        Err(TrampolineError::NoReachableMapping)
+        claim_near_candidate(near_candidates(next_ip, len, page_size)?, |candidate| {
+            mapping.try_map_executable(candidate)
+        })?;
+        Ok(mapping)
     }
 
     fn into_arena(mut self) -> Result<TrampolineArena, TrampolineError> {
@@ -4692,16 +4718,10 @@ fn near_candidates(
     next_ip: u64,
     len: usize,
     page_size: usize,
-) -> Result<Vec<usize>, TrampolineError> {
+) -> Result<NearCandidates, TrampolineError> {
     let next_ip = usize::try_from(next_ip)
         .map_err(|_| TrampolineError::AddressNotRepresentable { address: next_ip })?;
-    let low = (next_ip as i128 + i32::MIN as i128)
-        .max(page_size as i128)
-        .max(0) as usize;
-    let high = (next_ip as i128 + i32::MAX as i128).min((usize::MAX - len) as i128) as usize;
-    if low > high {
-        return Err(TrampolineError::NoReachableMapping);
-    }
+    let (low, high) = near_start_bounds(next_ip, len, page_size)?;
     let maps = read_process_maps_bounded()?;
     let record_count = maps.lines().count();
     let max_records = MAX_PROCESS_MAPS_BYTES / MIN_PROCESS_MAP_RECORD_BYTES + 1;
@@ -4744,7 +4764,7 @@ fn near_candidates(
     ranges.sort_unstable();
     let mut candidates = Vec::new();
     candidates
-        .try_reserve_exact(ranges.len().saturating_add(1))
+        .try_reserve_exact(ranges.len().saturating_add(1).saturating_mul(2))
         .map_err(|error| TrampolineError::ProcessMaps {
             message: format!("could not reserve bounded near-map candidates: {error}"),
         })?;
@@ -4780,9 +4800,9 @@ fn near_candidates(
         len,
         page_size,
     );
-    order_near_candidates(&mut candidates, next_ip);
+    candidates.sort_unstable_by_key(|candidate| order_near_key(candidate.next, next_ip));
     candidates.dedup();
-    Ok(candidates)
+    Ok(NearCandidates::new(candidates, page_size))
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -4858,20 +4878,20 @@ fn read_process_maps_from(mut reader: impl std::io::Read) -> Result<String, Tram
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+fn order_near_key(address: usize, next_ip: usize) -> (bool, usize) {
+    // Lower gaps cannot obstruct upward-growing brk. Keep the original order.
+    (address > next_ip, address.abs_diff(next_ip))
+}
+
+#[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 fn order_near_candidates(candidates: &mut [usize], next_ip: usize) {
-    // A mapping above the program image can begin exactly where [heap] ends,
-    // permanently capping future brk growth. Lower gaps cannot obstruct the
-    // upward-growing heap, and every candidate is already within rel32 reach.
-    candidates.sort_unstable_by_key(|candidate| {
-        let is_above = *candidate > next_ip;
-        (is_above, candidate.abs_diff(next_ip))
-    });
+    candidates.sort_unstable_by_key(|candidate| order_near_key(*candidate, next_ip));
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 #[allow(clippy::too_many_arguments)]
 fn add_gap_candidate(
-    candidates: &mut Vec<usize>,
+    candidates: &mut Vec<NearGap>,
     gap_start: usize,
     gap_end: usize,
     low: usize,
@@ -4888,7 +4908,27 @@ fn add_gap_candidate(
     if min_start > max_start {
         return;
     }
-    candidates.push(align_down(preferred, page_size).clamp(min_start, max_start));
+    // Split at the preferred page so every lower address remains preferred to
+    // every upper address, including a gap which straddles an unmapped target.
+    let preferred_page = align_down(preferred, page_size);
+    let below = max_start.min(preferred_page);
+    if min_start <= below {
+        candidates.push(NearGap {
+            next: below,
+            last: min_start,
+            descending: true,
+        });
+    }
+    if let Some(above) = preferred_page.checked_add(page_size) {
+        let above = min_start.max(above);
+        if above <= max_start {
+            candidates.push(NearGap {
+                next: above,
+                last: max_start,
+                descending: false,
+            });
+        }
+    }
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -4901,7 +4941,7 @@ fn align_up(value: usize, alignment: usize) -> usize {
     value.saturating_add(alignment - 1) & !(alignment - 1)
 }
 
-// These two ownership tests must not compete with unrelated unit tests for
+// These ownership/forced-contention tests must not compete with unrelated unit tests for
 // near-map gaps or for the address between a tested drop and exact reclamation.
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 fn run_staged_drop_test(name: &str, body: fn()) {
@@ -4915,6 +4955,7 @@ fn run_staged_drop_test(name: &str, body: fn()) {
         name,
         "trampoline::tests::dropping_staged_image_releases_its_exact_mapping"
             | "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners"
+            | "trampoline::near_mapping::tests::reachable_mapping_native_stale_gap_retains_competitor"
     ));
     if let Some(selected) = std::env::var_os(CHILD) {
         assert_eq!(selected.as_os_str(), std::ffi::OsStr::new(name));
