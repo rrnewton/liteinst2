@@ -27,13 +27,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 17,
-        "refusals": 71,
+        "refusals": 69,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_MOVD_TF_PASS group=0 pairs=17 movd=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=17 full_memory=17 live_endpoints=17\n"
+      "stdout": "LI2_MOVD_PROMOTED_ACCEPTANCES 2\nLI2_MOVD_TF_PASS group=0 pairs=17 movd=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=22 full_state=17 full_memory=17 live_endpoints=17\n"
     },
     {
       "argv": [
@@ -54,13 +54,13 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 71,
+        "refusals": 69,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_MOVD_TF_PASS group=1 pairs=21 movd=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=21 full_memory=21 live_endpoints=21\n"
+      "stdout": "LI2_MOVD_PROMOTED_ACCEPTANCES 2\nLI2_MOVD_TF_PASS group=1 pairs=21 movd=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=22 full_state=21 full_memory=21 live_endpoints=21\n"
     },
     {
       "argv": [
@@ -83,7 +83,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 71,
+        "refusals": 69,
         "version": 1
       },
       "name": "movd-load-fault",
@@ -119,7 +119,7 @@
         "step_endpoint_seen": 0
       },
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_MOVD_PROMOTED_ACCEPTANCES 2\nLI2_TF_EXPECTED_FAILURE 7\n"
     },
     {
       "argv": [
@@ -142,7 +142,7 @@
         "owner_detail_negative": 0,
         "owner_failure": 7,
         "pairs": 17,
-        "refusals": 71,
+        "refusals": 69,
         "version": 1
       },
       "name": "movd-store-fault",
@@ -178,7 +178,7 @@
         "step_endpoint_seen": 0
       },
       "stderr": "",
-      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+      "stdout": "LI2_MOVD_PROMOTED_ACCEPTANCES 2\nLI2_TF_EXPECTED_FAILURE 7\n"
     }
   ],
   "literal_effects": "Loads replace XMM low32 and clear upper96. Register stores zero-extend r32 into64 bits. Memory stores change exactly4 bytes. All other initialized kernel/live FP bytes, upper vectors, GPRs/RSP/logical flags/bases/selectors/stack/data remain exact.",
@@ -187,10 +187,15 @@
     21
   ],
   "negative_endpoint": "Actual PROT_NONE load ERR4 and store ERR6 at original crossing PC in both native and stepped lanes; failed owner retains revoke/sync/held borrow and no completion.",
-  "new_refusal_count": 24,
+  "new_refusal_count": 22,
   "new_sse2_pairs_total": 36,
   "old_cohorts": "All original generic, integer, padding, XGETBV and REP sources/commands/predicates remain separately required.",
   "old_refusal_count": 47,
+  "promoted_acceptance_checks_per_command": 2,
+  "promoted_encodings": [
+    "66480f6ece",
+    "66480f7ece"
+  ],
   "prospective_only": true,
   "record_extent": "header_bytes +22*actual_DWARF_sample_bytes+40; group0 uses17, group1 uses21 positive samples; failed commands retain startup plus negative_sample.",
   "record_header_fields": [
@@ -215,5 +220,5 @@
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
   "schema_version": 1,
-  "scope": "Two legacy SSE2 MOVD r/m32 Codes, finite original-PC native/TF qualification. MOVQ, MMX, VEX and EVEX excluded; no every-destination or loader-completion claim."
+  "scope": "Unchanged MOVD38 native pairs and two failed-memory comparisons. All24 historical neighbor rows remain: two exact REX.W forms are explicit positive classifier checks,22 still refuse. Their 64-bit effects require the separate MOVQ native suite. No loader/performance/full-B2 credit."
 }

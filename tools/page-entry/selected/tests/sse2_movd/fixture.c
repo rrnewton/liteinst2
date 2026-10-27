@@ -219,13 +219,23 @@ static void movd_refusals(void) {
         {3,{0x66,0x0f,0x7e}},
     };
     _Static_assert(sizeof(cases)/sizeof(cases[0])==24,"closed supplied-neighbor cohort");
+    unsigned promoted=0;
     for(size_t i=0;i<sizeof(cases)/sizeof(cases[0]);i++) {
         result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,cases[i].b,cases[i].n,&refused_last);
+        if(i==7||i==19) {
+            need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
+                 refused_last.next_pc==0x1005&&refused_last.length==5&&
+                 refused_last.code==(i==7?1582U:1821U)&&refused_last.policy==1&&
+                 refused_last.flow==LI2_TF_FALLTHROUGH&&refused_last.family==LI2_TF_SIMD,870+(unsigned)i);
+            ++promoted;
+        } else {
         need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
              !refused_last.policy&&!refused_last.flow&&!refused_last.family,840+(unsigned)i);
         ++result.refusals;
+        }
     }
+    need(promoted==2,889);output("LI2_MOVD_PROMOTED_ACCEPTANCES 2\n");
     result.failed_refusal=SIZE_MAX;
 }
 int fixture_main(unsigned long *stack) {
@@ -252,15 +262,15 @@ int fixture_main(unsigned long *stack) {
     int rc=li2_tf_refusal_controls(&complete,&failed,&decoder_result,&refused_last);
     result.refusals=complete;result.failed_refusal=failed;result.decoder_result=decoder_result;
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47,130);
-    movd_refusals();need(result.refusals==71,894);
+    movd_refusals();need(result.refusals==69,894);
     movd_seed_defaults();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     if(control){movd_prepare(&negative_sample,8+4*movd_fault_op+1);movd_pair(&negative_sample);die(895);}
     for(unsigned i=0;i<MOVD_COUNT;i++){movd_prepare(&samples[i+1],i);movd_pair(&samples[i+1]);}
     need(result.completed==MOVD_PAIRS&&dump(),896);
 #if MOVD_GROUP==0
-    output("LI2_MOVD_TF_PASS group=0 pairs=17 movd=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=17 full_memory=17 live_endpoints=17\n");
+    output("LI2_MOVD_TF_PASS group=0 pairs=17 movd=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=22 full_state=17 full_memory=17 live_endpoints=17\n");
 #else
-    output("LI2_MOVD_TF_PASS group=1 pairs=21 movd=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=21 full_memory=21 live_endpoints=21\n");
+    output("LI2_MOVD_TF_PASS group=1 pairs=21 movd=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=22 full_state=21 full_memory=21 live_endpoints=21\n");
 #endif
     return 0;
 }

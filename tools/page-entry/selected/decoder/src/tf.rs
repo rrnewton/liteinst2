@@ -84,6 +84,15 @@ fn canonical_notrack_register(instruction: &Instruction, bytes: &[u8]) -> bool {
         (Code::Call_rm64, 0xd0) | (Code::Jmp_rm64, 0xe0))
 }
 
+// Exactly the nine legacy REX.W MOVQ encodings qualified by the finite
+// full-state cohort. This does not relax the general 66+REX.W prefix rule.
+fn canonical_movq_integer(instruction: &Instruction, bytes: &[u8]) -> bool {
+    matches!((instruction.code(), bytes),
+        (Code::Movq_xmm_rm64, [0x66, 0x48 | 0x4d, 0x0f, 0x6e, 0xce | 0x0f]) |
+        (Code::Movq_rm64_xmm, [0x66, 0x48 | 0x4d, 0x0f, 0x7e, 0xce | 0x0f]) |
+        (Code::Movq_rm64_xmm, [0x66, 0x48, 0x0f, 0x7e, 0xc6]))
+}
+
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
@@ -100,6 +109,8 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // is checked on the genuine NX frame before either source page opens.
         if !matches!(&source[..instruction.len()],
             [0xf3, 0x48 | 0x49, 0x0f, 0x1e, m] if (*m & 0xf8) == 0xc8) { return Ok(out); }
+    } else if matches!(instruction.code(), Code::Movq_xmm_rm64 | Code::Movq_rm64_xmm) {
+        if !canonical_movq_integer(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Xgetbv {
         // The actual ECX=0 restriction is enforced on the genuine NX frame
         // before either instruction page opens; decoding grants no RX permit.
@@ -386,7 +397,9 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::Movd_xmm_rm32 | Code::Movd_rm32_xmm
         // Legacy low-lane unpack/shuffle only; upper vectors and flags survive.
         | Code::Punpcklbw_xmm_xmmm128 | Code::Punpcklwd_xmm_xmmm128
-        | Code::Pshufd_xmm_xmmm128_imm8 => (1, 6),
+        | Code::Pshufd_xmm_xmmm128_imm8
+        // REX.W MOVQ uses only the independently guarded canonical palette.
+        | Code::Movq_xmm_rm64 | Code::Movq_rm64_xmm => (1, 6),
         _ => return Ok(out),
     };
     out.policy = 1;

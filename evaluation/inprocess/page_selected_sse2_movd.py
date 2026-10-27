@@ -108,6 +108,7 @@ def publish(path, record, receipt):
         cases=[{'name': c['name'], 'accepted': c['accepted'], 'process_outcome': c['process_outcome'],
                 'actual_exit': c.get('actual_exit'), 'operation_completed': c.get('operation_completed'),
                 'verified_memory_fault': c.get('verified_memory_fault'),
+                'promoted_acceptance_checks': c.get('promoted_acceptance_checks'),
                 'header': c.get('header'), 'record': c.get('record')} for c in record['cases']],
         command_recipe={
             'selected_build': ['sh', 'tools/page-entry/selected/build.sh'],
@@ -139,8 +140,8 @@ def main():
     private = REPO/'target/evaluation/inprocess'/name
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
-    record = {'schema_version': 1, 'profile': 'page-selected-sse2-movd-oracle-v1', 'status': 'failed',
-        'scope': 'Two additive legacy MOVD r/m32 cohorts (17 and 21 pairs): 36 new native/TF pairs plus two startup pairs, 47 old and 24 new supplied encoding refusals. Two actual native/stepped memory-fault comparisons remain failed operations. Complete source-bound C state predicates and private raw records are retained. Original generic, integer, padding, XGETBV, REP and connected suites remain required separately. MOVQ, MMX, VEX and EVEX remain excluded. No every-encoding, loader, performance or full-B2 claim.',
+    record = {'schema_version': 1, 'profile': 'page-selected-sse2-movd-oracle-v2', 'status': 'failed',
+        'scope': 'Unchanged MOVD38 original-PC pairs and two actual native/stepped failed-memory comparisons. All24 historical neighbor rows remain:22 refuse and two exact REX.W MOVQ rows require positive classification, counted separately. Their actual64-bit effects require the additive MOVQ suite. All47 generic refusals and full raw state comparisons remain. Other old suites remain separately required; no loader/performance/full-B2 claim.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
@@ -151,7 +152,8 @@ def main():
                    'new_page_ending_pairs': 0, 'new_crossing_pairs': 0,
                    'verified_memory_fault_commands': 0, 'actual_native_failed_operations': 0,
                    'actual_stepped_failed_operations': 0, 'additional_negative_command_selftests': 0,
-                   'executed_refusal_checks': 0},
+                   'executed_refusal_checks': 0, 'promoted_acceptance_checks_per_command': 0,
+                   'executed_promoted_acceptance_checks': 0},
         'reproduce': ['python3', 'evaluation/inprocess/page_selected_sse2_movd.py',
                       '--expect-revision', args.expect_revision]}
     pins, binaries = {}, {}
@@ -225,7 +227,7 @@ def main():
                  file_size_bytes=16 << 20, wall_seconds=15, cpu_affinity_count=1),
              'exact MOVD names, input environments, exits, header schema and bounds')
         need(fact(FIXTURE/'OUTCOMES.json')['sha256'] ==
-             'ce888852e490f1041e38aff8ef547de12dee570724c52aa8c4d6f3c5c179e5fd',
+             '7adcafe5ecdf62f4f1709e88465a832ac5d26bd5778df50914357d22d6540f79',
              'exact reviewed four-command outcomes')
         for case in outcomes['commands']:
             name = case['name']
@@ -237,6 +239,10 @@ def main():
                                 env=case['environment_delta'])
             result['actual_exit'] = row['exit']
             need(out == case['stdout'].encode() and err == case['stderr'].encode(), 'exact fixture output: '+name)
+            need(out.startswith(b'LI2_MOVD_PROMOTED_ACCEPTANCES 2\n'), 'both explicit MOVQ promotions executed')
+            result['promoted_acceptance_checks'] = 2
+            record['totals']['promoted_acceptance_checks_per_command'] = 2
+            record['totals']['executed_promoted_acceptance_checks'] += 2
             data = (private/(name+'.record')).read_bytes()
             need(len(data) >= 136, 'retained complete header')
             header = dict(zip(names, struct.unpack_from('<17Q', data)))
@@ -266,8 +272,8 @@ def main():
                 record['totals']['memory_pairs'] += (used-1)//2
                 record['totals']['new_page_ending_pairs'] += 4
                 record['totals']['new_crossing_pairs'] += used-5
-                record['totals'].update(supplied_refusal_encodings=71,
-                    old_refusal_encodings=47, new_refusal_encodings=24)
+                record['totals'].update(supplied_refusal_encodings=69,
+                    old_refusal_encodings=47, new_refusal_encodings=22)
             else:
                 need(any(data[end:end+header['sample_bytes']]), 'retain actual failed-operation sample')
                 # The authenticated C path requires actual native #PF and the
@@ -281,12 +287,13 @@ def main():
                 record['totals']['additional_negative_command_selftests'] += 1
             result['accepted'] = True
         need(record['totals'] == dict(positive_pairs=38, generic_pairs=36, movd_pairs=36,
-                 positive_selftest_pairs=2, supplied_refusal_encodings=71, old_refusal_encodings=47,
-                 new_refusal_encodings=24, load_pairs=18, store_pairs=18, register_pairs=18, memory_pairs=18,
+                 positive_selftest_pairs=2, supplied_refusal_encodings=69, old_refusal_encodings=47,
+                 new_refusal_encodings=22, load_pairs=18, store_pairs=18, register_pairs=18, memory_pairs=18,
                  new_page_ending_pairs=8, new_crossing_pairs=28,
                  verified_memory_fault_commands=2, actual_native_failed_operations=2,
                  actual_stepped_failed_operations=2, additional_negative_command_selftests=2,
-                 executed_refusal_checks=284) and
+                 executed_refusal_checks=276, promoted_acceptance_checks_per_command=2,
+                 executed_promoted_acceptance_checks=8) and
              len(record['cases']) == 4 and all(c['accepted'] for c in record['cases']),
              'complete seventeen/twenty-one pair cohorts and two failed-memory commands')
         record['status'] = 'passed'
