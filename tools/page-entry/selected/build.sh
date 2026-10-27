@@ -21,7 +21,7 @@ export CARGO_BUILD_JOBS=1
 unset CARGO_ENCODED_RUSTFLAGS
 export RUSTFLAGS='-C relocation-model=pic -C panic=abort -C force-unwind-tables=no'
 "$cargo_bin" rustc --manifest-path "$source_dir/decoder/Cargo.toml" \
-  --release --locked --offline -j 1 -- -C metadata=li2_page_entry_selected_generic_tf_v1
+  --release --locked --offline -j 1 -- -C metadata=li2_page_entry_selected_product_generic_tf_v1
 cp target/release/libli2_page_selected_decoder.a "$output_dir/decoder.a"
 cp target/release/libli2_page_selected_decoder.d "$output_dir/decoder.d"
 # Keep the exact compiler identities and source dep-info beside the archive.
