@@ -15,6 +15,7 @@ from parsing import require
 from core_a3_inventory import before_core_a3
 from core_719519_inventory import before_core_719519
 from ordinary_shared_inventory import before_ordinary_shared
+from ordinary_thirtytwo_inventory import before_ordinary_thirtytwo
 from runtime_stack_consumer_inventory import (before_runtime_stack_consumer,
                                                before_runtime_stack_consumer_python)
 from core_main_inventory import before_core_main
@@ -141,7 +142,7 @@ def require_current_coalescence_sources():
 
 
 def before_coalescence(declared):
-    return before_coalescence_baseline(before_core_main(before_owned_stack(before_core_a3(before_runtime_stack_consumer(before_core_719519(before_ordinary_shared(declared)))))))
+    return before_coalescence_baseline(before_core_main(before_owned_stack(before_core_a3(before_runtime_stack_consumer(before_core_719519(before_ordinary_shared(before_ordinary_thirtytwo(declared))))))))
 
 
 def before_coalescence_python(identities):

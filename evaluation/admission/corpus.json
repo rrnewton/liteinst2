@@ -6085,7 +6085,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 736
+        "tests": 737
       }
     },
     "workspace_tests": {
@@ -6447,7 +6447,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 736
+        "tests": 737
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -7508,6 +7508,11 @@
       "cohort": "b3_ordinary_allocation_custody",
       "harness": "unit/liteinst_launch/lib",
       "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_growth_failures_preserve_prior_completed_custody"
+    },
+    {
+      "cohort": "b3_runtime_ordinary",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::thirtytwo::runtime_ordinary_thirty_two_nops_fit_default_budget_and_retain_exact_history"
     }
   ],
   "recorder_tests": 330,

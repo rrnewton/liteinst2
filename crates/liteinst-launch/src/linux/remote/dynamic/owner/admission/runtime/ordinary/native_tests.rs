@@ -11,6 +11,7 @@ pub(in crate::linux::remote::dynamic::owner::admission::runtime) mod coalescence
 pub(in crate::linux::remote::dynamic::owner::admission::runtime) mod cross_page;
 mod raw;
 pub(in crate::linux::remote::dynamic::owner::admission::runtime) mod support;
+mod thirtytwo;
 use support::{BASE, ENTRY, after_cleanup, begin, check, one, retained, with_owner};
 
 /// Read-only test assertion shared by the independent selected/refusal cohort.

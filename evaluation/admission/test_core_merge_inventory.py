@@ -13,6 +13,7 @@ from core_a3_inventory import (ADDED_HARNESSES as A3_ADDED, CHANGED_HARNESSES as
 import core_719519_inventory as core719
 from core_719519_inventory import before_core_719519
 from ordinary_shared_inventory import before_ordinary_shared
+from ordinary_thirtytwo_inventory import before_ordinary_thirtytwo
 from owned_stack_inventory import before_owned_stack
 from runtime_stack_consumer_inventory import before_runtime_stack_consumer
 from core_main_inventory import (ADDED_HARNESSES, CHANGED_HARNESSES, RUST_METHODS,
@@ -161,7 +162,7 @@ class CoreMergeInventoryTests(unittest.TestCase):
     def test_catalog_preserves_all_old_harnesses_and_native_collection_identities(self):
         # Authenticate the complete merged core corpus before exposing the
         # exact old fixture to every historical assertion below.
-        merged = before_ordinary_shared(json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        merged = before_ordinary_shared(before_ordinary_thirtytwo(json.loads(Path(__file__).with_name("corpus.json").read_text())))
         untouched = copy.deepcopy(merged)
         historical = before_core_719519(merged)
         self.assertEqual(merged, untouched)
@@ -240,7 +241,7 @@ class CoreMergeInventoryTests(unittest.TestCase):
                         core719.require_current_core_719519_sources()
                 self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
 
-        actual = before_runtime_stack_consumer(before_core_719519(before_ordinary_shared(json.loads(Path(__file__).with_name("corpus.json").read_text()))))
+        actual = before_runtime_stack_consumer(before_core_719519(before_ordinary_shared(before_ordinary_thirtytwo(json.loads(Path(__file__).with_name("corpus.json").read_text())))))
         unchanged_actual = copy.deepcopy(actual)
         prior_a3 = before_core_a3(actual)
         self.assertEqual(actual, unchanged_actual)
@@ -306,7 +307,7 @@ class CoreMergeInventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_a3_source_inventory_differs$") as caught:
                         before_core_a3(actual)
                 self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
-        current = before_owned_stack(before_core_a3(before_runtime_stack_consumer(before_core_719519(before_ordinary_shared(json.loads(Path(__file__).with_name("corpus.json").read_text()))))))
+        current = before_owned_stack(before_core_a3(before_runtime_stack_consumer(before_core_719519(before_ordinary_shared(before_ordinary_thirtytwo(json.loads(Path(__file__).with_name("corpus.json").read_text())))))))
         unchanged = copy.deepcopy(current)
         previous = before_core_main(current)
         self.assertEqual(current, unchanged)

@@ -10,12 +10,15 @@ from parsing import InvalidEvidence
 import runtime_stack_consumer_inventory as inventory
 from core_719519_inventory import before_core_719519
 import ordinary_shared_inventory as shared
+import ordinary_thirtytwo_inventory as thirtytwo
 import native_fixtures as fixtures
 
 
 class RuntimeStackConsumerInventoryTests(unittest.TestCase):
     def test_current_corpus_and_methods_reconstruct_exact_old_history(self):
-        current = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        expanded = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        thirtytwo_previous = thirtytwo.before_ordinary_thirtytwo(expanded)
+        current = thirtytwo_previous
         shared_previous = shared.before_ordinary_shared(current)
         declared = before_core_719519(shared_previous)
         unchanged = copy.deepcopy(declared)
@@ -53,7 +56,11 @@ class RuntimeStackConsumerInventoryTests(unittest.TestCase):
         # Preserve the exact core predecessor for the shared-layer inverse checks.
         declared = shared_previous
         # The new current corpus is authenticated before the old fixture is used.
+        # This unchanged raw-file equality observes the actual outer input.
+        current = expanded
         self.assertEqual(current, json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        # Remaining shared assertions observe its authenticated exact predecessor.
+        current = thirtytwo_previous
         self.assertEqual(shared.digest(current), shared.CURRENT_ORDINARY_SHARED_CORPUS_SHA256)
         self.assertEqual(shared.digest(declared), shared.PRE_ORDINARY_SHARED_CORPUS_SHA256)
         self.assertEqual(current["native_validation_fixtures"][:103], declared["native_validation_fixtures"])
@@ -67,8 +74,25 @@ class RuntimeStackConsumerInventoryTests(unittest.TestCase):
         with self.assertRaisesRegex(InvalidEvidence, "^ordinary_shared_inventory_differs$"):
             shared.before_ordinary_shared(declared)
 
+        # The separately registered32-step method remains mandatory current evidence.
+        self.assertEqual(expanded, json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        self.assertEqual(thirtytwo.digest(expanded), thirtytwo.CURRENT_ORDINARY_THIRTYTWO_CORPUS_SHA256)
+        self.assertEqual(thirtytwo.digest(thirtytwo_previous), thirtytwo.PRE_ORDINARY_THIRTYTWO_CORPUS_SHA256)
+        self.assertEqual(expanded["native_validation_fixtures"][:107], current["native_validation_fixtures"])
+        self.assertEqual(expanded["native_validation_fixtures"][107:], [fixtures.ORDINARY_THIRTYTWO_ROW])
+        self.assertEqual(len(fixtures.catalog(expanded["native_validation_fixtures"])), 108)
+        self.assertEqual(sum(map(len, thirtytwo.RUST_METHODS.values())), 1)
+        for cohort, total in (("workspace_tests", 2200), ("serial_launch", 1029)):
+            rows = expanded["harness_test_counts"][cohort]
+            self.assertEqual(rows[fixtures.UNIT], {"tests": 737, "ignored": 0})
+            self.assertEqual(sum(row["tests"] for row in rows.values()), total)
+        with self.assertRaisesRegex(InvalidEvidence, "^ordinary_thirtytwo_inventory_differs$"):
+            thirtytwo.before_ordinary_thirtytwo(thirtytwo_previous)
+
     def test_projection_refuses_changed_fields_counts_and_identities(self):
-        current = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        expanded = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        thirtytwo_previous = thirtytwo.before_ordinary_thirtytwo(expanded)
+        current = thirtytwo_previous
         shared_previous = shared.before_ordinary_shared(current)
         declared = before_core_719519(shared_previous)
         for count in (305, 327, 329, 331, 330.0, True, None):
@@ -190,6 +214,68 @@ class RuntimeStackConsumerInventoryTests(unittest.TestCase):
             with self.assertRaises(InvalidEvidence):
                 fixtures.fixture_outcomes(log.replace(rows[0]["test"], prefix), rows, True)
 
+        # New outer-layer negatives do not replace the complete shared/core checks.
+        for index in (0, 103, 104, 105, 106, 107):
+            for mode in ("missing", "duplicate", "rename", "cohort", "harness", "extra"):
+                changed = copy.deepcopy(expanded)
+                rows = changed["native_validation_fixtures"]
+                if mode == "missing": rows.pop(index)
+                elif mode == "duplicate": rows.append(copy.deepcopy(rows[index]))
+                elif mode == "rename": rows[index]["test"] += "_PRIVATE_SENTINEL"
+                elif mode == "cohort": rows[index]["cohort"] = "PRIVATE_SENTINEL"
+                elif mode == "harness": rows[index]["harness"] = "test/PRIVATE_SENTINEL"
+                else: rows[index]["extra"] = "/private/source"
+                with self.subTest(thirtytwo_row=index, mode=mode), self.assertRaisesRegex(
+                        InvalidEvidence, "^ordinary_thirtytwo_inventory_differs$") as caught:
+                    thirtytwo.before_ordinary_thirtytwo(changed)
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+        for cohort in ("workspace_tests", "serial_launch"):
+            for field, value in (("tests", 736), ("tests", 738), ("tests", 737.0), ("ignored", 1)):
+                changed = copy.deepcopy(expanded)
+                changed["harness_test_counts"][cohort][fixtures.UNIT][field] = value
+                with self.subTest(thirtytwo_count=cohort, field=field, value=value), self.assertRaisesRegex(
+                        InvalidEvidence, "^ordinary_thirtytwo_inventory_differs$"):
+                    thirtytwo.before_ordinary_thirtytwo(changed)
+        for key in expanded:
+            changed = copy.deepcopy(expanded)
+            del changed[key]
+            with self.subTest(thirtytwo_missing=key), self.assertRaisesRegex(
+                    InvalidEvidence, "^ordinary_thirtytwo_inventory_differs$"):
+                thirtytwo.before_ordinary_thirtytwo(changed)
+        changed = copy.deepcopy(expanded)
+        changed["extra"] = "PRIVATE_SENTINEL"
+        with self.assertRaisesRegex(InvalidEvidence, "^ordinary_thirtytwo_inventory_differs$"):
+            thirtytwo.before_ordinary_thirtytwo(changed)
+        row = fixtures.ORDINARY_THIRTYTWO_ROW
+        rows = [row]
+        header = "     Running unittests src/lib.rs (target/debug/deps/liteinst_launch-0123456789abcdef)"
+        line = "test " + row["test"] + " ... ok\n"
+        log = header + "\nrunning 1 test\n" + line + "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\n"
+        for succeeded in (False, True):
+            observed = fixtures.fixture_outcomes(log, rows, succeeded)
+            self.assertEqual([item["test"] for item in observed], [row["test"]])
+            self.assertTrue(all(item["status"] == "complete" and item["test_result"] == "ok"
+                                and item["command_succeeded"] is succeeded and item["qualified_run"] is False
+                                for item in observed))
+        for field, value in (("cohort", "b3_ordinary_allocation_custody"),
+                             ("harness", "test/PRIVATE_SENTINEL"),
+                             ("test", row["test"] + "_PRIVATE_SENTINEL")):
+            changed_row = row | {field: value}
+            with self.subTest(thirtytwo_catalog=field), self.assertRaisesRegex(
+                    InvalidEvidence, "^invalid_native_fixture_scope$"):
+                fixtures.catalog([changed_row])
+        for altered in (log.replace(line, ""), log.replace(line, line * 2),
+                        log.replace(row["test"], row["test"] + "_PRIVATE_SENTINEL"),
+                        log.replace(" ... ok", " ... FAILED"), log.replace(" ... ok", " ... ignored"),
+                        log.replace(header, "     Running tests/foreign.rs (target/debug/deps/foreign-0123456789abcdef)")):
+            with self.subTest(thirtytwo_outcome=altered), self.assertRaises(InvalidEvidence) as caught:
+                fixtures.fixture_outcomes(altered, rows, True)
+            self.assertEqual(len(caught.exception.partial), 1)
+            self.assertFalse(any(item["qualified_run"] for item in caught.exception.partial))
+            self.assertNotIn("PRIVATE_SENTINEL", json.dumps(caught.exception.partial))
+        private = log.replace("running 1 test\n", "running 1 test\nPRIVATE_SENTINEL /private/source pid=123\n")
+        self.assertEqual(fixtures.fixture_outcomes(private, rows, True), fixtures.fixture_outcomes(log, rows, True))
+
     def test_source_census_refuses_missing_extra_or_renamed_methods(self):
         read_text = Path.read_text
         targets = [(module + ".py", methods[0].rsplit(".", 1)[1])
@@ -234,6 +320,34 @@ class RuntimeStackConsumerInventoryTests(unittest.TestCase):
                         shared.require_current_ordinary_shared_sources()
                 self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
                 self.assertNotIn("/private/", str(caught.exception))
+
+
+        for target in thirtytwo.SOURCE_SHA256:
+            for mode in ("missing", "changed"):
+                def altered_thirtytwo(path, *args, **kwargs):
+                    if path.as_posix().endswith(target):
+                        if mode == "missing": raise OSError("PRIVATE_SENTINEL /private/source")
+                        return read_bytes(path, *args, **kwargs) + b"\n// PRIVATE_SENTINEL\n"
+                    return read_bytes(path, *args, **kwargs)
+                with self.subTest(thirtytwo_source=target, mode=mode), patch(
+                        "ordinary_thirtytwo_inventory.Path.read_bytes", altered_thirtytwo):
+                    with self.assertRaisesRegex(InvalidEvidence, "^ordinary_thirtytwo_source_inventory_differs$") as caught:
+                        thirtytwo.require_current_ordinary_thirtytwo_sources()
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+        for target, names in thirtytwo.RUST_METHODS.items():
+            for mode in ("rename", "extra", "ignored"):
+                def altered_thirtytwo_method(path, *args, **kwargs):
+                    if path.as_posix().endswith(target):
+                        data = read_bytes(path, *args, **kwargs)
+                        if mode == "rename": return data.replace(names[0].encode(), b"PRIVATE_SENTINEL", 1)
+                        if mode == "extra": return data + b"\n#[test]\nfn PRIVATE_SENTINEL() {}\n"
+                        return data.replace(b"#[test]", b"#[test]\n#[ignore]", 1)
+                    return read_bytes(path, *args, **kwargs)
+                with self.subTest(thirtytwo_method=target, mode=mode), patch(
+                        "ordinary_thirtytwo_inventory.Path.read_bytes", altered_thirtytwo_method):
+                    with self.assertRaisesRegex(InvalidEvidence, "^ordinary_thirtytwo_source_inventory_differs$") as caught:
+                        thirtytwo.require_current_ordinary_thirtytwo_sources()
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
 
 
 
