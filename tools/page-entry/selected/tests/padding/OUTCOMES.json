@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "prospective_only": true,
   "record_header_format": "<17Q",
   "record_header_fields": [
@@ -38,13 +38,13 @@
         "padding-tf-fixture"
       ],
       "exit": 0,
-      "stdout": "LI2_PADDING_TF_PASS pairs=21 generic=20 selftest=1 old_refusal_bytes=47 padding_refusal_bytes=12 full_state=21 full_memory=21 live_endpoints=21\n",
+      "stdout": "LI2_PADDING_TF_PASS group=0 pairs=21 generic=20 selftest=1 old_refusal_bytes=47 retained_padding_refusal_bytes=11 new_padding_refusal_bytes=2 promoted_padding_encodings=1 full_state=21 full_memory=21 live_endpoints=21\n",
       "stderr": "",
       "header_equals": {
         "version": 1,
         "header_bytes": 136,
         "pairs": 21,
-        "refusals": 59,
+        "refusals": 60,
         "failed_refusal": 18446744073709551615,
         "decoder_result": 0,
         "fixture_failure": 0,
@@ -56,34 +56,89 @@
         "owner_failure": 0,
         "owner_detail_abs": 0
       },
-      "process_outcome": "completed finite pair cohort"
+      "process_outcome": "completed finite pair cohort",
+      "group": 0,
+      "unused_sample_slots": 0
+    },
+    {
+      "name": "long-positive",
+      "argv": [
+        "padding-long-tf-fixture"
+      ],
+      "exit": 0,
+      "stdout": "LI2_PADDING_TF_PASS group=1 pairs=12 generic=11 selftest=1 old_refusal_bytes=47 retained_padding_refusal_bytes=11 new_padding_refusal_bytes=2 promoted_padding_encodings=1 full_state=12 full_memory=12 live_endpoints=12\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 12,
+        "refusals": 60,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 12,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "completed finite pair cohort",
+      "group": 1,
+      "unused_sample_slots": 9
     }
   ],
-  "description": "Separate additive padding cohort; unchanged original generic 21-pair and three negative commands remain required separately.",
-  "case_order": [
-    0,
-    200,
-    201,
-    202,
-    203,
-    204,
-    205,
-    206,
-    207,
-    208,
-    209,
-    210,
-    211,
-    212,
-    213,
-    214,
-    215,
-    216,
-    217,
-    218,
-    219
-  ],
+  "description": "Two finite groups retain all twenty original pairs, add all eleven placements of the observed eleven-byte form, and explicitly promote only old padding refusal entry two. Shared complete record layout and bounds unchanged.",
+  "case_order": {
+    "positive": [
+      0,
+      200,
+      201,
+      202,
+      203,
+      204,
+      205,
+      206,
+      207,
+      208,
+      209,
+      210,
+      211,
+      212,
+      213,
+      214,
+      215,
+      216,
+      217,
+      218,
+      219
+    ],
+    "long-positive": [
+      0,
+      220,
+      221,
+      222,
+      223,
+      224,
+      225,
+      226,
+      227,
+      228,
+      229,
+      230
+    ]
+  },
   "literal_effects": "All 16 GPRs including RSP, full logical flags, FS/GS, six live selectors, full initialized kernel FP and qualified actual XSAVE, full 8 KiB stack and 4 KiB data remain unchanged within each lane. RIP advances by exact length. Actual kernel NX RF, owned TF and explicit native INT3 diagnostic retain the unchanged generic comparator rules.",
-  "additional_supplied_refusals": 12,
-  "old_supplied_refusals": 47
+  "additional_supplied_refusals": 13,
+  "old_supplied_refusals": 47,
+  "retained_padding_refusals": 11,
+  "new_padding_refusals": 2,
+  "promoted_padding_encodings": 1,
+  "behavior_change": {
+    "old_padding_catalogue_index": 2,
+    "bytes": "66662e0f1f840000000000",
+    "old": "refused",
+    "new": "exact accepted classification plus eleven full native/TF boundary cases"
+  }
 }

@@ -179,14 +179,18 @@ builds the current product sources and retains raw records privately. The
 public receipt records actual iteration counts and preserves the fault as a
 failed operation.
 
-`tests/padding` qualifies the exact 1–10-byte canonical NOP palette, including
-`66 2e 0f 1f 84 00 00 00 00 00`. This single additional ten-byte encoding does
-not permit segment prefixes on other instructions. Run
+`tests/padding` covers the exact 1–10-byte palette and the observed eleven-byte
+`66 66 2e 0f 1f 84 00 00 00 00 00`, without permitting other repeated or segment
+prefixes. Run
 `python3 evaluation/inprocess/page_selected_padding.py --expect-revision REVISION`
-on one reserved CPU for twenty full-state native/stepped pairs: page-end
-placements and all nine splits of the ten-byte form. It retains the genuine
-startup pair, all 47 old refusal controls and twelve additional near-neighbor
-refusals. The original generic oracle, its actual failed-operation controls and
+on one reserved CPU. Two bounded processes retain the original twenty pairs and
+add eleven full-state native/stepped pairs: the new form ending at a page boundary
+and all ten crossing splits, plus two genuine startup pairs. Historical padding
+refusal entry two is intentionally promoted to accepted classification and these
+positive cases; its earlier refusal receipt stays historical. All 47 generic and
+the other eleven padding refusals remain, with two new neighbors (one extra 66 and
+a changed displacement) still refused. The complete record layout and resource
+bounds are unchanged; unused slots in the second record must be zero. The original generic oracle, its actual failed-operation controls and
 the connected REP cohort remain separate requirements. Padding support alone
 does not establish a completed real-linker run.
 
