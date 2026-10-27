@@ -1,8 +1,10 @@
 //! Always-on fixed-grammar callbacks. The old point and native adapters are separate.
 //! This facade owns metadata only; site::seal retains the actual publication.
+mod drain;
 pub(super) mod gate;
 pub(super) mod site;
 mod timing;
+pub use drain::IntervalBatch;
 pub use gate::{CallGate, CallResult, GateError, OriginalCallResult};
 pub use timing::{RawInterval, RawIntervalOwner, RawTimestamp};
 
@@ -514,6 +516,8 @@ pub struct IntervalThread {
     tid: u64,
     registration: u64,
     active: bool,
+    finished: Cell<Option<PairTotals>>,
+    drain_cursor: drain::Cursor,
     _local: PhantomData<Rc<()>>,
 }
 fn tid() -> u64 {
@@ -582,6 +586,8 @@ impl IntervalClient {
                     tid,
                     registration,
                     active: true,
+                    finished: Cell::new(Some(PairTotals::default())),
+                    drain_cursor: drain::Cursor::default(),
                     _local: PhantomData,
                 })
             })
@@ -619,7 +625,8 @@ impl IntervalThread {
             })
             .unwrap_or(Err(error(Cause::Attachment)))
     }
-    /// Copy raw completed endpoints while the attached thread has no live pair.
+    /// Copy the CURRENT local buffer while the attached thread has no live pair.
+    /// Explicitly drained rows are available in their owned IntervalBatch instead.
     /// The caller may move the copy out of its joined worker; no receipt escapes.
     pub fn raw_intervals(&self) -> Result<Vec<RawInterval>, BridgeError> {
         self.totals()?;
@@ -676,6 +683,9 @@ impl IntervalThread {
                 ))
             })
             .unwrap_or(Err(error(Cause::Attachment)))?;
+        // Only a successful matching facade completion can restore this latch.
+        // Preflight refusals above deliberately leave it unchanged.
+        let previous = self.finished.replace(None);
         // No STATE borrow or reference into its storage spans the assembly CALL.
         // SAFETY: exact caller obligations above and retained immutable gate.
         let result = unsafe { gate.invoke(bytes.as_ptr(), bytes.len(), &stack) }
@@ -686,6 +696,8 @@ impl IntervalThread {
         {
             return Err(error(Cause::Invariant));
         }
+        self.finished
+            .set(drain::completed_checkpoint(previous, before, after));
         Ok(result)
     }
     /// Failure leaves this handle and all TLS owners intact; only empty success removes them.

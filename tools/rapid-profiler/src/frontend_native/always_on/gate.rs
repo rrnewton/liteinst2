@@ -361,7 +361,30 @@ impl Drop for Invocation {
     }
 }
 
+fn idle(frame: Frame) -> Result<u64, GateError> {
+    if frame
+        != (Frame {
+            sequence: frame.sequence,
+            ..Frame::default()
+        })
+    {
+        return Err(GateError::Completion);
+    }
+    Ok(frame.sequence)
+}
+
 impl CallGate {
+    // IDLE is established only by the existing successful resumed-call check.
+    // Copy-only: no token, phase or sequence is changed by this observation.
+    pub(super) fn idle_checkpoint(&self) -> Result<u64, GateError> {
+        self.identity()?;
+        FRAME
+            .try_with(|cell| {
+                // SAFETY: private actual-thread cell; no Frame reference escapes.
+                idle(unsafe { cell.get().read() })
+            })
+            .map_err(|_| GateError::ThreadStorage)?
+    }
     /// Copy only the exact admitted geometry. This does not verify current bytes,
     /// publish a site, retain executable owners, or authorize invoking the target.
     pub fn new(certificate: &IntegerLeafCertificate) -> Result<Arc<Self>, GateError> {
@@ -588,3 +611,6 @@ impl CallGate {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+pub(super) mod drain_tests;
