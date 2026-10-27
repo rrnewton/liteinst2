@@ -16,7 +16,7 @@ import sys
 sys.dont_write_bytecode = True
 from checks import source
 from run import hardware
-from page_selected import ENV, fact, need, save, elf, bridge_check
+from page_selected import ENV, fact, need, save, elf, bridge_check, retain_selected_build
 from page_selected_process import invoke
 from page_selected_component_build import provider as build_provider, symbols
 
@@ -178,18 +178,19 @@ def main():
             need(not err, 'version stderr')
             record['toolchain'][name] = out.decode().strip()
         run('selected-build', [tools['sh'], PRODUCT/'build.sh'], 'archive')
-        archive = binary(BUILD/'decoder.a')
+        retained = retain_selected_build(private, record, binaries)
+        archive = binary(retained/'decoder.a')
         record['archive'] = fact(archive)
         definitions, errors = run('decoder-defined-symbols', [tools['nm'], '-g', '--defined-only', archive], 'inspect')
         personality = [line for line in definitions.splitlines() if line.split()[-2:] == [b'T', b'rust_eh_personality']]
         need(len(personality) == 1 and not errors, 'exactly one real personality text definition')
         record['personality_text_definitions'] = len(personality)
-        dep = pin(BUILD/'decoder.d').read_text()
+        dep = pin(retained/'decoder.d').read_text()
         need(all(str(PRODUCT/'decoder/src'/name) in dep for name in ('lib.rs', 'abi.rs', 'arena.rs', 'decode.rs', 'scan.rs')), 'decoder actual source dep-info')
         for name in ('decoder-rustc.txt', 'decoder-cargo.txt', 'cc-version.txt'):
-            record['toolchain'][name] = pin(BUILD/name).read_text().strip()
-        bridge = binary(BUILD/'bridge-selected.so')
-        binary(BUILD/'observe')
+            record['toolchain'][name] = pin(retained/name).read_text().strip()
+        bridge = binary(retained/'bridge-selected.so')
+        binary(retained/'observe')
         record['elf'] = {'controller': bridge_check(bridge)}
         no_undefined('controller-undefined', bridge)
         out = private/'build'

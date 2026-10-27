@@ -55,6 +55,55 @@ def save(path, data):
     path.write_text(json.dumps(data, indent=2, sort_keys=True)+'\n')
 
 
+def retain_selected_build(output, record, artifacts):
+    """Retain the exact build outputs before any inspection, link or execution.
+
+    The external build remains serialized through this transfer. Failed and
+    partial copies stay in the unique run directory; they never earn a permit.
+    Shared output names are provenance only after successful transfer.
+    """
+    names = ('decoder.a', 'decoder.d', 'bridge-selected.so', 'observe',
+             'decoder-rustc.txt', 'decoder-cargo.txt', 'cc-version.txt')
+    retained = output/'selected-artifacts'
+    transfer = {'source_before': {}, 'source_after': {}, 'retained': {},
+                'copy_started': [], 'copy_complete': [], 'errors': []}
+    record['retained_build'] = transfer
+    primary = None
+    def observed(path):
+        return dict(fact(path), mode=path.stat().st_mode & 0o777)
+    try:
+        retained.mkdir(exist_ok=False)
+        for name in names:
+            transfer['source_before'][name] = observed(BUILD/name)
+        for name in names:
+            transfer['copy_started'].append(name)
+            with (BUILD/name).open('rb') as reader, (retained/name).open('xb') as writer:
+                shutil.copyfileobj(reader, writer, length=1024*1024)
+            (retained/name).chmod(transfer['source_before'][name]['mode'])
+            transfer['copy_complete'].append(name)
+    except BaseException as error:
+        primary = error
+        transfer['errors'].append('copy: '+repr(error))
+    finally:
+        # A secondary observation cannot replace the original copy failure.
+        for key, directory in (('source_after', BUILD), ('retained', retained)):
+            for name in names:
+                try:
+                    transfer[key][name] = observed(directory/name)
+                except BaseException as error:
+                    transfer['errors'].append(key+'/'+name+': '+repr(error))
+                    if primary is None:
+                        primary = error
+    if primary is not None:
+        raise primary
+    need(transfer['copy_complete'] == list(names) and
+         transfer['source_before'] == transfer['source_after'] == transfer['retained'],
+         'exact retained build transfer')
+    for name, value in transfer['retained'].items():
+        artifacts[str(retained/name)] = {key: value[key] for key in ('bytes', 'sha256')}
+    return retained
+
+
 def invoke(row, output, cpu):
     process = None
     pidfd = None
@@ -331,13 +380,14 @@ def main():
         record['revision'] = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=REPO, text=True, timeout=5).strip()
         _, version, err = run('compiler-version', [tools['cc'], '--version']); need(not err, 'compiler version stderr'); record['compiler_version'] = version.decode()
         run('build', [tools['sh'], SELECTED/'build.sh'], build=True)
-        archive = pin(BUILD/'decoder.a')
-        bridge, observe = BUILD/'bridge-selected.so', BUILD/'observe'
+        retained = retain_selected_build(output, record, binaries)
+        archive = pin(retained/'decoder.a')
+        bridge, observe = retained/'bridge-selected.so', retained/'observe'
         record['archive'] = fact(archive)
-        dep = pin(BUILD/'decoder.d').read_text()
+        dep = pin(retained/'decoder.d').read_text()
         need(all(str(SELECTED/'decoder/src'/name) in dep for name in ('lib.rs', 'abi.rs', 'arena.rs', 'decode.rs', 'scan.rs')), 'exact decoder source dep-info')
         for name in ('decoder-rustc.txt', 'decoder-cargo.txt'):
-            record.setdefault('toolchain', {})[name] = pin(BUILD/name).read_text().strip()
+            record.setdefault('toolchain', {})[name] = pin(retained/name).read_text().strip()
         for path in (bridge, observe): binaries[str(path)] = fact(path)
         _, out, err = run('undefined', [tools['nm'], '-u', bridge]); need(out == err == b'', 'no unresolved bridge symbols')
         record['bridge_elf'] = bridge_check(bridge)
