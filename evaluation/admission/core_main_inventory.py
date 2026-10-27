@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+from core223_inventory import source_before_core223
 from owned_stack_inventory import before_owned_stack_python
 from runtime_stack_consumer_inventory import before_runtime_stack_consumer_python
 
@@ -95,6 +96,7 @@ def require_current_core_main_sources():
     for path in RUST_METHODS:
         try:
             source = (root / path).read_text()
+            source = source_before_core223(path, source.encode(), "core_main_source_inventory_differs").decode()
         except (OSError, UnicodeError):
             require(False, "core_main_source_inventory_differs")
         names = re.findall(r"#\[test\]\s*fn\s+([A-Za-z0-9_]+)\s*\(", source)
@@ -103,6 +105,7 @@ def require_current_core_main_sources():
     for path, fragment in SOURCE_WIRING.items():
         try:
             source = (root / path).read_text()
+            source = source_before_core223(path, source.encode(), "core_main_source_inventory_differs").decode()
         except (OSError, UnicodeError):
             require(False, "core_main_source_inventory_differs")
         require(source.count(fragment) == 1, "core_main_source_inventory_differs")

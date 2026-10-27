@@ -6219,7 +6219,7 @@
       },
       "test/e9_common_core_pages_contract": {
         "ignored": 0,
-        "tests": 9
+        "tests": 12
       },
       "test/e9_common_seed_contract": {
         "ignored": 0,
@@ -6463,7 +6463,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 79
+        "tests": 86
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
@@ -6479,7 +6479,7 @@
       },
       "unit/verify_common_core/verify_common_core": {
         "ignored": 0,
-        "tests": 16
+        "tests": 23
       }
     }
   },

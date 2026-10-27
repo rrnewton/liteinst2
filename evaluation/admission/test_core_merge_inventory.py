@@ -25,6 +25,7 @@ import core_041bd4a_inventory as core041
 import inprocess_inventory as inprocess
 import selected_inventory as selected
 import inline_clock_inventory as inline
+import core223_inventory as core223
 from owned_stack_inventory import before_owned_stack
 from runtime_stack_consumer_inventory import before_runtime_stack_consumer
 from core_main_inventory import (ADDED_HARNESSES, CHANGED_HARNESSES, RUST_METHODS,
@@ -304,10 +305,86 @@ class CoreMergeInventoryTests(unittest.TestCase):
                 self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
 
     def test_catalog_preserves_all_old_harnesses_and_native_collection_identities(self):
+        # Authenticate the new complete catalogue once at raw ingress. All
+        # literal historical assertions below retain their predecessor inputs.
+        core223_current = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        core223_untouched = copy.deepcopy(core223_current)
+        core223_previous = core223.before_core223(core223_current)
+        self.assertEqual(core223_current, core223_untouched)
+        self.assertEqual(core223.digest(core223_current), core223.CURRENT)
+        self.assertEqual(core223.digest(core223_previous), core223.PREVIOUS)
+        self.assertEqual(core223.PREVIOUS, inline.CURRENT)
+        rows223 = core223_current['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(rows223), sum(row['tests'] for row in rows223.values()),
+                          sum(row['ignored'] for row in rows223.values())), (98, 2371, 4))
+        self.assertEqual(len(core223.COMPILED_METHODS), 17)
+        self.assertEqual(len({(row['harness'], row['test']) for row in core223.COMPILED_METHODS}), 17)
+        self.assertEqual(core223_current['recorder_tests'], 330)
+        self.assertEqual(core223_current['harness_test_counts']['serial_launch'],
+                         core223_previous['harness_test_counts']['serial_launch'])
+        self.assertEqual({k: v for k, v in core223_current.items() if k != 'harness_test_counts'},
+                         {k: v for k, v in core223_previous.items() if k != 'harness_test_counts'})
+        for identity, (old, total) in core223.CHANGED_HARNESSES.items():
+            self.assertEqual(rows223[identity], counts(total))
+            self.assertEqual(core223_previous['harness_test_counts']['workspace_tests'][identity], counts(old))
+            self.assertEqual(sum(row['harness'] == identity for row in core223.COMPILED_METHODS), total - old)
+            for mode in ('missing', 'rename', 'low', 'high', 'ignored', 'float', 'extra'):
+                changed = copy.deepcopy(core223_current)
+                rows = changed['harness_test_counts']['workspace_tests']
+                if mode == 'missing': del rows[identity]
+                elif mode == 'rename': rows[identity + '_PRIVATE_SENTINEL'] = rows.pop(identity)
+                elif mode == 'low': rows[identity]['tests'] -= 1
+                elif mode == 'high': rows[identity]['tests'] += 1
+                elif mode == 'ignored': rows[identity]['ignored'] += 1
+                elif mode == 'float': rows[identity]['tests'] = float(rows[identity]['tests'])
+                else: rows[identity]['extra'] = 'PRIVATE_SENTINEL'
+                with self.subTest(core223_catalog=(identity, mode)), self.assertRaisesRegex(
+                        parsing.InvalidEvidence, '^core223_inventory_differs$'):
+                    core223.before_core223(changed)
+        for field in core223_current:
+            changed = copy.deepcopy(core223_current)
+            del changed[field]
+            with self.subTest(core223_missing=field), self.assertRaisesRegex(
+                    parsing.InvalidEvidence, '^core223_inventory_differs$'):
+                core223.before_core223(changed)
+        for invalid in (core223_previous, None, [], dict(core223_current, extra='PRIVATE_SENTINEL')):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^core223_inventory_differs$'):
+                core223.before_core223(invalid)
+        read223 = Path.read_bytes
+        for target in core223.SOURCE_SHA256:
+            for mode in ('missing', 'changed'):
+                def altered223(path, *args, **kwargs):
+                    if path.as_posix().endswith(target):
+                        if mode == 'missing': raise OSError('PRIVATE_SENTINEL')
+                        return read223(path, *args, **kwargs) + b'\n// PRIVATE_SENTINEL\n'
+                    return read223(path, *args, **kwargs)
+                with self.subTest(core223_source=(target, mode)), patch('core223_inventory.Path.read_bytes', altered223):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^core223_source_inventory_differs$'):
+                        core223.before_core223(core223_current)
+            with self.subTest(core223_hash=target), patch.dict(core223.SOURCE_SHA256, {target: '0' * 64}):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^core223_source_inventory_differs$'):
+                    core223.before_core223(core223_current)
+        for target, row in core223.PROJECTIONS.items():
+            data = (Path(__file__).resolve().parents[2] / target).read_bytes()
+            restored = core223.source_before_core223(target, data, 'core223_source_inventory_differs')
+            self.assertEqual(hashlib.sha256(data).hexdigest(), row['current_sha256'])
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for bad in (restored, data + b'\nPRIVATE_SENTINEL\n'):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^core223_source_inventory_differs$'):
+                    core223.source_before_core223(target, bad, 'core223_source_inventory_differs')
+            for field in ('current_sha256', 'previous_sha256', 'edits'):
+                broken = copy.deepcopy(row)
+                broken[field] = '0' * 64 if field != 'edits' else [(0, len(data) + 1, '')]
+                with self.subTest(core223_inverse=(target, field)), patch.dict(core223.PROJECTIONS, {target: broken}):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^core223_source_inventory_differs$'):
+                        core223.source_before_core223(target, data, 'core223_source_inventory_differs')
+
         current041 = json.loads(Path(__file__).with_name("corpus.json").read_text())
         inline_current = copy.deepcopy(current041)
+        current041 = core223.before_core223(current041)
         current041 = inline.before_inline(current041)
         self.assertEqual(inline_current, json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        inline_current = core223.before_core223(inline_current)
         self.assertEqual(inline.digest(inline_current), inline.CURRENT)
         self.assertEqual(inline.digest(current041), inline.PREVIOUS)
         self.assertEqual(inline.PREVIOUS, selected.CURRENT)
@@ -673,6 +750,8 @@ class CoreMergeInventoryTests(unittest.TestCase):
             "tools/exception-oracle/Cargo.toml"})
         for target, projection in coreae.SOURCE_PROJECTIONS.items():
             current_source = (root_ae / target).read_bytes()
+            current_source = core223.source_before_core223(
+                target, current_source, "core_c73f159_source_inventory_differs")
             prior_source = coreae.source_before_core_ae149a9(target, current_source)
             self.assertEqual(hashlib.sha256(current_source).hexdigest(), projection["current_sha256"])
             self.assertEqual(hashlib.sha256(prior_source).hexdigest(), corec73.SOURCE_SHA256[target])
