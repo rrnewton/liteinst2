@@ -54,7 +54,7 @@ struct register_tail {
     struct li2_fetch_progress fallback_releases[2];
     struct li2_decoder_stats decoder_before,decoder_after;
 };
-static struct run_record records[RECORDS_KEPT],*running;
+static struct run_record li2_register_records[RECORDS_KEPT],*running;
 static struct capacity_record capacities[CAPACITY_CYCLES];
 static struct register_header header;
 static struct register_tail tail;
@@ -65,7 +65,7 @@ static unsigned fallback_index,reference_phase,route;
 static volatile sig_atomic_t register_handling,publishing;
 
 static int register_dump(void) {
-    header.header_bytes=sizeof(header);header.record_bytes=sizeof(records[0]);
+    header.header_bytes=sizeof(header);header.record_bytes=sizeof(li2_register_records[0]);
     header.records_kept=RECORDS_KEPT;header.startup_bytes=sizeof(samples[0]);
     header.capacity_row_bytes=sizeof(capacities[0]);header.capacity_rows=CAPACITY_CYCLES;
     header.tail_bytes=sizeof(tail);header.xcr0=fixture_xcr0;header.xsave_bytes=xsave_bytes;
@@ -73,7 +73,7 @@ static int register_dump(void) {
     header.owner_detail_abs=result.owner_detail_abs;header.owner_detail_negative=result.owner_detail_negative;
     if(cache)tail.cache=*li2_run_cache_diagnostic(cache);
     return write_all(3,&header,sizeof(header))&&write_all(3,&samples[0],sizeof(samples[0]))&&
-        write_all(3,records,sizeof(records))&&write_all(3,capacities,sizeof(capacities))&&
+        write_all(3,li2_register_records,sizeof(li2_register_records))&&write_all(3,capacities,sizeof(capacities))&&
         write_all(3,&tail,sizeof(tail));
 }
 static int contains(void *context,uintptr_t first,size_t bytes) {
@@ -382,7 +382,7 @@ static int publish_run(struct run_record *r,int expected_hit,int permit_full) {
     compare_run(r);return status;
 }
 static void positive_case(unsigned id,unsigned slot) {
-    struct run_record *a=&records[slot],*b=&records[slot+1];
+    struct run_record *a=&li2_register_records[slot],*b=&li2_register_records[slot+1];
     prepare_run(a,id);*b=*a;b->repetition=1;
     native_run(a);native_run(b);restore_source(a);memcpy(b->state.source,b->literal_source,CODE_BYTES);
     need(!publish_run(a,0,0)&&!publish_run(b,1,0),365);
@@ -408,25 +408,25 @@ static void save_capacity(struct run_record *r,unsigned ordinal) {
 }
 static void capacity(void) {
     for(unsigned i=0;i<64;i++) {
-        struct run_record *r=&records[i==0?0:i==63?1:2];memset(r,0,sizeof(*r));
+        struct run_record *r=&li2_register_records[i==0?0:i==63?1:2];memset(r,0,sizeof(*r));
         prepare_run(r,0);native_run(r);restore_source(r);need(!publish_run(r,0,0),369);save_capacity(r,i);
     }
-    struct run_record *slow=&records[3];prepare_run(slow,0);native_run(slow);restore_source(slow);
+    struct run_record *slow=&li2_register_records[3];prepare_run(slow,0);native_run(slow);restore_source(slow);
     need(publish_run(slow,0,1)==LI2_RUN_SLOW&&slow->finished.attempts==65&&
          slow->finished.full_misses==1&&slow->finished.hits==0,370);
-    struct run_record *hit=&records[4];
-    hit->state=records[0].state;hit->case_index=0;hit->repetition=1;hit->started=1;
-    memcpy(hit->native_source,records[0].native_source,CODE_BYTES);
-    memcpy(hit->literal_source,records[0].literal_source,CODE_BYTES);
-    memcpy(hit->native_pages,records[0].native_pages,sizeof(hit->native_pages));
+    struct run_record *hit=&li2_register_records[4];
+    hit->state=li2_register_records[0].state;hit->case_index=0;hit->repetition=1;hit->started=1;
+    memcpy(hit->native_source,li2_register_records[0].native_source,CODE_BYTES);
+    memcpy(hit->literal_source,li2_register_records[0].literal_source,CODE_BYTES);
+    memcpy(hit->native_pages,li2_register_records[0].native_pages,sizeof(hit->native_pages));
     /* The independent native reference was captured before this source's sole
        restoration/publication. Reuse its immutable capture, not its execution
        credit. Fresh actual cache entry/exit and a fresh borrow follow. */
-    hit->trap_events=records[0].trap_events; /* Retain the actual reference observation. */
+    hit->trap_events=li2_register_records[0].trap_events; /* Retain the actual reference observation. */
     hit->state.step_endpoint_seen=0;hit->state.checked=0;
     memset(&hit->state.step_before,0,sizeof(hit->state.step_before));
     memset(&hit->state.step_endpoint,0,sizeof(hit->state.step_endpoint));
-    need(!publish_run(hit,1,0)&&hit->publication_address==records[0].publication_address&&
+    need(!publish_run(hit,1,0)&&hit->publication_address==li2_register_records[0].publication_address&&
          hit->finished.slots_used==64&&hit->finished.complete_slots==64&&hit->finished.attempts==66&&
          hit->finished.hits==1&&hit->finished.full_misses==1&&tail.history.completed_runs==65,371);
     need(header.completed_capacity==64&&header.completed_records==66&&header.native_references==65&&
@@ -435,7 +435,7 @@ static void capacity(void) {
 }
 int fixture_main(unsigned long *stack) {
     _Static_assert(REGISTER_GROUP>=0&&REGISTER_GROUP<=3,"closed group");
-    _Static_assert(sizeof(header)+sizeof(samples[0])+sizeof(records)+sizeof(capacities)+sizeof(tail)<16*1024*1024,
+    _Static_assert(sizeof(header)+sizeof(samples[0])+sizeof(li2_register_records)+sizeof(capacities)+sizeof(tail)<16*1024*1024,
                    "bounded complete private output");
     header.magic=UINT64_C(0x314e55525232494c);header.version=1;header.group=REGISTER_GROUP;
     setup(stack);size_t done=0,failed=0;uint32_t decoder=0;

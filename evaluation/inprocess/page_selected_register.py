@@ -32,7 +32,7 @@ def digest(value):
 
 def executable_layout(path, symbols):
     """Sizes come from the actual retained ELF's symbols, not the record header."""
-    names = {'header', 'samples', 'records', 'capacities', 'tail'}
+    names = {'header', 'samples', 'li2_register_records', 'capacities', 'tail'}
     found = {}
     _, _, segments = elf(path)
     for line in symbols.decode('ascii').splitlines():
@@ -53,13 +53,13 @@ def executable_layout(path, symbols):
     need(all(a[1] <= b[0] for a, b in zip(intervals, intervals[1:])), 'disjoint ELF record objects')
     size = {k: v['bytes'] for k, v in found.items()}
     need(size['header'] == 216 and size['samples'] % 21 == 0 and
-         size['records'] % 6 == 0 and size['capacities'] == 64*192,
+         size['li2_register_records'] % 6 == 0 and size['capacities'] == 64*192,
          'actual closed C object extents')
     layout = {'header_bytes': size['header'], 'startup_bytes': size['samples']//21,
-              'record_bytes': size['records']//6, 'records_kept': 6,
+              'record_bytes': size['li2_register_records']//6, 'records_kept': 6,
               'capacity_row_bytes': size['capacities']//64, 'capacity_rows': 64,
               'tail_bytes': size['tail']}
-    total = layout['header_bytes']+layout['startup_bytes']+size['records']+size['capacities']+size['tail']
+    total = layout['header_bytes']+layout['startup_bytes']+size['li2_register_records']+size['capacities']+size['tail']
     need(0 < layout['startup_bytes'] < layout['record_bytes'] and total < 16 << 20,
          'actual finite complete record bound')
     return {'symbols': found, 'sizes': layout, 'total_bytes': total}
