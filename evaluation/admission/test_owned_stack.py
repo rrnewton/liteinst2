@@ -9,6 +9,8 @@ import unittest
 from unittest.mock import patch
 
 from core_a3_inventory import before_core_a3
+from runtime_stack_consumer_inventory import (before_runtime_stack_consumer,
+                                               before_runtime_stack_consumer_python)
 import native_fixtures as fixtures
 from owned_stack_inventory import (
     NATIVE_NAMES, NATIVE_ROOT, OLD_NATIVE86_SHA256, OLD_PYTHON302_SHA256,
@@ -45,7 +47,7 @@ def python_identities():
                               for method in cls.body
                               if isinstance(method, (ast.FunctionDef, ast.AsyncFunctionDef))
                               and method.name.startswith("test_"))
-    return result
+    return before_runtime_stack_consumer_python(result)
 
 
 class OwnedStackTests(unittest.TestCase):
@@ -78,7 +80,7 @@ class OwnedStackTests(unittest.TestCase):
         self.assertEqual(fixtures.OWNED_STACK_ROOT, NATIVE_ROOT)
         self.assertEqual(fixtures.OWNED_STACK_NAMES, NATIVE_NAMES)
         self.assertEqual(fixtures.OWNED_STACK_ROWS, ROWS)
-        declared = before_core_a3(json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        declared = before_core_a3(before_runtime_stack_consumer(json.loads(Path(__file__).with_name("corpus.json").read_text())))
         original = copy.deepcopy(declared)
         previous = before_owned_stack(declared)
         self.assertEqual(declared, original)
@@ -112,7 +114,7 @@ class OwnedStackTests(unittest.TestCase):
         self.assertEqual([name for name in current_python if name not in old_python], list(PYTHON_METHODS))
 
     def test_owned_stack_projection_rejects_every_identity_count_and_source_mutation(self):
-        declared = before_core_a3(json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        declared = before_core_a3(before_runtime_stack_consumer(json.loads(Path(__file__).with_name("corpus.json").read_text())))
         for index in range(103):
             for change in ("missing", "duplicate", "position", "cohort", "harness", "test", "extra"):
                 changed = copy.deepcopy(declared)
@@ -233,7 +235,7 @@ class OwnedStackTests(unittest.TestCase):
                 self.assertEqual((rows[index]["status"], rows[index]["test_result"]),
                                  ("failed", "FAILED" if terminal == "FAILED" else "ignored"))
                 self.assertEqual(sum(row["status"] == "complete" for row in rows), 16)
-        declared = before_core_a3(json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        declared = before_core_a3(before_runtime_stack_consumer(json.loads(Path(__file__).with_name("corpus.json").read_text())))
         all_rows = declared["native_validation_fixtures"]
         before_owned_stack(declared)
         for row in all_rows:

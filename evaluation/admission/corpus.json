@@ -7482,6 +7482,6 @@
       "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_installed_allocation_failures_settle_before_cleanup"
     }
   ],
-  "recorder_tests": 305,
+  "recorder_tests": 330,
   "schema_version": 1
 }

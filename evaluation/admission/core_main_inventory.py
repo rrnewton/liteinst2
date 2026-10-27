@@ -12,6 +12,7 @@ import re
 
 from parsing import require
 from owned_stack_inventory import before_owned_stack_python
+from runtime_stack_consumer_inventory import before_runtime_stack_consumer_python
 
 PRE_CORE_MAIN_CORPUS_SHA256 = 'efc707cf3f8de3b4b1cc13fcb15d480ad18d0352c25e3e6d1b95c34fc9250410'
 OLD_PYTHON302_SHA256 = 'ef88eda4e26b581167c865bf32550ffa93bdcb15d755145795fa4650a005ac4b'
@@ -116,6 +117,7 @@ def require_current_core_main_sources():
                                       and method.name.startswith("test_"))
     except (OSError, UnicodeError, SyntaxError):
         require(False, "core_main_source_inventory_differs")
+    identities = before_runtime_stack_consumer_python(identities)
     identities = before_owned_stack_python(identities)
     require(len(identities) == 302 and len(set(identities)) == 302
             and digest(identities) == OLD_PYTHON302_SHA256, "core_main_source_inventory_differs")

@@ -11,6 +11,7 @@ from core_a3_inventory import (ADDED_HARNESSES as A3_ADDED, CHANGED_HARNESSES as
                                PRE_CORE_A3_CORPUS_SHA256, before_core_a3,
                                validate_core_a3_source)
 from owned_stack_inventory import before_owned_stack
+from runtime_stack_consumer_inventory import before_runtime_stack_consumer
 from core_main_inventory import (ADDED_HARNESSES, CHANGED_HARNESSES, RUST_METHODS,
                                  SOURCE_WIRING, PRE_CORE_MAIN_CORPUS_SHA256,
                                  before_core_main, validate_core_main_source)
@@ -132,7 +133,7 @@ class CoreMergeInventoryTests(unittest.TestCase):
                 parsing.parse_harnesses(text, {f"unit/{name}/lib": counts(total, ignored)}, 0)
 
     def test_catalog_preserves_all_old_harnesses_and_native_collection_identities(self):
-        actual = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        actual = before_runtime_stack_consumer(json.loads(Path(__file__).with_name("corpus.json").read_text()))
         unchanged_actual = copy.deepcopy(actual)
         prior_a3 = before_core_a3(actual)
         self.assertEqual(actual, unchanged_actual)
@@ -198,7 +199,7 @@ class CoreMergeInventoryTests(unittest.TestCase):
                     with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_a3_source_inventory_differs$") as caught:
                         before_core_a3(actual)
                 self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
-        current = before_owned_stack(before_core_a3(json.loads(Path(__file__).with_name("corpus.json").read_text())))
+        current = before_owned_stack(before_core_a3(before_runtime_stack_consumer(json.loads(Path(__file__).with_name("corpus.json").read_text()))))
         unchanged = copy.deepcopy(current)
         previous = before_core_main(current)
         self.assertEqual(current, unchanged)

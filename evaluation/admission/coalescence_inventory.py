@@ -13,6 +13,8 @@ import re
 import native_fixtures as fixtures
 from parsing import require
 from core_a3_inventory import before_core_a3
+from runtime_stack_consumer_inventory import (before_runtime_stack_consumer,
+                                               before_runtime_stack_consumer_python)
 from core_main_inventory import before_core_main
 from owned_stack_inventory import before_owned_stack, before_owned_stack_python
 
@@ -137,8 +139,8 @@ def require_current_coalescence_sources():
 
 
 def before_coalescence(declared):
-    return before_coalescence_baseline(before_core_main(before_owned_stack(before_core_a3(declared))))
+    return before_coalescence_baseline(before_core_main(before_owned_stack(before_core_a3(before_runtime_stack_consumer(declared)))))
 
 
 def before_coalescence_python(identities):
-    return before_coalescence_python_baseline(before_owned_stack_python(identities))
+    return before_coalescence_python_baseline(before_owned_stack_python(before_runtime_stack_consumer_python(identities)))
