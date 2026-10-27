@@ -72,18 +72,21 @@ native fixture identities, separately checked against all 138 existing runtime
 identities. The additive runtime launch-failure cleanup API contributes seven pure
 controls and two separate native controls. The separate finite initial map-coalescence
 addition contributes 36 pure and three native controls, retaining original RX source
-extents separately from actual NX containers. Expected totals are 612 launcher units,
-2037 workspace tests in 91 harnesses (2033 possible passes and four
-unchanged ignores), and 904 serial launch tests in the same 27 harnesses.
-The recorder expects 302 Python controls, including twelve separate compiler-consumer
-record/schema regressions, three launch-cleanup controls and three coalescence controls.
+extents separately from actual NX containers. The opt-in owned-initial-stack
+addition contributes 74 pure controls and 17 native identities. Expected totals
+are 703 launcher units, 2128 workspace tests in 91 harnesses (2124 possible passes
+and four unchanged ignores), and 995 serial launch tests in the same 27 harnesses.
+The recorder expects 305 Python controls, including twelve separate compiler-consumer
+record/schema regressions, three launch-cleanup controls, three coalescence controls
+and three owned-stack inventory controls.
 The separately merged core adds 49 methods: three seed-contract integration
 controls, 24 `common_sites` example controls, 14 carrier controls and eight
 counter-reading controls. Its two new workspace harnesses and two changed
 library counts are authenticated before reconstructing the exact previous
-1988-test/89-harness corpus for historical checks. Launcher612, serial904,
-all302 Python identities, all86 native rows, the coalescence39 inventory and
-every old assertion remain unchanged. Only the observed exact `common_sites`
+1988-test/89-harness corpus for historical checks. That core-only increment preserved 612 launcher units, 904 serial tests, all 302
+Python identities, all 86 native rows, the 39-test coalescence inventory and every old assertion;
+the separate owned-stack projection reconstructs that exact complete core corpus
+before any of those historical checks run. Only the observed exact `common_sites`
 source/binary/example-directory header is added to Cargo header recognition;
 all other example-directory variants refuse. No native collection or command
 limit changes are part of this inventory reconciliation.
@@ -125,6 +128,15 @@ authority for a non-executable header page. Their closed inventory validates all
 39 new Rust method names and the entire prior corpus before historical projection,
 preserving all 83 native rows, all 299 Python identities, every old assertion and
 the unchanged six commands, limits, deadlines and outer cleanup requirements.
+The 17 exact `b3_owned_stack` identities append as rows 87–103 in a separate
+closed module. Their inventory covers only the opt-in initial-stack E8/C3
+contract and its refusal, fault, state, CALL-history and cleanup controls; it
+supplies no generic memory/stack permission. It authenticates all 91 added Rust
+method identities and the complete current corpus before returning the exact
+302-Python/86-native historical inventory. All historical controls retain their
+original counts, identities and assertions. Native outcomes still require the
+full successful qualification and physical cleanup gates; declaring a method
+or parsing a synthetic record is not native execution evidence.
 The new inventory projection reconstructs the complete pre-kernel corpus before
 any historical control reads it; unknown rows and changed source-method
 identities cannot be hidden by that projection. The two cross-page controls
@@ -154,7 +166,13 @@ closure or successor. The six fixture identities cover return/control lineage,
 terminal custody, cross-page fetch, default-policy refusal, provider faults and
 unsupported calls, and stale replies. They are source inventory, not evidence
 that those trajectories have executed or that ordinary applications qualify.
-Memory/stack effects and actual enabled DR7 have explicit refusal controls.
+The default profile retains its memory/stack refusal controls. The separate
+owned-initial-stack opt-in is restricted to exact E8/C3 encodings and an owned
+8-byte initial-stack footprint, with explicit layout, PKRU/AC, source, control,
+page, census and append-only CALL-history obligations. The fixed 64 MiB default
+source budget, retained history and absolute execution deadline remain unchanged;
+this finite addition does not solve execution scaling. Actual enabled DR7 still
+has explicit refusal controls.
 The per-fixture subcases and corruption mutations do not increase outer test
 counts or add static instruction telemetry.
 

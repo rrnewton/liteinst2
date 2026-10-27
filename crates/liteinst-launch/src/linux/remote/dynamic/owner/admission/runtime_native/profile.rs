@@ -4,7 +4,7 @@ use super::super::runtime_kernel_native::OwnedRuntimeKernelReturn;
 use super::*;
 use crate::linux::remote::dynamic::owner::kernel_journal::{KernelAttemptId, KernelStopIdentity};
 const DR_BASE: u64 = 0xffff_0ff0;
-pub(super) const DR_TRACE: u64 = DR_BASE ^ 0x4000;
+pub(in crate::linux::remote::dynamic::owner::admission) const DR_TRACE: u64 = DR_BASE ^ 0x4000;
 
 #[derive(Clone, Copy, Debug, Default)]
 pub(in crate::linux::remote::dynamic::owner::admission) struct DebugRead {
@@ -390,6 +390,86 @@ impl ControlLineage {
             checkpoint: proof.after().clone(),
             dr6: self.dr6,
             kernel: self.kernel.clone(),
+        })
+    }
+    /// Stage lineage from the sole real stack completion; this does not
+    /// consume it or install the next current origin. Root installs only after
+    /// census successfully consumes that same borrowed native witness.
+    pub(in crate::linux::remote::dynamic::owner::admission) fn stack_successor(
+        &self,
+        proof: &super::super::runtime_stack_native::OwnedStackCompletion<'_>,
+    ) -> Result<Self, LaunchError> {
+        let identity = proof.identity();
+        let before = proof.logical_before();
+        self.require_orig_rax(before.stop, before.state.registers.orig_rax)?;
+        if identity.stop() != before.stop
+            || identity.until() != identity.operand_description().until
+            || identity.operand_description().stop != *before.stop
+        {
+            return Err(LaunchError::Invalid("owned stack control binding differs"));
+        }
+        let opening = proof.opening();
+        let mut previous = before.stop;
+        for checkpoint in &opening {
+            runner::next_stop(previous, checkpoint.stop)?;
+            if checkpoint.stop.phase != AdmissionPhase::Restored || checkpoint.state != before.state
+            {
+                return Err(LaunchError::Invalid("owned stack control opening differs"));
+            }
+            previous = checkpoint.stop;
+        }
+        let step = proof.step();
+        let trace = proof.trace();
+        runner::next_stop(previous, step.stop)?;
+        if step.stop.phase != AdmissionPhase::NativeCompleted
+            || step.state.registers.orig_rax != u64::MAX
+            || trace.ordinal != 3
+            || trace.tid != before.stop.token.tid
+            || trace.dr6 != DR_TRACE
+            || !libc::WIFSTOPPED(trace.status)
+            || libc::WSTOPSIG(trace.status) != libc::SIGTRAP
+            || trace.status >> 16 != 0
+        {
+            return Err(LaunchError::Invalid("owned stack control trace differs"));
+        }
+        let words = proof.words();
+        if words.operand != identity.operand_description()
+            || words.profile.stack != identity.stack_descriptor()
+            || words.profile.metadata != identity.stack_metadata()
+            || words.profile.layout != identity.pku_layout()
+            || words.profile.initial_rsp != identity.initial_rsp()
+            || words.profile.restored != *identity.initial_stop()
+            || words
+                .captures
+                .iter()
+                .any(|capture| !capture.complete || capture.first_failure.is_some())
+            || words.captures[0].word.bytes != words.captures[1].word.bytes
+            || words.captures[2].word.bytes != words.captures[3].word.bytes
+        {
+            return Err(LaunchError::Invalid(
+                "owned stack control word identity differs",
+            ));
+        }
+        super::super::runtime_stack::operand::validate_effect(
+            before.state,
+            step.state,
+            words.operand,
+            &words.captures[0].word.bytes,
+            &words.captures[2].word.bytes,
+        )
+        .map_err(|_| LaunchError::Invalid("owned stack control effect differs"))?;
+        previous = step.stop;
+        for checkpoint in &proof.closing() {
+            runner::next_stop(previous, checkpoint.stop)?;
+            if checkpoint.stop.phase != AdmissionPhase::Restored || checkpoint.state != step.state {
+                return Err(LaunchError::Invalid("owned stack control closing differs"));
+            }
+            previous = checkpoint.stop;
+        }
+        Ok(Self {
+            checkpoint: previous.clone(),
+            dr6: DR_TRACE,
+            kernel: None,
         })
     }
     pub(in crate::linux::remote::dynamic::owner::admission) fn from_completion(

@@ -139,6 +139,31 @@ INITIAL_COALESCENCE_ROWS = tuple({"cohort": "b3_initial_coalescence", "harness":
 INITIAL_COALESCENCE_IDENTITIES = {row["test"]: row for row in INITIAL_COALESCENCE_ROWS}
 
 
+# Closed owned-initial-stack controls; no generic memory or stack authority.
+OWNED_STACK_ROOT = 'linux::remote::dynamic::owner::admission::runtime::stack::native_tests'
+OWNED_STACK_NAMES = ('runtime_stack_call_ret_matches_raw_full_state_and_stack',
+ 'runtime_stack_boundary_call_ret_keeps_unexecuted_next_page_nx',
+ 'runtime_stack_crossing_call_opens_exact_two_pages',
+ 'runtime_stack_unaligned_two_page_word_preserves_neighbors',
+ 'runtime_stack_kernel_selected_ordinary_chain_preserves_call_history',
+ 'runtime_stack_default_encodings_targets_and_slot_refuse_before_release',
+ 'runtime_stack_metadata_changes_refuse_with_actual_records',
+ 'runtime_stack_nonresident_word_refuses_before_peek',
+ 'runtime_stack_nonexclusive_word_refuses_with_two_owned_pins',
+ 'runtime_stack_after_a_ac_refuses_before_private_effects',
+ 'runtime_stack_after_a_pkru_refuses_before_private_effects',
+ 'runtime_stack_after_b_ac_retains_actual_alignment_fault',
+ 'runtime_stack_after_b_pkru_retains_actual_access_fault',
+ 'runtime_stack_late_failure_and_unwind_retain_call_custody',
+ 'runtime_stack_budget_deadline_and_stale_source_refuse_before_effects',
+ 'runtime_stack_raw_io_failures_keep_request_prefix_and_cleanup',
+ 'runtime_stack_installed_allocation_failures_settle_before_cleanup')
+OWNED_STACK_ROWS = tuple({"cohort": "b3_owned_stack", "harness": UNIT,
+                          "test": OWNED_STACK_ROOT + "::" + name}
+                         for name in OWNED_STACK_NAMES)
+OWNED_STACK_IDENTITIES = {row["test"]: row for row in OWNED_STACK_ROWS}
+
+
 def catalog(fixtures):
     require(type(fixtures) is list, "invalid_native_fixture_catalog")
     identities = {}
@@ -147,6 +172,9 @@ def catalog(fixtures):
                 "invalid_native_fixture_catalog")
         require(all(type(value) is str for value in row.values())
                 and NAME.fullmatch(row["test"]), "invalid_native_fixture_catalog")
+        require(not row["test"].startswith(OWNED_STACK_ROOT)
+                or row == OWNED_STACK_IDENTITIES.get(row["test"]),
+                "invalid_native_fixture_scope")
         require(not row["test"].startswith(INITIAL_COALESCENCE_ROOT)
                 or row == INITIAL_COALESCENCE_IDENTITIES.get(row["test"]),
                 "invalid_native_fixture_scope")
@@ -193,6 +221,7 @@ def catalog(fixtures):
                 or row == WAIT_CUSTODY_ROW
                 or row == RUNTIME_KERNEL_IDENTITIES.get(row["test"])
                 or row == RUNTIME_LAUNCH_CLEANUP_IDENTITIES.get(row["test"])
+                or row == OWNED_STACK_IDENTITIES.get(row["test"])
                 or row == INITIAL_COALESCENCE_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
         key = (row["harness"], row["test"])
         require(key not in identities, "duplicate_native_fixture_catalog")
@@ -261,7 +290,8 @@ def fixture_outcomes(output, fixtures, successful_command):
                 require(key in expected or (current == UNIT and not start[1].startswith(
                     PREFIXES + (RESET_PREFIX, SOURCE_CENSUS_PREFIX, EXEC_PRIVATE_PREFIX)
                     + RUNTIME_NATIVE_ROOTS + (WAIT_CUSTODY_ROOT, RUNTIME_KERNEL_ROOT,
-                                              RUNTIME_LAUNCH_CLEANUP_ROOT, INITIAL_COALESCENCE_ROOT))),
+                                              RUNTIME_LAUNCH_CLEANUP_ROOT, INITIAL_COALESCENCE_ROOT,
+                                              OWNED_STACK_ROOT))),
                         "native_fixture_cohort_differs")
                 seen_tests.add(key)
                 active = key

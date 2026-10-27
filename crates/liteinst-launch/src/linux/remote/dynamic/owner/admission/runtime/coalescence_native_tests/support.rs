@@ -259,6 +259,7 @@ pub(super) fn allocate(options: &DynamicRuntimeOptions, until: Instant) -> Runti
             capture: profile(options),
             limits: options.limits,
             kernel: options.kernel,
+            stack: crate::RuntimeStackProfile::Refuse,
         },
         until,
     )

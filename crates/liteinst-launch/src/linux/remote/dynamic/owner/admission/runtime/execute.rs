@@ -127,7 +127,11 @@ impl RuntimeOwner {
                     .prepare_selected(owner, index, until)
                     .map(AdmissionReply::RuntimeProvider);
             }
-            self.ordinary(owner, index, until)?;
+            if self.stack.is_some() && stack::stack_candidate(&candidate) {
+                self.stack(owner, index, until)?;
+            } else {
+                self.ordinary(owner, index, until)?;
+            }
         }
     }
 

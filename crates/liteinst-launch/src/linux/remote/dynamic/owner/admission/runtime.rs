@@ -25,6 +25,7 @@ pub(super) mod maps;
 mod native_tests;
 mod ordinary;
 pub(super) mod selected;
+pub(super) mod stack;
 #[cfg(test)]
 mod tests;
 
@@ -33,6 +34,7 @@ pub(in crate::linux::remote::dynamic::owner) struct RuntimeStartOptions {
     pub(super) capture: InitialCaptureProfile,
     pub(super) limits: DynamicAdmissionLimits,
     pub(super) kernel: super::super::super::admission::RuntimeKernelProfile,
+    pub(super) stack: super::super::super::admission::RuntimeStackProfile,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -80,6 +82,7 @@ pub(in crate::linux::remote::dynamic::owner) struct RuntimeOwner {
     kernel_profile: super::super::super::admission::RuntimeKernelProfile,
     kernel_attempts: Vec<Box<kernel::RuntimeKernelAttempt>>,
     kernel_pending: Option<usize>,
+    stack: Option<stack::RuntimeStackState>,
     metrics: DynamicAdmissionMetrics,
     pages: Vec<RuntimePage>,
     // Initialized before any original read/effect. One is moved into the
@@ -162,6 +165,20 @@ impl RuntimeOwner {
                 ..BudgetCharge::default()
             })
             .map_err(census_error)?;
+        let stack_reservation = match options.stack {
+            super::super::super::admission::RuntimeStackProfile::Refuse => 0,
+            super::super::super::admission::RuntimeStackProfile::OriginalResidentWord => {
+                stack::RuntimeStackState::startup_reservation(configured.origins)?
+            }
+        };
+        if stack_reservation != 0 {
+            startup
+                .reserve(BudgetCharge {
+                    source_fact_bytes: stack_reservation,
+                    ..BudgetCharge::default()
+                })
+                .map_err(census_error)?;
+        }
         let sources = PreparedInitialSources::allocate(capture, until)?;
         let pages = storage(max_pages)?;
         let ready_xstate = state_storage()?;
@@ -194,6 +211,12 @@ impl RuntimeOwner {
             kernel_profile: options.kernel,
             kernel_attempts: Vec::new(),
             kernel_pending: None,
+            stack: match options.stack {
+                super::super::super::admission::RuntimeStackProfile::Refuse => None,
+                super::super::super::admission::RuntimeStackProfile::OriginalResidentWord => Some(
+                    stack::RuntimeStackState::empty(configured.origins, stack_reservation),
+                ),
+            },
             metrics: DynamicAdmissionMetrics::default(),
             pages,
             ready_capacity: ready_xstate.capacity(),
@@ -255,6 +278,9 @@ impl RuntimeOwner {
             ));
         }
         owner.time_left(self.until, "initial runtime capture")?;
+        if let Some(stack) = &mut self.stack {
+            stack.allocate_startup()?;
+        }
         self.stage = RuntimeStage::OriginalCapture;
         self.sources.capture_original(owner, initial)?;
         if let Some((plan, executable)) = self.sources.coalescence_plan(owner, initial)? {
@@ -358,6 +384,9 @@ impl RuntimeOwner {
         }
         self.stage = RuntimeStage::Reauthentication;
         self.sources.reauthenticate(owner, native, boot)?;
+        if let Some(stack) = &mut self.stack {
+            stack.capture_profile(owner, native, boot, &self.sources, self.until)?;
+        }
         self.stage = RuntimeStage::Catalog;
         self.build_pages()?;
         self.finish_initial_census(owner)
@@ -539,6 +568,9 @@ impl RuntimeOwner {
                 },
             )
             .map_err(census_error)?;
+        if let Some(stack) = &mut self.stack {
+            stack.settle_startup(census, reservation)?;
+        }
         census
             .finish_reservation(reservation)
             .map_err(census_error)?;

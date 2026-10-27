@@ -725,6 +725,7 @@ fn initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec() {
                         },
                         limits: options.limits,
                         kernel: options.kernel,
+                        stack: crate::RuntimeStackProfile::Refuse,
                     },
                     until,
                 )

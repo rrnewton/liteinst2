@@ -40,6 +40,17 @@ pub enum RuntimeKernelProfile {
     IdentityAndTermination,
 }
 
+/// Optional native access to one resident word in the original owned stack.
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+pub enum RuntimeStackProfile {
+    /// Stack operands retain the original memory-operand refusal.
+    #[default]
+    Refuse,
+    /// Exact unprefixed E8 rel32 CALL and C3 RET, with independently observed
+    /// original stack identity, exclusive resident pages and full native state.
+    OriginalResidentWord,
+}
+
 /// Initial singleton runtime profile with owner-captured Partial entry evidence.
 /// All seven selected classes remain selected. These limits do not certify
 /// instruction-head completeness, absence of writers or executable permission.
@@ -51,6 +62,8 @@ pub struct DynamicRuntimeOptions {
     pub limits: DynamicAdmissionLimits,
     /// Explicit finite original-site native syscall policy.
     pub kernel: RuntimeKernelProfile,
+    /// Explicit finite original-stack native operand policy.
+    pub stack: RuntimeStackProfile,
 }
 
 /// Private wire identity. This is separate from a legacy installed-plan token;
@@ -92,6 +105,13 @@ impl<P: InstructionProvider> DynamicAdmissionSession<P> {
     /// the optional IdentityAndTermination kernel profile admits only native64
     /// getpid/gettid and terminal exit/exit_group under separate native proofs.
     /// Other syscall effects and composed lifecycle transitions remain refused.
+    /// OriginalResidentWord additionally requires exclusive writer and alias
+    /// custody of the original stack, no external pager or userfaultfd handler,
+    /// and a common supported component-9 XSAVE layout on every CPU on which
+    /// controller or tracee may run. Its exact CALL/RET word is observed at the
+    /// held stops; resident/exclusive page checks do not establish that custody.
+    /// This profile promises neither paging nor fault transparency. CALL return
+    /// destinations are retained even when their page has never executed.
     pub unsafe fn launch_runtime(
         command: &LaunchCommand,
         options: DynamicRuntimeOptions,

@@ -33,6 +33,7 @@ impl Owner {
                     capture,
                     limits: options.limits,
                     kernel: options.kernel,
+                    stack: options.stack,
                 },
                 until,
             )?);

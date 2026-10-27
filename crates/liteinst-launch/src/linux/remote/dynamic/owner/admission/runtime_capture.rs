@@ -32,6 +32,7 @@ pub(super) use current::{
     RuntimeWindowProof,
 };
 mod geometry;
+mod stack;
 use geometry::{VmaGeometry, WindowGeometry};
 #[cfg(test)]
 mod tests;

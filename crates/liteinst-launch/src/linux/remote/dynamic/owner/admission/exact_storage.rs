@@ -45,3 +45,52 @@ pub(super) fn one<T>(value: T) -> Result<Box<[T]>, AllocationError> {
         )))
     }
 }
+
+/// Exact empty owning slots. Successful return owns every initialized None; a
+/// slot grants no fact or native authority. The caller installs it before any
+/// later fallible allocation and accounts this exact payload once.
+pub(super) fn empty_slots<T>(count: usize) -> Result<Box<[Option<Box<T>>]>, AllocationError> {
+    if count == 0 {
+        return Ok(Box::new([]));
+    }
+    let layout = Layout::array::<Option<Box<T>>>(count).map_err(|_| AllocationError::Capacity)?;
+    // SAFETY: nonzero checked global layout, aligned for Option<Box<T>>.
+    // Null is handled before any owner is published. No T is constructed.
+    let pointer = unsafe { alloc_zeroed(layout) }.cast::<Option<Box<T>>>();
+    if pointer.is_null() {
+        return Err(AllocationError::Allocation);
+    }
+    // SAFETY: initialize each element explicitly instead of relying on zero
+    // representation. None initialization cannot invoke user code or panic.
+    // The returned slice has exactly count elements and deallocates the same
+    // Layout; each later Some owns precisely its original Box<T>.
+    unsafe {
+        for index in 0..count {
+            pointer.add(index).write(None);
+        }
+        Ok(Box::from_raw(std::ptr::slice_from_raw_parts_mut(
+            pointer, count,
+        )))
+    }
+}
+
+/// One exact value owner. Stack-profile callers pass only empty fixed headers;
+/// on allocation failure value is still locally owned and is dropped normally.
+pub(super) fn value<T>(value: T) -> Result<Box<T>, AllocationError> {
+    let layout = Layout::new::<T>();
+    if layout.size() == 0 {
+        // A ZST has no allocation; Box uses its aligned dangling ZST owner.
+        return Ok(Box::new(value));
+    }
+    // SAFETY: checked nonzero global allocation with T's exact alignment.
+    let pointer = unsafe { alloc_zeroed(layout) }.cast::<T>();
+    if pointer.is_null() {
+        return Err(AllocationError::Allocation);
+    }
+    // SAFETY: one initialized T, uniquely owned, with identical Box drop
+    // layout. No fallible work or user callback intervenes before transfer.
+    unsafe {
+        pointer.write(value);
+        Ok(Box::from_raw(pointer))
+    }
+}

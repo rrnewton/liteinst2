@@ -3,6 +3,7 @@ use super::*;
 mod coalescence_fixture;
 mod helper_death;
 mod source_census;
+mod stack_fixture;
 pub(super) mod wait_withdrawal;
 use std::io::Write;
 use std::os::unix::fs::PermissionsExt;

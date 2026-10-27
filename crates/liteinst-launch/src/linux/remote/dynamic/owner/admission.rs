@@ -24,6 +24,8 @@ mod runtime_capture;
 mod runtime_instruction;
 pub(in crate::linux::remote::dynamic::owner) mod runtime_kernel_native;
 mod runtime_native;
+mod runtime_stack;
+mod runtime_stack_native;
 mod source_identity;
 pub(in crate::linux::remote::dynamic::owner) use mapping::maps::{
     MapEntries, MapEntry, ParsedMaps,

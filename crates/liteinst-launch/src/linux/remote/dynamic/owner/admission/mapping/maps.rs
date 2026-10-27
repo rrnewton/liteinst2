@@ -6,6 +6,14 @@
 //! particular, pathname bytes are not UTF-8 decoded or whitespace-normalized.
 //! `raw_line` also preserves the exact separator/padding before a pathname.
 
+/// One smaps header through the unchanged maps grammar. This supplies no
+/// complete-inventory, task, writer, alias or native permission authority.
+pub(in crate::linux::remote::dynamic::owner) fn parse_header_line(
+    line: &[u8],
+) -> Result<MapEntry<'_>, MapParseError> {
+    parse_line(line)
+}
+
 #[cfg(test)]
 mod tests;
 

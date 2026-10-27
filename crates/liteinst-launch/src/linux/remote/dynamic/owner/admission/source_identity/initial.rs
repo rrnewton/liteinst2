@@ -8,6 +8,7 @@ pub(in crate::linux::remote::dynamic::owner) use checkpoint::{
 };
 mod runtime;
 mod runtime_kernel;
+mod stack;
 pub(in crate::linux::remote::dynamic::owner::admission) use runtime::{
     RuntimeReadCheckpoint, RuntimeSourceRead,
 };

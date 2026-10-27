@@ -135,7 +135,7 @@ fn runtime_isolation_role_requires_exact_test_and_parent_binding() {
     for foreign in [
         Identity { case: 0, ..id },
         Identity { case: 2, ..id },
-        Identity { case: 30, ..id },
+        Identity { case: 47, ..id },
         Identity { parent: 701, ..id },
         Identity { nonce: 0, ..id },
         Identity { inode: 0, ..id },

@@ -6,6 +6,7 @@ import json
 from pathlib import Path
 import unittest
 from unittest.mock import patch
+from owned_stack_inventory import before_owned_stack
 from core_main_inventory import (ADDED_HARNESSES, CHANGED_HARNESSES, RUST_METHODS,
                                  SOURCE_WIRING, PRE_CORE_MAIN_CORPUS_SHA256,
                                  before_core_main, validate_core_main_source)
@@ -85,7 +86,7 @@ class CoreMergeInventoryTests(unittest.TestCase):
                 parsing.parse_harnesses(text, {f"unit/{name}/lib": counts(total, ignored)}, 0)
 
     def test_catalog_preserves_all_old_harnesses_and_native_collection_identities(self):
-        current = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        current = before_owned_stack(json.loads(Path(__file__).with_name("corpus.json").read_text()))
         unchanged = copy.deepcopy(current)
         previous = before_core_main(current)
         self.assertEqual(current, unchanged)

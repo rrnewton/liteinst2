@@ -13,6 +13,7 @@ import re
 import native_fixtures as fixtures
 from parsing import require
 from core_main_inventory import before_core_main
+from owned_stack_inventory import before_owned_stack, before_owned_stack_python
 
 PRE_COALESCENCE_CORPUS_SHA256 = '58a05eb23df1a5d9c9cda0a32f7838363b0406ac5aee1b9fce5cf75a596b7b2b'
 OLD_NATIVE83_SHA256 = '65c43f0b2312c0f42644bbbb609f6e0cae9b4e37a3c8722fd6af6c1efbd94685'
@@ -103,7 +104,7 @@ def before_coalescence_baseline(declared):
     return previous
 
 
-def before_coalescence_python(identities):
+def before_coalescence_python_baseline(identities):
     """Remove only the exact three added source identities, in original order."""
     require(type(identities) is list and len(identities) == 302
             and all(type(value) is str for value in identities)
@@ -135,4 +136,8 @@ def require_current_coalescence_sources():
 
 
 def before_coalescence(declared):
-    return before_coalescence_baseline(before_core_main(declared))
+    return before_coalescence_baseline(before_core_main(before_owned_stack(declared)))
+
+
+def before_coalescence_python(identities):
+    return before_coalescence_python_baseline(before_owned_stack_python(identities))

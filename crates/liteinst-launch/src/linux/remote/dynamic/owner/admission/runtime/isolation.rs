@@ -1,4 +1,4 @@
-//! Test-process isolation for the twenty-nine actual runtime controls. This removes
+//! Test-process isolation for the forty-six actual runtime controls. This removes
 //! unrelated libtest cases from the tracer mm, not the real public API threads.
 //! A child result and a separately owned post-body receipt are both mandatory.
 use std::fs::File;
@@ -22,7 +22,7 @@ const PROCESS_TIMEOUT: Duration = Duration::from_secs(120);
 const CLEANUP_TIMEOUT: Duration = Duration::from_secs(3);
 static NONCE: AtomicU64 = AtomicU64::new(1);
 
-const CASES: [&str; 29] = [
+const CASES: [&str; 46] = [
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_expired_original_deadline_keeps_pristine_exec",
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_one_short_bootstrap_reservation_keeps_pristine_exec",
     "linux::remote::dynamic::owner::admission::runtime::native_tests::initial_runtime_owner_refuses_raw_bypass_and_repeated_start",
@@ -52,6 +52,23 @@ const CASES: [&str; 29] = [
     "linux::remote::dynamic::owner::admission::runtime::coalescence_native_tests::initial_runtime_coalescence_merges_pair_and_recloses_original_rx_fetch",
     "linux::remote::dynamic::owner::admission::runtime::coalescence_native_tests::initial_runtime_coalescence_one_short_capacity_keeps_pristine_exec",
     "linux::remote::dynamic::owner::admission::runtime::coalescence_native_tests::initial_runtime_coalescence_unwind_retains_native_evidence_through_cleanup",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_call_ret_matches_raw_full_state_and_stack",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_boundary_call_ret_keeps_unexecuted_next_page_nx",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_crossing_call_opens_exact_two_pages",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_unaligned_two_page_word_preserves_neighbors",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_metadata_changes_refuse_with_actual_records",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_nonresident_word_refuses_before_peek",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_nonexclusive_word_refuses_with_two_owned_pins",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_raw_io_failures_keep_request_prefix_and_cleanup",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_after_a_ac_refuses_before_private_effects",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_after_a_pkru_refuses_before_private_effects",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_after_b_ac_retains_actual_alignment_fault",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_after_b_pkru_retains_actual_access_fault",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_kernel_selected_ordinary_chain_preserves_call_history",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_default_encodings_targets_and_slot_refuse_before_release",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_late_failure_and_unwind_retain_call_custody",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_budget_deadline_and_stale_source_refuse_before_effects",
+    "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_installed_allocation_failures_settle_before_cleanup",
 ];
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

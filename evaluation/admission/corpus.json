@@ -6085,7 +6085,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 612
+        "tests": 703
       }
     },
     "workspace_tests": {
@@ -6435,7 +6435,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 612
+        "tests": 703
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -7387,8 +7387,93 @@
       "cohort": "b3_initial_coalescence",
       "harness": "unit/liteinst_launch/lib",
       "test": "linux::remote::dynamic::owner::admission::runtime::coalescence_native_tests::initial_runtime_coalescence_unwind_retains_native_evidence_through_cleanup"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_call_ret_matches_raw_full_state_and_stack"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_boundary_call_ret_keeps_unexecuted_next_page_nx"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_crossing_call_opens_exact_two_pages"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_unaligned_two_page_word_preserves_neighbors"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_kernel_selected_ordinary_chain_preserves_call_history"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_default_encodings_targets_and_slot_refuse_before_release"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_metadata_changes_refuse_with_actual_records"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_nonresident_word_refuses_before_peek"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_nonexclusive_word_refuses_with_two_owned_pins"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_after_a_ac_refuses_before_private_effects"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_after_a_pkru_refuses_before_private_effects"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_after_b_ac_retains_actual_alignment_fault"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_after_b_pkru_retains_actual_access_fault"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_late_failure_and_unwind_retain_call_custody"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_budget_deadline_and_stale_source_refuse_before_effects"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_raw_io_failures_keep_request_prefix_and_cleanup"
+    },
+    {
+      "cohort": "b3_owned_stack",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_installed_allocation_failures_settle_before_cleanup"
     }
   ],
-  "recorder_tests": 302,
+  "recorder_tests": 305,
   "schema_version": 1
 }

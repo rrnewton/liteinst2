@@ -13,7 +13,7 @@ use liteinst_admission::oracle_chain::CacheLimits;
 
 mod runtime_session;
 pub use runtime_session::{
-    DynamicRuntimeCaptureLimits, DynamicRuntimeOptions, RuntimeKernelProfile,
+    DynamicRuntimeCaptureLimits, DynamicRuntimeOptions, RuntimeKernelProfile, RuntimeStackProfile,
 };
 pub(super) use runtime_session::{RuntimePendingToken, RuntimeProviderInput};
 mod signal_session;

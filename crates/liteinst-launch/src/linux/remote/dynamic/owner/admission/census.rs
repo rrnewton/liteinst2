@@ -19,6 +19,17 @@ mod runtime;
 pub(super) use runtime::{InitialRuntimeReservation, initial_runtime_origin_charge};
 mod ordinary;
 pub(super) use ordinary::{PreparedOrdinaryCensus, ordinary_census_charge};
+mod runtime_stack;
+pub(super) use runtime_stack::{
+    PreparedStackCensus, stack_census_charge, stack_census_temporary_bytes,
+};
+pub(super) mod stack_calls;
+#[cfg(test)]
+pub(super) use runtime_stack::native_oracle::{
+    StackCensusSnapshot, StackChainInput, StackPreparationSnapshot,
+};
+#[cfg(test)]
+pub(super) use stack_calls::native_oracle::{CallLedgerRowSnapshot, CallLedgerSnapshot};
 mod selected_runtime;
 pub(super) use selected_runtime::PreparedRuntimeSelected;
 mod runtime_kernel;
@@ -293,6 +304,11 @@ pub(super) enum StopPhase {
     OwnedOrdinaryComplete {
         execution: ExecutionId,
     },
+    /// One real E8/C3 trace, inserted only by the consuming stack seal adapter.
+    /// Generic current-origin insertion is unchanged and refuses this phase.
+    OwnedStackComplete {
+        execution: ExecutionId,
+    },
 }
 
 /// Full original observation. A raw INT3 RIP may be logical_pc + 1; the input
@@ -336,6 +352,18 @@ impl ObservedStop {
                     || execution.serial == 0
                     || self.signal.as_ref().map(DynamicSignalInfo::signal)
                         != Some(libc::SIGTRAP)
+                    || self.signal.as_ref().map(DynamicSignalInfo::code)
+                        != Some(libc::TRAP_TRACE) =>
+            {
+                return Err(CensusError::InvalidObservation);
+            }
+            StopPhase::OwnedStackComplete { execution }
+                if execution.session != session
+                    || execution.serial == 0
+                    || self.registers.orig_rax != u64::MAX
+                    || self.signal.as_ref().map(DynamicSignalInfo::signal)
+                        != Some(libc::SIGTRAP)
+                    || self.signal.as_ref().map(DynamicSignalInfo::errno) != Some(0)
                     || self.signal.as_ref().map(DynamicSignalInfo::code)
                         != Some(libc::TRAP_TRACE) =>
             {
@@ -514,6 +542,7 @@ enum Consumption {
     },
     /// Exactly one preallocated immutable record; actual authority was consumed.
     OwnedOrdinary(Box<[ordinary::OrdinaryEvidence]>),
+    OwnedStack(Box<[runtime_stack::StackEvidence]>),
     RuntimeKernel(Box<[runtime_kernel::KernelEvidence]>),
     KernelClone(Box<CompletedKernel>),
     Signal(Box<signal::SignalConsumption>),
@@ -665,6 +694,9 @@ impl OwnerConsumption {
             Consumption::Signal(signal) => signal.retained_bytes(),
             Consumption::OwnedOrdinary(records) => {
                 records.len() * std::mem::size_of::<ordinary::OrdinaryEvidence>()
+            }
+            Consumption::OwnedStack(records) => {
+                records.len() * std::mem::size_of::<runtime_stack::StackEvidence>()
             }
             Consumption::RuntimeKernel(records) => {
                 records.iter().map(|record| record.retained_bytes()).sum()

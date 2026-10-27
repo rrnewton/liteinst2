@@ -16,7 +16,7 @@ mod runner;
 #[cfg(test)]
 mod tests;
 pub(super) use profile::{ControlLineage, ControlProfile};
-use profile::{DR_TRACE, DebugRead};
+pub(super) use profile::{DR_TRACE, DebugRead};
 
 const MAP_BYTES: usize = 64 * 1024;
 const WAITS: usize = 7;
