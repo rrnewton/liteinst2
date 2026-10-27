@@ -484,3 +484,5 @@ fn activation_refuses_existing_tls_attachment_without_resetting_it() {
 
 // Explicit release-fixture qualification; old metadata tests remain literal.
 pub(super) mod concurrent_native;
+
+mod retirement;

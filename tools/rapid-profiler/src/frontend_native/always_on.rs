@@ -42,6 +42,8 @@ enum Cause {
     Gate(GateError),
     ClockProfile,
     ControllerReentry,
+    CurrentEpoch,
+    NotDrained,
 }
 /// Opaque typed failure. Debug retains the exact original model error; no
 /// FunctionClosed/NoCurrent fallback converts an unrelated error into a sample.
@@ -100,26 +102,35 @@ pub struct PreparedIntervalController {
     install: u64,
     function: FunctionId,
     limits: Limits,
-    epochs: Vec<EpochHandle>,
+    epochs: Vec<Option<EpochHandle>>,
     _exclusive: PhantomData<Cell<()>>,
 }
 fn staged(
     session: &Session,
     key: &Arc<()>,
-    epochs: &mut Vec<EpochHandle>,
+    epochs: &mut Vec<Option<EpochHandle>>,
     limits: Limits,
     config: Config,
 ) -> Result<IntervalEpoch, BridgeError> {
-    if epochs.len() == limits.epochs {
+    // Only explicit retirement creates a vacancy; a closed owner is not scavenged.
+    let index = epochs
+        .iter()
+        .position(Option::is_none)
+        .unwrap_or(epochs.len());
+    if index == limits.epochs {
         return Err(error(Cause::Capacity));
     }
     let owner = session.stage(config).map_err(|e| error(Cause::Setup(e)))?;
     let token = IntervalEpoch {
         key: Arc::clone(key),
-        index: epochs.len(),
+        index,
         generation: owner.generation(),
     };
-    epochs.push(owner); // Exact capacity was reserved before any publication.
+    if index == epochs.len() {
+        epochs.push(Some(owner)); // Exact capacity was reserved before publication.
+    } else {
+        epochs[index] = Some(owner);
+    }
     Ok(token)
 }
 impl PreparedIntervalController {
@@ -219,6 +230,7 @@ impl PreparedIntervalController {
             || !snapshot.actions.is_empty()
             || snapshot.retained_failed_generation.is_some()
             || snapshot.enabled != [false]
+            || self.epochs.iter().any(Option::is_none)
             || self.session.retained_epochs() != self.epochs.len()
         {
             return Err(error(Cause::Invariant));
@@ -251,19 +263,24 @@ impl PreparedIntervalController {
 /// One non-Clone controller, Send but not Sync. No Session or EpochHandle escapes.
 pub struct IntervalController {
     binding: Arc<Binding>,
-    epochs: Vec<EpochHandle>,
+    epochs: Vec<Option<EpochHandle>>,
     _exclusive: PhantomData<Cell<()>>,
 }
 impl IntervalController {
     fn owner(&self, epoch: &IntervalEpoch) -> Result<&EpochHandle, BridgeError> {
         self.binding.process()?;
-        let owner = self.epochs.get(epoch.index).ok_or(error(Cause::Epoch))?;
+        let owner = self
+            .epochs
+            .get(epoch.index)
+            .and_then(Option::as_ref)
+            .ok_or(error(Cause::Epoch))?;
         if !Arc::ptr_eq(&epoch.key, &self.binding.key) || owner.generation() != epoch.generation {
             return Err(error(Cause::Epoch));
         }
         Ok(owner)
     }
-    /// Stage without recycling a lifetime slot or dropping an old owner.
+    /// Stage in an explicitly retired slot or an unused bounded slot. Closed
+    /// owners are never recycled implicitly; all retained owners still consume E.
     pub fn stage(&mut self, config: Config) -> Result<IntervalEpoch, BridgeError> {
         self.binding.process()?;
         staged(
@@ -296,6 +313,39 @@ impl IntervalController {
     pub fn report(&self, epoch: &IntervalEpoch) -> Result<Option<Report>, BridgeError> {
         Ok(self.owner(epoch)?.try_report())
     }
+    /// Explicitly release a closed, noncurrent, drained epoch's controller slot.
+    /// This does not close an epoch or wait for outstanding reservations.
+    /// The returned report is acquired before removal and retains its original
+    /// owner permit. A new stage can still fail EpochLimit while any report,
+    /// acquired owner, frame or FunctionClosed receipt retains that owner.
+    ///
+    /// Retirement proves metadata drain only: a FunctionClosed receipt may hold
+    /// the permit until consumption inside the exit callback, before physical
+    /// RET. Neither retirement nor last-permit release proves native/code
+    /// quiescence or permits unmapping. History and generations are never reset.
+    pub fn retire(&mut self, epoch: &IntervalEpoch) -> Result<Report, BridgeError> {
+        let _scope = ControllerScope::enter()?;
+        let owner = self.owner(epoch)?;
+        {
+            let snapshot = self
+                .binding
+                .session
+                .snapshot()
+                .map_err(|e| error(Cause::Control(e)))?;
+            if snapshot.status != ControllerStatus::Ready {
+                return Err(error(Cause::Control(ControlError::TerminalFailure)));
+            }
+            if snapshot.current == Some(owner.generation()) {
+                return Err(error(Cause::CurrentEpoch));
+            }
+        } // Drop the allocating snapshot before the slot commit.
+        let report = owner.try_report().ok_or(error(Cause::NotDrained))?;
+        // The unique &mut controller is the only writer; callbacks can finish
+        // records but cannot replace this generation or make it current again.
+        // No allocation or fallible operation follows removal. Report owns E.
+        drop(self.epochs[epoch.index].take());
+        Ok(report)
+    }
     /// Bounded immutable copy of the complete existing action history.
     pub fn history(&self) -> Result<ControllerSnapshot, BridgeError> {
         let _scope = ControllerScope::enter()?;
@@ -310,7 +360,7 @@ impl Drop for IntervalController {
     fn drop(&mut self) {
         // Closing is not a fabricated Removed row or a native/code drain.
         // A forked active copy owns private metadata but has no rebinding API.
-        for epoch in &self.epochs {
+        for epoch in self.epochs.iter().flatten() {
             epoch.close();
         }
     }
