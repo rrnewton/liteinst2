@@ -77,7 +77,7 @@ static void lock_prepare(struct sample *s,unsigned index) {
     s->endpoint_int3=v->tail<8;s->count=s->endpoint_int3?2:1;
     memcpy(s->source+offset,v->bytes,8);
     int64_t displacement=(int64_t)s->target-(int64_t)s->expected_post;
-    need(displacement==(int64_t)v->displacement+((s==&negative_sample)?PAGE:0),917);
+    need(displacement==(int64_t)v->displacement+(int64_t)((s==&negative_sample)?PAGE:0),917);
     emit_i32(s->source+offset+3,displacement);
     memcpy((void *)s->mapping,s->source,sizeof(s->source));
     need(!dispatch(SYS_mprotect,s->mapping,CODE_BYTES,PROT_READ|PROT_EXEC,0,0,0),918);
