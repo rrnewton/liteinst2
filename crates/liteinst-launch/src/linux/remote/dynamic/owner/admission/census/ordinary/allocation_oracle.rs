@@ -13,6 +13,17 @@ pub(in crate::linux::remote::dynamic::owner::admission) struct AllocationCensusS
     history: HistorySnapshot,
 }
 impl ResumeCensus {
+    /// Copy retained counters only; no reservation, allocation or native query.
+    pub(in crate::linux::remote::dynamic::owner::admission) fn test_allocation_budget(
+        &self,
+    ) -> (Limits, BudgetCharge, BudgetCharge, Option<BudgetCharge>) {
+        (
+            self.limits,
+            self.state.charged,
+            self.state.used,
+            self.state.reservation.map(|(_, remaining)| remaining),
+        )
+    }
     pub(in crate::linux::remote::dynamic::owner::admission) fn allocation_custody_snapshot(
         &self,
     ) -> Result<AllocationCensusSnapshot, CensusError> {

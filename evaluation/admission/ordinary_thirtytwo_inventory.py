@@ -19,7 +19,7 @@ RUST_METHODS = {'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission
 SOURCE_SHA256 = {'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/isolation.rs': 'c323e377e67a1ee6f9b2c347d8dea1da2cdf820a8a6786734542307403c4d1cf',
  'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/isolation/tests.rs': 'f6bfa57b93be33f518a6b82e56d186e233ff9bb529cf82dbe204fd45e665caaa',
  'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests.rs': '828598ae114f61df73ce811e2693769afeb383995d037eac5950626bfda6c213',
- 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/thirtytwo.rs': '935c29f08cccb7ff0e108cb31980b8a5c570fe585ca50f499e6fe90b94e8e9fb'}
+ 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/thirtytwo.rs': 'ea474d9f54592ba0b65f2abf52f9c42a1f587ebad31a95d7a905d66e570792ec'}
 
 
 def digest(value):

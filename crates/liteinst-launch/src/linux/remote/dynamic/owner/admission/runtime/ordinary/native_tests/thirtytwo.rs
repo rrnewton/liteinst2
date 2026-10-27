@@ -1,6 +1,66 @@
 //! One fixed acceptance prefix. Any refusal before instruction32 is a failure.
 use super::*;
 
+// The original one() panic remains primary. one() reinstalls a taken
+// RuntimeOwner before propagating its outcome. with_owner still performs
+// physical cleanup before rethrowing the same panic payload.
+fn one_with_budget_diagnostic(owner: &mut Owner, until: Instant, ordinal: usize) {
+    if let Err(payload) = catch_unwind(AssertUnwindSafe(|| one(owner, until))) {
+        let _ = catch_unwind(AssertUnwindSafe(|| {
+            use std::io::Write as _;
+            let runtime = owner.runtime.as_ref();
+            let completed = runtime.map(|runtime| {
+                runtime
+                    .ordinary_attempts
+                    .iter()
+                    .filter(|attempt| {
+                        attempt.stage == AttemptStage::Complete
+                            && !attempt.failed
+                            && !attempt.unwound
+                            && attempt.allocation.first_failure.is_none()
+                    })
+                    .count()
+            });
+            let last = runtime
+                .and_then(|runtime| runtime.ordinary_attempts.last())
+                .map(|attempt| {
+                    (
+                        attempt.stage,
+                        attempt.failed,
+                        attempt.unwound,
+                        attempt.allocation.allocated,
+                        attempt.allocation.first_failure,
+                    )
+                });
+            let budget = runtime
+                .and_then(|runtime| runtime.census.as_ref())
+                .map(|census| census.test_allocation_budget());
+            let mut output = std::io::stderr().lock();
+            let _ = writeln!(
+                output,
+                concat!(
+                    "ordinary32 failure before cleanup: instruction_1based={} ",
+                    "checked_prefix={} runtime_stage={:?} attempts={:?} ",
+                    "completed_attempts={:?} pending_preparation={:?} ",
+                    "last_(stage,failed,unwound,allocated,first_failure)={:?}"
+                ),
+                ordinal + 1,
+                ordinal,
+                runtime.map(|runtime| runtime.stage),
+                runtime.map(|runtime| runtime.ordinary_attempts.len()),
+                completed,
+                runtime.map(|runtime| runtime.ordinary_preparation.is_some()),
+                last,
+            );
+            let _ = writeln!(
+                output,
+                "ordinary32 census (limits,charged,used,remaining): {budget:?}"
+            );
+        }));
+        resume_unwind(payload);
+    }
+}
+
 #[test]
 fn runtime_ordinary_thirty_two_nops_fit_default_budget_and_retain_exact_history() {
     crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
@@ -28,7 +88,7 @@ fn runtime_ordinary_thirty_two_nops_fit_default_budget_and_retain_exact_history(
                         // never the observed successor or a completion seal.
                         let mut expected = before.clone();
                         expected.registers.rip = ENTRY + (ordinal as u64) + 1;
-                        one(owner, until);
+                        one_with_budget_diagnostic(owner, until, ordinal);
                         check(owner, &before, &expected, original, ordinal, until);
                         let runtime = owner.runtime.as_ref().unwrap();
                         assert_eq!(runtime.until, until);
