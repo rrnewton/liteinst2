@@ -101,6 +101,9 @@ pub struct ControlWriter {
 }
 
 impl ControlWriter {
+    pub(crate) fn matches(&self, control: &ProbeControl) -> bool {
+        Arc::ptr_eq(&self.inner, &control.inner)
+    }
     /// Make a release-store request for this exact control. Completion/drain
     /// still belongs to the controller's admission protocol.
     pub fn set_enabled(&mut self, enabled: bool) {
@@ -193,6 +196,10 @@ impl ProbeControl {
     /// overhead. Count each distinct identity once; cloned handles share it.
     pub const fn payload_bytes() -> usize {
         core::mem::size_of::<ControlBlock>()
+    }
+
+    pub(crate) fn is_managed_bound(&self) -> bool {
+        self.inner.managed && self.inner.bound_callback.is_some()
     }
 
     pub(crate) fn callback(&self) -> HookCallback {

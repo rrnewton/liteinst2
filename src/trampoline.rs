@@ -667,6 +667,8 @@ impl HookContext {
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod backedge_clock;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod saved_pkru;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub use saved_pkru::SavedPkruView;
@@ -730,6 +732,8 @@ pub struct TrampolineImage {
     entry_routes: Vec<(u64, u64)>,
     instruction_boundaries: Vec<(u64, u64)>,
     controls: Vec<ProbeControl>,
+    clock: Option<crate::backedge_clock::BackedgeClock>,
+    clock_gate: Option<crate::backedge_clock::ClockGateLayout>,
     artifact: Option<ArtifactImageMetadata>,
 }
 
@@ -759,7 +763,8 @@ impl TrampolineImage {
     ///
     /// Controlled images embed pointers to their retained control blocks. A
     /// custom executable allocator copying these bytes must retain every
-    /// control for the entire executable-code lifetime. The provided private
+    /// control and any `clock()` owner for the entire executable-code lifetime.
+    /// The provided private
     /// and grouped allocators retain those references automatically.
     pub fn bytes(&self) -> &[u8] {
         &self.bytes
@@ -771,6 +776,16 @@ impl TrampolineImage {
     /// Their payload size excludes Arc and allocator overhead.
     pub fn controls(&self) -> &[ProbeControl] {
         &self.controls
+    }
+
+    /// Exact inline gate boundaries, present only for the finite clock profile.
+    pub fn clock_gate(&self) -> Option<crate::backedge_clock::ClockGateLayout> {
+        self.clock_gate
+    }
+
+    /// Retained separate RW owner for a finite clock image.
+    pub fn clock(&self) -> Option<&crate::backedge_clock::BackedgeClock> {
+        self.clock.as_ref()
     }
 
     /// Returns the checked section lengths.
@@ -790,6 +805,8 @@ impl TrampolineImage {
     /// later head bypasses earlier hooks, while an upstream entry executes the
     /// remaining prefix before reaching them. These routes are distinct from the
     /// reverse-PC ranges used to report faults in instrumentation code.
+    /// The explicit inline-clock profile enters its gate; only a zero boundary
+    /// in Stop mode enters the callback. Counter mode never invokes it.
     pub fn entry_routes(&self) -> &[(u64, u64)] {
         &self.entry_routes
     }
@@ -1093,6 +1110,7 @@ pub struct TrampolinePlan {
     hook: Option<HookCallback>,
     actions: Vec<(u64, HookCallback, bool)>,
     controls: Vec<ControlledAction>,
+    clock: Option<crate::backedge_clock::BackedgeClockAction>,
     instructions: Vec<Instruction>,
     logical_index: usize,
     relocated_start: usize,
@@ -1186,6 +1204,7 @@ impl TrampolinePlan {
             hook: Some(hook),
             actions: Vec::new(),
             controls: Vec::new(),
+            clock: None,
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
             relocated_start: 1,
@@ -1270,6 +1289,7 @@ impl TrampolinePlan {
             hook: Some(hook),
             actions: Vec::new(),
             controls: Vec::new(),
+            clock: None,
             instructions,
             logical_index: 0,
             relocated_start,
@@ -1369,6 +1389,7 @@ impl TrampolinePlan {
             hook,
             actions: Vec::new(),
             controls: Vec::new(),
+            clock: None,
             instructions,
             logical_index,
             relocated_start: logical_index + usize::from(replace),
@@ -1431,6 +1452,7 @@ impl TrampolinePlan {
             hook,
             actions: Vec::new(),
             controls: Vec::new(),
+            clock: None,
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
             relocated_start: usize::from(replace),
@@ -1472,6 +1494,7 @@ impl TrampolinePlan {
             hook: None,
             actions: Vec::new(),
             controls: Vec::new(),
+            clock: None,
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
             relocated_start: 0,
@@ -1552,6 +1575,54 @@ impl TrampolinePlan {
         Ok(plan)
     }
 
+    /// Builds the finite single-head inline-clock profile before any emission.
+    /// The higher-level planner also authenticates the complete authored source.
+    pub fn from_backedge_clock(
+        scan: &ScanResult,
+        physical: u64,
+        end: u64,
+        action: &crate::backedge_clock::BackedgeClockAction,
+    ) -> Result<Self, TrampolineError> {
+        if physical != action.logical_pc
+            || scan.instructions().first().map(|i| i.address()) != Some(action.base)
+            || scan.snapshot() != action.source.as_slice()
+        {
+            return Err(encoding_error("inline clock source/site differs"));
+        }
+        let item = scan
+            .instructions()
+            .iter()
+            .find(|i| i.address() == physical)
+            .ok_or(TrampolineError::SiteNotFound { address: physical })?;
+        let original = item.instruction();
+        let expected = match action.condition {
+            Some(5) => Code::Jne_rel32_64,
+            Some(15) => Code::Jg_rel32_64,
+            Some(2) => Code::Jb_rel32_64,
+            None => Code::Jmp_rel32_64,
+            _ => return Err(encoding_error("unsupported inline clock condition")),
+        };
+        if original.code() != expected
+            || original.near_branch_target() >= physical
+            || end != physical + item.len() as u64
+        {
+            return Err(encoding_error(
+                "inline clock requires one exact near backedge",
+            ));
+        }
+        let mut plan = Self::from_controlled_actions(
+            scan,
+            physical,
+            end,
+            &[ControlledAction {
+                logical_pc: physical,
+                control: action.control.clone(),
+            }],
+        )?;
+        plan.clock = Some(action.clone());
+        Ok(plan)
+    }
+
     /// Exact immutable managed point associations retained by this plan.
     /// Read-only clones cannot recover managed write authority.
     pub fn controlled_actions(&self) -> &[ControlledAction] {
@@ -1602,6 +1673,9 @@ impl TrampolinePlan {
         address: u64,
         limits: FrameTraceLimits,
     ) -> Result<FrameEmission, TrampolineError> {
+        if self.clock.is_some() {
+            return Err(encoding_error("inline clock frame metadata unsupported"));
+        }
         let origin = if self.ptrace_stops {
             FrameEntryOrigin::ControllerOwnedStack
         } else {
@@ -1854,6 +1928,8 @@ impl TrampolinePlan {
                 frames.return_jump(return_jump_address, return_jump.len(), self.return_address);
             }
             Ok(TrampolineImage {
+                clock: None,
+                clock_gate: None,
                 artifact: None,
                 address,
                 bytes,
@@ -1892,6 +1968,7 @@ impl TrampolinePlan {
         #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
         {
             if self.ptrace_stops
+                || self.clock.is_some()
                 || !self.controls.is_empty()
                 || !matches!(
                     self.kind,
@@ -1913,6 +1990,11 @@ impl TrampolinePlan {
         artifact: Option<&ArtifactEmission>,
         frames: Option<&mut FrameRecorder>,
     ) -> Result<TrampolineImage, TrampolineError> {
+        if self.clock.is_some() && (artifact.is_some() || frames.is_some() || self.ptrace_stops) {
+            return Err(encoding_error(
+                "inline clock supports only live ordinary emission",
+            ));
+        }
         let extended_state = match artifact {
             Some(input) => input.profile().saved_state(),
             None => SavedExtendedStateLayout::detect()?,
@@ -1964,6 +2046,8 @@ impl TrampolinePlan {
         let mut first_hook_lengths = None;
         let mut helper_frames = Vec::new();
         let mut action_index = 0;
+        let mut clock_spec = None;
+        let mut clock_observer = None;
         for (index, original) in self.instructions.iter().enumerate() {
             let entry_index = encoded_instructions.len();
             let mut entry = Instruction::with(Code::Zero_bytes);
@@ -1972,6 +2056,27 @@ impl TrampolinePlan {
             let action = actions
                 .get(action_index)
                 .filter(|action| action.0 == original.ip());
+            let clock_labels = if self.clock.is_some() {
+                Some((identity()?, identity()?))
+            } else {
+                None
+            };
+            let mut observing_index = entry_index;
+            if let Some(clock) = &self.clock {
+                let (observer, body) = clock_labels.unwrap();
+                clock_spec = Some(backedge_clock::append(
+                    &mut encoded_instructions,
+                    clock,
+                    observer,
+                    body,
+                    &mut identity,
+                )?);
+                observing_index = encoded_instructions.len();
+                let mut marker = Instruction::with(Code::Zero_bytes);
+                marker.set_ip(observer);
+                encoded_instructions.push(marker);
+                clock_observer = Some(observing_index);
+            }
             if let Some(&(_, hook, _)) = action {
                 // These helpers use only register/stack operands, absolute MOV
                 // immediates and internal relative branches. Their byte strings
@@ -1998,7 +2103,7 @@ impl TrampolinePlan {
                     recording.then_some(&mut restore_frames),
                 )?;
                 first_hook_lengths.get_or_insert((
-                    entry_index,
+                    observing_index,
                     instrumentation.bytes.len(),
                     restore.len(),
                 ));
@@ -2025,7 +2130,10 @@ impl TrampolinePlan {
             }
             let body_index = encoded_instructions.len();
             let mut body = Instruction::with(Code::Zero_bytes);
-            body.set_ip(identity()?);
+            body.set_ip(match clock_labels {
+                Some((_, body)) => body,
+                None => identity()?,
+            });
             encoded_instructions.push(body);
             let replaced = action.is_some_and(|action| action.2);
             if !replaced {
@@ -2055,12 +2163,33 @@ impl TrampolinePlan {
             }
             heads.push((original.ip(), entry_index, body_index, replaced));
         }
-        let block = encode_relocated_block_with_metadata(
-            &encoded_instructions,
-            address,
-            None,
-            artifact.is_some(),
-        )?;
+        let block = if self.clock.is_some() {
+            // All gate branches keep their exact forms; no indirect expansion,
+            // absolute literal or rel8 JRCXZ rewrite is admitted for this profile.
+            let encoded = BlockEncoder::encode(
+                64,
+                InstructionBlock::new(&encoded_instructions, address),
+                BlockEncoderOptions::RETURN_NEW_INSTRUCTION_OFFSETS
+                    | BlockEncoderOptions::RETURN_RELOC_INFOS
+                    | BlockEncoderOptions::DONT_FIX_BRANCHES,
+            )
+            .map_err(encoding_error)?;
+            if !encoded.reloc_infos.is_empty() {
+                return Err(encoding_error("inline gate created absolute fixup"));
+            }
+            RelocatedBlock {
+                encoded,
+                terminal_jump_offset: None,
+                branch_relays: Vec::new(),
+            }
+        } else {
+            encode_relocated_block_with_metadata(
+                &encoded_instructions,
+                address,
+                None,
+                artifact.is_some(),
+            )?
+        };
         let offset = |index: usize| -> Result<usize, TrampolineError> {
             block
                 .encoded
@@ -2075,6 +2204,17 @@ impl TrampolinePlan {
             address
                 .checked_add(offset as u64)
                 .ok_or(TrampolineError::AddressNotRepresentable { address })
+        };
+        if let Some(spec) = &clock_spec {
+            backedge_clock::verify(spec, &encoded_instructions, address, &block.encoded)?;
+        }
+        let clock_gate = match clock_observer {
+            Some(observer) => Some(crate::backedge_clock::ClockGateLayout {
+                entry: generated(offset(heads[0].1)?)?,
+                observing_entry: generated(offset(observer)?)?,
+                original_body: generated(offset(heads[0].2)?)?,
+            }),
+            None => None,
         };
         let mut entry_routes = Vec::new();
         let mut instruction_boundaries = Vec::new();
@@ -2119,6 +2259,11 @@ impl TrampolinePlan {
             Some(fragment) => fragment.bytes.clone(),
             None => encode_return_jump(return_start, self.return_address)?,
         };
+        if self.clock.is_some() && return_jump.len() != NEAR_RETURN_JUMP_BYTES {
+            return Err(encoding_error(
+                "inline clock requires exact near fallthrough continuation",
+            ));
+        }
         let return_code_len = if return_jump.len() == NOTRACK_ABSOLUTE_JUMP_BYTES {
             return_jump.len() - core::mem::size_of::<u64>()
         } else {
@@ -2274,6 +2419,8 @@ impl TrampolinePlan {
         };
         debug_assert_eq!(layout.total_len(), Some(bytes.len()));
         Ok(TrampolineImage {
+            clock: self.clock.as_ref().map(|action| action.clock.clone()),
+            clock_gate,
             artifact,
             address,
             bytes,
@@ -3461,6 +3608,7 @@ impl TrampolineArena {
             layout: image.layout,
             program_counters: image.program_counters.into_boxed_slice(),
             controls: ManuallyDrop::new(image.controls),
+            clock: ManuallyDrop::new(image.clock),
             program_counters_published: AtomicBool::new(false),
         })
     }
@@ -3502,6 +3650,7 @@ pub struct ExecutableTrampoline {
     // Verified unpublished discard releases these references after unmapping;
     // non-reclaimable arena slots retain them for the same process lifetime.
     controls: ManuallyDrop<Vec<ProbeControl>>,
+    clock: ManuallyDrop<Option<crate::backedge_clock::BackedgeClock>>,
 }
 
 /// Owns a staged executable image until its publication transaction commits.
@@ -3542,6 +3691,7 @@ impl PendingExecutableTrampoline {
                 layout: image.layout,
                 program_counters: image.program_counters.clone().into_boxed_slice(),
                 controls: ManuallyDrop::new(image.controls.clone()),
+                clock: ManuallyDrop::new(image.clock.clone()),
                 program_counters_published: AtomicBool::new(false),
             }),
         }
@@ -3775,6 +3925,8 @@ impl ExecutableTrampoline {
                     // code after unmapping. No other path drops this field.
                     // Failed unmapping conservatively retains controls with code.
                     unsafe { ManuallyDrop::drop(&mut this.controls) };
+                    // Same unpublished-unmap proof retires the embedded data owner.
+                    unsafe { ManuallyDrop::drop(&mut this.clock) };
                 }
             }
         }
@@ -4454,6 +4606,7 @@ impl PendingMapping {
             layout: image.layout,
             program_counters: image.program_counters.clone().into_boxed_slice(),
             controls: ManuallyDrop::new(image.controls.clone()),
+            clock: ManuallyDrop::new(image.clock.clone()),
             program_counters_published: AtomicBool::new(false),
         })
     }
@@ -6307,6 +6460,7 @@ mod tests {
             layout,
             program_counters: Box::new([]),
             controls: core::mem::ManuallyDrop::new(Vec::new()),
+            clock: core::mem::ManuallyDrop::new(None),
             program_counters_published: std::sync::atomic::AtomicBool::new(false),
         };
         assert_eq!(executable.ptrace_entry_stop_rip(), Some(trampoline + 1));

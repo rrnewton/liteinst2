@@ -9,6 +9,7 @@ mod artifact_fixups;
 mod artifact_fragments;
 #[cfg(all(test, target_os = "linux", target_arch = "x86_64"))]
 mod artifact_overlay_tests;
+pub mod backedge_clock;
 pub mod bundle;
 pub mod cache_line;
 pub mod composition;

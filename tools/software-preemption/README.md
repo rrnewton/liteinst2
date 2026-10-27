@@ -41,3 +41,40 @@ python3 -B tools/software-preemption/run.py \
 The build object joins the exact build command, actual waited closure and saved evidence files. The small caller does not parse Cargo logs or independently establish build provenance. Build/tool/source/runtime admission remains the root's task. Result sources and failed records must be preserved if later corrections are needed.
 
 The first measured result is [the d07873a receipt](../../evaluation/software-preemption-d07873a/README.md). The convenient `evaluate.py` wrapper was added afterward and is source-reviewed, not executed in that historical run. Configuration snapshots may contain `READ_DENIED`; equality establishes continuity of those observations, not complete readable Cargo configuration closure. The tracked wrapper itself is included in the source snapshot.
+
+## Explicit inline clock profile
+
+The default commands and historical results above remain the full-callback profile. The separate `inline-clock-v1` profile is a finite source addition, with compilation, native qualification and measurements pending when proposed. It accepts only the exact four authored function byte strings. Calls, general ELF discovery, multiple sites, artifact emission, frame metadata and asynchronous entry are unsupported.
+
+Its generated gate counts encounters and taken decisions with MOV/LEA, tests the original branch condition, and decrements a positive remainder without changing flags or RSP. RCX is saved in a separate owned RW page and restored before the original branch or the unchanged full-save helper. Counter mode never calls the callback. Stop mode enters that helper only at zero; the callback authenticates the already-charged words, parks before the original branch, accepts the exact resume, then refills the quantum. It does not charge the edge twice.
+
+The clock page is retained by the plan, image and executable owners. A non-Send worker lease and a per-invocation guard exclude private entry before the first spill. The unsafe mapping/run contracts also require the caller to exclude arbitrary external entry, recursive callbacks and signal-handler entry; a source address already known to an installer is not hidden by the type system. Controller reads of generated words occur only at the authenticated event/resume handoff or after worker join. Mapping retention on failure is not execution drainage.
+
+Before the inline qualification and benchmarks, a mandatory gate command runs 28 sibling pairs (56 children): three conditional sites, both outcomes, remainders 1 and 2, two seeds; and the direct branch with those remainders and seeds. The candidate executes the real installed source transfer and gate. It stops at the original-body boundary or immediately before the slow helper saves any state. The existing register/architectural-XSAVE comparator is reused, with the entire 64 KiB seeded application stack compared exactly. Only the existing debugger TF/RF treatment and logical original-head RIP projection apply. These controls make no whole-stack-after-callback claim.
+
+The separate inline qualification keeps all 96 stop cells, 16 native cells, 16 counter cells, 512 hardware SETcc checks, 256 parked checks and 48 repeated projected sequences. Inline timing keeps all 108 rows, equal work, two warmups, seven measurements and the exact 510-stop formula. The runner performs six fixed commands in order: gates, qualification, then four benchmarks. Every command keeps the old 60 CPU / 90 wall second / 1 MiB file limits and strict helper/parent closure. The extra clock data is exactly 4096 bytes per candidate instance; executable allocation remains 256 candidates, one mapping and at most 8192 bytes.
+
+Root must first admit an actual successful build and its exact current owners using the distinct `ROOT_REVIEWED_INLINE_CLOCK_RELEASE_BINARY` authority and `profile: "inline-clock-v1"`. The legacy binding remains unchanged and cannot activate this profile. Then the explicitly selected runner is:
+
+```sh
+python3 -B tools/software-preemption/run.py --profile inline-clock-v1 \
+  --binding ABSOLUTE_ROOT_REVIEWED_INLINE_BINDING.json \
+  --binding-sha256 EXACT_BINDING_SHA256 --raw NEW_ABSOLUTE_IGNORED_DIRECTORY
+```
+
+The convenience `evaluate.py` wrapper defaults to the legacy profile; its explicit inline selection is described below. No inline build, admission, performance result or completed control is implied by this source addition. The seven new core pure tests and two compile-fail ownership examples are also prospective until run.
+
+### One-command inline reproduction
+
+After integrating this profile and its evaluator, use the same fresh release-build admission with an explicit selection:
+
+```sh
+python3 -B tools/software-preemption/evaluate.py --profile inline-clock-v1 \
+  --repo "$PWD" --raw "$PWD/ignored/preemption-inline-new" \
+  --toolchain /absolute/rust-toolchain \
+  --user-home /absolute/user-home --cargo-home /absolute/cargo-home
+```
+
+The default `--profile full-callback-v1` retains the existing five-command invocation and binding without an added profile field. Inline selection constructs the distinct inline authority plus exact profile field and passes `--profile inline-clock-v1` to `run.py`. Both use the same actual successful release build, whole source/tool/configuration continuity and exact binary owner; selecting a profile supplies no historical result or independent runtime admission.
+
+The build retains 120 CPU / 180 wall seconds / 128 MiB per file, outer 190 seconds / kill-after 10 and direct-parent 205 seconds. Every experimental command retains 60 CPU / 90 wall seconds / 1 MiB, outer 100 / kill-after 10, parent 115 / failure cleanup 10, and four-CPU affinity. Only the whole-experiment parent differs: legacy 650 seconds = five × 115 + 75; inline 765 seconds = six × 115 + the same 75-second caller allowance. A per-command failure is still failed, remaining commands stay UNRUN, and this outer allowance does not widen any measurement or oracle limit. The evaluator and inline cohort remain unexecuted until their own actual fresh invocation is recorded.
