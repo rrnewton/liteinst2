@@ -12,13 +12,14 @@ from core_719519_inventory import before_core_719519
 import ordinary_shared_inventory as shared
 import ordinary_thirtytwo_inventory as thirtytwo
 import core_c73f159_inventory as corec73
+from core_ae149a9_inventory import before_core_ae149a9
 import native_fixtures as fixtures
 
 
 class RuntimeStackConsumerInventoryTests(unittest.TestCase):
     def test_current_corpus_and_methods_reconstruct_exact_old_history(self):
         raw_current = json.loads(Path(__file__).with_name("corpus.json").read_text())
-        expanded = corec73.before_core_c73f159(raw_current)
+        expanded = corec73.before_core_c73f159(before_core_ae149a9(raw_current))
         thirtytwo_previous = thirtytwo.before_ordinary_thirtytwo(expanded)
         current = thirtytwo_previous
         shared_previous = shared.before_ordinary_shared(current)
@@ -96,7 +97,7 @@ class RuntimeStackConsumerInventoryTests(unittest.TestCase):
 
     def test_projection_refuses_changed_fields_counts_and_identities(self):
         raw_current = json.loads(Path(__file__).with_name("corpus.json").read_text())
-        expanded = corec73.before_core_c73f159(raw_current)
+        expanded = corec73.before_core_c73f159(before_core_ae149a9(raw_current))
         thirtytwo_previous = thirtytwo.before_ordinary_thirtytwo(expanded)
         current = thirtytwo_previous
         shared_previous = shared.before_ordinary_shared(current)
