@@ -3,7 +3,7 @@ use super::super::super::census::CensusError;
 use super::super::super::exact_storage;
 use super::*;
 
-const STAGES: usize = 23;
+const STAGES: usize = 24;
 #[cfg(test)]
 const PANIC: u32 = 0x4f52_4441;
 
@@ -195,7 +195,7 @@ impl RuntimeOrdinaryAttempt {
             ),
             6 => (&mut self.source.identity, MAP_BYTES),
             7 => (&mut self.source.checkpoint.xstate, MAX_XSTATE),
-            8..=22 => {
+            8..=23 => {
                 return self
                     .native
                     .allocate_one(ordinal - 8)

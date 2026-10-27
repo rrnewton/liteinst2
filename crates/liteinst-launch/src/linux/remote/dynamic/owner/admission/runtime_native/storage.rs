@@ -1,9 +1,9 @@
 //! Installed independent native storage; allocation never creates a stop or seal.
+use super::super::exact_storage;
 use super::*;
 
 pub(in crate::linux::remote::dynamic::owner::admission) struct NativeInstructionStorage {
-    pending: Option<PendingInstructionStorage>,
-    allocated: Option<PreparedInstructionAttempt>,
+    owner: Option<NativeStorageConversion>,
     next: usize,
     first_failure: Option<InstructionFailure>,
 }
@@ -16,7 +16,7 @@ struct PendingInstructionStorage {
     membership: Option<Box<[u8; MAP_BYTES]>>,
     signals: [SignalObservation; WAITS],
     debug: [DebugRead; WAITS],
-    profile: ControlProfile,
+    profile: Option<Box<ControlProfile>>,
     peek: MemoryObservation,
     progress: InstructionProgress,
     initial: Option<AdmissionStop>,
@@ -45,7 +45,7 @@ impl PendingInstructionStorage {
             membership: None,
             signals: std::array::from_fn(|_| SignalObservation::default()),
             debug: [DebugRead::default(); WAITS],
-            profile: ControlProfile::default(),
+            profile: None,
             peek: MemoryObservation::default(),
             progress: InstructionProgress {
                 phase: InstructionPhase::Allocated,
@@ -92,7 +92,7 @@ impl PendingInstructionStorage {
                 until,
                 signals,
                 debug,
-                profile,
+                profile: Some(profile),
                 peek,
                 progress,
                 initial,
@@ -130,14 +130,28 @@ impl PendingInstructionStorage {
     }
 }
 
+// The caller has already reserved the complete header and construction peak.
+// This empty default contains no native observation or separately owned payload.
+pub(super) fn allocate_profile() -> Result<Box<ControlProfile>, LaunchError> {
+    exact_storage::value(ControlProfile::default()).map_err(|error| match error {
+        exact_storage::AllocationError::Capacity => {
+            LaunchError::Invalid("ordinary native profile allocation capacity differs")
+        }
+        exact_storage::AllocationError::Allocation => {
+            LaunchError::Invalid("ordinary native profile allocation failed")
+        }
+    })
+}
+
 impl NativeInstructionStorage {
     pub(in crate::linux::remote::dynamic::owner::admission) fn empty(
         shape: InstructionAttemptShape,
         until: Instant,
     ) -> Self {
         Self {
-            pending: Some(PendingInstructionStorage::empty(shape, until)),
-            allocated: None,
+            owner: Some(NativeStorageConversion::Partial(
+                PendingInstructionStorage::empty(shape, until),
+            )),
             next: 0,
             first_failure: None,
         }
@@ -159,16 +173,21 @@ impl NativeInstructionStorage {
         ordinal: usize,
     ) -> Result<(), LaunchError> {
         if ordinal != self.next
-            || ordinal >= 15
-            || self.allocated.is_some()
+            || ordinal >= 16
+            || matches!(self.owner, Some(NativeStorageConversion::Allocated(_)))
             || self.first_failure.is_some()
         {
             return Err(LaunchError::Invalid("ordinary native allocation reused"));
         }
         let result = (|| {
-            let pending = self.pending.as_mut().ok_or(LaunchError::Invalid(
-                "ordinary native pending storage absent",
-            ))?;
+            let pending = match self.owner.as_mut() {
+                Some(NativeStorageConversion::Partial(value)) => value,
+                _ => {
+                    return Err(LaunchError::Invalid(
+                        "ordinary native pending storage absent",
+                    ));
+                }
+            };
             match ordinal {
                 0..=8 => {
                     if pending.states[ordinal].is_some() {
@@ -207,6 +226,16 @@ impl NativeInstructionStorage {
                     }
                     pending.membership = Some(fixed_buffer()?);
                 }
+                15 => {
+                    if pending.profile.is_some() {
+                        return Err(LaunchError::Invalid(
+                            "ordinary native profile already allocated",
+                        ));
+                    }
+                    // Install before the root's after-allocation hook or any
+                    // later fallible check. Existing payload ordinals stay fixed.
+                    pending.profile = Some(allocate_profile()?);
+                }
                 _ => {
                     return Err(LaunchError::Invalid(
                         "ordinary native allocation ordinal differs",
@@ -230,15 +259,23 @@ impl NativeInstructionStorage {
     pub(in crate::linux::remote::dynamic::owner::admission) fn finish_allocation(
         &mut self,
     ) -> Result<(), LaunchError> {
-        if self.next != 15 || self.first_failure.is_some() || self.allocated.is_some() {
+        if self.next != 16
+            || self.first_failure.is_some()
+            || matches!(self.owner, Some(NativeStorageConversion::Allocated(_)))
+        {
             return Err(LaunchError::Invalid(
                 "ordinary native allocation incomplete",
             ));
         }
         {
-            let value = self.pending.as_ref().ok_or(LaunchError::Invalid(
-                "ordinary native pending storage absent",
-            ))?;
+            let value = match self.owner.as_ref() {
+                Some(NativeStorageConversion::Partial(value)) => value,
+                _ => {
+                    return Err(LaunchError::Invalid(
+                        "ordinary native pending storage absent",
+                    ));
+                }
+            };
             if self.payload_bytes()? > Self::payload_reservation(value.shape)? {
                 return Err(LaunchError::Invalid(
                     "ordinary native allocation exceeds reservation",
@@ -250,6 +287,7 @@ impl NativeInstructionStorage {
                 })
             }) || value.maps.iter().any(Option::is_none)
                 || value.membership.is_none()
+                || value.profile.is_none()
                 || value.progress.first_failure.is_some()
                 || value.claimed
                 || value.initial.is_some()
@@ -265,48 +303,61 @@ impl NativeInstructionStorage {
                 ));
             }
         }
-        // From the take through reinstallation: only closed matches and moves.
-        let pending = match self.pending.take() {
-            Some(value) => value,
+        // Consume the input Option before constructing the output Option.
+        // Every taken owner is reinstalled before any error or observation.
+        // There is no callback, assertion, allocation or fallible move interval.
+        match self.owner.take() {
+            Some(NativeStorageConversion::Partial(value)) => {
+                self.owner = Some(value.into_allocated());
+            }
+            Some(NativeStorageConversion::Allocated(value)) => {
+                self.owner = Some(NativeStorageConversion::Allocated(value));
+                return Err(LaunchError::Invalid(
+                    "ordinary native allocation incomplete",
+                ));
+            }
             None => {
                 return Err(LaunchError::Invalid(
                     "ordinary native pending storage absent",
                 ));
             }
-        };
-        match pending.into_allocated() {
-            NativeStorageConversion::Allocated(value) => {
-                self.allocated = Some(value);
-                Ok(())
-            }
-            NativeStorageConversion::Partial(value) => {
-                self.pending = Some(value);
-                Err(LaunchError::Invalid(
-                    "ordinary native allocation owners incomplete",
-                ))
-            }
+        }
+        match self.owner.as_ref() {
+            Some(NativeStorageConversion::Allocated(_)) => Ok(()),
+            _ => Err(LaunchError::Invalid(
+                "ordinary native allocation owners incomplete",
+            )),
         }
     }
 
     pub(in crate::linux::remote::dynamic::owner::admission) fn require_complete(
         &self,
     ) -> Result<&PreparedInstructionAttempt, LaunchError> {
-        if self.pending.is_some() || self.next != 15 || self.first_failure.is_some() {
+        if matches!(self.owner, Some(NativeStorageConversion::Partial(_)))
+            || self.next != 16
+            || self.first_failure.is_some()
+        {
             return Err(LaunchError::Invalid(
                 "ordinary native allocation is not ready",
             ));
         }
-        self.allocated.as_ref().ok_or(LaunchError::Invalid(
-            "ordinary native allocated owner absent",
-        ))
+        match self.owner.as_ref() {
+            Some(NativeStorageConversion::Allocated(value)) => Ok(value),
+            _ => Err(LaunchError::Invalid(
+                "ordinary native allocated owner absent",
+            )),
+        }
     }
     pub(in crate::linux::remote::dynamic::owner::admission) fn require_complete_mut(
         &mut self,
     ) -> Result<&mut PreparedInstructionAttempt, LaunchError> {
         self.require_complete()?;
-        self.allocated.as_mut().ok_or(LaunchError::Invalid(
-            "ordinary native allocated owner absent",
-        ))
+        match self.owner.as_mut() {
+            Some(NativeStorageConversion::Allocated(value)) => Ok(value),
+            _ => Err(LaunchError::Invalid(
+                "ordinary native allocated owner absent",
+            )),
+        }
     }
     pub(in crate::linux::remote::dynamic::owner::admission) fn take_completed(
         &mut self,
@@ -318,7 +369,7 @@ impl NativeInstructionStorage {
         &self,
     ) -> Result<usize, LaunchError> {
         let mut bytes = 0_usize;
-        if let Some(value) = &self.pending {
+        if let Some(NativeStorageConversion::Partial(value)) = &self.owner {
             for slot in value.states.iter().flatten() {
                 bytes = bytes
                     .checked_add(slot.state.xstate.capacity())
@@ -327,9 +378,14 @@ impl NativeInstructionStorage {
             bytes = bytes
                 .checked_add(value.maps.iter().filter(|slot| slot.is_some()).count() * MAP_BYTES)
                 .and_then(|n| n.checked_add(usize::from(value.membership.is_some()) * MAP_BYTES))
+                .and_then(|n| {
+                    n.checked_add(
+                        usize::from(value.profile.is_some()) * size_of::<ControlProfile>(),
+                    )
+                })
                 .ok_or(LaunchError::Invalid("ordinary native payload overflow"))?;
         }
-        if let Some(value) = &self.allocated {
+        if let Some(NativeStorageConversion::Allocated(value)) = &self.owner {
             bytes = bytes
                 .checked_add(
                     value
@@ -355,10 +411,10 @@ impl NativeInstructionStorage {
             None => InstructionFailure::Unwound,
         };
         self.first_failure.get_or_insert(failure);
-        if let Some(value) = &mut self.pending {
+        if let Some(NativeStorageConversion::Partial(value)) = &mut self.owner {
             value.progress.fail(error);
         }
-        if let Some(value) = &mut self.allocated {
+        if let Some(NativeStorageConversion::Allocated(value)) = &mut self.owner {
             value.progress.fail(error);
         }
     }
@@ -373,8 +429,8 @@ impl NativeInstructionStorage {
             size_of::<PendingInstructionStorage>(),
             size_of::<NativeStorageConversion>(),
             size_of::<PreparedInstructionAttempt>(),
-            size_of::<Option<PendingInstructionStorage>>(),
-            size_of::<Option<PreparedInstructionAttempt>>(),
+            // The take input is destructured before the output Some exists.
+            size_of::<Option<NativeStorageConversion>>(),
             size_of::<StateSlot>(),
             size_of::<MapBuffer>(),
             size_of::<Result<StateSlot, LaunchError>>(),
@@ -399,6 +455,7 @@ impl NativeInstructionStorage {
                 Option<usize>,
                 Result<usize, LaunchError>,
             )>(),
+            ControlProfile::allocation_temporary_bytes()?,
         ];
         let mut total = size_of::<[usize; 25]>()
             + size_of::<std::array::IntoIter<usize, 25>>()
@@ -415,32 +472,29 @@ impl NativeInstructionStorage {
     pub(in crate::linux::remote::dynamic::owner::admission) fn progress(
         &self,
     ) -> &InstructionProgress {
-        if let Some(value) = &self.allocated {
-            value.progress()
-        } else {
-            &self
-                .pending
-                .as_ref()
-                .expect("retained native pending owner")
-                .progress
+        match self.owner.as_ref() {
+            Some(NativeStorageConversion::Allocated(value)) => value.progress(),
+            Some(NativeStorageConversion::Partial(value)) => &value.progress,
+            None => panic!("retained native pending owner"),
         }
     }
     #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn diagnostics(
         &self,
     ) -> InstructionDiagnostics<'_> {
-        self.allocated
-            .as_ref()
-            .expect("allocated native diagnostics")
-            .diagnostics()
+        match self.owner.as_ref() {
+            Some(NativeStorageConversion::Allocated(value)) => value.diagnostics(),
+            _ => panic!("allocated native diagnostics"),
+        }
     }
     #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn completed(
         &self,
     ) -> Option<InstructionCompletionView<'_>> {
-        self.allocated
-            .as_ref()
-            .and_then(PreparedInstructionAttempt::completed)
+        match self.owner.as_ref() {
+            Some(NativeStorageConversion::Allocated(value)) => value.completed(),
+            _ => None,
+        }
     }
 }
 
@@ -449,6 +503,7 @@ pub(in crate::linux::remote::dynamic::owner::admission) struct NativeAllocationV
     pub(in crate::linux::remote::dynamic::owner::admission) states: [Option<&'a StateSlot>; STATES],
     pub(in crate::linux::remote::dynamic::owner::admission) maps: [Option<&'a MapBuffer>; 5],
     pub(in crate::linux::remote::dynamic::owner::admission) membership: Option<&'a [u8; MAP_BYTES]>,
+    pub(in crate::linux::remote::dynamic::owner::admission) profile: Option<&'a ControlProfile>,
     pub(in crate::linux::remote::dynamic::owner::admission) next: usize,
     pub(in crate::linux::remote::dynamic::owner::admission) first_failure:
         Option<InstructionFailure>,
@@ -467,29 +522,32 @@ impl NativeInstructionStorage {
     pub(in crate::linux::remote::dynamic::owner::admission) fn partial_view(
         &self,
     ) -> NativeAllocationView<'_> {
-        match (&self.pending, &self.allocated) {
-            (Some(value), _) => NativeAllocationView {
+        match self.owner.as_ref() {
+            Some(NativeStorageConversion::Partial(value)) => NativeAllocationView {
                 states: std::array::from_fn(|i| value.states[i].as_ref()),
                 maps: std::array::from_fn(|i| value.maps[i].as_ref()),
                 membership: value.membership.as_deref(),
+                profile: value.profile.as_deref(),
                 next: self.next,
                 first_failure: self.first_failure,
                 pending: true,
-                allocated: self.allocated.is_some(),
+                allocated: false,
             },
-            (None, Some(value)) => NativeAllocationView {
+            Some(NativeStorageConversion::Allocated(value)) => NativeAllocationView {
                 states: std::array::from_fn(|i| Some(&value.states[i])),
                 maps: std::array::from_fn(|i| Some(&value.maps[i])),
                 membership: Some(&value.membership),
+                profile: Some(&value.profile),
                 next: self.next,
                 first_failure: self.first_failure,
                 pending: false,
                 allocated: true,
             },
-            (None, None) => NativeAllocationView {
+            None => NativeAllocationView {
                 states: [None; STATES],
                 maps: [None; 5],
                 membership: None,
+                profile: None,
                 next: self.next,
                 first_failure: self.first_failure,
                 pending: false,

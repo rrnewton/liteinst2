@@ -51,9 +51,9 @@ RUST_METHODS = {'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission
                                                                                                      'ordinary_pending_native_failure_reuse_and_capacity_guards_retain_owners')}
 SOURCE_SHA256 = {'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared/tests.rs': 'fe92af341a15bc241c95b1da228a801eb6bbe89c2ebb393e85f50e5d655ff074',
  'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/ordinary/shared_commit/tests.rs': 'c36d2d1536d279ba9b664785b7dbab97a38ac0e518dd5e8f25cf4113d9e52c60',
- 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/allocation.rs': '7ca5622c20fa49662d519f5f998e91832bee479d831cb57f3f17f9d6c128d977',
- 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/storage/tests.rs': 'e112962b376b27ad0148f35050b63213ace760e747512da6a7a93fec7a4def37',
- 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/storage/tests.rs': '9d6f3335df4a162652e35aa27039bf07a5a4bf43a99e62daeca6946f7faf7b43'}
+ 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/allocation.rs': '161f60a5919c4a75f26d23354909d3cf7121b267a6d88fe64756b5c1d865435b',
+ 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/storage/tests.rs': '0b288aacdd834c44867a6234553b69b29a0124ee1bbb1687e15024eddf5ec867',
+ 'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime_native/storage/tests.rs': 'be12d331ea6e71740e4023e6cc94b7d2715ebcc400ff6185fa1d55c5b6ae36f2'}
 
 
 def digest(value):

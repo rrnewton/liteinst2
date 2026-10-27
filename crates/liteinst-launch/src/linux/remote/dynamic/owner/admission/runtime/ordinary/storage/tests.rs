@@ -186,6 +186,7 @@ fn expected_prefix(end: usize) -> usize {
             2 | 7 | 8..=16 => MAX_XSTATE,
             3..=5 => WINDOW,
             6 | 17..=22 => MAP_BYTES,
+            23 => size_of::<runtime_native::ControlProfile>(),
             _ => panic!("unexpected supplied stage"),
         })
         .sum()
@@ -202,6 +203,7 @@ struct Snapshot {
     replacement: Option<(usize, usize, usize)>,
     root: Option<RootSnapshot>,
     bytes: Vec<ByteOwner>,
+    complete_native: Option<runtime_native::NativeStorageSnapshot>,
     native: Option<(
         usize,
         Option<runtime_native::InstructionFailure>,
@@ -329,6 +331,7 @@ fn snapshot(model: &Model) -> Snapshot {
                 v.prior_slots.capacity(),
             ),
         }),
+        complete_native: view.attempt.map(|v| v.native.allocation_custody_snapshot()),
         native: view
             .native
             .map(|v| (v.next, v.first_failure, v.pending, v.allocated)),
@@ -424,6 +427,7 @@ fn ordinary_root_no_growth_and_two_generations_preserve_all_box_owners() {
     run(&mut growth).unwrap();
     let old_box = &*growth.attempts[0] as *const RuntimeOrdinaryAttempt as usize;
     let old_payload = growth.attempts[0].before.xstate.as_ptr() as usize;
+    let old_native = growth.attempts[0].native.allocation_custody_snapshot();
     let old_slots = growth.attempts.as_ptr() as usize;
     let old_capacity = growth.attempts.capacity();
     finish_success(&mut growth.attempts[0], &mut growth.census).unwrap();
@@ -437,6 +441,10 @@ fn ordinary_root_no_growth_and_two_generations_preserve_all_box_owners() {
     assert_eq!(
         growth.attempts[0].before.xstate.as_ptr() as usize,
         old_payload
+    );
+    assert_eq!(
+        growth.attempts[0].native.allocation_custody_snapshot(),
+        old_native
     );
     assert_eq!(growth.attempts[1].prior_slots.as_ptr() as usize, old_slots);
     assert_eq!(growth.attempts[1].prior_slots.capacity(), old_capacity);
@@ -572,4 +580,34 @@ fn ordinary_root_reuse_and_slot_shape_refusal_do_not_discard_owner() {
     );
     assert_eq!(snapshot(&supplied), old);
     assert!(supplied.attempts[0].native.take_completed().is_err());
+
+    // Arithmetic/atomicity only: this supplied census does not invoke runtime
+    // preparation. The separate genuine-owner one-short trajectory proves the
+    // actual refusal boundary. Keep the complete production charge formulas.
+    let mut full = ordinary_shared_census_charge().unwrap();
+    full.source_fact_bytes += root_bytes(WINDOW, NativeInstructionStorage::allocation_test_shape())
+        .unwrap()
+        + size_of::<Box<RuntimeOrdinaryAttempt>>();
+    let mut short = ResumeCensus::new(
+        SESSION,
+        supplied.observed.task.address_space,
+        0,
+        census::Limits {
+            epochs: 32,
+            source_fact_bytes: full.source_fact_bytes - 1,
+            reports: 64,
+            origins: 64,
+            witnesses: 128,
+            plan_history: 64,
+        },
+    )
+    .unwrap();
+    let prior_used = short.used();
+    let prior_charged = short.charged();
+    assert_eq!(short.reserve(full), Err(CensusError::Capacity));
+    assert_eq!(short.used(), prior_used);
+    assert_eq!(short.charged(), prior_charged);
+    assert_eq!(short.rows().count(), 0);
+    assert!(short.history().is_empty());
+    assert_eq!(snapshot(&supplied), old);
 }

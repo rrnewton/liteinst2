@@ -1,5 +1,6 @@
 //! Finite native control profile. Descriptive classifier flags grant nothing.
 use super::super::super::lifecycle::{BoundedCet, certify_bounded_cet};
+use super::super::exact_storage;
 use super::super::runtime_kernel_native::OwnedRuntimeKernelReturn;
 use super::*;
 use crate::linux::remote::dynamic::owner::kernel_journal::{KernelAttemptId, KernelStopIdentity};
@@ -72,6 +73,48 @@ pub(in crate::linux::remote::dynamic::owner::admission) struct ControlProfile {
     tid: Option<i32>,
 }
 impl ControlProfile {
+    /// Ordinary-native Box construction only. These named fixed source values
+    /// include the default/result/allocator overlap, not a measured stack frame.
+    /// The separately owned Box payload is charged by its actual owner.
+    pub(in crate::linux::remote::dynamic::owner::admission) fn allocation_temporary_bytes()
+    -> Result<usize, LaunchError> {
+        let terms = [
+            size_of::<Self>(), // complete default result
+            size_of::<Self>(), // exact_storage::value argument
+            size_of::<DebugRead>(),
+            size_of::<[u64; 6]>(),
+            size_of::<[Option<Request>; 6]>(),
+            size_of::<[u8; 24]>(),
+            size_of::<Option<Request>>(),
+            size_of::<Option<i32>>(),
+            size_of::<bool>(),
+            BoundedCet::construction_temporary_bytes()?,
+            size_of::<Result<Box<Self>, exact_storage::AllocationError>>(),
+            size_of::<Option<Box<Self>>>(),
+            size_of::<Result<Box<Self>, LaunchError>>(),
+            size_of::<LaunchError>(),
+            size_of::<Result<(), LaunchError>>(),
+            size_of::<(std::alloc::Layout, *mut Self, *mut u8)>(),
+            size_of::<[&Self; 2]>(),
+            size_of::<exact_storage::AllocationError>(),
+        ];
+        type Calculator = (
+            [usize; 18],
+            std::array::IntoIter<usize, 18>,
+            [usize; 6],
+            [Option<usize>; 2],
+            [Result<usize, LaunchError>; 2],
+            Option<exact_storage::AllocationError>,
+        );
+        let mut total = size_of::<Calculator>();
+        for item in terms {
+            total = total.checked_add(item).ok_or(LaunchError::Invalid(
+                "ordinary profile construction temporary overflow",
+            ))?;
+        }
+        Ok(total)
+    }
+
     /// Named temporary evidence in capture, in addition to retained Self.
     pub(in crate::linux::remote::dynamic::owner::admission) fn temporary_bytes()
     -> Result<usize, LaunchError> {

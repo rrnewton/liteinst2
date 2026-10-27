@@ -98,6 +98,19 @@ fn memory(v: &MemoryObservation) -> MemorySnapshot {
         complete: v.complete,
     }
 }
+#[derive(Debug, Eq, PartialEq)]
+pub(super) struct ProfileOwnerSnapshot {
+    address: usize,
+    extent: usize,
+    value: ProfileSnapshot,
+}
+pub(super) fn profile_snapshot(value: &ControlProfile) -> ProfileOwnerSnapshot {
+    ProfileOwnerSnapshot {
+        address: value as *const ControlProfile as usize,
+        extent: size_of::<ControlProfile>(),
+        value: value.test_retained_snapshot(),
+    }
+}
 type DebugSnapshot = ([u64; 6], [Option<Request>; 6]);
 #[derive(Debug, Eq, PartialEq)]
 struct Header {
@@ -106,7 +119,7 @@ struct Header {
     until: Instant,
     signals: Vec<([u8; 128], Option<Request>)>,
     debug: Vec<DebugSnapshot>,
-    profile: ProfileSnapshot,
+    profile: Option<ProfileOwnerSnapshot>,
     memory: MemorySnapshot,
     progress: ProgressSnapshot,
     initial: Option<AdmissionStop>,
@@ -142,7 +155,7 @@ fn pending(v: &PendingInstructionStorage) -> OwnerSnapshot {
             until: v.until,
             signals: v.signals.iter().map(|s| (s.bytes, s.request)).collect(),
             debug: v.debug.iter().map(|d| (d.values, d.requests)).collect(),
-            profile: v.profile.test_retained_snapshot(),
+            profile: v.profile.as_deref().map(profile_snapshot),
             memory: memory(&v.peek),
             progress: progress(&v.progress),
             initial: v.initial.clone(),
@@ -171,7 +184,7 @@ fn allocated(v: &PreparedInstructionAttempt) -> OwnerSnapshot {
             until: v.until,
             signals: v.signals.iter().map(|s| (s.bytes, s.request)).collect(),
             debug: v.debug.iter().map(|d| (d.values, d.requests)).collect(),
-            profile: v.profile.test_retained_snapshot(),
+            profile: Some(profile_snapshot(&v.profile)),
             memory: memory(&v.peek),
             progress: progress(&v.progress),
             initial: v.initial.clone(),
@@ -195,8 +208,14 @@ impl NativeInstructionStorage {
     ) -> NativeStorageSnapshot {
         NativeStorageSnapshot {
             address: self as *const Self as usize,
-            pending: self.pending.as_ref().map(pending),
-            allocated: self.allocated.as_ref().map(allocated),
+            pending: match self.owner.as_ref() {
+                Some(NativeStorageConversion::Partial(value)) => Some(pending(value)),
+                _ => None,
+            },
+            allocated: match self.owner.as_ref() {
+                Some(NativeStorageConversion::Allocated(value)) => Some(allocated(value)),
+                _ => None,
+            },
             next: self.next,
             failure: self.first_failure,
         }
@@ -210,7 +229,7 @@ impl NativeStorageSnapshot {
         unwound: bool,
         until: Instant,
     ) {
-        assert!(count <= 15);
+        assert!(count <= 16);
         assert_eq!(self.next, count);
         assert_eq!(self.pending.is_some(), !converted);
         assert_eq!(self.allocated.is_some(), converted);
@@ -227,7 +246,13 @@ impl NativeStorageSnapshot {
         assert!(h.signals.iter().all(|s| *s == ([0; 128], None)));
         assert_eq!(h.debug.len(), WAITS);
         assert!(h.debug.iter().all(|d| *d == ([0; 6], [None; 6])));
-        h.profile.require_empty();
+        assert_eq!(h.profile.is_some(), count == 16);
+        if let Some(profile) = &h.profile {
+            assert_ne!(profile.address, 0);
+            assert_eq!(profile.address % std::mem::align_of::<ControlProfile>(), 0);
+            assert_eq!(profile.extent, size_of::<ControlProfile>());
+            profile.value.require_empty();
+        }
         assert_eq!(
             h.memory,
             MemorySnapshot {
@@ -292,7 +317,7 @@ impl NativeStorageSnapshot {
                 );
             }
         }
-        assert_eq!(v.membership.is_some(), count == 15);
+        assert_eq!(v.membership.is_some(), count >= 15);
         if let Some((_, bytes)) = &v.membership {
             assert_eq!(bytes.len(), MAP_BYTES);
             assert!(bytes.iter().all(|b| *b == 0));

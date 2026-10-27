@@ -5,6 +5,7 @@ use super::super::storage::native_oracle::{
 use super::*;
 use crate::linux::remote::dynamic::{Request as DynamicRequest, Response};
 use std::cell::RefCell;
+mod capacity;
 mod observe;
 
 type PanicPayload = Box<dyn std::any::Any + Send>;
@@ -190,9 +191,10 @@ fn runtime_ordinary_allocation_errors_retain_actual_pending_custody() {
     crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
         "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_errors_retain_actual_pending_custody",
         || {
-            for ordinal in 0..23 {
+            for ordinal in 0..24 {
                 trajectory(Fault::Before(ordinal), false);
             }
+            capacity::trajectory();
         },
     );
 }
@@ -201,7 +203,7 @@ fn runtime_ordinary_allocation_unwinds_retain_actual_pending_custody() {
     crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
         "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_unwinds_retain_actual_pending_custody",
         || {
-            for ordinal in 0..23 {
+            for ordinal in 0..24 {
                 trajectory(Fault::After(ordinal), false);
             }
         },

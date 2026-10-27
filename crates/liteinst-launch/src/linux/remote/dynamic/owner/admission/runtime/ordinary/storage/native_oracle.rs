@@ -273,6 +273,102 @@ impl RuntimeOwner {
             vmas: self.sources.vmas().to_vec(),
         }
     }
+    /// Descriptive next-charge projection from the actual retained request
+    /// inputs. No native query, stop/permit construction, reservation or mutation.
+    pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn test_next_ordinary_charge(
+        &self,
+        until: Instant,
+    ) -> Result<BudgetCharge, GateError> {
+        if self.stage != RuntimeStage::Ready
+            || self.until != until
+            || self.ordinary_preparation.is_some()
+            || self.selected_pending.is_some()
+            || self.ordinary_attempts.last().is_some_and(|attempt| {
+                attempt.stage != AttemptStage::Complete
+                    || attempt.failed
+                    || attempt.unwound
+                    || attempt.allocation.first_failure.is_some()
+            })
+        {
+            return Err(GateError::Refused(
+                "ordinary next charge input is not ready",
+            ));
+        }
+        let census = self
+            .census
+            .as_ref()
+            .ok_or(GateError::Refused("runtime census is absent"))?;
+        let origin = self
+            .initial_origin
+            .ok_or(GateError::Refused("runtime current origin is absent"))?;
+        let before = census.current_observation(origin).map_err(census_error)?;
+        let index = self
+            .pages
+            .iter()
+            .find(|page| page.address == (before.logical_pc & !4095))
+            .ok_or(GateError::Refused("ordinary next charge page is absent"))?
+            .window;
+        let window = self
+            .sources
+            .window(index)
+            .ok_or(GateError::Refused("runtime source window absent"))?;
+        let candidate = classify(
+            window.snapshot,
+            &before.registers,
+            DebugDisposition::Absent,
+            &SyscallAliases::default(),
+        )
+        .map_err(|_| GateError::Refused("runtime ordinary encoding or mode is unqualified"))?;
+        let geometry =
+            maps::FetchGeometry::for_initial_source(window.initial_source(), candidate.range())?;
+        geometry.projected_rows(self.sources.runtime_baseline_maps()?)?;
+        let shape = InstructionAttemptShape::from_geometry(&geometry)?;
+        let spare = usize::from(self.ordinary_attempts.len() == self.ordinary_attempts.capacity());
+        let new_capacity = add(self.ordinary_attempts.capacity(), spare)?;
+        let retained = add(
+            root_bytes(window.snapshot.bytes().len(), shape)?,
+            mul(
+                if spare != 0 { new_capacity } else { 0 },
+                size_of::<Box<RuntimeOrdinaryAttempt>>(),
+            )?,
+        )?;
+        let mut charge = census::ordinary_shared_census_charge().map_err(census_error)?;
+        charge.source_fact_bytes = add(charge.source_fact_bytes, retained)?;
+        Ok(charge)
+    }
+
+    pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn test_require_ordinary_credit(
+        &self,
+        before: &OrdinaryAllocationSnapshot,
+        token: Reservation,
+        charge: BudgetCharge,
+    ) {
+        let after = self.test_ordinary_allocation_snapshot();
+        self.census
+            .as_ref()
+            .unwrap()
+            .require_unused_allocation_credit(&before.census, token, charge);
+        assert_eq!(after.until, before.until);
+        assert_eq!(after.stage, before.stage);
+        assert_eq!(after.ready, before.ready);
+        assert_eq!(after.current_origin, before.current_origin);
+        assert_eq!(after.next_execution, before.next_execution);
+        assert_eq!(after.configured, before.configured);
+        assert_eq!(after.slots, before.slots);
+        assert_eq!(after.attempts, before.attempts);
+        assert_eq!(after.pending, before.pending);
+        assert_eq!(after.current, before.current);
+        assert_eq!(after.native_current, before.native_current);
+        assert_eq!(after.registry, before.registry);
+        assert_eq!(after.lineage, before.lineage);
+        assert_eq!(after.pages, before.pages);
+        assert_eq!(after.windows, before.windows);
+        assert_eq!(after.original_maps, before.original_maps);
+        assert_eq!(after.original_progress, before.original_progress);
+        assert_eq!(after.baseline_maps, before.baseline_maps);
+        assert_eq!(after.vmas, before.vmas);
+    }
+
     pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn test_require_ordinary_failure(
         &self,
         before: &OrdinaryAllocationSnapshot,
@@ -350,7 +446,7 @@ impl RuntimeOwner {
         let ordinal = match fault {
             OrdinaryAllocationFault::Before(i) | OrdinaryAllocationFault::After(i) => i,
             OrdinaryAllocationFault::Boundary { point: 0 | 1, .. } => 1,
-            _ => 22,
+            _ => 23,
         };
         assert_eq!(record.ordinal, Some(ordinal));
         let expected_failure = if fault.unwinds() {
@@ -395,6 +491,7 @@ impl RuntimeOwner {
                 2 | 7 | 8..=16 => MAX_XSTATE,
                 3..=5 => 8192,
                 6 | 17..=22 => MAP_BYTES,
+                23 => size_of::<runtime_native::ControlProfile>(),
                 _ => unreachable!(),
             })
             .sum::<usize>();
@@ -417,6 +514,7 @@ impl RuntimeOwner {
         charge.source_fact_bytes += size_of::<RuntimeOrdinaryAttempt>()
             + 11 * MAX_XSTATE
             + 7 * MAP_BYTES
+            + size_of::<runtime_native::ControlProfile>()
             + 3 * 8192
             + capacity * size_of::<Box<RuntimeOrdinaryAttempt>>()
             + record.temporary;

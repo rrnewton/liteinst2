@@ -55,6 +55,28 @@ impl ResumeCensus {
             history: self.history_snapshot()?,
         })
     }
+    /// Real zero-item lifetime credit, without an observed payload allocation.
+    /// Only counters/token serial may change; backing identities stay exact.
+    pub(in crate::linux::remote::dynamic::owner::admission) fn require_unused_allocation_credit(
+        &self,
+        before: &AllocationCensusSnapshot,
+        token: Reservation,
+        charge: BudgetCharge,
+    ) {
+        assert_eq!(
+            charge,
+            BudgetCharge {
+                source_fact_bytes: charge.source_fact_bytes,
+                ..BudgetCharge::default()
+            }
+        );
+        assert!(charge.source_fact_bytes > 0);
+        self.require_allocation_failure_accounting(before, token, charge, 0);
+        let after = self.allocation_custody_snapshot().unwrap();
+        assert_eq!(after.origin_storage, before.origin_storage);
+        assert_eq!(after.history_storage, before.history_storage);
+    }
+
     pub(in crate::linux::remote::dynamic::owner::admission) fn require_allocation_failure_accounting(
         &self,
         before: &AllocationCensusSnapshot,

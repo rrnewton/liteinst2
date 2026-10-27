@@ -157,6 +157,7 @@ impl InstructionAttemptShape {
         size_of::<PreparedInstructionAttempt>()
             .checked_add(STATES * MAX_XSTATE)
             .and_then(|bytes| bytes.checked_add(6 * MAP_BYTES))
+            .and_then(|bytes| bytes.checked_add(size_of::<ControlProfile>()))
             .ok_or(LaunchError::Invalid("owned instruction storage overflows"))
     }
 }
@@ -168,7 +169,7 @@ pub(super) struct PreparedInstructionAttempt {
     membership: Box<[u8; MAP_BYTES]>,
     signals: [SignalObservation; WAITS],
     debug: [DebugRead; WAITS],
-    profile: ControlProfile,
+    profile: Box<ControlProfile>,
     peek: MemoryObservation,
     progress: InstructionProgress,
     initial: Option<AdmissionStop>,
@@ -211,7 +212,7 @@ impl PreparedInstructionAttempt {
             membership: fixed_buffer()?,
             signals: std::array::from_fn(|_| SignalObservation::default()),
             debug: [DebugRead::default(); WAITS],
-            profile: ControlProfile::default(),
+            profile: storage::allocate_profile()?,
             peek: MemoryObservation::default(),
             progress: InstructionProgress {
                 phase: InstructionPhase::Allocated,
@@ -241,15 +242,16 @@ impl PreparedInstructionAttempt {
         Ok(value)
     }
     pub(super) fn allocated_bytes(&self) -> Result<usize, LaunchError> {
-        self.states
-            .iter()
-            .try_fold(size_of::<Self>() + 6 * MAP_BYTES, |bytes, state| {
+        self.states.iter().try_fold(
+            size_of::<Self>() + 6 * MAP_BYTES + size_of::<ControlProfile>(),
+            |bytes, state| {
                 bytes
                     .checked_add(state.allocated_bytes() - size_of::<StateSlot>())
                     .ok_or(LaunchError::Invalid(
                         "owned instruction allocation overflows",
                     ))
-            })
+            },
+        )
     }
     #[cfg(test)]
     pub(super) fn progress(&self) -> &InstructionProgress {
