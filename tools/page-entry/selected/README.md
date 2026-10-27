@@ -25,7 +25,7 @@ and its output names remain unchanged. A caller can explicitly use
 and the existing sealed-namespace `exec-loader` command with that carrier.
 
 Canonical NOP and register/immediate MOV retain their original typed owner.
-A separate owner executes a closed set of 535 decoder instruction codes at
+A separate owner executes a closed set of 544 decoder instruction codes at
 their original addresses: integer arithmetic and memory access, stack operations,
 near branches/CALL/RET, integer shifts/rotates, multiply/divide, conditional
 results, bit operations/exchanges, and selected SSE2 data operations. The CPU supplies the
@@ -203,3 +203,15 @@ encoding refusals, three genuine pre-open index refusals and one actual native
 invalid-index fault. Run on one reserved CPU. Failed operations retain exit 125
 and are counted separately from completed pairs. All existing generic, integer,
 padding, REP and component suites remain required.
+
+Legacy XMM PCMPEQB/W/D, PCMPGTB/W/D, PMINUB, PMAXUB and r32 PMOVMSKB
+execute through the same original-address owner. MMX, AVX/EVEX and REX.W
+movemask encodings remain refused. Run
+`python3 evaluation/inprocess/page_selected_sse2_compare.py --expect-revision REVISION`
+on one reserved CPU for two bounded cohorts with 36 new pairs and two startup
+pairs. Literal lane/movemask expectations supplement the unchanged full-state
+comparison. The cohorts include register and aligned-memory forms, low/high
+registers, page endings and crossing fetches. An actual inaccessible-memory
+instruction remains a failed operation with native and stepped fault records.
+All prior suites remain required; this addition does not establish general SSE
+encoding support or completed real-linker execution.

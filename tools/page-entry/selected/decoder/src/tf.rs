@@ -347,7 +347,12 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::Pandn_xmm_xmmm128 | Code::Por_xmm_xmmm128 | Code::Paddb_xmm_xmmm128
         | Code::Paddw_xmm_xmmm128 | Code::Paddd_xmm_xmmm128 | Code::Paddq_xmm_xmmm128
         | Code::Psubb_xmm_xmmm128 | Code::Psubw_xmm_xmmm128 | Code::Psubd_xmm_xmmm128
-        | Code::Psubq_xmm_xmmm128 => (1, 6),
+        | Code::Psubq_xmm_xmmm128
+        // Legacy SSE2 only; unchanged prefix policy excludes 66+REX.W.
+        | Code::Pcmpeqb_xmm_xmmm128 | Code::Pcmpeqw_xmm_xmmm128 | Code::Pcmpeqd_xmm_xmmm128
+        | Code::Pcmpgtb_xmm_xmmm128 | Code::Pcmpgtw_xmm_xmmm128 | Code::Pcmpgtd_xmm_xmmm128
+        | Code::Pminub_xmm_xmmm128 | Code::Pmaxub_xmm_xmmm128
+        | Code::Pmovmskb_r32_xmm => (1, 6),
         _ => return Ok(out),
     };
     out.policy = 1;
