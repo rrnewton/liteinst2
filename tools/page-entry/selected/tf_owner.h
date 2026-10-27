@@ -21,7 +21,7 @@ enum li2_tf_flow { LI2_TF_REFUSED, LI2_TF_FALLTHROUGH, LI2_TF_NEAR_FLOW };
 enum li2_tf_family { LI2_TF_NONE, LI2_TF_INTEGER, LI2_TF_STACK,
     LI2_TF_BRANCH, LI2_TF_CALL, LI2_TF_RETURN, LI2_TF_SIMD };
 enum li2_tf_error { LI2_TF_CLASSIFICATION=100, LI2_TF_CONTINUATION, LI2_TF_FRAME,
-    LI2_TF_RSP_DOMAIN };
+    LI2_TF_RSP_DOMAIN, LI2_TF_XCR_INDEX };
 uint32_t li2_decoder_tf_classify(uint64_t,const unsigned char *,size_t,
                                struct li2_tf_classification *);
 

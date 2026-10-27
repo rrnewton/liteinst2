@@ -326,3 +326,67 @@ An earlier connected run at `f090e7b7` failed an observer assertion that incorre
 - [Required checks, recorder and serial](results/20261027T192329.459383Z-checks-96038db8aae4.json)
 
 The results commit adds documentation and seven numeric receipts totaling 117,232 bytes. Full captures and state records remain private.
+
+## Exact canonical padding NOPs (claims 2 and 4)
+
+Source `ca0f9c3616e52da81e5415815a38133b2f2a999c` adds the exact ten-byte `66 2e 0f 1f 84 00 00 00 00 00` padding form before the unchanged general prefix policy. The existing 534-code set and prior refused encodings remain unchanged. Twenty new native/stepped pairs cover lengths 1–10 ending at a page boundary, every split of the ten-byte form, and a nine-byte crossing. All preserve literal no-op effects and full state, including 2,444 kernel-FP bytes, 2,440 live-XSAVE bytes, 8 KiB stack and 4 KiB data. The genuine startup pair and all 47 prior plus twelve new refusal controls pass. All 31 opened-page prefixes revoke, synchronize and close.
+
+All seven optimized native runners pass: padding, original generic, REP oracle, connected REP, both integer groups and components. The connected cohort retains all 32 cases (28 completed and four required refusals), 189 commands, and every previous predicate. Components retain 112 decoder forms, two fatal cases, one freestanding decoder, 385 provider cases, twenty ordinary-step pairs, thirteen arm/false-claim refusals, four control processes and eighteen fetch cases. No performance result is claimed.
+
+The real linker progresses to 6,040 completed generic steps, 458 original steps, nine CPUID callbacks, two RDTSC callbacks and one source syscall, with 6,512 NX faults and the completed 52-iteration REP. It then refuses canonical XGETBV `0f01d0` (code 825) before effect, status 125/error 100. Selected-profile `ls` remains incomplete. This observed failure remains a failure; accepting padding does not establish general prefix or XGETBV support.
+
+Native runs used one reserved CPU (16), optimized builds and the exact tool/hardware identities in the receipts. Reproduce on one reserved CPU at the source revision:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_padding.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_generic_oracle.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_repeat_oracle.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_repeat.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_integer.py --group 0 --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_integer.py --group 1 --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_components.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c
+```
+
+All four required checks pass at this same revision: formatting, strict workspace/all-feature/all-target Clippy, workspace tests (2,457 passed, four previously ignored, 98 harnesses) and workspace/all-feature/all-target check. Recorder passes 330 tests. Serial passes 1,029 across 27 harnesses, with all 50 native, 15 dynamic, 388 matrix and 108 validation cases qualified and backing cleanup complete. Workspace takes 350.613 seconds within its unchanged 900-second bound; serial takes 136.627 seconds within its unchanged 180-second bound. Source/configuration stay unchanged. Reproduce checks with `PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/checks.py --expect-revision ca0f9c3616e52da81e5415815a38133b2f2a999c` on four reserved CPUs. Saved-log replay reconstructs the full strict qualification and compact receipt without changing any parser or assertion.
+
+- [Padding full-state oracle](results/20261027T193927.693722Z-page-selected-padding-ca0f9c3616e5.json)
+- [Unchanged generic oracle](results/20261027T193936.034753Z-page-selected-generic-oracle-ca0f9c3616e5.json)
+- [REP full-state oracle](results/20261027T193944.698558Z-page-selected-repeat-oracle-ca0f9c3616e5.json)
+- [Connected REP and linker diagnostic](results/20261027T193953.503973Z-page-selected-repeat-ca0f9c3616e5.json)
+- [Integer group zero](results/20261027T194030.946840Z-page-selected-integer-0-ca0f9c3616e5.json)
+- [Integer group one](results/20261027T194040.986892Z-page-selected-integer-1-ca0f9c3616e5.json)
+- [Complete components](results/20261027T194049.391917Z-page-selected-components-ca0f9c3616e5.json)
+- [Required checks, recorder and serial](results/20261027T194241.260102Z-checks-ca0f9c3616e5.json)
+
+The eight numeric receipts total 118,423 bytes. All 727 native/build commands are reaped without timeout or cleanup error; raw captures and state records remain private.
+
+## Canonical XGETBV with ECX zero (claims 2 and 4)
+
+Source `52bb8423ede1af98b198335e6c6fc585c778fa7c` executes exact `0f01d0` at its original address after checking the actual saved ECX is zero, before opening either source page. The previous 534 generic Codes and prefix policy remain unchanged. Six new XCR0 native/stepped pairs cover a page-end and both instruction splits, each with zero or nonzero ignored high RCX bits. All six plus startup pass the full architectural, FP/XSAVE, stack and data comparisons. Actual XCR0 is 743; RAX is 743 and RDX zero, with both results zero-extended. All 47 old and nine added encoding refusals pass. Three genuine nonzero-index entries refuse before opening; native ECX=2 produces its actual original-PC general-protection fault. All four operations remain failures with exit 125. ECX=1/XINUSE and unsupported hardware are outside this completion claim.
+
+All eight optimized native runners pass, totaling 750 build/native commands with complete reaping, no timeout and no cleanup error. The connected cohort retains 32 cases: 28 complete and four retain required refusals. The real linker advances to 7,468 generic steps, 725 original steps, 38 CPUID callbacks, two RDTSC callbacks and two source syscalls, with 8,237 NX faults and the completed 52-iteration REP. Its next refusal is `660f74e0`, PCMPEQB xmm4,xmm0 (code 1715), status 125/error 100 before effect. Selected-profile `ls` remains incomplete. These correctness runs do not measure performance.
+
+Independent saved-data review authenticates all seven XGETBV pairs, four failed operations, source/build/capture identities and the public projection. Separate connected replay retains all previous predicates and 189 commands. The original generic, padding, REP, both integer groups and complete component suites also pass. All four required checks pass: formatting, strict all-feature/all-target workspace Clippy, workspace tests (2,457 passed, four previously ignored across 98 harnesses), and all-feature/all-target workspace check. Recorder passes 330; serial passes 1,029 across 27 harnesses, including all 50 native, 15 dynamic, 388 matrix and 108 validation cases plus backing cleanup. Workspace takes 323.615 seconds within its unchanged 900-second bound; serial takes 133.556 seconds within its unchanged 180-second bound. Saved-log replay reproduces strict qualification without parser changes.
+
+Runs used AMD EPYC 9D85, microcode `0xb101066`, Linux 7.1.3, GCC 11.5.0 and Rust/Cargo 1.97.1, with no effective capabilities. Exact commands, affinities and identities are in the nine numeric receipts (137,866 bytes); raw logs and state captures remain private. Reproduce native runners on one reserved CPU and checks on four, at the source revision:
+
+```sh
+revision=52bb8423ede1af98b198335e6c6fc585c778fa7c
+for runner in page_selected_xgetbv page_selected_padding page_selected_generic_oracle page_selected_repeat_oracle page_selected_repeat page_selected_components; do
+    PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/"$runner".py --expect-revision "$revision" || exit
+done
+for group in 0 1; do
+    PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_integer.py --group "$group" --expect-revision "$revision" || exit
+done
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/checks.py --expect-revision "$revision"
+```
+
+- [XGETBV full-state oracle](results/20261027T195803.295091Z-page-selected-xgetbv-52bb8423ede1.json)
+- [Connected programs and linker diagnostic](results/20261027T195847.677501Z-page-selected-repeat-52bb8423ede1.json)
+- [Required checks, recorder and serial](results/20261027T195913.896278Z-checks-52bb8423ede1.json)
+- [Padding regression](results/20261027T195924.548747Z-page-selected-padding-52bb8423ede1.json)
+- [Original generic oracle](results/20261027T195932.874008Z-page-selected-generic-oracle-52bb8423ede1.json)
+- [REP full-state oracle](results/20261027T195941.489390Z-page-selected-repeat-oracle-52bb8423ede1.json)
+- [Integer group zero](results/20261027T195950.279353Z-page-selected-integer-0-52bb8423ede1.json)
+- [Integer group one](results/20261027T195958.438387Z-page-selected-integer-1-52bb8423ede1.json)
+- [Complete components](results/20261027T200006.957765Z-page-selected-components-52bb8423ede1.json)

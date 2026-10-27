@@ -46,7 +46,41 @@ int li2_tf_arm(struct li2_tf_owner *o,struct li2_step_session *s,
     return (int)error;
 }
 
+/* Separate canonical XGETBV entry: the complete old entry/open sequence plus
+   one actual-register guard. All other instructions use the old function. */
+static void tf_xgetbv_begin(struct li2_step_owner *o,int sig,siginfo_t *si,ucontext_t *uc) {
+    enter(o,LI2_STEP_ARMED,sig,si,uc);
+    greg_t *g=uc->uc_mcontext.gregs;
+    uintptr_t pc=o->request.decoded.pc;
+    require(o,sig==SIGSEGV && si->si_code==SEGV_ACCERR && !si->si_errno &&
+            (uintptr_t)g[REG_RIP]==pc && g[REG_TRAPNO]==14 && g[REG_ERR]==21 &&
+            (uintptr_t)si->si_addr==pc,LI2_STEP_FOREIGN_EVENT,sig);
+    require(o,(uint64_t)g[REG_EFL]==(o->request.original_flags|LI2_STEP_RF),LI2_STEP_INPUT_FLAGS,g[REG_EFL]);
+    frame(o,&o->before,uc);
+    require(o,equal((const void *)pc,o->request.decoded.bytes,o->request.decoded.length),LI2_STEP_PAGE_BINDING,2);
+    /* Intel specifies ECX, explicitly ignoring RCX[63:32]. Preserve the
+       authenticated refused frame and first error; no source page has opened. */
+    require(o,(uint32_t)g[REG_RCX]==0,LI2_TF_XCR_INDEX,(long)(uint32_t)g[REG_RCX]);
+    o->phase=LI2_STEP_OPENING;
+    for(size_t i=0;i<o->request.page_count;i++) {
+        const struct li2_step_page *p=&o->request.pages[i];
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->closed_prot),LI2_STEP_PAGE_BINDING,(long)i);
+        o->open_started[i]=1;
+        o->open_result[i]=RAW(SYS_mprotect,p->address,LI2_STEP_PAGE,p->open_prot,0,0,0);
+        require(o,!o->open_result[i],LI2_STEP_OPEN,o->open_result[i]);o->opened[i]=1;
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->open_prot),LI2_STEP_PAGE_BINDING,(long)i);
+    }
+    o->open_sync=RAW(SYS_membarrier,32,0,0,0,0,0);
+    require(o,!o->open_sync,LI2_STEP_SYNC_OPEN,o->open_sync);
+    require(o,equal(uc->uc_mcontext.fpregs,o->before.fp,o->before.fp_bytes),LI2_STEP_FRAME,4);
+    g[REG_EFL]|=LI2_STEP_TF;
+    o->phase=LI2_STEP_RUNNING;o->in_handler=0;
+}
+
 void li2_tf_begin(struct li2_tf_owner *o,int sig,siginfo_t *si,ucontext_t *uc) {
+    if(o->classification.code==825) {
+        tf_xgetbv_begin(&o->step,sig,si,uc);return;
+    }
     /* This old function performs no emulated-result check: exact real NX
        entry, immutable source, installed open prefixes, sync, then TF only. */
     li2_step_begin(&o->step,sig,si,uc);
