@@ -153,6 +153,26 @@ def exact_native_output(directory, terminal, concurrent=False):
     return rows, table, truth_table, comparisons
 
 
+RETIREMENT_CASES = {
+    'sixteen-epochs': (
+        'frontend_native::always_on::tests::concurrent_native::retirement_native::ordinary_native_retirement_sixteen_epochs',
+        'retirement-native PASS case=sixteen-epochs epochs=16 originals=16 calls=16 sampled=16 rows=16 events=32 actions=32 registrations=1 report_permit_refusals=16 joined=true'),
+    'function-closed': (
+        'frontend_native::always_on::tests::concurrent_native::retirement_native::ordinary_native_retirement_function_closed_receipt',
+        'retirement-native PASS case=function-closed originals=2 calls=2 sampled=1 closed=1 rows=2 events=4 actions=2 report_ready_before_return=true receipt_permit_refusal=1 post_return_stage=true joined=true'),
+}
+
+
+def retirement_output(data, case):
+    assert case in RETIREMENT_CASES
+    assert 0 < len(data) <= MIB and data.endswith(b'\n') and b'\r' not in data
+    test_name, terminal = RETIREMENT_CASES[case]
+    protocol = '\nrunning 1 test\ntest '+test_name+' ... '+terminal+'\nok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; '
+    assert re.fullmatch(re.escape(protocol)+r'[0-9]+ filtered out; finished in [0-9]+\.[0-9]+s\n\n', data.decode('ascii'))
+    fields = dict(word.split('=', 1) for word in terminal.split()[2:])
+    return {key: int(value) if value.isdecimal() else True if value == 'true' else value for key, value in fields.items()}
+
+
 def main():
     if sys.flags.optimize: raise SystemExit('assertions required')
     sys.dont_write_bytecode = True
@@ -160,6 +180,7 @@ def main():
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'): ap.add_argument('--'+name, type=Path, required=True)
     ap.add_argument('--exact-work', action='store_true', help='also require exact native work truth and all 12 fresh 24-call populations')
     ap.add_argument('--concurrent-epochs', action='store_true', help='also require concurrent-mode state, forced native contention and autonomous timed epochs; requires --exact-work')
+    ap.add_argument('--retire-epochs', action='store_true', help='also require two fresh native epoch-retirement controls; requires --concurrent-epochs')
     a = ap.parse_args(); repo = Path(__file__).resolve().parents[2]; raw = a.raw
     assert Path(__file__).resolve() == repo/'tools/rapid-profiler/verify_ordinary_interval.py'
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
@@ -167,9 +188,15 @@ def main():
     assert raw.is_absolute() and raw.is_relative_to(repo/'ignored') and not raw.exists()
     assert raw.parent.resolve(strict=True) == raw.parent
     assert not a.concurrent_epochs or a.exact_work
+    assert not a.retire_epochs or a.concurrent_epochs
     raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight', exact_work_requested=a.exact_work, concurrent_epochs_requested=a.concurrent_epochs,
         native_setup='Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.',
         scope='uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim', native_state_qualification='PENDING: gate entry through post-POP; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim')
+    result['retire_epochs_requested'] = a.retire_epochs
+    if a.retire_epochs:
+        result['epoch_retirement'] = dict(status='UNRUN',
+            scope='two finite cfg(test) lifecycle controls; source-attested actual CALL/RET, journal and report ownership; no new full-register oracle, buffer-drain, indefinite-service or performance credit',
+            cases=[dict(case=case, test=test, status='UNRUN') for case, (test, _) in RETIREMENT_CASES.items()])
     try:
         cpus = sorted(os.sched_getaffinity(0))[:4]; assert len(cpus) == 4
         os.sched_setaffinity(0, cpus); assert set(os.sched_getaffinity(0)) == set(cpus)
@@ -201,6 +228,8 @@ def main():
             'tools/rapid-profiler/ordinary-interval/timed/check_tests.rs',
             'tools/rapid-profiler/timed-work/check_output.py', 'tools/rapid-profiler/timed-work/test_recipe.py',
             'tools/rapid-profiler/timed-work/README.md']
+        if a.retire_epochs:
+            names.append('tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/retirement_native.rs')
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -383,6 +412,22 @@ def main():
             concurrent['timed'].update(originals=24, calls=24, epochs=3, actions=6, requested_active_ms=30, requested_inactive_ms=10)
             exact_stable(); assert digest(test_binary) == test_hash
             concurrent['status'] = 'PASS'
+        if a.retire_epochs:
+            retirement = result['epoch_retirement']; retirement['status'] = 'FAILED'
+            for case in retirement['cases']:
+                case['status'] = 'FAILED'
+                exact_stable(); assert digest(test_binary) == test_hash
+                label = 'retirement-'+case['case']
+                test_flags = ['--exact', case['test'], '--ignored', '--nocapture', '--test-threads=1']
+                result['commands'].append(['$RAPID_LIBTEST', *test_flags])
+                observed = stage(label, [str(test_binary), *test_flags], 10, 15, MIB,
+                    dict(RAPID_CONCURRENT_CANDIDATE=str(candidate), RAPID_CONCURRENT_EXPECTED=str(trusted)))
+                assert (observed/'stderr.txt').read_bytes() == b''
+                summary = retirement_output((observed/'stdout.txt').read_bytes(), case['case'])
+                exact_stable(); assert digest(test_binary) == test_hash
+                case.update(summary, status='PASS')
+            assert len(retirement['cases']) == 2 and all(c['status'] == 'PASS' for c in retirement['cases'])
+            retirement.update(status='PASS', fresh_processes=2)
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:
