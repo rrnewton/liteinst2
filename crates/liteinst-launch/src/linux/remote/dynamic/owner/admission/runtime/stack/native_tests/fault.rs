@@ -100,6 +100,11 @@ fn raw_fault(program: &Program, kind: InterventionKind) -> raw::Step {
 }
 pub(super) fn run(point: InterventionPoint, kind: InterventionKind) {
     let program = Program::call(4096, kind == InterventionKind::Ac);
+    let program = if kind == InterventionKind::PkruKeyZeroDeny {
+        program.with_initial_call_word_seed()
+    } else {
+        program
+    };
     let reference = (point == InterventionPoint::AfterB).then(|| raw_fault(&program, kind));
     let _ = support::with_owner(
         &program,

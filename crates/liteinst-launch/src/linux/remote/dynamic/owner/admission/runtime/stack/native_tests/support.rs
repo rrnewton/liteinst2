@@ -177,7 +177,10 @@ pub(super) fn held(owner: &Owner, until: Instant) {
 /// Physical read-only custody, including after cancellation. This does not
 /// authorize an owner operation, reset cancellation, or extend its deadline.
 /// Compare the same retained task/pin/status on both sides of every read.
-fn diagnostic_held(owner: &Owner, until: Instant) -> (libc::pid_t, i32, i32, bool, bool) {
+pub(super) fn diagnostic_held(
+    owner: &Owner,
+    until: Instant,
+) -> (libc::pid_t, i32, i32, bool, bool) {
     assert!(Instant::now() < until, "stack diagnostic original deadline");
     assert!(owner.pid > 0 && owner.attached);
     assert!(!owner.lost_wait && !owner.missing_pin);
@@ -260,7 +263,10 @@ pub(super) fn with_owner<T>(
     let helper = pin(harness.owner().broker.as_ref().unwrap().pid);
     assert_ne!(app.as_raw_fd(), helper.as_raw_fd());
     let initial = launched.event.stop_token().unwrap().clone();
+    // This owner survives the action catch, including partial preparation.
+    let mut preparation = seed::Evidence::empty(program.preparation);
     let outcome = catch_unwind(AssertUnwindSafe(|| {
+        preparation.prepare(harness.owner(), &launched.event, program, until, read_stack);
         let before = Before::capture(
             harness.owner(),
             &launched.event,
@@ -270,11 +276,13 @@ pub(super) fn with_owner<T>(
         );
         assert_eq!(before.state.registers.rip, program.entry);
         assert_eq!(before.state.registers.orig_rax, libc::SYS_execve as u64);
+        preparation.require_before(&before);
         action(harness.owner(), &initial, until, &before)
     }));
     if let Err(payload) = &outcome {
         diagnostic("body", payload.as_ref());
     }
+    let prepared = catch_unwind(AssertUnwindSafe(|| preparation.retained()));
     let cleanup = harness.owner().cleanup().unwrap_or_else(|error| {
         let _ = writeln!(std::io::stderr().lock(), "owned stack cleanup: {error:?}");
         std::process::abort()
@@ -282,6 +290,22 @@ pub(super) fn with_owner<T>(
     assert_eq!(cleanup.reaped, [launched.pid]);
     reaped(&app);
     reaped(&helper);
+    let retained = match prepared {
+        Ok(check) => catch_unwind(AssertUnwindSafe(|| {
+            check(&preparation);
+            preparation.require_attempts(harness.owner());
+        })),
+        Err(payload) => Err(payload),
+    };
+    let outcome = match (outcome, retained) {
+        (Err(first), Err(secondary)) => {
+            diagnostic("secondary seed retention", secondary.as_ref());
+            Err(first)
+        }
+        (Err(first), Ok(())) => Err(first),
+        (Ok(_), Err(payload)) => Err(payload),
+        (Ok(value), Ok(())) => Ok(value),
+    };
     let outcome = match outcome {
         Ok(value) => catch_unwind(AssertUnwindSafe(|| {
             after_cleanup(harness.owner(), &value);
@@ -480,6 +504,10 @@ pub(super) fn with_raw_owner<T: FnOnce()>(
     program: &Program,
     action: impl FnOnce(&mut Owner, &DynamicStop, Instant, &Before) -> T,
 ) {
+    assert_eq!(
+        program.preparation,
+        fixture::InitialStackPreparation::Unchanged
+    );
     let mut harness = Harness::new();
     *harness.owner() = Owner::new(
         SESSION.fetch_add(1, Ordering::Relaxed),

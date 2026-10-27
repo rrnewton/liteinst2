@@ -88,7 +88,15 @@ allocator metadata or compiler stack size. They are not performance results.
 Native controls require an independent raw SINGLESTEP lane, complete own-lane
 state and whole-stack equations, exact source and mapping observations, actual
 one/two-page fetch cases and retained CALL/census identities through cleanup.
-Positive whole-stack reads are disclosed residency setup. Residency-negative
+Selected aligned positive operand fixtures, including allocation and later-failure
+controls, perform one disclosed same-value ptrace write of the initial CALL word
+before startup. Their independent raw references use the same preparation. Three
+actual pagemap observations distinguish before-read, before-write and after-write
+state; exact full-state, maps, source and whole-stack equality plus actual final
+page eligibility remain required. This prepares paging state and does not claim
+natural or untouched-stack exclusivity. Unaligned fixtures retain their separate
+kernel-written argv-table preparation. Positive whole-stack reads are disclosed
+residency setup. Residency-negative
 fixtures observe pagemap before any eligibility-changing stack read. AC/PKRU
 interventions use actual setters and readbacks; the post-B fault cases require
 the specified real fault and cannot count an earlier refusal as equivalent.

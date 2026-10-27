@@ -56,7 +56,9 @@ pub(super) fn mixed() {
         next,
         setup: 0,
         encoding: code[4..9].try_into().unwrap(),
-    };
+        preparation: fixture::InitialStackPreparation::Unchanged,
+    }
+    .with_initial_call_word_seed();
     let _ = support::with_owner(
         &program,
         true,
@@ -385,7 +387,7 @@ pub(super) fn late() {
         RootIntervention::AfterCallRecordPanic,
         RootIntervention::RefuseClosedObserver,
     ] {
-        let program = Program::call(4096, false);
+        let program = Program::call(4096, false).with_initial_call_word_seed();
         let _ = support::with_owner(
             &program,
             true,
@@ -488,7 +490,7 @@ pub(super) fn late() {
 }
 
 pub(super) fn budgets() {
-    let program = Program::call(4096, false);
+    let program = Program::call(4096, false).with_initial_call_word_seed();
     let (startup, charge) = support::with_owner(
         &program,
         true,

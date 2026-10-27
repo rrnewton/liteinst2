@@ -5,6 +5,11 @@ pub(super) const MARK: u64 = 0x1122_3344_5566_7788;
 pub(super) const MARKER: [u8; 12] = [
     0x49, 0xbc, 0x88, 0x77, 0x66, 0x55, 0x44, 0x33, 0x22, 0x11, 0xeb, 0xfe,
 ];
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(super) enum InitialStackPreparation {
+    Unchanged,
+    SeedInitialCallWord,
+}
 pub(super) struct Program {
     pub(super) fixture: Fixture,
     pub(super) entry: u64,
@@ -13,6 +18,7 @@ pub(super) struct Program {
     pub(super) next: u64,
     pub(super) setup: usize,
     pub(super) encoding: [u8; 5],
+    pub(super) preparation: InitialStackPreparation,
 }
 impl Program {
     pub(super) fn call(entry: usize, unaligned: bool) -> Self {
@@ -52,7 +58,16 @@ impl Program {
             next,
             setup: usize::from(unaligned) * 2,
             encoding,
+            preparation: InitialStackPreparation::Unchanged,
         }
+    }
+    pub(super) fn with_initial_call_word_seed(mut self) -> Self {
+        assert_eq!(self.preparation, InitialStackPreparation::Unchanged);
+        assert_eq!(self.setup, 0);
+        assert_eq!(self.encoding[0], 0xe8);
+        assert_eq!(self.next, self.call_pc.checked_add(5).unwrap());
+        self.preparation = InitialStackPreparation::SeedInitialCallWord;
+        self
     }
     pub(super) fn cross_page_stack(&self) -> bool {
         match self.setup {
@@ -70,6 +85,7 @@ impl Program {
             next: 0,
             setup: 0,
             encoding: [0; 5],
+            preparation: InitialStackPreparation::Unchanged,
         }
     }
 }

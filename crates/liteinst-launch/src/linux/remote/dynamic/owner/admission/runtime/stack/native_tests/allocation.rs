@@ -127,7 +127,7 @@ fn measured(attempt: &RuntimeStackAttempt) -> usize {
     bytes
 }
 pub(super) fn run() {
-    let program = Program::call(4096, false);
+    let program = Program::call(4096, false).with_initial_call_word_seed();
     for ordinal in 0..3 {
         for unwind in [false, true] {
             let fault = StackAllocationFault {

@@ -26,6 +26,7 @@ mod models;
 mod raw;
 mod refusal;
 mod retention;
+mod seed;
 mod support;
 use fixture::{BASE, CALLEE, MARK, Program};
 use support::Before;
@@ -135,21 +136,21 @@ fn positive(program: Program) {
 fn runtime_stack_call_ret_matches_raw_full_state_and_stack() {
     crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
         "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_call_ret_matches_raw_full_state_and_stack",
-        || positive(Program::call(4096, false)),
+        || positive(Program::call(4096, false).with_initial_call_word_seed()),
     );
 }
 #[test]
 fn runtime_stack_boundary_call_ret_keeps_unexecuted_next_page_nx() {
     crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
         "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_boundary_call_ret_keeps_unexecuted_next_page_nx",
-        || positive(Program::call(4091, false)),
+        || positive(Program::call(4091, false).with_initial_call_word_seed()),
     );
 }
 #[test]
 fn runtime_stack_crossing_call_opens_exact_two_pages() {
     crate::linux::remote::dynamic::owner::admission::runtime::isolation::run(
         "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_crossing_call_opens_exact_two_pages",
-        || positive(Program::call(4093, false)),
+        || positive(Program::call(4093, false).with_initial_call_word_seed()),
     );
 }
 #[test]
