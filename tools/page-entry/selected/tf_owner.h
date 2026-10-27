@@ -21,7 +21,7 @@ enum li2_tf_flow { LI2_TF_REFUSED, LI2_TF_FALLTHROUGH, LI2_TF_NEAR_FLOW };
 enum li2_tf_family { LI2_TF_NONE, LI2_TF_INTEGER, LI2_TF_STACK,
     LI2_TF_BRANCH, LI2_TF_CALL, LI2_TF_RETURN, LI2_TF_SIMD };
 enum li2_tf_error { LI2_TF_CLASSIFICATION=100, LI2_TF_CONTINUATION, LI2_TF_FRAME,
-    LI2_TF_RSP_DOMAIN, LI2_TF_XCR_INDEX, LI2_TF_SHSTK_QUERY, LI2_TF_SHSTK_ENABLED };
+    LI2_TF_RSP_DOMAIN, LI2_TF_XCR_INDEX, LI2_TF_SHSTK_QUERY, LI2_TF_SHSTK_ENABLED, LI2_TF_SHSTK_OBSERVATION };
 uint32_t li2_decoder_tf_classify(uint64_t,const unsigned char *,size_t,
                                struct li2_tf_classification *);
 
@@ -34,6 +34,16 @@ struct li2_tf_hooks {
        The caller retains a complete query/error prefix before its first I/O. */
     int (*continue_closed)(void *,uintptr_t);
 };
+/* Actual adjacent CPL3 observations, not a kernel-query-derived permit.
+   Exact seeds must both survive; enabled SHSTK writes the same SSP to both. */
+#define LI2_SHSTK_SEED_A UINT64_C(0x13579bdf2468ace1)
+#define LI2_SHSTK_SEED_B UINT64_C(0xfedcba9876543210)
+struct li2_tf_shstk_observation {
+    uint64_t version,attempted,complete,reserved,seed_a,seed_b,value_a,value_b;
+};
+_Static_assert(sizeof(struct li2_tf_shstk_observation)==64,"two-probe evidence size");
+int li2_tf_observe_shstk(struct li2_tf_shstk_observation *);
+int li2_tf_shstk_observation_disabled(const struct li2_tf_shstk_observation *);
 struct li2_tf_owner {
     struct li2_step_owner step;
     struct li2_tf_classification classification;
@@ -47,6 +57,7 @@ struct li2_tf_owner {
     unsigned rdssp_query_attempted,rdssp_query_complete;
     long rdssp_query_result;
     uint64_t rdssp_features;
+    struct li2_tf_shstk_observation rdssp_observation;
 };
 
 /* Distinct proof: the CPU executes the original instruction. No emulated GPR,
@@ -56,6 +67,8 @@ struct li2_tf_owner {
 int li2_tf_arm(struct li2_tf_owner *,struct li2_step_session *,
                const struct li2_tf_hooks *,const struct li2_step_request *);
 void li2_tf_begin(struct li2_tf_owner *,int,siginfo_t *,ucontext_t *);
+/* Distinct production path; the original strict query entry stays available. */
+void li2_tf_begin_observed_shstk(struct li2_tf_owner *,int,siginfo_t *,ucontext_t *);
 void li2_tf_trace(struct li2_tf_owner *,int,siginfo_t *,ucontext_t *);
 /* Unexpected real faults retain their actual frame, never count as a completed
    instruction/continuation, revoke the installed prefix, then terminate. This

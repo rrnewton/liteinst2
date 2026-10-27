@@ -208,7 +208,7 @@ static void selected_generic_begin(int sig,siginfo_t *si,ucontext_t *context,uin
     int error=li2_tf_arm(&selected_tf,&selected_session,&hooks,&request);
     if(error)li2_tf_abort(&selected_tf,(unsigned)error,0);
     selected_initialized();
-    li2_tf_begin(&selected_tf,sig,si,context);
+    li2_tf_begin_observed_shstk(&selected_tf,sig,si,context);
 }
 static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
     li2_tf_trace(&selected_tf,sig,si,context);
