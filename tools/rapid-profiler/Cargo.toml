@@ -31,5 +31,5 @@ bench = false
 [[bin]]
 name = "ordinary-interval"
 path = "ordinary-interval/main.rs"
-test = false
+test = true
 bench = false

@@ -1,8 +1,10 @@
 //! Four finite ordinary CALL/RET state pairs; separate from the old fixed modes.
-use super::{Path, STATE_SEEDS, current_single_main, oracle};
+use super::{Path, STATE_SEEDS, current_single_main, exact_truth as truth, oracle};
 use liteinst2::bundle::WritableAlias;
 use liteinst2::contracts::*;
-use oracle::native_ordinary::{ChildContext, GATE_BYTES, OrdinaryOracle, Ready};
+use oracle::native_ordinary::{
+    ChildContext, GATE_BYTES, OrdinaryOracle, OriginalObservation, Ready,
+};
 use rapid_profiler::frontend::{Limits, Observation, PayloadOutcome};
 use rapid_profiler::frontend_native::{
     CallGate, IntegerLeafContract, IntervalJournal, LoadedIntegerLeaf, OrdinarySitePreparation,
@@ -95,20 +97,24 @@ fn publish(
     unsafe { prep.seal(installed, receipt) }.unwrap()
 }
 
-fn child(candidate: bool, context: ChildContext<'_>, subject: &Path, expected_elf: &[u8]) {
+fn child(
+    candidate: bool,
+    context: ChildContext<'_>,
+    subject: &Path,
+    expected_elf: &[u8],
+    symbol: &std::ffi::CStr,
+) {
     current_single_main();
-    // SAFETY: independently pinned exact compiler output of the two fixed C
-    // symbols. Child-local load precedes any application call; no constructors,
+    // SAFETY: independently pinned exact fixed C/assembly DSO output.
+    // The selected symbol is one of the two nonempty checksum implementations. Child-local load precedes any application call; no constructors,
     // foreign callers, CET, signal/nonlocal entry, unload or source writer.
-    let owner = unsafe {
-        LoadedIntegerLeaf::load(
-            subject,
-            expected_elf,
-            c"ordinary_checksum_nonempty",
-            CONTRACT,
-        )
+    let owner =
+        unsafe { LoadedIntegerLeaf::load(subject, expected_elf, symbol, CONTRACT) }.unwrap();
+    if symbol == c"exact_work_nonempty" {
+        truth::check_bytes(owner.code()).unwrap();
+    } else {
+        assert_eq!(symbol, c"ordinary_checksum_nonempty");
     }
-    .unwrap();
     let entry = owner.entry();
     let heads = owner.certificate().heads().to_vec();
     let returns = owner.certificate().returns().to_vec();
@@ -286,7 +292,141 @@ fn child(candidate: bool, context: ChildContext<'_>, subject: &Path, expected_el
     current_single_main();
 }
 
+fn bytes_at(bytes: &[u8], base: u64, address: u64, count: usize) -> &[u8] {
+    let offset = usize::try_from(address.checked_sub(base).unwrap()).unwrap();
+    &bytes[offset..offset.checked_add(count).unwrap()]
+}
+
+// Independent expected trace uses no Ready heads, certificate or emitted map.
+// The original path is an actual normal uninstrumented subject invocation.
+fn check_exact(observed: OriginalObservation<'_>) -> (usize, usize, usize, usize) {
+    let code = bytes_at(
+        observed.source,
+        observed.source_address,
+        observed.entry,
+        truth::BYTES.len(),
+    );
+    truth::check_bytes(code).unwrap();
+    let steps: Vec<_> = observed.steps().collect();
+    let starts: Vec<_> = steps
+        .iter()
+        .enumerate()
+        .filter_map(|(i, s)| (s.before.rip == observed.entry).then_some(i))
+        .collect();
+    assert_eq!(starts.len(), 1, "one actual external entry");
+    let first = &steps[starts[0]];
+    assert_eq!(
+        (first.before.rdi, first.before.rsi),
+        (observed.input_address, observed.input.len() as u64)
+    );
+    let input = bytes_at(
+        first.data,
+        first.data_address,
+        first.before.rdi,
+        observed.input.len(),
+    );
+    assert_eq!(input, observed.input);
+    let return_word = u64::from_le_bytes(
+        bytes_at(first.stack, first.stack_address, first.before.rsp, 8)
+            .try_into()
+            .unwrap(),
+    );
+    assert_eq!(return_word, observed.continuation);
+    let expected = truth::interpret(
+        code,
+        input,
+        observed.entry,
+        first.before.rdi,
+        first.before.rsp,
+        return_word,
+    )
+    .unwrap();
+    let body = &steps[starts[0]..starts[0].checked_add(expected.steps.len()).unwrap()];
+    assert_eq!(
+        body.iter()
+            .map(|s| s.before.rip - observed.entry)
+            .collect::<BTreeSet<_>>(),
+        truth::HEADS
+            .iter()
+            .map(|&p| u64::from(p))
+            .collect::<BTreeSet<_>>()
+    );
+    let (mut conditional, mut taken, mut reads) = (0, 0, 0);
+    for (actual, predicted) in body.iter().zip(&expected.steps) {
+        assert_eq!(
+            (actual.before.rip, actual.after.rip),
+            (predicted.pc, predicted.next_pc)
+        );
+        assert_eq!(
+            bytes_at(
+                actual.data,
+                actual.data_address,
+                observed.input_address,
+                input.len()
+            ),
+            input
+        );
+        if let Some(branch) = predicted.branch_taken {
+            conditional += 1;
+            let actual_taken = actual.before.eflags & 1 != 0; // Fixed JB consumes CMP's CF.
+            assert_eq!(actual_taken, branch);
+            taken += usize::from(actual_taken);
+        }
+        if let Some(read) = predicted.read {
+            reads += 1;
+            match read.kind {
+                truth::ReadKind::InputByte => {
+                    assert_eq!((read.address, read.width), (actual.before.rdi, 1));
+                    assert_eq!(
+                        read.value,
+                        u64::from(
+                            bytes_at(actual.data, actual.data_address, actual.before.rdi, 1)[0]
+                        )
+                    );
+                    assert_eq!(actual.after.rcx, read.value); // MOVZX really consumed that byte.
+                }
+                truth::ReadKind::ReturnWord => {
+                    assert_eq!((read.address, read.width), (actual.before.rsp, 8));
+                    assert_eq!(
+                        read.value,
+                        u64::from_le_bytes(
+                            bytes_at(actual.stack, actual.stack_address, actual.before.rsp, 8)
+                                .try_into()
+                                .unwrap()
+                        )
+                    );
+                    assert_eq!(actual.after.rip, read.value);
+                    assert_eq!(actual.after.rsp, actual.before.rsp.checked_add(8).unwrap());
+                }
+            }
+        }
+    }
+    let last = body.last().unwrap();
+    assert_eq!(last.before.rip, observed.entry + 36);
+    assert_eq!(
+        (last.after.rip, last.after.rsp, last.after.rax),
+        (return_word, expected.resumed_rsp, expected.value)
+    );
+    assert_eq!(last.after.rax, truth::checksum(input).unwrap());
+    assert_eq!(
+        steps[starts[0] + body.len()].before.rip,
+        observed.continuation,
+        "subject RET followed immediately by actual gate continuation"
+    );
+    let counts = (body.len(), conditional, taken, reads);
+    assert_eq!(counts, truth::counts(input.len()).unwrap());
+    counts
+}
+
 pub fn run(subject: &Path, expected: &Path, output: &Path) {
+    run_selected(subject, expected, output, false);
+}
+
+pub fn run_exact(subject: &Path, expected: &Path, output: &Path) {
+    run_selected(subject, expected, output, true);
+}
+
+fn run_selected(subject: &Path, expected: &Path, output: &Path, exact: bool) {
     current_single_main();
     // The root-owned recipe supplies a separately trusted exact compiler ELF;
     // these bytes are not generated from the candidate by this native fixture.
@@ -323,15 +463,53 @@ pub fn run(subject: &Path, expected: &Path, output: &Path) {
     let mut csv = String::from(
         "seed,length,status,children,comparisons,original_visits,original_steps,candidate_steps,value\n",
     );
+    let mut trace_csv = String::from(
+        "seed,length,status,instructions,conditional_branches,taken_branches,input_reads,return_reads,value\n",
+    );
     let mut comparisons = 0;
     for seed in STATE_SEEDS {
         let mut observed = BTreeSet::new();
         let mut declared = None;
         for length in [1, 64] {
             let oracle = OrdinaryOracle::new(seed);
-            let result = oracle.pair(length, |candidate, context| {
-                child(candidate, context, subject, &expected_elf)
-            });
+            let result = if exact {
+                let mut counts = None;
+                let result = oracle.pair_with_original(
+                    length,
+                    |candidate, context| {
+                        child(
+                            candidate,
+                            context,
+                            subject,
+                            &expected_elf,
+                            c"exact_work_nonempty",
+                        )
+                    },
+                    |observed| {
+                        counts = Some(check_exact(observed));
+                    },
+                );
+                let (instructions, conditional, taken, reads) =
+                    counts.expect("actual original inspected");
+                assert_eq!(result.visits, instructions);
+                trace_csv.push_str(&format!(
+                    "{seed},{length},PASS,{instructions},{conditional},{taken},{},1,{}\n",
+                    reads - 1,
+                    result.value
+                ));
+                std::fs::write(output.join("exact-truth.csv"), &trace_csv).unwrap();
+                result
+            } else {
+                oracle.pair(length, |candidate, context| {
+                    child(
+                        candidate,
+                        context,
+                        subject,
+                        &expected_elf,
+                        c"ordinary_checksum_nonempty",
+                    )
+                })
+            };
             if let Some(previous) = &declared {
                 assert_eq!(previous, &result.declared_returns);
             } else {
@@ -347,7 +525,15 @@ pub fn run(subject: &Path, expected: &Path, output: &Path) {
                 result.candidate_steps,
                 result.value
             ));
-            std::fs::write(output.join("ordinary-pairs.csv"), &csv).unwrap();
+            std::fs::write(
+                output.join(if exact {
+                    "exact-pairs.csv"
+                } else {
+                    "ordinary-pairs.csv"
+                }),
+                &csv,
+            )
+            .unwrap();
         }
         assert_eq!(
             observed,
@@ -377,12 +563,22 @@ pub fn run(subject: &Path, expected: &Path, output: &Path) {
         "complete short-RET factory refusal"
     );
     std::fs::write(
-        output.join("ordinary-refusals.csv"),
+        output.join(if exact {
+            "exact-refusals.csv"
+        } else {
+            "ordinary-refusals.csv"
+        }),
         "case,status,reason\nempty_capable_symbol,PASS,NoPatchWindow\n",
     )
     .unwrap();
     current_single_main();
-    println!(
-        "native-ordinary:required=4:pairs=4:children=8:comparisons={comparisons}:short-ret-refusals=1:real-outer-ret=8:complete"
-    );
+    if exact {
+        println!(
+            "native-exact:required=4:pairs=4:children=8:comparisons={comparisons}:truth-instructions=800:conditional=130:taken=126:input-reads=130:return-reads=4:short-ret-refusals=1:real-outer-ret=8:complete"
+        );
+    } else {
+        println!(
+            "native-ordinary:required=4:pairs=4:children=8:comparisons={comparisons}:short-ret-refusals=1:real-outer-ret=8:complete"
+        );
+    }
 }

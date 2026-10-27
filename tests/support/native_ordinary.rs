@@ -258,6 +258,45 @@ impl ChildContext<'_> {
     }
 }
 
+/// Borrowed original-only observations, after both real children have reaped.
+/// Source bytes were compared against actual child memory at EVERY unchanged
+/// snapshot. Instruction expectations must come from an independent consumer,
+/// never this fixture's certificate or relocation map.
+pub struct OriginalObservation<'a> {
+    pub entry: u64,
+    pub continuation: u64,
+    pub source_address: u64,
+    pub source: &'a [u8],
+    pub input_address: u64,
+    pub input: &'a [u8],
+    data_address: u64,
+    stack_address: u64,
+    points: &'a [Snapshot],
+}
+pub struct OriginalStep<'a> {
+    pub before: libc::user_regs_struct,
+    pub after: libc::user_regs_struct,
+    pub data_address: u64,
+    pub data: &'a [u8],
+    pub stack_address: u64,
+    pub stack: &'a [u8],
+}
+impl OriginalObservation<'_> {
+    /// Consecutive actual SINGLESTEP states, including the gate and subject.
+    /// Operand reads are reconstructed from these real bytes/registers plus
+    /// independently authenticated instruction semantics, not hardware events.
+    pub fn steps(&self) -> impl Iterator<Item = OriginalStep<'_>> {
+        self.points.windows(2).map(move |pair| OriginalStep {
+            before: pair[0].registers,
+            after: pair[1].registers,
+            data_address: self.data_address,
+            data: &pair[0].data,
+            stack_address: self.stack_address,
+            stack: &pair[0].application_stack,
+        })
+    }
+}
+
 pub struct PairResult {
     pub comparisons: usize,
     pub original_steps: usize,
@@ -488,6 +527,16 @@ impl OrdinaryOracle {
     where
         F: for<'a> Fn(bool, ChildContext<'a>),
     {
+        self.pair_with_original(length, setup, |_| {})
+    }
+
+    /// Same pair/state/cleanup contract; optional source-independent inspection
+    /// borrows already captured original state only after both normal reaps.
+    pub fn pair_with_original<F, O>(&self, length: usize, setup: F, inspect: O) -> PairResult
+    where
+        F: for<'a> Fn(bool, ChildContext<'a>),
+        O: for<'a> FnOnce(OriginalObservation<'a>),
+    {
         assert!(matches!(length, 1 | 64));
         assert_eq!(
             unsafe { libc::syscall(libc::SYS_gettid) },
@@ -705,6 +754,17 @@ impl OrdinaryOracle {
                 Some(libc::ECHILD)
             );
         }
+        inspect(OriginalObservation {
+            entry: original.entry,
+            continuation: original.continuation,
+            source_address: original.immutable[0].0,
+            source: &original.original_source,
+            input_address: self.data.address() + 128,
+            input: &self.data.bytes()[128..128 + length],
+            data_address: self.data.address(),
+            stack_address: self.gate_rsp() - 16 - 128,
+            points: &points,
+        });
         PairResult {
             comparisons: next,
             original_steps: a.steps,
