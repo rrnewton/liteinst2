@@ -1,0 +1,354 @@
+{
+  "categories": [
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Nine closed operation fixtures only; no produced ELF, structural envelope, or live execution.",
+      "name": "positive-copy",
+      "original_construction": "Nine fixture records above: literal ordinary operation, all four Jcc conditions, short JMP promotion, PUSH-original-return/JMP CALL, RET and unreachable NOP; compare every literal byte/physical endpoint.",
+      "original_required_result": "byte witness only",
+      "planned_controls": [
+        "operation-direct-copied-store",
+        "operation-relocated-copied-store",
+        "derive-relocated-copied-store",
+        "operation-direct-jb",
+        "operation-relocated-jb",
+        "derive-relocated-jb",
+        "case-completions-jb",
+        "operation-direct-jae",
+        "operation-relocated-jae",
+        "derive-relocated-jae",
+        "case-completions-jae",
+        "operation-direct-jbe",
+        "operation-relocated-jbe",
+        "derive-relocated-jbe",
+        "case-completions-jbe",
+        "operation-direct-jne",
+        "operation-relocated-jne",
+        "derive-relocated-jne",
+        "case-completions-jne",
+        "operation-direct-jump",
+        "operation-relocated-jump",
+        "derive-relocated-jump",
+        "case-completions-jump",
+        "operation-direct-call",
+        "operation-relocated-call",
+        "derive-relocated-call",
+        "case-completions-call",
+        "operation-direct-ret",
+        "operation-relocated-ret",
+        "derive-relocated-ret",
+        "case-completions-ret",
+        "operation-direct-unreachable-nop",
+        "operation-relocated-unreachable-nop",
+        "derive-relocated-unreachable-nop",
+        "case-completions-unreachable-nop"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "All 87 exact table heads and 176 records in a synthetic byte view; no whole-ELF/hash/owner admission.",
+      "name": "positive-direct",
+      "original_construction": "Every original head remains byte-identical at its own source PC, including every CALL; operation is one original instruction with both frozen seeds.",
+      "original_required_result": "87 heads/176 cases retained",
+      "planned_controls": [
+        "direct-all-87-heads",
+        "direct-all-176-case-records"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Fixed synthetic byte routes only; no actual loader owner or executed gateway proof.",
+      "name": "positive-prefixes",
+      "original_construction": "Reach an exact operation through each pinned redundant-prefix E9 spelling plus EB/relay E9; validate every edge and owner.",
+      "original_required_result": "complete fixed edge list",
+      "planned_controls": [
+        "jump-prefix-none",
+        "derive-prefix-none",
+        "jump-prefix-48",
+        "derive-prefix-48",
+        "jump-prefix-4826",
+        "derive-prefix-4826",
+        "jump-prefix-482636",
+        "derive-prefix-482636",
+        "jump-prefix-4826363e",
+        "derive-prefix-4826363e",
+        "jump-short-eb",
+        "derive-eb-relay-e9",
+        "reject-unsupported-prefix-26",
+        "reject-unsupported-prefix-3648",
+        "reject-unsupported-prefix-48263e",
+        "reject-unsupported-prefix-4848",
+        "route-empty"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "One explicit synthetic continue/bypass pair; full producer bypass accounting remains unrun.",
+      "name": "positive-bypass",
+      "original_construction": "Exact continuation points beyond the following original JMP, with exact recorded bypass and byte route; current operation ends before continuation.",
+      "original_required_result": "no second original operation consumed",
+      "planned_controls": [
+        "derive-owned-continue-bypass"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Requires a caller-admitted original/product envelope; inventory()/read_witness() are not called.",
+      "name": "wrong-original",
+      "original_construction": "Change one original ELF byte and rebind caller hash.",
+      "original_required_result": "refuse closed original hash",
+      "planned_controls": [],
+      "prospective_pure_scope": "UNRUN_REQUIRES_PRODUCT_OR_OWNER_DATA",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Requires the closed original and structural owner reader; no whole table rejection test is claimed.",
+      "name": "table-missing-extra-duplicate",
+      "original_construction": "Delete, append or duplicate a row; also change one length/flow/target/offset while preserving row count.",
+      "original_required_result": "refuse whole table hash",
+      "planned_controls": [],
+      "prospective_pure_scope": "UNRUN_REQUIRES_PRODUCT_OR_OWNER_DATA",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Requires authenticated full selection and producer envelope.",
+      "name": "selection-subset",
+      "original_construction": "Drop a requested jump or heap site while keeping table complete; independently alter site ID, original PC, length or file offset.",
+      "original_required_result": "refuse complete static selection",
+      "planned_controls": [],
+      "prospective_pure_scope": "UNRUN_REQUIRES_PRODUCT_OR_OWNER_DATA",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Requires actual producer/backend/loader and receipts.",
+      "name": "producer-lane",
+      "original_construction": "Exchange stock and bootstrap backend/loader, alter producer common argv or receipt/statistic.",
+      "original_required_result": "unchanged structural refusal",
+      "planned_controls": [],
+      "prospective_pure_scope": "UNRUN_REQUIRES_PRODUCT_OR_OWNER_DATA",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Requires structurally valid actual trap output and site classification.",
+      "name": "trap-site",
+      "original_construction": "Provide the structurally valid trap template/outcome.",
+      "original_required_result": "required unresolved; never eligible",
+      "planned_controls": [],
+      "prospective_pure_scope": "UNRUN_REQUIRES_PRODUCT_OR_OWNER_DATA",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Synthetic derive() outcome, entry and extent predicates only; actual producer outcomes remain unrun.",
+      "name": "refused-site",
+      "original_construction": "Keep a failed per-site debug outcome in otherwise closed producer output.",
+      "original_required_result": "required unresolved, outcome retained",
+      "planned_controls": [
+        "derive-refused-selected-site",
+        "derive-wrong-selected-entry",
+        "derive-wrong-selected-extent"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Pure full/compact target records only; no host capability/native qualification.",
+      "name": "bad-target",
+      "original_construction": "Mutate full LI2TARGET component size or mask without its exact compact selection projection.",
+      "original_required_result": "refuse full/compact join",
+      "planned_controls": [
+        "target-exact-xsave",
+        "target-exact-fxsave",
+        "target-refuse-component-size",
+        "target-refuse-missing-mask-bit",
+        "target-refuse-missing-component",
+        "target-refuse-duplicate-component",
+        "target-refuse-compact-mismatch",
+        "target-refuse-duplicate-compact"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Requires actual loader byte stream and structural owner plan.",
+      "name": "mapping-order",
+      "original_construction": "Reorder overlay before trampoline mapping, overlap owner intervals or change emitted mmap bytes.",
+      "original_required_result": "unchanged structural refusal",
+      "planned_controls": [],
+      "prospective_pure_scope": "UNRUN_REQUIRES_PRODUCT_OR_OWNER_DATA",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Only missing synthetic trampoline interval is tested; full pages, offsets, flags and global/journal changes remain unrun.",
+      "name": "mapping-owner",
+      "original_construction": "Change final file offset/page bytes, add RWX generated owner, change original global/journal/BSS byte or permission.",
+      "original_required_result": "refuse or required unresolved; never eligible",
+      "planned_controls": [
+        "derive-body-without-trampoline-owner"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "No actual View/page ownership constructor coverage is claimed.",
+      "name": "seed-collision",
+      "original_construction": "Place any initial LOAD or overlay in A/E including adjacent guard pages.",
+      "original_required_result": "refuse seed owner collision",
+      "planned_controls": [],
+      "prospective_pure_scope": "UNRUN_REQUIRES_PRODUCT_OR_OWNER_DATA",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Synthetic exact bytes and rel32 domain only; no candidate admission.",
+      "name": "wrong-gateway",
+      "original_construction": "Change a displacement so the predicted target has no exact same-head operation; do not scan nearby bytes.",
+      "original_required_result": "required unresolved",
+      "planned_controls": [
+        "reject-truncated-jump-short",
+        "reject-truncated-jump-near",
+        "reject-truncated-jump-prefix",
+        "derive-wrong-gateway-destination",
+        "operation-out-of-rel32-call",
+        "operation-out-of-rel32-jcc",
+        "operation-out-of-rel32-jmp"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Synthetic exact 32/33 edges and self/two cycles; original fixed bound unchanged.",
+      "name": "gateway-cycle",
+      "original_construction": "Create a self/2-cycle or33-edge prefix chain with no earlier operation.",
+      "original_required_result": "required unresolved at fixed prefix bound",
+      "planned_controls": [
+        "route-32-edges",
+        "derive-32-edges",
+        "route-33-edges",
+        "derive-33-edges",
+        "route-self-cycle",
+        "derive-self-cycle",
+        "route-two-cycle",
+        "derive-two-cycle"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Fixed relocated PUSH/return-word and forbidden E8 byte mutations only.",
+      "name": "wrong-call-word",
+      "original_construction": "Change one byte of PUSH immediate or use relocated E8 that pushes generated return PC.",
+      "original_required_result": "required unresolved",
+      "planned_controls": [
+        "derive-wrong-return-immediate",
+        "derive-wrong-relocated-e8"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Fixed call JMP target mutation only; no hardware call execution.",
+      "name": "wrong-call-callee",
+      "original_construction": "Retain original return immediate but change JMP destination.",
+      "original_required_result": "required unresolved",
+      "planned_controls": [
+        "derive-wrong-callee"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Fixed Jb condition/target mutations plus all four positive Jcc fixtures; no hardware flags comparison.",
+      "name": "wrong-condition",
+      "original_construction": "Exchange Jb/Jae or one target displacement while preserving length.",
+      "original_required_result": "required unresolved",
+      "planned_controls": [
+        "derive-wrong-condition",
+        "derive-wrong-target"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Exact opcode/target/missing bypass record or route; continuation is never an executed completion.",
+      "name": "wrong-continuation",
+      "original_construction": "Keep operation exact but corrupt continuation opcode/target or omit its exact bypass owner.",
+      "original_required_result": "required unresolved",
+      "planned_controls": [
+        "derive-continuation-opcode",
+        "derive-continuation-missing",
+        "derive-continuation-unowned-target",
+        "derive-missing-bypass-record",
+        "derive-bypass-record-without-route"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Requires complete product read_witness() accounting over all heads.",
+      "name": "unaccounted-bypass",
+      "original_construction": "Append a structurally parsed bypass record that no resolved template accounts for.",
+      "original_required_result": "required unresolved; no extra record discarded",
+      "planned_controls": [],
+      "prospective_pure_scope": "UNRUN_REQUIRES_PRODUCT_OR_OWNER_DATA",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Requires actual original/candidate page union and full structural envelope.",
+      "name": "unowned-source-change",
+      "original_construction": "Modify text outside the three kernel ranges, even if an RPC row names it.",
+      "original_required_result": "refuse or required unresolved, never new source write authority",
+      "planned_controls": [],
+      "prospective_pure_scope": "UNRUN_REQUIRES_PRODUCT_OR_OWNER_DATA",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Checks projected case174/175 tuple/PC against literal expectations; no observed fault or native siginfo.",
+      "name": "fault-preservation",
+      "original_construction": "Compare fixture cases174/175 with normal store completion: fault PC must not advance and address staysA+8/A+24.",
+      "original_required_result": "no fault-to-pass conversion",
+      "planned_controls": [
+        "case-completions-copied-store"
+      ],
+      "prospective_pure_scope": "PLANNED_PURE_SUBSET",
+      "whole_product_status": "UNRUN"
+    },
+    {
+      "actual_status": "UNRUN",
+      "limitation": "Reader Bound/main ownership/output behavior is outside this pure function suite.",
+      "name": "drift-and-output",
+      "original_construction": "Change a held input owner/byte or use an existing output directory.",
+      "original_required_result": "refuse without replacing prior evidence",
+      "planned_controls": [],
+      "prospective_pure_scope": "UNRUN_REQUIRES_PRODUCT_OR_OWNER_DATA",
+      "whole_product_status": "UNRUN"
+    }
+  ],
+  "schema": 1,
+  "scope": "All 24 original categories retained; no category-level whole-product pass is implied by pure controls.",
+  "source_plan_sha256": "aa08150c46d171c97e0d4cd1aa8eb2ce9a4670d3e5d745f2b8fbfaca2343e802"
+}
