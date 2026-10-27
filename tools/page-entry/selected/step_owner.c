@@ -220,3 +220,5 @@ void li2_step_trace(struct li2_step_owner *o,int sig,siginfo_t *si,ucontext_t *u
     o->phase=LI2_STEP_COMPLETE;o->in_handler=0;
     if(o->self_test)o->session->self_test_complete=1;
 }
+
+#include "tf_owner.inc"

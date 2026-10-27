@@ -4,6 +4,15 @@
 #define SELECTED_TF UINT64_C(0x100)
 static struct li2_step_session selected_session;
 static struct li2_step_owner selected_step;
+/* The old pending bit continues to guard every existing dispatch boundary.
+   This tag chooses the sole cleanup owner; it is never execution authority. */
+enum selected_pending_route { SELECTED_NO_STEP, SELECTED_OLD_STEP, SELECTED_GENERIC_TF };
+static volatile sig_atomic_t selected_pending_route;
+static struct li2_tf_owner selected_tf;
+static struct li2_tf_continuation selected_tf_continuation;
+static uint64_t selected_tf_attempts,selected_tf_steps;
+static unsigned selected_tf_release_started,selected_tf_release_complete;
+static int selected_tf_release_result;
 static struct li2_fetch_ref selected_borrow;
 static struct li2_fetch_view selected_view;
 static struct li2_selected_hardware selected_hardware;

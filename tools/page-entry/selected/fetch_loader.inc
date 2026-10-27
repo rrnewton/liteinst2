@@ -179,3 +179,5 @@ int li2_lifecycle_fetch_release(const struct li2_fetch_ref *ref) {
 }
 int li2_lifecycle_fetch_interlock(void) { return fetch.progress.held?LI2_FETCH_BUSY:0; }
 const struct li2_fetch_progress *li2_lifecycle_fetch_progress(void) { return &fetch.progress; }
+
+#include "tf_continuation.inc"

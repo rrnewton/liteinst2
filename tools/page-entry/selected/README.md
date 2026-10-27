@@ -24,14 +24,20 @@ and its output names remain unchanged. A caller can explicitly use
 `carrier.py make ORIGINAL target/page-entry/selected/bridge-selected.so OUTPUT`
 and the existing sealed-namespace `exec-loader` command with that carrier.
 
-Only canonical NOP, non-stack-pointer MOV-immediate and closed register MOV
-forms are accepted as ordinary instructions. Register MOV supports 16/32/64-bit
-operands, including RSP as a source, with the exact canonical prefix/opcode
-checks in both decoder and owner. SP/ESP/RSP destinations, memory operands,
-arithmetic, CALL/RET/branches and unqualified prefixes remain unsupported.
-The register-MOV extension accepts the initial `MOV RDI,RSP` used by some dynamic
-linkers; it does not make their subsequent instruction stream supported. A real
-ld.so run can still refuse, and its exact current refusal must be measured.
+Canonical NOP and register/immediate MOV retain their original typed owner.
+A separate owner executes a closed set of 301 decoder instruction codes at
+their original addresses: integer arithmetic and memory access, stack operations,
+near branches/CALL/RET, and selected SSE2 data operations. The CPU supplies the
+actual register, flags, memory and FP results. The runtime validates the actual
+post-instruction PC after revoking all temporary executable pages; it does not
+predict indirect targets or emulate ordinary instructions.
+
+The classifier explicitly checks prefixes and refuses every unlisted code.
+TF-affecting, repeated-string, privileged and transaction instructions remain
+unsupported. ENDBR64 is also outside this initial profile: a measured real
+linker completed its initial MOV and CALL before refusing that instruction.
+This result is not a completed gated `ls` run. Random/ID instructions targeting
+SP/ESP/RSP still refuse through their separate selected-instruction policy.
 
 The selected inventory describes CPUID, RDRAND, RDSEED, RDPID, RDTSC, RDTSCP and
 SYSCALL. Random/ID completion uses one genuine native result with exact width,
@@ -57,8 +63,13 @@ RF-clear invariant, with TF clear. The controller carries logical flags forward
 through each supported instruction instead of inferring them by masking a saved
 page-fault frame. Ordinary steps execute at the original address and require the
 actual user fetch fault and exact TRAP_TRACE/vector1 completion. All opened
-pages must be revoked and synchronized before the next application fetch. Any
-foreign, nested, wrong-PC or failed-cleanup event refuses. The original kernel
+pages must be revoked and synchronized before the next application fetch. Near
+control flow requires its actual destination to be owned, logically RX and
+currently NX. A boundary CALL can push a return address on a never-executed next
+page; pushing that address does not open or admit the return page. Generic
+continuation requires the actual RSP below 2^47 and preserves it without repair;
+this does not establish that the stack is mapped or writable. Foreign, nested
+or failed-cleanup events refuse. The original kernel
 FP frame remains intact; the Rust decoder emits vector instructions, so C's
 `-mgeneral-regs-only` is not an integer-only guarantee for the combined runtime.
 
@@ -70,10 +81,14 @@ and its execution refuses until it has its own qualified owner. Selected code
 uses the bridge's SUD-allowed raw gateway. Policies dependent on the original
 syscall PC or private handler context, such as seccomp/tracing policies,
 remain outside the parent execution contract.
+Unexpected reserved faults retain their actual frame and terminate after
+revoking the owned prefix. SIGBUS/SIGILL are process-terminal in this profile;
+application fault delivery or restart is not implemented.
 
 The decoder borrows one process-lifetime arena, seals allocation after genuine
 table initialization and refuses reentry. Its C ABI is fixed: decoded72 bytes,
-stats48 bytes and scan88 bytes. Complete all-start scans are descriptive; this
+stats48 bytes and scan88 bytes; the separate TF classification is40 bytes.
+Complete all-start scans are descriptive; this
 controller does not turn a scan into full-page permission. Pending failure
 prefixes retain actual outcomes and the first failure. Completed counters are
 retained, not an unbounded history of every instruction. New builds still need
@@ -110,11 +125,21 @@ oracles are separate from mechanism availability. Raw captures, binaries and
 host-dependent paths belong only under `target`, not in these product sources.
 
 Reproduce the finite connected cohort on one reserved CPU with
-`python3 evaluation/inprocess/page_selected.py --expect-revision REVISION`.
-The current real-linker control requires its first register MOV to complete
-then its next CALL to refuse precisely; that case is never reported as a
-successful gated program. Component evaluation preserves the larger independent
-state and refusal cohorts.
+`python3 evaluation/inprocess/page_selected_generic.py --expect-revision REVISION`.
+It retains all15 original streams and adds five programs for branch/stack/memory,
+boundary CALL/RET, CPUID, RDTSC and RDTSCP. Timestamp results use serialized native
+brackets, without an equality tolerance. The separate real-linker diagnostic
+reports actual completion or an exact classifier refusal. The older
+`page_selected.py` command reproduces the earlier NOP/MOV profile at its recorded
+revision; its component helpers and all15 stream predicates remain in use.
+
+`tests/generic` adds20 same-address native/stepped pairs with complete GPR, flags,
+selectors, FS/GS, kernel FP, live XSAVE, stack/data and continuation comparisons.
+It also retains47 supplied-byte refusals and three actual negative processes:
+memory fault, unowned branch target and out-of-domain RSP. The finite connected
+programs supplement these independent state comparisons.
+Run this oracle on one reserved CPU with
+`python3 evaluation/inprocess/page_selected_generic_oracle.py --expect-revision REVISION`.
 
 Run the complete component suite on one reserved CPU with
 `python3 evaluation/inprocess/page_selected_components.py --expect-revision REVISION`.

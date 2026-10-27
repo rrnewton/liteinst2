@@ -1,5 +1,5 @@
-/* Every target instruction stays NX until either exact selected completion or
-   the separately qualified original-address NOP/MOV step. No fast page yet. */
+/* Every target instruction stays NX until exact selected completion or one
+   of two distinct original-address step owners. No fast page is admitted. */
 static void selected_report(struct writer *w) {
     field(w,",\"selected_profile\":",1);
     field(w,",\"selected_steps\":",selected_steps);
@@ -33,6 +33,47 @@ static void selected_report(struct writer *w) {
     field(w,",\"builtin_b\":",selected_builtin_prefix.b);
     field(w,",\"builtin_c\":",selected_builtin_prefix.c);
     field(w,",\"builtin_d\":",selected_builtin_prefix.d);
+    field(w,",\"generic_tf_profile\":",1);
+    field(w,",\"generic_tf_attempts\":",selected_tf_attempts);
+    field(w,",\"generic_tf_steps\":",selected_tf_steps);
+    field(w,",\"step_route\":",selected_pending_route);
+    const struct li2_step_owner *p=&selected_tf.step;
+    field(w,",\"tf_phase\":",p->phase);
+    field(w,",\"tf_error\":",p->first_error);
+    field(w,",\"tf_detail_abs\":",p->first_detail<0?0ULL-(uint64_t)p->first_detail:(uint64_t)p->first_detail);
+    field(w,",\"tf_detail_negative\":",p->first_detail<0);
+    field(w,",\"tf_pc\":",p->request.decoded.pc);
+    field(w,",\"tf_length\":",p->request.decoded.length);
+    uint64_t bytes_lo=0,bytes_hi=0;
+    for(size_t i=0;i<p->request.decoded.length && i<15;i++) {
+        if(i<8)bytes_lo|=(uint64_t)p->request.decoded.bytes[i]<<(8*i);
+        else bytes_hi|=(uint64_t)p->request.decoded.bytes[i]<<(8*(i-8));
+    }
+    field(w,",\"tf_bytes_lo\":",bytes_lo);
+    field(w,",\"tf_bytes_hi\":",bytes_hi);
+    field(w,",\"tf_code\":",selected_tf.classification.code);
+    field(w,",\"tf_flow\":",selected_tf.classification.flow);
+    field(w,",\"tf_family\":",selected_tf.classification.family);
+    field(w,",\"tf_trace\":",p->trace_seen);
+    field(w,",\"tf_actual_flags\":",selected_tf.actual_post_flags);
+    field(w,",\"tf_open_started\":",p->open_started[0]|(p->open_started[1]<<1));
+    field(w,",\"tf_opened\":",p->opened[0]|(p->opened[1]<<1));
+    field(w,",\"tf_revoke_started\":",p->revoke_started[0]|(p->revoke_started[1]<<1));
+    field(w,",\"tf_revoked\":",p->revoked[0]|(p->revoked[1]<<1));
+    field(w,",\"tf_sync_started\":",p->revoke_sync_started);
+    field(w,",\"tf_sync_abs\":",p->revoke_sync<0?0ULL-(uint64_t)p->revoke_sync:(uint64_t)p->revoke_sync);
+    field(w,",\"tf_sync_negative\":",p->revoke_sync<0);
+    field(w,",\"tf_continuation_started\":",selected_tf.continuation_started);
+    field(w,",\"tf_continuation_complete\":",selected_tf.continuation_complete);
+    field(w,",\"tf_continuation_result_abs\":",selected_tf.continuation_result<0?0ULL-(uint64_t)selected_tf.continuation_result:(uint64_t)selected_tf.continuation_result);
+    field(w,",\"tf_continuation_result_negative\":",selected_tf.continuation_result<0);
+    field(w,",\"tf_query_attempted\":",selected_tf_continuation.attempted);
+    field(w,",\"tf_query_complete\":",selected_tf_continuation.complete);
+    field(w,",\"tf_release_started\":",selected_tf_release_started);
+    field(w,",\"tf_release_complete\":",selected_tf_release_complete);
+    field(w,",\"tf_release_result_abs\":",selected_tf_release_result<0?0ULL-(uint64_t)selected_tf_release_result:(uint64_t)selected_tf_release_result);
+    field(w,",\"tf_release_result_negative\":",selected_tf_release_result<0);
+    field(w,",\"tf_unexpected_frame\":",selected_tf.unexpected_frame_observed);
 }
 static int selected_authenticate(void *context,const struct li2_step_page *p,int prot) {
     (void)context;
@@ -130,6 +171,67 @@ static void selected_trace(int sig,siginfo_t *si,ucontext_t *context) {
        survive. Counts retain completed operations, not an unbounded journal. */
     selected_step=(struct li2_step_owner){0};
 }
+/* Read-only callback. The sole source borrow remains occupied throughout
+   TRACE, every source-page revoke/sync, and actual continuation validation. */
+static int selected_continue_closed(void *context,uintptr_t pc) {
+    (void)context;
+    return li2_lifecycle_tf_continuation(&selected_borrow,pc,&selected_tf_continuation);
+}
+static void selected_generic_begin(int sig,siginfo_t *si,ucontext_t *context,uint64_t flags) {
+    checked(!selected_selftesting && !selected_step_pending &&
+            selected_pending_route==SELECTED_NO_STEP &&
+            li2_lifecycle_fetch_interlock()==LI2_FETCH_BUSY,649,0);
+    /* Reuse only a never-used owner or the fully closed previous attempt.
+       Failed owners terminate with their complete installed prefix intact. */
+    checked((selected_tf.step.phase==LI2_STEP_EMPTY && !selected_tf.step.session) ||
+            (selected_tf.step.phase==LI2_STEP_COMPLETE && !selected_tf.step.first_error &&
+             selected_tf.continuation_complete && selected_tf_continuation.complete &&
+             selected_tf_release_complete),650,0);
+    checked(selected_tf_attempts!=UINT64_MAX,651,0);
+    selected_tf=(struct li2_tf_owner){0};
+    selected_tf_continuation=(struct li2_tf_continuation){0};
+    selected_tf_release_started=0;selected_tf_release_complete=0;selected_tf_release_result=0;
+    ++selected_tf_attempts;
+    struct li2_step_request request={.decoded=selected_decoded,.original_flags=flags};
+    uintptr_t first=selected_decoded.pc&~(PAGE-1),last=(selected_decoded.next_pc-1)&~(PAGE-1);
+    request.page_count=first==last?1:2;
+    checked(request.page_count<=selected_view.page_count,652,0);
+    for(size_t i=0;i<request.page_count;i++) {
+        const struct li2_fetch_page *p=&selected_view.pages[i];
+        request.pages[i]=(struct li2_step_page){p->address,p->allocation,p->generation,p->offset,PROT_READ,PROT_READ|PROT_EXEC};
+    }
+    const struct li2_tf_hooks hooks={{0,selected_authenticate,selected_step_failure},selected_continue_closed};
+    selected_pending_route=SELECTED_GENERIC_TF;selected_step_pending=1;
+    int error=li2_tf_arm(&selected_tf,&selected_session,&hooks,&request);
+    if(error)li2_tf_abort(&selected_tf,(unsigned)error,0);
+    selected_initialized();
+    li2_tf_begin(&selected_tf,sig,si,context);
+}
+static void selected_generic_trace(int sig,siginfo_t *si,ucontext_t *context) {
+    li2_tf_trace(&selected_tf,sig,si,context);
+    const struct li2_step_owner *p=&selected_tf.step;
+    checked(p->phase==LI2_STEP_COMPLETE && !p->first_error && p->trace_seen &&
+            p->revoke_sync_started && !p->revoke_sync &&
+            selected_tf.continuation_started && selected_tf.continuation_complete &&
+            !selected_tf.continuation_result && selected_tf_continuation.attempted &&
+            selected_tf_continuation.page_observed && selected_tf_continuation.complete &&
+            !selected_tf_continuation.result &&
+            selected_tf_continuation.pc==selected_tf.actual_post_pc &&
+            (uintptr_t)context->uc_mcontext.gregs[REG_RIP]==selected_tf.actual_post_pc,653,0);
+    for(size_t i=0;i<p->request.page_count;i++)
+        checked(p->open_started[i] && p->opened[i] && p->revoke_started[i] && p->revoked[i],654,i);
+    selected_tf_release_started=1;
+    selected_tf_release_result=li2_lifecycle_fetch_release(&selected_borrow);
+    checked(!selected_tf_release_result,655,selected_tf_release_result);
+    selected_tf_release_complete=1;
+    selected_logical_flags=(uint64_t)context->uc_mcontext.gregs[REG_EFL];
+    checked(!(selected_logical_flags&(SELECTED_TF|SELECTED_RF)) &&
+            selected_logical_flags==(selected_tf.actual_post_flags&~SELECTED_TF),656,0);
+    selected_flags_known=1;++selected_tf_steps;
+    selected_step_pending=0;selected_pending_route=SELECTED_NO_STEP;
+    /* Retain the actual last owner, frame, query and release prefix until the
+       next generic attempt. Counters are not an unbounded execution journal. */
+}
 /* Internal-only controls while target is stopped and no step page is open.
    These controls cannot change source/lifecycle generations. Actual restoration
    must complete before any frame commit, fetch release or application return. */
@@ -199,6 +301,10 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
         g[REG_EFL]=(greg_t)flags;g[REG_R11]=(greg_t)flags;
         selected_release();++selected_source_syscalls;dispatch_operation(number,context);return;
     }
+    if(!selected_selftesting && selected_decoded.kind==LI2_NONE &&
+       selected_decoded.step_disposition!=LI2_STEP_CANDIDATE) {
+        selected_generic_begin(sig,si,context,flags);return;
+    }
     checked(selected_decoded.kind==LI2_NONE && selected_decoded.step_disposition==LI2_STEP_CANDIDATE,632,selected_decoded.code);
     struct li2_step_request request={.decoded=selected_decoded,.original_flags=flags};
     uintptr_t first=pc&~(PAGE-1),last=(selected_decoded.next_pc-1)&~(PAGE-1);
@@ -209,6 +315,7 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
         request.pages[i]=(struct li2_step_page){p->address,p->allocation,p->generation,p->offset,PROT_READ,PROT_READ|PROT_EXEC};
     }
     const struct li2_step_hooks hooks={0,selected_authenticate,selected_step_failure};
+    selected_pending_route=SELECTED_OLD_STEP;
     selected_step_pending=1;
     int error=li2_step_arm(&selected_step,&selected_session,&hooks,&request,selected_selftesting);
     if(error)li2_step_abort(&selected_step,(unsigned)error,0);

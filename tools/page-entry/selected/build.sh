@@ -21,7 +21,7 @@ export CARGO_BUILD_JOBS=1
 unset CARGO_ENCODED_RUSTFLAGS
 export RUSTFLAGS='-C relocation-model=pic -C panic=abort -C force-unwind-tables=no'
 "$cargo_bin" rustc --manifest-path "$source_dir/decoder/Cargo.toml" \
-  --release --locked --offline -j 1 -- -C metadata=li2_page_entry_selected_regmov_v1
+  --release --locked --offline -j 1 -- -C metadata=li2_page_entry_selected_generic_tf_v1
 cp target/release/libli2_page_selected_decoder.a "$output_dir/decoder.a"
 cp target/release/libli2_page_selected_decoder.d "$output_dir/decoder.d"
 # Keep the exact compiler identities and source dep-info beside the archive.
@@ -34,7 +34,7 @@ cp target/release/libli2_page_selected_decoder.d "$output_dir/decoder.d"
   -fno-stack-protector -fno-builtin -fno-tree-loop-distribute-patterns -fno-tree-vectorize \
   -mgeneral-regs-only -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections \
   -Wall -Wextra -Werror -I"$source_dir" -I"$parent_dir" \
-  -Wl,--gc-sections,--exclude-libs,ALL,--undefined=li2_selected_observe_hardware,--undefined=li2_selected_complete_native,--undefined=li2_selected_complete_scripted,--undefined=li2_step_session_init,--undefined=li2_step_arm,--undefined=li2_step_begin,--undefined=li2_step_trace,--undefined=li2_step_abort,--undefined=li2_decoder_initialize,--undefined=li2_decoder_decode,--undefined=li2_decoder_scan_page,--undefined=li2_decoder_stats \
+  -Wl,--gc-sections,--exclude-libs,ALL,--undefined=li2_selected_observe_hardware,--undefined=li2_selected_complete_native,--undefined=li2_selected_complete_scripted,--undefined=li2_step_session_init,--undefined=li2_step_arm,--undefined=li2_step_begin,--undefined=li2_step_trace,--undefined=li2_step_abort,--undefined=li2_decoder_initialize,--undefined=li2_decoder_decode,--undefined=li2_decoder_scan_page,--undefined=li2_decoder_stats,--undefined=li2_decoder_tf_classify,--undefined=li2_tf_arm,--undefined=li2_tf_begin,--undefined=li2_tf_trace,--undefined=li2_tf_abort,--undefined=li2_tf_unexpected,--undefined=li2_lifecycle_tf_continuation \
   -Wl,-e,_start,-Bsymbolic,-z,now,-z,relro,-z,noexecstack,--build-id=none,--no-undefined \
   "$parent_dir/bridge.c" "$source_dir/runtime_loader.c" "$source_dir/lifecycle_loader.c" \
   "$source_dir/entry.S" "$source_dir/provider.c" "$source_dir/step_owner.c" \

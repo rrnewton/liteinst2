@@ -4,6 +4,8 @@
 #include "lifecycle_loader.h"
 #include "provider.h"
 #include "step_owner.h"
+#include "tf_owner.h"
+#include "tf_continuation.h"
 #include "selected_globals.inc"
 #include <linux/audit.h>
 #include <fcntl.h>
@@ -27,8 +29,9 @@ static void fail(unsigned,long) __attribute__((noreturn));
 
 #include "fork_profile.h"
 
-/* The added 64 numeric fields need at most 2,505 field bytes plus the fixed
-   JSON prefix/suffix. One bounded 4 KiB writer fits the 512 KiB guarded stack. */
+/* All 99 numeric fields use at most 3,872 bytes at uint64 width;
+   the fixed prefix/suffix adds 97 bytes (3,969 total <= 4,096).
+   The unchanged bounded writer fits the existing 512 KiB guarded stack. */
 struct writer { char bytes[4096]; size_t used; };
 static void text(struct writer *w,const char *s) {
     while (*s) { if (w->used==sizeof(w->bytes)) li2_fail("loader report overflow"); w->bytes[w->used++]=*s++; }
@@ -44,7 +47,7 @@ static void report(unsigned status,unsigned code,long detail) {
     reported=1;
     if(fork_profile.enabled) { fork_report(status,code,detail); return; }
     struct writer w={.used=0}; struct li2_lifecycle_counts lc; li2_lifecycle_snapshot(&lc);
-    text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_original_entry\",\"source_patches\":0");
+    text(&w,"LI2_LOADER {\"version\":1,\"scope\":\"partial_selected_generic_tf_original_entry\",\"source_patches\":0");
     field(&w,",\"status\":",status); field(&w,",\"failure_code\":",code);
     field(&w,",\"detail_abs\":",detail<0?0ULL-(uint64_t)detail:(uint64_t)detail);
     field(&w,",\"detail_negative\":",detail<0); field(&w,",\"dependency_objects\":",dependency_count);
@@ -67,6 +70,7 @@ static void report(unsigned status,unsigned code,long detail) {
     text(&w,"}\n"); (void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
 }
 static void fail(unsigned code,long detail) {
+    if(selected_pending_route==SELECTED_GENERIC_TF) li2_tf_abort(&selected_tf,code,detail);
     if(selected_step_pending) li2_step_abort(&selected_step,code,detail);
     li2_lifecycle_abort(); report(125,code,detail);
     (void)raw(SYS_exit_group,125,0,0,0,0,0); __builtin_trap();
@@ -170,11 +174,30 @@ static void dispatch(siginfo_t *si,ucontext_t *context) {
 #include "selected_controller.inc"
 
 static void handler(int sig,siginfo_t *si,void *ptr) {
+    if(selected_pending_route==SELECTED_GENERIC_TF) {
+        /* Route real unexpected reserved events to the owner before the old
+           controller guard can lose their actual running signal frame. The
+           owner still refuses nested/inconsistent state with first-error
+           cleanup; this does not invent a valid frame for such a state. */
+        ucontext_t *uc=ptr;
+        if(handling || !selected_step_pending || !si || !uc || sig!=SIGTRAP ||
+           si->si_signo!=SIGTRAP || si->si_code!=TRAP_TRACE || si->si_errno ||
+           uc->uc_mcontext.gregs[REG_TRAPNO]!=1 || uc->uc_mcontext.gregs[REG_ERR] ||
+           (uintptr_t)si->si_addr!=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP])
+            li2_tf_unexpected(&selected_tf,sig,si,uc);
+    }
     checked(!handling && si && ptr,218,sig); handling=1;
-    if(selected_step_pending) {
+    if(selected_pending_route==SELECTED_GENERIC_TF) {
+        selected_generic_trace(sig,si,ptr);
+    } else if(selected_step_pending) {
+        checked(selected_pending_route==SELECTED_OLD_STEP,657,0);
         if(sig!=SIGTRAP) li2_step_abort(&selected_step,603,sig);
         selected_trace(sig,si,ptr);
-    } else if(sig==SIGSEGV) selected_fetch(sig,si,ptr);
+        selected_pending_route=SELECTED_NO_STEP;
+    } else if(sig==SIGSEGV) {
+        checked(selected_pending_route==SELECTED_NO_STEP,658,0);
+        selected_fetch(sig,si,ptr);
+    }
     else if(sig==SIGSYS) dispatch(si,ptr);
     else fail(219,sig);
     handling=0;

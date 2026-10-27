@@ -182,3 +182,29 @@ pub unsafe extern "C" fn li2_decoder_scan_page(
         )
     }
 }
+
+// Insert only this module declaration, re-export and new function into lib.rs.
+mod tf;
+pub use tf::Classification as TfClassification;
+
+/// # Safety
+/// Same immutable, disjoint source/output and sealed-arena obligations as
+/// li2_decoder_decode. This classification is descriptive, never an RX lease.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn li2_decoder_tf_classify(
+    pc: u64, bytes: *const u8, length: usize, out: *mut TfClassification,
+) -> u32 {
+    if out.is_null() { return abi::BAD_ARGUMENT; }
+    // SAFETY: unique writable output is required even on input refusal.
+    unsafe { out.write(TfClassification::default()); }
+    if bytes.is_null() || !(1..=15).contains(&length)
+        || (bytes as usize).checked_add(length).is_none()
+    { return abi::BAD_ARGUMENT; }
+    let _call = match arena::enter() { Ok(call) => call, Err(error) => return error };
+    // SAFETY: caller owns this bounded, immutable, disjoint allocation.
+    let source = unsafe { core::slice::from_raw_parts(bytes, length) };
+    match tf::one(pc, source) {
+        Ok(row) => { unsafe { out.write(row); } abi::OK }
+        Err(error) => error,
+    }
+}
