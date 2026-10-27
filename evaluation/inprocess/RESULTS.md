@@ -244,3 +244,31 @@ Each run now retains its build outputs before another build can overwrite them. 
 - [Existing component cohort](results/20261027T173153.058717Z-page-selected-components-504071ca5087.json)
 - [Required checks, recorder and serial](results/20261027T173155.520498Z-checks-504071ca5087.json)
 - [Retained pre-native build failure](results/20261027T172916.041538Z-page-selected-generic-oracle-69e73f9dbbc9.json)
+
+## Original-address integer families (claims 2 and 4)
+
+Source `9c7ada5c39b7385d689f8fdf8c517612b713b08f` adds canonical ENDBR64 and ordinary integer shifts/rotates, multiply/divide, conditional results, bit operations and exchanges to the selected original-entry controller. Its classifier now enumerates 534 exact instruction codes. The original prefix, selected-provider, CPU-state, revoke/sync and closed-continuation contracts remain intact; the no-user-CET assumption remains explicit.
+
+Two new cohorts pass forty native/TF instruction cases plus a real startup pair in each. Independent literal expectations check register widths, flags, memory effects, signed division, false CMOV32 zero-extension, XADD and both CMPXCHG outcomes. The unchanged full comparison retains all sixteen GPRs, logical flags, live selectors, FS/GS, 2,444 kernel-FP bytes, 2,440 live XSAVE bytes, 8 KiB stack and 4 KiB data. Flags the ISA leaves undefined remain compared exactly between native and TF lanes; their observed values are not a portable guarantee. All records fit the unchanged 16 MiB limit. Independent replay of the retained binaries and actual DWARF verifies all forty cases.
+
+The original generic oracle also passes all 21 pairs, 47 supplied refusals and three actual failed operations. The existing 437-command component cohort and twenty connected streams pass unchanged. Across these five native runners, all 594 commands complete with their required outcomes. Optimized builds used GCC 11.5.0 and Rust 1.97.1 on CPU 13, AMD EPYC 9D85, microcode `0xb101066`, Linux 7.1.3, with no effective capabilities. No performance result is claimed.
+
+The actual system linker now executes 44 older steps, 1,805 generic steps and two RDTSC callbacks across 1,852 NX faults, then refuses REP STOSQ (`f348ab`, decoder code 346). This is an unsupported-program result, not completed selected-profile `ls` execution. REP needs a separate iteration protocol; its existing refusal controls remain unchanged. Application divide-fault delivery, selected RSP destinations, general signals/threads and full B2/B3/B4 remain open. The earlier successful default-loader `ls` results are a separate profile.
+
+Reproduce each native command on one externally reserved CPU; the last command may use four:
+
+```sh
+python3 evaluation/inprocess/page_selected_generic_oracle.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f
+python3 evaluation/inprocess/page_selected_integer.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f --group 0
+python3 evaluation/inprocess/page_selected_integer.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f --group 1
+python3 evaluation/inprocess/page_selected_generic.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f
+python3 evaluation/inprocess/page_selected_components.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f
+python3 evaluation/inprocess/checks.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f
+```
+
+All four required checks pass: formatting, strict workspace/all-target/all-feature Clippy, workspace tests (2,350 passed and four previously ignored across 98 harnesses), and workspace/all-feature/all-target check. Recorder passes 330 tests; serial passes 1,029 tests across 27 harnesses, including every required native collection and backing cleanup. Workspace takes 310.127 seconds within the unchanged 900-second bound; serial takes 134.679 seconds within its unchanged 180-second bound. Source and configuration remain unchanged.
+
+The native summary copies the measured results, exact source/hardware and reproduction commands, and binds all five full receipts by hash. Their full command/capture records remain private. The results commit changes only documentation and two numeric receipts totaling 53,093 bytes.
+
+- [Native results and per-class counts](results/20261027T175910.211918Z-integer-summary-9c7ada5c39b7.json)
+- [Required checks, recorder and serial](results/20261027T180123.253835Z-checks-9c7ada5c39b7.json)
