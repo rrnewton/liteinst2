@@ -417,7 +417,8 @@ impl CodePointSession {
         attach_binding(&self.inner.binding)
     }
     pub fn report(&self, epoch: Epoch) -> Result<Option<frontend::Report>, Error> {
-        Ok(Self::owner(&self.state()?, epoch)?.try_report())
+        let state = self.state()?;
+        Ok(Self::owner(&state, epoch)?.try_report())
     }
     pub fn history(&self) -> Result<Vec<Record>, Error> {
         if self.inner.process != std::process::id() {
