@@ -110,6 +110,108 @@ fn registers_hex(r: &libc::user_regs_struct) -> String {
     hex(&bytes)
 }
 
+/// Own the disabled-altstack precondition for this isolated test process.
+/// The runtime's existing stack allocation remains owned and mapped by it.
+/// This guard outlives every reference/candidate Tracee and private Router.
+pub(super) struct Bootstrap {
+    prior_stack: libc::stack_t,
+    prior_action: Action,
+    prior_mask: u64,
+    armed: bool,
+}
+impl Bootstrap {
+    pub(super) fn new() -> Self {
+        assert_eq!(std::fs::read_dir("/proc/self/task").unwrap().count(), 1);
+        assert_eq!(
+            unsafe { libc::syscall(libc::SYS_gettid) },
+            i64::from(std::process::id())
+        );
+        assert!(TABLE.load(Ordering::Acquire).is_null());
+        assert_eq!(COUNT.load(Ordering::Acquire), 0);
+        let prior_stack = altstack();
+        assert!(matches!(prior_stack.ss_flags, 0 | libc::SS_DISABLE));
+        let mut out = Self {
+            prior_stack,
+            prior_action: action(),
+            prior_mask: mask(),
+            armed: false,
+        };
+        let disabled = libc::stack_t {
+            ss_sp: core::ptr::null_mut(),
+            ss_flags: libc::SS_DISABLE,
+            ss_size: 0,
+        };
+        assert_eq!(
+            unsafe { libc::sigaltstack(&disabled, core::ptr::null_mut()) },
+            0
+        );
+        // No fallible operation separates the successful mutation and arming.
+        out.armed = true;
+        assert_eq!(stack_identity(&altstack()), (0, libc::SS_DISABLE, 0));
+        assert_eq!(action(), out.prior_action);
+        assert_eq!(mask(), out.prior_mask);
+        out
+    }
+}
+impl Drop for Bootstrap {
+    fn drop(&mut self) {
+        if !self.armed {
+            return;
+        }
+        let mut observed_stack: libc::stack_t = unsafe { core::mem::zeroed() };
+        let stack_query = unsafe { libc::sigaltstack(core::ptr::null(), &mut observed_stack) };
+        let mut observed_action = Action {
+            handler: 0,
+            flags: 0,
+            restorer: 0,
+            mask: 0,
+        };
+        let action_query = unsafe {
+            libc::syscall(
+                libc::SYS_rt_sigaction,
+                libc::SIGILL,
+                core::ptr::null::<Action>(),
+                &mut observed_action,
+                8_usize,
+            )
+        };
+        let mut observed_mask = 0_u64;
+        let mask_query = unsafe {
+            libc::syscall(
+                libc::SYS_rt_sigprocmask,
+                libc::SIG_SETMASK,
+                core::ptr::null::<u64>(),
+                &mut observed_mask,
+                8_usize,
+            )
+        };
+        let table = TABLE.load(Ordering::Acquire);
+        let count = COUNT.load(Ordering::Acquire);
+        // Restore the borrowed runtime stack before reporting a failed
+        // teardown invariant. Tracee/Router owners have already been dropped;
+        // failure-path descendant absence still belongs to the strict helper.
+        assert_eq!(
+            unsafe { libc::sigaltstack(&self.prior_stack, core::ptr::null_mut()) },
+            0
+        );
+        self.armed = false;
+        assert_eq!(
+            stack_identity(&altstack()),
+            stack_identity(&self.prior_stack)
+        );
+        assert_eq!(stack_query, 0);
+        assert_eq!(action_query, 0);
+        assert_eq!(mask_query, 0);
+        assert_eq!(stack_identity(&observed_stack), (0, libc::SS_DISABLE, 0));
+        assert_eq!(observed_action, self.prior_action);
+        assert_eq!(observed_mask, self.prior_mask);
+        assert!(table.is_null());
+        assert_eq!(count, 0);
+        assert_eq!(action(), self.prior_action);
+        assert_eq!(mask(), self.prior_mask);
+    }
+}
+
 pub(super) struct Router {
     stack: Mapping,
     table: Mapping,

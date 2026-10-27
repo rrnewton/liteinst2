@@ -49,6 +49,7 @@ pub(super) fn main() {
         dir.parent().unwrap()
     );
     std::fs::create_dir(dir).unwrap();
+    let bootstrap = router_native::Bootstrap::new();
     let mut original = vec![0; (IMAGE_END - IMAGE_START) as usize];
     original[(PC - IMAGE_START) as usize..(PC - IMAGE_START) as usize + 64].fill(0x90);
     let owned = OwnedImage::new(original);
@@ -183,5 +184,6 @@ pub(super) fn main() {
         write_source(&owned, &[0x90; 64]);
     }
     assert_eq!(comparisons, 12);
+    drop(bootstrap);
     write_new(&dir.join("complete.tsv"),b"LI2COMMONROUTERCONTROLS\t1\nsynthetic_roundtrips\t4\nfull_state_comparisons\t12\nrefused_deliveries\t2\nchildren\t10\ncommon_corpus_credit\tfalse\nqualification_complete\tfalse\n");
 }

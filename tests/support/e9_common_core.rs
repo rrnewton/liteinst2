@@ -737,6 +737,7 @@ pub fn main() {
         unsafe { libc::syscall(libc::SYS_gettid) },
         libc::c_long::from(std::process::id())
     );
+    let bootstrap = router.enabled().then(router_native::Bootstrap::new);
     let original = Input::open(Path::new(&args[2]), MAX_INPUT);
     let instructions = Input::open(Path::new(&args[3]), 16384);
     let requested_target = Input::open(Path::new(&args[4]), 16384);
@@ -922,6 +923,7 @@ pub fn main() {
         candidate.stable();
         write_new(&case.join("pair.tsv"),format!("LI2COREPAIR\t1\ncase\t{}\ncomparisons\t3\nchildren\t2\nE9\tUNIMPLEMENTED_UNRUN\nnormal_loader_validation\tfalse\nqualification_complete\tfalse\n",spec.case_index).as_bytes());
     }
+    drop(bootstrap);
     write_new(&dir.join("complete.tsv"),b"LI2COMMONCOREPAIRS\t1\nheads\t87\nnormal_pairs\t174\nfault_pairs\t2\nchildren\t352\ncomparisons\t528\nfiles\t8636\nE9\tUNIMPLEMENTED_UNRUN\nrecording_hooks\tUNIMPLEMENTED_UNRUN\nnormal_loader_validation\tfalse\nqualification_complete\tfalse\n");
     println!(
         "core null pairs complete: heads=87 normal=174 faults=2 comparisons=528 E9=UNIMPLEMENTED_UNRUN qualification_complete=false"
