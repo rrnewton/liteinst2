@@ -59,11 +59,15 @@ impl PreparedStackProfileCapture {
             self.progress.aborted();
         }
     }
+    // Read-only progress projection for native retention controls.
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn progress(
         &self,
     ) -> &StackCaptureProgress {
         &self.progress
     }
+    // Read-only startup storage projection for native retention/allocation controls.
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn observation(
         &self,
     ) -> &StackObservationStorage {

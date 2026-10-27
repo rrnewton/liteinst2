@@ -230,6 +230,8 @@ impl PreparedStackOperand {
             description: None,
         }
     }
+    // Standalone-owner formula for pure controls; native wrappers charge their own headers.
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn reservation_bytes()
     -> Result<usize, StackError> {
         add(size_of::<Self>(), 3 * BYTES)
@@ -239,6 +241,8 @@ impl PreparedStackOperand {
     ) -> Result<(), StackError> {
         self.observation.allocate_payloads()
     }
+    // Pure-control total; production wrappers use the checked payload_bytes tally.
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn allocated_bytes(
         &self,
     ) -> Result<usize, StackError> {

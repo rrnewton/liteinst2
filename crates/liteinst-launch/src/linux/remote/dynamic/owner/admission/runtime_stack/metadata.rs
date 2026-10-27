@@ -114,6 +114,8 @@ pub(in crate::linux::remote::dynamic::owner::admission) struct StackMetadata {
     flags: u16,
 }
 impl StackMetadata {
+    // Descriptive bit projection used by the metadata controls.
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn flags(self) -> u16 {
         self.flags
     }

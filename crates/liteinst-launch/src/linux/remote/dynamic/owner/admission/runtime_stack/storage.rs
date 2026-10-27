@@ -157,8 +157,8 @@ impl StackObservationStorage {
             installed_pointers: [None; 3],
         }
     }
-    /// Exact owned header plus three independent MAX payloads. Root subtracts
-    /// this header if embedded in a larger already-counted owner.
+    // Standalone-owner formula for pure controls; native wrappers charge their own headers.
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn reservation_bytes()
     -> Result<usize, StackError> {
         add(size_of::<Self>(), 3 * BYTES)
@@ -244,6 +244,8 @@ impl StackObservationStorage {
         }
         Ok(bytes)
     }
+    // Pure-control total; production wrappers use the checked payload_bytes tally.
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn allocated_bytes(
         &self,
     ) -> Result<usize, StackError> {
@@ -318,8 +320,9 @@ fn empty_state() -> StateSlot {
     }
 }
 
-/// The two separately owned startup index arrays. The concrete future attempt
-/// and CALL types determine headers; these payloads are not hidden in profile.
+/// Pure model of the two startup index payloads. Production startup charges
+/// its concrete attempt index and CALL ledger separately.
+#[cfg(test)]
 pub(in crate::linux::remote::dynamic::owner::admission) fn history_payload_bytes<A, C>(
     count: usize,
 ) -> Result<usize, StackError> {

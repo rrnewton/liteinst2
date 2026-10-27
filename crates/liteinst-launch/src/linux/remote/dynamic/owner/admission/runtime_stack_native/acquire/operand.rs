@@ -60,6 +60,8 @@ impl PreparedStackOperandCapture {
             self.progress.aborted();
         }
     }
+    // Read-only progress projection for native retention and allocation controls.
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn progress(
         &self,
     ) -> &StackCaptureProgress {
@@ -251,15 +253,12 @@ impl OwnedStackOperand<'_> {
     pub(in crate::linux::remote::dynamic::owner::admission) fn word(&self) -> &WordObservation {
         &self.captured.diagnostic.word
     }
+    // Read-only layout projection for the test-only PKRU intervention.
+    #[cfg(test)]
     pub(in crate::linux::remote::dynamic::owner::admission) fn layout_evidence(
         &self,
     ) -> &PkuLayoutEvidence {
         &self.captured.diagnostic.layout_evidence
-    }
-    pub(in crate::linux::remote::dynamic::owner::admission) fn pagemap_access(
-        &self,
-    ) -> &PagemapAccess {
-        &self.captured.pagemap_access
     }
     pub(in crate::linux::remote::dynamic::owner::admission) fn before(&self) -> &TaskStateSnapshot {
         &self.observation().state.state

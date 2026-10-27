@@ -7,6 +7,7 @@ use super::super::trusted::{AdmissionPhase, AdmissionStop, TaskStateSnapshot};
 use super::exact_storage::{self, AllocationError};
 use super::mapping::maps::{MapEntry, ParsedMaps, parse_header_line};
 use crate::linux::RegisterSnapshot;
+#[cfg(test)]
 use std::mem::size_of;
 use std::ops::Range;
 
