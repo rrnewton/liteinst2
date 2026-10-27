@@ -140,6 +140,28 @@ fn inline_clock_duplicate_reentrant_and_wrong_process_leases_refuse() {
 }
 
 #[test]
+fn inline_clock_caught_panic_does_not_release_an_existing_lease() {
+    fn require_unwind_owner<T: std::panic::UnwindSafe + std::panic::RefUnwindSafe>() {}
+    require_unwind_owner::<BackedgeClock>();
+    require_unwind_owner::<TrampolinePlan>();
+    let page = clock();
+    let lease = unsafe { page.acquire(7, MAX_WORK) }.unwrap();
+    let before = unsafe { page.snapshot_parked() };
+    let outcome = std::panic::catch_unwind(|| {
+        drop(page.clone());
+        panic!("mapping-owner unwind control");
+    });
+    assert!(outcome.is_err());
+    assert!(matches!(
+        unsafe { page.acquire(7, MAX_WORK) },
+        Err(ClockError::Owner)
+    ));
+    assert_eq!(unsafe { page.snapshot_parked() }, before);
+    drop(lease);
+    drop(unsafe { page.acquire(3, 4) }.unwrap());
+}
+
+#[test]
 fn inline_clock_requires_exact_managed_writer_and_keeps_enable_immutable() {
     let page = clock();
     let a = action(0, ClockMode::Stop, &page);

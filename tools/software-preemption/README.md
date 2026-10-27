@@ -62,7 +62,7 @@ python3 -B tools/software-preemption/run.py --profile inline-clock-v1 \
   --binding-sha256 EXACT_BINDING_SHA256 --raw NEW_ABSOLUTE_IGNORED_DIRECTORY
 ```
 
-The convenience `evaluate.py` wrapper defaults to the legacy profile; its explicit inline selection is described below. No inline build, admission, performance result or completed control is implied by this source addition. The seven new core pure tests and two compile-fail ownership examples are also prospective until run.
+The convenience `evaluate.py` wrapper defaults to the legacy profile; its explicit inline selection is described below. No inline build, admission, performance result or completed control is implied by this source addition. The eight new core pure tests and three compile-fail ownership examples are also prospective until run.
 
 ### One-command inline reproduction
 

@@ -66,6 +66,13 @@ struct Storage {
 // controller reads are serialized by the explicit lease/event handoff contract.
 unsafe impl Send for Storage {}
 unsafe impl Sync for Storage {}
+// Safe handle operations never expose or interpret the generated words. All
+// page access requires a separate unsafe execution/handoff proof, including
+// after a caught panic. The atomic owner bit remains valid across unwinding;
+// neither this marker nor Drop establishes that generated execution drained.
+// Keep the invocation lease's Cell-based unwind boundary separate from this
+// shared mapping owner, so ordinary plans retain their existing unwind traits.
+impl std::panic::RefUnwindSafe for Storage {}
 impl Drop for Storage {
     fn drop(&mut self) {
         // An unproven active invocation retains its mapping. Executable owners
@@ -251,6 +258,12 @@ fn thread_id() -> i64 {
 /// use liteinst2::backedge_clock::ClockLease;
 /// fn require_clone<T: Clone>() {}
 /// require_clone::<ClockLease>();
+/// ```
+///
+/// ```compile_fail
+/// use liteinst2::backedge_clock::ClockLease;
+/// fn require_shared_unwind<T: std::panic::RefUnwindSafe>() {}
+/// require_shared_unwind::<ClockLease>();
 /// ```
 pub struct ClockLease {
     clock: BackedgeClock,
