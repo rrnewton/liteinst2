@@ -34,6 +34,10 @@ impl StackMapSlot {
     pub(super) fn payload_bytes(&self) -> usize {
         usize::from(self.value.is_some()) * MAP_BYTES
     }
+    #[cfg(feature = "dev-owned-stack-consumer-oracle")]
+    pub(super) fn consumer_retained(&self) -> Option<&MapBuffer> {
+        self.value.as_ref()
+    }
     #[cfg(test)]
     pub(super) fn retained(&self) -> Option<&MapBuffer> {
         self.value.as_ref()

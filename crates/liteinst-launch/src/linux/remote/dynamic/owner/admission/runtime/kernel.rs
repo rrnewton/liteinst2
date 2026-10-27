@@ -8,6 +8,8 @@ use crate::linux::remote::dynamic::admission::RuntimePendingToken;
 use crate::linux::remote::dynamic::owner::kernel_journal::KernelAttemptId;
 use crate::selected::{SelectedArguments, SelectedInput, SyscallAbi};
 
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+mod consumer_oracle;
 mod drive;
 pub(in crate::linux::remote::dynamic::owner) mod namespace;
 mod observer;

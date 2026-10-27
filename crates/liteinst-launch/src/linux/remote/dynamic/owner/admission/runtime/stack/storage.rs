@@ -61,7 +61,7 @@ impl RuntimeStackState {
             startup_settled: 0,
             #[cfg(test)]
             intervention: None,
-            #[cfg(test)]
+            #[cfg(any(test, feature = "dev-owned-stack-consumer-oracle"))]
             before_opening: None,
             #[cfg(test)]
             fail_attempt_header: false,

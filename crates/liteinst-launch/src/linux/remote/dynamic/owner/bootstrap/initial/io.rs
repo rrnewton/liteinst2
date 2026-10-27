@@ -299,7 +299,7 @@ impl SignalObservation {
 #[derive(Clone, Copy, Debug)]
 pub(in crate::linux::remote::dynamic::owner) struct MemoryObservation {
     #[cfg_attr(
-        not(test),
+        not(any(test, feature = "dev-owned-stack-consumer-oracle")),
         expect(
             dead_code,
             reason = "Retained memory request evidence is inspected by native controls"
@@ -307,7 +307,7 @@ pub(in crate::linux::remote::dynamic::owner) struct MemoryObservation {
     )]
     pub(in crate::linux::remote::dynamic::owner) address: u64,
     #[cfg_attr(
-        not(test),
+        not(any(test, feature = "dev-owned-stack-consumer-oracle")),
         expect(
             dead_code,
             reason = "Retained memory request evidence is inspected by native controls"

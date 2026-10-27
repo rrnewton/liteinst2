@@ -9,6 +9,11 @@ use std::rc::Rc;
 use std::sync::{Mutex, MutexGuard};
 
 mod runtime;
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(in crate::linux::remote::dynamic::owner) use runtime::consumer_oracle::{
+    JournalAttemptView, JournalBindingView, JournalCounts, JournalPartialView, JournalStateView,
+    JournalWriterTransition, PreparedKernelObservation,
+};
 pub(in crate::linux::remote::dynamic::owner) use runtime::{
     PreparedRuntimeJournal, RuntimeJournalBefore, RuntimeJournalShape, RuntimeJournalSink,
     RuntimeKernelHandle,

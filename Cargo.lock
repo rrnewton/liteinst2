@@ -113,6 +113,7 @@ dependencies = [
  "liteinst-admission",
  "liteinst-launch",
  "liteinst2",
+ "sha2",
 ]
 
 [[package]]

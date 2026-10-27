@@ -810,3 +810,6 @@ mod tests {
         );
     }
 }
+
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(crate) use remote::owned_stack_consumer_oracle_main;

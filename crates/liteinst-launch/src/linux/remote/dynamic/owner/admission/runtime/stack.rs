@@ -28,7 +28,13 @@ mod observer;
 use binding::StackRequest;
 mod storage;
 use observer::SourceObserver;
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+mod consumer_oracle;
 mod execute;
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(crate) fn owned_stack_consumer_oracle_main() -> std::process::ExitCode {
+    consumer_oracle::run()
+}
 #[cfg(test)]
 mod native_tests;
 #[cfg(test)]
@@ -95,7 +101,7 @@ pub(super) struct RuntimeStackState {
     startup_settled: usize,
     #[cfg(test)]
     intervention: Option<RootIntervention>,
-    #[cfg(test)]
+    #[cfg(any(test, feature = "dev-owned-stack-consumer-oracle"))]
     before_opening: Option<BeforeOpening>,
     #[cfg(test)]
     fail_attempt_header: bool,
@@ -198,7 +204,7 @@ enum RootIntervention {
     AfterCallRecordPanic,
     RefuseClosedObserver,
 }
-#[cfg(test)]
+#[cfg(any(test, feature = "dev-owned-stack-consumer-oracle"))]
 type BeforeOpening = fn(
     &Owner,
     &NativeLifecycle,

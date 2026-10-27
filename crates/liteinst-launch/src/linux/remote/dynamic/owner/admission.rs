@@ -767,3 +767,6 @@ pub(crate) use exec::exec_backing_cleanup_main;
 pub(in crate::linux::remote::dynamic::owner) use census::{
     RuntimeKernelCommitOutcome, RuntimeKernelCommitReceipt, RuntimeKernelCommitView,
 };
+
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(crate) use runtime::owned_stack_consumer_oracle_main;

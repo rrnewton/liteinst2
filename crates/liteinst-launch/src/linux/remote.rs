@@ -2031,3 +2031,6 @@ fn qualify_single_step(pid: libc::pid_t) -> Result<(), LaunchError> {
 
 #[cfg(feature = "dev-exec-backing-cleanup")]
 pub(crate) use dynamic::exec_backing_cleanup_main;
+
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(crate) use dynamic::owned_stack_consumer_oracle_main;

@@ -11,6 +11,8 @@ use super::*;
 use std::mem::size_of;
 use std::time::Instant;
 
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(in crate::linux::remote::dynamic::owner::admission::census) mod consumer_oracle;
 #[cfg(test)]
 pub(super) mod native_oracle;
 #[cfg(test)]

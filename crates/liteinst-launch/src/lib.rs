@@ -83,3 +83,14 @@ pub(crate) mod exec_cleanup_support;
 pub fn __run_exec_backing_cleanup() -> std::process::ExitCode {
     linux::exec_backing_cleanup_main()
 }
+
+/// Fixed development-only finite consumer oracle entry; not a tracing API.
+#[doc(hidden)]
+#[cfg(all(
+    feature = "dev-owned-stack-consumer-oracle",
+    target_os = "linux",
+    target_arch = "x86_64"
+))]
+pub fn __run_owned_stack_consumer_oracle() -> std::process::ExitCode {
+    linux::owned_stack_consumer_oracle_main()
+}

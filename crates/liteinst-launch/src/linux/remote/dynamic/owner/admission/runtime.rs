@@ -615,3 +615,6 @@ fn initial_maps_prefix<'a>(
     }
     Ok(&bytes[..progress.copied_bytes])
 }
+
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(crate) use stack::owned_stack_consumer_oracle_main;

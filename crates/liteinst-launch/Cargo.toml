@@ -8,6 +8,7 @@ license = "BSD-2-Clause"
 
 [dependencies]
 libc = "0.2.186"
+sha2 = { version = "0.10.9", optional = true }
 liteinst-admission = { version = "0.1.0", path = "../liteinst-admission" }
 liteinst2 = { version = "0.1.0", path = "../.." }
 iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "decoder"] }
@@ -15,6 +16,7 @@ iced-x86 = { version = "1.21.0", default-features = false, features = ["std", "d
 # Fixed development-only native resource controls; no default runtime API.
 [features]
 dev-exec-backing-cleanup = []
+dev-owned-stack-consumer-oracle = ["dep:sha2"]
 
 [dev-dependencies]
 liteinst-launch = { version = "=0.1.0", path = ".", features = ["dev-exec-backing-cleanup"] }
@@ -23,3 +25,8 @@ liteinst-launch = { version = "=0.1.0", path = ".", features = ["dev-exec-backin
 name = "exec_backing_cleanup"
 path = "tests/exec_backing_cleanup.rs"
 harness = false
+
+[[example]]
+name = "runtime_stack_consumer_oracle"
+path = "examples/runtime_stack_consumer_oracle.rs"
+required-features = ["dev-owned-stack-consumer-oracle"]

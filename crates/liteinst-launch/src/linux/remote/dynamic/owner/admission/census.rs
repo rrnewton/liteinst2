@@ -20,6 +20,23 @@ pub(super) use runtime::{InitialRuntimeReservation, initial_runtime_origin_charg
 mod ordinary;
 pub(super) use ordinary::{PreparedOrdinaryCensus, ordinary_census_charge};
 mod runtime_stack;
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(super) use runtime_stack::consumer_oracle::prefix_mirror::{
+    PreparedStackPrefixMirror, stack_prefix_mirror_temporary_bytes,
+};
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(super) use runtime_stack::consumer_oracle::storage::CensusConsumerError;
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(super) use runtime_stack::consumer_oracle::{
+    PreparedStackObservation, StackConsumerInput, consumer_observation_temporary_bytes,
+};
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(super) use stack_calls::consumer_oracle::PreparedCallObservation;
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(super) use stack_calls::consumer_oracle::prefix_mirror::{
+    PreparedCallPrefixMirror, call_prefix_mirror_temporary_bytes,
+};
+
 pub(super) use runtime_stack::{
     PreparedStackCensus, stack_census_charge, stack_census_temporary_bytes,
 };

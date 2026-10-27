@@ -229,7 +229,7 @@ impl RuntimeOwner {
                 } else {
                     None
                 };
-                #[cfg(test)]
+                #[cfg(any(test, feature = "dev-owned-stack-consumer-oracle"))]
                 if let Some(record) = &recorded {
                     if let Some(observe) = state.before_opening {
                         observe(
@@ -242,9 +242,12 @@ impl RuntimeOwner {
                             &self.sources,
                         )?;
                     }
-                    if state.intervention == Some(RootIntervention::AfterCallRecordPanic) {
-                        std::panic::panic_any(0x4341_4c4c_u32);
-                    }
+                }
+                #[cfg(test)]
+                if recorded.is_some()
+                    && state.intervention == Some(RootIntervention::AfterCallRecordPanic)
+                {
+                    std::panic::panic_any(0x4341_4c4c_u32);
                 }
                 {
                     let mut observer = SourceObserver {
