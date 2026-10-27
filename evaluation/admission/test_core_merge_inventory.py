@@ -6,6 +6,10 @@ import json
 from pathlib import Path
 import unittest
 from unittest.mock import patch
+from core_a3_inventory import (ADDED_HARNESSES as A3_ADDED, CHANGED_HARNESSES as A3_CHANGED,
+                               RUST_METHODS as A3_METHODS, SOURCE_WIRING as A3_WIRING,
+                               PRE_CORE_A3_CORPUS_SHA256, before_core_a3,
+                               validate_core_a3_source)
 from owned_stack_inventory import before_owned_stack
 from core_main_inventory import (ADDED_HARNESSES, CHANGED_HARNESSES, RUST_METHODS,
                                  SOURCE_WIRING, PRE_CORE_MAIN_CORPUS_SHA256,
@@ -68,6 +72,33 @@ class CoreMergeInventoryTests(unittest.TestCase):
                                       {"test/e9_common_seed_contract": counts(3)}, 0)[0]
         self.assertEqual(row["outer"]["passed"], 3)
 
+        # Prospective exact Cargo contract from test=true source wiring, not a native capture.
+        example = "     Running unittests examples/verify_common_core.rs (target/debug/examples/verify_common_core-123abc)"
+        expected = {"unit/verify_common_core/verify_common_core": counts(3)}
+        valid = "\n".join((example, "running 3 tests", summary(3)))
+        row = parsing.parse_harnesses(valid, expected, 0)[0]
+        self.assertEqual(row["outer"]["passed"], 3)
+        self.assertEqual(row["nested"], [])
+        for text in (valid.replace("examples/verify_common_core.rs", "examples/other.rs"),
+                     valid.replace("examples/verify_common_core.rs", "src/verify_common_core.rs"),
+                     valid.replace("examples/verify_common_core.rs", "examples/common_sites.rs"),
+                     valid.replace("verify_common_core-", "common_sites-"),
+                     valid.replace("verify_common_core-", "other-"),
+                     valid.replace("target/debug/examples/", "target/debug/deps/"),
+                     valid.replace("target/debug/examples/", "target/release/examples/"),
+                     valid.replace("target/debug/examples/", "/PRIVATE_SENTINEL/"),
+                     valid.replace("examples/verify_common_core.rs", "/PRIVATE_SENTINEL/verify_common_core.rs"),
+                     valid.replace("verify_common_core-123abc", "verify_common_core-NOTHEX"),
+                     valid + "\n" + valid, example + "\nrunning 3 tests\n"):
+            with self.subTest(example=text), self.assertRaises(parsing.InvalidEvidence) as caught:
+                parsing.parse_harnesses(text, expected, 0)
+            self.assertNotIn("PRIVATE_SENTINEL", json.dumps(caught.exception.partial))
+            self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+        pages = "     Running tests/e9_common_core_pages_contract.rs (target/debug/deps/e9_common_core_pages_contract-123abc)"
+        row = parsing.parse_harnesses("\n".join((pages, "running 9 tests", summary(9))),
+                                      {"test/e9_common_core_pages_contract": counts(9)}, 0)[0]
+        self.assertEqual(row["outer"]["passed"], 9)
+
     def test_new_core_cohort_retains_exact_child_shape_without_generalizing_it(self):
         for total in (176, 184, 208):
             valid = "\n".join((header("liteinst2"), f"running {total} tests", "running 1 test",
@@ -85,8 +116,89 @@ class CoreMergeInventoryTests(unittest.TestCase):
             with self.subTest(name=name, total=total, child=child, ignored=ignored, filtered=filtered), self.assertRaises(parsing.InvalidEvidence):
                 parsing.parse_harnesses(text, {f"unit/{name}/lib": counts(total, ignored)}, 0)
 
+        valid = "\n".join((header("liteinst2"), "running 213 tests", "running 1 test",
+                           summary(212, ignored=1)))
+        row = parsing.parse_harnesses(valid, {"unit/liteinst2/lib": counts(213, 1)}, 0)[0]
+        self.assertEqual(row["outer"]["passed"], 212)
+        self.assertEqual(row["unmatched_nested_starts"], 1)
+        self.assertEqual(row["nested"], [])
+        for name, total, child, ignored, filtered in (
+                ("liteinst2", 212, 1, 1, 0), ("liteinst2", 214, 1, 1, 0),
+                ("other", 213, 1, 1, 0), ("liteinst2", 213, 2, 1, 0),
+                ("liteinst2", 213, 1, 0, 0), ("liteinst2", 213, 1, 1, 1)):
+            text = "\n".join((header(name), f"running {total} tests", f"running {child} tests",
+                              summary(total - ignored, ignored=ignored, filtered=filtered)))
+            with self.subTest(name=name, total=total, child=child, ignored=ignored, filtered=filtered), self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(text, {f"unit/{name}/lib": counts(total, ignored)}, 0)
+
     def test_catalog_preserves_all_old_harnesses_and_native_collection_identities(self):
-        current = before_owned_stack(json.loads(Path(__file__).with_name("corpus.json").read_text()))
+        actual = json.loads(Path(__file__).with_name("corpus.json").read_text())
+        unchanged_actual = copy.deepcopy(actual)
+        prior_a3 = before_core_a3(actual)
+        self.assertEqual(actual, unchanged_actual)
+        self.assertEqual(digest(prior_a3), PRE_CORE_A3_CORPUS_SHA256)
+        self.assertEqual(actual["recorder_tests"], 305)
+        self.assertEqual(len(actual["native_validation_fixtures"]), 103)
+        self.assertEqual(actual["native_validation_fixtures"], prior_a3["native_validation_fixtures"])
+        self.assertEqual(actual["harness_test_counts"]["serial_launch"],
+                         prior_a3["harness_test_counts"]["serial_launch"])
+        self.assertEqual(sum(row["tests"] for row in actual["harness_test_counts"]["serial_launch"].values()), 995)
+        workspace_a3 = actual["harness_test_counts"]["workspace_tests"]
+        self.assertEqual(len(workspace_a3), 93)
+        self.assertEqual(sum(row["tests"] for row in workspace_a3.values()), 2148)
+        self.assertEqual(sum(row["ignored"] for row in workspace_a3.values()), 4)
+        self.assertEqual(workspace_a3["unit/liteinst_launch/lib"], counts(703))
+        self.assertEqual(sum(map(len, A3_METHODS.values())), 20)
+        with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_a3_inventory_differs$"):
+            before_core_a3(prior_a3)
+        for identity in (*A3_ADDED, *A3_CHANGED):
+            for change in ("missing", "count", "ignored", "type", "ignored_type", "rename", "extra"):
+                altered = copy.deepcopy(actual)
+                group = altered["harness_test_counts"]["workspace_tests"]
+                if change == "missing": del group[identity]
+                elif change == "count": group[identity]["tests"] -= 1
+                elif change == "ignored": group[identity]["ignored"] += 1
+                elif change == "type": group[identity]["tests"] = float(group[identity]["tests"])
+                elif change == "ignored_type": group[identity]["ignored"] = bool(group[identity]["ignored"])
+                elif change == "rename": group[identity + "_extra"] = group.pop(identity)
+                else: group[identity]["extra"] = "PRIVATE_SENTINEL"
+                with self.subTest(a3_identity=identity, change=change), self.assertRaises(parsing.InvalidEvidence) as caught:
+                    before_core_a3(altered)
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+        for change in ("recorder", "serial", "old_workspace", "native", "static", "dynamic", "matrix", "helper", "baseline", "extra"):
+            altered = copy.deepcopy(actual)
+            if change == "recorder": altered["recorder_tests"] -= 1
+            elif change == "serial": altered["harness_test_counts"]["serial_launch"]["unit/liteinst_launch/lib"]["tests"] -= 1
+            elif change == "old_workspace": altered["harness_test_counts"]["workspace_tests"]["unit/liteinst_launch/lib"]["tests"] -= 1
+            elif change == "native": altered["native_validation_fixtures"].pop()
+            elif change == "static": altered["native_cases"].pop()
+            elif change == "dynamic": altered["dynamic_admission_fixtures"].pop()
+            elif change == "matrix": altered["dynamic_matrix_cases"].pop()
+            elif change == "helper": altered["backing_cleanup_harnesses"]["serial_launch"].pop()
+            elif change == "baseline": altered["baseline_revision"] = "0" * 40
+            else: altered["extra"] = "PRIVATE_SENTINEL"
+            with self.subTest(a3_history=change), self.assertRaises(parsing.InvalidEvidence):
+                before_core_a3(altered)
+        for path, names in A3_METHODS.items():
+            for bad in (list(names[:-1]), list(names) + [names[0]], list(reversed(names)),
+                        ["PRIVATE_SENTINEL"] + list(names[1:])):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_a3_source_inventory_differs$"):
+                    validate_core_a3_source(path, bad)
+        read_a3 = Path.read_text
+        for target in (*A3_METHODS, *A3_WIRING):
+            for mutation in ("missing", "changed"):
+                def altered_a3(path, *args, **kwargs):
+                    if path.as_posix().endswith(target):
+                        if mutation == "missing": raise OSError("PRIVATE_SENTINEL /private/source")
+                        text = read_a3(path, *args, **kwargs)
+                        needle = A3_METHODS[target][0] if target in A3_METHODS else A3_WIRING[target]
+                        return text.replace(needle, "PRIVATE_SENTINEL", 1)
+                    return read_a3(path, *args, **kwargs)
+                with self.subTest(a3_source=target, mutation=mutation), patch("core_a3_inventory.Path.read_text", altered_a3):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, "^core_a3_source_inventory_differs$") as caught:
+                        before_core_a3(actual)
+                self.assertNotIn("PRIVATE_SENTINEL", str(caught.exception))
+        current = before_owned_stack(before_core_a3(json.loads(Path(__file__).with_name("corpus.json").read_text())))
         unchanged = copy.deepcopy(current)
         previous = before_core_main(current)
         self.assertEqual(current, unchanged)

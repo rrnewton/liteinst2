@@ -49,6 +49,12 @@ def harness_id(line):
         r"\(target/debug/examples/common_sites-[a-f0-9]+\)", line)
     if example:
         return "unit/common_sites/common_sites"
+    # Exact new Cargo example target declared test=true; no generic examples grammar.
+    example = re.fullmatch(
+        r"\s*Running unittests examples/verify_common_core\.rs "
+        r"\(target/debug/examples/verify_common_core-[a-f0-9]+\)", line)
+    if example:
+        return "unit/verify_common_core/verify_common_core"
     match = re.fullmatch(r"\s*Running (unittests [^()]+|tests/[^()]+|native-interval/calibrations\.rs) \(([^()]+)\)", line)
     if not match:
         return None
@@ -58,6 +64,8 @@ def harness_id(line):
     # This reviewed example has one source/binary/output-directory identity.
     # The generic legacy unit matcher cannot provide an alternate spelling.
     require(label != "unittests examples/common_sites.rs" and binary[1] != "common_sites",
+            "invalid_harness_source_label")
+    require(label != "unittests examples/verify_common_core.rs" and binary[1] != "verify_common_core",
             "invalid_harness_source_label")
     if label == "native-interval/calibrations.rs":
         require(binary[1] == "frontend_native_calibrations", "invalid_harness_source_label")
@@ -161,10 +169,12 @@ def parse_harnesses(output, expected, exit_code):
                 known = (current["id"], current["declared_outer_tests"], current["expected_ignored"])
                 # Retain the exact historical core cohorts for replay. The
                 # merged core adds 24 tests to the same unchanged ptrace-child
-                # fixture; the current corpus requires exactly 208 tests.
+                # fixture. The later five-test A3 addition retains that exact
+                # child and requires 213; historical tuples remain replayable.
                 require(known in (("unit/liteinst2/lib", 176, 1),
                                   ("unit/liteinst2/lib", 184, 1),
-                                  ("unit/liteinst2/lib", 208, 1), ("test/stress", 7, 3))
+                                  ("unit/liteinst2/lib", 208, 1),
+                                  ("unit/liteinst2/lib", 213, 1), ("test/stress", 7, 3))
                         and stack == [current["declared_outer_tests"], 1]
                         and count == current["declared_outer_tests"]
                         and summary["filtered"] == 0,

@@ -6209,6 +6209,10 @@
         "ignored": 0,
         "tests": 2
       },
+      "test/e9_common_core_pages_contract": {
+        "ignored": 0,
+        "tests": 9
+      },
       "test/e9_common_seed_contract": {
         "ignored": 0,
         "tests": 3
@@ -6259,7 +6263,7 @@
       },
       "test/integration": {
         "ignored": 0,
-        "tests": 11
+        "tests": 14
       },
       "test/lifecycle": {
         "ignored": 0,
@@ -6419,7 +6423,7 @@
       },
       "unit/liteinst2/lib": {
         "ignored": 1,
-        "tests": 208
+        "tests": 213
       },
       "unit/liteinst2_arena_fork_fixture/arena_fork_fixture": {
         "ignored": 0,
@@ -6450,6 +6454,10 @@
         "tests": 106
       },
       "unit/rapid_profiler/main": {
+        "ignored": 0,
+        "tests": 3
+      },
+      "unit/verify_common_core/verify_common_core": {
         "ignored": 0,
         "tests": 3
       }

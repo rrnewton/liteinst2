@@ -74,7 +74,7 @@ controls and two separate native controls. The separate finite initial map-coale
 addition contributes 36 pure and three native controls, retaining original RX source
 extents separately from actual NX containers. The opt-in owned-initial-stack
 addition contributes 74 pure controls and 17 native identities. Expected totals
-are 703 launcher units, 2128 workspace tests in 91 harnesses (2124 possible passes
+are 703 launcher units, 2148 workspace tests in 93 harnesses (2144 possible passes
 and four unchanged ignores), and 995 serial launch tests in the same 27 harnesses.
 The recorder expects 305 Python controls, including twelve separate compiler-consumer
 record/schema regressions, three launch-cleanup controls, three coalescence controls
@@ -87,8 +87,20 @@ library counts are authenticated before reconstructing the exact previous
 Python identities, all 86 native rows, the 39-test coalescence inventory and every old assertion;
 the separate owned-stack projection reconstructs that exact complete core corpus
 before any of those historical checks run. Only the observed exact `common_sites`
-source/binary/example-directory header is added to Cargo header recognition;
-all other example-directory variants refuse. No native collection or command
+source/binary/example-directory header was added by that historical increment.
+The later A3 merge adds twenty methods: five artifact-overlay units, three
+composition-overlay integration controls, nine page-contract controls and three
+`verify_common_core` example controls. Its exact two added and two changed
+harness rows are authenticated before reconstructing the complete prior
+2128-test/91-harness corpus. All 305 Python identities, 103 native rows, 703
+launcher units, 995 serial tests, and historical assertions remain unchanged.
+The only additional example header is the exact `examples/verify_common_core.rs`
+source, `verify_common_core` binary and `target/debug/examples/` directory,
+declared by Cargo `test = true`. This header is prospective until an official
+run emits it; it is not a saved native observation. Cross-pairs, alternate
+directories, changed source labels and all other example-directory variants
+refuse. The core unmatched-child tuple adds only the new exact 213-test cohort
+beside the preserved historical 176/184/208 cohorts. No native collection or command
 limit changes are part of this inventory reconciliation.
 These are source-derived expectations;
 this inventory makes no execution or qualification claim.
