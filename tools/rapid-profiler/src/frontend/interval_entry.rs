@@ -1,5 +1,5 @@
-//! Test-only atomic interval entry seam. No native pair, TLS, control, or code
-//! authority is created here; those remain a separate, unimplemented bridge.
+//! Atomic interval entry seam. Native authority belongs to the separate
+//! always-on bridge; this module exposes no frame, ticket or epoch extraction.
 use super::*;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -325,4 +325,76 @@ impl ThreadModel {
     }
 }
 
+/// Read-only diagnostic copy; contains no admission, frame, ticket or owner.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum IntervalEntrySummary {
+    Admitted {
+        generation: GenerationId,
+        invocation: usize,
+        history_len: usize,
+        binding: BindingChange,
+    },
+    Unsampled {
+        reason: UnsampledSummary,
+        history_len: usize,
+        binding: BindingChange,
+    },
+}
+impl IntervalEntry {
+    pub(crate) fn summary(&self) -> Option<IntervalEntrySummary> {
+        let state = self.state.as_ref()?;
+        Some(match state {
+            Entered::Admitted { admission, .. } => IntervalEntrySummary::Admitted {
+                generation: admission.generation,
+                invocation: admission.invocation,
+                history_len: self.stamp.history_len,
+                binding: self.stamp.binding,
+            },
+            Entered::Unsampled(owner) => IntervalEntrySummary::Unsampled {
+                reason: match owner {
+                    UnsampledOwner::Disarmed {
+                        observed: BindingChange::Initial,
+                    } => UnsampledSummary::InitialDisarmed,
+                    UnsampledOwner::Disarmed {
+                        observed: BindingChange::Removed { generation, .. },
+                    } => UnsampledSummary::Removed {
+                        generation: *generation,
+                    },
+                    UnsampledOwner::FunctionClosed { owner, function } => {
+                        UnsampledSummary::FunctionClosed {
+                            generation: owner.epoch.id(),
+                            function: *function,
+                        }
+                    }
+                    UnsampledOwner::Disarmed {
+                        observed: BindingChange::Published { .. },
+                    } => return None,
+                },
+                history_len: self.stamp.history_len,
+                binding: self.stamp.binding,
+            },
+        })
+    }
+}
+impl IntervalExit {
+    pub(crate) fn summary(&self) -> IntervalEntrySummary {
+        match self {
+            Self::Completed {
+                completion, stamp, ..
+            } => IntervalEntrySummary::Admitted {
+                generation: completion.admission.generation,
+                invocation: completion.admission.invocation,
+                history_len: stamp.history_len,
+                binding: stamp.binding,
+            },
+            Self::Unsampled { reason, stamp } => IntervalEntrySummary::Unsampled {
+                reason: *reason,
+                history_len: stamp.history_len,
+                binding: stamp.binding,
+            },
+        }
+    }
+}
+
+#[cfg(test)]
 mod tests;
