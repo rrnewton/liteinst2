@@ -93,6 +93,14 @@ fn canonical_movq_integer(instruction: &Instruction, bytes: &[u8]) -> bool {
         (Code::Movq_rm64_xmm, [0x66, 0x48, 0x0f, 0x7e, 0xc6]))
 }
 
+// Only this original-PC, memory-destination LOCK ADD encoding. The CPU
+// performs the atomic RMW; this exception neither emulates it nor authorizes
+// other LOCK/HLE prefixes, address sizes, operand sizes or ModRM forms.
+fn canonical_lock_add_rip(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::Add_rm32_imm8
+        && matches!(bytes, [0xf0, 0x83, 0x05, _, _, _, _, _])
+}
+
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
@@ -117,6 +125,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         if source[..instruction.len()] != [0x0f, 0x01, 0xd0] { return Ok(out); }
     } else if !canonical_padding_nop(&instruction, &source[..instruction.len()])
         && !canonical_notrack_register(&instruction, &source[..instruction.len()])
+        && !canonical_lock_add_rip(&instruction, &source[..instruction.len()])
         && !prefixes(&instruction, &source[..instruction.len()]) { return Ok(out); }
     // Exact Code enumeration, never a catch-all mnemonic/valid-decode permit.
     let (flow, family) = match instruction.code() {
