@@ -370,7 +370,10 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::Pcmpeqb_xmm_xmmm128 | Code::Pcmpeqw_xmm_xmmm128 | Code::Pcmpeqd_xmm_xmmm128
         | Code::Pcmpgtb_xmm_xmmm128 | Code::Pcmpgtw_xmm_xmmm128 | Code::Pcmpgtd_xmm_xmmm128
         | Code::Pminub_xmm_xmmm128 | Code::Pmaxub_xmm_xmmm128
-        | Code::Pmovmskb_r32_xmm => (1, 6),
+        | Code::Pmovmskb_r32_xmm
+        // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.
+        | Code::Movlpd_xmm_m64 | Code::Movlpd_m64_xmm
+        | Code::Movhpd_xmm_m64 | Code::Movhpd_m64_xmm => (1, 6),
         _ => return Ok(out),
     };
     out.policy = 1;
