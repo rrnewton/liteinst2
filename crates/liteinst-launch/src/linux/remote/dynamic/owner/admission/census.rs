@@ -30,6 +30,7 @@ pub(super) use history::{
 pub(super) use ordinary::AllocationCensusSnapshot;
 #[cfg(test)]
 pub(super) use ordinary::OrdinaryPreparationHistorySnapshot;
+#[cfg(test)]
 pub(super) use ordinary::shared::ObservationView;
 mod runtime_stack;
 #[cfg(feature = "dev-owned-stack-consumer-oracle")]

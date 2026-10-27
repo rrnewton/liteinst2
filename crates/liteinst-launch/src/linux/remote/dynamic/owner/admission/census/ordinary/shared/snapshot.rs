@@ -24,6 +24,7 @@ pub(in crate::linux::remote::dynamic::owner::admission::census) struct ArchiveSn
     pub(in crate::linux::remote::dynamic::owner::admission::census) trace: Option<NativeTrace>,
     pub(in crate::linux::remote::dynamic::owner::admission::census) prior: Progress,
     pub(in crate::linux::remote::dynamic::owner::admission::census) native: Progress,
+    pub(in crate::linux::remote::dynamic::owner::admission::census) roles: [CaptureRole; PAYLOADS],
     pub(in crate::linux::remote::dynamic::owner::admission::census) identities:
         [PayloadIdentity; PAYLOADS],
     pub(in crate::linux::remote::dynamic::owner::admission::census) progress: [Progress; PAYLOADS],
@@ -33,24 +34,29 @@ pub(in crate::linux::remote::dynamic::owner::admission::census) struct ArchiveSn
     pub(in crate::linux::remote::dynamic::owner::admission::census) references:
         [Option<SharedObservationRef>; ENDPOINTS],
 }
-impl OrdinaryHistoryPayloads {
-    pub(in crate::linux::remote::dynamic::owner::admission::census) fn test_snapshot(
-        &self,
-    ) -> ArchiveSnapshot {
-        let view = self.partial_view();
-        ArchiveSnapshot {
+impl ArchiveSnapshot {
+    fn of(view: ArchivePartialView<'_>) -> Self {
+        Self {
             address: view.address,
             binding: view.binding,
             owner: view.owner,
             trace: view.trace,
             prior: view.prior,
             native: view.native,
+            roles: std::array::from_fn(|i| view.payloads[i].role),
             identities: std::array::from_fn(|i| view.payloads[i].identity),
             progress: std::array::from_fn(|i| view.payloads[i].progress),
             bytes: std::array::from_fn(|i| view.payloads[i].bytes.to_vec()),
             headers: std::array::from_fn(|i| view.headers[i].map(owned)),
             references: view.references,
         }
+    }
+}
+impl OrdinaryHistoryPayloads {
+    pub(in crate::linux::remote::dynamic::owner::admission::census) fn test_snapshot(
+        &self,
+    ) -> ArchiveSnapshot {
+        ArchiveSnapshot::of(self.partial_view())
     }
 }
 #[cfg(test)]
@@ -66,14 +72,12 @@ impl PreparedOrdinaryHistory {
     pub(in crate::linux::remote::dynamic::owner::admission::census) fn test_snapshot(
         &self,
     ) -> PreparedSnapshot {
+        let view = self.partial_view();
         PreparedSnapshot {
-            allocation: self.allocation,
-            installed_bytes: self.installed_bytes,
-            transferred: self.transferred,
-            archive: self
-                .archive
-                .as_deref()
-                .map(OrdinaryHistoryPayloads::test_snapshot),
+            allocation: view.allocation,
+            installed_bytes: view.installed_bytes,
+            transferred: view.transferred,
+            archive: view.archive.map(ArchiveSnapshot::of),
         }
     }
 }

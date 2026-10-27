@@ -295,6 +295,14 @@ impl BindingView {
         }
     }
 }
+// Keep every diagnostic field in the unconditional temporary-layout bound.
+#[cfg_attr(
+    not(any(test, feature = "dev-exec-backing-cleanup")),
+    expect(
+        dead_code,
+        reason = "The full diagnostic payload layout is charged even when snapshot readers are absent."
+    )
+)]
 #[derive(Clone, Copy, Debug)]
 pub(in crate::linux::remote::dynamic::owner::admission::census) struct PayloadView<'a> {
     pub(in crate::linux::remote::dynamic::owner::admission::census) role: CaptureRole,
@@ -302,6 +310,14 @@ pub(in crate::linux::remote::dynamic::owner::admission::census) struct PayloadVi
     pub(in crate::linux::remote::dynamic::owner::admission::census) progress: Progress,
     pub(in crate::linux::remote::dynamic::owner::admission::census) bytes: &'a [u8],
 }
+// Keep every diagnostic field in the unconditional temporary-layout bound.
+#[cfg_attr(
+    not(any(test, feature = "dev-exec-backing-cleanup")),
+    expect(
+        dead_code,
+        reason = "The full diagnostic archive layout is charged even when snapshot readers are absent."
+    )
+)]
 #[derive(Clone, Copy, Debug)]
 pub(in crate::linux::remote::dynamic::owner::admission::census) struct ArchivePartialView<'a> {
     pub(in crate::linux::remote::dynamic::owner::admission::census) address: usize,
@@ -317,6 +333,14 @@ pub(in crate::linux::remote::dynamic::owner::admission::census) struct ArchivePa
     pub(in crate::linux::remote::dynamic::owner::admission::census) references:
         [Option<SharedObservationRef>; ENDPOINTS],
 }
+// Keep every diagnostic field in the unconditional temporary-layout bound.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "The full preparation diagnostic layout is charged even when test readers are absent."
+    )
+)]
 #[derive(Clone, Copy, Debug)]
 pub(in crate::linux::remote::dynamic::owner::admission::census) struct PartialView<'a> {
     pub(in crate::linux::remote::dynamic::owner::admission::census) allocation: Progress,
