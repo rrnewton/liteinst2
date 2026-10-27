@@ -122,7 +122,8 @@ pub(super) fn run(point: InterventionPoint, kind: InterventionKind) {
             runtime.stack.as_mut().unwrap().native_intervention = Some((point, kind));
             let result = support::invoke(owner, AdmissionRequest::Advance, until);
             assert!(
-                matches!(result,Err(GateError::Control(LaunchError::Invalid(reason))) if reason==match point {InterventionPoint::AfterA=>"owned private before-state differs",InterventionPoint::AfterB=>"owned original did not reach exact trace stop"})
+                matches!(result,Err(GateError::Control(LaunchError::Invalid(reason))) if reason==match point {InterventionPoint::AfterA=>"owned private before-state differs",InterventionPoint::AfterB=>"owned original did not reach exact trace stop"}),
+                "stack intervention {point:?}/{kind:?}: {result:?}"
             );
             let runtime = owner.runtime.as_ref().unwrap();
             let retained = runtime.stack.as_ref().unwrap();
