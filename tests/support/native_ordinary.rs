@@ -206,6 +206,17 @@ fn same_ready(a: &Ready, b: &Ready) {
     assert_eq!(a.original_source, b.original_source);
 }
 
+fn harness_resume_flags(saved: u64, after_ret: u64) -> u64 {
+    const TF: u64 = 1 << 8;
+    assert_eq!(saved & TF, 0, "ordinary harness did not enable tracing");
+    assert_eq!(
+        after_ret & !TF,
+        saved,
+        "outer RET preserves every other flag"
+    );
+    after_ret & !TF
+}
+
 /// Parent-owned mappings inherited at the same addresses, live until both reap.
 pub struct OrdinaryOracle {
     data: Mapping,
@@ -653,6 +664,13 @@ impl OrdinaryOracle {
                 word,
                 "RET did not rewrite return word"
             );
+            // The explicit outer-RET SINGLESTEP can leave TF set. Remove only
+            // that debugger bit after proving every other flag still equals
+            // this child's saved harness flags with TF clear. No application state
+            // comparison or return instruction is skipped or repaired here.
+            let mut continuation_registers = after;
+            continuation_registers.eflags = harness_resume_flags(saved.eflags, after.eflags);
+            walk.child.set_registers(&continuation_registers);
             walk.child.request(libc::PTRACE_CONT, 0, 0);
             let status = walk.child.wait();
             assert!(
@@ -702,6 +720,20 @@ impl OrdinaryOracle {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn ordinary_harness_resume_only_removes_debugger_tf() {
+        assert_eq!(harness_resume_flags(0x203, 0x303), 0x203);
+        assert_eq!(harness_resume_flags(0x203, 0x203), 0x203);
+        assert!(std::panic::catch_unwind(|| harness_resume_flags(0x303, 0x303)).is_err());
+        for bit in 0..64 {
+            if bit != 8 {
+                assert!(
+                    std::panic::catch_unwind(|| harness_resume_flags(0x203, 0x303 ^ (1 << bit)))
+                        .is_err()
+                );
+            }
+        }
+    }
     fn ready() -> Ready {
         Ready {
             entry: 0x2000,

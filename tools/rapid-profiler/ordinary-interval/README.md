@@ -36,7 +36,9 @@ audit. Native state qualification covers the actual gate entry through its post-
 boundary: full inherited GPR/flags/XSAVE comparison, the complete data page and
 exact `[S-128, stack_end)` application-stack range. Each child then restores
 only its own saved harness context and executes the real outer return before
-normal invocation validation. This is not whole-64KiB stack qualification,
+normal invocation validation. After that return, every flag except ptrace's TF
+bit must equal the saved harness flags; the adapter clears only TF before
+continuing. This is not whole-64KiB stack qualification,
 arbitrary-function coverage or timing accuracy. The state and functional
 checks are separate required stages of the same wrapper; neither substitutes
 for the other. The combined wrapper is source-only until its own execution is
