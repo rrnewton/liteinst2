@@ -6119,7 +6119,7 @@
       },
       "test/a2_oracle": {
         "ignored": 0,
-        "tests": 43
+        "tests": 49
       },
       "test/arena_fork": {
         "ignored": 0,
@@ -6143,7 +6143,7 @@
       },
       "test/boundary_signal_oracle": {
         "ignored": 0,
-        "tests": 30
+        "tests": 36
       },
       "test/bounded_proc_stat": {
         "ignored": 0,
@@ -6155,7 +6155,7 @@
       },
       "test/call_return_oracle": {
         "ignored": 0,
-        "tests": 30
+        "tests": 36
       },
       "test/checkpoint": {
         "ignored": 0,
@@ -6179,7 +6179,7 @@
       },
       "test/controlled_oracle": {
         "ignored": 0,
-        "tests": 30
+        "tests": 36
       },
       "test/core_bridge": {
         "ignored": 0,
@@ -6219,7 +6219,7 @@
       },
       "test/e9_common_core_pages_contract": {
         "ignored": 0,
-        "tests": 9
+        "tests": 12
       },
       "test/e9_common_seed_contract": {
         "ignored": 0,
@@ -6235,7 +6235,7 @@
       },
       "test/entry_paths_oracle": {
         "ignored": 0,
-        "tests": 30
+        "tests": 36
       },
       "test/eviction_chain_contract": {
         "ignored": 0,
@@ -6243,7 +6243,7 @@
       },
       "test/eviction_chain_extensions": {
         "ignored": 0,
-        "tests": 31
+        "tests": 37
       },
       "test/eviction_chain_grouping_contract": {
         "ignored": 0,
@@ -6251,7 +6251,7 @@
       },
       "test/eviction_chain_oracle": {
         "ignored": 0,
-        "tests": 32
+        "tests": 38
       },
       "test/exact_syscall": {
         "ignored": 0,
@@ -6259,7 +6259,7 @@
       },
       "test/exception_landing": {
         "ignored": 0,
-        "tests": 30
+        "tests": 36
       },
       "test/foreign_neighbor_engine": {
         "ignored": 0,
@@ -6299,7 +6299,7 @@
       },
       "test/mandatory_prefix_oracle": {
         "ignored": 0,
-        "tests": 31
+        "tests": 37
       },
       "test/model": {
         "ignored": 0,
@@ -6323,7 +6323,7 @@
       },
       "test/neighbor_eviction_oracle": {
         "ignored": 0,
-        "tests": 74
+        "tests": 80
       },
       "test/oracle": {
         "ignored": 0,
@@ -6347,7 +6347,7 @@
       },
       "test/parked_context_oracle": {
         "ignored": 0,
-        "tests": 30
+        "tests": 36
       },
       "test/pc_relative": {
         "ignored": 0,
@@ -6359,7 +6359,7 @@
       },
       "test/prefixed_pun_oracle": {
         "ignored": 0,
-        "tests": 30
+        "tests": 36
       },
       "test/quiescent_contract": {
         "ignored": 0,
@@ -6367,11 +6367,11 @@
       },
       "test/quiescent_oracle": {
         "ignored": 0,
-        "tests": 33
+        "tests": 39
       },
       "test/rel32_endpoint_oracle": {
         "ignored": 0,
-        "tests": 30
+        "tests": 36
       },
       "test/replace_first_cet": {
         "ignored": 0,
@@ -6411,7 +6411,7 @@
       },
       "test/successor_eviction_oracle": {
         "ignored": 0,
-        "tests": 34
+        "tests": 40
       },
       "test/sync_core_capability": {
         "ignored": 0,
@@ -6463,7 +6463,7 @@
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
-        "tests": 79
+        "tests": 86
       },
       "unit/liteinst_rewrite/main": {
         "ignored": 0,
@@ -6479,7 +6479,7 @@
       },
       "unit/verify_common_core/verify_common_core": {
         "ignored": 0,
-        "tests": 16
+        "tests": 23
       }
     }
   },

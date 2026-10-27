@@ -24,7 +24,7 @@ def check(spec, row, command, stdout, native, before, after, decoded, original, 
                           original.read_bytes(), observed)
 
 
-def publish(path, receipt, private, aliases):
+def publish(path, receipt, private, aliases, *, repeat=False):
     """Project already checked rows; full attempts and captures remain private."""
     del aliases  # No actual argv or external path is copied into this projection.
     build = receipt.get('build', {})
@@ -55,6 +55,10 @@ def publish(path, receipt, private, aliases):
         if row.get('selected_last_kind'):
             item['selected_outcome'] = {key: row['selected_last_'+key] for key in
                 ('kind', 'width', 'value', 'carry', 'input_destination', 'output_destination')}
+        if case.get('repeat') is not None:
+            r = case['repeat']
+            item['repeat'] = {k: r[k] for k in ('attempts', 'completed', 'traces', 'queries')}
+            item['repeat_report_sha256'] = base.digest(r)
         cases.append(item)
     diagnostic = receipt.get('ls_diagnostic')
     if diagnostic is not None:
@@ -64,11 +68,15 @@ def publish(path, receipt, private, aliases):
                 'tf_length', 'tf_phase', 'step_route') if key in row},
             opcode_bytes=diagnostic.get('bytes'), original=diagnostic['original'],
             interpreter=diagnostic['interpreter'])
+        if receipt['ls_diagnostic'].get('repeat') is not None:
+            r = receipt['ls_diagnostic']['repeat']
+            diagnostic['repeat'] = {k: r[k] for k in ('attempts', 'completed', 'traces', 'queries')}
+            diagnostic['repeat_report_sha256'] = base.digest(r)
     public = {key: receipt.get(key) for key in ('schema', 'profile', 'status', 'scope', 'expected_revision',
         'started_utc', 'cpu', 'hardware', 'source', 'source_unchanged', 'environment', 'bounds', 'reproduce',
         'cohort_command_count', 'finite_command_count', 'hardware_observer')}
     public.update(
-        required_cases=22, required_finite_commands=98,
+        required_cases=32 if repeat else 22, required_finite_commands=168 if repeat else 98,
         attempted_cases=len(cases), accepted_cases=sum(case['accepted'] is True for case in cases),
         completed_cases=sum(case['classification'] == 'completed' for case in cases),
         expected_refusals=sum(case['classification'] == 'expected_refusal' for case in cases),
@@ -102,6 +110,10 @@ def publish(path, receipt, private, aliases):
             ls=['make-carrier', 'native /bin/ls -d .', 'gated /bin/ls -d .',
                 'decode-ls-refusal only on exact unsupported-opcode outcome'],
             evidence='Private receipt retains ordered exact argv, environments, bounds, outcomes, namespace bindings and capture hashes.'))
+    if repeat:
+        public['command_recipe']['images'] = ['python3', 'evaluation/inprocess/page_selected_repeat_images.py', '${RUN}/images']
+        public['command_recipe']['each_repeat'] = ['make-carrier', 'before-clock', 'native-original', 'gated-carrier', 'after-clock', 'decode-last-generic', 'decode-last-repeat']
+        public['command_recipe']['old_twenty_two'] = 'The entire old 98-command finite prefix remains required.'
     text = json.dumps(public, indent=2, sort_keys=True, allow_nan=False)+'\n'
     base.need(not any(value and len(value) > 1 and value in text for value in
                      (str(Path.home()), str(base.ROOT), platform.node(), '/home/')),
