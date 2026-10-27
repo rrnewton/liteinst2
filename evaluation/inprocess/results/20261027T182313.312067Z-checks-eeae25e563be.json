@@ -1,0 +1,125 @@
+{
+  "backing_cleanup_required": true,
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "-m",
+        "unittest",
+        "discover",
+        "-s",
+        "evaluation/admission",
+        "-p",
+        "test_*.py"
+      ],
+      "environment_delta": {},
+      "id": "recorder_tests",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "environment_delta": {},
+      "id": "fmt",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "environment_delta": {},
+      "id": "clippy",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "environment_delta": {},
+      "id": "workspace_tests",
+      "status": "not_run",
+      "timeout_seconds": 900
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "environment_delta": {},
+      "id": "workspace_check",
+      "status": "not_run",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "environment_delta": {
+        "LITEINST_EVALUATION": "1"
+      },
+      "id": "serial_launch",
+      "status": "not_run",
+      "timeout_seconds": 180
+    }
+  ],
+  "configuration_unchanged": null,
+  "environment": {
+    "CARGO_BUILD_JOBS": "4",
+    "CARGO_INCREMENTAL": "0",
+    "CARGO_NET_OFFLINE": "true",
+    "CARGO_TARGET_DIR": "target",
+    "CARGO_TERM_COLOR": "never",
+    "LANG": "C.UTF-8",
+    "LC_ALL": "C.UTF-8",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "RLIMIT_CORE": 0,
+    "RUSTC_WORKSPACE_WRAPPER": "",
+    "RUSTC_WRAPPER": "",
+    "RUSTDOCFLAGS": "",
+    "RUSTFLAGS": "",
+    "RUST_TEST_THREADS": "4",
+    "TMPDIR": "private_run/tmp"
+  },
+  "error": "untracked_input",
+  "expected_revision": "eeae25e563be5e9288416979ac73c431f2d34dd3",
+  "log_limit_bytes_per_command": 8388608,
+  "profile": "inprocess-required-checks-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/checks.py",
+    "--expect-revision",
+    "eeae25e563be5e9288416979ac73c431f2d34dd3"
+  ],
+  "runner_sha256": "cd3477ec3bfe5391f2c55ae61a89941fd75c5218194e871290442453f5d754c2",
+  "schema_version": 1,
+  "scope": "New 900-second workspace profile; no historical result is relabelled.",
+  "source": null,
+  "source_unchanged": null,
+  "started_utc": "20261027T182313.312067Z",
+  "status": "failed"
+}
