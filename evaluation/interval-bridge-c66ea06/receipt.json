@@ -1,0 +1,299 @@
+{
+  "all_cleanup_complete": true,
+  "all_parents_closed": true,
+  "allocation_regressions": [
+    "trampoline::tests::dropping_staged_image_releases_its_exact_mapping",
+    "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners",
+    "native_state_covers_every_prefixed_pun_and_original_successor"
+  ],
+  "claim": "4 partial",
+  "counts_scope": "Command observations overlap; do not sum across phases. Nested child summaries receive no extra pass credit.",
+  "driver_sha256": "24e1b3b39e98bf9e3b5bd35cb0926d573448f8177396118cc44d8f0025e40dec",
+  "gates": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "exit": 0,
+      "name": "fmt",
+      "seconds": 6.2490024459548295,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "start_utc": "2026-10-27T11:33:56.062044+00:00",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit": 0,
+      "name": "clippy",
+      "seconds": 3.0854898979887366,
+      "sha256": "a8edc9b5f0eae9e167d4d452492e2a85fa3d35f23ccf15abc9cba0b5cb85d8b7",
+      "start_utc": "2026-10-27T11:34:02.314793+00:00",
+      "timeout_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "exit": 0,
+      "name": "test",
+      "seconds": 330.7629232881591,
+      "sha256": "572212a5411b7200a7fc9b08f1c9cac94da01550efc413462a04641a4f96dbfa",
+      "start_utc": "2026-10-27T11:34:05.406881+00:00",
+      "timeout_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "exit": 0,
+      "name": "check",
+      "seconds": 1.3185835480690002,
+      "sha256": "cd8208625be024764dacdd469dbf40924b54d59265c209107b1bc084f33390db",
+      "start_utc": "2026-10-27T11:39:36.175063+00:00",
+      "timeout_seconds": 180
+    }
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ]
+  },
+  "native_interval_execution": false,
+  "parent_sha256": "d862ce92441f37a0a783379be81f3f759ec55030067cc1c536b3717fe4dde48c",
+  "performance_claim": false,
+  "phases": [
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "rapid-profiler",
+        "--all-targets"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "parent_closed_sha256": "c2c1bd0e5b91983846dacf29c58d94d7eb78beae6b1d8b524934f4689ff6f974",
+      "parent_seconds": 5.680624982807785,
+      "passed": 243,
+      "phase": "targeted-profiler",
+      "raw_log_sha256": "0aa442c8d7bad6653774165662b8ab76679b84e8ab78efca71ea54710518ad67",
+      "seconds": 4.504375841002911,
+      "source_snapshot_sha256": "b290c46b058d98afaeabb3013636bdb00be581cd717acd63d916905677a6206c",
+      "start_utc": "2026-10-27T11:33:37.449412+00:00",
+      "wall_limit_seconds": 180
+    },
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "$REPO/evaluation/required-gates.py",
+        "--repo",
+        "$REPO",
+        "--output",
+        "$REPO/ignored/a4/native-interval-bridge-validation-v1/required/gates"
+      ],
+      "failed": 0,
+      "ignored": 4,
+      "parent_closed_sha256": "6ad6550176b7486ecaec936f528c5d529e3312da858ca7b4c39e22060c6a273e",
+      "parent_seconds": 343.1453287010081,
+      "passed": 2293,
+      "phase": "required",
+      "raw_log_sha256": "589077093eb3962f848dbc89831bd3b7e1f5fb4c80b274b10732c575188ce491",
+      "seconds": 341.94166130386293,
+      "source_snapshot_sha256": "b290c46b058d98afaeabb3013636bdb00be581cd717acd63d916905677a6206c",
+      "start_utc": "2026-10-27T11:33:55.795789+00:00",
+      "wall_limit_seconds": 1000
+    },
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--tests",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "parent_closed_sha256": "92cd707e7366fcc1a470b177a462ed2f69663e6952ee72c2bb73e556236d9fe6",
+      "parent_seconds": 119.82771337381564,
+      "passed": 995,
+      "phase": "serial",
+      "raw_log_sha256": "91608342ed6a6e7388c20a7e795d3fcb09fb294ebe28df1d84a1c4c9bcf4fc45",
+      "seconds": 118.91889164806344,
+      "source_snapshot_sha256": "b290c46b058d98afaeabb3013636bdb00be581cd717acd63d916905677a6206c",
+      "start_utc": "2026-10-27T11:39:52.868476+00:00",
+      "wall_limit_seconds": 180
+    },
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib"
+      ],
+      "failed": 0,
+      "ignored": 1,
+      "parent_closed_sha256": "d3571f3cea698366a65fb38707f849b2a54aa2039a19d78f011f9a6039934bf7",
+      "parent_seconds": 2.720426613930613,
+      "passed": 218,
+      "phase": "parallel-library",
+      "raw_log_sha256": "6048acdb6de7005a3b2fe55a3d93100728a6e87764fc487977fc9615085d72ab",
+      "seconds": 1.8128706270363182,
+      "source_snapshot_sha256": "b290c46b058d98afaeabb3013636bdb00be581cd717acd63d916905677a6206c",
+      "start_utc": "2026-10-27T11:41:52.732518+00:00",
+      "wall_limit_seconds": 360
+    },
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "parent_closed_sha256": "3b356e05838ee26a8c2b23664d561a1a18cc9a04495357d522109db927fffb90",
+      "parent_seconds": 2.2189245969057083,
+      "passed": 30,
+      "phase": "parallel-prefixed",
+      "raw_log_sha256": "a211661bcdd9023123b7aca0035a381779cc7bf616c7cd145e050b854d5e2a48",
+      "seconds": 1.3225460450630635,
+      "source_snapshot_sha256": "b290c46b058d98afaeabb3013636bdb00be581cd717acd63d916905677a6206c",
+      "start_utc": "2026-10-27T11:41:55.481321+00:00",
+      "wall_limit_seconds": 360
+    },
+    {
+      "affinity": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "neighbor_eviction_oracle"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "parent_closed_sha256": "084279900a34f8731d71eca7c47a09bdd3189bca1d050b99477288cdfbf926e4",
+      "parent_seconds": 103.90092479693703,
+      "passed": 74,
+      "phase": "parallel-neighbor",
+      "raw_log_sha256": "b9fa57c54b9329cb2449396ea3e24d94b512ffc0cbe640a68e570196db814427",
+      "seconds": 103.03927381988615,
+      "source_snapshot_sha256": "b290c46b058d98afaeabb3013636bdb00be581cd717acd63d916905677a6206c",
+      "start_utc": "2026-10-27T11:41:57.732424+00:00",
+      "wall_limit_seconds": 360
+    }
+  ],
+  "profile": {
+    "cargo_jobs": 4,
+    "debug_assertions": true,
+    "debug_information": 0,
+    "incremental": false,
+    "optimization": 0,
+    "overflow_checks": true
+  },
+  "qualification_complete": false,
+  "raw_evidence": "ignored; exact raw log and closure hashes above",
+  "revision": "c66ea0607e38db67dd5b7cfbc7ab7f0ac7f7afdd",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "schema": 1,
+  "source_tools_configs_equal": true,
+  "workspace_added_cases": [
+    "frontend_native::always_on::tests::activation_refuses_existing_tls_attachment_without_resetting_it",
+    "frontend_native::always_on::tests::admitted_removed_new_mixed_lifo_retains_exact_original_owner",
+    "frontend_native::always_on::tests::attach_duplicate_preflight_does_not_consume_registration_and_empty_detach_works",
+    "frontend_native::always_on::tests::closed_function_pair_is_unsampled_and_keeps_old_report_unchanged",
+    "frontend_native::always_on::tests::controller_drop_closes_present_epoch_without_disarmed_or_unsampled_relabel",
+    "frontend_native::always_on::tests::controller_rejects_foreign_epoch_stale_index_and_process_without_history_change",
+    "frontend_native::always_on::tests::event_capacity_reserves_every_pending_exit_before_any_new_admission",
+    "frontend_native::always_on::tests::exit_capacity_refuses_before_receipt_consumption",
+    "frontend_native::always_on::tests::foreign_pair_and_dirty_unsampled_token_retain_receipt",
+    "frontend_native::always_on::tests::initial_off_pair_keeps_initial_stamp_across_real_publication",
+    "frontend_native::always_on::tests::journal_preserves_entire_page_literal_header_rows_and_zero_tail",
+    "frontend_native::always_on::tests::mixed_pair_depth_uses_minimum_of_fixed_four_and_model_limit",
+    "frontend_native::always_on::tests::non_top_rsp_and_full_return_word_refuse_without_popping",
+    "frontend_native::always_on::tests::old_admission_blocks_report_until_its_own_ret_after_new_arm",
+    "frontend_native::always_on::tests::ordinal_and_totals_exhaustion_refuse_before_model_mutation",
+    "frontend_native::always_on::tests::outstanding_detach_and_drop_poison_retain_tls_pairs",
+    "frontend_native::always_on::tests::packed_fields_reject_overflow_or_inconsistent_binding_without_truncation",
+    "frontend_native::always_on::tests::stage_slots_and_old_owner_lifetime_are_never_recycled"
+  ],
+  "workspace_prior_cases_retained": 2279,
+  "workspace_removed_or_changed_cases": 0
+}
