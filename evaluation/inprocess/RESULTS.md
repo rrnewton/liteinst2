@@ -125,3 +125,41 @@ The five compact receipts total 447,601 bytes; raw captures remain private:
 - [Dynamic pairs](results/20261027T140706.935685Z-dynamic-8ff8b1ac0ff2.json)
 
 Independent audit authenticated all 354 release captures (177 commands), actual binaries and source bindings, and replayed all six check logs to the exact receipt totals. All four release runners remain byte-identical to the preceding tested revision. This results commit changes only documentation and numeric receipts.
+
+## Original-linker first-entry admission
+
+Source `c696f8f55f5b8c8c69d0f035c4d17cecea26695a` adds a freestanding ELF interpreter bridge that arms in-process page admission before entering the original dynamic linker. It also fixes protected-descriptor checks to use Linux's unsigned-32-bit close argument, including high-bit aliases. This retains core `7ab79270` ancestry. Reproduce on the recorded Linux x86-64 profile:
+
+```sh
+python3 evaluation/inprocess/first_entry.py --expect-revision c696f8f55f5b8c8c69d0f035c4d17cecea26695a
+python3 evaluation/inprocess/first_entry_abi.py --expect-revision c696f8f55f5b8c8c69d0f035c4d17cecea26695a
+python3 evaluation/inprocess/lifecycle.py
+python3 evaluation/inprocess/dynamic.py --repeats 5
+python3 evaluation/inprocess/checks.py --expect-revision c696f8f55f5b8c8c69d0f035c4d17cecea26695a
+```
+
+The optimized first-entry runner passes all 65 commands: ten native/gated ls pairs, sixteen native/gated refusal controls, two supported-operation pairs, the first-opcode fixture, carrier corruption controls, malformed sealed ELF and five namespace tests. Both ls modes produce native-identical output in all five repeats. Directory/numeric listing observes 117/143 NX admissions and 100/122 forwarded syscalls, with 38 CPUID and ten RDTSC traps each. Numeric listing additionally handles one vDSO RDTSCP; vDSO pages remain outside NX gating. Both perform real linker relocation, TLS, tid/robust-list and rseq setup against five sealed dependencies.
+
+On CPU 3, AMD EPYC 9D85, Linux 7.1.3 and GCC 11.5.0 `-O2`, native/gated whole-process medians are 2.210256/58.507034 ms for directory output and 2.276104/61.257590 ms for numeric listing. Gated times include Python namespace copying/sealing and bridge preparation. These are complete-launch observations, not pure instrumentation overhead or a warmed first-entry measurement. The existing post-constructor dynamic regression also passes fifteen pairs: its warmed 1,000-scan medians are 27.891830/32.246858 ms with 4,002 forwarded calls and no additional admission faults. Shared-host and filesystem/cache effects remain.
+
+The independent ABI cohort passes 35 commands and seven actual endpoint records. It compares sixteen GPRs, flags, FS/GS/selectors, qualified XSAVE state, the full 135,168-byte initial stack except the authenticated AT_BASE value, and 504 PHDR bytes. Both actual corruptions are rejected, alongside 84 supplied comparator controls and twelve resource-profile controls. This observes a separate fixture interpreter after the unchanged production entry body; it does not measure real ld.so's entry registers. The separate first-opcode fixture requires interpreter CPUID and main RDTSC interception.
+
+The lifecycle regression retains all prior cases and adds native/gated protected-FD and ordinary-close controls: 21 commands, twenty rows, fifteen successful mappings, 52 generations all retired, fourteen admissions/sync-core operations, and zero remaining owned pages. Ordinary high-bit close retains Linux behavior; high-bit protected report/retained/original descriptors refuse in their applicable profiles.
+
+The initial first-entry run at `874c6958f21e4c37cc657a5ded8cb6dc70c7555a` failed before its first gated target exec: the 1 MiB per-file limit also capped a sealed dependency memfd. Its receipt remains failed. The explicit replacement preparation profile permits 16 MiB per file while preserving 64 KiB capture acceptance, CPU/memory/wall limits, native thread behavior and every semantic check. The earlier ABI pass at that source is retained separately.
+
+This is a singleton, explicit sealed-namespace profile using kernel traps with `source_patches=0`, distinct from the owned-region source patches above. RDRAND/RDSEED/RDPID interception in arbitrary original-loader code, general signals, threads/process lifecycle, transparent loader identity and complete B2/B3/B4 remain open. See the [first-entry contract](../../tools/page-entry/README.md).
+
+All four required checks pass on the exact source: formatting, strict all-feature/all-target Clippy, workspace tests (2,350 passed, four previously ignored, 98 harnesses), and workspace all-feature/all-target check. Recorder passes all 330 controls. Serial passes all 1,029 tests/27 harnesses, required native collections and backing cleanup in 131.443 seconds, within its unchanged 180-second limit. Workspace takes 419.569 seconds within the existing 900-second profile; source and configuration remain unchanged.
+
+Seven numeric receipts total 363,119 bytes; raw captures and ABI records remain under target. The results commit changes documentation and receipts only.
+
+- [First-entry release cohort](results/20261027T143750.079470Z-first-entry-c696f8f55f5b.json)
+- [Independent ABI cohort](results/20261027T143755.660824Z-first-entry-abi-c696f8f55f5b.json)
+- [Lifecycle and FD controls](results/20261027T143758.366580Z-lifecycle-c696f8f55f5b.json)
+- [Existing dynamic regression](results/20261027T143801.355503Z-dynamic-c696f8f55f5b.json)
+- [Required checks](results/20261027T143827.811380Z-checks-c696f8f55f5b.json)
+- [Earlier ABI pass](results/20261027T143128.363549Z-first-entry-abi-874c6958f21e.json)
+- [Earlier preparation failure](results/20261027T143141.869332Z-first-entry-874c6958f21e.json)
+
+Independent audit authenticates all 152 commands and 304 captures in the four new passing native cohorts, including seven ABI records, and replays all six required-check logs to their exact totals. Source, input, binary and namespace bindings agree; raw logs are not published. Earlier receipts retain their original statuses.
