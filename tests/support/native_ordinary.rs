@@ -311,18 +311,21 @@ struct Walk<'a> {
     steps: usize,
 }
 impl Walk<'_> {
-    fn step(&mut self) {
+    fn step(&mut self, phase: &str) {
         assert!(
             self.steps < MAX_STEPS,
-            "whole ordinary child 20000-step budget"
+            "whole ordinary child 20000-step budget: phase={phase} steps={} rip={:#x} pid={}",
+            self.steps,
+            self.child.registers().rip,
+            self.child.pid
         );
         assert!(Instant::now() < self.child.deadline);
         self.steps += 1;
         self.child.step(&[]);
     }
-    fn reach_gate(&mut self, ready: &Ready) -> libc::user_regs_struct {
+    fn reach_gate(&mut self, ready: &Ready, phase: &str) -> libc::user_regs_struct {
         while self.child.registers().rip != ready.gate {
-            self.step();
+            self.step(phase);
         }
         check_gate(ready, &self.child.memory(ready.gate, GATE_BYTES.len()));
         self.child.registers()
@@ -550,8 +553,8 @@ impl OrdinaryOracle {
             child: &children[1],
             steps: 0,
         };
-        let ar = a.reach_gate(&original);
-        let br = b.reach_gate(&candidate);
+        let ar = a.reach_gate(&original, "reach_original_gate");
+        let br = b.reach_gate(&candidate, "reach_candidate_gate");
         same_arguments(&ar, &br);
         let ax = a.child.xstate();
         let bx = b.child.xstate();
@@ -584,7 +587,7 @@ impl OrdinaryOracle {
             if pc == original.gate + OUTER_RET {
                 break;
             }
-            a.step();
+            a.step("original_body");
         }
         let mut next = 0;
         loop {
@@ -606,7 +609,7 @@ impl OrdinaryOracle {
                     break;
                 }
             }
-            b.step();
+            b.step("candidate_body");
         }
         assert_eq!(next, points.len(), "all original boundary comparisons");
         assert_eq!(returns.len(), 1, "one real subject RET per call");
@@ -640,7 +643,7 @@ impl OrdinaryOracle {
             restored.rip = actual.rip; // Still the actual outer C3, never its continuation.
             walk.child.set_registers(&restored);
             walk.child.set_xstate(&xstate);
-            walk.step(); // Execute the actual outer RET on its own original stack.
+            walk.step("outer_return"); // Execute the actual outer RET on its own original stack.
             let after = walk.child.registers();
             assert_eq!(after.rip, continuation);
             assert_eq!(after.rsp, saved.rsp.checked_add(8).unwrap());
