@@ -374,7 +374,9 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::Pmovmskb_r32_xmm
         // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.
         | Code::Movlpd_xmm_m64 | Code::Movlpd_m64_xmm
-        | Code::Movhpd_xmm_m64 | Code::Movhpd_m64_xmm => (1, 6),
+        | Code::Movhpd_xmm_m64 | Code::Movhpd_m64_xmm
+        // Legacy byte-count shifts of one XMM register; upper vectors survive.
+        | Code::Pslldq_xmm_imm8 | Code::Psrldq_xmm_imm8 => (1, 6),
         _ => return Ok(out),
     };
     out.policy = 1;
