@@ -37,7 +37,7 @@ pub use always_on::{
 pub use module::ordinary::{IntegerLeafCertificate, IntegerLeafContract, LoadedIntegerLeaf};
 
 /// Separate ordinary scalar-function interval profile; raw, uncalibrated timing.
-pub use always_on::site::ordinary::OrdinarySitePreparation;
+pub use always_on::site::ordinary::{OrdinarySitePreparation, PreparedOriginalCall};
 pub use always_on::{
     CallGate, CallResult, GateError, OriginalCallResult, RawInterval, RawIntervalOwner,
     RawTimestamp,

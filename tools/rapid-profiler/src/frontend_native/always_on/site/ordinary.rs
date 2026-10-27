@@ -1,7 +1,7 @@
 //! Ordinary scalar-symbol factory. Admission is separate from publication and timing.
 use super::super::{
     ReadableStack,
-    gate::{CallGate, OriginalCallResult},
+    gate::{CallGate, GateError, OriginalCallResult},
     timed_entry_callback, timed_exit_callback, timing,
 };
 use super::{
@@ -17,6 +17,8 @@ use liteinst2::planner::HookSemantics;
 use liteinst2::quiescent::{
     InstallRequest, SearchPolicy, TacticPolicy, plan_coalesced_detailed_after,
 };
+use std::marker::PhantomData;
+use std::rc::Rc;
 use std::sync::Arc;
 
 /// Owns one admitted DSO and all mandatory entry/RET plans. No publication occurs
@@ -26,6 +28,79 @@ pub struct OrdinarySitePreparation {
     planned: PlannedBundle,
     site: Arc<Site>,
     gate: Arc<CallGate>,
+}
+
+/// One original call with its complete before-check already performed.
+///
+/// This exclusive, thread-bound guard is consumed by `invoke`. Dropping it makes
+/// no call and arms no gate. It exposes neither owner nor gate state.
+///
+/// The preparation cannot be inspected or published while the guard is live:
+/// ```compile_fail,E0502
+/// use rapid_profiler::frontend_native::OrdinarySitePreparation;
+/// fn inspect(prep: &mut OrdinarySitePreparation) {
+///     let call = unsafe { prep.prepare_original_call() }.unwrap();
+///     let _ = prep.plan();
+///     drop(call);
+/// }
+/// ```
+/// A call cannot be used twice:
+/// ```compile_fail,E0382
+/// use rapid_profiler::frontend_native::{PreparedOriginalCall, ReadableStack};
+/// unsafe fn twice(call: PreparedOriginalCall<'_>, bytes: &[u8], stack: &ReadableStack) {
+///     let _ = unsafe { call.invoke(bytes.as_ptr(), bytes.len(), stack) };
+///     let _ = unsafe { call.invoke(bytes.as_ptr(), bytes.len(), stack) };
+/// }
+/// ```
+/// It cannot be transferred to another thread or shared:
+/// ```compile_fail,E0277
+/// use rapid_profiler::frontend_native::PreparedOriginalCall;
+/// fn need_send<T: Send>() {}
+/// need_send::<PreparedOriginalCall<'static>>();
+/// ```
+/// ```compile_fail,E0277
+/// use rapid_profiler::frontend_native::PreparedOriginalCall;
+/// fn need_sync<T: Sync>() {}
+/// need_sync::<PreparedOriginalCall<'static>>();
+/// ```
+pub struct PreparedOriginalCall<'a> {
+    preparation: &'a mut OrdinarySitePreparation,
+    pid: u32,
+    tid: libc::c_long,
+    _local: PhantomData<Rc<()>>,
+}
+
+impl PreparedOriginalCall<'_> {
+    /// Consume this preparation through the unchanged original-only CALL gate.
+    /// The full after-check runs even if identity or the gate refuses.
+    ///
+    /// # Safety
+    /// The preparation's no-writer, no-fork, no-reentry, lifetime and unpublished
+    /// source contract has held continuously since preparation. The same actual
+    /// thread supplies the admitted SysV input, readable stack/return-word extent,
+    /// no-CET, normal-return, no-signal/nonlocal-exit and termination obligations
+    /// of `OrdinarySitePreparation::invoke_original`. No callback is installed.
+    pub unsafe fn invoke(
+        self,
+        data: *const u8,
+        len: usize,
+        stack: &ReadableStack,
+    ) -> Result<OriginalCallResult, SiteError> {
+        let result = if self.pid != std::process::id() {
+            Err(GateError::Process)
+        } else if self.tid != unsafe { libc::syscall(libc::SYS_gettid) } {
+            Err(GateError::Identity)
+        } else {
+            // SAFETY: caller retains the original-only source, ABI and memory contract.
+            unsafe { self.preparation.gate.invoke_original(data, len, stack) }
+        };
+        // A gate refusal also preserves the required after-observation.
+        self.preparation
+            .owner
+            .verify_original()
+            .map_err(SiteError::Source)?;
+        result.map_err(SiteError::Gate)
+    }
 }
 
 struct BlockActions {
@@ -370,6 +445,33 @@ impl OrdinarySitePreparation {
         })
     }
 
+    /// Perform the complete before-check and exclusively reserve one original call.
+    /// No gate/TLS state is armed until the returned guard is consumed.
+    ///
+    /// # Safety
+    /// No publication or callback attachment has occurred. The loader's complete
+    /// source/lifetime and sole-caller contract holds. From this check until the
+    /// guard is invoked or dropped, no source/alias writer, fork, unload, asynchronous
+    /// signal handler/nonlocal exit, reentry, foreign subject call or publication may
+    /// intervene. A tracer-owned stop that runs no handler and changes no owner/code
+    /// is permitted; actual gate execution keeps its no-signal contract. Invocation
+    /// must satisfy all ABI, input-memory, stack and normal-return obligations of
+    /// `invoke_original`; the guard does not establish them or hide known source PCs.
+    pub unsafe fn prepare_original_call(&mut self) -> Result<PreparedOriginalCall<'_>, SiteError> {
+        self.owner.verify_original().map_err(SiteError::Source)?;
+        // SAFETY: gettid has no pointer arguments and observes only this thread.
+        let tid = unsafe { libc::syscall(libc::SYS_gettid) };
+        if tid <= 0 || tid > libc::c_long::from(i32::MAX) {
+            return Err(SiteError::Gate(GateError::Identity));
+        }
+        Ok(PreparedOriginalCall {
+            pid: std::process::id(),
+            tid,
+            preparation: self,
+            _local: PhantomData,
+        })
+    }
+
     /// Call the unchanged original through the same library gate before publication.
     /// This returns a value and CALL/RSP observations, never interval/RET coverage.
     ///
@@ -385,12 +487,9 @@ impl OrdinarySitePreparation {
         len: usize,
         stack: &ReadableStack,
     ) -> Result<OriginalCallResult, SiteError> {
-        self.owner.verify_original().map_err(SiteError::Source)?;
-        // SAFETY: caller supplies the original-only gate and memory contract.
-        let result = unsafe { self.gate.invoke_original(data, len, stack) };
-        // A gate refusal also preserves the required after-observation.
-        self.owner.verify_original().map_err(SiteError::Source)?;
-        result.map_err(SiteError::Gate)
+        // SAFETY: the unchanged caller contract covers both consecutive phases.
+        let call = unsafe { self.prepare_original_call() }?;
+        unsafe { call.invoke(data, len, stack) }
     }
 
     /// Full bundle, including every image, original source page and final overlay.

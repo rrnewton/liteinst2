@@ -270,10 +270,15 @@ fn child(candidate: bool, context: ChildContext<'_>, subject: &Path, expected_el
         // Raw timestamps are joined as private owner data, never compared
         // across children or used to relax any application-state predicate.
     } else {
+        // SAFETY: same sole-child original-only ownership contract. The complete
+        // before-check precedes readiness; no writer/fork/reentry intervenes.
+        let call = unsafe { prep.prepare_original_call() }.unwrap();
+        // The tracer-owned SIGSTOP runs no handler and changes no owner/code;
+        // actual gate execution keeps its no-signal/no-reentry contract.
         context.ready(&ready);
-        // SAFETY: the distinct original-only API legitimately arms the same
-        // assembly and requires no callback/completion fields. Never forge them.
-        let result = unsafe { prep.invoke_original(data, length, &stack) }.unwrap();
+        // SAFETY: the consuming original-only guard uses the unchanged private
+        // arming/assembly and full after-check, with no callback/completion credit.
+        let result = unsafe { call.invoke(data, length, &stack) }.unwrap();
         assert_eq!(result.value, expected);
         assert_eq!(result.pre_call_rsp, gate_rsp - 8);
         assert_eq!(result.resumed_rsp, gate_rsp - 8);

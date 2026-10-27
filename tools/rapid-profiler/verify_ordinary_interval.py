@@ -94,6 +94,7 @@ def main():
     assert raw.is_absolute() and raw.is_relative_to(repo/'ignored') and not raw.exists()
     assert raw.parent.resolve(strict=True) == raw.parent
     raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight',
+        native_setup='Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.',
         scope='uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim', native_state_qualification='PENDING: gate entry through post-POP; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim')
     try:
         cpus = sorted(os.sched_getaffinity(0))[:4]; assert len(cpus) == 4

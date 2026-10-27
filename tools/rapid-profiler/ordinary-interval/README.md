@@ -42,6 +42,17 @@ checks are separate required stages of the same wrapper; neither substitutes
 for the other. The combined wrapper is source-only until its own execution is
 recorded at an exact committed revision.
 
+The native original uses a one-shot prepared call: complete file/mapping/source
+validation runs before the readiness stop, while an exclusive borrow keeps the
+preparation unavailable for publication. Consumption on the same process/thread
+calls the unchanged gate and requires the complete after-check before returning.
+Candidate publication and attachment also precede readiness. The continuous
+20,000-step allowance starts at readiness; the 15-second child deadline starts
+before either fork and includes setup. A diagnostic attempt that single-stepped
+the original's file/mapping preflight exhausted the allowance before gate entry.
+It remains a failure; this boundary does not establish that the previous path
+fits the allowance. Every gate/function state comparison remains required.
+
 The endpoint columns contain fenced RDTSCP observations taken after the
 application state has been saved at the entry and exit callbacks. Differences
 include instrumentation and descheduling. They are uncalibrated TSC ticks;
