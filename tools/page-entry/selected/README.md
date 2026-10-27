@@ -215,3 +215,15 @@ registers, page endings and crossing fetches. An actual inaccessible-memory
 instruction remains a failed operation with native and stepped fault records.
 All prior suites remain required; this addition does not establish general SSE
 encoding support or completed real-linker execution.
+
+Scalar BSF/BSR r16/r32/r64 register and memory forms use the same
+original-address owner. Run
+`python3 evaluation/inprocess/page_selected_bitscan.py --expect-revision REVISION`
+on one reserved CPU for three bounded cohorts: 48 new pairs and three startups,
+including zero/nonzero sources, low/high registers and crossing fetches. Literal
+effects constrain ZF and nonzero destination indices; exact native comparisons
+retain every actual flag and zero-input destination. Two actual inaccessible
+memory commands remain failed operations, with native and stepped fault records.
+All 47 old encoding refusals and 24 additive refusals run in each process.
+All prior suites remain required; no general exception continuation or completed
+real-linker execution is claimed.

@@ -298,6 +298,10 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::Setle_rm8
         // Setg — exact iced-x86 1.21.0 Code alternatives.
         | Code::Setg_rm8
+        // BSF/BSR — exact scalar forms. CPU supplies all actual flags and
+        // destination state, including zero-source architecture variations.
+        | Code::Bsf_r16_rm16 | Code::Bsf_r32_rm32 | Code::Bsf_r64_rm64
+        | Code::Bsr_r16_rm16 | Code::Bsr_r32_rm32 | Code::Bsr_r64_rm64
         // Bswap — exact iced-x86 1.21.0 Code alternatives.
         | Code::Bswap_r32 | Code::Bswap_r64
         // Bt — exact iced-x86 1.21.0 Code alternatives.

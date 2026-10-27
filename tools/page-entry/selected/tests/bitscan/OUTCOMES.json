@@ -1,0 +1,251 @@
+{
+  "schema_version": 1,
+  "prospective_only": true,
+  "scope": "Closed scalar BSF/BSR source candidate; no execution or loader-completion claim",
+  "record_header_format": "<17Q",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_extent": "header_bytes + 22 * actual_DWARF_sample_bytes + 40; positives samples[0..16], unused samples[17..20] zero; failed controls retain samples[0] and negative_sample",
+  "record_limit_bytes": 16777216,
+  "commands": [
+    {
+      "name": "group0",
+      "argv": [
+        "bitscan-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "stdout": "LI2_BITSCAN_TF_PASS group=0 width=16 pairs=17 bitscan=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=17 full_memory=17 live_endpoints=17\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 17,
+        "refusals": 71,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 17,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "completed finite native/TF pair cohort"
+    },
+    {
+      "name": "group1",
+      "argv": [
+        "bitscan-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "stdout": "LI2_BITSCAN_TF_PASS group=1 width=32 pairs=17 bitscan=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=17 full_memory=17 live_endpoints=17\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 17,
+        "refusals": 71,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 17,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "completed finite native/TF pair cohort"
+    },
+    {
+      "name": "group2",
+      "argv": [
+        "bitscan-2"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "stdout": "LI2_BITSCAN_TF_PASS group=2 width=64 pairs=17 bitscan=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=24 full_state=17 full_memory=17 live_endpoints=17\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 17,
+        "refusals": 71,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 0,
+        "completed": 17,
+        "expected_failure_verified": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0
+      },
+      "process_outcome": "completed finite native/TF pair cohort"
+    },
+    {
+      "name": "bsf-load-fault",
+      "argv": [
+        "bitscan-2"
+      ],
+      "environment_delta": {
+        "LI2_BITSCAN_CONTROL": "bsf-load-fault"
+      },
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 17,
+        "refusals": 71,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 1,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 7,
+        "owner_detail_abs": 11
+      },
+      "process_outcome": "failed original-PC memory instruction; actual native and stepped failure frames and held-borrow/revoke prefix verified; not completed",
+      "required_record": {
+        "native_fault": 1,
+        "native_complete": 0,
+        "step_endpoint_seen": 0,
+        "negative_verified": 1,
+        "owner_phase": 6,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "owner_continuation_started": 0,
+        "owner_continuation_complete": 0,
+        "native_after_TRAPNO": 14,
+        "native_after_ERR": 4,
+        "owner_signal_number": 11,
+        "owner_signal_code": 2,
+        "owner_signal_errno": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_revoke_sync_started": 1,
+        "owner_revoke_sync": 0,
+        "fetch_held": 1,
+        "negative_id": 637,
+        "decoded_code": 2120,
+        "operand_width": 64
+      }
+    },
+    {
+      "name": "bsr-load-fault",
+      "argv": [
+        "bitscan-2"
+      ],
+      "environment_delta": {
+        "LI2_BITSCAN_CONTROL": "bsr-load-fault"
+      },
+      "exit": 125,
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n",
+      "stderr": "",
+      "header_equals": {
+        "version": 1,
+        "header_bytes": 136,
+        "pairs": 17,
+        "refusals": 71,
+        "failed_refusal": 18446744073709551615,
+        "decoder_result": 0,
+        "fixture_failure": 0,
+        "owner_detail_negative": 0,
+        "magic": 3550605999948051020,
+        "control": 1,
+        "completed": 1,
+        "expected_failure_verified": 1,
+        "owner_failure": 7,
+        "owner_detail_abs": 11
+      },
+      "process_outcome": "failed original-PC memory instruction; actual native and stepped failure frames and held-borrow/revoke prefix verified; not completed",
+      "required_record": {
+        "native_fault": 1,
+        "native_complete": 0,
+        "step_endpoint_seen": 0,
+        "negative_verified": 1,
+        "owner_phase": 6,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "owner_continuation_started": 0,
+        "owner_continuation_complete": 0,
+        "native_after_TRAPNO": 14,
+        "native_after_ERR": 4,
+        "owner_signal_number": 11,
+        "owner_signal_code": 2,
+        "owner_signal_errno": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_revoke_sync_started": 1,
+        "owner_revoke_sync": 0,
+        "fetch_held": 1,
+        "negative_id": 645,
+        "decoded_code": 2126,
+        "operand_width": 64
+      }
+    }
+  ],
+  "bounds": {
+    "cpu_seconds": 5,
+    "address_space_bytes": 536870912,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15,
+    "cpu_affinity_count": 1
+  },
+  "literal_effects": "ZF for every operand; nonzero destination index with 16-bit merge / 32-bit zero-extension / 64-bit result; other GPRs, complete FP/XSAVE, stack and data unchanged. No literal claim for zero destination or non-ZF status flags. Every raw native/stepped GPR and flag remains exactly compared by the unchanged generic comparator; only existing authenticated TF/RF/INT3 endpoint distinctions apply.",
+  "native_pairs_per_group": 17,
+  "new_bitscan_pairs_total": 48,
+  "native_reference_startup_pairs": 3,
+  "register_cases": 24,
+  "memory_cases": 24,
+  "zero_cases": 12,
+  "nonzero_cases": 36,
+  "page_ending_cases": 12,
+  "crossing_cases": 36,
+  "old_refusal_count": 47,
+  "new_refusal_count": 24,
+  "case_table": "source cases.inc and CASES.json; group1 includes exact observed 0fbcc2",
+  "old_cohorts": "All original generic, integer, padding, XGETBV, SSE2 and REP sources/commands/predicates remain separately required.",
+  "negative_endpoint": "The crossing native load faults before its planned INT3. Actual native fault EFLAGS retains RF and must equal the retained native-before flags. Only the separately derived logical seed clears RF; the raw fault frames are never normalized or marked complete.",
+  "architecture_note": "Current Intel pages refine zero-destination/flag behavior and explicitly mention older-processor differences. The literal oracle intentionally checks only the common portable subset. The unchanged exact native/TF comparison still qualifies all actual observed output bits on the measured machine; no mask or exemption is added."
+}
