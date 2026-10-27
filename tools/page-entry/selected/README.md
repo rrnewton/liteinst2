@@ -275,3 +275,14 @@ form is now positively qualified, while its historical failure remains recorded.
 All other prefix restrictions and owner predicates remain. Real dynamically
 linked applications still stop at unsupported instructions, as recorded in
 the evaluation receipts.
+
+The register build shares physical `/proc/self/maps` rows only within one
+uninterrupted handler phase. Each query retains its ownership, seals,
+permissions and source-byte checks. Execution, application syscalls, unwhitelisted raw calls,
+nested events and failures invalidate the rows; later handlers acquire fresh rows.
+`page_selected_maps.py` qualifies four existing positive/capacity cases, fourteen
+terminal controls and nine new acquisition/invalidation modes on one reserved
+CPU. The connected and first/hit measurement scripts exercise the production
+bridge separately. Exact revisions, commands and numeric results are recorded
+in `evaluation/inprocess/RESULTS.md`; finite timing results do not establish
+real-program completion.
