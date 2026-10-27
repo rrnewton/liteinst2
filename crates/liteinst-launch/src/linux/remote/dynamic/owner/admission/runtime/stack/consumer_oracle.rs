@@ -21,6 +21,9 @@ mod raw;
 mod storage;
 
 use crate::linux::remote::dynamic::owner::admission::census::CensusConsumerError;
+use crate::linux::remote::dynamic::owner::admission::census::{
+    ConsumerDescriptorRetention, PreparedConsumerDescriptors,
+};
 use crate::linux::remote::dynamic::owner::kernel_journal::{
     JournalWriterTransition, PreparedKernelObservation,
 };
@@ -110,6 +113,8 @@ struct Experiment {
     journal: PreparedKernelObservation,
     journal_transition: Option<JournalWriterTransition>,
     reservation: ObserverReservation,
+    descriptors: PreparedConsumerDescriptors,
+    descriptor_before_cleanup: Option<ConsumerDescriptorRetention>,
     custody: Custody,
     row: Row,
 }
@@ -138,6 +143,8 @@ impl Experiment {
             journal: PreparedKernelObservation::empty(),
             journal_transition: None,
             reservation: ObserverReservation::empty(),
+            descriptors: PreparedConsumerDescriptors::empty(),
+            descriptor_before_cleanup: None,
             custody: Custody::empty(),
             row: Row::empty(),
         }
@@ -326,6 +333,14 @@ impl Experiment {
         // No producer reservation may intervene between this real Q check and
         // observer initialization. The callback itself never reserves or grows.
         self.reservation.require_finished()?;
+        self.descriptors.require_complete(
+            self.admitted_owner
+                .owner_ref()?
+                .runtime
+                .as_ref()
+                .and_then(|runtime| runtime.census.as_ref())
+                .ok_or(OracleError::Invalid("oracle prepared census absent"))?,
+        )?;
         let owner = self.admitted_owner.owner()?;
         let runtime = owner
             .runtime
@@ -426,7 +441,34 @@ impl Experiment {
                 .capture(&this.admitted_owner.owner_ref()?.kernel_journal)
                 .map_err(Into::into)
         });
+        self.step(Step::DescriptorBeforeCleanup, |this| {
+            let census = this
+                .admitted_owner
+                .owner_ref()?
+                .runtime
+                .as_ref()
+                .and_then(|runtime| runtime.census.as_ref());
+            this.descriptor_before_cleanup = Some(this.descriptors.retention_snapshot(census)?);
+            Ok(())
+        });
         self.step(Step::AdmittedCleanup, |this| this.admitted_owner.finish());
+        self.step(Step::DescriptorRetention, |this| {
+            let census = this
+                .admitted_owner
+                .owner_ref()?
+                .runtime
+                .as_ref()
+                .and_then(|runtime| runtime.census.as_ref());
+            this.descriptors.require_retention(
+                census,
+                this.descriptor_before_cleanup
+                    .as_ref()
+                    .ok_or(OracleError::Invalid(
+                        "oracle descriptor cleanup snapshot absent",
+                    ))?,
+            )?;
+            Ok(())
+        });
         self.step(Step::AdmittedRetention, |this| {
             if this.admitted_owner.owner_ref()?.runtime.is_some() {
                 this.admitted

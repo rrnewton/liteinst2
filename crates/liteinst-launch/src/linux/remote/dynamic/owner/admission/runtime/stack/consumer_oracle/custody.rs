@@ -29,7 +29,9 @@ pub(super) enum Step {
     StackPrefix1Capture,
     CallPrefixCapture,
     JournalBeforeCleanup,
+    DescriptorBeforeCleanup,
     AdmittedCleanup,
+    DescriptorRetention,
     AdmittedRetention,
     StackPrefix0Retention,
     StackPrefix1Retention,
@@ -64,8 +66,10 @@ impl Step {
             | Self::StackPrefix0Capture
             | Self::StackPrefix1Capture
             | Self::CallPrefixCapture
-            | Self::JournalBeforeCleanup => "admitted_execution",
+            | Self::JournalBeforeCleanup
+            | Self::DescriptorBeforeCleanup => "admitted_execution",
             Self::AdmittedCleanup
+            | Self::DescriptorRetention
             | Self::AdmittedRetention
             | Self::StackPrefix0Retention
             | Self::StackPrefix1Retention

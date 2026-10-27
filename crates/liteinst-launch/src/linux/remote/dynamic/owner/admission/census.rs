@@ -32,7 +32,14 @@ pub(super) use ordinary::AllocationCensusSnapshot;
 pub(super) use ordinary::OrdinaryPreparationHistorySnapshot;
 #[cfg(test)]
 pub(super) use ordinary::shared::ObservationView;
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+mod consumer_descriptors;
 mod runtime_stack;
+#[cfg(feature = "dev-owned-stack-consumer-oracle")]
+pub(super) use consumer_descriptors::{
+    ConsumerDescriptorDemand, ConsumerDescriptorRetention, PreparedConsumerDescriptors,
+    consumer_descriptor_temporary_bytes,
+};
 #[cfg(feature = "dev-owned-stack-consumer-oracle")]
 pub(super) use runtime_stack::consumer_oracle::prefix_mirror::{
     PreparedStackPrefixMirror, stack_prefix_mirror_temporary_bytes,

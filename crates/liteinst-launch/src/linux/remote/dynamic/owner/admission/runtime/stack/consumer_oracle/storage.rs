@@ -2,11 +2,20 @@
 //! Finishing never refunds charged lifetime capacity or permits execution.
 use super::admitted::{AdmittedShape, PreparedAdmitted};
 use super::artifact::PinnedArtifact;
+use super::artifact::{PLAN_CAP, PlannedKind};
 use super::owner::ArtifactOwner;
 use super::protocol::Input;
 use super::raw::PreparedRawLane;
 use super::*;
-use crate::linux::remote::dynamic::owner::admission::census::{CensusError, Reservation};
+use crate::linux::remote::dynamic::owner::admission::census::{
+    CensusError, ConsumerDescriptorDemand, Reservation, consumer_descriptor_temporary_bytes,
+    ordinary_shared_census_charge, runtime_kernel_census_charge, stack_census_charge,
+};
+use crate::linux::remote::dynamic::owner::admission::runtime::kernel::RuntimeKernelOperation;
+
+#[cfg(test)]
+#[path = "storage/descriptor_tests.rs"]
+mod descriptor_tests;
 use std::mem::size_of;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -129,6 +138,111 @@ fn subtract(total: usize, embedded: usize) -> Result<usize, OracleError> {
     ))
 }
 
+/// Closed descriptive bound over the same census charges used by dispatch.
+/// Counts are future reserve frontiers, including epochs, not native authority.
+fn descriptor_demand(
+    kinds: impl IntoIterator<Item = PlannedKind>,
+) -> Result<ConsumerDescriptorDemand, OracleError> {
+    let mut demand = ConsumerDescriptorDemand {
+        origins: 0,
+        history: 0,
+    };
+    let (mut count, mut ordinary, mut calls, mut returns, mut syscalls) =
+        (0_usize, 0_usize, 0_usize, 0_usize, 0_usize);
+    for kind in kinds {
+        count = count
+            .checked_add(1)
+            .ok_or(OracleError::Invalid("descriptor plan count overflow"))?;
+        if count > PLAN_CAP {
+            return Err(OracleError::Invalid("descriptor plan exceeds bound"));
+        }
+        let charge = match kind {
+            PlannedKind::Ordinary => {
+                ordinary += 1;
+                if ordinary > 30 || syscalls == 3 {
+                    return Err(OracleError::Invalid("descriptor ordinary path differs"));
+                }
+                ordinary_shared_census_charge()
+            }
+            PlannedKind::Call => {
+                if calls != 0 || returns != 0 || syscalls != 1 {
+                    return Err(OracleError::Invalid("descriptor CALL order differs"));
+                }
+                calls += 1;
+                stack_census_charge()
+            }
+            PlannedKind::Ret => {
+                if calls != 1 || returns != 0 || syscalls != 1 {
+                    return Err(OracleError::Invalid("descriptor RET order differs"));
+                }
+                returns += 1;
+                stack_census_charge()
+            }
+            PlannedKind::Syscall { number } => {
+                let operation = match (syscalls, number) {
+                    (0, 39) if calls == 0 => RuntimeKernelOperation::Getpid,
+                    (1, 186) if calls == 1 && returns == 1 => RuntimeKernelOperation::Gettid,
+                    (2, 231) if calls == 1 && returns == 1 => RuntimeKernelOperation::ExitGroup,
+                    _ => return Err(OracleError::Invalid("descriptor syscall path differs")),
+                };
+                syscalls += 1;
+                runtime_kernel_census_charge(operation)
+            }
+        }
+        .map_err(|error| OracleError::Gate(census_error(error)))?;
+        demand.origins = sum([demand.origins, charge.origins])?;
+        demand.history = sum([demand.history, charge.witnesses, charge.epochs])?;
+    }
+    if calls != 1 || returns != 1 || syscalls != 3 {
+        return Err(OracleError::Invalid("descriptor closed path incomplete"));
+    }
+    Ok(demand)
+}
+
+// Arrays/iterators actually constructed by the nested charge calculators:
+// shared preparation 27, archive 35, lineage 36, history 15, resolver 16.
+// Keep their scalar/fold outcomes separately from the represented payload sizes.
+type ChargeCalculatorScratch = (
+    [usize; 27],
+    std::array::IntoIter<usize, 27>,
+    [usize; 35],
+    std::array::IntoIter<usize, 35>,
+    [usize; 36],
+    std::array::IntoIter<usize, 36>,
+    [usize; 15],
+    std::array::IntoIter<usize, 15>,
+    [usize; 16],
+    std::array::IntoIter<usize, 16>,
+    [usize; 32],
+    [Option<usize>; 32],
+    [Result<usize, CensusError>; 32],
+);
+
+fn descriptor_demand_temporary_bytes() -> Result<usize, OracleError> {
+    // Existing charge calculators are pure and fixed. Their complete returned
+    // headers and nested source-value families are conservatively included.
+    sum([
+        consumer_descriptor_temporary_bytes()?,
+        crate::linux::remote::dynamic::owner::admission::census::stack_census_temporary_bytes()
+            .map_err(|error| OracleError::Gate(census_error(error)))?,
+        crate::linux::remote::dynamic::owner::admission::census::history_view_temporary_bytes()
+            .map_err(|error| OracleError::Gate(census_error(error)))?,
+        size_of::<ArtifactPlan>(),
+        4 * size_of::<ConsumerDescriptorDemand>(),
+        8 * size_of::<BudgetCharge>(),
+        4 * size_of::<PlannedKind>(),
+        4 * size_of::<RuntimeKernelOperation>(),
+        16 * size_of::<Result<BudgetCharge, CensusError>>(),
+        32 * size_of::<Result<usize, CensusError>>(),
+        size_of::<[usize; 128]>() + size_of::<[Option<usize>; 64]>(),
+        size_of::<std::slice::Iter<'static, Option<super::artifact::PlannedInstruction>>>(),
+        size_of::<[usize; 16]>() + size_of::<std::array::IntoIter<usize, 16>>(),
+        4 * size_of::<Result<ConsumerDescriptorDemand, OracleError>>(),
+        16 * size_of::<&ArtifactPlan>(),
+        size_of::<ChargeCalculatorScratch>(),
+    ])
+}
+
 impl Experiment {
     /// Count each new owning slot once. The physical Owner is unchanged launch
     /// infrastructure; its native/runtime/journal payload remains in the
@@ -144,6 +258,7 @@ impl Experiment {
                 size_of::<PreparedAdmitted>(),
                 size_of::<PreparedKernelObservation>(),
                 size_of::<PrefixMirrors>(),
+                size_of::<PreparedConsumerDescriptors>(),
                 2 * size_of::<Owner>(),
                 // The genuine Ready inline state was already debited by startup.
                 // Only that exact moved value is excluded, never a new snapshot.
@@ -161,6 +276,13 @@ impl Experiment {
             self.admitted.allocated_bytes()?,
             self.journal.allocated_bytes()?,
             self.prefix.allocated_bytes()?,
+            self.descriptors.allocated_bytes(
+                self.admitted_owner
+                    .owner_ref()?
+                    .runtime
+                    .as_ref()
+                    .and_then(|runtime| runtime.census.as_ref()),
+            )?,
         ])
     }
 
@@ -176,6 +298,7 @@ impl Experiment {
             PreparedAdmitted::reservation_bytes(shape)?,
             PreparedKernelObservation::reservation_bytes()?,
             PrefixMirrors::reservation_bytes(shape.window_bytes)?,
+            self.descriptors.reservation_bytes()?,
         ])
     }
 
@@ -199,6 +322,7 @@ impl Experiment {
             native_checks::temporary_bytes()?,
             output::temporary_bytes()?,
             PrefixMirrors::temporary_bytes()?,
+            consumer_descriptor_temporary_bytes()?,
             root_temporary_bytes()?,
         ])
     }
@@ -219,6 +343,14 @@ impl Experiment {
             .as_ref()
             .ok_or(OracleError::Invalid("oracle plan is absent"))?;
         let shape = PreparedAdmitted::shape(runtime, plan)?;
+        let demand = descriptor_demand(plan.instructions().map(|instruction| instruction.kind()))?;
+        self.descriptors.plan(
+            runtime
+                .census
+                .as_ref()
+                .ok_or(OracleError::Invalid("oracle descriptor census absent"))?,
+            demand,
+        )?;
         self.reservation.shape = Some(shape);
         let retained = self.observer_retained_bound(shape)?;
         self.reservation.retained_bound = Some(retained);
@@ -243,6 +375,18 @@ impl Experiment {
         // No fallible action between reserve and installation of its real token.
         self.reservation.token = Some(token);
         let allocation = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            {
+                let owner = self.admitted_owner.owner()?;
+                owner.time_left(until, "oracle descriptor allocation")?;
+                self.descriptors.allocate_in_place(
+                    owner
+                        .runtime
+                        .as_mut()
+                        .and_then(|runtime| runtime.census.as_mut())
+                        .ok_or(OracleError::Invalid("oracle descriptor census absent"))?,
+                    token,
+                )?;
+            }
             let owner = self.admitted_owner.owner_ref()?;
             owner.time_left(until, "oracle observer allocation")?;
             self.prefix.allocate_payloads(shape.window_bytes)?;
@@ -269,6 +413,9 @@ impl Experiment {
             Ok::<(), OracleError>(())
         }));
         self.reservation.allocation_unwound = allocation.is_err();
+        if allocation.is_err() {
+            self.descriptors.mark_aborted();
+        }
         // A measurement refusal is itself retained. Finish is still attempted
         // below; no retry, replacement allocation or partial-prefix discard.
         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
@@ -473,6 +620,17 @@ type RootCalculatorScratch = (
     [Result<usize, OracleError>; 6],
     Option<usize>,
     Result<usize, OracleError>,
+    // Expanded root arrays remain in addition to every prior source term.
+    [usize; 9],
+    std::array::IntoIter<usize, 9>,
+    [usize; 8],
+    std::array::IntoIter<usize, 8>,
+    [usize; 8],
+    std::array::IntoIter<usize, 8>,
+    [usize; 13],
+    std::array::IntoIter<usize, 13>,
+    [usize; 34],
+    std::array::IntoIter<usize, 34>,
 );
 
 // Complete new diagnostic source values: decimal buffer; seven-vector array
@@ -548,6 +706,7 @@ fn root_temporary_bytes() -> Result<usize, OracleError> {
         4 * size_of::<owner::RequestResult>(),
         size_of::<std::sync::atomic::AtomicU64>(),
         size_of::<(RootCalculatorScratch, FailureDiagnosticScratch)>(),
+        descriptor_demand_temporary_bytes()?,
     ])
 }
 
