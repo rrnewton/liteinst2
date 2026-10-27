@@ -1,0 +1,325 @@
+{
+  "build": {
+    "artifacts": {
+      "frontend-native-oracle": {
+        "binary": {
+          "bytes": 4114496,
+          "sha256": "6cc117f6e9333ace0170c78bc71b7c8de069435ebb065d40a6b51970b7654e5f"
+        },
+        "cargo_fresh": false,
+        "profile": {
+          "debug_assertions": true,
+          "debuginfo": 0,
+          "opt_level": "3",
+          "overflow_checks": true,
+          "test": false
+        }
+      },
+      "ordinary-interval": {
+        "binary": {
+          "bytes": 3494976,
+          "sha256": "3c0b5d42717219f0f87984c919075ee9fdd57323bb626b862fc992970f726ab9"
+        },
+        "cargo_fresh": false,
+        "profile": {
+          "debug_assertions": true,
+          "debuginfo": 0,
+          "opt_level": "3",
+          "overflow_checks": true,
+          "test": false
+        }
+      }
+    },
+    "cpu_seconds": 120,
+    "file_bytes": 134217728,
+    "process_exit": 0,
+    "strict_cleanup": true,
+    "wall_seconds": 180
+  },
+  "checksum_dso": {
+    "bytes": 13624,
+    "sha256": "ec9791b02a6ccb07ad150e953516c30710ee0f88ad0483fd8f3fc3fa3175ae7d"
+  },
+  "claim": 4,
+  "cleanup": "All 18 bounded native commands and all seven workspace checks exited zero with complete cleanup and zero rescued descendants; native inner helpers also require ECHILD and no cleanup events.",
+  "closed_receipt_sha256": {
+    "native": "e1fe684bfd8dacb447cf2c0551e566171d99a20aabd11808d7a422478e39faa5",
+    "workspace": "5fbd5845bf794df9a3d201badc7d64c32f78b6cd71d97d908f9f2608bf5e268c"
+  },
+  "csv": {
+    "checksum-intervals.csv": {
+      "bytes": 959,
+      "sha256": "bf3e320a7440bf7d2885dc553e14aed34059bdb98132696a8df67a9260f13b7e"
+    },
+    "commands.csv": {
+      "bytes": 8192,
+      "sha256": "7cdb80d0605a8b01d3d4c0039e2ed4797f9018b37f058bcc41aa3f1d19464c42"
+    },
+    "exact-truth.csv": {
+      "bytes": 347,
+      "sha256": "535aa12a158497ebe542521fd61d10d56cb7f8489672469ae774064d14604335"
+    },
+    "intervals.csv": {
+      "bytes": 30418,
+      "sha256": "f6b1c2adbf11747145a1fe9aec413295692e984a7acf54c0d4ee641fcccd15f9"
+    },
+    "native-pairs.csv": {
+      "bytes": 696,
+      "sha256": "dd85594f65466d3023ee682403e0d535e13aa8f65c701b65a59589a918c044f4"
+    },
+    "populations.csv": {
+      "bytes": 664,
+      "sha256": "0c6c60b18f6d949af7f1c1de73b6d665c5b9c4afa2398a3f0e0c3652367309ce"
+    }
+  },
+  "development_failure_scope": "Uncommitted integration before source revision; both attempts remain failed. Corrected module path preserves every test.",
+  "development_failures": [
+    {
+      "cause": "join.rs needed an explicit join/tests.rs path under its path-attributed module",
+      "exit_code": 1,
+      "log_sha256": "800ca0d712362c6267b7018f780800f3b9ce52087189d4d94a747157b9bfd860",
+      "operation": "cargo fmt --all"
+    },
+    {
+      "cause": "same missing test module path; no test executed",
+      "exit_code": 101,
+      "log_sha256": "e2a90558299237a9dc9d17780d2cbd40d7690b48141869b6ba5ea306c03bde19",
+      "operation": "cargo test -p rapid-profiler --bin ordinary-interval"
+    }
+  ],
+  "exact_dso": {
+    "bytes": 13672,
+    "sha256": "6dc05966ea7a8bd8c7c70dd63065e7157e709d46220d90a08056a3eed38c5ecc"
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "build_affinity_cpus": 4,
+    "family": 26,
+    "model": 17,
+    "native_affinity_cpus": 1,
+    "native_state_affinity_cpus": 4,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "included_main": "4f4e39bf9f1ab7efd4858ef0c3796829f71e61aa",
+  "limits": [
+    "Finite nonrecursive read-only integer leaf ABI; no ordinary arbitrary application or browser qualification.",
+    "Instruction and operand-read truth is an independent fixed-byte semantic model checked against original native single steps; reads are reconstructed, not hardware event counts.",
+    "CSV rows retain full invocation population; complete boundary, stack and Report joins are runtime assertions, not additional exported raw state.",
+    "Raw callback RDTSCP endpoints are uncalibrated and include instrumentation/descheduling. No duration, PMU, cache-model or perf-superiority claim.",
+    "Mandatory entry/RET hooks remain active after K closes; no hook-overhead savings claim.",
+    "Seven workspace checks use default host parallelism except explicit serial-launch; native fixture processes deliberately use one pinned worker and four available tracing/build CPUs.",
+    "Workspace totals are outer summaries; nested summaries and the custom cleanup harness are non-additive.",
+    "Command seconds are operational durations, not performance measurements."
+  ],
+  "native": {
+    "checksum_children": 8,
+    "checksum_full_state_comparisons": 978,
+    "checksum_instrumented_calls": 8,
+    "checksum_original_calls": 8,
+    "checksum_pairs": 4,
+    "exact_children": 8,
+    "exact_conditional_branches": 130,
+    "exact_full_state_comparisons": 844,
+    "exact_function_closed": 148,
+    "exact_input_reads": 130,
+    "exact_instrumented_calls": 288,
+    "exact_original_calls": 288,
+    "exact_original_instructions": 800,
+    "exact_pairs": 4,
+    "exact_return_reads": 4,
+    "exact_sampled": 140,
+    "exact_taken_branches": 126,
+    "fresh_exact_populations": 12,
+    "real_outer_returns": 16,
+    "short_ret_refusals": 2
+  },
+  "native_setup_scope": "Setup precedes readiness. The absolute 15-second deadline includes setup; the continuous 20,000-step bound starts at readiness. No pre-readiness instruction comparison or whole-64KiB stack qualification.",
+  "native_state_qualification": "PASS: gate entry through post-POP; full inherited GPR/flags/XSAVE/data and exact [S-128, stack_end) comparisons; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim",
+  "new_rust_pure_methods": 14,
+  "parser_controls": 5,
+  "reproduction": {
+    "native": "python3 -B tools/rapid-profiler/verify_ordinary_interval.py --exact-work --revision 723f09ea1331617139070e9d67465c9a5429e48d --raw \"$REPO/ignored/NEW_NATIVE\" --toolchain \"$TOOLCHAIN\" --user-home \"$USER_HOME\" --cargo-home \"$CARGO_HOME\"",
+    "pure_parser": "python3 -B tools/rapid-profiler/exact-work/test_recipe.py --runner tools/rapid-profiler/verify_ordinary_interval.py",
+    "workspace": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only"
+  },
+  "reviews": {
+    "client_source": "f4b883c40333e770abda49cbe9be01f7a49939032821b7f9a55ac1200b7a1cf0",
+    "native_source": "8a20b339d1ce2338b150d1b4d8fc4145546ac7a15430e9069e6242dff8b4136d",
+    "native_validation": "d91a9bd609862f169079716a689da12c3c1c52fb2a878b776592975ae9c55289",
+    "recipe_source": "10e08a9807acf374397153faf1f2652291aa2e4b5da548b2c5f59c894a5e2db4"
+  },
+  "schema": 1,
+  "source_pins": {
+    "Cargo.lock": {
+      "bytes": 5214,
+      "sha256": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088"
+    },
+    "Cargo.toml": {
+      "bytes": 3968,
+      "sha256": "4f19980341acf68a101ee80cb748cc5d0894e7a35e3fddf35a6df422855a0dea"
+    },
+    "evaluation/admission/processes.py": {
+      "bytes": 15760,
+      "sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+    },
+    "tests/support/native_interval_oracle.rs": {
+      "bytes": 79917,
+      "sha256": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460"
+    },
+    "tests/support/native_ordinary.rs": {
+      "bytes": 31511,
+      "sha256": "4f6079ce93d175203be6f5e8469c8151d1744e09b1e71ac0372f03fd66bfa1b2"
+    },
+    "tools/rapid-profiler/Cargo.toml": {
+      "bytes": 788,
+      "sha256": "44a10ae94825a0bad3d09776065fe2aff56082dcb41263a5efe28230a746c685"
+    },
+    "tools/rapid-profiler/exact-work/README.md": {
+      "bytes": 2429,
+      "sha256": "73c3f4486b98aa8efb4f975be8b48ce70ce26c26aa3c0801332e1627edad8062"
+    },
+    "tools/rapid-profiler/exact-work/exact_work.S": {
+      "bytes": 1399,
+      "sha256": "301286c614dc174c604bcbe6b0010b56f633fa28e9193cfb21749cfe3a42ee06"
+    },
+    "tools/rapid-profiler/exact-work/join.rs": {
+      "bytes": 10602,
+      "sha256": "93eb8df3357be8f05f584a139d5f6412f2685ed78d3df02687459696ea15d6fd"
+    },
+    "tools/rapid-profiler/exact-work/join/tests.rs": {
+      "bytes": 16701,
+      "sha256": "d929f8022a32e395fb766ed7daf4d2ffe1299f6e753a97792adea0e8d66da5cc"
+    },
+    "tools/rapid-profiler/exact-work/test_recipe.py": {
+      "bytes": 6961,
+      "sha256": "a339e231eee1eec8d1902fd16de0de4b91abf79a7238e5263cd6cf574ad96eec"
+    },
+    "tools/rapid-profiler/exact-work/truth.rs": {
+      "bytes": 10014,
+      "sha256": "66d341133f358bd28864d304f7407d262642d0f88979536ca003b4843b75b305"
+    },
+    "tools/rapid-profiler/native-interval/main.rs": {
+      "bytes": 36025,
+      "sha256": "099274237b7ade7190e3920a1b745bdfd3e3e6d380242e9aae03ae59df30b266"
+    },
+    "tools/rapid-profiler/native-interval/ordinary.rs": {
+      "bytes": 22160,
+      "sha256": "fea66a28888bfd8805a9217da94b8cfd6f9bbc4d65a2e408520f3e35f2ddc53e"
+    },
+    "tools/rapid-profiler/native-interval/ordinary_checksum.c": {
+      "bytes": 1181,
+      "sha256": "88f291fca7a3faf2a630431df169f7309ea70797f115ccfd7167e20fa153748e"
+    },
+    "tools/rapid-profiler/ordinary-interval/exact.rs": {
+      "bytes": 7498,
+      "sha256": "eccd04aaff02023916c200fbfd7025fd304a3b440cf24b5aec933a1441ee4b9f"
+    },
+    "tools/rapid-profiler/ordinary-interval/main.rs": {
+      "bytes": 22217,
+      "sha256": "dba750072a07fd83dd765d34bc53115b6528cf0d42c4b27f5ffb119349ee58f5"
+    },
+    "tools/rapid-profiler/src/frontend.rs": {
+      "bytes": 40541,
+      "sha256": "82bc3c5a5f086673450190378b7ae3099cb8f9e968834e3bb28494edcacee4cd"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on.rs": {
+      "bytes": 36524,
+      "sha256": "137f87093954004be88ed7706d400da06cf004df534e84a0e90d46d6f1b463a6"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/gate.rs": {
+      "bytes": 20192,
+      "sha256": "00176fda7a34b9e70fd27f55c4c9252d0af8d56dcde429406a2d2e32cd165cf2"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/site/ordinary.rs": {
+      "bytes": 25616,
+      "sha256": "cc3005100df913d44f742a44054c9888594c427c608b48bd38dc494f0024cba7"
+    },
+    "tools/rapid-profiler/src/frontend_native/always_on/timing.rs": {
+      "bytes": 6353,
+      "sha256": "1d381750abc68c0e2124729acba3dbbad35136f7e5a9768c4ef7a4ebd3dcfd45"
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/cfg.rs": {
+      "bytes": 7892,
+      "sha256": "a986f89e31eff1b9b57fe63d43ed1f88cd42bf7b26b9bab76c25e7bcab2c598e"
+    },
+    "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": {
+      "bytes": 23486,
+      "sha256": "777c9844103f7d507cf21a8969ff076d3f27fe31822e08f1bc62017abcfc0d42"
+    },
+    "tools/rapid-profiler/src/generation.rs": {
+      "bytes": 24354,
+      "sha256": "e2bb80f2402e6d295eb12022fa7cee612a9be96708a4d50d97119d975a2401c1"
+    },
+    "tools/rapid-profiler/verify_ordinary_interval.py": {
+      "bytes": 29115,
+      "sha256": "f896a30b48e61d86fada2895e1bcf1187708d7589e1f3e88ae0126d2f243e061"
+    },
+    "tools/unwind-oracle/bounded_command.py": {
+      "bytes": 7710,
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    }
+  },
+  "source_revision": "46253eaa8ad9f8a8def8597c89f0d08ca5ceb481",
+  "stage_counts": {
+    "pure_parser": 1,
+    "release_native": 18,
+    "workspace": 7
+  },
+  "status": "PASS",
+  "tested_revision": "723f09ea1331617139070e9d67465c9a5429e48d",
+  "tool_pins": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "python": {
+      "bytes": 15448,
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    }
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "11.5.0",
+    "git": "git version 2.52.0",
+    "python": [
+      3,
+      9,
+      25
+    ],
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    }
+  },
+  "workspace": {
+    "failed": 0,
+    "groups": 100,
+    "ignored": 4,
+    "parsed_nested_summaries_excluded": 5,
+    "passed": 2531,
+    "seconds": 308.7377536490094
+  },
+  "workspace_parallelism": {
+    "RUST_TEST_THREADS": null,
+    "affinity_changed": false,
+    "available_affinity_cpus": 316,
+    "compiler_jobs": 4,
+    "serial_launch_threads": 1
+  }
+}
