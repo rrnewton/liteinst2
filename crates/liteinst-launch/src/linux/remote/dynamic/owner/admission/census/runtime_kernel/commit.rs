@@ -181,6 +181,7 @@ impl ResumeCensus {
                         returned: id,
                         parent: None,
                     }),
+                    ordinary_history: None,
                 });
                 for index in 0..4 {
                     let before = if index == 0 {

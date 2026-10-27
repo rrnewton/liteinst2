@@ -4,6 +4,10 @@ use super::super::super::super::bootstrap::Request;
 use super::*;
 use std::mem::size_of;
 use std::os::fd::{FromRawFd, OwnedFd};
+#[cfg(test)]
+mod native_oracle;
+#[cfg(test)]
+pub(in crate::linux::remote::dynamic::owner) use native_oracle::CetRetainedSnapshot;
 
 #[derive(Clone, Copy)]
 pub(in crate::linux::remote::dynamic::owner) struct CetQuery {

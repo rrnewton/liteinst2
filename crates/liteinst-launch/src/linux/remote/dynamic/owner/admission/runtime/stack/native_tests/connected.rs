@@ -90,8 +90,8 @@ pub(super) fn mixed() {
                 .census
                 .as_ref()
                 .unwrap()
-                .history()
-                .to_vec();
+                .history_snapshot()
+                .unwrap();
             let stack_before = original.read_stack(owner, until);
             let call_start = kernel_history.len();
             let call = compare::successor(&expected, CALLEE, true);
@@ -166,7 +166,12 @@ pub(super) fn mixed() {
             assert_eq!(second.input.registers(), &after_nop.registers);
             let runtime = owner.runtime.as_ref().unwrap();
             assert_eq!(
-                &runtime.census.as_ref().unwrap().history()[..kernel_history.len()],
+                runtime
+                    .census
+                    .as_ref()
+                    .unwrap()
+                    .history_snapshot_prefix(kernel_history.len())
+                    .unwrap(),
                 kernel_history
             );
             assert_eq!(runtime.stack.as_ref().unwrap().count, 2);
@@ -245,8 +250,8 @@ pub(super) fn refusals() {
                     .census
                     .as_ref()
                     .unwrap()
-                    .history()
-                    .to_vec();
+                    .history_snapshot()
+                    .unwrap();
                 let result = support::invoke(owner, AdmissionRequest::Advance, until);
                 assert!(matches!(result,Err(GateError::Refused(actual)) if actual==reason));
                 assert_eq!(support::observe_state(owner, until), before);
@@ -262,7 +267,8 @@ pub(super) fn refusals() {
                         .census
                         .as_ref()
                         .unwrap()
-                        .history(),
+                        .history_snapshot()
+                        .unwrap(),
                     history
                 );
                 no_effects(owner);
@@ -318,8 +324,8 @@ pub(super) fn refusals() {
                     .census
                     .as_ref()
                     .unwrap()
-                    .history()
-                    .to_vec();
+                    .history_snapshot()
+                    .unwrap();
                 let result = support::invoke(owner, AdmissionRequest::Advance, until);
                 if mode == 0 {
                     assert!(matches!(
@@ -345,7 +351,8 @@ pub(super) fn refusals() {
                         .census
                         .as_ref()
                         .unwrap()
-                        .history(),
+                        .history_snapshot()
+                        .unwrap(),
                     history
                 );
                 no_effects(owner);
@@ -396,7 +403,7 @@ pub(super) fn late() {
                 ledger::install(owner);
                 let runtime = owner.runtime.as_mut().unwrap();
                 let origin = runtime.initial_origin;
-                let history = runtime.census.as_ref().unwrap().history().to_vec();
+                let history = runtime.census.as_ref().unwrap().history_snapshot().unwrap();
                 runtime.stack.as_mut().unwrap().intervention = Some(hook);
                 let result = catch_unwind(AssertUnwindSafe(|| match hook {
                     RootIntervention::AfterCallRecordPanic => {
@@ -426,7 +433,10 @@ pub(super) fn late() {
                 let native = attempt.native.diagnostics();
                 let p = attempt.native.progress();
                 assert_eq!(runtime.initial_origin, origin);
-                assert_eq!(runtime.census.as_ref().unwrap().history(), history);
+                assert_eq!(
+                    runtime.census.as_ref().unwrap().history_snapshot().unwrap(),
+                    history
+                );
                 assert!(!native.claimed);
                 assert!(attempt.failure.is_some());
                 ledger::check(owner, 1);
@@ -592,8 +602,8 @@ pub(super) fn budgets() {
                     .census
                     .as_ref()
                     .unwrap()
-                    .history()
-                    .to_vec();
+                    .history_snapshot()
+                    .unwrap();
                 if mode == 0 {
                     std::thread::sleep(until.saturating_duration_since(Instant::now()));
                 }
@@ -650,7 +660,8 @@ pub(super) fn budgets() {
                         .census
                         .as_ref()
                         .unwrap()
-                        .history(),
+                        .history_snapshot()
+                        .unwrap(),
                     history
                 );
                 // No renewed observation deadline after expiry. Other subcases

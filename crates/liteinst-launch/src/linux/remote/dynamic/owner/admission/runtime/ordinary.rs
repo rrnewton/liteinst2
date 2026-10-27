@@ -1,12 +1,12 @@
 //! Prospective ordinary-attempt storage and the connected consuming route.
 //! Every attempt is installed before native reads/effects; failure and unwind
 //! retain it beside the physical native owner for the outer cleanup path.
-use super::super::census::{PreparedOrdinaryCensus, Reservation, ordinary_census_charge};
+use super::super::census::{Reservation, SharedOrdinaryPreparation, ordinary_shared_census_charge};
 use super::super::runtime_capture::{CapturedRuntimeRead, RuntimeCatalogCheckpoint};
 use super::super::runtime_instruction::{DebugDisposition, classify};
 use super::super::runtime_native::{
     self, ControlLineage, InstructionAttemptShape, InstructionEffect, InstructionObservation,
-    PreparedInstructionAttempt,
+    NativeInstructionStorage,
 };
 use super::super::source_identity::SourceReadProgress;
 use super::instruction::RuntimeInstructionBinding;
@@ -14,6 +14,10 @@ use super::*;
 use crate::selected::SyscallAliases;
 
 const MAP_BYTES: usize = 64 * 1024;
+mod storage;
+pub(super) use storage::PendingOrdinaryPreparation;
+#[cfg(test)]
+pub(super) use storage::native_oracle::OrdinaryAllocationFault;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum AttemptStage {
@@ -30,8 +34,11 @@ pub(super) struct RuntimeOrdinaryAttempt {
     stop: AdmissionStop,
     before: ObservedStop,
     source: SourceChecks,
-    native: PreparedInstructionAttempt,
-    census: Option<Box<PreparedOrdinaryCensus>>,
+    native: NativeInstructionStorage,
+    allocation: storage::AllocationRecord,
+    // Already charged old slot storage, retained empty after Box-owner transfer.
+    prior_slots: Vec<Box<RuntimeOrdinaryAttempt>>,
+    census: SharedOrdinaryPreparation,
     stage: AttemptStage,
     failed: bool,
     unwound: bool,
@@ -45,52 +52,7 @@ struct SourceChecks {
     checkpoint_stop: AdmissionStop,
 }
 
-fn observation(source: &ObservedStop) -> Result<ObservedStop, GateError> {
-    if !(512..MAX_XSTATE).contains(&source.xstate.len()) {
-        return Err(GateError::Refused(
-            "runtime ordinary full state extent differs",
-        ));
-    }
-    let mut xstate = state_storage()?;
-    if xstate.capacity() != MAX_XSTATE {
-        return Err(GateError::Refused(
-            "runtime ordinary state capacity differs",
-        ));
-    }
-    xstate[..source.xstate.len()].copy_from_slice(&source.xstate);
-    xstate.truncate(source.xstate.len());
-    Ok(ObservedStop {
-        token: source.token.clone(),
-        task: source.task,
-        logical_pc: source.logical_pc,
-        registers: source.registers,
-        xstate,
-        signal_mask: source.signal_mask,
-        phase: source.phase,
-        signal: source.signal.clone(),
-    })
-}
-
-fn bytes(length: usize) -> Result<Vec<u8>, GateError> {
-    let mut result = storage(length)?;
-    if result.capacity() != length {
-        return Err(GateError::Refused(
-            "runtime ordinary source capacity differs",
-        ));
-    }
-    result.resize(length, 0);
-    Ok(result)
-}
-
-fn root_bytes(window: usize) -> Result<usize, GateError> {
-    // Native's inline header is charged by its own exact shape, while the
-    // census object is separately boxed and charged by its preparation API.
-    let header = size_of::<RuntimeOrdinaryAttempt>()
-        .checked_sub(size_of::<PreparedInstructionAttempt>())
-        .ok_or(GateError::Refused(
-            "runtime ordinary embedded header differs",
-        ))?;
-    let payload = add(mul(3, window)?, add(2 * MAX_XSTATE, MAP_BYTES)?)?;
+fn root_temporary_bytes() -> Result<usize, GateError> {
     let temporary = add(
         CapturedRuntimeRead::temporary_bytes(),
         add(
@@ -107,7 +69,19 @@ fn root_bytes(window: usize) -> Result<usize, GateError> {
         temporary,
         add(size_of::<ControlLineage>(), size_of::<ControlLineage>())?,
     )?;
-    add(add(header, payload)?, temporary)
+    add(temporary, storage::temporary_bytes()?)
+}
+fn root_bytes(window: usize, shape: InstructionAttemptShape) -> Result<usize, GateError> {
+    // The complete wrapper, pending metadata and prior-slot Vec header are
+    // embedded here once. Native's independent payloads remain unchanged.
+    let payload = add(mul(3, window)?, add(2 * MAX_XSTATE, MAP_BYTES)?)?;
+    add(
+        add(size_of::<RuntimeOrdinaryAttempt>(), payload)?,
+        add(
+            NativeInstructionStorage::payload_reservation(shape)?,
+            root_temporary_bytes()?,
+        )?,
+    )
 }
 
 impl RuntimeOwner {
@@ -119,11 +93,14 @@ impl RuntimeOwner {
     ) -> Result<(), GateError> {
         owner.time_left(until, "runtime ordinary preparation")?;
         if self.stage != RuntimeStage::Ready
+            || self.ordinary_preparation.is_some()
             || self.selected_pending.is_some()
-            || self
-                .ordinary_attempts
-                .last()
-                .is_some_and(|attempt| attempt.stage != AttemptStage::Complete)
+            || self.ordinary_attempts.last().is_some_and(|attempt| {
+                attempt.stage != AttemptStage::Complete
+                    || attempt.failed
+                    || attempt.unwound
+                    || attempt.allocation.first_failure.is_some()
+            })
         {
             return Err(GateError::Refused(
                 "runtime ordinary operation is not ready",
@@ -161,76 +138,57 @@ impl RuntimeOwner {
         geometry.projected_rows(self.sources.runtime_baseline_maps()?)?;
         let shape = InstructionAttemptShape::from_geometry(&geometry)?;
         let window_bytes = window.snapshot.bytes().len();
-        let native_bytes = shape.reservation_bytes()?;
         let spare = usize::from(self.ordinary_attempts.len() == self.ordinary_attempts.capacity());
         let new_capacity = add(self.ordinary_attempts.capacity(), spare)?;
         let retained = add(
-            add(root_bytes(window_bytes)?, native_bytes)?,
-            mul(spare, size_of::<Box<RuntimeOrdinaryAttempt>>())?,
+            root_bytes(window_bytes, shape)?,
+            mul(
+                if spare != 0 { new_capacity } else { 0 },
+                size_of::<Box<RuntimeOrdinaryAttempt>>(),
+            )?,
         )?;
-        let mut charge = ordinary_census_charge().map_err(census_error)?;
+        let mut charge = ordinary_shared_census_charge().map_err(census_error)?;
         charge.source_fact_bytes = add(charge.source_fact_bytes, retained)?;
         let serial = self.next_execution;
         let next = serial
             .checked_add(1)
             .ok_or(GateError::Refused("runtime execution identity exhausted"))?;
+        let temporary = root_temporary_bytes()?;
         let reservation = census.reserve(charge).map_err(census_error)?;
         self.next_execution = next;
-        if spare != 0 {
-            self.ordinary_attempts
-                .try_reserve_exact(1)
-                .map_err(|_| GateError::Refused("runtime ordinary history allocation failed"))?;
-        }
-        if self.ordinary_attempts.capacity() != new_capacity {
-            return Err(GateError::Refused(
-                "runtime ordinary history capacity exceeds reservation",
-            ));
-        }
-        let before = census.current_observation(origin).map_err(census_error)?;
-        let attempt = RuntimeOrdinaryAttempt {
+        let pending = PendingOrdinaryPreparation::new(storage::PreparationRequest {
             reservation,
-            stop: stop.clone(),
-            before: observation(before)?,
-            source: SourceChecks {
-                bytes: [
-                    bytes(window_bytes)?,
-                    bytes(window_bytes)?,
-                    bytes(window_bytes)?,
-                ],
-                progress: std::array::from_fn(|_| SourceReadProgress::default()),
-                identity: bytes(MAP_BYTES)?,
-                checkpoint: observation(before)?,
-                checkpoint_stop: stop,
-            },
-            native: PreparedInstructionAttempt::allocate(shape, until)?,
-            census: None,
-            stage: AttemptStage::Allocated,
-            failed: false,
-            unwound: false,
-        };
-        if attempt.native.allocated_bytes()? > native_bytes {
-            return Err(GateError::Refused(
-                "runtime native storage exceeds prospective charge",
-            ));
-        }
-        // No native/source read has happened in preparation. From here onward
-        // this installed object survives errors and the parent's unwind catch.
-        self.ordinary_attempts.push(Box::new(attempt));
-        census
-            .account_external(
-                reservation,
-                BudgetCharge {
-                    source_fact_bytes: retained,
-                    ..BudgetCharge::default()
-                },
-            )
-            .map_err(census_error)?;
+            origin,
+            serial,
+            stop,
+            until,
+            shape,
+            window_bytes,
+            temporary,
+            expected_capacity: new_capacity,
+        });
+        #[cfg(test)]
+        let pending = pending.with_test_fault(self.ordinary_allocation_fault.take());
+        self.ordinary_preparation = Some(pending);
+        storage::prepare(
+            &mut self.ordinary_attempts,
+            &mut self.ordinary_preparation,
+            census,
+        )?;
         let attempt = self
             .ordinary_attempts
             .last_mut()
             .expect("installed ordinary attempt");
         let outcome =
             std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> Result<(), GateError> {
+                if !attempt.allocation.allocated
+                    || attempt.allocation.until != until
+                    || attempt.allocation.serial != serial
+                {
+                    return Err(GateError::Refused(
+                        "ordinary retained allocation binding differs",
+                    ));
+                }
                 let native = self
                     .native
                     .as_mut()
@@ -275,12 +233,11 @@ impl RuntimeOwner {
                     proof, candidate, census, origin, serial, island, lineage,
                 )?;
                 attempt.stage = AttemptStage::Census;
-                attempt.census = Some(Box::new(
-                    census
-                        .prepare_ordinary(reservation, &binding)
-                        .map_err(census_error)?,
-                ));
-                let prepared = attempt.census.as_mut().expect("prepared ordinary census");
+                attempt
+                    .census
+                    .prepare(census, reservation, &binding)
+                    .map_err(census_error)?;
+                let prepared = attempt.census.prepared_mut().map_err(census_error)?;
                 let remaining = prepared.remaining_charge().map_err(census_error)?;
                 {
                     let mut observer = SourceObserver {
@@ -300,7 +257,7 @@ impl RuntimeOwner {
                             owner,
                             native,
                             &binding,
-                            &mut attempt.native,
+                            attempt.native.require_complete_mut()?,
                             &mut observer,
                         )?;
                     }
@@ -310,11 +267,9 @@ impl RuntimeOwner {
                 let completed = attempt.native.take_completed()?;
                 let lineage = ControlLineage::from_completion(&completed)?;
                 let result = census
-                    .commit_ordinary(reservation, completed, prepared)
+                    .commit_shared_ordinary(reservation, completed, prepared)
                     .map_err(census_error)?;
-                census
-                    .finish_reservation(reservation)
-                    .map_err(census_error)?;
+                storage::finish_success(attempt, census)?;
                 self.initial_origin = Some(result.current);
                 self.control_lineage = Some(lineage);
                 attempt.stage = AttemptStage::Complete;
@@ -322,12 +277,13 @@ impl RuntimeOwner {
             }));
         match outcome {
             Ok(result) => {
-                attempt.failed = result.is_err();
+                if let Err(error) = &result {
+                    storage::fail_returned(attempt, census, error);
+                }
                 result
             }
             Err(payload) => {
-                attempt.failed = true;
-                attempt.unwound = true;
+                storage::fail_registered(attempt, census, storage::Failure::Unwound);
                 std::panic::resume_unwind(payload)
             }
         }

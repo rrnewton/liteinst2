@@ -76,7 +76,7 @@ fn unchanged_control(owner: &Owner) -> Box<dyn Fn(&Owner)> {
     let charged = admission.census.charged();
     let used = admission.census.used();
     let rows = admission.census.rows().cloned().collect::<Vec<_>>();
-    let history = admission.census.history().to_vec();
+    let history = admission.census.history_snapshot().unwrap();
     let active = admission
         .census
         .active()
@@ -96,7 +96,7 @@ fn unchanged_control(owner: &Owner) -> Box<dyn Fn(&Owner)> {
         assert_eq!(admission.census.charged(), charged);
         assert_eq!(admission.census.used(), used);
         assert_eq!(admission.census.rows().cloned().collect::<Vec<_>>(), rows);
-        assert_eq!(admission.census.history(), history);
+        assert_eq!(admission.census.history_snapshot().unwrap(), history);
         assert_eq!(
             admission
                 .census

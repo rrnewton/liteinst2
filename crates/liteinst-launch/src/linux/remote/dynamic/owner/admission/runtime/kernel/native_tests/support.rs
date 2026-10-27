@@ -253,7 +253,7 @@ pub(super) struct Current {
     pub(super) observed: ObservedStop,
     pub(super) origin: OriginId,
     pub(super) rows: Vec<crate::linux::remote::dynamic::owner::admission::census::OriginRow>,
-    pub(super) history: Vec<crate::linux::remote::dynamic::owner::admission::census::HistoryRecord>,
+    pub(super) history: crate::linux::remote::dynamic::owner::admission::census::HistorySnapshot,
     pub(super) charged: BudgetCharge,
     pub(super) used: BudgetCharge,
 }
@@ -294,7 +294,7 @@ pub(super) fn current(owner: &Owner, app: &OwnedFd, memory: &Memory, until: Inst
         observed,
         origin,
         rows: census.rows().cloned().collect(),
-        history: census.history().to_vec(),
+        history: census.history_snapshot().unwrap(),
         charged: census.charged(),
         used: census.used(),
     }
@@ -385,8 +385,8 @@ pub(super) fn completed(
 pub(super) fn advance_count(before: &Current, after: &Current, origins: usize, witnesses: usize) {
     assert_eq!(&after.rows[..before.rows.len()], before.rows.as_slice());
     assert_eq!(
-        &after.history[..before.history.len()],
-        before.history.as_slice()
+        after.history.prefix(before.history.len()).unwrap(),
+        before.history
     );
     assert_eq!(after.rows.len(), before.rows.len() + origins);
     assert_eq!(after.history.len(), before.history.len() + witnesses);

@@ -13,6 +13,14 @@ use std::mem::size_of;
 
 mod profile;
 mod runner;
+mod storage;
+#[cfg(test)]
+pub(super) use profile::ControlLineageSnapshot;
+#[cfg(test)]
+pub(super) use storage::NativeAllocationView;
+pub(super) use storage::NativeInstructionStorage;
+#[cfg(test)]
+pub(super) use storage::NativeStorageSnapshot;
 #[cfg(test)]
 mod tests;
 pub(super) use profile::{ControlLineage, ControlProfile};
@@ -174,6 +182,7 @@ pub(super) struct PreparedInstructionAttempt {
     claimed: bool,
 }
 impl PreparedInstructionAttempt {
+    #[cfg(test)]
     pub(super) fn allocate(
         shape: InstructionAttemptShape,
         until: Instant,

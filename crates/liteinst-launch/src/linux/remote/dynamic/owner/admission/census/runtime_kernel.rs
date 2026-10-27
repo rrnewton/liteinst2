@@ -22,7 +22,8 @@ use std::time::Instant;
 mod commit;
 mod lineage;
 mod validate;
-pub(super) use lineage::KernelOriginLineage;
+pub(in super::super) use lineage::runtime_lineage_temporary_bytes;
+pub(super) use lineage::{KernelOriginLineage, lineage_caller_temporary_bytes};
 // Insert before the existing cfg(test) tests declaration; do not append after it.
 #[cfg(test)]
 mod native_oracle;

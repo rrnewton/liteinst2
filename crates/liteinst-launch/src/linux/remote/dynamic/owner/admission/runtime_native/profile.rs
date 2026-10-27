@@ -3,6 +3,10 @@ use super::super::super::lifecycle::{BoundedCet, certify_bounded_cet};
 use super::super::runtime_kernel_native::OwnedRuntimeKernelReturn;
 use super::*;
 use crate::linux::remote::dynamic::owner::kernel_journal::{KernelAttemptId, KernelStopIdentity};
+#[cfg(test)]
+mod native_oracle;
+#[cfg(test)]
+pub(super) use native_oracle::{ControlLineageSnapshot, ProfileSnapshot};
 const DR_BASE: u64 = 0xffff_0ff0;
 pub(in crate::linux::remote::dynamic::owner::admission) const DR_TRACE: u64 = DR_BASE ^ 0x4000;
 

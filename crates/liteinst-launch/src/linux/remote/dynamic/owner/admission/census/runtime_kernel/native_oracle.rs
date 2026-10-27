@@ -120,6 +120,9 @@ impl ResumeCensus {
         current: Option<OriginId>,
     ) {
         let history = &self.state.history[start..];
+        for record in history {
+            self.history_view(record).unwrap();
+        }
         assert_eq!(history.len(), if current.is_some() { 8 } else { 4 });
         assert_eq!(identity.pending().stop, original.token);
         assert_eq!(identity.task(), original.task);

@@ -18,7 +18,19 @@ mod panic_custody;
 mod runtime;
 pub(super) use runtime::{InitialRuntimeReservation, initial_runtime_origin_charge};
 mod ordinary;
-pub(super) use ordinary::{PreparedOrdinaryCensus, ordinary_census_charge};
+pub(super) use ordinary::{SharedOrdinaryPreparation, ordinary_shared_census_charge};
+mod history;
+#[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+pub(super) use history::HistorySnapshot;
+pub(super) use history::{
+    ConsumptionEvidenceView, ConsumptionView, HistoryView, SharedOrdinaryRecord,
+    history_view_temporary_bytes,
+};
+#[cfg(test)]
+pub(super) use ordinary::AllocationCensusSnapshot;
+#[cfg(test)]
+pub(super) use ordinary::OrdinaryPreparationHistorySnapshot;
+pub(super) use ordinary::shared::ObservationView;
 mod runtime_stack;
 #[cfg(feature = "dev-owned-stack-consumer-oracle")]
 pub(super) use runtime_stack::consumer_oracle::prefix_mirror::{
@@ -48,7 +60,9 @@ pub(super) use stack_calls::native_oracle::CallLedgerRowSnapshot;
 mod selected_runtime;
 pub(super) use selected_runtime::PreparedRuntimeSelected;
 mod runtime_kernel;
-pub(super) use runtime_kernel::{PreparedRuntimeKernelCensus, runtime_kernel_census_charge};
+pub(super) use runtime_kernel::{
+    PreparedRuntimeKernelCensus, runtime_kernel_census_charge, runtime_lineage_temporary_bytes,
+};
 pub(in crate::linux::remote::dynamic::owner) use runtime_kernel::{
     RuntimeKernelCommitOutcome, RuntimeKernelCommitReceipt, RuntimeKernelCommitView,
 };
@@ -446,7 +460,8 @@ pub(super) struct ActiveOrigin<'a> {
     pub(super) current: &'a ObservedStop,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
+#[cfg_attr(any(test, feature = "dev-exec-backing-cleanup"), derive(Clone))]
 struct StoredOrigin {
     row: OriginRow,
     current: ObservedStop,
@@ -454,6 +469,7 @@ struct StoredOrigin {
     frame: Option<Arc<FrameFacts>>,
     // Minted only by sealed runtime-kernel commit; inherited only by exact CPU completion.
     runtime_kernel: Option<runtime_kernel::KernelOriginLineage>,
+    ordinary_history: Option<ordinary::SharedOrdinaryOwner>,
 }
 
 /// Full evidence of the one already-authorized native clone invocation.
@@ -787,6 +803,7 @@ fn input_matches(
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(super) enum HistoryRecord {
+    SharedOrdinary(SharedOrdinaryRecord),
     Refreshed {
         origin: OriginId,
         before: ObservedStop,
@@ -832,7 +849,8 @@ pub(super) struct Projection {
     pub(super) resumes: BTreeMap<u64, BTreeSet<ResumeKind>>,
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Debug, Eq, PartialEq)]
+#[cfg_attr(any(test, feature = "dev-exec-backing-cleanup"), derive(Clone))]
 struct State {
     generation: u64,
     next_serial: u64,
@@ -1054,6 +1072,7 @@ impl ResumeCensus {
             active: true,
             frame: None,
             runtime_kernel: None,
+            ordinary_history: None,
         });
         self.state.next_serial = next;
         self.commit_debit(token, remaining, used);

@@ -185,6 +185,11 @@ pub(super) fn reservation_charge(
     temporary = add(temporary, RuntimeKernelShape::temporary_bytes()?)?;
     temporary = add(temporary, ControlProfile::temporary_bytes()?)?;
     temporary = add(temporary, namespace::temporary_bytes())?;
+    temporary = add(
+        temporary,
+        crate::linux::remote::dynamic::owner::admission::census::runtime_lineage_temporary_bytes()
+            .map_err(census_error)?,
+    )?;
     root = add(root, temporary)?;
     let mut charge = runtime_kernel_census_charge(operation).map_err(census_error)?;
     charge.source_fact_bytes = add(charge.source_fact_bytes, root)?;

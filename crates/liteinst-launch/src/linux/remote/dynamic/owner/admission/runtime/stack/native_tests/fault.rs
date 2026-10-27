@@ -123,7 +123,7 @@ pub(super) fn run(point: InterventionPoint, kind: InterventionKind) {
             }
             let runtime = owner.runtime.as_mut().unwrap();
             let old_origin = runtime.initial_origin;
-            let old_history = runtime.census.as_ref().unwrap().history().to_vec();
+            let old_history = runtime.census.as_ref().unwrap().history_snapshot().unwrap();
             runtime.stack.as_mut().unwrap().native_intervention = Some((point, kind));
             let result = support::invoke(owner, AdmissionRequest::Advance, until);
             assert!(
@@ -180,7 +180,10 @@ pub(super) fn run(point: InterventionPoint, kind: InterventionKind) {
             assert!(native.trace.is_none());
             assert!(!progress.instruction_completed && !progress.nx_closed);
             assert_eq!(runtime.initial_origin, old_origin);
-            assert_eq!(runtime.census.as_ref().unwrap().history(), old_history);
+            assert_eq!(
+                runtime.census.as_ref().unwrap().history_snapshot().unwrap(),
+                old_history
+            );
             assert!(owner.closing && owner.cancel.load(Ordering::Acquire));
             if point == InterventionPoint::AfterA {
                 assert!(progress.effects().is_empty());

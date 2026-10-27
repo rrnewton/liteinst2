@@ -94,3 +94,23 @@ pub(super) fn value<T>(value: T) -> Result<Box<T>, AllocationError> {
         Ok(Box::from_raw(pointer))
     }
 }
+
+/// Exact uninitialized element storage. The caller installs this empty owner
+/// before any later check/hook. No T exists until the caller moves it in.
+pub(super) fn empty_vec<T>(capacity: usize) -> Result<Vec<T>, AllocationError> {
+    if capacity == 0 {
+        return Ok(Vec::new());
+    }
+    let layout = Layout::array::<T>(capacity).map_err(|_| AllocationError::Capacity)?;
+    if layout.size() == 0 {
+        return Err(AllocationError::Capacity);
+    }
+    // SAFETY: checked nonzero global layout, aligned for T. No T is initialized.
+    let pointer = unsafe { alloc_zeroed(layout) }.cast::<T>();
+    if pointer.is_null() {
+        return Err(AllocationError::Allocation);
+    }
+    // SAFETY: unique exact capacity with length zero; Vec deallocates the same
+    // layout. No fallible work/callback separates allocation and ownership.
+    Ok(unsafe { Vec::from_raw_parts(pointer, 0, capacity) })
+}

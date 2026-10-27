@@ -8,6 +8,7 @@ pub(super) const ENTRY: u64 = BASE + 4096;
 const TIMEOUT: Duration = Duration::from_secs(3);
 
 pub(super) struct Before {
+    pub(super) initial: crate::linux::remote::dynamic::DynamicEvent,
     pub(super) state: TaskStateSnapshot,
     pub(super) maps: Vec<u8>,
     pub(super) source: Vec<u8>,
@@ -17,6 +18,10 @@ pub(super) struct Before {
 }
 
 impl Before {
+    pub(super) fn diagnostic_stack(&self) -> (&std::fs::File, u64, &[u8]) {
+        (&self.memory, self.stack_start, &self.stack)
+    }
+
     pub(super) fn stack_unchanged(&self, owner: &Owner, until: Instant) {
         owner
             .time_left(until, "ordinary full stack observation")
@@ -92,6 +97,7 @@ pub(super) fn with_owner<T>(
             .read_exact_at(&mut stack, stacks[0].start)
             .unwrap();
         let before = Before {
+            initial: ready.event.clone(),
             state: state(ready.pid),
             maps: original_maps,
             source: memory(ready.pid, BASE, 8192),
@@ -227,6 +233,14 @@ fn same_architecture(observed: &ObservedStop, expected: &TaskStateSnapshot) {
     assert_eq!(observed.logical_pc, expected.registers.rip);
     assert_eq!(observed.registers, expected.registers);
     assert_eq!(observed.xstate, expected.xstate);
+    assert_eq!(observed.signal_mask, expected.mask);
+}
+
+// Full resolved header/bytes; this borrowed view grants no native authority.
+fn same_history_architecture(observed: census::ObservationView<'_>, expected: &TaskStateSnapshot) {
+    assert_eq!(observed.logical_pc, expected.registers.rip);
+    assert_eq!(*observed.registers, expected.registers);
+    assert_eq!(observed.xstate, expected.xstate.as_slice());
     assert_eq!(observed.signal_mask, expected.mask);
 }
 
@@ -458,9 +472,19 @@ pub(super) fn check(
     let old_row = census.rows().nth(ordinal).unwrap();
     let mut prior_token = attempt.stop.token.clone();
     for (i, record) in history.iter().enumerate() {
+        let record = census.history_view(record).unwrap();
         if i == 3 {
             assert!(
-                matches!(record, census::HistoryRecord::Consumed { origin, .. } if *origin == old_row.id)
+                matches!(&record, census::HistoryView::Consumed { origin, .. } if *origin == old_row.id)
+            );
+            let census::HistoryView::Consumed { evidence, .. } = record else {
+                unreachable!("checked resolved consumption");
+            };
+            assert_eq!(evidence.before.token, &prior_token);
+            same_history_architecture(evidence.before, before);
+            assert_eq!(
+                evidence.successor,
+                census::ObservationView::of(&next_row.initial)
             );
             assert!(next_row.initial.token.sequence > prior_token.sequence);
             assert_eq!(next_row.initial.task, attempt.stop.identity);
@@ -469,7 +493,7 @@ pub(super) fn check(
             prior_token = next_row.initial.token.clone();
             continue;
         }
-        let census::HistoryRecord::Refreshed {
+        let census::HistoryView::Refreshed {
             before: from,
             after: to,
             ..
@@ -478,17 +502,17 @@ pub(super) fn check(
             panic!("missing actual private checkpoint");
         };
         if i < 3 {
-            same_architecture(from, before);
-            same_architecture(to, before);
+            same_history_architecture(from, before);
+            same_history_architecture(to, before);
         } else {
-            same_architecture(from, expected);
-            same_architecture(to, expected);
+            same_history_architecture(from, expected);
+            same_history_architecture(to, expected);
         }
         assert_eq!(to.task, attempt.stop.identity);
         assert_eq!(to.token.session, owner.session);
-        assert_eq!(from.token, prior_token);
+        assert_eq!(from.token, &prior_token);
         assert!(to.token.sequence > prior_token.sequence);
-        prior_token = to.token.clone();
+        prior_token = (*to.token).clone();
         assert_eq!(to.phase, StopPhase::UserCheckpoint);
         assert_eq!(to.signal, None);
     }
@@ -590,6 +614,7 @@ struct MemoryEvidence {
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct AttemptEvidence {
+    census: census::OrdinaryPreparationHistorySnapshot,
     stage: AttemptStage,
     failed: bool,
     unwound: bool,
@@ -612,7 +637,7 @@ struct AttemptEvidence {
 }
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub(in crate::linux::remote::dynamic::owner::admission::runtime) struct Retained {
-    history: Vec<census::HistoryRecord>,
+    history: census::HistorySnapshot,
     origins: Vec<census::OriginRow>,
     current: ObservedStop,
     charged: BudgetCharge,
@@ -628,7 +653,7 @@ pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn retained(
     let runtime = owner.runtime.as_ref().unwrap();
     let census = runtime.census.as_ref().unwrap();
     Retained {
-        history: census.history().to_vec(),
+        history: census.history_snapshot().unwrap(),
         origins: census.rows().cloned().collect(),
         current: census
             .current_observation(runtime.initial_origin.unwrap())
@@ -656,6 +681,7 @@ pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn retained(
                 let profile = diagnostic.profile;
                 let memory = diagnostic.memory;
                 AttemptEvidence {
+                    census: attempt.census.history_snapshot().unwrap(),
                     stage: attempt.stage,
                     failed: attempt.failed,
                     unwound: attempt.unwound,

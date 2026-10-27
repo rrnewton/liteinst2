@@ -921,4 +921,6 @@ pub(super) fn anchor_shadow_stack_disabled(tid: i32) -> Result<(), LaunchError> 
     thread::shadow_stack_disabled(tid)
 }
 
+#[cfg(test)]
+pub(in crate::linux::remote::dynamic::owner) use thread::CetRetainedSnapshot;
 pub(in crate::linux::remote::dynamic::owner) use thread::{BoundedCet, certify_bounded_cet};

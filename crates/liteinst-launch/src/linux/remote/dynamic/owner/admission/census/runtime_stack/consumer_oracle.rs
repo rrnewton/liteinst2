@@ -213,7 +213,13 @@ type RowView<'a> = (
     &'a ObservedStop,
     Option<&'a [StackEvidence]>,
 );
-fn row(value: &HistoryRecord) -> Result<RowView<'_>, CensusConsumerError> {
+fn row<'a>(
+    census: &'a ResumeCensus,
+    value: &'a HistoryRecord,
+) -> Result<RowView<'a>, CensusConsumerError> {
+    // Authenticate shared references before refusing this owned-stack-only
+    // view. A borrowed slice has no Vec capacity and cannot enter copy_state.
+    census.history_view(value)?;
     match value {
         HistoryRecord::Refreshed {
             origin,
@@ -420,7 +426,7 @@ impl ResumeCensus {
             )?;
             let mut previous = original;
             for (index, record) in history.iter().enumerate() {
-                let (header, before, after, evidence) = row(record)?;
+                let (header, before, after, evidence) = row(self, record)?;
                 out.rows[index] = Some(header);
                 out.copy(index * 2, before)?;
                 out.copy(index * 2 + 1, after)?;
@@ -558,8 +564,8 @@ impl ResumeCensus {
                     && current.row.pc == input.checkpoints[3].state.registers.rip
                     && current.frame.is_none()
                     && current.runtime_kernel.is_none()
-                    && old.current == *row(&history[3])?.1
-                    && current.row.initial == *row(&history[3])?.2
+                    && old.current == *row(self, &history[3])?.1
+                    && current.row.initial == *row(self, &history[3])?.2
                     && current.current == *previous
                     && input.native_current == input.checkpoints[6].stop
                     && current.current.token == input.native_current.token
@@ -613,7 +619,7 @@ impl ResumeCensus {
             .get(start..end)
             .ok_or(CensusConsumerError::Incomplete)?;
         for (index, record) in history.iter().enumerate() {
-            let (header, before, after, evidence) = row(record)?;
+            let (header, before, after, evidence) = row(self, record)?;
             require(out.rows[index] == Some(header))?;
             out.matches(index * 2, before)?;
             out.matches(index * 2 + 1, after)?;
@@ -646,7 +652,7 @@ impl ResumeCensus {
         require(out.actual_allocations[15] == Some(BufferIdentity::of(&new.current.xstate)))?;
         // Slot15 was the complete actual current at capture; the immutable last
         // closing endpoint retains its value even after that origin advances.
-        require(out.states[15].as_ref() == Some(row(&history[6])?.2))?;
+        require(out.states[15].as_ref() == Some(row(self, &history[6])?.2))?;
         out.evidence
             .as_ref()
             .and_then(|v| v.binding.as_ref())
@@ -662,6 +668,7 @@ impl ResumeCensus {
 pub(in crate::linux::remote::dynamic::owner::admission) fn consumer_observation_temporary_bytes()
 -> Result<usize, CensusConsumerError> {
     let mut total = super::stack_census_temporary_bytes()?;
+    total = checked_add(total, super::super::history_view_temporary_bytes()?)?;
     total = checked_add(
         total,
         super::super::stack_calls::consumer_oracle::temporary_bytes()?,
@@ -673,6 +680,8 @@ pub(in crate::linux::remote::dynamic::owner::admission) fn consumer_observation_
         2 * size_of::<Binding>(),
         size_of::<StackConsumerInput<'_>>(),
         4 * size_of::<RowView<'_>>(),
+        size_of::<HistoryView<'_>>(),
+        size_of::<Result<HistoryView<'_>, CensusError>>(),
         size_of::<[StackCaptureAssociation; 4]>(),
         2 * size_of::<ObservedStop>(),
         4 * size_of::<BufferIdentity>(),
@@ -682,6 +691,7 @@ pub(in crate::linux::remote::dynamic::owner::admission) fn consumer_observation_
         size_of::<ConsumerBindingView<'_>>(),
         8 * size_of::<Result<(), CensusConsumerError>>(),
         size_of::<[usize; 16]>(),
+        size_of::<[usize; 18]>() + size_of::<std::array::IntoIter<usize, 18>>(),
     ] {
         total = checked_add(total, size)?;
     }

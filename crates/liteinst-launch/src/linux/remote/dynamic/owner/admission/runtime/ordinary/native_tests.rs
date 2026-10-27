@@ -6,6 +6,7 @@ use super::super::native_tests::{bytes as memory, exact_nx_maps, maps, ready, ro
 use super::*;
 use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 
+mod allocation;
 pub(in crate::linux::remote::dynamic::owner::admission::runtime) mod coalescence;
 pub(in crate::linux::remote::dynamic::owner::admission::runtime) mod cross_page;
 mod raw;
@@ -20,7 +21,7 @@ pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn assert_unrel
 ) {
     assert_eq!(runtime.ordinary_attempts.len(), census_prepared.len());
     for (attempt, prepared) in runtime.ordinary_attempts.iter().zip(census_prepared) {
-        assert_eq!(attempt.census.is_some(), *prepared);
+        assert_eq!(attempt.census.has_prepared_owner(), *prepared);
         let progress = attempt.native.progress();
         assert!(progress.effects().is_empty());
         assert_eq!(progress.waits, [None; 7]);

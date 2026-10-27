@@ -313,6 +313,13 @@ pub(super) fn attempt_charge(window: usize, call: bool) -> Result<BudgetCharge, 
     ] {
         temporary = add(temporary, term)?;
     }
+    // Keep the observation-only stack census temporary helper independent:
+    // the C observer charges its own direct resolver, without lineage scans.
+    temporary = add(
+        temporary,
+        crate::linux::remote::dynamic::owner::admission::census::runtime_lineage_temporary_bytes()
+            .map_err(census_error)?,
+    )?;
     charge.source_fact_bytes = add(charge.source_fact_bytes, add(bytes, temporary)?)?;
     Ok(charge)
 }

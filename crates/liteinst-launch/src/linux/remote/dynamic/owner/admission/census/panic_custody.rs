@@ -5,6 +5,7 @@ impl ResumeCensus {
     pub(in super::super) fn panic_prefix_check(&self) -> Check {
         let identity = (self.identity, self.session, self.space, self.limits);
         let state = self.state.clone();
+        let history = self.history_snapshot().unwrap();
         assert!(state.reservation.is_none());
         Box::new(move |actual| {
             assert_eq!(
@@ -29,6 +30,10 @@ impl ResumeCensus {
             );
             assert!(actual.state.history.len() >= state.history.len());
             assert_eq!(&actual.state.history[..state.history.len()], state.history);
+            assert_eq!(
+                actual.history_snapshot_prefix(history.len()).unwrap(),
+                history
+            );
             let mut expected = state.origins.clone();
             let added = &actual.state.history[state.history.len()..];
             assert!(
@@ -36,6 +41,7 @@ impl ResumeCensus {
                 "actual source restoration refresh was retained"
             );
             for row in added {
+                actual.history_view(row).unwrap();
                 let HistoryRecord::Refreshed {
                     origin,
                     before,
@@ -125,6 +131,7 @@ impl ResumeCensus {
     pub(in super::super) fn panic_exact_check(&self) -> Check {
         let identity = (self.identity, self.session, self.space, self.limits);
         let state = self.state.clone();
+        let history = self.history_snapshot().unwrap();
         let allocations = (
             self.state.origins.as_ptr() as usize,
             self.state.origins.capacity(),
@@ -137,6 +144,7 @@ impl ResumeCensus {
                 identity
             );
             assert_eq!(actual.state, state);
+            assert_eq!(actual.history_snapshot().unwrap(), history);
             assert_eq!(
                 (
                     actual.state.origins.as_ptr() as usize,

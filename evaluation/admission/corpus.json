@@ -6085,7 +6085,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 703
+        "tests": 736
       }
     },
     "workspace_tests": {
@@ -6447,7 +6447,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 703
+        "tests": 736
       },
       "unit/liteinst_rewrite/lib": {
         "ignored": 0,
@@ -7488,6 +7488,26 @@
       "cohort": "b3_owned_stack",
       "harness": "unit/liteinst_launch/lib",
       "test": "linux::remote::dynamic::owner::admission::runtime::stack::native_tests::runtime_stack_installed_allocation_failures_settle_before_cleanup"
+    },
+    {
+      "cohort": "b3_ordinary_allocation_custody",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_errors_retain_actual_pending_custody"
+    },
+    {
+      "cohort": "b3_ordinary_allocation_custody",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_allocation_unwinds_retain_actual_pending_custody"
+    },
+    {
+      "cohort": "b3_ordinary_allocation_custody",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_transfer_copy_conversion_failures_retain_actual_custody"
+    },
+    {
+      "cohort": "b3_ordinary_allocation_custody",
+      "harness": "unit/liteinst_launch/lib",
+      "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation::runtime_ordinary_growth_failures_preserve_prior_completed_custody"
     }
   ],
   "recorder_tests": 330,

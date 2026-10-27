@@ -2,7 +2,7 @@
 //! are explicit scripted values; they are never described as native CPU results.
 use super::*;
 use crate::DynamicAdmissionSession;
-use crate::linux::remote::dynamic::owner::admission::census::{HistoryRecord, OriginRow};
+use crate::linux::remote::dynamic::owner::admission::census::{HistorySnapshot, OriginRow};
 use crate::linux::remote::dynamic::owner::admission::runtime::native_tests::{
     bytes as read_bytes, exact_nx_maps, maps as read_maps, ready, rows, start, state as read_state,
 };
@@ -386,7 +386,7 @@ struct Current {
     observed: ObservedStop,
     origin: OriginId,
     rows: Vec<OriginRow>,
-    history: Vec<HistoryRecord>,
+    history: HistorySnapshot,
     charged: BudgetCharge,
     used: BudgetCharge,
 }
@@ -423,7 +423,7 @@ fn current(owner: &Owner, app: &OwnedFd, memory: &Memory) -> Current {
         observed,
         origin,
         rows: census.rows().cloned().collect(),
-        history: census.history().to_vec(),
+        history: census.history_snapshot().unwrap(),
         charged: census.charged(),
         used: census.used(),
     }
@@ -565,8 +565,8 @@ fn finish(
     assert_eq!(&after.rows[..before.rows.len()], before.rows.as_slice());
     assert_eq!(after.rows.len(), before.rows.len() + 1);
     assert_eq!(
-        &after.history[..before.history.len()],
-        before.history.as_slice()
+        after.history.prefix(before.history.len()).unwrap(),
+        before.history
     );
     assert_eq!(after.history.len(), before.history.len() + 1);
     assert_eq!(after.used.origins, before.used.origins + 1);
@@ -831,8 +831,8 @@ fn runtime_selected_cpu_and_ordinary_keep_exact_control_lineage() {
                         assert_eq!(after.observed.task, before.observed.task);
                         assert!(after.stop.token.sequence > before.stop.token.sequence);
                         assert_eq!(
-                            &after.history[..before.history.len()],
-                            before.history.as_slice()
+                            after.history.prefix(before.history.len()).unwrap(),
+                            before.history
                         );
                         assert_eq!(after.history.len(), before.history.len() + 7);
                         assert_eq!(after.used.origins, before.used.origins + 1);

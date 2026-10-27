@@ -164,6 +164,19 @@ OWNED_STACK_ROWS = tuple({"cohort": "b3_owned_stack", "harness": UNIT,
 OWNED_STACK_IDENTITIES = {row["test"]: row for row in OWNED_STACK_ROWS}
 
 
+# Closed held-owner allocation custody controls: 23 Err + 23 unwind + 12
+# transfer/copy/conversion + 4 growth trajectories; four named test outcomes.
+ORDINARY_ALLOCATION_ROOT = 'linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::allocation'
+ORDINARY_ALLOCATION_NAMES = ('runtime_ordinary_allocation_errors_retain_actual_pending_custody',
+ 'runtime_ordinary_allocation_unwinds_retain_actual_pending_custody',
+ 'runtime_ordinary_transfer_copy_conversion_failures_retain_actual_custody',
+ 'runtime_ordinary_growth_failures_preserve_prior_completed_custody')
+ORDINARY_ALLOCATION_ROWS = tuple({"cohort": "b3_ordinary_allocation_custody", "harness": UNIT,
+                                  "test": ORDINARY_ALLOCATION_ROOT + "::" + name}
+                                 for name in ORDINARY_ALLOCATION_NAMES)
+ORDINARY_ALLOCATION_IDENTITIES = {row["test"]: row for row in ORDINARY_ALLOCATION_ROWS}
+
+
 def catalog(fixtures):
     require(type(fixtures) is list, "invalid_native_fixture_catalog")
     identities = {}
@@ -172,6 +185,9 @@ def catalog(fixtures):
                 "invalid_native_fixture_catalog")
         require(all(type(value) is str for value in row.values())
                 and NAME.fullmatch(row["test"]), "invalid_native_fixture_catalog")
+        require(not row["test"].startswith(ORDINARY_ALLOCATION_ROOT)
+                or row == ORDINARY_ALLOCATION_IDENTITIES.get(row["test"]),
+                "invalid_native_fixture_scope")
         require(not row["test"].startswith(OWNED_STACK_ROOT)
                 or row == OWNED_STACK_IDENTITIES.get(row["test"]),
                 "invalid_native_fixture_scope")
@@ -187,7 +203,9 @@ def catalog(fixtures):
         require(not row["test"].startswith(WAIT_CUSTODY_ROOT)
                 or row == WAIT_CUSTODY_ROW, "invalid_native_fixture_scope")
         require(not row["test"].startswith(RUNTIME_NATIVE_ROOTS)
-                or row == RUNTIME_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
+                or row == RUNTIME_IDENTITIES.get(row["test"])
+                or row == ORDINARY_ALLOCATION_IDENTITIES.get(row["test"]),
+                "invalid_native_fixture_scope")
         require(row["test"] not in MAPPING_TESTS
                 or (row["cohort"] == "b3_mapping" and row["harness"] == MAPPING_REFERENCE),
                 "invalid_native_fixture_scope")
@@ -221,6 +239,7 @@ def catalog(fixtures):
                 or row == WAIT_CUSTODY_ROW
                 or row == RUNTIME_KERNEL_IDENTITIES.get(row["test"])
                 or row == RUNTIME_LAUNCH_CLEANUP_IDENTITIES.get(row["test"])
+                or row == ORDINARY_ALLOCATION_IDENTITIES.get(row["test"])
                 or row == OWNED_STACK_IDENTITIES.get(row["test"])
                 or row == INITIAL_COALESCENCE_IDENTITIES.get(row["test"]), "invalid_native_fixture_scope")
         key = (row["harness"], row["test"])

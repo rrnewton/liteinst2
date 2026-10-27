@@ -79,6 +79,17 @@ impl RetiredCensus {
         &self.history
     }
 
+    #[cfg(any(test, feature = "dev-exec-backing-cleanup"))]
+    pub(in super::super) fn history_snapshot(&self) -> Result<HistorySnapshot, CensusError> {
+        super::history::retired_snapshot(
+            self.retirement.binding.census,
+            &self.origins,
+            &self.history,
+            self.history.len(),
+            true,
+        )
+    }
+
     /// These values must not be summed as a second active lifetime account.
     pub(in super::super) fn accounting_at_retirement(&self) -> (BudgetCharge, BudgetCharge) {
         (self.charged_at_retirement, self.used_at_retirement)
@@ -316,6 +327,7 @@ impl ResumeCensus {
             active: true,
             frame: None,
             runtime_kernel: None,
+            ordinary_history: None,
         });
 
         // All checks, allocation and arithmetic are complete. These moves are

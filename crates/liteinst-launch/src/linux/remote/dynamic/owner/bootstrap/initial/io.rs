@@ -448,6 +448,11 @@ pub(in crate::linux::remote::dynamic::owner) struct MapBuffer {
     pub(in crate::linux::remote::dynamic::owner) complete: bool,
 }
 impl MapBuffer {
+    /// Actual initialized allocation bytes, independent of captured length.
+    #[cfg(test)]
+    pub(in crate::linux::remote::dynamic::owner) fn initialized_storage(&self) -> &[u8; MAP_BYTES] {
+        &self.storage
+    }
     pub(in crate::linux::remote::dynamic::owner) fn allocate() -> Result<Self, LaunchError> {
         Ok(Self {
             storage: fixed_buffer()?,

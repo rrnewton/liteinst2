@@ -404,6 +404,7 @@ impl ResumeCensus {
             active: true,
             frame: None,
             runtime_kernel: None,
+            ordinary_history: None,
         });
         for index in 0..3 {
             let before = if index == 0 {
