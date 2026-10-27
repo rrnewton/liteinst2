@@ -28,8 +28,8 @@ def check(spec,row,owner,command,stdout,native,before,after,decoded,original,obs
     base.need(not err,'native REP decoder observer stderr')
     d=json.loads(out)
     base.need(d['pc']==item['pc'] and d['next_pc']==item['pc']+3 and d['abi']==1 and d['decode_status']==0 and
-              d['length']==3 and d['kind']==0 and d['code']==346 and d['step_disposition']==8,
-              'independent canonical REP decode and unchanged old classifier refusal')
+              d['length']==3 and d['kind']==0 and d['code']==346 and d['step_disposition']==0,
+              'independent canonical REP decode and old NOP/MOV unsupported disposition')
     return result
 
 

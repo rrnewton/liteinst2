@@ -171,3 +171,10 @@ actual first-store write fault. Run it on one reserved CPU. A separate bounded
 prefixes and counters; the original `LI2_LOADER` report is unchanged. Its parser
 requires complete REP evidence and rejects an extra report in every old finite
 program. The real-linker diagnostic remains separate from finite completion.
+
+`page_selected_repeat_oracle.py --expect-revision REVISION` separately runs six
+same-address native/REP pairs with full state and memory comparisons, all 47
+generic refusals, six REP refusal checks and an actual first-store fault. It
+builds the current product sources and retains raw records privately. The
+public receipt records actual iteration counts and preserves the fault as a
+failed operation.
