@@ -19,6 +19,7 @@ from page_selected_process import invoke
 from page_selected_generic_build import Build, PROFILES as BUILD_PROFILES
 from run import hardware
 import page_selected_generic_compare as compare
+import page_selected_repeat_compare as repeat_compare
 
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
@@ -83,6 +84,10 @@ def publish(path, receipt, private, aliases):
             'counters': counts(receipt['ls_diagnostic']['result']),
             'exact_report_sha256': digest(receipt['ls_diagnostic']['result']),
             'namespace': receipt['ls_diagnostic'].get('namespace')}
+        if receipt['ls_diagnostic'].get('repeat') is not None:
+            r = receipt['ls_diagnostic']['repeat']
+            diagnostic['repeat'] = {k: r[k] for k in ('attempts', 'completed', 'traces', 'queries')}
+            diagnostic['repeat_report_sha256'] = digest(r)
     commands = []
     for command in receipt['commands']:
         commands.append(dict(name=command['name'], stage=command['stage'], profile=command['profile'],
@@ -121,8 +126,10 @@ def publish(path, receipt, private, aliases):
         output.write(text)
 
 
-def main(*, embedded=False):
-    need(type(embedded) is bool, 'closed embedded profile selector')
+def main(*, embedded=False, repeat=False):
+    need(type(embedded) is bool and type(repeat) is bool and (not repeat or embedded), 'closed cohort selector')
+    if repeat:
+        import page_selected_repeat as repetition
     if embedded:
         import page_selected_embedded as addition
     ap = argparse.ArgumentParser(description=__doc__)
@@ -134,7 +141,7 @@ def main(*, embedded=False):
     cpu = next(iter(os.sched_getaffinity(0)))
     os.chdir(ROOT)
     stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    name = stamp+('-page-selected-embedded-' if embedded else '-page-selected-generic-')+args.expect_revision[:12]
+    name = stamp+('-page-selected-repeat-' if repeat else '-page-selected-embedded-' if embedded else '-page-selected-generic-')+args.expect_revision[:12]
     output = ROOT/'target/evaluation/inprocess'/name
     output.mkdir(parents=True, exist_ok=False)
     public = HERE/'results'/(name+'.json')
@@ -152,6 +159,10 @@ def main(*, embedded=False):
             finite_command_count=None,
             reproduce=['python3', 'evaluation/inprocess/page_selected_embedded.py',
                        '--expect-revision', args.expect_revision])
+    if repeat:
+        receipt.update(profile='page-selected-repeat-v1',
+            scope='32 finite streams including ten canonical REP programs; separate real-ls diagnostic; no general REP, signal delivery, full B2/B3 or performance claim',
+            reproduce=['python3', 'evaluation/inprocess/page_selected_repeat.py', '--expect-revision', args.expect_revision])
     for i, path in enumerate(args.library_root or [Path('/usr/lib64')]):
         aliases.append((str(path.resolve()), '${LIBRARY_ROOT_'+str(i)+'}'))
         if args.library_root:
@@ -213,10 +224,14 @@ def main(*, embedded=False):
         need(hw['cpu'] == cpu, 'actual CPU')
         receipt['hardware_observer'] = hw
         images = output/'images'
-        generator = 'page_selected_embedded_images.py' if embedded else 'page_selected_generic_images.py'
+        generator = 'page_selected_repeat_images.py' if repeat else 'page_selected_embedded_images.py' if embedded else 'page_selected_generic_images.py'
         run('images', [python, HERE/generator, images])
         specs = json.loads(binary(images/'images.json').read_bytes())
         additions = []
+        repeats = []
+        if repeat:
+            need(len(specs) == 32 and [s['name'] for s in specs[22:]] == repetition.NAMES, 'closed ten-case REP extension')
+            specs, repeats = specs[:22], specs[22:]
         if embedded:
             need(len(specs) == 22 and [item['name'] for item in specs[20:]] ==
                  ['embedded_cpuid_direct', 'embedded_cpuid_cross_indirect'], 'closed two-case embedded extension')
@@ -226,7 +241,7 @@ def main(*, embedded=False):
               'prefix_random', 'cross_mov', 'cross_selected', 'rsp_refusal', 'query_trap', 'query_trap_highbits', 'query_usr1'] and
              [s['name'] for s in specs[-5:]] ==
              ['branch_memory_stack', 'boundary_call_ret', 'cpuid0', 'rdtsc', 'rdtscp'], 'closed 15+5 cohort')
-        specs += additions
+        specs += additions + repeats
         for i, spec in enumerate(specs):
             name = spec['name']
             case = dict(name=name, accepted=False)
@@ -249,13 +264,17 @@ def main(*, embedded=False):
                 before = compare.clock(out, cpu)
             native = None
             if name != 'rsp_refusal':
-                command, out, err = run('native-'+name, [original], None)
+                command, out, err = run('native-'+name, [original], -11 if repeat and i >= 22 and spec['fault'] else None)
                 need(not err, 'native stderr')
                 native = dict(exit=command['exit'], stdout=out)
             namespace = output/('namespace-'+name)
             command, out, err = run('gated-'+name, [python, ROOT/'tools/page-entry/carrier.py', 'exec-loader',
                 '--library-root', spec['library_root'], '--namespace', namespace, carrier, original, '--', original], None)
-            row = compare.parse(err)
+            row, repeat_row = repeat_compare.parse(err)
+            if i < 22:
+                need(repeat_row is None, 'old finite programs cannot acquire a REP route')
+            else:
+                need(repeat, 'new program requires explicit REP cohort')
             if i < 15:
                 compare.check_legacy(spec, row, command, out, native, hw)
             else:
@@ -269,10 +288,14 @@ def main(*, embedded=False):
                 decoded = json.loads(decoded_out)
                 if i < 20:
                     case['outcome'] = compare.check_connected(spec, row, command, out, native, before, after, decoded)
-                else:
+                elif i < 22:
                     need(embedded, 'extra case requires explicit embedded profile')
                     case['outcome'] = addition.check(spec, row, command, out, native, before, after, decoded,
                                                      original, observe, run)
+                else:
+                    case['outcome'] = repetition.check(spec, row, repeat_row, command, out, native,
+                                                       before, after, decoded, original, observe, run)
+                    case['repeat'] = repeat_row
             ns = json.loads(binary(namespace/'namespace.json').read_bytes())
             binary(namespace/'launch.json')
             need(len(ns['objects']) == 1 and ns['objects'][0]['sha256'] == spec['interpreter_sha256'] and
@@ -282,7 +305,14 @@ def main(*, embedded=False):
             if embedded and i == 19:
                 need(len(receipt['cases']) == 20 and all(x['accepted'] for x in receipt['cases']) and
                      len(receipt['commands'])-cohort_start == 76, 'all finite cases and exact command cohort')
-        if embedded:
+            if repeat and i == 21:
+                need(len(receipt['cases']) == 22 and all(x['accepted'] for x in receipt['cases']) and
+                     len(receipt['commands'])-cohort_start == 98, 'all original 22 cases and 98 commands')
+        if repeat:
+            receipt['finite_command_count'] = len(receipt['commands'])-cohort_start
+            need(len(receipt['cases']) == 32 and all(x['accepted'] for x in receipt['cases']) and
+                 receipt['finite_command_count'] == 168, 'all 32 finite cases and exact 98+70 commands')
+        elif embedded:
             receipt['finite_command_count'] = len(receipt['commands'])-cohort_start
             need(len(receipt['cases']) == 22 and all(x['accepted'] for x in receipt['cases']) and
                  receipt['finite_command_count'] == 98, 'all 22 finite cases and exact 76+22 commands')
@@ -306,8 +336,8 @@ def main(*, embedded=False):
             argv += ['--library-root', path.resolve()]
         argv += ['--namespace', namespace, carrier, ls, '--', ls, '-d', '.']
         command, out, err = run('gated-ls-diagnostic', argv, None)
-        row = compare.parse(err)
-        diagnostic = dict(status='failed', result=row, original=fact(ls), interpreter=fact(loader))
+        row, repeat_row = repeat_compare.parse(err)
+        diagnostic = dict(status='failed', result=row, original=fact(ls), interpreter=fact(loader), repeat=repeat_row)
         receipt['ls_diagnostic'] = diagnostic
         if command['exit'] == 0:
             need(out == expected_out and row['status'] == row['failure_code'] == row['detail_abs'] == row['detail_negative'] == 0 and
@@ -336,11 +366,14 @@ def main(*, embedded=False):
             need(decoded['pc'] == row['tf_pc'] and decoded['length'] == n and decoded['decode_status'] == 0 and
                  decoded['kind'] == 0 and decoded['code'] == row['tf_code'], 'actual failed opcode identity')
             diagnostic.update(status='unsupported_actual_opcode', bytes=packed[:n].hex(), decoded=decoded)
+        if repeat_row is not None:
+            repeat_compare.completed(repeat_row)
         ns = json.loads(binary(namespace/'namespace.json').read_bytes())
         binary(namespace/'launch.json')
         for item in ns['objects']:
             need(item['seals'] == 15 and fact(pin(item['source']))['sha256'] == item['sha256'], 'immutable actual ls dependency')
-        expected_commands = ((101 if diagnostic['status'] == 'completed_actual_ls' else 102) if embedded else
+        expected_commands = ((171 if diagnostic['status'] == 'completed_actual_ls' else 172) if repeat else
+                             (101 if diagnostic['status'] == 'completed_actual_ls' else 102) if embedded else
                              (79 if diagnostic['status'] == 'completed_actual_ls' else 80))
         need(len(receipt['commands'])-cohort_start == expected_commands,
              'complete exact diagnostic command cohort')
@@ -374,7 +407,9 @@ def main(*, embedded=False):
         if receipt['error'] or receipt['final_errors'] or receipt['build']['status'] != 'passed':
             receipt['status'] = 'failed'
         save(output/'receipt.json', receipt)
-        if embedded:
+        if repeat:
+            repetition.publish(public, receipt, output, aliases)
+        elif embedded:
             addition.publish(public, receipt, output, aliases)
         else:
             publish(public, receipt, output, aliases)

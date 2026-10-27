@@ -10,6 +10,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+from core223_inventory import peel_current as peel_core223, source_before_core223
 
 PREVIOUS = '5722a63804e587b2bc6c9b9330e9a610feeedc5838916409d652fc5ea0b76668'
 CURRENT = '3de828ebb4d057e7fad20da36e59a90ea9ab09dedf5a2cb6ff7cf66068118f61'
@@ -89,6 +90,7 @@ def digest(value):
 
 
 def source_before_inline(path, data, error):
+    data = source_before_core223(path, data, error)
     if path not in PROJECTIONS:
         return data
     row = PROJECTIONS[path]
@@ -104,6 +106,7 @@ def source_before_inline(path, data, error):
 
 
 def before_inline(declared):
+    declared = peel_core223(declared)
     require(type(declared) is dict and digest(declared) == CURRENT, 'inline_inventory_differs')
     previous = copy.deepcopy(declared)
     rows = previous['harness_test_counts']['workspace_tests']
@@ -129,4 +132,5 @@ def before_inline(declared):
 
 
 def peel_current(declared):
+    declared = peel_core223(declared)
     return before_inline(declared) if type(declared) is dict and digest(declared) == CURRENT else declared

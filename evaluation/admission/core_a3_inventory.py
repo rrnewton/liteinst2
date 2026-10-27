@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 
 from parsing import require
+from core223_inventory import source_before_core223
 from runtime_stack_consumer_inventory import before_runtime_stack_consumer_python
 
 PRE_CORE_A3_CORPUS_SHA256 = '9fa263ff4f52fadfbb3f9a2d010d58846a52bb25ce28d9c1b22fee6bdb331a0c'
@@ -63,6 +64,7 @@ def require_current_core_a3_sources():
     for path in RUST_METHODS:
         try:
             source = (root / path).read_text()
+            source = source_before_core223(path, source.encode(), "core_a3_source_inventory_differs").decode()
         except (OSError, UnicodeError):
             require(False, "core_a3_source_inventory_differs")
         names = re.findall(r"#\[test\]\s*fn\s+([A-Za-z0-9_]+)\s*\(", source)
@@ -71,6 +73,7 @@ def require_current_core_a3_sources():
     for path, fragment in SOURCE_WIRING.items():
         try:
             source = (root / path).read_text()
+            source = source_before_core223(path, source.encode(), "core_a3_source_inventory_differs").decode()
         except (OSError, UnicodeError):
             require(False, "core_a3_source_inventory_differs")
         require(source.count(fragment) == 1, "core_a3_source_inventory_differs")

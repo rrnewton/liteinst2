@@ -1,0 +1,124 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "repeat-owner-fixture"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "active_index": 5,
+        "active_lane": 1,
+        "completed": 6,
+        "control": 0,
+        "emergency_revoke_attempted": 0,
+        "emergency_revoke_result": 0,
+        "emergency_sync_attempted": 0,
+        "emergency_sync_result": 0,
+        "expected_failure_verified": 0,
+        "first_error": 0,
+        "header_bytes": 208,
+        "magic": 3553416325899039308,
+        "old_refusals": 47,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 6,
+        "stosq_refusals": 6,
+        "unexpected_observed": 0,
+        "version": 2
+      },
+      "name": "positive",
+      "native_pairs_completed": 6,
+      "stderr": "",
+      "stdout_prefix": "LI2_REPEAT_OWNER_PASS pairs=6 counts=0,1,3 directions=0,1 old_refusals=47 stosq_refusals=6 selftest=1 traces=",
+      "stdout_suffix": "\n",
+      "successful_operation": true,
+      "trace_total_max": 10,
+      "trace_total_min": 6
+    },
+    {
+      "actual_failed_operation": true,
+      "argv": [
+        "repeat-owner-fixture"
+      ],
+      "environment_delta": {
+        "LI2_REPEAT_WRITE_FAULT": "1"
+      },
+      "exit": 125,
+      "header_equals": {
+        "active_index": 1,
+        "active_lane": 1,
+        "completed": 0,
+        "control": 1,
+        "emergency_revoke_attempted": 0,
+        "emergency_revoke_result": 0,
+        "emergency_sync_attempted": 0,
+        "emergency_sync_result": 0,
+        "expected_failure_verified": 1,
+        "first_error": 0,
+        "header_bytes": 208,
+        "magic": 3553416325899039308,
+        "old_refusals": 47,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 6,
+        "stosq_refusals": 6,
+        "traces": 0,
+        "unexpected_observed": 1,
+        "version": 2
+      },
+      "name": "write-fault",
+      "native_pairs_completed": 0,
+      "stderr": "",
+      "stdout": "LI2_REPEAT_OWNER_EXPECTED_FAILURE 7\n",
+      "successful_operation": false
+    }
+  ],
+  "header_bytes": 208,
+  "header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "case_bytes",
+    "event_bytes",
+    "selftest_bytes",
+    "pairs",
+    "completed",
+    "traces",
+    "old_refusals",
+    "stosq_refusals",
+    "xcr0",
+    "xsave_bytes",
+    "first_error",
+    "active_index",
+    "active_lane",
+    "unexpected_observed",
+    "emergency_revoke_attempted",
+    "emergency_revoke_result",
+    "emergency_sync_attempted",
+    "emergency_sync_result",
+    "control",
+    "expected_failure_verified",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "header_format": "<18QqQq5Q",
+  "inherited_failure_record": "Setup/decoder fatal paths can retain the old generic shape; preserve every failure byte before any success parser.",
+  "limits": {
+    "core_bytes": 0,
+    "external_cpu_count": 1,
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "record_extent": "header_bytes + selftest_bytes + 6 * case_bytes + event_bytes",
+  "record_limit_bytes_exclusive": 16777216,
+  "schema_version": 1,
+  "scope": "Standalone real REP owner; no connected product join"
+}
