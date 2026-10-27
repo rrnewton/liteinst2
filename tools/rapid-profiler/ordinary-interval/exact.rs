@@ -3,7 +3,7 @@ use super::*;
 #[path = "../exact-work/join.rs"]
 mod join;
 #[path = "../exact-work/truth.rs"]
-mod truth;
+pub(super) mod truth;
 
 pub(super) fn run(candidate: &Path, expected: &Path, name: &str, retained: usize) {
     let (schedule, schedule_id) = match name {

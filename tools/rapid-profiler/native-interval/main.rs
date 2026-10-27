@@ -856,7 +856,10 @@ fn permission_refusals(leaf: &mut LoadedLeaf, output: &Path) {
 
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
-    if args.get(1).and_then(|s| s.to_str()) == Some("exact-state") {
+    if matches!(
+        args.get(1).and_then(|s| s.to_str()),
+        Some("exact-state" | "exact-concurrent-state")
+    ) {
         assert_eq!(
             args.len(),
             5,
@@ -868,7 +871,11 @@ fn main() {
         assert!(output.is_absolute() && !output.exists());
         std::fs::create_dir(&output).unwrap();
         assert_eq!(output.canonicalize().unwrap(), output);
-        ordinary::run_exact(&subject, &expected, &output);
+        if args[1] == "exact-concurrent-state" {
+            ordinary::run_exact_concurrent(&subject, &expected, &output);
+        } else {
+            ordinary::run_exact(&subject, &expected, &output);
+        }
         return;
     }
     if args.get(1).and_then(|s| s.to_str()) == Some("ordinary-state") {

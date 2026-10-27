@@ -103,6 +103,7 @@ fn child(
     subject: &Path,
     expected_elf: &[u8],
     symbol: &std::ffi::CStr,
+    concurrent: bool,
 ) {
     current_single_main();
     // SAFETY: independently pinned exact fixed C/assembly DSO output.
@@ -202,7 +203,14 @@ fn child(
             .unwrap();
         let generation = epoch.generation().get();
         // SAFETY: this actual single child owns all code before attaching TLS.
-        let (mut controller, client) = unsafe { prepared.activate() }.unwrap();
+        let (mut controller, client) = unsafe {
+            if concurrent {
+                prepared.activate_concurrent()
+            } else {
+                prepared.activate()
+            }
+        }
+        .unwrap();
         controller.arm(&epoch).unwrap();
         let mut attached = unsafe { client.attach(1, stack, IntervalJournal::allocate()) }.unwrap();
         let totals = PairTotals {
@@ -419,14 +427,18 @@ fn check_exact(observed: OriginalObservation<'_>) -> (usize, usize, usize, usize
 }
 
 pub fn run(subject: &Path, expected: &Path, output: &Path) {
-    run_selected(subject, expected, output, false);
+    run_selected(subject, expected, output, false, false);
 }
 
 pub fn run_exact(subject: &Path, expected: &Path, output: &Path) {
-    run_selected(subject, expected, output, true);
+    run_selected(subject, expected, output, true, false);
 }
 
-fn run_selected(subject: &Path, expected: &Path, output: &Path, exact: bool) {
+pub fn run_exact_concurrent(subject: &Path, expected: &Path, output: &Path) {
+    run_selected(subject, expected, output, true, true);
+}
+
+fn run_selected(subject: &Path, expected: &Path, output: &Path, exact: bool, concurrent: bool) {
     current_single_main();
     // The root-owned recipe supplies a separately trusted exact compiler ELF;
     // these bytes are not generated from the candidate by this native fixture.
@@ -483,6 +495,7 @@ fn run_selected(subject: &Path, expected: &Path, output: &Path, exact: bool) {
                             subject,
                             &expected_elf,
                             c"exact_work_nonempty",
+                            concurrent,
                         )
                     },
                     |observed| {
@@ -507,6 +520,7 @@ fn run_selected(subject: &Path, expected: &Path, output: &Path, exact: bool) {
                         subject,
                         &expected_elf,
                         c"ordinary_checksum_nonempty",
+                        concurrent,
                     )
                 })
             };
@@ -573,8 +587,13 @@ fn run_selected(subject: &Path, expected: &Path, output: &Path, exact: bool) {
     .unwrap();
     current_single_main();
     if exact {
+        let mode = if concurrent {
+            "exact-concurrent"
+        } else {
+            "exact"
+        };
         println!(
-            "native-exact:required=4:pairs=4:children=8:comparisons={comparisons}:truth-instructions=800:conditional=130:taken=126:input-reads=130:return-reads=4:short-ret-refusals=1:real-outer-ret=8:complete"
+            "native-{mode}:required=4:pairs=4:children=8:comparisons={comparisons}:truth-instructions=800:conditional=130:taken=126:input-reads=130:return-reads=4:short-ret-refusals=1:real-outer-ret=8:complete"
         );
     } else {
         println!(

@@ -62,6 +62,8 @@ struct Binding {
     function: FunctionId,
     limits: Limits,
     entry_mode: EntryMode,
+    #[cfg(test)]
+    native_entry_pause: std::sync::OnceLock<Arc<tests::concurrent_native::EntryPause>>,
 }
 #[derive(Clone, Copy)]
 enum EntryMode {
@@ -230,6 +232,8 @@ impl PreparedIntervalController {
             function: self.function,
             limits: self.limits,
             entry_mode,
+            #[cfg(test)]
+            native_entry_pause: std::sync::OnceLock::new(),
         });
         let client = IntervalClient {
             binding: Arc::clone(&binding),
@@ -840,6 +844,12 @@ impl State {
         self.next = next;
         self.totals.entries = entries;
         self.journal.header(self.tid, self.depth);
+        // Qualification-only pause after actual owner/pair/journal publication.
+        // Production builds have no field, branch or callback here.
+        #[cfg(test)]
+        if let Some(pause) = self.binding.native_entry_pause.get() {
+            pause.wait(next - 1)?;
+        }
         Ok(())
     }
     fn finish(&mut self, pc: u64, rsp: u64, return_word: u64) -> Result<(), BridgeError> {
