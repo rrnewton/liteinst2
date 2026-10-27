@@ -212,3 +212,35 @@ The results commit changes documentation and three numeric receipts totaling 98,
 - [Component cohort](results/20261027T164153.849695Z-page-selected-components-906e92f061d5.json)
 - [Connected controller cohort](results/20261027T164325.624061Z-page-selected-906e92f061d5.json)
 - [Required checks](results/20261027T164324.111142Z-checks-906e92f061d5.json)
+
+
+## Original-address memory and control flow (claims 2 and 4)
+
+Source `504071ca5087133e69b8b310845e66e34c5b7958` (tree `20eb320e036376ff3008b582d41e4d344bcd1582`) adds a separate generic TF owner to the selected original-entry profile. A closed classifier enumerates 301 instruction codes for integer/memory operations, stack operations, near branches/CALL/RET and selected SSE2 operations. The CPU executes original bytes and supplies the actual result. Source pages are revoked and synchronized before the actual continuation is authenticated as owned and NX. The original NOP/MOV route and selected-instruction precedence remain intact.
+
+Reproduce on one reserved CPU, except the required-check command may use up to four:
+
+```sh
+python3 evaluation/inprocess/page_selected_generic_oracle.py --expect-revision 504071ca5087133e69b8b310845e66e34c5b7958
+python3 evaluation/inprocess/page_selected_generic.py --expect-revision 504071ca5087133e69b8b310845e66e34c5b7958
+python3 evaluation/inprocess/page_selected_components.py --expect-revision 504071ca5087133e69b8b310845e66e34c5b7958
+python3 evaluation/inprocess/checks.py --expect-revision 504071ca5087133e69b8b310845e66e34c5b7958
+```
+
+The O2 native runs used an AMD EPYC 9D85, microcode `0xb101066`, Linux 7.1.3, GCC 11.5.0 and Rust 1.97.1, with no effective capabilities. Exact hardware and commands are in the receipts. These are correctness results, not performance measurements.
+
+The generic oracle passes 20 same-address native/stepped pairs, 47 supplied classifier refusals and three actual failed-operation controls. It compares all 16 GPRs, logical flags, original/endpoint RIP, all six live selectors, FS/GS bases, complete 2,444-byte kernel FP records, 2,440 qualified live XSAVE bytes, 8 KiB stack and 4 KiB data. Both boundary CALLs push the original return address while leaving the never-executed return page outside the opened source bundle. Negative controls retain actual memory-fault, unowned-target and out-of-domain-RSP failures; they remain exit 125 operations. Independent saved-data replay derived layouts from the retained binary and passed 3,064 assertions.
+
+The connected cohort passes all 15 previous streams plus five programs for branch/stack/memory, boundary CALL/RET, CPUID, RDTSC and RDTSCP (97 build/cohort commands). The CALL program reports original return `0x402000` and result 42. CPUID matches all four native outputs; timestamp cases satisfy strict serialized native/gated brackets without tolerances. Exact old/generic instruction counts, NX fetches, source syscalls and complete close/query/release prefixes pass. Independent replay also reproduces the public receipts from their private records.
+
+The real system linker now completes its initial MOV and CALL, then refuses canonical ENDBR64 (`f30f1efa`, decoder code 1054) before opening pages or executing that instruction: status 125/error 100, old 1/generic 1, NX 3 and zero source syscalls. This is progress in the selected profile, not a completed gated `ls` run. The separate default loader's earlier real-program results remain separate. Exhaustive native qualification of all 301 classifier codes remains open, along with general signals/threads/process lifecycle, selected RSP destinations and complete B2/B3/B4.
+
+The existing 437-command component cohort passes unchanged: 112 decoder forms, two fatal controls, freestanding scan, 385 provider cases, 20 old step pairs, 13 decoder and 13 forged-candidate refusals, four step-process controls and 18 fetch cases. All four required workspace checks pass, with 2,350 tests passed and four ignored; recorder 330 and serial 1,029 also pass. Serial validation includes 50 native fixtures, 15 dynamic fixtures, 388 matrix cases, 108 validation fixtures and backing cleanup, within the unchanged 180-second bound (134.976 seconds).
+
+Each run now retains its build outputs before another build can overwrite them. The generic runners authenticate source archives against Cargo.lock, compare all 186 extracted dependency files with those archives, and require actual dep-info to name exactly the six committed decoder sources. An earlier committed-source attempt correctly failed that dependency check when Cargo reused a prototype artifact; it executed no native case. A distinct product metadata identity fixes the collision without changing the check. Its compact failed receipt is retained. Full records and binaries stay private; the four successful public receipts total 171,595 bytes.
+
+- [Generic native oracle](results/20261027T173116.281005Z-page-selected-generic-oracle-504071ca5087.json)
+- [Connected controller](results/20261027T173127.299656Z-page-selected-generic-504071ca5087.json)
+- [Existing component cohort](results/20261027T173153.058717Z-page-selected-components-504071ca5087.json)
+- [Required checks, recorder and serial](results/20261027T173155.520498Z-checks-504071ca5087.json)
+- [Retained pre-native build failure](results/20261027T172916.041538Z-page-selected-generic-oracle-69e73f9dbbc9.json)
