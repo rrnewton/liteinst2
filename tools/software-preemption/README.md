@@ -1,0 +1,32 @@
+# Finite software-preemption prototype
+
+`liteinst-preempt` installs a real observing trampoline at the one near backward branch in each of four private, authored functions. The corpus is countdown/JNZ, signed/JG, unsigned/JB, and direct/JMP. Each function is call-free, has complete decoded entry heads, and uses no application stack storage beyond its ordinary call/return. Unsupported calls, indirect transfers, short backward encodings, and a missing or second backward site refuse before publication. This is a finite static corpus, not an arbitrary ELF instrumenter or complete progress guarantee.
+
+The software clock counts **taken backward branch decisions BEFORE the branch executes**. It evaluates the original Jcc condition using saved RFLAGS; an unconditional backward JMP is always taken. Untaken conditional branches are encounters but consume no clock quantum. At a positive quantum boundary the actual callback sends `(logical site offset, taken-edge count, branch encounters, saved state)` to its controller and blocks until the controller returns the exact matching resume. The original branch executes only after that return. Neither a timeout nor ptrace triggers preemption, and no callback edits RIP/RSP or unwinds through generated code. Calls/indirect branches, multiple sites, external application concurrency, asynchronous cancellation, and mid-instruction stops are outside this increment.
+
+The instance belongs to one worker's TLS and authenticates process/thread, exact managed control, and original logical PC. The enabled control has no remaining writer. Publication and retirement require the sole main thread and a lease over the complete original and generated dependencies; workers receive a callable address only after final RX permissions, byte checks and publication receipt. Every successful run joins its worker. No mapping becomes RWX. Failure retains executable/control owners until process exit; this is not a drain claim. The strict helper owns bounded abnormal-process cleanup. The callback's two-second wait is a failure backstop, not optional success or a scheduling threshold.
+
+Qualification executes 512 independent native SETcc truth-table checks; 16 native and 16 counter-only cells; 96 stop/resume cells covering four input sizes, three quanta and two repeats. Every one of the 256 actual stops compares the whole 4 KiB result page and progress counter before and after a one-millisecond parked interval. All 48 paired stop sequences compare the exact ordered projection `(logical site offset, taken-edge count, branch encounters, [RAX, RCX, RDX], RFLAGS & 0x8d5)`. This repeated-run comparison omits other registers, RSP, instance addresses and the remaining flag bits; the separate comparison across each parked wait retains all 18 saved context words exactly. Results and whole-page canaries must match independent formulas and the native function. The callback compares its entire 18-word saved context across each wait. It uses the core's unchanged GPR/RFLAGS/extended-state-preserving trampoline, but this packet does **not** add an independent ptrace XSAVE/full-application-stack comparison for this new corpus. It cannot claim that distinct qualification.
+
+Each release benchmark has native, counter-only, and stop/resume modes, two warmups and seven measured repetitions per mode. All run 128 calls of 256 iterations (32,768 work units); the stop quantum is 64, producing exactly 510 stops per stop/resume repetition. Timing encloses the actual work and all callback/controller scheduling overhead, excludes mapping/planning/thread creation, and contains no ptrace or deliberate parked delay. These are synchronous full-state callbacks, not a claimed minimal inline decrement. Raw CSV rows are authoritative; the caller adds per-mode medians/min/max. There is no performance threshold, success claim, or estimated speedup before execution.
+
+## Build and run
+
+Integrate the six source/documentation destinations from the private packet, format and compile at an exact committed revision. This source proposal and every planned command are UNRUN. The root caller must supply the resulting complete source-owner catalog, exact release product and tool owners, reviewed saved build command/closure, and four admitted CPUs; no historical product or namespace authority transfers.
+
+```sh
+CARGO_INCREMENTAL=0 CARGO_BUILD_JOBS=4 \
+CARGO_PROFILE_RELEASE_OPT_LEVEL=3 CARGO_PROFILE_RELEASE_DEBUG=0 \
+CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=true CARGO_PROFILE_RELEASE_OVERFLOW_CHECKS=true \
+cargo build --locked --offline --release --bin liteinst-preempt
+```
+
+First run the two pure tests with `cargo test --bin liteinst-preempt`, then the strict qualification. The fixed caller subsequently runs all four benchmarks in declared order and stops on any failure, retaining all remaining rows UNRUN. Its root-reviewed binding is deliberately unfilled in the source packet. Each of the five commands uses 60 CPU seconds, 90 wall seconds, 1 MiB per-file output, outer timeout 100 seconds/kill-after 10, direct-parent wait 115 seconds and failure cleanup 10. The unchanged bounded helper requires ECHILD and no unexpected descendants. Resource failures remain failures. The caller checks exact source/tool/product ownership before and after; its small free-filesystem check is not a managed-slot quota proof or a full dynamic-loader closure.
+
+```sh
+python3 -B tools/software-preemption/run.py \
+  --binding ABSOLUTE_ROOT_REVIEWED_BINDING.json \
+  --binding-sha256 EXACT_BINDING_SHA256 --raw NEW_ABSOLUTE_IGNORED_DIRECTORY
+```
+
+The build object is a root-reviewed join of the exact build command, actual waited closure and pinned saved evidence files. The small caller does not parse Cargo logs or independently establish build provenance. Build/tool/source/runtime admission remains the root's task. Result sources and failed records must be preserved if later corrections are needed.
