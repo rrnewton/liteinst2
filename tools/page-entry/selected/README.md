@@ -254,3 +254,12 @@ It retains all 18 semantic records and five capacity/fallback/hit records.
 The other capacity cycles retain in-process full-state checks and hashes.
 This finite oracle does not establish arbitrary relocation, application
 completion, signal/thread support or a performance result.
+
+`python3 evaluation/inprocess/page_selected_register_perf.py --expect-revision REVISION`
+measures the first publication and 1/10/100 later hits at the same original PC,
+with separate bracket-only controls. Run it on one reserved CPU. It uses the
+optimized opt-in bridge and records every raw interval in TSC ticks under
+`evaluation/inprocess/results/`. The intervals include clock, CPUID and page-gate
+work; they do not isolate publisher cost. Any workload or finalization failure
+withholds timing credit for the entire cohort. The separately qualified full-state,
+publication-failure and capacity oracles remain required.

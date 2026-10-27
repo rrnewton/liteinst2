@@ -433,3 +433,20 @@ python3 evaluation/inprocess/summarize_selected.py \
 ```
 
 The projection publishes numbers and hashes only. Full raw process captures and retained binaries remain private; its source hash is recorded in the compact receipt. Earlier fixture setup failures (ambiguous BSS symbol and an incorrect expectation of the existing refusal-helper success sentinel) remain failed and provide no native completion credit.
+
+## First publication and repeated register-run hits
+
+At revision `aa3f8f7eedd9d7acbc1dc6f22d8ebb47c2dd0962`, an optimized six-case experiment executes one two-MOV run at the same original address, first by publication and then through 1, 10 or 100 cache hits. Every native result, output byte, publication count and guard count passes; all 59 build/native commands finish without timeouts or cleanup errors. This supplies finite measurement evidence for claims 1/4. It does not complete the real-program milestone.
+
+For the 100-hit case, the measured source intervals are:
+
+| Execution | First interval (TSC ticks) | Mean of 100 later intervals (TSC ticks) |
+| --- | ---: | ---: |
+| Native two-MOV program | 4,758 | 126.02 |
+| Page-gated two-MOV program | 2,677,051 | 2,545,967.53 |
+| Native bracket-only control | 4,324 | 127.87 |
+| Page-gated bracket-only control | 1,959,510 | 1,927,641.35 |
+
+The first interval includes the first publication of this run. Startup precedes it. Both first and later intervals include the serializing CPUIDs, source-clock handling and intervening page-gate work; they are not isolated publisher or cache-lookup durations. The control omits the two MOVs and therefore has different later instruction addresses. No control subtraction, clock-frequency conversion, outlier removal or whole-program speedup is claimed. The very high remaining overhead limits practical performance.
+
+The [numeric receipt](results/20261027T212306.556161Z-page-selected-register-perf-aa3f8f7eedd9.json) retains all 456 first/later interval samples across the six native/gated pairs, exact sums/counts, hardware, revision, build mode and reproduction command. Hardware is AMD EPYC 9D85, family 26/model 17/stepping 0, microcode `0xb101066`, Linux 7.1.3. The bridge uses `-O2`, the decoder uses the release profile, and every child runs on one reserved CPU. Reproduce with `python3 evaluation/inprocess/page_selected_register_perf.py --expect-revision aa3f8f7eedd9d7acbc1dc6f22d8ebb47c2dd0962` under the same one-CPU reservation contract. The independent saved-data review reparses all twelve 4 KiB outputs, verifies the actual hardware brackets and literal register values, and recomputes every published timing sample and aggregate.
