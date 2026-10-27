@@ -1,0 +1,391 @@
+{
+  "archive": {
+    "bytes": 11022564,
+    "sha256": "ad189f0da911d374333bacafd7933edcf4033fa8bb929c1972083dbdb8ac82e2"
+  },
+  "binary_manifest_sha256": "fc77ebefcf36186e7314e6e8fbb9282fcc73ff5e71cad441b8d269f26691f57c",
+  "bounds": {
+    "archive": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "decoder": [
+      3,
+      268435456,
+      1048576,
+      10
+    ],
+    "fetch": [
+      5,
+      1073741824,
+      16777216,
+      10
+    ],
+    "fetch_link": [
+      30,
+      1073741824,
+      16777216,
+      60
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "link": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "provider": [
+      3,
+      268435456,
+      1048576,
+      10
+    ],
+    "step": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "step_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "case_records_sha256": "016b3a0e75e4ebdbaccf30518807622f4f335c2f048b3e64bb49dff561cea503",
+  "command_count": 437,
+  "command_recipe": {
+    "actual_commands": "Private receipt records every argv and capture; commands_sha256 authenticates the complete ordered rows.",
+    "build": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ],
+    "decoder": [
+      "decoder-controls",
+      "<empty|tiny_arena|personality>"
+    ],
+    "fetch": [
+      "fetch-fixture",
+      "<exact CASES key>"
+    ],
+    "freestanding": [
+      "decoder-freestanding"
+    ],
+    "provider": [
+      "provider-<normal|nested>-fixture",
+      "<actual record fd>",
+      "<seven exact cohort arguments>"
+    ],
+    "step": [
+      "step-fixture",
+      "<empty|foreign|nested|tf|rf>"
+    ]
+  },
+  "commands_sha256": "40d3e34d91d88e1097f2791692c1f46e728f1d8d12c2a310193ade3c68d291d3",
+  "cpu": 45,
+  "elf": {
+    "controller": {
+      "imports": 0,
+      "interpreter": false,
+      "relative_relocations": 585,
+      "tls": false
+    },
+    "decoder": {
+      "dynamic": false,
+      "interpreter": false,
+      "relocations": 0,
+      "tls": false,
+      "type": "ET_EXEC"
+    },
+    "step": {
+      "dynamic": false,
+      "interpreter": false,
+      "relocations": 0,
+      "tls": false,
+      "type": "ET_EXEC"
+    }
+  },
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "504071ca5087133e69b8b310845e66e34c5b7958",
+  "failed_commands": [],
+  "failure_type": null,
+  "final_error_count": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 45,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "input_manifest_sha256": "688dd04d71b3b95b4af12d53c376b24f3fafb533916b18afc69fde63d71295e4",
+  "personality_text_definitions": 1,
+  "planned_provider_cases_sha256": "c1e97e4910e1ab0e10fba625ea4b05a4e92477b6eb8741e9ebfec4ddb810376c",
+  "private_receipt": {
+    "bytes": 1053985,
+    "sha256": "1ae1f11ef53e7abca6176f29c1ef32a3656f81159bc76e7bbd4a1de2a82ef563"
+  },
+  "profile": "page-selected-components-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_components.py",
+    "--expect-revision",
+    "504071ca5087133e69b8b310845e66e34c5b7958"
+  ],
+  "schema_version": 1,
+  "scope": "Decoder112/fatal102/106/freestanding; provider385 native/scripted/refusal; step20 pairs+13 arm-refusal pairs+4 refusal processes; fetch18. No general B2 or full-program claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "504071ca5087133e69b8b310845e66e34c5b7958",
+    "source_manifest_sha256": "93408177f98450a2162b9038329bfd802bb7355d790e20f244b12dd76950ca14",
+    "tracked_clean": true,
+    "tree": "20eb320e036376ff3008b582d41e4d344bcd1582"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261027T173153.058717Z",
+  "status": "passed",
+  "tool_hashes": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    "python3": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "toolchain": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "cc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)\nCopyright (C) 2021 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "cc-version.txt": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)\nCopyright (C) 2021 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+    "decoder-cargo.txt": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "decoder-rustc.txt": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6",
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "totals": {
+    "decoder_fatal": 2,
+    "decoder_forms": 112,
+    "decoder_freestanding": 1,
+    "fetch_cases": 18,
+    "provider_cases": 385,
+    "step_arm_refusals": 13,
+    "step_control_processes": 4,
+    "step_false_claim_refusals": 13,
+    "step_pairs": 20
+  }
+}

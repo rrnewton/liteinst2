@@ -6,6 +6,9 @@ carrier and explicit sealed copies of dependencies. No ptrace supervisor is
 needed. The kernel-trap backend has `source_patches=0`; actual selected-instruction
 source patches are provided separately by `liteinst-inprocess`.
 
+The opt-in [partial selected controller](selected/README.md) adds original-address
+ordinary stepping and native random/ID completion under a narrower execution profile.
+
 Build the optimized runtime and its fixtures from the repository root:
 
 ```sh

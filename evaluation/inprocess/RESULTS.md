@@ -184,3 +184,91 @@ The results commit adds documentation and three numeric receipts totaling 106,31
 - [Raw-fork and continuation cohort](results/20261027T153503.221425Z-fork-315b2712115f.json)
 - [Existing native regression summary](results/20261027T152247.353033Z-regressions-315b2712115f.json)
 - [Required checks](results/20261027T152326.379750Z-checks-315b2712115f.json)
+
+## Original-entry random and ID completion
+
+Source `906e92f061d501d170c256c46d93cd91df4dd988` (tree `332329e58df58e99aa119f1ea3f1225f47716f0d`) adds the opt-in [selected original-entry profile](../../tools/page-entry/selected/README.md). It completes RDRAND/RDSEED at 16/32/64 bits and RDPID at 64 bits from the original interpreter entry, preserving native random carry results and destination-width semantics. Ordinary NOP and immediate/register MOV instructions execute at their original addresses through a qualified TF step; original source syscalls use the checked lifecycle dispatcher. Application code remains NX between instructions. This profile performs no source patching and makes no performance claim (claims 2 and 4).
+
+Reproduce with one externally reserved CPU for each native runner:
+
+```sh
+python3 evaluation/inprocess/page_selected_components.py --expect-revision 906e92f061d501d170c256c46d93cd91df4dd988
+python3 evaluation/inprocess/page_selected.py --expect-revision 906e92f061d501d170c256c46d93cd91df4dd988 --library-root /usr/lib64
+python3 evaluation/inprocess/checks.py --expect-revision 906e92f061d501d170c256c46d93cd91df4dd988
+```
+
+The component cohort passes 437 commands: 112 decoder forms, two actual fatal outcomes (102/106), a freestanding seven-class/4,110-start scan, 385 provider cases, twenty native/stepped state pairs, thirteen decoder and thirteen false-candidate refusals, four process controls, and eighteen fetch cases. The provider cases include native and separately labeled scripted carry-clear results, actual corruption controls and an actual nested fault. Independent replay checks all twenty step pairs, 23 source-page opens and revocations, 100 kernel-frame observations with 2,444 FP bytes each, eighty live GPR/flags/selector observations, source/redzone/FS/GS state, and actual default-signal preparation. Full state records remain private.
+
+The connected cohort passes 55 commands covering sixteen declared outcomes, including original-entry random/ID instructions, operand-size semantics, immediate/register MOV, cross-page instructions and protected-signal queries. The actual system linker executes its initial MOV, then refuses the next CALL with exact error 632/detail 693 after one step and two NX faults. This is an expected unsupported-instruction outcome; this selected profile does not yet run real ls to completion. The preceding default loader remains a separate profile. Arbitrary instructions, selected RSP destinations, threads, general process lifecycle and application signal handling remain outside this profile; B2/B3/B4 are incomplete.
+
+Both native cohorts use Linux x86-64 on AMD EPYC 9D85, kernel 7.1.3, GCC 11.5.0 `-O2` and Rust/Cargo 1.97.1 release builds, on reserved CPUs 3 and 17 respectively. Exact tool hashes, bounds, source identities and commands are recorded. No timing is interpreted as a performance result.
+
+Independent saved-data replay authenticates every actually executed component binary, 1,269 component captures and all 110 connected captures. The later connected build overwrote the component run's bridge binary, used there only for static inspection. Its original ELF and empty-undefined-symbol observations remain captured, but its raw bytes are no longer available for independent authentication. The final connected bridge is retained and its ELF checks replay exactly. This retention limit does not apply to the executed component binaries.
+
+All four required Cargo checks pass: formatting, strict workspace/all-feature/all-target Clippy, workspace tests (2,350 passed, four previously ignored across 98 harnesses), and workspace/all-feature/all-target check. Recorder passes 330 tests. Serial passes all 1,029 tests across 27 harnesses, including 50 native cases, fifteen dynamic fixtures, 388 matrix records, 108 validation fixtures and complete backing cleanup. Workspace takes 308.288 seconds and serial 128.181 seconds within their unchanged 900/180-second bounds. Source and configuration remain unchanged. Independent replay authenticates all six saved check logs and reproduces the strict totals, native collection qualification and backing cleanup.
+
+The results commit changes documentation and three numeric receipts totaling 98,734 bytes only. Raw captures remain under target.
+
+- [Component cohort](results/20261027T164153.849695Z-page-selected-components-906e92f061d5.json)
+- [Connected controller cohort](results/20261027T164325.624061Z-page-selected-906e92f061d5.json)
+- [Required checks](results/20261027T164324.111142Z-checks-906e92f061d5.json)
+
+
+## Original-address memory and control flow (claims 2 and 4)
+
+Source `504071ca5087133e69b8b310845e66e34c5b7958` (tree `20eb320e036376ff3008b582d41e4d344bcd1582`) adds a separate generic TF owner to the selected original-entry profile. A closed classifier enumerates 301 instruction codes for integer/memory operations, stack operations, near branches/CALL/RET and selected SSE2 operations. The CPU executes original bytes and supplies the actual result. Source pages are revoked and synchronized before the actual continuation is authenticated as owned and NX. The original NOP/MOV route and selected-instruction precedence remain intact.
+
+Reproduce on one reserved CPU, except the required-check command may use up to four:
+
+```sh
+python3 evaluation/inprocess/page_selected_generic_oracle.py --expect-revision 504071ca5087133e69b8b310845e66e34c5b7958
+python3 evaluation/inprocess/page_selected_generic.py --expect-revision 504071ca5087133e69b8b310845e66e34c5b7958
+python3 evaluation/inprocess/page_selected_components.py --expect-revision 504071ca5087133e69b8b310845e66e34c5b7958
+python3 evaluation/inprocess/checks.py --expect-revision 504071ca5087133e69b8b310845e66e34c5b7958
+```
+
+The O2 native runs used an AMD EPYC 9D85, microcode `0xb101066`, Linux 7.1.3, GCC 11.5.0 and Rust 1.97.1, with no effective capabilities. Exact hardware and commands are in the receipts. These are correctness results, not performance measurements.
+
+The generic oracle passes 20 same-address native/stepped pairs, 47 supplied classifier refusals and three actual failed-operation controls. It compares all 16 GPRs, logical flags, original/endpoint RIP, all six live selectors, FS/GS bases, complete 2,444-byte kernel FP records, 2,440 qualified live XSAVE bytes, 8 KiB stack and 4 KiB data. Both boundary CALLs push the original return address while leaving the never-executed return page outside the opened source bundle. Negative controls retain actual memory-fault, unowned-target and out-of-domain-RSP failures; they remain exit 125 operations. Independent saved-data replay derived layouts from the retained binary and passed 3,064 assertions.
+
+The connected cohort passes all 15 previous streams plus five programs for branch/stack/memory, boundary CALL/RET, CPUID, RDTSC and RDTSCP (97 build/cohort commands). The CALL program reports original return `0x402000` and result 42. CPUID matches all four native outputs; timestamp cases satisfy strict serialized native/gated brackets without tolerances. Exact old/generic instruction counts, NX fetches, source syscalls and complete close/query/release prefixes pass. Independent replay also reproduces the public receipts from their private records.
+
+The real system linker now completes its initial MOV and CALL, then refuses canonical ENDBR64 (`f30f1efa`, decoder code 1054) before opening pages or executing that instruction: status 125/error 100, old 1/generic 1, NX 3 and zero source syscalls. This is progress in the selected profile, not a completed gated `ls` run. The separate default loader's earlier real-program results remain separate. Exhaustive native qualification of all 301 classifier codes remains open, along with general signals/threads/process lifecycle, selected RSP destinations and complete B2/B3/B4.
+
+The existing 437-command component cohort passes unchanged: 112 decoder forms, two fatal controls, freestanding scan, 385 provider cases, 20 old step pairs, 13 decoder and 13 forged-candidate refusals, four step-process controls and 18 fetch cases. All four required workspace checks pass, with 2,350 tests passed and four ignored; recorder 330 and serial 1,029 also pass. Serial validation includes 50 native fixtures, 15 dynamic fixtures, 388 matrix cases, 108 validation fixtures and backing cleanup, within the unchanged 180-second bound (134.976 seconds).
+
+Each run now retains its build outputs before another build can overwrite them. The generic runners authenticate source archives against Cargo.lock, compare all 186 extracted dependency files with those archives, and require actual dep-info to name exactly the six committed decoder sources. An earlier committed-source attempt correctly failed that dependency check when Cargo reused a prototype artifact; it executed no native case. A distinct product metadata identity fixes the collision without changing the check. Its compact failed receipt is retained. Full records and binaries stay private; the four successful public receipts total 171,595 bytes.
+
+- [Generic native oracle](results/20261027T173116.281005Z-page-selected-generic-oracle-504071ca5087.json)
+- [Connected controller](results/20261027T173127.299656Z-page-selected-generic-504071ca5087.json)
+- [Existing component cohort](results/20261027T173153.058717Z-page-selected-components-504071ca5087.json)
+- [Required checks, recorder and serial](results/20261027T173155.520498Z-checks-504071ca5087.json)
+- [Retained pre-native build failure](results/20261027T172916.041538Z-page-selected-generic-oracle-69e73f9dbbc9.json)
+
+## Original-address integer families (claims 2 and 4)
+
+Source `9c7ada5c39b7385d689f8fdf8c517612b713b08f` adds canonical ENDBR64 and ordinary integer shifts/rotates, multiply/divide, conditional results, bit operations and exchanges to the selected original-entry controller. Its classifier now enumerates 534 exact instruction codes. The original prefix, selected-provider, CPU-state, revoke/sync and closed-continuation contracts remain intact; the no-user-CET assumption remains explicit.
+
+Two new cohorts pass forty native/TF instruction cases plus a real startup pair in each. Independent literal expectations check register widths, flags, memory effects, signed division, false CMOV32 zero-extension, XADD and both CMPXCHG outcomes. The unchanged full comparison retains all sixteen GPRs, logical flags, live selectors, FS/GS, 2,444 kernel-FP bytes, 2,440 live XSAVE bytes, 8 KiB stack and 4 KiB data. Flags the ISA leaves undefined remain compared exactly between native and TF lanes; their observed values are not a portable guarantee. All records fit the unchanged 16 MiB limit. Independent replay of the retained binaries and actual DWARF verifies all forty cases.
+
+The original generic oracle also passes all 21 pairs, 47 supplied refusals and three actual failed operations. The existing 437-command component cohort and twenty connected streams pass unchanged. Across these five native runners, all 594 commands complete with their required outcomes. Optimized builds used GCC 11.5.0 and Rust 1.97.1 on CPU 13, AMD EPYC 9D85, microcode `0xb101066`, Linux 7.1.3, with no effective capabilities. No performance result is claimed.
+
+The actual system linker now executes 44 older steps, 1,805 generic steps and two RDTSC callbacks across 1,852 NX faults, then refuses REP STOSQ (`f348ab`, decoder code 346). This is an unsupported-program result, not completed selected-profile `ls` execution. REP needs a separate iteration protocol; its existing refusal controls remain unchanged. Application divide-fault delivery, selected RSP destinations, general signals/threads and full B2/B3/B4 remain open. The earlier successful default-loader `ls` results are a separate profile.
+
+Reproduce each native command on one externally reserved CPU; the last command may use four:
+
+```sh
+python3 evaluation/inprocess/page_selected_generic_oracle.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f
+python3 evaluation/inprocess/page_selected_integer.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f --group 0
+python3 evaluation/inprocess/page_selected_integer.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f --group 1
+python3 evaluation/inprocess/page_selected_generic.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f
+python3 evaluation/inprocess/page_selected_components.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f
+python3 evaluation/inprocess/checks.py --expect-revision 9c7ada5c39b7385d689f8fdf8c517612b713b08f
+```
+
+All four required checks pass: formatting, strict workspace/all-target/all-feature Clippy, workspace tests (2,350 passed and four previously ignored across 98 harnesses), and workspace/all-feature/all-target check. Recorder passes 330 tests; serial passes 1,029 tests across 27 harnesses, including every required native collection and backing cleanup. Workspace takes 310.127 seconds within the unchanged 900-second bound; serial takes 134.679 seconds within its unchanged 180-second bound. Source and configuration remain unchanged.
+
+The native summary copies the measured results, exact source/hardware and reproduction commands, and binds all five full receipts by hash. Their full command/capture records remain private. The results commit changes only documentation and two numeric receipts totaling 53,093 bytes.
+
+- [Native results and per-class counts](results/20261027T175910.211918Z-integer-summary-9c7ada5c39b7.json)
+- [Required checks, recorder and serial](results/20261027T180123.253835Z-checks-9c7ada5c39b7.json)

@@ -1,0 +1,2887 @@
+{
+  "archive": {
+    "bytes": 10938032,
+    "sha256": "939f9949cb9d2917f52a0438dab7fe44a4f845e5fe996703aec7ace204905179"
+  },
+  "artifact_manifest_sha256": "5129a2ba5aacd21559c8df42077ae035e9498ffff1fcb08cfa0f0a27be790265",
+  "bounds": {
+    "cpu_seconds_per_process": 3,
+    "file_bytes": 16777216,
+    "memory_bytes": 536870912,
+    "parallel_commands": 1,
+    "wall_seconds_per_command": 15
+  },
+  "bridge_elf": {
+    "imports": 0,
+    "interpreter": false,
+    "relative_relocations": 584,
+    "tls": false
+  },
+  "cases": [
+    {
+      "name": "rdrand16",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 49699,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 49699,
+        "selected_last_width": 16,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 49699,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdrand32",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 2934228702,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 2934228702,
+        "selected_last_width": 32,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 2934228702,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdrand64",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 8539271860714888725,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 8539271860714888725,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 2858835477,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdseed16",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 1,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 3,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 28971,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 28971,
+        "selected_last_width": 16,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 28971,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdseed32",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 1,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 3,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 3481239838,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 3481239838,
+        "selected_last_width": 32,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 3481239838,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdseed64",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 1,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 3,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 17499928977916952461,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 17499928977916952461,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 3545104269,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rdpid64",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 1,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 4,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 17,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 17,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 17,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "mov_exit",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 0,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 0,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 0,
+        "selected_last_value": 0,
+        "selected_last_width": 0,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 2,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 43,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "prefix_random",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 5,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 5,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 6291279698326390698,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 6291279698326390698,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 3,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 2438924202,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "cross_mov",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 4,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 4,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 1,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 1,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 1311768467463790320,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 2674999949773340185,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 2674999949773340185,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 2,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 342720025,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "cross_selected",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 1,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 3,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 3,
+        "partial_errors": 0,
+        "rdpid": 1,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 7,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 4,
+        "selected_last_native_attempts": 1,
+        "selected_last_output_destination": 17,
+        "selected_last_phase": 4,
+        "selected_last_status": 0,
+        "selected_last_value": 17,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 17,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "rsp_refusal",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 7,
+        "detail_negative": 0,
+        "failure_code": 629,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 0,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 1,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 0,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 1,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 4,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 2,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 7,
+        "selected_last_value": 0,
+        "selected_last_width": 64,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 0,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 0,
+        "status": 125,
+        "sync_core": 0,
+        "syscalls": 0,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "query_trap",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 13,
+        "detail_negative": 0,
+        "failure_code": 206,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 0,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 6,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 13,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 6,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 0,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 0,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 0,
+        "selected_last_value": 0,
+        "selected_last_width": 0,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 5,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 125,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "query_trap_highbits",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 13,
+        "detail_negative": 0,
+        "failure_code": 206,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 0,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 6,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 13,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 6,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 0,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 0,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 0,
+        "selected_last_value": 0,
+        "selected_last_width": 0,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 5,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 1,
+        "status": 125,
+        "sync_core": 0,
+        "syscalls": 1,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "query_usr1",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 1,
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 3,
+        "generations": 5,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 14,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 60,
+        "live_pages": 3,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 14,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 0,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 0,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 0,
+        "selected_last_value": 0,
+        "selected_last_width": 0,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 11,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 3,
+        "status": 0,
+        "sync_core": 0,
+        "syscalls": 3,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "passed"
+    },
+    {
+      "name": "ls-unsupported",
+      "result": {
+        "admissions": 0,
+        "builtin_a": 0,
+        "builtin_b": 0,
+        "builtin_c": 0,
+        "builtin_d": 0,
+        "builtin_enable_result_abs": 0,
+        "builtin_enable_result_negative": 0,
+        "builtin_kind": 0,
+        "builtin_phase": 0,
+        "builtin_restore_result_abs": 0,
+        "builtin_restore_result_negative": 0,
+        "cpuid": 0,
+        "dependency_faults": 0,
+        "dependency_objects": 5,
+        "detail_abs": 693,
+        "detail_negative": 0,
+        "failure_code": 632,
+        "first_target_is_interpreter_entry": 1,
+        "forwarded": 0,
+        "generations": 63,
+        "interpreter_entry_faults": 1,
+        "interpreter_faults": 2,
+        "kernel_errors": 0,
+        "last_mapping_syscall": 11,
+        "last_phase": 5,
+        "last_syscall": 0,
+        "live_pages": 61,
+        "main_faults": 0,
+        "mappings": 1,
+        "nx_faults": 2,
+        "partial_errors": 0,
+        "rdpid": 0,
+        "rdrand": 0,
+        "rdseed": 0,
+        "rdtsc": 0,
+        "rdtscp": 0,
+        "retired": 2,
+        "rseq": 0,
+        "scope": "partial_selected_original_entry",
+        "selected_last_carry": 0,
+        "selected_last_destination": 0,
+        "selected_last_input_destination": 0,
+        "selected_last_kind": 0,
+        "selected_last_native_attempts": 0,
+        "selected_last_output_destination": 0,
+        "selected_last_phase": 0,
+        "selected_last_status": 0,
+        "selected_last_value": 0,
+        "selected_last_width": 0,
+        "selected_profile": 1,
+        "selected_selftests": 1,
+        "selected_steps": 1,
+        "set_robust_list": 0,
+        "set_tid_address": 0,
+        "source_patches": 0,
+        "source_syscalls": 0,
+        "status": 125,
+        "sync_core": 0,
+        "syscalls": 0,
+        "tls_changes": 0,
+        "vdso_close_attempted": 1,
+        "vdso_close_observed": 1,
+        "vdso_close_result_abs": 0,
+        "vdso_close_result_negative": 0,
+        "vdso_closed": 1,
+        "vdso_selected": 0,
+        "version": 1
+      },
+      "status": "expected_refusal"
+    }
+  ],
+  "commands": [
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 248,
+          "sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "f7c68fa8c505befad352ef4434e259e1264c6c42be90cf00c71b8052aaa91cba",
+      "duration_ns": 2964329,
+      "error_type": null,
+      "exit": 0,
+      "name": "compiler-version",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        120,
+        2147483648,
+        134217728,
+        150
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 74,
+          "sha256": "8891688152b3682ac33cac049b7f47af9e151be35242f35d1894ba784331e3a7"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "3ebe3b0a8d9dd840ea03b488ee9c51c874e09f9094187ec4c3020a89c751e78f",
+      "duration_ns": 1860332314,
+      "error_type": null,
+      "exit": 0,
+      "name": "build",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "a7a0d3084a344c75499b124ab7b9df67890fa1dfa4558cd810762894bd9022a9",
+      "duration_ns": 13550028,
+      "error_type": null,
+      "exit": 0,
+      "name": "undefined",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 90,
+          "sha256": "493867a6d1f8408e05a77d4de9c47ce0fa8e5cfbfd6f315c8f08d7190cbf9339"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "298afb677b7742398af5bdf3bcdf941c299228eb46d65231fd0247b9db4df3f9",
+      "duration_ns": 2897168,
+      "error_type": null,
+      "exit": 0,
+      "name": "hardware-before",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "96ded00a5d6be51f95ed3d8cc6b8a3b232908348ff61cdc37abc2c16a3294962",
+      "duration_ns": 35917630,
+      "error_type": null,
+      "exit": 0,
+      "name": "images",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "387f775c570a5d8360de66ca5bded998b3312573c1843eef1f68a52444adf1be"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "e1d541f7d71ecf95ba52942912aab62fb86d5cf6a36d2fbbef55a8b10fbac5d3",
+      "duration_ns": 39899897,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdrand16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "93ee43cb919f51886ff70e5a20ca1d095af132fb2178dce1680c65cd36255892",
+      "duration_ns": 2640343,
+      "error_type": null,
+      "exit": 121,
+      "name": "native-rdrand16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1390,
+          "sha256": "f426c4926560ed3e99eea1db2373864ec4dff71e0e7861b818f850dddf20d77b"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "76d433d1fa62236188e7ab3298b0b55d33d908b368d3da2b863ffdb6c2d00516",
+      "duration_ns": 45989056,
+      "error_type": null,
+      "exit": 35,
+      "name": "gated-rdrand16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "bd7f9066c0171edea298bc22591147f2a1ba75c65fb89fd0962e5208018cb31b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "7b8871b7bd753f220cc6c5727f8233311a36318154b6c7375ac097bfc3d07278",
+      "duration_ns": 44449154,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdrand32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "b4fc2b50c639dd8f23ebc3d7075f1a00b772c5c490c05eb7750e83e47d2853d3",
+      "duration_ns": 2671629,
+      "error_type": null,
+      "exit": 148,
+      "name": "native-rdrand32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1405,
+          "sha256": "651bc9fd43a810f6f36a0ff23d00dc63b8a4d580e5b33c7c3915396aa9093316"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "1ce387d8e8ac6ab5f868eac107005c0c1b10c879f2d066c33a87a1b517dc049b",
+      "duration_ns": 44015373,
+      "error_type": null,
+      "exit": 222,
+      "name": "gated-rdrand32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "05f2aa8745a44510f318f84f28b9405fd9605ff70fe9de7a7b9194ca33e994f1"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "97b4b134248e3c59947dda8fb45d2fa9cc85d1388b2126c39d12bd937f718c8a",
+      "duration_ns": 41401220,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdrand64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "dd2c20aaddc475f417375044f46872e16f1f6a334944036e61d484e1e13c5e6c",
+      "duration_ns": 2551369,
+      "error_type": null,
+      "exit": 31,
+      "name": "native-rdrand64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1423,
+          "sha256": "5b5715133412c403026514e8dd0e0c2b202cbb98805124d0a9c8bd56f28cb628"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "40e19182e552c8a393b5de36ee34efe9da6e466ea010dd2e533b505411deede9",
+      "duration_ns": 41951036,
+      "error_type": null,
+      "exit": 21,
+      "name": "gated-rdrand64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "06af7537eaefae50ef5e9318c97519464bb2e285810d6ceaa9becb4e298a8da3"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "d2e2b1f9faa4f2c319c5e5a2241c8836c8b410638b4ce90ed26a90edb25b90e4",
+      "duration_ns": 41547609,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdseed16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "6fc8f90cd1bf1d22fde9eae2fa56f7261b5c5744d2862cda374c21bb1cbf5145",
+      "duration_ns": 2604079,
+      "error_type": null,
+      "exit": 248,
+      "name": "native-rdseed16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1390,
+          "sha256": "1d61319b5a64e71344e4a926e42875aa3ea78be5274ca230a1e9bb7237cf7077"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "0ebbc4d4f355eae0f44aec00a45b1e02081cf426616488ec5134fff7d845986d",
+      "duration_ns": 40799186,
+      "error_type": null,
+      "exit": 43,
+      "name": "gated-rdseed16",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "325df3b9e18f0def6d3a0853460f2109795b9573468fefa4da23384567cbf803"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "107dd9830ee2a8640333d4b8173315ce8e8a439273ac7a29511f8bdd7b75b894",
+      "duration_ns": 42844967,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdseed32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "ca87a7c003b5e1668d1830a607505e329ef17014f52e5348f967f6cc00afe573",
+      "duration_ns": 2549818,
+      "error_type": null,
+      "exit": 93,
+      "name": "native-rdseed32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1405,
+          "sha256": "d123b7d058bb02dcd2bcdfe8237fc9628e0f75da6ad425e88f175b72750cf00b"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "01df6b37297a8cfb3950dc25731d284a88c0255dafa1e5730eb1c29f88c0bc14",
+      "duration_ns": 46826663,
+      "error_type": null,
+      "exit": 30,
+      "name": "gated-rdseed32",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "3a37503c8c1773d7f963e44a869810649b4fe126e84a3a652158c52a06fb4d7d"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "ec510e9e3aea1c086c42ff552fab75cc91789bc377580e8174ec4ec0a17d5a26",
+      "duration_ns": 43054502,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdseed64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "e083a8e1ea77e3ba3c6637e29d2541428dcf289f893dcec56ef75001d4954519",
+      "duration_ns": 2531870,
+      "error_type": null,
+      "exit": 200,
+      "name": "native-rdseed64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1425,
+          "sha256": "5033f0b705e3f21d44d2e40d42b10009eca4575b03b2ab5b2c28faf273f89ca5"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "8e20b92b2149d52c923bd20d48ca0eef07a15ab93bff40ae7c95d9071a574563",
+      "duration_ns": 42577325,
+      "error_type": null,
+      "exit": 141,
+      "name": "gated-rdseed64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "7389ef97dd146004db242fe95c44696fbb81c6a97f79cf54354543e995239bd5"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "4bf4450e979dbdb69fd53628ee8d29f00d4e4d3cfb337b224a4292fbb31090b1",
+      "duration_ns": 41519107,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rdpid64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "6aa259b9cd0cf3d0c2793123dcbe90cff1bcc408fa2b9861e4bfd886620e28d2",
+      "duration_ns": 2489647,
+      "error_type": null,
+      "exit": 17,
+      "name": "native-rdpid64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1381,
+          "sha256": "e3e4f2bbf529a30a7f82229f0f2d376033e0daedd97590e263c88d9ca9a1f98e"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "ab2afbe18b153cd32e6d9426216e8429ded0a4c49a83609795dddcb28360b101",
+      "duration_ns": 43139669,
+      "error_type": null,
+      "exit": 17,
+      "name": "gated-rdpid64",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "c12c217410ca20d2582f0f7d8cdd17ed6be023d77651a0d7473b8203a17caab4"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "332a7b24fc4315f1a5d2f91a5538256c7567cd68c5f47a599d72fef660f49ae2",
+      "duration_ns": 40227608,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-mov_exit",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "4a7ff001606c5c2e2d3a06fa927b80baa0a0fdea2aaa8cc8a6005e7da119a157",
+      "duration_ns": 2583448,
+      "error_type": null,
+      "exit": 43,
+      "name": "native-mov_exit",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1378,
+          "sha256": "de9c14cd83fcb2eb4fc841c45ade14dfe7085e3d4ba84ef23a2a2fc51eefc742"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "244b4c037848943e92595362a4e17f9fea5bccb0a8aceb04df0e52df1dbdb1c2",
+      "duration_ns": 40834429,
+      "error_type": null,
+      "exit": 43,
+      "name": "gated-mov_exit",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "9f2db0bccefb6499a18850f3c5b02bac87fba7cc11fef0e4de217fc0dc767393"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "fdc1e7e4d567d5b24d77242da41b94edbade5aeedc762982e7567237a6d57b9a",
+      "duration_ns": 40378455,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-prefix_random",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "c3a940f70896007d9c9123036ebdbd300e355fd257698a9a423e4633dd135628",
+      "duration_ns": 2683107,
+      "error_type": null,
+      "exit": 141,
+      "name": "native-prefix_random",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1423,
+          "sha256": "3c7d514f5cc6b061338cff718fa85911175c7d241b38702187b65dd89450e7a0"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "e8a7bcf9e02b78399edb9e82eabc74046698bcc75e33801b04b8c92d1fa75d19",
+      "duration_ns": 41620569,
+      "error_type": null,
+      "exit": 170,
+      "name": "gated-prefix_random",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "57538c2435441b1c5e39f6ced29427862251d9328d901c496b87a9373ade94bd"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "66ae407485de8f4f4fcb147ce27639ddd79aad3a0ce98743801646055001f3e2",
+      "duration_ns": 42342804,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-cross_mov",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "49c192cc43ef96514e3b9f20e94fafa107019a82796453558f09dbf5d0885d58",
+      "duration_ns": 2806332,
+      "error_type": null,
+      "exit": 235,
+      "name": "native-cross_mov",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1440,
+          "sha256": "2cda7b59d020c60db29e8b9c1c468290f4f11609643a48d03a3d232e9d48be76"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "73816e93907e13118be5da343bf7c19ae1b0645e92ceae41d4a0455f5ff6a385",
+      "duration_ns": 42090525,
+      "error_type": null,
+      "exit": 25,
+      "name": "gated-cross_mov",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "b6b48a2132d3b923a755ed86dc254a85ce2bd1f9487217a80778203126cf575b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "e121398354574c33a5d517b5c7c3d07988c9695e521d20fb3e03b33eacf4eab8",
+      "duration_ns": 40021510,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-cross_selected",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "82d0e884e240329221ae46b52c1471aa7f72864ec741f4424d6eed91784e1826",
+      "duration_ns": 2501225,
+      "error_type": null,
+      "exit": 17,
+      "name": "native-cross_selected",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1381,
+          "sha256": "e3e4f2bbf529a30a7f82229f0f2d376033e0daedd97590e263c88d9ca9a1f98e"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "59964da0bfd962581f09acd20796f213aa0ec7b8bcea8728e70eb34b2ff870f5",
+      "duration_ns": 41413559,
+      "error_type": null,
+      "exit": 17,
+      "name": "gated-cross_selected",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "9c7aac9d492e550d8b6e24448d828f94acf79c1bbb17c0ee8eb5a806b1723135"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "3f3e4f9d743485a7508e34e4877e9ab0e1f5808c6d921311e1499672eee03e7e",
+      "duration_ns": 41141440,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-rsp_refusal",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1381,
+          "sha256": "37c222661312057e9b70432fb5c17d47c313318fac26761189c42dc05149b286"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "b2d94e96706214d45e2c45845bc22640cbea837626f8fd826f42432aa6c8a8d4",
+      "duration_ns": 40907970,
+      "error_type": null,
+      "exit": 125,
+      "name": "gated-rsp_refusal",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "3c5094037c07aa749d193027d3071aeab08429cbea965a78fe9ae6773918b6b3"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "01cea1b355c97840b2dc16010c5925f49cf996fd42a53f27a602d0ba27dba5be",
+      "duration_ns": 43863285,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-query_trap",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "52180f8566c4e5cdca3a80e22de12b7456d3cd1c892beb96d877f38876d242e8",
+      "duration_ns": 2505080,
+      "error_type": null,
+      "exit": 0,
+      "name": "native-query_trap",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1382,
+          "sha256": "bcf5fb576c8bab3589f2129a180ce9e3381e5d8a85febe2eabf45426db82a5e0"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "d49afa6fbd3ac55287a7008df1db1bbc5881c12516997a00bd5f0586810b87f3",
+      "duration_ns": 43320721,
+      "error_type": null,
+      "exit": 125,
+      "name": "gated-query_trap",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "2cb1744bdf1f42e843f1f884c890260772a578413475378241d9a22890b37534"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "978df854f864d5ce6b647c050ad84ae861728d3182ef65c63946873cb8bd6db8",
+      "duration_ns": 40049560,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-query_trap_highbits",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "78c24bb1c6b9c6eae289f8e5c5498ade8cc2996ea8aa79c4cee5746e699977d3",
+      "duration_ns": 2506372,
+      "error_type": null,
+      "exit": 0,
+      "name": "native-query_trap_highbits",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1382,
+          "sha256": "bcf5fb576c8bab3589f2129a180ce9e3381e5d8a85febe2eabf45426db82a5e0"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "447ed3a1b702afee2cdd2c6c8ec84be56223f77718e5c04ac417385bff76cfd1",
+      "duration_ns": 42375052,
+      "error_type": null,
+      "exit": 125,
+      "name": "gated-query_trap_highbits",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 507,
+          "sha256": "f3e71686207bee98c886a1b30d11b14db66595a221d22224831f723c8b4df163"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "b6100eb2e6ad1a868b6156fe45dd24d8e681fbbb6a28312b6ffddc622ae04b37",
+      "duration_ns": 39595559,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-query_usr1",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "1c5b458d5045d55f6a430c7cf87e50b2eb7267578ecc696534e177b3aef67847",
+      "duration_ns": 2372250,
+      "error_type": null,
+      "exit": 0,
+      "name": "native-query_usr1",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1380,
+          "sha256": "564d23e5036affac3207b80a48dae124dd3530b8a9e529c4d879d2c401854ab4"
+        },
+        "stdout": {
+          "bytes": 32,
+          "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "c36e30e6e865c7b7cbb1339d5301ff9e77c72e6600f247e83f9ed6be71d2c934",
+      "duration_ns": 43211467,
+      "error_type": null,
+      "exit": 0,
+      "name": "gated-query_usr1",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 136,
+          "sha256": "c090db5af6ffa6f15f04a1f3b11321f4391f97319000977d4e16436a9c763660"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "98219d5ea4159abf24d9ae8d2e53b511ca2f280827bd9e647cd392c1098ad213",
+      "duration_ns": 3128636,
+      "error_type": null,
+      "exit": 0,
+      "name": "ls-entry-decode",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 136,
+          "sha256": "bc952a060c387df4adb1ab1e6982bf174255221cbfd7a101fcbdeed26d64fda4"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "133f3964bfbeea6ffbdd7aae0a0a9e7f04f36f534bbbcc86df91d91204ac6a91",
+      "duration_ns": 3271560,
+      "error_type": null,
+      "exit": 0,
+      "name": "ls-call-decode",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 509,
+          "sha256": "e23e18ab17a4b890c754a1cb670461db655495deb4a8de18908a5004404e344c"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "1afc3710f5e9abd3983ed72f48f484e77faa82bcdf3aa3f42cefcd350c485adf",
+      "duration_ns": 42138557,
+      "error_type": null,
+      "exit": 0,
+      "name": "make-ls",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 2,
+          "sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "59b3afb9b05ca462bd0d8ea2cc2df7107f1362f8c1c77349bc59752fe886f521",
+      "duration_ns": 2958521,
+      "error_type": null,
+      "exit": 0,
+      "name": "native-ls",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 1384,
+          "sha256": "631022960a04daf8259eb3e865ae79603a10ee20fbedfbf3454db160aed9c6db"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "000b750b5c6a10018ff6c7eaecdb5d5951aa1022b74ee74c08bccb957548edd9",
+      "duration_ns": 59038512,
+      "error_type": null,
+      "exit": 125,
+      "name": "gated-ls-unsupported",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "bounds": [
+        3,
+        536870912,
+        16777216,
+        15
+      ],
+      "captures": {
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 90,
+          "sha256": "493867a6d1f8408e05a77d4de9c47ce0fa8e5cfbfd6f315c8f08d7190cbf9339"
+        }
+      },
+      "cleanup_error_count": 0,
+      "command_sha256": "298afb677b7742398af5bdf3bcdf941c299228eb46d65231fd0247b9db4df3f9",
+      "duration_ns": 3067454,
+      "error_type": null,
+      "exit": 0,
+      "name": "hardware-after",
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "cpu": 17,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "906e92f061d501d170c256c46d93cd91df4dd988",
+  "failure_type": null,
+  "final_error_count": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 17,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "hardware_after": {
+    "cpu": 17,
+    "leaf1_ecx": 2130326027,
+    "leaf7_ebx": 4055865259,
+    "leaf7_ecx": 423714782,
+    "rdpid": 17
+  },
+  "hardware_before": {
+    "cpu": 17,
+    "leaf1_ecx": 2130326027,
+    "leaf7_ebx": 4055865259,
+    "leaf7_ecx": 423714782,
+    "rdpid": 17
+  },
+  "input_manifest_sha256": "4617725fa76ad24e4b50c5421a5f4c7f919f3ead41aa43a3a835a5f8068fea02",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected.py",
+    "--expect-revision",
+    "906e92f061d501d170c256c46d93cd91df4dd988",
+    "--library-root",
+    "/usr/lib64"
+  ],
+  "schema": 1,
+  "scope": "16 finite original-entry cases; no full ABI/B2/real-ls success claim",
+  "source": {
+    "head_sources_match": true,
+    "revision": "906e92f061d501d170c256c46d93cd91df4dd988",
+    "source_manifest_sha256": "48f7661aebf8b7e4993d54ddf4b5c484bcc1729dc70e31f0b08abd762fa702e3",
+    "tracked_clean": true,
+    "tree": "332329e58df58e99aa119f1ea3f1225f47716f0d"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261027T164325.624061Z",
+  "status": "passed",
+  "tool_hashes": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "python3": {
+      "bytes": 13541832,
+      "sha256": "886c366577a40e52823af32c30ecf67e628e27a2f87bcf1588be69493845ac6b"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "toolchain": {
+    "decoder-cargo.txt": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "decoder-rustc.txt": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6"
+  }
+}
