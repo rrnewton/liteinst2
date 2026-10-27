@@ -417,9 +417,10 @@ impl Owner {
         }
         Ok(())
     }
-    /// WNOWAIT or an owned creation payload pins the numeric incarnation until
-    /// a stable descriptor is acquired. ThreadClone always requests PIDFD_THREAD;
-    /// legacy process profiles retain flags=0 first. No TGID read precedes it.
+    /// WNOWAIT or independently authenticated creation wait-domain custody pins
+    /// the numeric incarnation until a stable descriptor is acquired.
+    /// ThreadClone always requests PIDFD_THREAD; legacy process profiles retain
+    /// flags=0 first. No TGID read precedes it.
     pub(super) fn pin_task(&mut self, tid: libc::pid_t) -> Result<(), LaunchError> {
         if self.handles.contains_key(&tid) {
             return Ok(());
@@ -433,9 +434,10 @@ impl Owner {
         // Preserve the existing process-only profiles' kernel capability
         // envelope. A successful flags=0 open authenticates a process pin.
         // Linux returns ENOENT for a nonleader; this does not establish its
-        // kind, but permits an explicit task-pin attempt while WNOWAIT/the
-        // creation payload still preserves exact ownership. Only that second
-        // successful syscall authenticates Thread. No unrelated errno retries.
+        // kind, but permits an explicit task-pin attempt while WNOWAIT or
+        // authenticated creation wait-domain custody preserves ownership. Only
+        // that second successful syscall authenticates Thread. No unrelated
+        // errno retries.
         match self.open_pin(tid, PinKind::Process) {
             Err(LaunchError::System { source, .. })
                 if source.raw_os_error() == Some(libc::ENOENT) =>
@@ -959,12 +961,56 @@ impl Owner {
                 // most two lifetime records, including retired tasks. Cleanup
                 // never resumes original code, so a retired number cannot
                 // legitimately gain a second creation incarnation here.
-                if child > 0 && !self.reaped.contains(&child) {
-                    self.owned.insert(child);
-                    let _ = self.pin_task(child);
-                }
+                let _ = self.pin_creation_candidate(child);
             }
         }
+    }
+    /// GETEVENTMSG supplies a candidate, not an identity witness. A fatal
+    /// signal can replace a consumed creation stop with EXIT before that read,
+    /// leaving an exit status where the caller expected a child TID.
+    fn pin_creation_candidate(&mut self, child: libc::pid_t) -> Result<(), LaunchError> {
+        if child <= 0
+            || self.reaped.contains(&child)
+            || self.tracer_terminal.contains_key(&child)
+            || self
+                .broker
+                .as_ref()
+                .is_some_and(|broker| broker.pid == child)
+        {
+            return Err(LaunchError::Invalid("invalid creation custody candidate"));
+        }
+        let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+        // Linux waitid(P_PID) with __WNOTHREAD authenticates this exact task in
+        // the current thread's wait domain. Success with si_pid==0 still proves
+        // an eligible unreaped child exists without an available wait status.
+        // ECHILD proves no such ownership. Neither outcome consumes a wait.
+        // Under our sole-tracer contract, a traced child cannot be physically
+        // retired/reused until this thread consumes its terminal wait. The
+        // non-application broker is excluded above even though it is our child.
+        let observed = unsafe {
+            libc::waitid(
+                libc::P_PID,
+                child as libc::id_t,
+                &raw mut info,
+                libc::WEXITED
+                    | libc::WSTOPPED
+                    | libc::WNOHANG
+                    | libc::WNOWAIT
+                    | libc::__WALL
+                    | libc::__WNOTHREAD,
+            )
+        };
+        if observed < 0 {
+            return Err(system("authenticate creation child wait"));
+        }
+        let witness = unsafe { info.si_pid() };
+        if observed != 0 || (witness != 0 && witness != child) {
+            return Err(LaunchError::Invalid("creation child wait identity differs"));
+        }
+        // Retain numeric custody even if pidfd allocation fails, exactly as
+        // poll_raw does after its own WNOWAIT domain witness.
+        self.owned.insert(child);
+        self.pin_task(child)
     }
     fn kill_owned(&self) -> BTreeSet<libc::pid_t> {
         let mut confirmed = BTreeSet::new();
