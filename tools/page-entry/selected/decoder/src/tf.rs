@@ -81,11 +81,15 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // Existing no-CET profile only: one canonical instruction, no added
         // or ignored prefix. Other Code values retain the old prefix policy.
         if source[..instruction.len()] != [0xf3, 0x0f, 0x1e, 0xfa] { return Ok(out); }
+    } else if instruction.code() == Code::Xgetbv {
+        // The actual ECX=0 restriction is enforced on the genuine NX frame
+        // before either instruction page opens; decoding grants no RX permit.
+        if source[..instruction.len()] != [0x0f, 0x01, 0xd0] { return Ok(out); }
     } else if !canonical_padding_nop(&instruction, &source[..instruction.len()])
         && !prefixes(&instruction, &source[..instruction.len()]) { return Ok(out); }
     // Exact Code enumeration, never a catch-all mnemonic/valid-decode permit.
     let (flow, family) = match instruction.code() {
-        Code::Endbr64 | Code::Nopw | Code::Nopd | Code::Nopq
+        Code::Xgetbv | Code::Endbr64 | Code::Nopw | Code::Nopd | Code::Nopq
         | Code::Nop_rm16 | Code::Nop_rm32 | Code::Nop_rm64
         | Code::Mov_rm8_r8 | Code::Mov_rm16_r16 | Code::Mov_rm32_r32
         | Code::Mov_rm64_r64 | Code::Mov_r8_rm8 | Code::Mov_r16_rm16

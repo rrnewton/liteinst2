@@ -25,7 +25,7 @@ and its output names remain unchanged. A caller can explicitly use
 and the existing sealed-namespace `exec-loader` command with that carrier.
 
 Canonical NOP and register/immediate MOV retain their original typed owner.
-A separate owner executes a closed set of 534 decoder instruction codes at
+A separate owner executes a closed set of 535 decoder instruction codes at
 their original addresses: integer arithmetic and memory access, stack operations,
 near branches/CALL/RET, integer shifts/rotates, multiply/divide, conditional
 results, bit operations/exchanges, and selected SSE2 data operations. The CPU supplies the
@@ -189,3 +189,17 @@ startup pair, all 47 old refusal controls and twelve additional near-neighbor
 refusals. The original generic oracle, its actual failed-operation controls and
 the connected REP cohort remain separate requirements. Padding support alone
 does not establish a completed real-linker run.
+
+Canonical XGETBV (`0f 01 d0`) executes only when the genuine NX frame has
+ECX=0. Upper RCX bits are ignored as specified by the instruction; they remain
+unchanged. An authenticated nonzero ECX refuses before source opening or TF
+insertion. The CPU supplies the actual XCR0 result in zero-extended EAX/EDX.
+ECX=1 state-use observation and noncanonical encodings remain outside this
+profile. Unsupported XSAVE/OSXSAVE hardware remains a terminal failure.
+
+`python3 evaluation/inprocess/page_selected_xgetbv.py --expect-revision REVISION`
+runs six full-state XCR0 pairs plus the startup pair, all 47 old and nine new
+encoding refusals, three genuine pre-open index refusals and one actual native
+invalid-index fault. Run on one reserved CPU. Failed operations retain exit 125
+and are counted separately from completed pairs. All existing generic, integer,
+padding, REP and component suites remain required.
