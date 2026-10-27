@@ -506,6 +506,11 @@ mod ordered_trace {
     pub use word_sync::WordPublication;
     include!("word_trace_method.rs");
 
+    // Additive point-only child setup; existing comparators/log bodies stay literal.
+    pub mod native_point {
+        include!("native_point.rs");
+    }
+
     const EVENT_CAPACITY: usize = 128;
     thread_local! {
         static ACTIVE_LOG: Cell<(*mut u64, usize)> = const { Cell::new((core::ptr::null_mut(), 0)) };
