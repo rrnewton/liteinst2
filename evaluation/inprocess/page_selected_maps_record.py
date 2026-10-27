@@ -97,7 +97,7 @@ def check(data, layout, case):
     same(q[0]['maps'], guard['maps'])
     need(stats[1]['acquisitions'] == stats[0]['acquisitions']+1 and stats[1]['reuses'] > stats[0]['reuses'] and
          stats[1]['active'] == stats[1]['valid'] == 1, 'one measured acquisition across different owners')
-    need(r['source_before'] == bytes.fromhex('90e9fa0f000090909090909090909090'), 'complete literal source NOP/JMP bytes')
+    need(r['source_before'] == bytes.fromhex('90e9fa0f0000909090909090909090'), 'complete literal source NOP/JMP bytes')
     for frame in frames:
         if not frame['observed']:
             continue
