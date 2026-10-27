@@ -293,7 +293,9 @@ fn isolated_prefixed_pun() {
         .args(["--exact", NAME, "--nocapture", "--test-threads=1"])
         .env(SELECTOR, NAME)
         .stdin(Stdio::null())
-        .stdout(Stdio::inherit())
+        // Exact exit receipts below authenticate body completion; keep its
+        // diagnostics on stderr without unfinished child libtest progress.
+        .stdout(Stdio::null())
         .stderr(Stdio::inherit())
         .process_group(0);
     // SAFETY: only async-signal-safe syscalls are used before exec.
