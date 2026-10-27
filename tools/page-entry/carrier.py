@@ -111,7 +111,7 @@ def execute(carrier, argv):
     os.execve(fd, argv or [str(carrier)], os.environ.copy())
 
 
-def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0):
+def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False):
     # This separate command intentionally supplies a private namespace and a
     # closed environment. The original fixture's make/exec path is unchanged.
     import namespace
@@ -136,6 +136,9 @@ def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, chi
         env = {"PATH": "/usr/bin:/bin", "LANG": "C", "LC_ALL": "C", "TZ": "UTC",
                "LD_LIBRARY_PATH": str(directory), "LD_BIND_NOW": "1",
                "LI2_DEPENDENCY_FDS": ",".join(str(item) for item in fds)}
+        if disable_rseq:
+            # Explicit named workload only; never inherit arbitrary caller tunables.
+            env["GLIBC_TUNABLES"] = "glibc.pthread.rseq=0"
         if fork_fds is not None:
             if len(fork_fds) != 2 or fork_fds[0] == fork_fds[1] or any(item <= 2 for item in fork_fds):
                 raise ValueError("distinct fork report descriptors")
@@ -176,6 +179,7 @@ def main():
     loader = sub.add_parser("exec-loader", help="explicit sealed dependency namespace; separate loader backend")
     loader.add_argument("--library-root", action="append", type=Path, required=True)
     loader.add_argument("--namespace", type=Path, required=True)
+    loader.add_argument("--disable-rseq", action="store_true", help="explicit glibc.pthread.rseq=0 workload")
     loader.add_argument("carrier", type=Path)
     loader.add_argument("original", type=Path)
     loader.add_argument("argv", nargs=argparse.REMAINDER)
@@ -197,7 +201,8 @@ def main():
         execute_loader(args.carrier, args.original, args.library_root, args.namespace, args.argv,
                        (args.report_parent, args.report_child), args.child_failure)
     else:
-        execute_loader(args.carrier, args.original, args.library_root, args.namespace, args.argv)
+        execute_loader(args.carrier, args.original, args.library_root, args.namespace, args.argv,
+                       disable_rseq=args.disable_rseq)
 
 
 if __name__ == "__main__":

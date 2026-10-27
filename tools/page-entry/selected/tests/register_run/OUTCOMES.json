@@ -1,0 +1,223 @@
+{
+  "scope": "prospective source-only native register-run publication fixture; no executed results",
+  "native_bounds": {
+    "cpu_seconds": 5,
+    "address_space_bytes": 536870912,
+    "file_bytes": 16777216,
+    "wall_seconds": 15,
+    "external_cpus": 1
+  },
+  "requires": "reviewed process helper with actual catchable-signal reset/mask observation, genuine inherited record fd3, pidfd/process-group cleanup; all commands must be retained even on failure",
+  "commands": [
+    {
+      "name": "register-run-0",
+      "argv": [
+        "register-run-0"
+      ],
+      "environment_delta": {},
+      "exit_code": 0,
+      "stdout": "LI2_REGISTER_RUN_PASS cases=3 records=6 native=6 miss=3 hit=3 trace=0\n",
+      "stderr": "",
+      "expected_header": {
+        "completed_records": 6,
+        "completed_capacity": 0,
+        "native_references": 6,
+        "published_runs": 6,
+        "hit_runs": 3,
+        "fallback_runs": 0,
+        "source_restorations": 3,
+        "generated_trace_events": 0,
+        "fallback_trace_events": 0,
+        "refusals": 47,
+        "complete": 1,
+        "fixture_failure": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0
+      },
+      "case_indices": [
+        0,
+        1,
+        2
+      ],
+      "history_completed_runs": 6,
+      "history_copied_instructions": 12,
+      "cache": {
+        "slots_used": 3,
+        "complete_slots": 3,
+        "attempts": 6,
+        "hits": 3,
+        "full_misses": 0
+      }
+    },
+    {
+      "name": "register-run-1",
+      "argv": [
+        "register-run-1"
+      ],
+      "environment_delta": {},
+      "exit_code": 0,
+      "stdout": "LI2_REGISTER_RUN_PASS cases=3 records=6 native=6 miss=3 hit=3 trace=0\n",
+      "stderr": "",
+      "expected_header": {
+        "completed_records": 6,
+        "completed_capacity": 0,
+        "native_references": 6,
+        "published_runs": 6,
+        "hit_runs": 3,
+        "fallback_runs": 0,
+        "source_restorations": 3,
+        "generated_trace_events": 0,
+        "fallback_trace_events": 0,
+        "refusals": 47,
+        "complete": 1,
+        "fixture_failure": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0
+      },
+      "case_indices": [
+        3,
+        4,
+        5
+      ],
+      "history_completed_runs": 6,
+      "history_copied_instructions": 14,
+      "cache": {
+        "slots_used": 3,
+        "complete_slots": 3,
+        "attempts": 6,
+        "hits": 3,
+        "full_misses": 0
+      }
+    },
+    {
+      "name": "register-run-2",
+      "argv": [
+        "register-run-2"
+      ],
+      "environment_delta": {},
+      "exit_code": 0,
+      "stdout": "LI2_REGISTER_RUN_PASS cases=3 records=6 native=6 miss=3 hit=3 trace=0\n",
+      "stderr": "",
+      "expected_header": {
+        "completed_records": 6,
+        "completed_capacity": 0,
+        "native_references": 6,
+        "published_runs": 6,
+        "hit_runs": 3,
+        "fallback_runs": 0,
+        "source_restorations": 3,
+        "generated_trace_events": 0,
+        "fallback_trace_events": 0,
+        "refusals": 47,
+        "complete": 1,
+        "fixture_failure": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0
+      },
+      "case_indices": [
+        6,
+        7,
+        8
+      ],
+      "history_completed_runs": 6,
+      "history_copied_instructions": 36,
+      "cache": {
+        "slots_used": 3,
+        "complete_slots": 3,
+        "attempts": 6,
+        "hits": 3,
+        "full_misses": 0
+      }
+    },
+    {
+      "name": "register-run-3",
+      "argv": [
+        "register-run-3"
+      ],
+      "environment_delta": {},
+      "exit_code": 0,
+      "stdout": "LI2_REGISTER_CAPACITY_PASS slots=64 published=65 hit=1 fallback=1 fallback_trace=2\n",
+      "stderr": "",
+      "expected_header": {
+        "completed_records": 66,
+        "completed_capacity": 64,
+        "native_references": 65,
+        "published_runs": 65,
+        "hit_runs": 1,
+        "fallback_runs": 1,
+        "source_restorations": 65,
+        "generated_trace_events": 0,
+        "fallback_trace_events": 2,
+        "refusals": 47,
+        "complete": 1,
+        "fixture_failure": 0,
+        "owner_failure": 0,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0
+      },
+      "case_indices": [
+        0
+      ],
+      "history_completed_runs": 65,
+      "history_copied_instructions": 130,
+      "cache": {
+        "slots_used": 64,
+        "complete_slots": 64,
+        "attempts": 66,
+        "hits": 1,
+        "full_misses": 1
+      }
+    }
+  ],
+  "record": {
+    "fd": 3,
+    "endianness": "little",
+    "header_u64_fields": [
+      "magic",
+      "version",
+      "header_bytes",
+      "group",
+      "record_bytes",
+      "records_kept",
+      "startup_bytes",
+      "capacity_row_bytes",
+      "capacity_rows",
+      "tail_bytes",
+      "completed_records",
+      "completed_capacity",
+      "native_references",
+      "published_runs",
+      "hit_runs",
+      "fallback_runs",
+      "source_restorations",
+      "generated_trace_events",
+      "fallback_trace_events",
+      "refusals",
+      "xcr0",
+      "xsave_bytes",
+      "fixture_failure",
+      "owner_failure",
+      "owner_detail_abs",
+      "owner_detail_negative",
+      "complete"
+    ],
+    "header_bytes": 216,
+    "magic": 3552870968096606540,
+    "version": 1,
+    "extent": "216 + sizeof(struct sample) + 6*sizeof(struct run_record) + 64*sizeof(struct capacity_record) + sizeof(struct register_tail); sizes authenticated against each actual retained ELF/DWARF, never accepted from untrusted header alone",
+    "sections": [
+      "header",
+      "unchanged startup samples[0]",
+      "run_record records[6]",
+      "capacity_record capacities[64]",
+      "register_tail tail"
+    ],
+    "maximum_bytes": 16777216
+  },
+  "required": "all source/build/tool/archive/record closure and every in-fixture predicate; a PASS string/header never substitutes for full saved-data replay of retained records",
+  "capacity_limit": "64 complete cycle facts and hashes; complete records retained for cycle0, cycle62, cycle63, fallback and hit-after-full only; intermediate full records not independently replayable",
+  "negative_catalogue": "separate future additive source; no claim yet for corruption/protection/wrong-borrow/reentry/failed-reset controls"
+}
