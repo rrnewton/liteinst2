@@ -1,0 +1,465 @@
+{
+  "composition_overlay_sha256": "bb65588a6a0797574d3e577cb0b716f5e41bb81c14a2c1529316203e079b54b6",
+  "composition_revision": "521531b49fd11fbb5615e90c36ef8922bd1c9712",
+  "generators": [
+    {
+      "fact": {
+        "bytes": 34605,
+        "sha256": "ecf5a0a0ad92a5ab88ba46c2b11eaff5bba0ff07fb0dfd466c237bc9324f833c"
+      },
+      "file": "run_support.base",
+      "stdout": {
+        "generated_bytes": 34605,
+        "generated_sha256": "ecf5a0a0ad92a5ab88ba46c2b11eaff5bba0ff07fb0dfd466c237bc9324f833c",
+        "source_bytes": 34870,
+        "source_sha256": "b0c758cb466ef3f8a35442f7cecbda77eb58c269a7ac90270d769c53440b2910"
+      }
+    },
+    {
+      "fact": {
+        "bytes": 34783,
+        "sha256": "dfaea6882aa13856c951dd967902aa1a3a1efaded83ecd81a00fd741cc595d1f"
+      },
+      "file": "run_support.inc",
+      "stdout": {
+        "after_sha256": "dfaea6882aa13856c951dd967902aa1a3a1efaded83ecd81a00fd741cc595d1f",
+        "before_sha256": "ecf5a0a0ad92a5ab88ba46c2b11eaff5bba0ff07fb0dfd466c237bc9324f833c",
+        "bytes": 34783,
+        "scope": "positive"
+      }
+    },
+    {
+      "fact": {
+        "bytes": 30882,
+        "sha256": "d265cd2e551923ce99017316a5651ecbd35df981be9f470f3b6bff1f6a7dbc26"
+      },
+      "file": "timing_support.inc",
+      "stdout": {
+        "bytes": 30882,
+        "generated_sha256": "d265cd2e551923ce99017316a5651ecbd35df981be9f470f3b6bff1f6a7dbc26",
+        "source_sha256": "6d4e551426006b33ebd38cceff1ab48762ab19d310a07cbb74e42a94497f44c1"
+      }
+    }
+  ],
+  "mechanism_manifest_sha256": "3842a4be98e666ffdca9053d77aa9d875092111083b86d3b5ddc03a1ebf819ae",
+  "mechanism_predecessor_sha256": "9fc9aae1a94908572f204ec5613f5609583bb6daf810fd9111619cc75636bffb",
+  "mechanism_review_sha256": "67247a3744f197583d2d573b2f445df8a668490383f2b8979b63c3f54a9c0873",
+  "schema": 1,
+  "scope": "Exact reviewed mechanism and current committed build/context. A later source successor requires explicit row rebinding; the runtime revision is separately checked by --expect-revision.",
+  "sources": [
+    {
+      "bytes": 7298,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/checks.py",
+      "sha256": "cd3477ec3bfe5391f2c55ae61a89941fd75c5218194e871290442453f5d754c2"
+    },
+    {
+      "bytes": 29973,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected.py",
+      "sha256": "941c10dca909c9eed84af6606da38e0f88e4f76eda7f3deaf034282680674e17"
+    },
+    {
+      "bytes": 22590,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_components.py",
+      "sha256": "74dea5e7e11f56a2179b51a802facb496078ea044cf1e298cccef2fdbd0b5735"
+    },
+    {
+      "bytes": 26303,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_generic.py",
+      "sha256": "e5e7690309267be887cee9b04d26e90a29f8d379110e22214948922c857a139a"
+    },
+    {
+      "bytes": 13303,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_generic_build.py",
+      "sha256": "bca479e14865a41c627aacbab5d018422fafa52b215162f056056e5c4a942870"
+    },
+    {
+      "bytes": 10868,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_generic_compare.py",
+      "sha256": "09000c0df0d5e72cfaf3def3eb6bd6350604b128fcea58b153f429da58fb01b6"
+    },
+    {
+      "bytes": 1615,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_maps_dwarf.py",
+      "sha256": "29acb68de03ebc631a3f68778372e77ad5a649f119b5b8c9991a44bb4d877c0f"
+    },
+    {
+      "bytes": 11633,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_maps_record.py",
+      "sha256": "b47d29707c678c284e83a37ce8b8910d16734c37c7a2a0cdaa9e4205bca012a3"
+    },
+    {
+      "bytes": 7089,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_process.py",
+      "sha256": "71cc09047a01bd62c79d994587998aac17655f0f65a4464c94f12df461f1f773"
+    },
+    {
+      "bytes": 21977,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_register.py",
+      "sha256": "e2a9fb4ff8bd0d73be8a275073419187a79874a9ba7f466683c7449ba0ecadba"
+    },
+    {
+      "bytes": 8308,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_register_connected_compare.py",
+      "sha256": "3215dfcb1ae83fc586608ecbc947211c65d800208c5c5063abaa92332c465d94"
+    },
+    {
+      "bytes": 18872,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_register_controls.py",
+      "sha256": "8580ab153681d6ea1caaf74bf6e830c98bd5b154ede2ee3ce97eaab06df3b69e"
+    },
+    {
+      "bytes": 21860,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_register_real.py",
+      "sha256": "f1804d33f387b2b4da1821a2be4001d6593171751834b04bccac97dad8db281b"
+    },
+    {
+      "bytes": 8873,
+      "origin": "timing V2 3842a4be",
+      "path": "evaluation/inprocess/page_selected_register_time_compare.py",
+      "sha256": "9f9cf09d6ecbdcf30e95400059a1073aee5585c7a012db74fd29471f0192fcfe"
+    },
+    {
+      "bytes": 1725,
+      "origin": "timing V2 3842a4be",
+      "path": "evaluation/inprocess/page_selected_register_time_dwarf.py",
+      "sha256": "45e3b709fbd07938af45167f67694731986da590b69fabe4ee55a47eee5ff9d8"
+    },
+    {
+      "bytes": 12292,
+      "origin": "timing V2 3842a4be",
+      "path": "evaluation/inprocess/page_selected_register_time_record.py",
+      "sha256": "47e05920930033f5a6ab855e806bd0f6fbaef8e526b25c866a12a2fe67f064ff"
+    },
+    {
+      "bytes": 12373,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/page_selected_repeat_compare.py",
+      "sha256": "7b81441b044db928bbf6190c47d78895224c26bee99535896af9bd7c8d4750fc"
+    },
+    {
+      "bytes": 13593,
+      "origin": "committed composition input",
+      "path": "evaluation/inprocess/run.py",
+      "sha256": "3e239969f1d043c9a4261ccfe8a464f18eecbf6a5ef9a4dd6139e2023c1f3bd2"
+    },
+    {
+      "bytes": 15965,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/bridge.c",
+      "sha256": "1f48f8d895982a6a7403024ef0f30858553c9a89da90269b084c7fea7551f11a"
+    },
+    {
+      "bytes": 1531,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/bridge.h",
+      "sha256": "c9d849cb270211bfff896c2e996e67edfbc0979b43e7f4f6411e626faeb4f7e9"
+    },
+    {
+      "bytes": 10150,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/carrier.py",
+      "sha256": "8b196af13ea422c552762612f50f20e9dff90778582c6e913c1472afde8af159"
+    },
+    {
+      "bytes": 11288,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/namespace.py",
+      "sha256": "076c8d751dd5228f163fe3dca361ada4e32198107df7cd75963fe995d769f863"
+    },
+    {
+      "bytes": 3192,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/build-register-run.sh",
+      "sha256": "64688455305f942c11251dbb37e3e2d53a9f41f1f16ef70c2919c8aa9e2a7649"
+    },
+    {
+      "bytes": 2057,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/build-register-timing.sh",
+      "sha256": "921f6ef482a51de233a0e69b2130d25633eb118fbd8f025006c6f28767fc0fc4"
+    },
+    {
+      "bytes": 3014,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/build.sh",
+      "sha256": "e453596f873279e5de1ccb6ecc78141fdcf365ae78fb781ab0ba7bd3386a5ab6"
+    },
+    {
+      "bytes": 799,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/decoder/Cargo.lock",
+      "sha256": "1006555168c3320ddeed45455bf5171086bf3683b78633f839df63819ff8e41e"
+    },
+    {
+      "bytes": 385,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/decoder/Cargo.toml",
+      "sha256": "24f0b3ec5be0d18577f40e1353e898d358261640cb6537b883632d6978a4d243"
+    },
+    {
+      "bytes": 2353,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/decoder/src/abi.rs",
+      "sha256": "7d29aecce77ce21dc34bbaddfe10af32b6994b052a25cd07c92120edb9db5b2c"
+    },
+    {
+      "bytes": 5490,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/decoder/src/arena.rs",
+      "sha256": "7306a0e12a5cb26fb7a19ea271f828bc2561ab4d03e5bcc9e0273a61eb22bd6b"
+    },
+    {
+      "bytes": 8805,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/decoder/src/decode.rs",
+      "sha256": "b7948615ebfb766620e9b082e3cda8b8a480326427d9742c23f4076f7f493160"
+    },
+    {
+      "bytes": 6696,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/decoder/src/lib.rs",
+      "sha256": "c98f3ada4c6a4f5e23e7d4000cca265b613c036517c3919cafd62ad6ff33cb2f"
+    },
+    {
+      "bytes": 2626,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/decoder/src/scan.rs",
+      "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
+    },
+    {
+      "bytes": 26497,
+      "origin": "521531b49fd1 plus reviewed BND composition bb65588a",
+      "path": "tools/page-entry/selected/decoder/src/tf.rs",
+      "sha256": "c5dc9b012bed6b8670a0ed74c4790185033f8bc067c305698aeeb2715e50d328"
+    },
+    {
+      "bytes": 2900,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/entry.S",
+      "sha256": "e8927647513805dc1684b56912cccc1a9f54260e65a267c7bbfcd3cb53831b8e"
+    },
+    {
+      "bytes": 36798,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/lifecycle_loader.c",
+      "sha256": "4c3d0d259d09a8fe68f5022a168fdb7420bb599df3a10d44ae9f60d48b3a4b70"
+    },
+    {
+      "bytes": 5426,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/lifecycle_loader.h",
+      "sha256": "afcc78199d577b3c87fe5d45e64b5adb8b248509ba491921bd2f0138dd1f74e7"
+    },
+    {
+      "bytes": 1711,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/maps_phase.h",
+      "sha256": "69126941704abc1015d4a7f0aaf6076395203d75cf3d32c27844a2354db029fe"
+    },
+    {
+      "bytes": 7480,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/maps_phase.inc",
+      "sha256": "42acd97b5b004b35416be99d58d29343d99636efcad2e7615538340a22871b2b"
+    },
+    {
+      "bytes": 6190,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/register_run.h",
+      "sha256": "5106c335e54ede90588915837f36b362b57086679d5576eed2abdb312c58ff86"
+    },
+    {
+      "bytes": 14402,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/register_run_owner.c",
+      "sha256": "a866fa46e4efe453cb7f6dd326bdf8e76f5bcc5b7f714aaf61702c330879fa89"
+    },
+    {
+      "bytes": 6786,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/register_run_plan.c",
+      "sha256": "e7a5181460529651308feead0502f6305dedae27eb91f6c8065b8bb15aed62c2"
+    },
+    {
+      "bytes": 19934,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/register_run_publish.c",
+      "sha256": "20398abd5ec9bd70a53f471c555b8058bc2c7289d355c763e412f22406828dcd"
+    },
+    {
+      "bytes": 5397,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/register_run_publish.h",
+      "sha256": "c7fc766512f11b67af42b1c189043f2790fa21f9707bc07f3d9c98f0becd918a"
+    },
+    {
+      "bytes": 4076,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/register_run_reset.c",
+      "sha256": "05bf57184349574f3a6b281fe03da8dbbb9efb9e2df878627b67f716061b7582"
+    },
+    {
+      "bytes": 1201,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/register_run_reset.h",
+      "sha256": "bab90e21c0e4f9894a6ee17d7609e38a26dc5cb08b7f2fccd3aceaf661c6f3f6"
+    },
+    {
+      "bytes": 11864,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/register_run_timing.c",
+      "sha256": "07f442b5c76f3c87d945980c78d95301a288e63d1f402b151d02c2935c12418a"
+    },
+    {
+      "bytes": 3070,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/register_run_timing.h",
+      "sha256": "cdc38ac5592beadef79472d0d366baef4911316b4f779bf65aa7aaf1e6a14f4b"
+    },
+    {
+      "bytes": 18605,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/runtime_loader.c",
+      "sha256": "c8c781629736cd851943bb72efac4ae5a4e36af8b8cee34920d4cb074b67f1bd"
+    },
+    {
+      "bytes": 21675,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/selected_controller.inc",
+      "sha256": "59f1a0f3d240f43b18a216022788d2076fb85a2e2e401e2464bdd5132a32f528"
+    },
+    {
+      "bytes": 3416,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/selected_globals.inc",
+      "sha256": "511d2af9fc9485443c6daa9afa2c3cc5aa3034f27d292d2ee1e10f8bc54eab4b"
+    },
+    {
+      "bytes": 14504,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/selected_register_run.inc",
+      "sha256": "cf329a26ed4360f6cc6e2895dcaf066ebdfc62994e64f8dac7daba1e277e26b9"
+    },
+    {
+      "bytes": 5019,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/selected_run_timing.inc",
+      "sha256": "de849ffc5235004b2ee01b81a810a67b8459ac2f72b1ce87de6ce818b8c1b1e9"
+    },
+    {
+      "bytes": 12474,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/step_owner.c",
+      "sha256": "d2008695c78b460736cd45fb8f164ff3b1654f214e6134da62792085a9ad75db"
+    },
+    {
+      "bytes": 3979,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/step_owner.h",
+      "sha256": "2225714d80012af2fa3a63422a0e4031aaba1470bf5576500ad178988bf594a9"
+    },
+    {
+      "bytes": 3971,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/tests/generic/fixture.S",
+      "sha256": "c2b1b973ff0ce9ca01e55d3094c16d05a671c72e95d6a7f4315570d08f67e262"
+    },
+    {
+      "bytes": 34870,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/tests/generic/fixture.c",
+      "sha256": "b0c758cb466ef3f8a35442f7cecbda77eb58c269a7ac90270d769c53440b2910"
+    },
+    {
+      "bytes": 1162,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/tests/generic/fixture.h",
+      "sha256": "c26afb5abee1bda0874879440670694db5791f127705e879ac5ba420700c875e"
+    },
+    {
+      "bytes": 3127,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/tests/generic/tf_controls.c",
+      "sha256": "e885b57159faf106a5b737c86a39fa7df42f1bd5b4957f4f89359336f7388d99"
+    },
+    {
+      "bytes": 1860,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/tests/maps_phase/adapt_support.py",
+      "sha256": "4a497b6b5917411d1dfeaacf3d1400f16e02f130e2903317310659a5d3fe1c4e"
+    },
+    {
+      "bytes": 1340,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/tests/register_run/cases.h",
+      "sha256": "3a1e2e3564d106e509d83a5b814810716b5d4ed05bf9cf509af11b4b8b5e6e8f"
+    },
+    {
+      "bytes": 30490,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/tests/register_run/fixture.c",
+      "sha256": "6d4e551426006b33ebd38cceff1ab48762ab19d310a07cbb74e42a94497f44c1"
+    },
+    {
+      "bytes": 1811,
+      "origin": "committed composition input",
+      "path": "tools/page-entry/selected/tests/register_run/prepare.py",
+      "sha256": "0d9c5001a08846591da538b0b66b247ef6f9cc9ea068e75991611bd3383770d8"
+    },
+    {
+      "bytes": 1567,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/tests/register_timing/ADAPTERS.json",
+      "sha256": "7280b13680f80740e5f4642072a0660814d7222c9b61537330a04696552ac1e3"
+    },
+    {
+      "bytes": 2113,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/tests/register_timing/OUTCOMES.json",
+      "sha256": "b6168c94f08ecf3582f15ade32ab605bc72685dfb2c361bb084d15083a6eb3f8"
+    },
+    {
+      "bytes": 1734,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/tests/register_timing/build.sh",
+      "sha256": "e1d25ed6f5b835b1de845fd255614fe0b96b8266a412d8130cf0f68e22a19da8"
+    },
+    {
+      "bytes": 9528,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/tests/register_timing/fixture.c",
+      "sha256": "4b81f3b9c15813b37875093b64b5b9194475be810cffb3f4aa94abd1df773b8d"
+    },
+    {
+      "bytes": 1697,
+      "origin": "timing V2 3842a4be",
+      "path": "tools/page-entry/selected/tests/register_timing/prepare.py",
+      "sha256": "9501f67347aa6f8b9df1f29ea6ea869cf87de4657903ad00dc1c04a2f7dc029e"
+    },
+    {
+      "bytes": 4789,
+      "origin": "521531b49fd1 plus reviewed BND composition bb65588a",
+      "path": "tools/page-entry/selected/tf_owner.h",
+      "sha256": "3c442483e2201486d94c37ef0b289522446d95ed10e24a615a39b348e47341e2"
+    },
+    {
+      "bytes": 16797,
+      "origin": "521531b49fd1 plus reviewed BND composition bb65588a",
+      "path": "tools/page-entry/selected/tf_owner.inc",
+      "sha256": "86a703cc20af302b9e8b81a09bf7fb9ff05a1afdb5d255dfe581a9f150b730bb"
+    }
+  ]
+}

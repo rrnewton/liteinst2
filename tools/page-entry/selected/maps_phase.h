@@ -20,6 +20,11 @@ void li2_maps_phase_fail(void);
 void li2_maps_before_raw(long,long,long,long,long,long,long);
 void li2_maps_after_raw(long,long,long,long,long,long,long,long);
 void li2_maps_stats_read(struct li2_maps_stats *);
+#ifdef LI2_RUN_TIMING
+#include <stddef.h>
+/* Trusted observer buffer registered before target entry; never app authority. */
+int li2_maps_clock_observer_register(const void *,size_t);
+#endif
 #ifdef LI2_MAPS_PHASE_TEST
 int li2_maps_test_saturate(unsigned);
 #endif

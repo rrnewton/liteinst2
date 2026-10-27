@@ -1,0 +1,38 @@
+[
+  {
+    "old": "#define RECORDS_KEPT 6U",
+    "new": "#define RECORDS_KEPT 11U"
+  },
+  {
+    "old": "        write_all(3,&tail,sizeof(tail));",
+    "new": "        write_all(3,&tail,sizeof(tail))&&timing_append();"
+  },
+  {
+    "old": "static void register_handler(int sig,siginfo_t *si,void *frame_) {\n",
+    "new": "static void register_handler(int sig,siginfo_t *si,void *frame_) {\n    li2_maps_event_boundary();\n"
+  },
+  {
+    "old": "    if(register_handling||publishing) {\n",
+    "new": "    if(register_handling||publishing) {\n        timing_nested(sig,si,frame_);\n"
+  },
+  {
+    "old": "    greg_t *g=uc->uc_mcontext.gregs;\n",
+    "new": "    greg_t *g=uc->uc_mcontext.gregs;\n    need(!li2_maps_phase_begin(),831);\n"
+  },
+  {
+    "old": "    } else if(route==1) {\n",
+    "new": "    } else if(route==1) {\n        if(tail.active.phase==LI2_RUN_EMPTY) {\n            need(nx(sig,si,g,s->pc)&&(uint64_t)g[REG_EFL]==(s->initial_flags|LI2_STEP_RF),832);\n            timing_capture(uc);timing_enter();\n        }\n"
+  },
+  {
+    "old": "            r->reset_complete=1;g[REG_RIP]=(greg_t)(uintptr_t)fixture_capture_return;",
+    "new": "            timing_completed();\n            r->reset_complete=1;g[REG_RIP]=(greg_t)(uintptr_t)fixture_capture_return;"
+  },
+  {
+    "old": "    fixture_vector_clobber();register_handling=0;",
+    "new": "    li2_maps_phase_end();fixture_vector_clobber();register_handling=0;"
+  },
+  {
+    "old": "int fixture_main(unsigned long *stack) {",
+    "new": "int old_register_fixture_main(unsigned long *stack) {"
+  }
+]

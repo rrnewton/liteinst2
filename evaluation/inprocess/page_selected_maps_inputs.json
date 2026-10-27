@@ -86,14 +86,14 @@
       "sha256": "afcc78199d577b3c87fe5d45e64b5adb8b248509ba491921bd2f0138dd1f74e7"
     },
     {
-      "bytes": 1520,
+      "bytes": 1711,
       "path": "tools/page-entry/selected/maps_phase.h",
-      "sha256": "02bdcff0bfefa385a745968cd31bd9b02e761d3718e21f981cd2a586653ca8b8"
+      "sha256": "69126941704abc1015d4a7f0aaf6076395203d75cf3d32c27844a2354db029fe"
     },
     {
-      "bytes": 6743,
+      "bytes": 7480,
       "path": "tools/page-entry/selected/maps_phase.inc",
-      "sha256": "cf4ee704e587a92fa92f3c7a976adb8536db4c624b0e1296b347c6d325f59e18"
+      "sha256": "42acd97b5b004b35416be99d58d29343d99636efcad2e7615538340a22871b2b"
     },
     {
       "bytes": 855,
@@ -136,9 +136,9 @@
       "sha256": "c046df2d3398e9ee28fc64041db51fca7e2fe7bf84dfc4ea3766709dfb065dab"
     },
     {
-      "bytes": 18435,
+      "bytes": 18605,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "e81cc4ed96ba840144293bb70064829b5da89dcb46aa3fb79dc759f04430f223"
+      "sha256": "c8c781629736cd851943bb72efac4ae5a4e36af8b8cee34920d4cb074b67f1bd"
     },
     {
       "bytes": 21675,
@@ -146,14 +146,14 @@
       "sha256": "59f1a0f3d240f43b18a216022788d2076fb85a2e2e401e2464bdd5132a32f528"
     },
     {
-      "bytes": 3304,
+      "bytes": 3416,
       "path": "tools/page-entry/selected/selected_globals.inc",
-      "sha256": "aaf733e5a3b78a8c9c4f6507f33d3a940dc311516e8b561456e45b60bf164def"
+      "sha256": "511d2af9fc9485443c6daa9afa2c3cc5aa3034f27d292d2ee1e10f8bc54eab4b"
     },
     {
-      "bytes": 13264,
+      "bytes": 14504,
       "path": "tools/page-entry/selected/selected_register_run.inc",
-      "sha256": "940f92c07c4f45405dd9b4f8b42c4b2362ea3c0b2b16d1f164f9af40861242c9"
+      "sha256": "cf329a26ed4360f6cc6e2895dcaf066ebdfc62994e64f8dac7daba1e277e26b9"
     },
     {
       "bytes": 12474,

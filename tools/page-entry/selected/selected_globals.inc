@@ -13,6 +13,10 @@ static struct li2_run_nested selected_run_interrupted;
 static volatile sig_atomic_t selected_run_failing;
 static uint64_t selected_run_plan_misses;
 static struct li2_run_brk_observation selected_run_private_brk;
+#ifdef LI2_RUN_TIMING
+#include "register_run_timing.h"
+static struct li2_run_timing selected_run_timing;
+#endif
 #endif
 static struct li2_step_session selected_session;
 static struct li2_step_owner selected_step;

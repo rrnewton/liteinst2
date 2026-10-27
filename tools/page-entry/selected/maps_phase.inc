@@ -48,7 +48,23 @@ int li2_maps_phase_begin(void) {
     MAPS_STORE(&maps_stats.active,1);
     return 0;
 }
+#ifdef LI2_RUN_TIMING
+static uintptr_t maps_clock_observer;
+int li2_maps_clock_observer_register(const void *buffer,size_t bytes) {
+    uintptr_t p=(uintptr_t)buffer;
+    if(!active || tx.guard || MAPS_LOAD(&maps_stats.active) ||
+       MAPS_LOAD(&maps_stats.poisoned) || maps_clock_observer || !p || (p&7) ||
+       bytes!=16 || p>UINTPTR_MAX-bytes)return LI2_FETCH_ARGUMENT;
+    /* The trusted caller registered exact full private protection first.
+       This is a rows-only observation allowance, never a query permit. */
+    maps_clock_observer=p;return 0;
+}
+#endif
 static int maps_nonmutating(long n,long a,long b,long c,long d,long e,long f) {
+#ifdef LI2_RUN_TIMING
+    if(n==SYS_clock_gettime && a==4 && maps_clock_observer &&
+       (uintptr_t)b==maps_clock_observer && !c && !d && !e && !f)return 1;
+#endif
     if(n==SYS_getpid || n==SYS_gettid || n==SYS_fstat)return 1;
     if(n==SYS_fcntl && b==F_GET_SEALS && !c && !d && !e && !f)return 1;
     if(n==SYS_membarrier && a==MEMBARRIER_CMD_PRIVATE_EXPEDITED_SYNC_CORE &&

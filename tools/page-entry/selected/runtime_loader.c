@@ -30,6 +30,9 @@ static void fail(unsigned,long) __attribute__((noreturn));
 #ifdef LI2_REGISTER_RUN
 static void selected_run_initialize(void);
 static void selected_run_report(unsigned,unsigned,long);
+#ifdef LI2_RUN_TIMING
+static void selected_run_time_report(unsigned,unsigned,long);
+#endif
 static int selected_run_try(int,siginfo_t *,ucontext_t *,uint64_t);
 static void selected_run_exit(int,siginfo_t *,ucontext_t *);
 static void selected_run_before_syscall(long,const long[6]);
@@ -86,6 +89,9 @@ static void report(unsigned status,unsigned code,long detail) {
     if(selected_repeat_attempts)selected_repeat_report(status,code,detail);
 #ifdef LI2_REGISTER_RUN
     selected_run_report(status,code,detail);
+#ifdef LI2_RUN_TIMING
+    selected_run_time_report(status,code,detail);
+#endif
 #endif
 }
 static void fail(unsigned code,long detail) {
