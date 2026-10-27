@@ -291,3 +291,38 @@ All four required checks pass, including 2,350 workspace tests with four previou
 - [Native embedded-entry results](results/20261027T182224.247893Z-page-selected-embedded-eeae25e563be.json)
 - [Required checks, recorder and serial](results/20261027T182556.716129Z-checks-eeae25e563be.json)
 - [Retained preflight failure](results/20261027T182313.312067Z-checks-eeae25e563be.json)
+
+## Original-address canonical REP STOSQ (claims 2 and 4)
+
+Source `b809f35817e79de828c9b0661ce897354bd80c28` joins original-address canonical `f3 48 ab` execution to the in-process selected controller and includes main `223e5f3543884adfa6cda04e72671be4cebc8f76`. A separate owner retains the original fetch borrow through every actual TRACE. Each cycle revokes and synchronizes the source, authenticates exact bounded RCX/RDI progress, including count-zero completion and a fresh closed continuation, then reopens for an intermediate iteration or releases after final completion. The old 534-code generic classifier and its 47 refusal controls remain unchanged. This increment does not add general repeated-string instructions or application fault delivery.
+
+The portable native oracle passes six same-PC native/owner pairs at counts 0/1/3 and DF 0/1, with ten actual TRACE events, one genuine startup pair, all 47 old and six REP refusals, and a real failed first store. Full comparisons retain all GPRs, logical flags, selectors, FS/GS, complete kernel FP, qualified live XSAVE, stack and data. The failed store remains terminal exit 125 with a held borrow, closed source and zero completed iterations. The unchanged generic oracle separately passes its 21 pairs, 47 refusals, three actual failed operations and three command controls.
+
+The connected runner retains all 22 earlier streams and adds ten programs for the six count/direction combinations, crossing and page-end fetches, owner reuse, and a read-only store fault. All 32 cases satisfy their required outcomes: 28 complete and four retain required refusals. Each successful REP program matches all 128 output bytes against both literal expectations and native execution. The fault remains native SIGSEGV versus terminal gated 125; it is not completed instruction support. All 189 connected build/cohort commands and 44 oracle commands are reaped without timeout or cleanup failure. Independent replay authenticates saved source/tool/artifact/capture identities, complete state records and the compact public projections.
+
+The real system linker completes a REP with 52 actual TRACE/closed-query cycles, then refuses padding NOP `662e0f1f840000000000` (code 1056). Its prefix includes 47 old steps, 2,035 generic steps, two RDTSC callbacks and 2,086 NX faults. Selected-profile `ls` remains incomplete. The earlier default-loader program results remain a separate profile. General signals/threads, selected RSP destinations, fast-page publication and full B2/B3/B4 remain open.
+
+Optimized correctness runs used GCC 11.5.0 and Rust/Cargo 1.97.1 on reserved CPU 1, AMD EPYC 9D85, microcode `0xb101066`, Linux 7.1.3, with no effective capabilities. No performance result is claimed. Reproduce each native command on one reserved CPU; checks may use four:
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_repeat_oracle.py --expect-revision b809f35817e79de828c9b0661ce897354bd80c28
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_repeat.py --expect-revision b809f35817e79de828c9b0661ce897354bd80c28
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/page_selected_generic_oracle.py --expect-revision b809f35817e79de828c9b0661ce897354bd80c28
+PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/checks.py --expect-revision 96038db8aae478c9ae37f05ddfa4e37b773755db
+```
+
+The subsequent `96038db8aae478c9ae37f05ddfa4e37b773755db` commit changes only three inventory files. Independent verification rehashes all 604 recorded native input bindings (282 distinct paths) and confirms they remain byte-identical. Native results retain their actual `b809f358` revision; required checks use the corrected inventory revision.
+
+All four required checks pass at `96038db8`: formatting, strict workspace/all-feature/all-target Clippy, workspace tests (2,457 passed, four previously ignored, 98 complete harnesses), and workspace/all-feature/all-target check. Recorder passes 330 tests; serial passes all 1,029 across 27 harnesses, including 50 native fixtures, 15 dynamic fixtures, 388 matrix cases, 108 validation fixtures and backing cleanup. Workspace takes 335.587 seconds within the unchanged 900-second bound; serial takes 139.150 seconds within its unchanged 180-second bound. Source and configuration remain unchanged.
+
+An earlier connected run at `f090e7b7` failed an observer assertion that incorrectly expected selected disposition 8 for an unchanged old NOP/MOV classification. The correction requires its actual existing disposition 0; it changes no decoder or owner rule. The first merged required-check attempt at `57f5d652` failed historical source pins after core's ELF additions. An authenticated exact source/catalog projection reconstructs historical inputs while preserving every old assertion, ignored count and serial collection. Its first catalog counted 17 new declarations but omitted 90 instances compiled through shared integration support. The full workspace process at `b809f358` exited zero, and the unchanged parser correctly rejected its incomplete catalog. The corrected inventory requires all 107 added instances. All three failed receipts remain failed.
+
+- [Portable REP native oracle](results/20261027T191051.898010Z-page-selected-repeat-oracle-b809f35817e7.json)
+- [Connected REP programs](results/20261027T191100.763033Z-page-selected-repeat-b809f35817e7.json)
+- [Unchanged generic native oracle](results/20261027T191135.955137Z-page-selected-generic-oracle-b809f35817e7.json)
+- [Retained observer failure](results/20261027T185233.377700Z-page-selected-repeat-f090e7b7a848.json)
+- [Retained merged inventory failure](results/20261027T185710.617370Z-checks-57f5d6527bc5.json)
+- [Retained compiled-inventory failure](results/20261027T191052.175479Z-checks-b809f35817e7.json)
+- [Required checks, recorder and serial](results/20261027T192329.459383Z-checks-96038db8aae4.json)
+
+The results commit adds documentation and seven numeric receipts totaling 117,232 bytes. Full captures and state records remain private.
