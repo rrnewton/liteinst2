@@ -41,8 +41,9 @@ bit must equal the saved harness flags; the adapter clears only TF before
 continuing. This is not whole-64KiB stack qualification,
 arbitrary-function coverage or timing accuracy. The state and functional
 checks are separate required stages of the same wrapper; neither substitutes
-for the other. The combined wrapper is source-only until its own execution is
-recorded at an exact committed revision.
+for the other. The [recorded run](../../../evaluation/ordinary-interval-ff18353/README.md)
+contains the exact revision, four state pairs, eight functional rows and final
+workspace validation results.
 
 The native original uses a one-shot prepared call: complete file/mapping/source
 validation runs before the readiness stop, while an exclusive borrow keeps the

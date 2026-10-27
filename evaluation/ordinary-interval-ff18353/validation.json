@@ -1,0 +1,583 @@
+{
+  "passed_attempt": {
+    "aggregate_test_count": null,
+    "cleanup_seconds_per_command": 3,
+    "counting": "Literal terminal observations, not additive outer or unique-test totals; nested rows are not extra credit.",
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "$CARGO_HOME",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "CARGO_TARGET_DIR": "$REPO/target",
+      "CARGO_TERM_COLOR": "never",
+      "HOME": "$USER_HOME",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "LITEINST_EVALUATION": "1",
+      "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "RUSTC": "$TOOLCHAIN/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+      "RUSTDOCFLAGS": "",
+      "RUSTFLAGS": "",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "$RAW/tmp"
+    },
+    "hardware": {
+      "architecture": "x86_64",
+      "build_affinity_cpus": 4,
+      "family": 26,
+      "model": 17,
+      "owner_label": "AMD EPYC Zen 5 dev host",
+      "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+      "stepping": 0,
+      "vendor": "AuthenticAMD"
+    },
+    "jobs": 4,
+    "native_qualification": false,
+    "revision": "ff18353d4ed70bb3ad4018079328833bac4696b4",
+    "runner": {
+      "bytes": 13090,
+      "sha256": "0a55ab19bae9e2d56401cbf04d6194f83fe3258ad088b53cd7ecc5a58530e183"
+    },
+    "schema": 1,
+    "scope": "Exact-revision final validation commands; operational durations, not performance.",
+    "source_before_after_equal": true,
+    "source_files": 2738,
+    "source_inventory_sha256": "468eb8ec34d28a539be471576e40f743c47dee3a64aa4cc3d814aaa6803d6e5a",
+    "stages": [
+      {
+        "allocation_regressions_passed": [],
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "fmt",
+          "--check"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "reaped_descendants": 0,
+          "seconds": 6.170055348891765,
+          "start_utc": "2026-10-27T19:45:45.401808+00:00",
+          "termination": null
+        },
+        "max_log_bytes": 8388608,
+        "name": "fmt",
+        "status": "PASS",
+        "terminal_observations": 0,
+        "wall_seconds": 180
+      },
+      {
+        "allocation_regressions_passed": [],
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "3fe980a0f9709b0a2d093ea2a65202e1e589d4893ac71be4272c165923b9e527",
+          "reaped_descendants": 0,
+          "seconds": 0.1934268558397889,
+          "start_utc": "2026-10-27T19:45:51.957134+00:00",
+          "termination": null
+        },
+        "max_log_bytes": 8388608,
+        "name": "clippy",
+        "status": "PASS",
+        "terminal_observations": 0,
+        "wall_seconds": 180
+      },
+      {
+        "allocation_regressions_passed": [],
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "9ddcb7a97f3589835ba8f354c41d25b0a805bd5f85ddbccaff009e6f6dc7236c",
+          "reaped_descendants": 0,
+          "seconds": 0.11833740188740194,
+          "start_utc": "2026-10-27T19:45:52.560780+00:00",
+          "termination": null
+        },
+        "max_log_bytes": 8388608,
+        "name": "check",
+        "status": "PASS",
+        "terminal_observations": 0,
+        "wall_seconds": 180
+      },
+      {
+        "allocation_regressions_passed": [],
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "test",
+          "--workspace"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "4efbafd86b2f5a2dcdef6899e8c22ccb645e6f1f6ea24a0a4cc140be82194e9f",
+          "reaped_descendants": 0,
+          "seconds": 336.1602934950497,
+          "start_utc": "2026-10-27T19:45:53.055133+00:00",
+          "termination": null
+        },
+        "max_log_bytes": 8388608,
+        "name": "workspace",
+        "status": "PASS",
+        "terminal_observations": 104,
+        "wall_seconds": 360
+      },
+      {
+        "allocation_regressions_passed": [],
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "e30eb40bf4e15d326690616b144efadcf7ebab424f45a0b6292c380ab6e90ad2",
+          "reaped_descendants": 0,
+          "seconds": 131.67897153203376,
+          "start_utc": "2026-10-27T19:51:29.572625+00:00",
+          "termination": null
+        },
+        "max_log_bytes": 8388608,
+        "name": "serial-launch",
+        "status": "PASS",
+        "terminal_observations": 28,
+        "wall_seconds": 180
+      },
+      {
+        "allocation_regressions_passed": [
+          "trampoline::tests::dropping_staged_image_releases_its_exact_mapping",
+          "trampoline::observing_control_tests::observing_control_staged_drop_unmaps_before_releasing_last_owners"
+        ],
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--lib",
+          "staged"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "dba652ef02882de9484b216d1ea91f9cf17d7cf64dedeba03acabf683e0e4055",
+          "reaped_descendants": 0,
+          "seconds": 0.05573816504329443,
+          "start_utc": "2026-10-27T19:53:41.598248+00:00",
+          "termination": null
+        },
+        "max_log_bytes": 8388608,
+        "name": "staged-allocation",
+        "status": "PASS",
+        "terminal_observations": 1,
+        "wall_seconds": 180
+      },
+      {
+        "allocation_regressions_passed": [
+          "native_state_covers_every_prefixed_pun_and_original_successor"
+        ],
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--test",
+          "prefixed_pun_oracle"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "167d85b3c9f2636baddbd6f3fab2e2066db6583321ecb56a12819458ff173aae",
+          "reaped_descendants": 0,
+          "seconds": 1.3295947019942105,
+          "start_utc": "2026-10-27T19:53:41.995979+00:00",
+          "termination": null
+        },
+        "max_log_bytes": 8388608,
+        "name": "prefixed-pun",
+        "status": "PASS",
+        "terminal_observations": 1,
+        "wall_seconds": 180
+      }
+    ],
+    "status": "PASS",
+    "tools": {
+      "cargo": {
+        "bytes": 42839824,
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "cargo-clippy": {
+        "bytes": 1274552,
+        "sha256": "a0a3808dddb32f525601e608740ee7c1c5df86db4a7183ea945449f60d29509d"
+      },
+      "cargo-fmt": {
+        "bytes": 3729264,
+        "sha256": "07ce638a5be73e97defbf0864f32a64ed40a0b7682b85625e68790f9e68d19e9"
+      },
+      "clippy-driver": {
+        "bytes": 22412784,
+        "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373"
+      },
+      "git": {
+        "bytes": 4397400,
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "python": {
+        "bytes": 13542408,
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      },
+      "rustc": {
+        "bytes": 645000,
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "rustdoc": {
+        "bytes": 13680928,
+        "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+      },
+      "rustfmt": {
+        "bytes": 5268472,
+        "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8"
+      }
+    },
+    "tools_before_after_equal": true,
+    "total_gate_wall_seconds": 1440,
+    "versions": {
+      "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+      "python": [
+        3,
+        12,
+        15
+      ],
+      "rust": {
+        "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+        "host": "x86_64-unknown-linux-gnu",
+        "release": "1.97.1"
+      }
+    }
+  },
+  "prior_failed_attempt": {
+    "aggregate_test_count": null,
+    "cleanup_seconds_per_command": 3,
+    "counting": "Literal terminal observations, not additive outer or unique-test totals; nested rows are not extra credit.",
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "environment": {
+      "CARGO_BUILD_JOBS": "4",
+      "CARGO_HOME": "$CARGO_HOME",
+      "CARGO_INCREMENTAL": "0",
+      "CARGO_NET_OFFLINE": "true",
+      "CARGO_PROFILE_DEV_DEBUG": "0",
+      "CARGO_PROFILE_DEV_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_DEV_OPT_LEVEL": "0",
+      "CARGO_PROFILE_DEV_OVERFLOW_CHECKS": "true",
+      "CARGO_PROFILE_TEST_DEBUG": "0",
+      "CARGO_PROFILE_TEST_DEBUG_ASSERTIONS": "true",
+      "CARGO_PROFILE_TEST_OPT_LEVEL": "0",
+      "CARGO_PROFILE_TEST_OVERFLOW_CHECKS": "true",
+      "CARGO_TARGET_DIR": "$REPO/target",
+      "CARGO_TERM_COLOR": "never",
+      "HOME": "$USER_HOME",
+      "LANG": "C.UTF-8",
+      "LC_ALL": "C.UTF-8",
+      "LITEINST_EVALUATION": "1",
+      "PATH": "$TOOLCHAIN/bin:/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1",
+      "PYTHONNOUSERSITE": "1",
+      "RUSTC": "$TOOLCHAIN/bin/rustc",
+      "RUSTC_WORKSPACE_WRAPPER": "",
+      "RUSTC_WRAPPER": "",
+      "RUSTDOC": "$TOOLCHAIN/bin/rustdoc",
+      "RUSTDOCFLAGS": "",
+      "RUSTFLAGS": "",
+      "RUST_TEST_THREADS": "4",
+      "TMPDIR": "$RAW/tmp"
+    },
+    "failure_kind": "AssertionError",
+    "hardware": {
+      "architecture": "x86_64",
+      "build_affinity_cpus": 4,
+      "family": 26,
+      "model": 17,
+      "owner_label": "AMD EPYC Zen 5 dev host",
+      "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+      "stepping": 0,
+      "vendor": "AuthenticAMD"
+    },
+    "jobs": 4,
+    "native_qualification": false,
+    "revision": "ff18353d4ed70bb3ad4018079328833bac4696b4",
+    "runner": {
+      "bytes": 13090,
+      "sha256": "0a55ab19bae9e2d56401cbf04d6194f83fe3258ad088b53cd7ecc5a58530e183"
+    },
+    "schema": 1,
+    "scope": "Exact-revision final validation commands; operational durations, not performance.",
+    "source_before_after_equal": true,
+    "source_files": 2738,
+    "source_inventory_sha256": "468eb8ec34d28a539be471576e40f743c47dee3a64aa4cc3d814aaa6803d6e5a",
+    "stages": [
+      {
+        "allocation_regressions_passed": [],
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "fmt",
+          "--check"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "reaped_descendants": 0,
+          "seconds": 5.571867224993184,
+          "start_utc": "2026-10-27T19:37:43.849687+00:00",
+          "termination": null
+        },
+        "max_log_bytes": 8388608,
+        "name": "fmt",
+        "status": "PASS",
+        "wall_seconds": 180
+      },
+      {
+        "allocation_regressions_passed": [],
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "b061388ab896fd7c137701694b05fd31913a053e13ac3f2844307cf8646f9643",
+          "reaped_descendants": 0,
+          "seconds": 33.5981645679567,
+          "start_utc": "2026-10-27T19:37:49.762661+00:00",
+          "termination": null
+        },
+        "max_log_bytes": 8388608,
+        "name": "clippy",
+        "status": "PASS",
+        "wall_seconds": 180
+      },
+      {
+        "allocation_regressions_passed": [],
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "check",
+          "--workspace",
+          "--all-features",
+          "--all-targets"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": 0,
+          "private_log_sha256": "43b7de51c292b66d2816be98dea3854c07facecc6798c207ed63ccf7d04a83a5",
+          "reaped_descendants": 0,
+          "seconds": 22.1679586682003,
+          "start_utc": "2026-10-27T19:38:23.707564+00:00",
+          "termination": null
+        },
+        "max_log_bytes": 8388608,
+        "name": "check",
+        "status": "PASS",
+        "wall_seconds": 180
+      },
+      {
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "test",
+          "--workspace"
+        ],
+        "closed": {
+          "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+          "cleanup_complete": true,
+          "exit_code": -9,
+          "private_log_sha256": "eff769cd29368ff84e7d1ffc9a59804cdc42b61a27205d6bf5c0735e4497b898",
+          "reaped_descendants": 1,
+          "seconds": 360.06801993004046,
+          "start_utc": "2026-10-27T19:38:46.211420+00:00",
+          "termination": "timeout"
+        },
+        "max_log_bytes": 8388608,
+        "name": "workspace",
+        "status": "FAILED",
+        "wall_seconds": 360
+      },
+      {
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "max_log_bytes": 8388608,
+        "name": "serial-launch",
+        "status": "UNRUN",
+        "wall_seconds": 180
+      },
+      {
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--lib",
+          "staged"
+        ],
+        "max_log_bytes": 8388608,
+        "name": "staged-allocation",
+        "status": "UNRUN",
+        "wall_seconds": 180
+      },
+      {
+        "argv": [
+          "$TOOLCHAIN/bin/cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--test",
+          "prefixed_pun_oracle"
+        ],
+        "max_log_bytes": 8388608,
+        "name": "prefixed-pun",
+        "status": "UNRUN",
+        "wall_seconds": 180
+      }
+    ],
+    "status": "FAILED",
+    "tools": {
+      "cargo": {
+        "bytes": 42839824,
+        "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+      },
+      "cargo-clippy": {
+        "bytes": 1274552,
+        "sha256": "a0a3808dddb32f525601e608740ee7c1c5df86db4a7183ea945449f60d29509d"
+      },
+      "cargo-fmt": {
+        "bytes": 3729264,
+        "sha256": "07ce638a5be73e97defbf0864f32a64ed40a0b7682b85625e68790f9e68d19e9"
+      },
+      "clippy-driver": {
+        "bytes": 22412784,
+        "sha256": "e8fa6ad666c353e4c9248fc67074cf160ff2a5dbd97debd20416b81d7f917373"
+      },
+      "git": {
+        "bytes": 4397400,
+        "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+      },
+      "python": {
+        "bytes": 13542408,
+        "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+      },
+      "rustc": {
+        "bytes": 645000,
+        "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+      },
+      "rustdoc": {
+        "bytes": 13680928,
+        "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+      },
+      "rustfmt": {
+        "bytes": 5268472,
+        "sha256": "30de9e1efcd8f8fe7750e00d0c45ff8f4c480608ef1be5baf9ab6f1b4556e8f8"
+      }
+    },
+    "tools_before_after_equal": true,
+    "total_gate_wall_seconds": 1440,
+    "versions": {
+      "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+      "python": [
+        3,
+        12,
+        15
+      ],
+      "rust": {
+        "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+        "host": "x86_64-unknown-linux-gnu",
+        "release": "1.97.1"
+      }
+    }
+  },
+  "reproducer": "tools/rapid-profiler/validate_ordinary.py",
+  "retry_scope": "Same revision, commands and bounds. First workspace command exhausted its 360-second wall after 33.58 seconds compiling; second command reused the built binaries. No pass credit from the timed-out attempt.",
+  "revision": "ff18353d4ed70bb3ad4018079328833bac4696b4",
+  "status": "PASS",
+  "terminal_observations": {
+    "file": "validation-terminals.csv",
+    "rows": 134,
+    "scope": "Literal terminal observations, including nested child summaries. Do not sum these rows as unique tests.",
+    "sha256": "f6bbe03f237f8cdf9c2138bb475b9e8f8e48019a7ca275f13d7bd65548a108fa"
+  },
+  "workspace_counts": {
+    "cargo_groups": 100,
+    "counting": "Last libtest terminal in each Cargo Running/Doc-tests group that has one; five nested summaries excluded. exec_backing_cleanup is a separate successful custom harness and adds no libtest count.",
+    "custom_harnesses_without_libtest_terminal": 1,
+    "failed": 0,
+    "ignored": 4,
+    "passed": 2506,
+    "raw_terminals": 104,
+    "terminal_bearing_groups": 99
+  }
+}
