@@ -4419,7 +4419,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census.rs",
-      "sha256": "ad2038032eb0fd8f655c2ba9f4b3ac201b0627451651a305d1a29923e0313b82",
+      "sha256": "69f557ac4c581fbf9717aba098182a173ee0b22e40734278787db03c00374a85",
       "test_functions": []
     },
     {
@@ -5717,7 +5717,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/journal.rs",
-      "sha256": "773c51665d58940a21503336a4964bd0b0f8db273c7f97b711ae5050ac8f8b58",
+      "sha256": "e6c4fa44befce2c0c7edcb3d8f484bced4c0213ae57bdae39b8d09eb3b6e41a0",
       "test_functions": []
     },
     {

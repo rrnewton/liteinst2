@@ -5,9 +5,7 @@ use super::observe::Frame;
 use super::{Experiment, OracleError};
 use crate::gate::SelectedExecution;
 use crate::linux::remote::dynamic::admission::AdmissionReply;
-use crate::linux::remote::dynamic::owner::admission::census::runtime_stack::consumer_oracle::{
-    CensusHeader, StackPartialView,
-};
+use crate::linux::remote::dynamic::owner::admission::census::{CensusHeader, StackPartialView};
 use crate::linux::remote::dynamic::owner::kernel_journal::{
     JournalAttemptView, JournalBindingView, JournalCounts, JournalPartialView, JournalStateView,
     JournalWriterTransition, KernelAttemptId, KernelStopIdentity, KernelWriterStatus,

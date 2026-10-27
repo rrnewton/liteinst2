@@ -48,7 +48,8 @@ pub(super) use runtime_stack::consumer_oracle::prefix_mirror::{
 pub(super) use runtime_stack::consumer_oracle::storage::CensusConsumerError;
 #[cfg(feature = "dev-owned-stack-consumer-oracle")]
 pub(super) use runtime_stack::consumer_oracle::{
-    PreparedStackObservation, StackConsumerInput, consumer_observation_temporary_bytes,
+    CensusHeader, PreparedStackObservation, StackConsumerInput, StackPartialView,
+    consumer_observation_temporary_bytes,
 };
 #[cfg(feature = "dev-owned-stack-consumer-oracle")]
 pub(super) use stack_calls::consumer_oracle::PreparedCallObservation;
