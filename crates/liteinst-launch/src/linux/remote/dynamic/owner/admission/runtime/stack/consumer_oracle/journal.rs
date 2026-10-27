@@ -3,6 +3,7 @@
 use super::admitted::AdmittedView;
 use super::observe::Frame;
 use super::{Experiment, OracleError};
+use crate::gate::SelectedExecution;
 use crate::linux::remote::dynamic::admission::AdmissionReply;
 use crate::linux::remote::dynamic::owner::kernel_journal::{
     JournalAttemptView, JournalBindingView, JournalCounts, JournalPartialView, JournalStateView,
@@ -14,7 +15,7 @@ use crate::linux::remote::dynamic::owner::kernel_journal::{
 };
 use crate::linux::remote::dynamic::owner::trusted::TaskStateSnapshot;
 use crate::selected::{SelectedArguments, SelectedInput, SyscallAbi};
-use crate::{DynamicAdmissionEvent, DynamicTask, RegisterSnapshot, SelectedExecution};
+use crate::{DynamicAdmissionEvent, DynamicTask, RegisterSnapshot};
 use std::mem::size_of;
 
 type Result<T> = std::result::Result<T, OracleError>;

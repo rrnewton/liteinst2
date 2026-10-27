@@ -1,7 +1,7 @@
 //! Actual selected exchange; payloads are installed before validation. The
 //! terminal path retains the actual event and never requests an after-state.
 use super::*;
-use crate::SelectedExecution;
+use crate::gate::SelectedExecution;
 use crate::lifecycle::ExitStatus;
 use crate::selected::{Operation, SyscallAbi};
 

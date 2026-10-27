@@ -5222,7 +5222,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/admitted/selected.rs",
-      "sha256": "8fb7720e7b0cca08601fe3f62b14771c049e6c0c1b030b054b663c0beb37aff8",
+      "sha256": "8f708a98011ab256a936ace03f20bdf446f9ca26caef2bce1f7488bafdf3181a",
       "test_functions": []
     },
     {
@@ -5294,7 +5294,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/journal.rs",
-      "sha256": "741009f86c92ad114019fd1b231738dddfa9ccdd60db1c0b06bd5eef4e22003f",
+      "sha256": "f98172ea7bb3bd1337575ead022bdb6841a41a7a2818bbc89e955a3e0b93bb7c",
       "test_functions": []
     },
     {
