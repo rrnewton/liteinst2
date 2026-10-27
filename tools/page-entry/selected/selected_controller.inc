@@ -306,8 +306,13 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
     if(!selected_selftesting && li2_repeat_candidate(&selected_decoded)) {
         selected_repeat_begin(sig,si,context,flags);return;
     }
+    /* The descriptive Nopw candidate also includes canonical 66 90. The
+       initial owner only qualifies single-byte 90; use the already-qualified
+       generic padding owner for this exact two-byte form. */
+    unsigned short_padding=selected_decoded.length==2 &&
+        selected_decoded.bytes[0]==0x66 && selected_decoded.bytes[1]==0x90;
     if(!selected_selftesting && selected_decoded.kind==LI2_NONE &&
-       selected_decoded.step_disposition!=LI2_STEP_CANDIDATE) {
+       (selected_decoded.step_disposition!=LI2_STEP_CANDIDATE || short_padding)) {
         selected_generic_begin(sig,si,context,flags);return;
     }
     checked(selected_decoded.kind==LI2_NONE && selected_decoded.step_disposition==LI2_STEP_CANDIDATE,632,selected_decoded.code);
