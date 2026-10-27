@@ -313,3 +313,7 @@ line; it does not establish concurrent atomicity, split-lock or device behavior.
 The real-program and legacy diagnostic failures remain visible in the numeric
 receipts. Current instruction coverage still does not complete the tested
 dynamically linked programs; their performance fields remain null.
+
+The selected profile additionally accepts five canonical PMAXUD forms, exact BND RIP-relative indirect JMP `f2 ff 25 disp32`, and exact unmasked VPBROADCASTB `62 e2 7d 48 7a c6` (ESI's low byte to ZMM16). BND requires a fresh actual XCR0 observation with MPX components disabled before opening source pages. These additions do not enable general F2/EVEX prefix acceptance or enabled-MPX execution.
+
+`python3 evaluation/inprocess/page_selected_register_time.py --expect-revision <full-commit> --program true --disable-rseq` enables the bounded fixed-site clock observer. Successful discovery and final program completion are mandatory before real timing is published. Its finite native/cache controls qualify clock capture and terminal error handling; they do not substitute for real-program completion. All observed real discovery runs through bb425428 remain failed with null real timing. See the exact per-workload commands and outcomes in the milestone evidence; no application speedup or complete dynamic-program coverage is claimed.
