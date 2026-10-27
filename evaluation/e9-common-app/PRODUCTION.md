@@ -17,6 +17,26 @@ python3 -B evaluation/e9-common-app/produce.py \
   --inputs "$INPUTS" --inputs-sha256 "$INPUTS_SHA256" --raw "$NEW_RAW"
 ```
 
+That command retains the legacy `prepare` frontend. The separate opt-in is:
+
+```sh
+python3 -B evaluation/e9-common-app/produce.py \
+  --inputs "$INPUTS" --inputs-sha256 "$INPUTS_SHA256" --raw "$NEW_RAW" \
+  --planning-profile owned-foreign-neighbors-v1
+```
+
+The opt-in envelope must also declare exactly
+`"planning_profile": "owned-foreign-neighbors-v1"`. A CLI/envelope mismatch,
+unknown profile or extra field is refused before production. This selects
+`prepare-owned-neighbors` for all eight core cells; it does not change either
+E9 lane, any selected site, allocation permit, budget or comparator. It is
+independent of the fixed versus original-derived allocation profile below.
+The frontend requires separately authenticated complete function/head/resume
+declarations already carried by the full selection. A foreign victim is an
+auxiliary original operation, never another requested hook. Any unsupported
+owner, control-flow or placement remains a failed core cell. Selecting this
+profile does not promise eight complete candidates.
+
 The variables denote independently admitted absolute coordinates and the
 SHA-256 of the entire input JSON. `NEW_RAW` must not exist, must have a canonical
 existing parent, and must lie under the checkout's ignored directory. Input
@@ -36,7 +56,7 @@ does not establish identical allocation policy between the two implementations.
 
 ## Input contract
 
-The JSON has exactly `schema`, `preparation`, `build_admission`, `cells`,
+The legacy JSON has exactly `schema`, `preparation`, `build_admission`, `cells`,
 `products`, `tools`, and `files`. `schema` is 1. `files` maps every admitted
 absolute input pathname to `{ "sha256": HEX, "bytes": INTEGER }`.
 It includes the complete caller-selected preparation, compiler, provenance,
@@ -46,6 +66,12 @@ before and after every helper. Extra evidence owners can be included in this
 map without adding stages. The source tree is independently compared to every
 tracked Git blob, its modes and complete content map, before and after each
 helper; the initial and final complete observations are retained.
+
+Only the owned-neighbor opt-in adds the single `planning_profile` key above.
+Its build admission still names actual products and evidence from the same
+clean committed recipe/source revision. A profile label or the older successful
+builds cannot replace that admission. No new build or execution admission is
+created by this documentation.
 
 `preparation` has these keys:
 
@@ -113,6 +139,23 @@ bootstrap-patched-reference stages: transport, producer, adapter, comparator.
 The two hook compiler/linker stages occur between the hook groups. This is
 exactly 74 possible helper launches: 36 null, two hook, and 36 journal.
 
+Every core request retains the exact selected frontend verb and is checked
+against its full saved argv. The old whole `COMPLETE`, bundle-index, selection
+and per-site report checks run unchanged for both profiles, including withheld
+candidates. Legacy bundles must omit `planning-profile.tsv`. Owned-neighbor
+bundles must index exactly the full marker bytes
+`LI2PLANNING\t1\nprofile\towned-foreign-neighbors-v1\nqualification_complete\tfalse\n`;
+missing, unindexed, duplicate, truncated or differently named profiles refuse.
+The marker's digest and length must match its bundle-index row, which is bound
+by `COMPLETE`. A global input-failure directory stays a failed postcheck; the
+recipe never manufactures a profile marker or successful bundle for it.
+
+For the opt-in only, `planning-profile.json` records the profile, frontend verb,
+marker identity and false qualification scope before the first helper. It is
+included in the unchanged watched-owner checks and final raw index. The same
+record appears in `summary.json` as `planning_profile`. Legacy output field
+shapes and its `prepare` argv remain unchanged.
+
 The hook compile and link use 60 CPU seconds, 90 wall seconds and a 128 MiB
 per-file cap. Every other stage uses 20 CPU seconds, 30 wall seconds and 16 MiB.
 The existing helper is unchanged. Its outer timeout remains `--kill-after=10s`
@@ -171,3 +214,10 @@ indexes retained files, including partial outputs, and excludes itself.
 The enclosing parent closure remains separately observed. Operational times
 are diagnostics, not benchmarks. Ordinary dataset and native execution counts
 for this recipe are both zero; `qualification_complete` remains false.
+
+The prospective `test_production_profile.py` controls exercise only synthetic
+saved bundle/schema validation, including complete and refused two-site
+reports. They execute no producer, compiler, application or native replay and
+do not replace any existing validation. New ordinary/native admission and any
+reporting consumer must explicitly join the actual profile, exact command and
+indexed marker; structural production alone supplies no runtime credit.

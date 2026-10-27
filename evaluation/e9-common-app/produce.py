@@ -38,6 +38,9 @@ FUNCTIONS = ('li2_array_store', 'li2_sift_down', 'li2_heap_sort')
 ENV = dict(PATH='/usr/bin:/bin', LC_ALL='C', PYTHONDONTWRITEBYTECODE='1')
 CAP = 128 * 1024 * 1024
 PAGE = 4096
+CORE_PROFILES = {'legacy': 'prepare', 'owned-foreign-neighbors-v1': 'prepare-owned-neighbors'}
+PLANNING_MARKER = 'planning-profile.tsv'
+PLANNING_MARKER_BYTES = b'LI2PLANNING\t1\nprofile\towned-foreign-neighbors-v1\nqualification_complete\tfalse\n'
 
 
 def sha(data):
@@ -358,6 +361,34 @@ def core_product(directory, inv, original):
     return complete
 
 
+def planning_profile(inputs, profile):
+    assert profile in CORE_PROFILES, 'unknown core planning profile'
+    if profile == 'legacy':
+        assert inputs.keys() == {'schema', 'preparation', 'build_admission', 'cells', 'products', 'tools', 'files'} and type(inputs['schema']) is int and inputs['schema'] == 1
+        return None
+    assert inputs.keys() == {'schema', 'preparation', 'build_admission', 'cells', 'products', 'tools', 'files', 'planning_profile'}
+    assert type(inputs['schema']) is int and inputs['schema'] == 1
+    assert inputs['planning_profile'] == profile, 'input envelope and explicit CLI profile must agree'
+    return dict(schema=1, planning_profile=profile, core_subcommand=CORE_PROFILES[profile],
+        marker=PLANNING_MARKER, marker_sha256=sha(PLANNING_MARKER_BYTES), marker_bytes=len(PLANNING_MARKER_BYTES),
+        qualification_complete=False)
+
+
+def profiled_core_product(directory, inv, original, profile):
+    # The old whole index/COMPLETE/selection/report checks always run first,
+    # including all requested rows when the candidate is withheld.
+    complete = core_product(directory, inv, original)
+    assert profile in CORE_PROFILES
+    index = read(directory / 'bundle-index.tsv')[0].decode().splitlines()
+    markers = [line for line in index[4:] if line.split('\t')[1] == PLANNING_MARKER]
+    if profile == 'legacy':
+        assert markers == [], 'legacy preparation must not carry an opt-in marker'
+    else:
+        assert markers == [f'file\t{PLANNING_MARKER}\t{len(PLANNING_MARKER_BYTES)}\t{sha(PLANNING_MARKER_BYTES)}'], 'exact complete indexed planning marker required'
+        assert read(directory / PLANNING_MARKER)[0] == PLANNING_MARKER_BYTES
+    return complete
+
+
 def main():
     if sys.flags.optimize:
         raise SystemExit('assertions required')
@@ -365,6 +396,7 @@ def main():
     parser.add_argument('--inputs', type=Path, required=True)
     parser.add_argument('--inputs-sha256', required=True)
     parser.add_argument('--raw', type=Path, required=True)
+    parser.add_argument('--planning-profile', choices=tuple(CORE_PROFILES), default='legacy')
     args = parser.parse_args()
     repo = Path(__file__).resolve().parents[2]
     assert Path(__file__).resolve() == repo / 'evaluation/e9-common-app/produce.py'
@@ -373,7 +405,8 @@ def main():
     input_bytes, input_owner = read(args.inputs)
     assert sha(input_bytes) == args.inputs_sha256 and re.fullmatch('[0-9a-f]{64}', args.inputs_sha256)
     inputs = loads(input_bytes)
-    assert inputs.keys() == {'schema', 'preparation', 'build_admission', 'cells', 'products', 'tools', 'files'} and type(inputs['schema']) is int and inputs['schema'] == 1
+    profile = planning_profile(inputs, args.planning_profile)
+    core_subcommand = CORE_PROFILES[args.planning_profile]
     assert inputs['tools'].keys() == {'gcc', 'python', 'helper_python', 'timeout', 'git'}
     assert inputs['tools']['git'] == '/usr/bin/git'
     watched = {str(args.inputs): input_owner}
@@ -497,6 +530,9 @@ def main():
             if str(p) in watched:
                 assert watched[str(p)] == identity
             watched[str(p)] = identity
+    if profile is not None:
+        write(raw / 'planning-profile.json', profile)
+        freeze(raw / 'planning-profile.json')
     def snapshot():
         value = {p: read(p)[1] for p in sorted(watched)}
         assert value == watched, 'input owner/byte drift; no implicit refresh'
@@ -598,10 +634,12 @@ def main():
             write(policy_path, policy)
             freeze(policy_path)
             name = key + '-core'
-            d, code = execute(name, [build['products']['core'], 'prepare', original, selection, core_dir], cell_dir / 'tmp')
+            core_argv = [build['products']['core'], core_subcommand, original, selection, core_dir]
+            d, code = execute(name, core_argv, cell_dir / 'tmp')
             def core_check():
                 assert code in (0, 2) and not read(d / 'stderr.txt')[0]
-                complete = core_product(core_dir, inv, originals[variant])
+                assert loads(read(d / 'request.json')[0])['argv'] == list(map(str, core_argv))
+                complete = profiled_core_product(core_dir, inv, originals[variant], args.planning_profile)
                 assert code == (0 if complete else 2)
                 assert read(d / 'stdout.txt')[0] == f'candidate_complete={str(complete).lower()} qualification_complete=false sites={len(inv["sites"])}\n'.encode()
                 freeze(core_dir)
@@ -711,7 +749,8 @@ def main():
             qualification_complete=False, scope='Artifact production and complete structural comparison only',
             parent_closed_reaped_authority='Must be recorded separately by the invoking root process',
             build_authority='Caller-admitted source/build/product records; this recipe does not compile the core or decoder',
-            timings='Operational diagnostics only, not performance measurements'))
+            timings='Operational diagnostics only, not performance measurements',
+            **({'planning_profile': profile} if profile is not None else {})))
         index = {}
         for directory, dirs, files in os.walk(raw, followlinks=False):
             assert all(not (Path(directory) / name).is_symlink() for name in dirs + files)

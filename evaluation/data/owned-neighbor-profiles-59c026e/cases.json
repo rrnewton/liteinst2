@@ -1,0 +1,128 @@
+[
+  {
+    "classname": "ProductionProfile",
+    "name": "test_changed_but_self_consistently_indexed_marker_refuses",
+    "phase": "production",
+    "status": "PASS"
+  },
+  {
+    "classname": "ProductionProfile",
+    "name": "test_legacy_cannot_relabel_an_owned_bundle",
+    "phase": "production",
+    "status": "PASS"
+  },
+  {
+    "classname": "ProductionProfile",
+    "name": "test_legacy_complete_and_withheld_results_remain_distinct",
+    "phase": "production",
+    "status": "PASS"
+  },
+  {
+    "classname": "ProductionProfile",
+    "name": "test_legacy_envelope_keeps_old_exact_schema",
+    "phase": "production",
+    "status": "PASS"
+  },
+  {
+    "classname": "ProductionProfile",
+    "name": "test_missing_opt_in_marker_refuses_at_profile_guard",
+    "phase": "production",
+    "status": "PASS"
+  },
+  {
+    "classname": "ProductionProfile",
+    "name": "test_missing_unknown_mismatched_or_extra_profile_refuses",
+    "phase": "production",
+    "status": "PASS"
+  },
+  {
+    "classname": "ProductionProfile",
+    "name": "test_opt_in_requires_matching_caller_and_exact_command_marker",
+    "phase": "production",
+    "status": "PASS"
+  },
+  {
+    "classname": "ProductionProfile",
+    "name": "test_owned_complete_and_withheld_results_keep_both_requested_rows",
+    "phase": "production",
+    "status": "PASS"
+  },
+  {
+    "classname": "ProductionProfile",
+    "name": "test_profile_does_not_bypass_complete_selection_or_original_rows",
+    "phase": "production",
+    "status": "PASS"
+  },
+  {
+    "classname": "ProductionProfile",
+    "name": "test_unindexed_duplicate_or_bad_hash_marker_keeps_old_index_refusals",
+    "phase": "production",
+    "status": "PASS"
+  },
+  {
+    "classname": "CandidateProfile",
+    "name": "test_both_profiles_preserve_all_74_statuses_and_24_artifact_denominators",
+    "phase": "ordinary",
+    "status": "PASS"
+  },
+  {
+    "classname": "CandidateProfile",
+    "name": "test_every_attempted_core_verb_is_checked_including_withheld_candidates",
+    "phase": "ordinary",
+    "status": "PASS"
+  },
+  {
+    "classname": "CandidateProfile",
+    "name": "test_exact_ordinary_caller_schema_and_explicit_opt_in",
+    "phase": "ordinary",
+    "status": "PASS"
+  },
+  {
+    "classname": "CandidateProfile",
+    "name": "test_full_core_command_original_selection_destination_and_arity_are_exact",
+    "phase": "ordinary",
+    "status": "PASS"
+  },
+  {
+    "classname": "CandidateProfile",
+    "name": "test_legacy_refuses_owned_marker_or_record_without_changing_legacy_schema",
+    "phase": "ordinary",
+    "status": "PASS"
+  },
+  {
+    "classname": "CandidateProfile",
+    "name": "test_marker_presence_and_whole_self_consistent_bytes_required_for_both_outcomes",
+    "phase": "ordinary",
+    "status": "PASS"
+  },
+  {
+    "classname": "CandidateProfile",
+    "name": "test_old_bundle_index_and_complete_selection_guards_stay_active",
+    "phase": "ordinary",
+    "status": "PASS"
+  },
+  {
+    "classname": "CandidateProfile",
+    "name": "test_pinned_bytes_and_six_owner_epoch_are_not_refreshed",
+    "phase": "ordinary",
+    "status": "PASS"
+  },
+  {
+    "classname": "CandidateProfile",
+    "name": "test_profile_does_not_relabel_failed_history_or_tolerate_missing_stage",
+    "phase": "ordinary",
+    "status": "PASS"
+  },
+  {
+    "classname": "CandidateProfile",
+    "name": "test_profile_must_join_admission_input_summary_record_and_raw_index",
+    "phase": "ordinary",
+    "status": "PASS"
+  },
+  {
+    "classname": "CandidateProfile",
+    "name": "test_unchanged_six_argument_caller_does_not_silently_adopt_owned_profile",
+    "phase": "ordinary",
+    "status": "PASS"
+  }
+]

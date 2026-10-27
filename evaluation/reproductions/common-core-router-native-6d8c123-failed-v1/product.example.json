@@ -1,0 +1,49 @@
+{
+  "artifact": {
+    "executable": "${REPO}/target/debug/elf-exec-oracle",
+    "features": [],
+    "filenames": [
+      "${REPO}/target/debug/elf-exec-oracle"
+    ],
+    "fresh": "<actual-cargo-fresh-boolean>",
+    "manifest_path": "${REPO}/Cargo.toml",
+    "package_id": "path+file://${REPO}#liteinst2@0.1.0",
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "0",
+      "overflow_checks": true,
+      "test": false
+    },
+    "reason": "compiler-artifact",
+    "target": {
+      "crate_types": [
+        "bin"
+      ],
+      "doc": false,
+      "doctest": false,
+      "edition": "2024",
+      "kind": [
+        "bin"
+      ],
+      "name": "elf-exec-oracle",
+      "src_path": "${REPO}/tests/support/elf_exec_driver.rs",
+      "test": false
+    }
+  },
+  "build_log_sha256": "<fresh-build-log-sha256>",
+  "build_summary_sha256": "<fresh-build-summary-sha256>",
+  "product": {
+    "bytes": "<fresh-bytes>",
+    "ctime_ns": "<fresh-ctime_ns>",
+    "dev": "<fresh-dev>",
+    "gid": "<fresh-gid>",
+    "ino": "<fresh-ino>",
+    "mode": "<fresh-mode>",
+    "mtime_ns": "<fresh-mtime_ns>",
+    "path": "${REPO}/target/debug/elf-exec-oracle",
+    "sha256": "<fresh-sha256>",
+    "uid": "<fresh-uid>"
+  },
+  "revision": "6d8c123531f30e1a841c52c8955d46f294811172"
+}
