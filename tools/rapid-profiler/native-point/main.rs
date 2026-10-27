@@ -323,7 +323,15 @@ fn images_unchanged(images: &[(u64, Vec<u8>)]) {
                     && *address + bytes.len() as u64 <= u64::from_str_radix(high, 16).unwrap()
             })
             .unwrap();
-        assert_eq!(row.split_whitespace().nth(1), Some("r-xp"));
+        let fields: Vec<_> = row.split_whitespace().collect();
+        // PendingMapping::try_map_executable uses MAP_SHARED for its memfd;
+        // publish_at removes the writable alias before returning the image.
+        assert_eq!(fields[1], "r-xs");
+        assert_ne!(fields[4], "0");
+        assert!(maps.lines().all(|line| {
+            let other: Vec<_> = line.split_whitespace().collect();
+            other[3..5] != fields[3..5] || !other[1].contains('w')
+        }));
     }
 }
 fn install(
