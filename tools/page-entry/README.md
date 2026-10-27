@@ -44,6 +44,18 @@ recorded whole-process durations include Python dependency copying/sealing and
 child creation/reaping; they are not pure instrumentation overhead or a warmed
 application measurement.
 
+The first-entry evaluator's `first_entry_dependency_files_v2` profile sets a
+16 MiB per-file `RLIMIT_FSIZE` for non-build commands, matching the namespace's
+existing maximum dependency size. This physical limit also covers each stdout
+and stderr capture; the unchanged acceptance check rejects captures larger than
+64 KiB. The 3 CPU-second, 256 MiB address-space and 10-second wall bounds remain,
+and the native process-count limit stays inherited without an override so the
+real thread-creation control can execute. Build limits and the separate ABI and
+post-constructor profiles are unchanged. The earlier 1 MiB-profile attempt
+failed while sealing a dependency (`EFBIG`) and remains a failed observation;
+this resource-envelope correction does not relax any of the 65 commands or
+semantic checks.
+
 ## Startup and backing identity
 
 The carrier clears PF_X on original main PT_LOAD headers before the kernel maps

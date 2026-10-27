@@ -22,6 +22,7 @@ from run import Refusal, file_digest, hardware, invalid_constant, pairs, require
 ROOT = Path(__file__).resolve().parents[2]
 PRODUCT = Path('tools/page-entry')
 BUILD = Path('target/page-entry')
+FILE_SIZE_LIMIT_BYTES = 16 * 1024**2
 SOURCE_NAMES = tuple('tools/page-entry/' + name for name in (
     'bridge.c', 'bridge.h', 'entry.S', 'sha256.h', 'runtime_loader.c',
     'lifecycle_loader.c', 'lifecycle_loader.h', 'carrier.py', 'namespace.py',
@@ -187,7 +188,11 @@ def main():
     record = {'schema_version': 1, 'status': 'failed', 'revision': args.expect_revision,
               'started_utc': stamp, 'scope': 'first_entry_sealed_namespace_kernel_traps_and_NX',
               'source_patches': 0, 'build_profile': 'release-O2', 'repeats': 5,
-              'environment': ENV, 'bounds': BOUNDS,
+              'environment': ENV, 'bounds': BOUNDS | {'capture_file_bytes': FILE_SIZE_LIMIT_BYTES},
+              'resource_profile': 'first_entry_dependency_files_v2',
+              'file_size_limit_scope': 'per-file RLIMIT_FSIZE, including dependency memfds and stdout/stderr captures',
+              'stdout_stderr_acceptance_bytes': 65536,
+              'process_count_limit': 'inherited unchanged; no RLIMIT_NPROC override',
               'gated_exec_environment': {'PATH': '/usr/bin:/bin', 'LANG': 'C', 'LC_ALL': 'C', 'TZ': 'UTC',
                                          'LD_BIND_NOW': '1', 'LD_LIBRARY_PATH': 'per-command private namespace',
                                          'LI2_DEPENDENCY_FDS': 'actual inherited descriptors; private launch.json'},
@@ -217,7 +222,8 @@ def main():
     def run(label, argv, cwd=Path('.'), env=None, build=False, pass_fds=()):
         unchanged()
         command, stdout, stderr = invoke(argv, ENV if env is None else env, cwd, private, label, cpu,
-                                         build=build, pass_fds=pass_fds)
+                                         build=build, pass_fds=pass_fds,
+                                         file_size_limit_bytes=None if build else FILE_SIZE_LIMIT_BYTES)
         if env is not None:
             command['environment_delta'] = {key: value for key, value in env.items() if ENV.get(key) != value}
         if pass_fds:

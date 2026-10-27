@@ -47,8 +47,15 @@ def command_bounds(build=False, bounds=None):
     return bounds.copy()
 
 
-def invoke(argv, environment, cwd, private, label, cpu, build=False, pass_fds=(), bounds=None):
+def invoke(argv, environment, cwd, private, label, cpu, build=False, pass_fds=(), bounds=None,
+           file_size_limit_bytes=None):
     profile = command_bounds(build, bounds)  # Reject before opening captures or Popen.
+    require(file_size_limit_bytes is None or
+            (not build and bounds is None and type(file_size_limit_bytes) is int and
+             0 < file_size_limit_bytes <= 16 * 1024**2), 'invalid_file_size_limit')
+    if file_size_limit_bytes is not None:
+        # RLIMIT_FSIZE covers each file, including dependency memfds and captures.
+        profile['capture_file_bytes'] = file_size_limit_bytes
     stdout = private / (label + '.stdout')
     stderr = private / (label + '.stderr')
     seconds = profile['wall_seconds']
@@ -59,6 +66,8 @@ def invoke(argv, environment, cwd, private, label, cpu, build=False, pass_fds=()
     if bounds is not None:
         row['bounds_override'] = profile.copy()
         row['pidfd_close'] = None
+    if file_size_limit_bytes is not None:
+        row['file_size_limit_bytes'] = file_size_limit_bytes
     process = None
     pidfd = None
     started = time.perf_counter_ns()

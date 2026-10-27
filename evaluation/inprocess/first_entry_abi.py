@@ -96,6 +96,10 @@ def main():
         row, stdout, stderr = dynamic.invoke(
             argv, ENV if env is None else env, Path('.'), private, label, cpu,
             build=build, pass_fds=pass_fds, bounds=None if build else ABI_BOUNDS)
+        if env is not None:
+            row['environment_delta'] = {key: value for key, value in env.items() if ENV.get(key) != value}
+        if pass_fds:
+            row['passed_fds'] = list(pass_fds)
         private_commands.append(row)
         record['commands'].append(public_command(row))
         completed(row, expected)
