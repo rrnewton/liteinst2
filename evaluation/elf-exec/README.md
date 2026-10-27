@@ -66,8 +66,9 @@ python3.9 -B evaluation/elf-exec/reproduce_tactics.py \
 
 The full sequence requires 748 state comparisons across 76 original and 152
 rewritten traces, plus 30 ordinary process executions. It covers B1, B2, T1, T2
-and T3 with stripped/unstripped files and null/recording hooks. These counts
-remain prospective until exact-revision results are published.
+and T3 with stripped/unstripped files and null/recording hooks. The complete
+explicit debug0 run passed at `f454ba1`; its [results and exact receipt](../elf-exec-f454ba1/README.md)
+retain all 120 stage outcomes and 748 live state comparisons.
 
 Pure controls for the profile admission guards accept two complete records and
 require 28 malformed or mismatched records to be rejected. They extract the

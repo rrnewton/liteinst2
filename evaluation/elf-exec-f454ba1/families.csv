@@ -1,0 +1,6 @@
+family,status,entry_heads,candidates,original_traces,rewritten_traces,live_state_comparisons,ordinary_executions,subject_call_ret_witnesses,hook_call_return_witnesses,recording_hook_rows,capture_files
+B1,PASS,2,4,8,16,72,6,24,8,4,1230
+B2,PASS,3,4,12,24,120,6,36,8,4,1967
+T1,PASS,3,4,12,24,120,6,36,8,4,1967
+T2,PASS,6,4,24,48,248,6,72,8,4,3983
+T3,PASS,5,4,20,40,188,6,60,8,4,3215
