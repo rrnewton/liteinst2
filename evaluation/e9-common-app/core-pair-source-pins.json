@@ -1,0 +1,12 @@
+{
+  "evaluation/e9-common-app/run_candidates.py": "53dc86dd31efbde432e9bcad3a2c22e20c7cda8a54920fa68f39d7fcbe6b2e24",
+  "tests/support/e9_common_core.rs": "3bae746d2eb581d1dda576ef4cee1d73b64320df6e8ad196eefd7fee0b689be0",
+  "tests/support/e9_common_image.rs": "cbae7fdc847eafe56532894164c4715c5a12ed1cc7b9bc906d3c5b7357141ec5",
+  "tests/support/e9_common_seed.instructions.tsv": "74afc406acb8eb7742695afdf0e610a7e77afbaa6fb1498463a9e8ae85901fcd",
+  "tests/support/e9_common_seed.rs": "df1678dc0d0a5eede05d76d592048d5065d983fa44ba42c6d5dd7da9d297c2e3",
+  "tests/support/elf_exec_driver.rs": "f898bea1da083535ece4a2daa5fc7f794d94e1c0a99e9cc8f123a3f2476c21f7",
+  "tests/support/elf_exec_oracle.rs": "1302da90836b31f9346cff5c20a458f4e5b3134b0f529e21f5027f78e4764c6b",
+  "tests/support/quiescent_oracle.rs": "e8c17e5daaf6e9720d6c515fd5e6f986307eca9c12ce115cdd51b465406dc756",
+  "tools/elf-rewrite/examples/verify_common_core.rs": "7a3e3ea5eaff5ba4dc602737c3d1dd6a9f583b9ac1168c1abedf659923580d62",
+  "tools/unwind-oracle/bounded_command.py": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+}
