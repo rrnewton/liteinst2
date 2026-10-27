@@ -128,7 +128,9 @@ fn consumer_stack_prefix_mirror_checks_full_failed_header_families() {
     macro_rules! changed {
         ($field:expr, $value:expr) => {{
             let old = $field;
-            $field = $value;
+            let replacement = $value;
+            assert_ne!(replacement, old);
+            $field = replacement;
             assert_eq!(
                 out.require_preserved(&source),
                 Err(CensusConsumerError::Mismatch)
@@ -149,7 +151,10 @@ fn consumer_stack_prefix_mirror_checks_full_failed_header_families() {
     changed!(source.census.as_mut().unwrap().next_serial, 900);
     changed!(source.census.as_mut().unwrap().generation, 1);
     changed!(source.census.as_mut().unwrap().origins_pointer, 0);
-    changed!(source.census.as_mut().unwrap().history_capacity, 0);
+    changed!(
+        source.census.as_mut().unwrap().history_capacity,
+        source.census.as_ref().unwrap().history_capacity ^ 1
+    );
     changed!(source.census.as_mut().unwrap().reservation, None);
     macro_rules! budget {
         ($axis:ident) => {{

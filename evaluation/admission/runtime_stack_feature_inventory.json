@@ -4307,7 +4307,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/census/runtime_stack/consumer_oracle/prefix_mirror/tests.rs",
-      "sha256": "f29b1e2a44b4dd08e670ca36ed9f872fdc7b12339a5222959952b518067c5454",
+      "sha256": "7f7b3109dd9d9a31d42635e564b74fc2b3211c36ababbfd45b2e04e71726831f",
       "test_functions": [
         "consumer_stack_prefix_mirror_checks_full_failed_header_families",
         "consumer_stack_prefix_mirror_checks_full_state_bytes_and_allocation_identity",
