@@ -19,6 +19,7 @@ use crate::linux::remote::dynamic::owner::{
 };
 use crate::linux::remote::dynamic::{DynamicEvent, DynamicEventKind};
 use std::{mem::size_of, ops::Range, time::Instant};
+pub(super) mod control;
 pub(super) mod io;
 use io::IoBuffer;
 #[cfg(test)]
@@ -249,6 +250,7 @@ pub(super) struct Metadata {
     pub(super) pagemap: IoBuffer,
     pub(super) layout: PkuLayoutEvidence,
     pub(super) profile: Option<Box<ControlProfile>>,
+    pub(super) exec_control: control::ExecObservation,
     pub(super) stack: Option<RawStackDescription>,
     phase: Option<MetadataPhase>,
     /// All observations for `phase` completed. ExecEvent is never user access.
@@ -264,6 +266,7 @@ impl Metadata {
             pagemap: IoBuffer::empty(),
             layout: PkuLayoutEvidence::default(),
             profile: None,
+            exec_control: control::ExecObservation::empty(),
             stack: None,
             phase: None,
             complete: false,
@@ -319,8 +322,16 @@ impl Metadata {
             .profile
             .as_mut()
             .ok_or(OracleError::Invalid("oracle control storage absent"))?;
-        profile.capture(owner, until)?;
-        profile.require(debug.value())?;
+        match phase {
+            MetadataPhase::ExecEvent => {
+                self.exec_control
+                    .capture(owner, profile, &self.state, until)?;
+            }
+            MetadataPhase::RestoredUser => {
+                profile.capture(owner, until)?;
+                profile.require(debug.value())?;
+            }
+        }
         self.source
             .read_memory(owner, plan.read_load.start, until)?;
         plan.require_image(file, self.source.prefix())?;
@@ -334,6 +345,21 @@ impl Metadata {
             ));
         }
         require_user_state(&self.state, &self.layout)
+    }
+    pub(super) fn require_exec_control(&self, until: Instant) -> Result<(), OracleError> {
+        if !self.complete || self.phase != Some(MetadataPhase::ExecEvent) {
+            return Err(OracleError::Invalid(
+                "raw retained EXEC metadata incomplete",
+            ));
+        }
+        self.exec_control.require(
+            self.profile
+                .as_ref()
+                .ok_or(OracleError::Invalid("raw EXEC profile absent"))?,
+            &self.state,
+            until,
+        )?;
+        Ok(())
     }
     fn allocated(&self) -> bool {
         self.state.state.xstate.capacity() == MAX
@@ -441,8 +467,13 @@ impl LaneShape {
             .and_then(|v| v.checked_add(frames.checked_mul(per)?))
             .and_then(|v| v.checked_add(4 * extra))
             .ok_or(OracleError::Invalid("oracle lane capacity overflows"))?;
-        let temporary_bytes = ControlProfile::temporary_bytes()?
-            .checked_add(dataflow::temporary_bytes()?)
+        let profile_temporary = ControlProfile::temporary_bytes()?;
+        let dataflow_temporary = dataflow::temporary_bytes()?;
+        let control_temporary = control::temporary_bytes()?;
+        let temporary_bytes = profile_temporary
+            .checked_add(dataflow_temporary)
+            .and_then(|n| n.checked_add(control_temporary))
+            .and_then(|n| n.checked_add(3 * size_of::<usize>()))
             .and_then(|n|n.checked_add(
                 2*size_of::<ControlProfile>()+size_of::<PreparedLane>()+size_of::<Metadata>()+size_of::<Frame>()
                     +2*size_of::<libc::statfs>()+size_of::<libc::iovec>()+2*size_of::<RegisterSnapshot>()

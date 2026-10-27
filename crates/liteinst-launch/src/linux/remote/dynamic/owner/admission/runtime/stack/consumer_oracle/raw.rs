@@ -16,6 +16,7 @@ use crate::{DynamicEvent, DynamicEventKind, RegisterSnapshot};
 use std::{mem::size_of, time::Instant};
 mod namespace;
 use namespace::Namespace;
+use observe::control::{EntryControls, EntryPhase};
 #[cfg(test)]
 mod tests;
 
@@ -76,6 +77,7 @@ impl Wait {
 }
 pub(super) struct PreparedRawLane {
     pub(super) lane: PreparedLane,
+    controls: EntryControls,
     pub(super) states: [StateSlot; STATES],
     pub(super) waits: [Wait; WAITS],
     pub(super) requests: [Option<RawRequest>; REQUESTS],
@@ -115,6 +117,7 @@ impl PreparedRawLane {
     pub(super) fn empty() -> Self {
         Self {
             lane: PreparedLane::empty(),
+            controls: EntryControls::empty(),
             states: std::array::from_fn(|_| observe::empty_state()),
             waits: std::array::from_fn(|_| Wait::empty()),
             requests: [None; REQUESTS],
@@ -221,6 +224,7 @@ impl PreparedRawLane {
                 ));
             }
             self.lane.allocate_frames(plan, shape)?;
+            self.controls.allocate()?;
             for state in &mut self.states {
                 observe::allocate_state(state)?;
             }
@@ -233,6 +237,7 @@ impl PreparedRawLane {
     pub(super) fn allocated_bytes(&self) -> Result<usize, OracleError> {
         let own = size_of::<Self>() - size_of::<PreparedLane>();
         own.checked_add(self.lane.allocated_bytes()?)
+            .and_then(|n| n.checked_add(self.controls.allocated_payload_bytes()))
             .and_then(|n| {
                 n.checked_add(
                     self.states
@@ -246,6 +251,7 @@ impl PreparedRawLane {
     pub(super) fn reservation_bytes(shape: LaneShape) -> Result<usize, OracleError> {
         (size_of::<Self>() - size_of::<PreparedLane>())
             .checked_add(shape.retained_bytes)
+            .and_then(|n| n.checked_add(EntryControls::reserved_payload_bytes()))
             .and_then(|n| n.checked_add(STATES * 64 * 1024))
             .ok_or(OracleError::Invalid("raw reservation overflows"))
     }
@@ -316,6 +322,23 @@ impl PreparedRawLane {
             return Err(OracleError::Invalid("raw real exec EXIT differs"));
         }
         validate_syscall(&self.waits[wait], exited, 2, None, Some(0))?;
+        // EXEC is before kernel rseq reset. Authenticate the actual EXIT
+        // profile before any entry POKE/CONT; a later INT3 cannot prove this.
+        self.lane.metadata.require_exec_control(until)?;
+        if wait != 0 {
+            return Err(OracleError::Invalid(
+                "raw initial EXIT wait ordinal differs",
+            ));
+        }
+        self.controls.capture(
+            owner,
+            &self.lane.metadata.exec_control,
+            EntryPhase::ExecExit,
+            self.waits[wait]
+                .actual
+                .ok_or(OracleError::Invalid("raw EXIT wait absent"))?,
+            &self.states[0],
+        )?;
         let offset = usize::try_from(plan.entry - plan.read_load.start)
             .map_err(|_| OracleError::Invalid("raw entry offset differs"))?;
         let word: [u8; 8] = self
@@ -403,8 +426,74 @@ impl PreparedRawLane {
             &self.lane.frame(0, false)?.state,
             &self.lane.metadata.layout,
         )?;
+        // This is a fresh profile: neither the pre-reset EXEC observation
+        // nor the EXIT qualification may stand in for restored-user control.
+        if wait != 1 {
+            return Err(OracleError::Invalid("raw first-user wait ordinal differs"));
+        }
+        self.controls.capture(
+            owner,
+            &self.lane.metadata.exec_control,
+            EntryPhase::Restored,
+            self.waits[wait]
+                .actual
+                .ok_or(OracleError::Invalid("raw first-user wait absent"))?,
+            &self.lane.frame(0, false)?.state,
+        )?;
+        self.require_initial_controls(plan)?;
         self.initialized = true;
         Ok(())
+    }
+    fn require_initial_controls(&self, plan: &ArtifactPlan) -> Result<(), OracleError> {
+        let until = self.segments[0].ok_or(OracleError::Invalid("raw initial deadline absent"))?;
+        self.lane.metadata.require_exec_control(until)?;
+        self.controls.require(
+            &self.lane.metadata.exec_control,
+            EntryPhase::ExecExit,
+            self.waits[0]
+                .actual
+                .ok_or(OracleError::Invalid("raw retained EXIT wait absent"))?,
+            &self.states[0],
+        )?;
+        self.controls.require(
+            &self.lane.metadata.exec_control,
+            EntryPhase::Restored,
+            self.waits[1]
+                .actual
+                .ok_or(OracleError::Invalid("raw retained first-user wait absent"))?,
+            &self.lane.frame(0, false)?.state,
+        )?;
+        // Recheck the same full bridge observations; no successful phase flag
+        // substitutes for the actual retained state, signal, source or requests.
+        let original = &self.lane.metadata.state.state;
+        let exited = &self.states[0].state;
+        let mut expected = original.registers;
+        expected.rax = 0;
+        if exited.registers != expected
+            || exited.xstate != original.xstate
+            || exited.mask != original.mask
+        {
+            return Err(OracleError::Invalid("raw retained exec EXIT differs"));
+        }
+        validate_syscall(&self.waits[0], exited, 2, None, Some(0))?;
+        require_signal(&self.waits[1], false)?;
+        let first = &self.states[1].state;
+        expected.rip = plan.entry + 1;
+        expected.orig_rax = u64::MAX;
+        if first.registers != expected || first.mask != exited.mask {
+            return Err(OracleError::Invalid("raw retained first-user trap differs"));
+        }
+        expected.rip = plan.entry;
+        let restored = &self.lane.frame(0, false)?.state;
+        if restored.state.registers != expected
+            || restored.state.xstate != first.xstate
+            || restored.state.mask != first.mask
+        {
+            return Err(OracleError::Invalid(
+                "raw retained restored full state differs",
+            ));
+        }
+        observe::require_user_state(restored, &self.lane.metadata.layout)
     }
     fn request(
         &mut self,
@@ -724,6 +813,7 @@ pub(super) fn require_complete(
     {
         return Err(OracleError::Invalid("raw finite evidence incomplete"));
     }
+    p.require_initial_controls(plan)?;
     for namespace in &p.namespaces {
         namespace.require_complete()?;
     }

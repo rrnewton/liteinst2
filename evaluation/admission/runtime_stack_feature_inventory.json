@@ -2018,6 +2018,26 @@
       "scope": "feature_pure"
     },
     {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::observe::control::tests::consumer_observer_entry_control_requires_distinct_phase_wait_state_and_deadline",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/control/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::observe::control::tests::consumer_observer_entry_control_storage_retains_exact_prefix_and_refuses_reuse",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/control/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::observe::control::tests::consumer_observer_exec_control_keeps_content_descriptive_without_profile_completion",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/control/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
+      "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::observe::control::tests::consumer_observer_exec_control_rejects_transport_debug_cet_and_partial_results",
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/control/tests.rs",
+      "scope": "feature_pure"
+    },
+    {
       "name": "linux::remote::dynamic::owner::admission::runtime::stack::consumer_oracle::observe::tests::consumer_observer_empty_state_and_requests_claim_no_completed_read",
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/tests.rs",
       "scope": "feature_pure"
@@ -5314,8 +5334,23 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe.rs",
-      "sha256": "fe34f13c29658d70f260aa5e596b96fa4f40dfdbb60b097282ed33c2e4cfd064",
+      "sha256": "4432528fc1829c27338b797d5406751ae5921b196988681cc9b0c3732126d099",
       "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/control.rs",
+      "sha256": "32db3894ee4f51c685965334f36e0447e2bcbb0b289072178f58297f7dc52b77",
+      "test_functions": []
+    },
+    {
+      "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/control/tests.rs",
+      "sha256": "10a7b48aad42697a8f5ae7f7b25b6052980d605f70266ef35f0e95e2c527e2b5",
+      "test_functions": [
+        "consumer_observer_entry_control_requires_distinct_phase_wait_state_and_deadline",
+        "consumer_observer_entry_control_storage_retains_exact_prefix_and_refuses_reuse",
+        "consumer_observer_exec_control_keeps_content_descriptive_without_profile_completion",
+        "consumer_observer_exec_control_rejects_transport_debug_cet_and_partial_results"
+      ]
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/observe/io.rs",
@@ -5367,7 +5402,7 @@
     },
     {
       "path": "crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/stack/consumer_oracle/raw.rs",
-      "sha256": "02fb43e4aeb6d3827200157ddc682ed2a95061143ad708f1060a4ae5ba80ac0a",
+      "sha256": "9690a57b3d96f6912e42a611791d82bd440b15b63dfc8a4502ccebe1d3f62b4f",
       "test_functions": []
     },
     {

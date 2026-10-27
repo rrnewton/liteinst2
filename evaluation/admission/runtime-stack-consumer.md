@@ -45,6 +45,16 @@ commits, fourteen waits, twelve private calls, two original steps and eight A–
 captures. Kernel evidence remains separately counted: three attempts, twenty-four
 waits, fifteen states and fact counts `[25,25,20]`.
 
+The raw lane retains separate EXEC, exec EXIT and restored-entry control
+observations. EXEC is reported before the kernel clears inherited rseq
+registration, so its exact 24-byte response is descriptive. Transport, debug
+and CET checks still apply. A fresh full zero-rseq control profile must pass at
+the authenticated exec EXIT before the entry patch or user return; a second
+fresh full profile must pass after exact entry restoration and user-state
+validation, before any original instruction. Both profiles and their phase,
+wait, state and deadline associations remain owned through cleanup. The admitted
+lane and later CALL/RET checks retain their existing strict requirements.
+
 These numbers are success requirements, not values inserted into failed rows.
 The formatter projects actual initialized records and leaves unobserved values
 null. The parent driver independently checks the row, process result, pinned
