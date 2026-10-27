@@ -60,10 +60,18 @@ def summarize(paths, revision):
             "source_unchanged", "configuration_unchanged", "failure_type", "final_error_count",
             "totals", "required_cases", "attempted_cases", "accepted_cases", "completed_cases",
             "expected_refusals", "required_finite_commands", "finite_command_count", "cohort_command_count",
-            "ls_diagnostic", "failed_commands") if key in receipt}
+            "ls_diagnostic", "failed_commands", "timing_scope", "build_status",
+            "register_build_status", "required_cohort_commands") if key in receipt}
         row["receipt"] = {"name": path.name, "bytes": len(data), "sha256": digest(data)}
+        environment = receipt.get("environment")
+        if environment is None:
+            if receipt["profile"] != "page-selected-register-real-v1":
+                raise ValueError("missing receipt environment")
+            environment = {"per_workload": {c["name"]: c["environment"] for c in receipt["cases"]}}
+            if len(environment["per_workload"]) != len(receipt["cases"]):
+                raise ValueError("duplicate workload environment")
         for table, value in (
-            ("hardware", receipt["hardware"]), ("environments", receipt["environment"]),
+            ("hardware", receipt["hardware"]), ("environments", environment),
             ("tools", receipt.get("tool_versions", receipt.get("toolchain"))),
             ("bounds", receipt.get("bounds"))):
             row[table + "_index"] = intern(table, value)
@@ -85,7 +93,9 @@ def summarize(paths, revision):
             row["cases"] = [{k: c[k] for k in (
                 "name", "accepted", "classification", "process_outcome", "actual_exit",
                 "native_exit", "gated_exit", "operation_completed",
-                "verified_memory_fault", "verified_native_fault", "verified_pre_open_refusal")
+                "verified_memory_fault", "verified_native_fault", "verified_pre_open_refusal",
+                "status", "environment", "counters", "outcome", "register", "cache_counts",
+                "last_opcode", "repeat", "whole_process_ns", "first_touch_ns", "steady_state_ns")
                 if k in c} for c in receipt["cases"]]
         if receipt["profile"] == "inprocess-required-checks-v1":
             row["commands"] = [{k: v for k, v in c.items() if k in (

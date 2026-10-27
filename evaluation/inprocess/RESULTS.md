@@ -406,3 +406,30 @@ Reproduce each `runs[].reproduce` command in that receipt at the source revision
 ```sh
 PYTHONDONTWRITEBYTECODE=1 python3 evaluation/inprocess/summarize_selected.py --revision e3e3c792292ececff1d6da4c9f566d9db649f653 --output target/sse2-milestone-reproduced.json evaluation/inprocess/results/*e3e3c792292e.json
 ```
+
+## Immutable register runs and original-address NOTRACK
+
+Revision `89a91d2a59dd87b83b6cbe57d03fdfd3e611e42b` adds an opt-in register-run cache: closed NOP/MOV prefixes execute from immutable private RX pages while their original source pages remain NX. A genuine fetch fault at the original guard completes the run, releases its borrow and dispatches that guard. Publication uses fresh RW storage, source reauthentication, RW-to-RX protection, synchronization and full-page verification. The cache remains opt-in; the default build continues original-address execution and retains the same all-start admission policy. This supplies finite evidence for claims 1/4; it does not establish general B2/B3 coverage.
+
+The native oracle passes 18 semantic pairs (nine publications and nine hits), fills all 64 slots, takes one genuine capacity fallback and subsequently hits an existing slot. Generated runs cause zero TRACE events; the two-instruction fallback causes two. All 23 retained full records and four startup pairs were independently replayed, including complete GPR/flags/kernel FP/live XSAVE/selectors/FS/GS, 8 KiB stack and 4 KiB data. All 64 capacity rows were checked; 61 intermediate capacity cycles do not retain full-state records. Fourteen terminal controls verify stale/corrupt identities, permissions, failed publication, reset and interruption handling. Their attempted operations all fail, with zero generated executions or completion credit; three explicit raw-error injections and one actual signal remain distinguished.
+
+Three connected programs complete both copied runs and original CPUID/syscall guards. Direct and crossing-first-instruction cases each execute six generated runs, four publications and two hits. The crossing-guard case correctly falls back before publication for that loop and executes three other generated runs. Together they complete nine CPUID guards and six source syscalls. All native outputs match an independent hardware observation and the literal dependent-register values.
+
+The same revision supports thirty exact NOTRACK register CALL/JMP encodings in the existing no-user-CET profile, and scalar BSF/BSR at original addresses. NOTRACK passes 40 branch pairs plus two startup pairs, with 20 exact original CALL return words; 15 pushed return addresses point into a next page excluded from the opened fetch bundle. Ten cases cross source-page boundaries. All 42 full states and 182 refusal checks were independently authenticated. BSF/BSR passes 48 instruction pairs plus three startup pairs, 355 refusal checks and two actual memory-fault controls. These extend claim-2/4 evidence without granting unsupported prefixes or general CET support.
+
+The explicit real-program experiment attempts `/bin/true` and `/bin/ls -d .`, both with the default environment and separately with `GLIBC_TUNABLES=glibc.pthread.rseq=0`. Both lanes use `LD_BIND_NOW=1`; sealed dependency identity and the actual target environment are authenticated. All four native baselines exit zero. All four gated programs stop before executing unsupported `66 0f 12 0f` (MOVLPD, Code 943), so **zero real programs complete**. Each default attempt completes 138 generated runs using 41 publications and 97 hits; each rseq-disabled attempt completes 146 using 43 publications and 103 hits. These are partial execution counts, not successful whole-program or performance results. Every timing field remains null.
+
+All 14 finite/native evaluator runs pass their specified outcomes (924 build/native commands); the separate failed real-program experiment adds 37 commands. Hardware is AMD EPYC 9D85, family 26/model 17/stepping 0, microcode `0xb101066`, Linux 7.1.3; Rust 1.97.1 and GCC 11.5.0. Native children use one reserved CPU and no effective capabilities. C fixtures and bridges use `-O2`, and the decoder uses the release profile. No throughput or first-touch/steady-state performance result is claimed here.
+
+All four required checks pass at the exact source: formatting, strict all-feature/all-target Clippy, workspace tests and workspace check. Workspace validation observes 2,457 passed and four previously ignored across 98 harnesses in 310.162 seconds. The recorder has 330 passed; the serial launch run has 1,029 passed across 27 harnesses in 132.594 seconds. Source and configuration remain unchanged throughout.
+
+The [compact milestone receipt](results/20261027-register-run-milestone.json) retains each evaluator's exact revision, command, bounds, hardware, numeric outcomes and original receipt hash. Reproduce each `runs[].reproduce` command at the recorded source under its stated CPU reservation, then project the resulting receipts with `summarize_selected.py`. For the retained original records, the projection command is:
+
+```sh
+python3 evaluation/inprocess/summarize_selected.py \
+  --revision 89a91d2a59dd87b83b6cbe57d03fdfd3e611e42b \
+  --output target/register-run-milestone-reproduced.json \
+  evaluation/inprocess/results/*89a91d2a59dd.json
+```
+
+The projection publishes numbers and hashes only. Full raw process captures and retained binaries remain private; its source hash is recorded in the compact receipt. Earlier fixture setup failures (ambiguous BSS symbol and an incorrect expectation of the existing refusal-helper success sentinel) remain failed and provide no native completion credit.
