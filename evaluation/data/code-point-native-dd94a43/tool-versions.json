@@ -1,0 +1,18 @@
+{
+  "other_tool_version_strings_recorded": false,
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "tools": {
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustdoc": {
+      "bytes": 13680928,
+      "sha256": "3b0c7aef20e0dfdfe2dd19ddb0b40d3b744f76318a44031813f501e1912934df"
+    }
+  }
+}

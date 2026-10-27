@@ -1,0 +1,384 @@
+{
+  "base_revision": "50c0715e015107c92a8ecee03735645a83734220",
+  "commands": [
+    {
+      "argv": [
+        "$BINARY",
+        "bytes-real-lifecycle",
+        "0",
+        "0",
+        "$RAW/bytes-0-seed-0/output"
+      ],
+      "candidate_children": 6,
+      "children": 8,
+      "full_state_comparisons": 15,
+      "id": "bytes-0-seed-0",
+      "member": "0",
+      "mode": "bytes-real-lifecycle",
+      "original_children": 2,
+      "original_entries": [
+        "MOV",
+        "RET"
+      ],
+      "output_files": 14,
+      "phases": [
+        "Armed",
+        "Closed",
+        "Rearmed"
+      ],
+      "seed_index": 0,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "bytes-real-lifecycle",
+        "0",
+        "1",
+        "$RAW/bytes-0-seed-1/output"
+      ],
+      "candidate_children": 6,
+      "children": 8,
+      "full_state_comparisons": 15,
+      "id": "bytes-0-seed-1",
+      "member": "0",
+      "mode": "bytes-real-lifecycle",
+      "original_children": 2,
+      "original_entries": [
+        "MOV",
+        "RET"
+      ],
+      "output_files": 14,
+      "phases": [
+        "Armed",
+        "Closed",
+        "Rearmed"
+      ],
+      "seed_index": 1,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "bytes-real-lifecycle",
+        "1",
+        "0",
+        "$RAW/bytes-1-seed-0/output"
+      ],
+      "candidate_children": 6,
+      "children": 8,
+      "full_state_comparisons": 15,
+      "id": "bytes-1-seed-0",
+      "member": "1",
+      "mode": "bytes-real-lifecycle",
+      "original_children": 2,
+      "original_entries": [
+        "MOV",
+        "RET"
+      ],
+      "output_files": 14,
+      "phases": [
+        "Armed",
+        "Closed",
+        "Rearmed"
+      ],
+      "seed_index": 0,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "bytes-real-lifecycle",
+        "1",
+        "1",
+        "$RAW/bytes-1-seed-1/output"
+      ],
+      "candidate_children": 6,
+      "children": 8,
+      "full_state_comparisons": 15,
+      "id": "bytes-1-seed-1",
+      "member": "1",
+      "mode": "bytes-real-lifecycle",
+      "original_children": 2,
+      "original_entries": [
+        "MOV",
+        "RET"
+      ],
+      "output_files": 14,
+      "phases": [
+        "Armed",
+        "Closed",
+        "Rearmed"
+      ],
+      "seed_index": 1,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "bytes-real-lifecycle",
+        "2",
+        "0",
+        "$RAW/bytes-2-seed-0/output"
+      ],
+      "candidate_children": 6,
+      "children": 8,
+      "full_state_comparisons": 15,
+      "id": "bytes-2-seed-0",
+      "member": "2",
+      "mode": "bytes-real-lifecycle",
+      "original_children": 2,
+      "original_entries": [
+        "MOV",
+        "RET"
+      ],
+      "output_files": 14,
+      "phases": [
+        "Armed",
+        "Closed",
+        "Rearmed"
+      ],
+      "seed_index": 0,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "bytes-real-lifecycle",
+        "2",
+        "1",
+        "$RAW/bytes-2-seed-1/output"
+      ],
+      "candidate_children": 6,
+      "children": 8,
+      "full_state_comparisons": 15,
+      "id": "bytes-2-seed-1",
+      "member": "2",
+      "mode": "bytes-real-lifecycle",
+      "original_children": 2,
+      "original_entries": [
+        "MOV",
+        "RET"
+      ],
+      "output_files": 14,
+      "phases": [
+        "Armed",
+        "Closed",
+        "Rearmed"
+      ],
+      "seed_index": 1,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "bytes-real-lifecycle",
+        "3",
+        "0",
+        "$RAW/bytes-3-seed-0/output"
+      ],
+      "candidate_children": 6,
+      "children": 8,
+      "full_state_comparisons": 15,
+      "id": "bytes-3-seed-0",
+      "member": "3",
+      "mode": "bytes-real-lifecycle",
+      "original_children": 2,
+      "original_entries": [
+        "MOV",
+        "RET"
+      ],
+      "output_files": 14,
+      "phases": [
+        "Armed",
+        "Closed",
+        "Rearmed"
+      ],
+      "seed_index": 0,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "bytes-real-lifecycle",
+        "3",
+        "1",
+        "$RAW/bytes-3-seed-1/output"
+      ],
+      "candidate_children": 6,
+      "children": 8,
+      "full_state_comparisons": 15,
+      "id": "bytes-3-seed-1",
+      "member": "3",
+      "mode": "bytes-real-lifecycle",
+      "original_children": 2,
+      "original_entries": [
+        "MOV",
+        "RET"
+      ],
+      "output_files": 14,
+      "phases": [
+        "Armed",
+        "Closed",
+        "Rearmed"
+      ],
+      "seed_index": 1,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "bytes-real-lifecycle",
+        "old-reservation",
+        "0",
+        "$RAW/bytes-old-reservation-seed-0/output"
+      ],
+      "candidate_children": 2,
+      "children": 4,
+      "full_state_comparisons": 5,
+      "id": "bytes-old-reservation-seed-0",
+      "member": "old-reservation",
+      "mode": "bytes-real-lifecycle",
+      "original_children": 2,
+      "original_entries": [
+        "MOV",
+        "RET"
+      ],
+      "output_files": 6,
+      "phases": [
+        "OldReservation"
+      ],
+      "seed_index": 0,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "bytes-real-lifecycle",
+        "old-reservation",
+        "1",
+        "$RAW/bytes-old-reservation-seed-1/output"
+      ],
+      "candidate_children": 2,
+      "children": 4,
+      "full_state_comparisons": 5,
+      "id": "bytes-old-reservation-seed-1",
+      "member": "old-reservation",
+      "mode": "bytes-real-lifecycle",
+      "original_children": 2,
+      "original_entries": [
+        "MOV",
+        "RET"
+      ],
+      "output_files": 6,
+      "phases": [
+        "OldReservation"
+      ],
+      "seed_index": 1,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "byte-owner-refusals",
+        "wrong-owner",
+        "0",
+        "$RAW/bytes-refuse-wrong-owner/output"
+      ],
+      "candidate_children": 0,
+      "children": 1,
+      "control": "wrong-owner",
+      "expected_refusal": "InvalidInstallation",
+      "full_state_comparisons": 0,
+      "id": "bytes-refuse-wrong-owner",
+      "mode": "byte-owner-refusals",
+      "original_children": 0,
+      "output_files": 2,
+      "seed_index": 0,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "byte-owner-refusals",
+        "inactive",
+        "0",
+        "$RAW/bytes-refuse-inactive/output"
+      ],
+      "candidate_children": 0,
+      "children": 1,
+      "control": "inactive",
+      "expected_refusal": "InvalidInstallation",
+      "full_state_comparisons": 0,
+      "id": "bytes-refuse-inactive",
+      "mode": "byte-owner-refusals",
+      "original_children": 0,
+      "output_files": 2,
+      "seed_index": 0,
+      "status": "UNRUN"
+    },
+    {
+      "argv": [
+        "$BINARY",
+        "bytes-real-sync-refusal",
+        "membarrier",
+        "0",
+        "$RAW/bytes-refuse-membarrier/output"
+      ],
+      "candidate_children": 0,
+      "children": 1,
+      "control": "membarrier",
+      "expected_refusal": "Synchronize(SystemCall(Synchronize, EPERM)); physical status FAILED",
+      "full_state_comparisons": 0,
+      "id": "bytes-refuse-membarrier",
+      "mode": "bytes-real-sync-refusal",
+      "original_children": 0,
+      "output_files": 2,
+      "seed_index": 0,
+      "status": "UNRUN"
+    }
+  ],
+  "modes": [
+    {
+      "mode": "bytes-real-lifecycle",
+      "status": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "mode": "words-atomic-real-lifecycle",
+      "status": "UNIMPLEMENTED"
+    },
+    {
+      "mode": "words-split-real-lifecycle",
+      "status": "UNIMPLEMENTED"
+    },
+    {
+      "mode": "bytes-real-sync-refusal",
+      "status": "IMPLEMENTED_SOURCE_ONLY"
+    },
+    {
+      "mode": "words-split-real-sync-refusal",
+      "status": "UNIMPLEMENTED"
+    },
+    {
+      "mode": "coalesced-mandatory-data-flag",
+      "status": "UNIMPLEMENTED"
+    }
+  ],
+  "schema": 1,
+  "scope": "SOURCE_ONLY_UNCOMPILED_UNRUN",
+  "totals": {
+    "actual_completed": 0,
+    "candidate_children": 52,
+    "children": 75,
+    "commands": 13,
+    "full_state_comparisons": 130,
+    "original_children": 20,
+    "output_files": 130,
+    "refusal_children": 3
+  },
+  "unchanged_word_inventory": {
+    "calibrations": 26,
+    "cases": 838,
+    "rerun_by_this_proposal": false
+  }
+}

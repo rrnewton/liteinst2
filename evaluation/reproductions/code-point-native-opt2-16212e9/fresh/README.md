@@ -1,0 +1,22 @@
+This prospective recipe runs a new byte-point cohort with optimization level 2 from exact source revision `16212e9ab00a18ce003a305f7265bce8633e1c0e`. It is **UNRUN**. The separate historical run at 16212e9 passed all 13 cases, closed 75 children and reported 130 source-attested live comparisons. Those results do not transfer to a repetition. The three earlier opt0 cohorts retain their failures.
+
+Copy the eight published `fresh/` files unchanged into an ignored recipe directory before switching to the exact source commit. Publication files may not exist at that older commit. From the publication checkout:
+
+```sh
+mkdir -p ignored/point-opt2-recipe
+cp evaluation/reproductions/code-point-native-opt2-16212e9/fresh/* ignored/point-opt2-recipe/
+git checkout --detach 16212e9ab00a18ce003a305f7265bce8633e1c0e
+python3.9 -B ignored/point-opt2-recipe/launch.py build --sole-writer --cohort "$PWD/ignored/point-opt2-repeat-001" --toolchain /absolute/rust/toolchain --user-home /absolute/user/home --cargo-home /absolute/cargo/home
+python3.9 -B ignored/point-opt2-recipe/launch.py prepare --sole-writer --cohort "$PWD/ignored/point-opt2-repeat-001"
+python3.9 -B ignored/point-opt2-recipe/launch.py run --sole-writer --cohort "$PWD/ignored/point-opt2-repeat-001"
+```
+
+Check the published hashes first and stop on any command failure. Use a clean checkout and real installed paths. The host needs Linux x86-64, Python 3.9 at `/usr/bin/python3.9`, offline Rust/Cargo dependencies, access to CPUs 0–3, `ptrace` and `fork`, executable dual mappings, and the native synchronization mechanism. The recipe checks real refusal behavior. Keep the checkout under one writer throughout the campaign; `--sole-writer` declares that condition and does not create operating-system isolation or a quota.
+
+The build uses the complete native-build command, offline dependencies, four jobs and disabled debug information. It explicitly sets `CARGO_PROFILE_DEV_OPT_LEVEL=2`, `CARGO_PROFILE_DEV_DEBUG_ASSERTIONS=true` and `CARGO_PROFILE_DEV_OVERFLOW_CHECKS=true`. Preparation requires the matching Cargo profile, verifies the complete closed build and all 2,191 source files, and checks the four native source members. It then records the current executable, tools, configurations and four selected runtime owners. Runtime checks those owners before and after each case. This covers selected host owners; it does not establish complete loader or process-map closure. The fresh catalog has 22 entries under the unchanged limit of 64. It needs no private proposal or historical result directory and does not manufacture historical inode, ctime or admission records.
+
+The build, preparation and campaign parents allow 240, 90 and 1,200 seconds respectively, each with a 10-second cleanup wait. Each native request retains 20 CPU seconds, 30 wall seconds and a 1 MiB output-file limit. Its outer timeout remains 40 seconds with a 10-second kill grace period; its direct parent allows 55 seconds plus 10 seconds for cleanup. Each trace retains the 15-second and 20,000-step bounds. All 13 cases, 75 planned children, 130 planned comparisons and 130 planned output files remain, along with the complete state, image and event checks, failure stopping and UNRUN tails. Capacity checks retain the 20 GB slot limit, a 1 GiB growth reserve and 512 MiB of available memory. The four word/coalesced modes remain UNIMPLEMENTED.
+
+All 121 runtime assertions match the reviewed opt2 caller, apart from exact source activation and a neutral hardware label. The label is `independent byte-point repetition host`; the recipe observes CPU, kernel and libc information anew. It does not assign the historical AMD EPYC label to another machine. Relative to the tested opt2 sources, `build.py` changes only that label, while `run.py` activates the exact revision and changes the label. The preparation and parent scripts are prospective adapters, with complete edit inverses retained privately.
+
+The historical command/source exports and saved-result summaries are separate from this clean-checkout recipe. This recipe supplies no new execution result, complete A4 qualification, architecture-wide qualification or performance measurement. On failure, preserve the entire cohort and use a new unique name after diagnosis; never overwrite or resume a partial cohort. Keep raw logs, lifecycle records and child records ignored. Publish only separately reviewed summaries.

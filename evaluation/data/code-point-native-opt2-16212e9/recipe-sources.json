@@ -1,0 +1,42 @@
+[
+  {
+    "attempt": "opt2",
+    "file": "opt2/run.py",
+    "historical_source_only": true,
+    "original_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+    "public_sha256": "b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "opt2",
+    "file": "opt2/build.py",
+    "historical_source_only": true,
+    "original_sha256": "67cc6d06f28a319bf6bddc1e0504fdada7468b25198d6198438f7d243d9166dd",
+    "public_sha256": "67cc6d06f28a319bf6bddc1e0504fdada7468b25198d6198438f7d243d9166dd",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "opt2",
+    "file": "opt2/construct-historical.py",
+    "historical_source_only": true,
+    "original_sha256": "1fd436bc498e4fcf9316795fd29f54e3821316ee0533c724aa9299b64721d0e8",
+    "public_sha256": "1fd436bc498e4fcf9316795fd29f54e3821316ee0533c724aa9299b64721d0e8",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "opt2",
+    "file": "opt2/native-parent.py.template",
+    "historical_source_only": true,
+    "original_sha256": "9f915ded95b459546ac47cb51aca7b69a60ee7bad1713c8a36925cca95e6abdf",
+    "public_sha256": "9f915ded95b459546ac47cb51aca7b69a60ee7bad1713c8a36925cca95e6abdf",
+    "transformation": "exact bytes"
+  },
+  {
+    "attempt": "opt2",
+    "file": "opt2/build-parent.py.template",
+    "historical_source_only": true,
+    "original_sha256": "576fa940fe75db9e52b7b7dfff44738ac303490038613c1e1d58581ab8db8b6e",
+    "public_sha256": "9512eb5c7971a7ba850af52fcef444b4982939487e5a1b2fe4c18829ab7b92f4",
+    "transformation": "invertible private-path roles"
+  }
+]

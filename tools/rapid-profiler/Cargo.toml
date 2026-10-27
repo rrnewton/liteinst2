@@ -20,3 +20,9 @@ bench = false
 [[test]]
 name = "frontend-native-calibrations"
 path = "native-interval/calibrations.rs"
+
+[[bin]]
+name = "frontend-native-point"
+path = "native-point/main.rs"
+test = false
+bench = false

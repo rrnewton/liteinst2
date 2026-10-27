@@ -39,3 +39,9 @@ The journal is exactly 131144 bytes: eight u64 header fields, 16384 PC slots and
 For every original/null cell, independently require zero recorded PCs. For a real-hook cell, require the complete ordered PC sequence from the original finite baseline and exact header/guards; empty or singleton heap-write cases legitimately have zero visits. Capacity is fixed before execution and never silently increased. The actual baseline sequence must fit it; overflow is a failed run. Full journal/raw address observations stay private. Application output, hook effects and selected-site retention are separate checks, and none substitutes for architectural state, unwind, CET, PIE/DSO or complete A3 qualification.
 
 The [contract](contract.json) states exact field offsets and bounds. All old fixtures, comparator calibrations, limits and failed histories remain unchanged. Source declarations grant no execution or qualification credit; those require separately recorded results.
+
+## Core pair verification
+
+`run_core_pairs.py` defines the bounded original/core comparison for all 176 cases in each of the four null-hook cells. `audit_core_pairs.py` independently checks the saved architectural states, route observations and input identities. Both require explicit source and build activation; their unset activation constants deliberately refuse execution. The current source alone supplies no native result.
+
+`test_core_pair_profiles.py` exercises the auditor with synthetic valid inputs and corruptions; [all eight methods passed](../reproductions/core-auditor-pure-041bd4a/README.md) in the recorded run. The separate [canonical-verifier controls](../reproductions/canonical-verifier-pure-50c0715/README.md) check source correspondence and build-reader selection. These controls validate the checking tools; the 704 native core pairs and 2,112 recording obligations remain pending.

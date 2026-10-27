@@ -1,0 +1,94 @@
+{
+  "command": {
+    "argv": [
+      "/bin/bash",
+      "./e9test.sh"
+    ],
+    "cpu_seconds": 120,
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "cwd": "$WORK",
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "file_bytes": 134217728,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "outer_kill_grace_seconds": 10,
+    "outer_wall_seconds": 190,
+    "parent_cleanup_seconds": 10,
+    "parent_seconds": 205,
+    "wall_seconds": 180
+  },
+  "context": {
+    "architecture": "x86_64",
+    "benchmark": false,
+    "caller_sha256": "094286b70e748a213117fe846f814c249468306f9952e2bd5caefea3b6fe4e95",
+    "compiler": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "hardware": "AMD EPYC Zen 5 dev host",
+    "provenance_scope": "Selected file bytes only; not complete compiler-chain or runtime-owner admission",
+    "revision": "c66ea0607e38db67dd5b7cfbc7ab7f0ac7f7afdd",
+    "tool_hashes": {
+      "bash": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf",
+      "diff": "e7c3d87c94da76f9dcca7b78454b9dd52cede61923abf748640db3e0cba3ea4a",
+      "dirname": "dcccd2b58cda47c25292457d1153e612a68599ad7086c3b90a66ed568ab8950b",
+      "gcc": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0",
+      "python3.9": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+      "timeout": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+    }
+  },
+  "duration_scope": "Operational validation duration, not benchmark throughput",
+  "failed": 0,
+  "parent": {
+    "exit": 0,
+    "parent_error": null,
+    "parent_wait_returned": true,
+    "seconds": 119.64045003708452
+  },
+  "passed": 10,
+  "performance_claim": false,
+  "qualification_complete": false,
+  "raw_files": {
+    "closed.json": "f14eaf05097a3c58338d0184ebd2951db66515ba64a8bf40e5b3ea53e4e88459",
+    "command.json": "34d48cf4c5ce8ba60e1fa4601c349304df7d99725cd0748bd4844e6e043d12de",
+    "context.json": "f955a11b7642818f9cdc9f3eb396cb348e07ddd5bc45b1e98f1beec9b828e330",
+    "receipt.json": "6d9e6da1af3d633c8f19571ed258b4db7b348c1bd3bab7642aa1b61727c4451f",
+    "request.json": "e192c6081bdd87512ebb7f7dd8873bd62fd070e1ea2220e66d8d5683aaec4e8d",
+    "result.json": "f67a3b8c627ada257335586cd09f07589777898e23c32256145e6583c8d5f5a4",
+    "stderr.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout.txt": "011576c7eeda89fbcc52127ba56f69ab3aa9ca9b5ed21afe699ed789feb467bd"
+  },
+  "receipt": {
+    "aborted": null,
+    "absence_proof": "ECHILD",
+    "cleanup_error": null,
+    "cleanup_events": [],
+    "elapsed_seconds": 119.56052573607303,
+    "exit": 0,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "inputs_unchanged": true,
+    "request_sha256": "e192c6081bdd87512ebb7f7dd8873bd62fd070e1ea2220e66d8d5683aaec4e8d",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "011576c7eeda89fbcc52127ba56f69ab3aa9ca9b5ed21afe699ed789feb467bd",
+    "unexpected_descendants": [],
+    "wall_timeout": false
+  },
+  "schema": 1,
+  "scope": "Upstream self-rewrite corpus only; no LiteInst comparison or performance claim",
+  "source_pins": {
+    "e9compile.sh": "d5c3d1e34dc6c2cdf9ffcfb815b679a7af97b8419b12b9e52fee1ff49a225e2b",
+    "e9patch": "890f76cb5741b6c7cfba3414ae72a64fd7deddc7d2dd33b17d53e8b906529fdb",
+    "e9test.sh": "99456c781101671a7722003ee0f0970ccd24f4d03320734b44ddc080764a6dc5",
+    "e9tool": "36b05e9a47c9193041d71ed4e14dda87e835e0e2b47e4a82a7d30a7c0d4eeb5e",
+    "examples/nop.c": "7ca4be4b594591a4287579862df63af80462b74856b2a85a57444148bcc7f32b"
+  },
+  "status": "PASS",
+  "unobserved": 0,
+  "upstream_revision": "0d5d36e4c4edcac37ca2499694d64302a391136f"
+}

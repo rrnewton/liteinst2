@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+"""Record and bound the direct parent of the complete thirteen-case campaign."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import signal
+import subprocess
+import sys
+import time
+
+if sys.flags.optimize:
+    raise SystemExit('assertions required')
+repo = Path.cwd().resolve()
+here = repo / 'ignored/a4/code-point-opt2-runtime-activation-v1'
+raw = repo / 'ignored/a4/code-point-opt2-runtime-v1'
+parent = repo / 'ignored/a4/code-point-opt2-runtime-parent-v1'
+source = here / 'run.py'
+binding = here / 'binding.json'
+source_hash = 'b5f3f28201b3609dcb32a9129158e32b3fc89b4cbec180ebcc7dd74c6fb14458'
+binding_hash = '849f70b990b68b993d1b282927ad581a1727bb9e3d4832950ebfb2db8cab0bc2'  # root fills only after successful fresh construction
+assert isinstance(binding_hash, str) and len(binding_hash) == 64
+assert all(c in '0123456789abcdef' for c in binding_hash)
+assert hashlib.sha256(source.read_bytes()).hexdigest() == source_hash
+assert hashlib.sha256(binding.read_bytes()).hexdigest() == binding_hash
+assert not raw.exists() and not parent.exists()
+assert {0, 1, 2, 3} <= os.sched_getaffinity(0)
+os.sched_setaffinity(0, {0, 1, 2, 3})
+parent.mkdir()
+argv = ['/usr/bin/python3.9', '-B', str(source), '--binding', str(binding),
+        '--binding-sha256', binding_hash, '--raw', str(raw)]
+env = dict(PATH='/usr/bin:/bin', LANG='C.UTF-8', LC_ALL='C.UTF-8',
+           PYTHONDONTWRITEBYTECODE='1', PYTHONNOUSERSITE='1')
+
+
+def write(name, value):
+    with (parent / name).open('x') as stream:
+        json.dump(value, stream, indent=2, sort_keys=True, allow_nan=False)
+        stream.write('\n')
+
+
+write('command.json', dict(argv=argv, cwd=str(repo), env=env, affinity=[0, 1, 2, 3],
+    parent_timeout_seconds=1200, parent_failure_cleanup_seconds=10,
+    revision='16212e9ab00a18ce003a305f7265bce8633e1c0e', caller_sha256=source_hash,
+    binding_sha256=binding_hash, parent_source_sha256=hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+    bound_scope='Whole fixed campaign including metadata reads; all per-case bounds unchanged'))
+child = None
+error = None
+began = time.monotonic()
+try:
+    with (parent / 'stdout.txt').open('xb') as out, (parent / 'stderr.txt').open('xb') as err:
+        child = subprocess.Popen(argv, cwd=repo, env=env, stdin=subprocess.DEVNULL,
+            stdout=out, stderr=err, start_new_session=True)
+        try:
+            write('started.json', dict(pid=child.pid))
+            child.wait(timeout=1200)
+        except BaseException as failure:
+            error = type(failure).__name__
+            if child.poll() is None:
+                try:
+                    os.killpg(child.pid, signal.SIGKILL)
+                except ProcessLookupError:
+                    pass
+            try:
+                child.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                error += ':CLEANUP_WAIT_EXPIRED'
+                raise
+            raise
+finally:
+    if child is not None:
+        closed = dict(exit=child.returncode, parent_error=error,
+            parent_wait_returned=child.returncode is not None, pid=child.pid,
+            seconds=time.monotonic()-began,
+            stdout_sha256=hashlib.sha256((parent / 'stdout.txt').read_bytes()).hexdigest(),
+            stderr_sha256=hashlib.sha256((parent / 'stderr.txt').read_bytes()).hexdigest())
+        write('closed.json', closed)
+assert child is not None
+print(json.dumps(closed, sort_keys=True), flush=True)
+print((parent / 'stdout.txt').read_text()[-12000:], flush=True)
+print((parent / 'stderr.txt').read_text()[-12000:], flush=True)
+raise SystemExit(0 if child.returncode == 0 and error is None else 1)

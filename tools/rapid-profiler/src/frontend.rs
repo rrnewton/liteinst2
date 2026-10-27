@@ -1164,5 +1164,11 @@ impl ThreadModel {
     }
 }
 
+mod interval_entry;
+pub(crate) use interval_entry::{
+    BindingChange, IntervalEntry, IntervalEntryError, IntervalEntrySummary, IntervalExitError,
+    UnsampledSummary,
+};
+
 #[cfg(test)]
 mod tests;

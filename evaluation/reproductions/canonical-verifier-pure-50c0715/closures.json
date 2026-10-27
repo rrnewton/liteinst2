@@ -1,0 +1,33 @@
+{
+  "parent": {
+    "exit": 0,
+    "parent_error": null,
+    "parent_wait_returned": true,
+    "pid": 1980793,
+    "seconds": 0.2653883770108223,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+  },
+  "receipt": {
+    "aborted": null,
+    "absence_proof": "ECHILD",
+    "cleanup_error": null,
+    "cleanup_events": [],
+    "elapsed_seconds": 0.21344421221874654,
+    "exit": 0,
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "inputs_unchanged": true,
+    "request_sha256": "7a164587ebd48ab8bf0f25ff523129cb914890c17e5812b85f6e6018d92c731e",
+    "stderr_sha256": "f63db1ecd3a221cae91f77f2b9f19466ffc16b675ad4a3aa142145f2cd71c188",
+    "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "unexpected_descendants": [],
+    "wall_timeout": false
+  },
+  "root_result": {
+    "exit": 0,
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "8fbb0c88b57cec76ece48fa73d6ad507a104414230f4b3bf9f3ec703402cd3f3"
+  },
+  "schema": 1,
+  "scope": "Recorded strict child receipt, actual helper-parent wait, and separate root tool terminal."
+}

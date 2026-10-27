@@ -1,0 +1,484 @@
+{
+  "actual_parent_sha256": "d4685ee64fbb7990a04f8293ef4c8bb5f7fb28c6f79b8a4ea9b30690e184cddb",
+  "all_six_phases_passed": true,
+  "case_observation_counts": {
+    "failed": 0,
+    "ignored": 5,
+    "passed": 3569
+  },
+  "driver_sha256": "b5d7f6652746fc0cf2c987997ce28d6122943c5cc2fbd5604fa8954726865c40",
+  "durations": "operational observations, not performance measurements",
+  "hardware": {
+    "architecture": "x86_64",
+    "cpu_model": "AMD EPYC 9D85 158-Core Processor",
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "kernel_release": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "libc": [
+      "glibc",
+      "2.34"
+    ]
+  },
+  "input_sha256": "344b9683b757ac71f9c1dbb824e34d25d4cef7ed5b361c1539303aaf59259fa9",
+  "inventory_accounting": {
+    "native-build": {
+      "bare_terminals": 0,
+      "extra_child_starts": 0,
+      "groups": null,
+      "named_cases": null,
+      "nested_completed_summaries": 0,
+      "ordinary_main": [],
+      "ordinary_main_harnesses": 0,
+      "serial_split_terminals": 0
+    },
+    "parallel-library": {
+      "bare_terminals": 2,
+      "extra_child_starts": 3,
+      "groups": 1,
+      "named_cases": 219,
+      "nested_completed_summaries": 2,
+      "ordinary_main": [],
+      "ordinary_main_harnesses": 0,
+      "serial_split_terminals": 0
+    },
+    "parallel-neighbor": {
+      "bare_terminals": 0,
+      "extra_child_starts": 0,
+      "groups": 1,
+      "named_cases": 74,
+      "nested_completed_summaries": 0,
+      "ordinary_main": [],
+      "ordinary_main_harnesses": 0,
+      "serial_split_terminals": 0
+    },
+    "parallel-prefixed": {
+      "bare_terminals": 0,
+      "extra_child_starts": 0,
+      "groups": 1,
+      "named_cases": 30,
+      "nested_completed_summaries": 0,
+      "ordinary_main": [],
+      "ordinary_main_harnesses": 0,
+      "serial_split_terminals": 0
+    },
+    "required": {
+      "bare_terminals": 3,
+      "extra_child_starts": 7,
+      "groups": 95,
+      "named_cases": 2256,
+      "nested_completed_summaries": 5,
+      "ordinary_main": [
+        {
+          "controls": [
+            "admitted_exec_native_backing_probes_close_exact_owned_resources",
+            "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
+            "exec_backing_native_invalid_unmap_aborts_isolated_owner"
+          ],
+          "identity": "Running tests/exec_backing_cleanup.rs (target/debug/deps/exec_backing_cleanup)",
+          "libtest_pass_credit": 0,
+          "records": [
+            {
+              "controls": 3,
+              "kind": "begin",
+              "schema_version": 1,
+              "trajectories": 4
+            },
+            {
+              "control": "admitted_exec_native_backing_probes_close_exact_owned_resources",
+              "errno": 0,
+              "id": "complete",
+              "index": 0,
+              "kind": "trajectory",
+              "outcome": "complete",
+              "owner_cleanup": true,
+              "physical_cleanup": true,
+              "probes": 6,
+              "receipt_authenticated": true,
+              "schema_version": 1,
+              "terminal": "exit0"
+            },
+            {
+              "control": "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
+              "errno": 14,
+              "id": "read_error",
+              "index": 1,
+              "kind": "trajectory",
+              "outcome": "native_read_error",
+              "owner_cleanup": true,
+              "physical_cleanup": true,
+              "probes": 1,
+              "receipt_authenticated": true,
+              "schema_version": 1,
+              "terminal": "exit0"
+            },
+            {
+              "control": "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
+              "errno": 0,
+              "id": "unwind",
+              "index": 2,
+              "kind": "trajectory",
+              "outcome": "injected_unwind",
+              "owner_cleanup": true,
+              "physical_cleanup": true,
+              "probes": 1,
+              "receipt_authenticated": true,
+              "schema_version": 1,
+              "terminal": "exit0"
+            },
+            {
+              "control": "exec_backing_native_invalid_unmap_aborts_isolated_owner",
+              "errno": 22,
+              "id": "invalid_unmap",
+              "index": 3,
+              "kind": "trajectory",
+              "outcome": "expected_fail_stop",
+              "owner_cleanup": false,
+              "physical_cleanup": true,
+              "probes": 1,
+              "receipt_authenticated": true,
+              "schema_version": 1,
+              "terminal": "sigabrt"
+            },
+            {
+              "controls": 3,
+              "kind": "complete",
+              "physical_cleanup": true,
+              "schema_version": 1,
+              "trajectories": 4
+            }
+          ]
+        }
+      ],
+      "ordinary_main_harnesses": 1,
+      "serial_split_terminals": 0
+    },
+    "serial": {
+      "bare_terminals": 0,
+      "extra_child_starts": 0,
+      "groups": 27,
+      "named_cases": 995,
+      "nested_completed_summaries": 0,
+      "ordinary_main": [
+        {
+          "controls": [
+            "admitted_exec_native_backing_probes_close_exact_owned_resources",
+            "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
+            "exec_backing_native_invalid_unmap_aborts_isolated_owner"
+          ],
+          "identity": "Running tests/exec_backing_cleanup.rs (target/debug/deps/exec_backing_cleanup)",
+          "libtest_pass_credit": 0,
+          "records": [
+            {
+              "controls": 3,
+              "kind": "begin",
+              "schema_version": 1,
+              "trajectories": 4
+            },
+            {
+              "control": "admitted_exec_native_backing_probes_close_exact_owned_resources",
+              "errno": 0,
+              "id": "complete",
+              "index": 0,
+              "kind": "trajectory",
+              "outcome": "complete",
+              "owner_cleanup": true,
+              "physical_cleanup": true,
+              "probes": 6,
+              "receipt_authenticated": true,
+              "schema_version": 1,
+              "terminal": "exit0"
+            },
+            {
+              "control": "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
+              "errno": 14,
+              "id": "read_error",
+              "index": 1,
+              "kind": "trajectory",
+              "outcome": "native_read_error",
+              "owner_cleanup": true,
+              "physical_cleanup": true,
+              "probes": 1,
+              "receipt_authenticated": true,
+              "schema_version": 1,
+              "terminal": "exit0"
+            },
+            {
+              "control": "admitted_exec_native_backing_read_and_unwind_preserve_cleanup",
+              "errno": 0,
+              "id": "unwind",
+              "index": 2,
+              "kind": "trajectory",
+              "outcome": "injected_unwind",
+              "owner_cleanup": true,
+              "physical_cleanup": true,
+              "probes": 1,
+              "receipt_authenticated": true,
+              "schema_version": 1,
+              "terminal": "exit0"
+            },
+            {
+              "control": "exec_backing_native_invalid_unmap_aborts_isolated_owner",
+              "errno": 22,
+              "id": "invalid_unmap",
+              "index": 3,
+              "kind": "trajectory",
+              "outcome": "expected_fail_stop",
+              "owner_cleanup": false,
+              "physical_cleanup": true,
+              "probes": 1,
+              "receipt_authenticated": true,
+              "schema_version": 1,
+              "terminal": "sigabrt"
+            },
+            {
+              "controls": 3,
+              "kind": "complete",
+              "physical_cleanup": true,
+              "schema_version": 1,
+              "trajectories": 4
+            }
+          ]
+        }
+      ],
+      "ordinary_main_harnesses": 1,
+      "serial_split_terminals": 95
+    }
+  },
+  "native_build_is_not_native_execution": true,
+  "native_build_profile": {
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "opt_level": "0",
+    "overflow_checks": true,
+    "test": false
+  },
+  "native_campaign_review": false,
+  "nested_passes_aggregated": false,
+  "phases": [
+    "native-build",
+    "required",
+    "serial",
+    "parallel-library",
+    "parallel-prefixed",
+    "parallel-neighbor"
+  ],
+  "qualification_complete": false,
+  "repeated_case_observations": 3574,
+  "required_dispatches": 1,
+  "review_sha256": "c345269a029b1f23e9fc1bc35852b64b30eb9640276cfe8c4d2b95e41300b074",
+  "revision": "dd94a43b7986509f70635896ab759659fbd81ba4",
+  "rows": [
+    {
+      "cleanup_complete": true,
+      "command_context": "native-build",
+      "counts": null,
+      "cpus": 4,
+      "exit": 0,
+      "groups": null,
+      "id": "native-build",
+      "log_sha256": "a06670451f0192d03840e1c98a1acc84f5b44109ec1a70c0b5d236a9be664174",
+      "parent_context": "native-build/parent",
+      "parent_seconds": 1.9190152159426361,
+      "reaped_descendants": 0,
+      "scope": "validation",
+      "seconds": 0.8445196549873799,
+      "status": "PASS",
+      "timeout_seconds": 180
+    },
+    {
+      "cleanup_complete": true,
+      "command_context": "required",
+      "counts": null,
+      "cpus": 4,
+      "exit": 0,
+      "groups": null,
+      "id": "required",
+      "log_sha256": "f1af65699fec496c929cb3e8b20739ffb220f26b1bc4825cf6ab529a248f967d",
+      "parent_context": "required/parent",
+      "parent_seconds": 300.1651601418853,
+      "reaped_descendants": 0,
+      "scope": "dispatch",
+      "seconds": 299.25880833296105,
+      "status": "PASS",
+      "timeout_seconds": 1000
+    },
+    {
+      "cleanup_complete": null,
+      "command_context": "required/fmt",
+      "counts": null,
+      "cpus": 4,
+      "exit": 0,
+      "groups": null,
+      "id": "required/fmt",
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "parent_context": "required/parent",
+      "parent_seconds": null,
+      "reaped_descendants": null,
+      "scope": "validation",
+      "seconds": 5.325290492968634,
+      "status": "PASS",
+      "timeout_seconds": 180
+    },
+    {
+      "cleanup_complete": null,
+      "command_context": "required/clippy",
+      "counts": null,
+      "cpus": 4,
+      "exit": 0,
+      "groups": null,
+      "id": "required/clippy",
+      "log_sha256": "b0c4c05de7caa0b4c67a1f04736d3c6b9d31fdddb07e05753342601254d9eb29",
+      "parent_context": "required/parent",
+      "parent_seconds": null,
+      "reaped_descendants": null,
+      "scope": "validation",
+      "seconds": 1.067661721026525,
+      "status": "PASS",
+      "timeout_seconds": 180
+    },
+    {
+      "cleanup_complete": null,
+      "command_context": "required/test",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 4,
+        "measured": 0,
+        "passed": 2252
+      },
+      "cpus": 4,
+      "exit": 0,
+      "groups": 95,
+      "id": "required/test",
+      "log_sha256": "2f53a4b97784a95478600d39b1719deded5b98e4513b69b43e72433a69d1cbf9",
+      "parent_context": "required/parent",
+      "parent_seconds": null,
+      "reaped_descendants": null,
+      "scope": "validation",
+      "seconds": 291.8173999830615,
+      "status": "PASS",
+      "timeout_seconds": 360
+    },
+    {
+      "cleanup_complete": null,
+      "command_context": "required/check",
+      "counts": null,
+      "cpus": 4,
+      "exit": 0,
+      "groups": null,
+      "id": "required/check",
+      "log_sha256": "6f8997c3d94cd089bcb9a5415f3182ec48e5e01b72325d34536cd8bc58dc5ae6",
+      "parent_context": "required/parent",
+      "parent_seconds": null,
+      "reaped_descendants": null,
+      "scope": "validation",
+      "seconds": 0.7167551529128104,
+      "status": "PASS",
+      "timeout_seconds": 180
+    },
+    {
+      "cleanup_complete": true,
+      "command_context": "serial",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 995
+      },
+      "cpus": 4,
+      "exit": 0,
+      "groups": 27,
+      "id": "serial",
+      "log_sha256": "0193bfd6a3b92627f6b88cc0c54e0b29c407300cba36f69727e01a1ebb2d9ddc",
+      "parent_context": "serial/parent",
+      "parent_seconds": 124.83597084600478,
+      "reaped_descendants": 0,
+      "scope": "validation",
+      "seconds": 123.92406370700337,
+      "status": "PASS",
+      "timeout_seconds": 180
+    },
+    {
+      "cleanup_complete": true,
+      "command_context": "parallel-library",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 1,
+        "measured": 0,
+        "passed": 218
+      },
+      "cpus": 8,
+      "exit": 0,
+      "groups": 1,
+      "id": "parallel-library",
+      "log_sha256": "8787ffecb0541a03d6480a047e38c42286825987a3fabafe18cceb2de0177682",
+      "parent_context": "parallel-library/parent",
+      "parent_seconds": 2.6897384121548384,
+      "reaped_descendants": 0,
+      "scope": "validation",
+      "seconds": 1.7603898630477488,
+      "status": "PASS",
+      "timeout_seconds": 360
+    },
+    {
+      "cleanup_complete": true,
+      "command_context": "parallel-prefixed",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 30
+      },
+      "cpus": 8,
+      "exit": 0,
+      "groups": 1,
+      "id": "parallel-prefixed",
+      "log_sha256": "f279fd2364e472b09a6fdf018ffc8c9fdfeaef2f1bbbc51d9df0bc8c8ba1ad30",
+      "parent_context": "parallel-prefixed/parent",
+      "parent_seconds": 2.319267862010747,
+      "reaped_descendants": 0,
+      "scope": "validation",
+      "seconds": 1.3852260790299624,
+      "status": "PASS",
+      "timeout_seconds": 360
+    },
+    {
+      "cleanup_complete": true,
+      "command_context": "parallel-neighbor",
+      "counts": {
+        "failed": 0,
+        "filtered_out": 0,
+        "ignored": 0,
+        "measured": 0,
+        "passed": 74
+      },
+      "cpus": 8,
+      "exit": 0,
+      "groups": 1,
+      "id": "parallel-neighbor",
+      "log_sha256": "8d942ba81571272d4ebb8eef966f076bfaa87274597d52a3223456631bb01713",
+      "parent_context": "parallel-neighbor/parent",
+      "parent_seconds": 116.59640825889073,
+      "reaped_descendants": 0,
+      "scope": "validation",
+      "seconds": 115.68266013101675,
+      "status": "PASS",
+      "timeout_seconds": 360
+    }
+  ],
+  "schema": 1,
+  "source_files": 2189,
+  "unique_tests_not_summed": true,
+  "validation_commands": 9,
+  "workspace": {
+    "allocation_regressions_passed": 3,
+    "doc_identity_relocations": 0,
+    "failed": 0,
+    "groups": 95,
+    "ignored": 4,
+    "passed": 2252,
+    "prior_identities_statuses_retained": 2256
+  }
+}

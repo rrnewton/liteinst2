@@ -1,0 +1,165 @@
+{
+  "actual_review_sha256": "4e53fd90c045604caa112bf567d531673de5fa83de392e20b19fad6faccfee22",
+  "application_or_verifier_executions": 0,
+  "auditor_main_executions": 0,
+  "auditor_source_review_sha256": "c68c0759ac25b34da6c80eba38ba8a89be948d346f9d826b8c40448a971397ab",
+  "authority": "Root-executed pure controls with independently checked saved records; no subject rerun by the reviewer or public projector.",
+  "bounds": {
+    "cpu_seconds": 10,
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "file_bytes": 1048576,
+    "kill_after_seconds": 10,
+    "outer_seconds": 25,
+    "parent_failure_cleanup_seconds": 10,
+    "parent_normal_wait_seconds": 40,
+    "wall_seconds": 15
+  },
+  "canonical_build_admission": "UNRUN",
+  "child": {
+    "aborted": null,
+    "absence_proof": "ECHILD",
+    "cleanup_error": null,
+    "cleanup_events": [],
+    "exit": 0,
+    "seconds": 0.2676824638620019,
+    "unexpected_descendants": [],
+    "wall_timeout": false
+  },
+  "compiler_executions": 0,
+  "core_obligations": "704_UNRUN",
+  "execution_context": {
+    "host_label": "AMD EPYC Zen 5 dev host",
+    "provenance": {
+      "bytes": 223,
+      "fresh_census": false,
+      "record": "A4 50c0715 required/hardware.json",
+      "same_execution_host": "Explicitly confirmed by the root implementation agent; not inferred from a new observation.",
+      "sha256": "7b8045a29f005210d4b6fc65d270ce4eccae560df23150cc471e8fb3ab1fbf80"
+    }
+  },
+  "failed": 0,
+  "failed_control_attempts_observed_in_this_cohort": 0,
+  "full_a3": false,
+  "hardware_observation": null,
+  "historical_source_records": "Frozen UNRUN source proposals retained; actual result recorded separately. The separate 12-control result and prior failed archive/build/native records are untouched.",
+  "namespace_admission": false,
+  "normal_loader_validation": false,
+  "parent": {
+    "exit": 0,
+    "parent_error": null,
+    "parent_wait_returned": true,
+    "pid": 3878182,
+    "seconds": 0.31616191007196903
+  },
+  "passed": 8,
+  "product_admission": false,
+  "public_installation_recipe": "UNRUN",
+  "qualification_complete": false,
+  "raw_logs_public": false,
+  "recording_obligations": "2112_UNRUN",
+  "root_recorded_revision": "041bd4a933d050eee946d9b03ae9fd7082a72186",
+  "root_tool": {
+    "environment_recorded": false,
+    "exit": 0,
+    "pid": null,
+    "seconds": null
+  },
+  "runtime_admission": false,
+  "schema": 1,
+  "selected_files": 6,
+  "selected_tools": 2,
+  "source_modules_unactivated": true,
+  "source_plan_by_method": {
+    "LedgerControls.test_whole_current_reads_and_two_image_requirement": {
+      "accepts": 1,
+      "derivation": "seven named ledger mutations; one whole-ledger accept",
+      "refusals": 7
+    },
+    "LedgerControls.test_whole_route_grammar_marker_owner_and_profile": {
+      "accepts": 15,
+      "derivation": "4 fields + duplicate + absent profile + 2 EVEX violations; 14 legacy bytes + 1 EVEX accept",
+      "refusals": 8
+    },
+    "TraceControls.test_code_table_route_siginfo_layout_and_maps": {
+      "accepts": 0,
+      "derivation": "6 fields + 5 byte mutations + 1 map-permission mutation",
+      "refusals": 12
+    },
+    "TraceControls.test_complete_first_last_and_nontrap": {
+      "accepts": 3,
+      "derivation": "first route, last of87 routes, nontrap",
+      "refusals": 0
+    },
+    "TraceControls.test_missing_duplicate_and_reordered_actual_observations": {
+      "accepts": 0,
+      "derivation": "7 row kinds x3 omission/duplication/reordering mutations",
+      "refusals": 21
+    },
+    "TraceControls.test_source_profile_arguments_and_unactivated_execution": {
+      "accepts": 2,
+      "derivation": "2 invalid profiles +1 unset activation; 2 exact argv accepts",
+      "refusals": 3
+    },
+    "TraceControls.test_stop_and_full_register_mutations": {
+      "accepts": 0,
+      "derivation": "5 states x7 registers +3 raw-stop-status mutations",
+      "refusals": 38
+    },
+    "TraceControls.test_ucontext_and_both_whole_fp_images": {
+      "accepts": 0,
+      "derivation": "9 frame/FP mutations +1 FP-pointer mutation",
+      "refusals": 10
+    }
+  },
+  "source_review_sha256": "c64cf714be641e8a1290ecbfc993c03e172aef5ff501b2df7c67a25272b65904",
+  "source_tools_before_after_exact": true,
+  "sources": {
+    "caller.py": {
+      "bytes": 8710,
+      "sha256": "f8af25673bedbd5bc4bc044a61ee85fe144adb3119d49a0e12bc6748c6a2c0f8"
+    },
+    "payload/evaluation/e9-common-app/audit_core_pairs.py": {
+      "bytes": 67666,
+      "sha256": "ec0fb7b9f12b8755075c4a6a762f1291fd862ed6fc5b096af95003bfd8242fdc"
+    },
+    "payload/evaluation/e9-common-app/core-pair-heads.json": {
+      "bytes": 16825,
+      "sha256": "5e8f74c75c8274917f76c5663ad0badb7d1d7d31915fa716d29521e61e75e32c"
+    },
+    "payload/evaluation/e9-common-app/core-pair-source-pins.json": {
+      "bytes": 1107,
+      "sha256": "acbe048cc46e941e46fc68578e2c99e0fcd15cc7537c05474b963e511811666b"
+    },
+    "payload/evaluation/e9-common-app/test_core_pair_profiles.py": {
+      "bytes": 14630,
+      "sha256": "f4f16d782cd4a2be9b94a66c7fd45841527849e9092021922b6d399f25c1cb54"
+    },
+    "tools/unwind-oracle/bounded_command.py": {
+      "bytes": 7710,
+      "sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44"
+    }
+  },
+  "status": "PASS_PURE_AUDITOR_SOURCE_CONTROLS",
+  "synthetic_counts_scope": "Complete fixed source enumeration; terminal directly observes 8 methods only.",
+  "synthetic_refusals_source_plan": 99,
+  "tests": 8,
+  "timing_scope": "Observed operational elapsed times; not a benchmark or native performance result.",
+  "tools": {
+    "/usr/bin/python3.9": {
+      "bytes": 15448,
+      "resolved": "/usr/bin/python3.9",
+      "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+    },
+    "/usr/bin/timeout": {
+      "bytes": 36848,
+      "resolved": "/usr/bin/timeout",
+      "sha256": "8eb5abb15bad3a1d608c68272412f0d55c9100c64078ae083b4f8b0e746d781c"
+    }
+  },
+  "unittest_terminal_seconds": 0.065
+}

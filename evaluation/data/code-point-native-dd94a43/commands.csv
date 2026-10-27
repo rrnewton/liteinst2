@@ -1,0 +1,11 @@
+id,scope,status,exit,seconds,parent_seconds,cpus,timeout_seconds,log_sha256,counts,groups,command_context,parent_context,cleanup_complete,reaped_descendants
+native-build,validation,PASS,0,0.8445196549873799,1.9190152159426361,4,180,a06670451f0192d03840e1c98a1acc84f5b44109ec1a70c0b5d236a9be664174,,,native-build,native-build/parent,True,0
+required,dispatch,PASS,0,299.25880833296105,300.1651601418853,4,1000,f1af65699fec496c929cb3e8b20739ffb220f26b1bc4825cf6ab529a248f967d,,,required,required/parent,True,0
+required/fmt,validation,PASS,0,5.325290492968634,,4,180,e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855,,,required/fmt,required/parent,,
+required/clippy,validation,PASS,0,1.067661721026525,,4,180,b0c4c05de7caa0b4c67a1f04736d3c6b9d31fdddb07e05753342601254d9eb29,,,required/clippy,required/parent,,
+required/test,validation,PASS,0,291.8173999830615,,4,360,2f53a4b97784a95478600d39b1719deded5b98e4513b69b43e72433a69d1cbf9,"{""failed"": 0, ""filtered_out"": 0, ""ignored"": 4, ""measured"": 0, ""passed"": 2252}",95,required/test,required/parent,,
+required/check,validation,PASS,0,0.7167551529128104,,4,180,6f8997c3d94cd089bcb9a5415f3182ec48e5e01b72325d34536cd8bc58dc5ae6,,,required/check,required/parent,,
+serial,validation,PASS,0,123.92406370700337,124.83597084600478,4,180,0193bfd6a3b92627f6b88cc0c54e0b29c407300cba36f69727e01a1ebb2d9ddc,"{""failed"": 0, ""filtered_out"": 0, ""ignored"": 0, ""measured"": 0, ""passed"": 995}",27,serial,serial/parent,True,0
+parallel-library,validation,PASS,0,1.7603898630477488,2.6897384121548384,8,360,8787ffecb0541a03d6480a047e38c42286825987a3fabafe18cceb2de0177682,"{""failed"": 0, ""filtered_out"": 0, ""ignored"": 1, ""measured"": 0, ""passed"": 218}",1,parallel-library,parallel-library/parent,True,0
+parallel-prefixed,validation,PASS,0,1.3852260790299624,2.319267862010747,8,360,f279fd2364e472b09a6fdf018ffc8c9fdfeaef2f1bbbc51d9df0bc8c8ba1ad30,"{""failed"": 0, ""filtered_out"": 0, ""ignored"": 0, ""measured"": 0, ""passed"": 30}",1,parallel-prefixed,parallel-prefixed/parent,True,0
+parallel-neighbor,validation,PASS,0,115.68266013101675,116.59640825889073,8,360,8d942ba81571272d4ebb8eef966f076bfaa87274597d52a3223456631bb01713,"{""failed"": 0, ""filtered_out"": 0, ""ignored"": 0, ""measured"": 0, ""passed"": 74}",1,parallel-neighbor,parallel-neighbor/parent,True,0

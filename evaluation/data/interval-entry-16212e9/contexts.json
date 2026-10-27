@@ -1,0 +1,812 @@
+[
+  {
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "rapid-profiler",
+          "--all-targets"
+        ],
+        "caller_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW}/targeted-profiler/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+        "timeout_seconds": 180
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 3521418,
+        "seconds": 3.7732128698844463,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "7f143fe0eb5a4393180e932886e231d9c9fe9dd02abdcb8cd2807d08298cb2d0"
+      },
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e41d215ab9d2b73ed4f0ed66e26921eb24f7bdd11fcf5de95215a90683a25c2a",
+        "reaped_descendants": 0,
+        "seconds": 2.903860309161246,
+        "start_utc": "2026-10-27T10:56:46.498841+00:00",
+        "termination": null
+      }
+    },
+    "id": "targeted-profiler"
+  },
+  {
+    "context": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${VALIDATION_RECIPES}/validate.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW}/targeted-profiler",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--phase",
+        "targeted-profiler"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_cleanup_seconds": 10,
+      "parent_source_sha256": "d563fe8b5c867c1b6a1a212ff4ed14860f2a442978fe0eb3928e6c55066755d0",
+      "parent_timeout_seconds": 240,
+      "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+      "source_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4"
+    },
+    "id": "targeted-profiler/parent"
+  },
+  {
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "/usr/bin/python3.9",
+          "-B",
+          "${REPO}/evaluation/required-gates.py",
+          "--repo",
+          "${REPO}",
+          "--output",
+          "${RAW}/required/gates"
+        ],
+        "caller_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW}/required/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+        "timeout_seconds": 1000
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 3710173,
+        "seconds": 326.3931903319899,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "54498eecf520012da82558c9219fe96f7dab57d2290d57f9d7c0fd094919c357"
+      },
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "10766bc1083833d1ed2947cf0b8b4d7ae1997327e67656432463f8b026f9255c",
+        "reaped_descendants": 0,
+        "seconds": 325.49074398493394,
+        "start_utc": "2026-10-27T10:58:04.643908+00:00",
+        "termination": null
+      }
+    },
+    "id": "required"
+  },
+  {
+    "context": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${VALIDATION_RECIPES}/validate.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW}/required",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--phase",
+        "required"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_cleanup_seconds": 10,
+      "parent_source_sha256": "d563fe8b5c867c1b6a1a212ff4ed14860f2a442978fe0eb3928e6c55066755d0",
+      "parent_timeout_seconds": 1060,
+      "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+      "source_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4"
+    },
+    "id": "required/parent"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "LITEINST_EVALUATION": "1",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "",
+        "RUSTFLAGS": "",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}/required/gates"
+      },
+      "env_authority": {
+        "independently_saved_env": false,
+        "kind": "source-derived from saved outer env and exact gate-source assignment",
+        "sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+        "source": "${REPO}/evaluation/required-gates.py"
+      },
+      "timeout_seconds": 180
+    },
+    "id": "required/fmt"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "LITEINST_EVALUATION": "1",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "",
+        "RUSTFLAGS": "",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}/required/gates"
+      },
+      "env_authority": {
+        "independently_saved_env": false,
+        "kind": "source-derived from saved outer env and exact gate-source assignment",
+        "sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+        "source": "${REPO}/evaluation/required-gates.py"
+      },
+      "timeout_seconds": 180
+    },
+    "id": "required/clippy"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "LITEINST_EVALUATION": "1",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "",
+        "RUSTFLAGS": "",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}/required/gates"
+      },
+      "env_authority": {
+        "independently_saved_env": false,
+        "kind": "source-derived from saved outer env and exact gate-source assignment",
+        "sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+        "source": "${REPO}/evaluation/required-gates.py"
+      },
+      "timeout_seconds": 360
+    },
+    "id": "required/test"
+  },
+  {
+    "context": {
+      "affinity": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "CARGO_BUILD_JOBS": "4",
+        "CARGO_HOME": "${CARGO_HOME}",
+        "CARGO_INCREMENTAL": "0",
+        "CARGO_NET_OFFLINE": "true",
+        "CARGO_PROFILE_DEV_DEBUG": "0",
+        "CARGO_PROFILE_TEST_DEBUG": "0",
+        "CARGO_TARGET_DIR": "${REPO}/target",
+        "CARGO_TERM_COLOR": "never",
+        "HOME": "${USER_HOME}",
+        "LANG": "C.UTF-8",
+        "LC_ALL": "C.UTF-8",
+        "LITEINST_EVALUATION": "1",
+        "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "RUSTC_WORKSPACE_WRAPPER": "",
+        "RUSTC_WRAPPER": "",
+        "RUSTDOCFLAGS": "",
+        "RUSTFLAGS": "",
+        "RUST_TEST_THREADS": "4",
+        "TMPDIR": "${RAW}/required/gates"
+      },
+      "env_authority": {
+        "independently_saved_env": false,
+        "kind": "source-derived from saved outer env and exact gate-source assignment",
+        "sha256": "6d71d2a6518b8d93e136fb5fcb8170dded37e7bcfa0eae2c1fdefb1582a1fb8b",
+        "source": "${REPO}/evaluation/required-gates.py"
+      },
+      "timeout_seconds": 180
+    },
+    "id": "required/check"
+  },
+  {
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst-launch",
+          "--tests",
+          "--",
+          "--test-threads=1",
+          "--nocapture"
+        ],
+        "caller_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW}/serial/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+        "timeout_seconds": 180
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 585679,
+        "seconds": 122.25052971299738,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "59d1791d4e839e64bb7cd72615d3bdf9386c581b7a1d4f2410a913b8ef3bc5f7"
+      },
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "cda0b3d665f81564dd1b8510c4724fb072d4a09fe52a0ffac0419ee9128a593f",
+        "reaped_descendants": 0,
+        "seconds": 121.32845646282658,
+        "start_utc": "2026-10-27T11:03:41.851093+00:00",
+        "termination": null
+      }
+    },
+    "id": "serial"
+  },
+  {
+    "context": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${VALIDATION_RECIPES}/validate.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW}/serial",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--phase",
+        "serial"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_cleanup_seconds": 10,
+      "parent_source_sha256": "d563fe8b5c867c1b6a1a212ff4ed14860f2a442978fe0eb3928e6c55066755d0",
+      "parent_timeout_seconds": 240,
+      "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+      "source_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4"
+    },
+    "id": "serial/parent"
+  },
+  {
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--lib"
+        ],
+        "caller_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW}/parallel-library/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+        "timeout_seconds": 360
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 910721,
+        "seconds": 2.6702147792093456,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "c8866e712fec84fee968144732e7a8cd5d3ebc3a98248c2a76c715453a1df5d1"
+      },
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "63c0f9cbdbaaa2fa793dca5653770714de5d374f4f87999fdc0b8b80c1f72996",
+        "reaped_descendants": 0,
+        "seconds": 1.794859783956781,
+        "start_utc": "2026-10-27T11:06:13.110698+00:00",
+        "termination": null
+      }
+    },
+    "id": "parallel-library"
+  },
+  {
+    "context": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${VALIDATION_RECIPES}/validate.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW}/parallel-library",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--phase",
+        "parallel-library"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_cleanup_seconds": 10,
+      "parent_source_sha256": "d563fe8b5c867c1b6a1a212ff4ed14860f2a442978fe0eb3928e6c55066755d0",
+      "parent_timeout_seconds": 420,
+      "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+      "source_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4"
+    },
+    "id": "parallel-library/parent"
+  },
+  {
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--test",
+          "prefixed_pun_oracle"
+        ],
+        "caller_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW}/parallel-prefixed/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+        "timeout_seconds": 360
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 914445,
+        "seconds": 2.1691228977870196,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "4a14e4e9e2466f7146aa85c07ad525c6003bf7fdd6af112c994061fd734749d0"
+      },
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "40cf7314faecfe7e1156fad62f4eb0d264c77190e7ab3035dffe4eac31974164",
+        "reaped_descendants": 0,
+        "seconds": 1.32217619381845,
+        "start_utc": "2026-10-27T11:06:15.805071+00:00",
+        "termination": null
+      }
+    },
+    "id": "parallel-prefixed"
+  },
+  {
+    "context": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${VALIDATION_RECIPES}/validate.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW}/parallel-prefixed",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--phase",
+        "parallel-prefixed"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_cleanup_seconds": 10,
+      "parent_source_sha256": "d563fe8b5c867c1b6a1a212ff4ed14860f2a442978fe0eb3928e6c55066755d0",
+      "parent_timeout_seconds": 420,
+      "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+      "source_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4"
+    },
+    "id": "parallel-prefixed/parent"
+  },
+  {
+    "context": {
+      "command": {
+        "affinity": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        "argv": [
+          "cargo",
+          "test",
+          "-p",
+          "liteinst2",
+          "--test",
+          "neighbor_eviction_oracle"
+        ],
+        "caller_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4",
+        "cwd": "${REPO}",
+        "debug_info": "disabled to keep the bounded slot below 20 GB; debug assertions unchanged",
+        "env": {
+          "CARGO_BUILD_JOBS": "4",
+          "CARGO_HOME": "${CARGO_HOME}",
+          "CARGO_INCREMENTAL": "0",
+          "CARGO_NET_OFFLINE": "true",
+          "CARGO_PROFILE_DEV_DEBUG": "0",
+          "CARGO_PROFILE_TEST_DEBUG": "0",
+          "CARGO_TARGET_DIR": "${REPO}/target",
+          "CARGO_TERM_COLOR": "never",
+          "HOME": "${USER_HOME}",
+          "LANG": "C.UTF-8",
+          "LC_ALL": "C.UTF-8",
+          "LITEINST_EVALUATION": "1",
+          "PATH": "${TOOLCHAIN}/bin:/usr/bin:/bin",
+          "PYTHONDONTWRITEBYTECODE": "1",
+          "RUSTC_WORKSPACE_WRAPPER": "",
+          "RUSTC_WRAPPER": "",
+          "RUSTDOCFLAGS": "",
+          "RUSTFLAGS": "",
+          "TMPDIR": "${RAW}/parallel-neighbor/tmp"
+        },
+        "max_log_bytes": 8388608,
+        "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: x86_64-unknown-linux-gnu\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+        "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+        "timeout_seconds": 360
+      },
+      "parent": {
+        "exit": 0,
+        "parent_error": null,
+        "parent_wait_returned": true,
+        "pid": 916799,
+        "seconds": 116.0237556041684,
+        "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "stdout_sha256": "a52b890be952eb457969853318898c1a1c846e1ee7d57e6bfd59592d02020dd9"
+      },
+      "result": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "727d4ec96b84710b18538b5e0e6b9303a4a62cdb70c54bfa9087cfbfa736b18c",
+        "reaped_descendants": 0,
+        "seconds": 115.15111402398907,
+        "start_utc": "2026-10-27T11:06:18.032783+00:00",
+        "termination": null
+      }
+    },
+    "id": "parallel-neighbor"
+  },
+  {
+    "context": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${VALIDATION_RECIPES}/validate.py",
+        "--repo",
+        "${REPO}",
+        "--output",
+        "${RAW}/parallel-neighbor",
+        "--toolchain",
+        "${TOOLCHAIN}",
+        "--user-home",
+        "${USER_HOME}",
+        "--cargo-home",
+        "${CARGO_HOME}",
+        "--phase",
+        "parallel-neighbor"
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C.UTF-8",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "parent_cleanup_seconds": 10,
+      "parent_source_sha256": "d563fe8b5c867c1b6a1a212ff4ed14860f2a442978fe0eb3928e6c55066755d0",
+      "parent_timeout_seconds": 420,
+      "source_revision": "16212e9ab00a18ce003a305f7265bce8633e1c0e",
+      "source_sha256": "a819f578148b1a0d8031b8add0b1dd6a0461b8d277fc7b75a9a6799d04a75ec4"
+    },
+    "id": "parallel-neighbor/parent"
+  }
+]

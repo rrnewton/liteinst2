@@ -1,0 +1,74 @@
+{
+  "records": {
+    "${RAW}/after.json": {
+      "bytes": 3057,
+      "sha256": "327104c422244d410b0398d778ee1594c699a8a4bdf215e41454344544911aa6"
+    },
+    "${RAW}/before.json": {
+      "bytes": 3057,
+      "sha256": "327104c422244d410b0398d778ee1594c699a8a4bdf215e41454344544911aa6"
+    },
+    "${RAW}/checks.json": {
+      "bytes": 1131,
+      "sha256": "36d49deee911da261b475e24bee09827e07a1ee02390d039dce8488f2024f5ff"
+    },
+    "${RAW}/closed.json": {
+      "bytes": 297,
+      "sha256": "24909689f9b7eba7f7fbc5f08e419ce5abc61f078348440cfaad27f7e45123b4"
+    },
+    "${RAW}/command.json": {
+      "bytes": 1957,
+      "sha256": "8f59d28fa64f4282d8a1dcf3f12aec49d8aaf94636cf380ef6d22e7fa39e6ff8"
+    },
+    "${RAW}/controller.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "${RAW}/controller.stdout": {
+      "bytes": 97,
+      "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+    },
+    "${RAW}/receipt.json": {
+      "bytes": 589,
+      "sha256": "a8ff29c6fc6d131c009a9840a6de49ecb0c5f3b4fbd186a27dea2c67cbea2fcc"
+    },
+    "${RAW}/request.json": {
+      "bytes": 771,
+      "sha256": "7a164587ebd48ab8bf0f25ff523129cb914890c17e5812b85f6e6018d92c731e"
+    },
+    "${RAW}/started.json": {
+      "bytes": 109,
+      "sha256": "a9ade5c9aefc44de3c1cfccf501c2f3b63761843f36ac874d9164eccd8f7013b"
+    },
+    "${RAW}/stderr.txt": {
+      "bytes": 1076,
+      "sha256": "f63db1ecd3a221cae91f77f2b9f19466ffc16b675ad4a3aa142145f2cd71c188"
+    },
+    "${RAW}/stdout.txt": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "${ROOT_REVIEW}/binding.json": {
+      "bytes": 853,
+      "sha256": "811515a8a2496470bca015430e2897e58312c452a86c2229c09056aa5d933f57"
+    },
+    "${ROOT_REVIEW}/root-command.json": {
+      "bytes": 369,
+      "sha256": "1eebd26603d8a9e2b42faaa598ae521abb91ba4a6068337fa58797a31df66166"
+    },
+    "${ROOT_REVIEW}/root-result.json": {
+      "bytes": 190,
+      "sha256": "924221ebf8e86eddb04b96d579feb94fb56891607974a5adcd17c0ed1bf235f5"
+    },
+    "${ROOT_REVIEW}/root.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "${ROOT_REVIEW}/root.stdout": {
+      "bytes": 245,
+      "sha256": "8fbb0c88b57cec76ece48fa73d6ad507a104414230f4b3bf9f3ec703402cd3f3"
+    }
+  },
+  "schema": 1,
+  "scope": "Complete twelve control files plus five root review/command/terminal files; bodies and owner tuples remain private unless separately exported."
+}

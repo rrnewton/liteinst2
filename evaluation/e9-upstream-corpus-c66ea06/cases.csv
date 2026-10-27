@@ -1,0 +1,11 @@
+program,action,status
+e9tool,=.*:passthru,PASS
+e9patch,=.*:passthru,PASS
+e9tool,=.*:call entry@nop,PASS
+e9patch,=.*:call entry@nop,PASS
+e9tool,"=.*:call[naked,after] entry@nop",PASS
+e9patch,"=.*:call[naked,after] entry@nop",PASS
+e9tool,"=.*:call entry(instrAsmStr,instrBytes,rflags,rdi,rip,instrAddr)@nop",PASS
+e9patch,"=.*:call entry(instrAsmStr,instrBytes,rflags,rdi,rip,instrAddr)@nop",PASS
+e9tool,=.*:print,PASS
+e9patch,=.*:print,PASS

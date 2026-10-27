@@ -27,6 +27,7 @@ include = [
     "/examples/replace_first.rs",
     "/examples/saved_pkru_probe.rs",
     "/src/**",
+    "/tools/software-preemption/**",
     "/tests/**",
     "/tools/word-sync-oracle/README.md",
     "/tools/word-sync-oracle/adapter.py",
@@ -118,5 +119,13 @@ doc = false
 name = "elf-exec-oracle"
 path = "tests/support/elf_exec_driver.rs"
 test = false
+bench = false
+doc = false
+
+# Explicit finite software-preemption experiment; no automatic runtime activation.
+[[bin]]
+name = "liteinst-preempt"
+path = "tools/software-preemption/main.rs"
+test = true
 bench = false
 doc = false

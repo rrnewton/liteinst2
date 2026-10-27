@@ -1,0 +1,101 @@
+{
+  "bounded_child": {
+    "argv": [
+      "/usr/bin/python3.9",
+      "-B",
+      "{SUBJECT_PACKAGE}/payload/evaluation/e9-common-app/test_core_pair_profiles.py",
+      "-v"
+    ],
+    "cpu_seconds": 10,
+    "cwd": "{REPO}",
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "file_bytes": 1048576,
+    "stderr": "{CONTROL_RAW}/stderr.txt",
+    "stdout": "{CONTROL_RAW}/stdout.txt",
+    "wall_seconds": 15
+  },
+  "helper_parent": {
+    "argv": [
+      "/usr/bin/timeout",
+      "--signal=TERM",
+      "--kill-after=10s",
+      "25s",
+      "/usr/bin/python3.9",
+      "-B",
+      "{REPO}/tools/unwind-oracle/bounded_command.py",
+      "--request",
+      "{CONTROL_RAW}/request.json",
+      "--receipt",
+      "{CONTROL_RAW}/receipt.json"
+    ],
+    "cpus": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "cwd": "{REPO}",
+    "env": {
+      "LC_ALL": "C",
+      "PATH": "/usr/bin:/bin",
+      "PYTHONDONTWRITEBYTECODE": "1"
+    },
+    "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "methods": [
+      [
+        "LedgerControls",
+        "test_whole_current_reads_and_two_image_requirement"
+      ],
+      [
+        "LedgerControls",
+        "test_whole_route_grammar_marker_owner_and_profile"
+      ],
+      [
+        "TraceControls",
+        "test_code_table_route_siginfo_layout_and_maps"
+      ],
+      [
+        "TraceControls",
+        "test_complete_first_last_and_nontrap"
+      ],
+      [
+        "TraceControls",
+        "test_missing_duplicate_and_reordered_actual_observations"
+      ],
+      [
+        "TraceControls",
+        "test_source_profile_arguments_and_unactivated_execution"
+      ],
+      [
+        "TraceControls",
+        "test_stop_and_full_register_mutations"
+      ],
+      [
+        "TraceControls",
+        "test_ucontext_and_both_whole_fp_images"
+      ]
+    ],
+    "parent_timeout_seconds": 40,
+    "scope": "SOURCE_ONLY_PURE_AUDITOR_CONTROLS",
+    "source_pins": {
+      "payload/evaluation/e9-common-app/audit_core_pairs.py": "ec0fb7b9f12b8755075c4a6a762f1291fd862ed6fc5b096af95003bfd8242fdc",
+      "payload/evaluation/e9-common-app/core-pair-heads.json": "5e8f74c75c8274917f76c5663ad0badb7d1d7d31915fa716d29521e61e75e32c",
+      "payload/evaluation/e9-common-app/core-pair-source-pins.json": "acbe048cc46e941e46fc68578e2c99e0fcd15cc7537c05474b963e511811666b",
+      "payload/evaluation/e9-common-app/test_core_pair_profiles.py": "f4f16d782cd4a2be9b94a66c7fd45841527849e9092021922b6d399f25c1cb54"
+    }
+  },
+  "root": {
+    "argv": [
+      "/usr/bin/python3.9",
+      "-B",
+      "ignored/a3/common-core-auditor-pure-caller-v1/payload/launch.py",
+      "--run-controls"
+    ],
+    "cwd": "{REPO}",
+    "source_revision": "041bd4a933d050eee946d9b03ae9fd7082a72186"
+  }
+}

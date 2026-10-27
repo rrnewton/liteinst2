@@ -1,0 +1,85 @@
+{
+  "contexts": {
+    "controls": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${PURE_SOURCE}/controls.py",
+        "-v"
+      ],
+      "cpu_seconds": 10,
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "file_bytes": 1048576,
+      "stderr": "${RAW}/stderr.txt",
+      "stdout": "${RAW}/stdout.txt",
+      "wall_seconds": 15
+    },
+    "helper_parent": {
+      "argv": [
+        "/usr/bin/timeout",
+        "--signal=TERM",
+        "--kill-after=10s",
+        "25s",
+        "/usr/bin/python3.9",
+        "-B",
+        "${REPO}/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "${RAW}/request.json",
+        "--receipt",
+        "${RAW}/receipt.json"
+      ],
+      "cpus": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "cwd": "${REPO}",
+      "env": {
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1"
+      },
+      "helper_sha256": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+      "methods": [
+        "test_complete_source_correspondence",
+        "test_missing_each_original_attribute_refuses",
+        "test_duplicate_each_original_attribute_refuses",
+        "test_preexisting_each_canonical_attribute_refuses",
+        "test_near_spelling_is_not_a_path_exemption",
+        "test_exact_seven_member_map",
+        "test_fresh_epoch_is_one_explicit_direct_child",
+        "test_closed_historical_epoch_refuses",
+        "test_epoch_scope_ancestors_descendants_and_escape_refuse",
+        "test_raw_build_and_review_must_match_the_exact_new_root",
+        "test_unactivated_scope_refuses_before_any_read",
+        "test_explicit_dispatch_and_no_fallback_after_refusal"
+      ],
+      "parent_timeout_seconds": 40,
+      "scope": "SOURCE_ONLY_PURE_CANONICAL_CONTROLS",
+      "source_pins": {
+        "controls.py": "e9e70c86a41181cb1b386a525a1b0872332eb1d7633b32ae4162455c25fc6953",
+        "payload/build.py": "5fbf13ecb2dd61316be9880af70ceaa7b8686365d894441405472f3e758df26a",
+        "payload/evaluation/e9-common-app/run_core_pairs.py": "c2bbca05f9cf4c728f8d3f939588e027e53266109bc1185083ac0594a471e05e"
+      }
+    },
+    "root_caller": {
+      "argv": [
+        "/usr/bin/python3.9",
+        "-B",
+        "${CALLER}/launch.py",
+        "--run-controls"
+      ],
+      "cwd": "${REPO}",
+      "source_revision": "50c0715e015107c92a8ecee03735645a83734220"
+    }
+  },
+  "root_caller_environment": "INHERITED_NOT_RECORDED",
+  "schema": 1,
+  "scope": "Exact recorded objects, with reversible private path roles. No absent root environment is invented."
+}
