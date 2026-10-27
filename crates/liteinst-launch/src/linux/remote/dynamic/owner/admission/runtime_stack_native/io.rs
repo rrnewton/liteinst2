@@ -595,6 +595,8 @@ pub(super) fn capture_layout(
         bootstrap::physical(owner, until)?;
         // SAFETY: native x86-64 provides CPUID. Unsupported leaves are retained
         // and rejected by the closed validator; no XGETBV/inactive synthesis.
+        // CPUID is unsafe on the minimum supported Rust; newer Rust makes it safe.
+        #[allow(unused_unsafe)]
         let value = unsafe { std::arch::x86_64::__cpuid_count(leaf, subleaf) };
         layout.records[index] = Some(CpuidRecord {
             leaf,

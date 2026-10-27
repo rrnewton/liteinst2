@@ -21,6 +21,8 @@ fn raw_intervene(owner: &Owner, until: Instant, kind: InterventionKind) -> TaskS
         }
         InterventionKind::PkruKeyZeroDeny => {
             // Independent raw CPUID read and exact exported component-9 bounds.
+            // Keep the minimum-Rust unsafe signature; newer Rust makes it safe.
+            #[allow(unused_unsafe)]
             let layout = unsafe { std::arch::x86_64::__cpuid_count(13, 9) };
             assert_eq!(layout.eax, 8);
             let offset = layout.ebx as usize;

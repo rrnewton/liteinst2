@@ -9,9 +9,9 @@ use super::super::runtime_instruction::CandidateKind;
 use super::super::runtime_native::{NativeCheckpoint, NativeTrace};
 use super::super::runtime_stack::access::{PkuLayout, validate_state};
 use super::super::runtime_stack::metadata::{StackDescriptor, StackMetadata, validate_smaps};
-use super::super::runtime_stack::operand::{
-    OperandDescription, OperandGeometry, StackOperation, validate_effect,
-};
+#[cfg(test)]
+use super::super::runtime_stack::operand::StackOperation;
+use super::super::runtime_stack::operand::{OperandDescription, OperandGeometry, validate_effect};
 use super::super::runtime_stack::profile::ProfileDescription;
 use super::super::runtime_stack_native::acquire::{StackCaptureAssociation, StackWordView};
 use super::super::runtime_stack_native::{OwnedStackCompletion, StackWordViews};
@@ -27,7 +27,7 @@ pub(super) mod storage;
 #[cfg(test)]
 pub(super) mod tests;
 mod validate;
-use binding::{Binding, ProfileRecord, SourceRecord, encoding, validate_operand};
+use binding::{Binding, ProfileRecord, SourceRecord};
 use storage::PayloadProgress;
 
 const STATES: usize = 16;

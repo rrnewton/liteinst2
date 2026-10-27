@@ -41,7 +41,10 @@ fn root_request_temporary_bytes() -> Result<usize, GateError> {
 }
 
 impl RuntimeStackState {
-    pub(super) fn empty(capacity: usize, reservation: usize) -> Self {
+    pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn empty(
+        capacity: usize,
+        reservation: usize,
+    ) -> Self {
         Self {
             profile: PreparedStackProfileCapture::empty(),
             attempts: Box::default(),
@@ -77,7 +80,9 @@ impl RuntimeStackState {
     }
     /// The whole RuntimeOwner charges every embedded header once. Only new
     /// separately owned payload and the explicit acquisition temporary remain.
-    pub(super) fn startup_reservation(capacity: usize) -> Result<usize, GateError> {
+    pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn startup_reservation(
+        capacity: usize,
+    ) -> Result<usize, GateError> {
         if capacity == 0 {
             return Err(GateError::Refused("runtime stack history is empty"));
         }
@@ -137,7 +142,9 @@ impl RuntimeStackState {
         }
     }
 
-    pub(super) fn allocate_startup(&mut self) -> Result<(), GateError> {
+    pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn allocate_startup(
+        &mut self,
+    ) -> Result<(), GateError> {
         if self.startup_started
             || self.failure.is_some()
             || self.pending.is_some()
@@ -197,7 +204,7 @@ impl RuntimeStackState {
             }
         }
     }
-    pub(super) fn capture_profile(
+    pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn capture_profile(
         &mut self,
         owner: &Owner,
         native: &NativeLifecycle,
@@ -234,7 +241,7 @@ impl RuntimeStackState {
             }
         }
     }
-    pub(super) fn settle_startup(
+    pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn settle_startup(
         &mut self,
         census: &mut ResumeCensus,
         reservation: Reservation,

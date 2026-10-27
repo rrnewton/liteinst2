@@ -2,7 +2,7 @@
 use super::*;
 
 impl RuntimeOwner {
-    pub(super) fn stack(
+    pub(in crate::linux::remote::dynamic::owner::admission::runtime) fn stack(
         &mut self,
         owner: &mut Owner,
         index: usize,
