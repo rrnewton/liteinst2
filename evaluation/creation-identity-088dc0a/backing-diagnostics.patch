@@ -1,0 +1,27 @@
+diff --git a/crates/liteinst-launch/tests/support/b3_exec_cleanup.rs b/crates/liteinst-launch/tests/support/b3_exec_cleanup.rs
+index 16a97a6..76abb40 100644
+--- a/crates/liteinst-launch/tests/support/b3_exec_cleanup.rs
++++ b/crates/liteinst-launch/tests/support/b3_exec_cleanup.rs
+@@ -356,6 +356,12 @@ pub(crate) fn assert_main_singleton() {
+ 
+ /// Only this fixed entry is reached by the development bridge.
+ pub(crate) fn main(action: fn(Role, &File)) -> std::process::ExitCode {
++    if let Some(path) = std::env::var_os("LITEINST_BACKING_RECEIPT") {
++        let path = PathBuf::from(path).with_extension("panic");
++        std::panic::set_hook(Box::new(move |info| {
++            let _ = std::fs::write(&path, format!("{info}"));
++        }));
++    }
+     let result = std::panic::catch_unwind(|| dispatch(action));
+     if result.is_ok() {
+         std::process::ExitCode::SUCCESS
+@@ -511,6 +517,9 @@ fn run_child(role: Role) {
+     };
+     drop(fork);
+     let status = child.wait();
++    if libc::WIFEXITED(status) && libc::WEXITSTATUS(status) != 0 {
++        eprintln!("LI2CORE_BACKING_DIAGNOSTIC role={role:?} panic={:?}", std::fs::read_to_string(receipt.with_extension("panic")));
++    }
+     if role == Role::InvalidUnmap {
+         assert!(libc::WIFSIGNALED(status));
+         assert_eq!(libc::WTERMSIG(status), libc::SIGABRT);
