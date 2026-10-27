@@ -4746,8 +4746,11 @@ fn run_staged_drop_test(name: &str, body: fn()) {
     command
         .args(["--exact", name, "--nocapture", "--test-threads=1"])
         .env(CHILD, name)
-        .stdin(Stdio::null());
-    // stdout/stderr stay inherited, preserving the child's assertion output.
+        .stdin(Stdio::null())
+        .stdout(Stdio::null());
+    // Exact exit status below authenticates complete body and local-drop execution.
+    // Suppress unfinished child libtest progress; --nocapture keeps assertion
+    // diagnostics on inherited stderr.
     // SAFETY: only async-signal-safe resource calls run before child exec.
     unsafe {
         command.pre_exec(|| {
