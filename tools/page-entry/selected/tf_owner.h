@@ -21,7 +21,7 @@ enum li2_tf_flow { LI2_TF_REFUSED, LI2_TF_FALLTHROUGH, LI2_TF_NEAR_FLOW };
 enum li2_tf_family { LI2_TF_NONE, LI2_TF_INTEGER, LI2_TF_STACK,
     LI2_TF_BRANCH, LI2_TF_CALL, LI2_TF_RETURN, LI2_TF_SIMD };
 enum li2_tf_error { LI2_TF_CLASSIFICATION=100, LI2_TF_CONTINUATION, LI2_TF_FRAME,
-    LI2_TF_RSP_DOMAIN, LI2_TF_XCR_INDEX, LI2_TF_SHSTK_QUERY, LI2_TF_SHSTK_ENABLED, LI2_TF_SHSTK_OBSERVATION };
+    LI2_TF_RSP_DOMAIN, LI2_TF_XCR_INDEX, LI2_TF_SHSTK_QUERY, LI2_TF_SHSTK_ENABLED, LI2_TF_SHSTK_OBSERVATION, LI2_TF_MPX_ENABLED };
 uint32_t li2_decoder_tf_classify(uint64_t,const unsigned char *,size_t,
                                struct li2_tf_classification *);
 
@@ -43,6 +43,8 @@ struct li2_tf_shstk_observation {
 };
 _Static_assert(sizeof(struct li2_tf_shstk_observation)==64,"two-probe evidence size");
 int li2_tf_observe_shstk(struct li2_tf_shstk_observation *);
+/* Actual XCR0 read; production has no supplied-observation hook. */
+uint64_t li2_tf_observe_xcr0(void);
 int li2_tf_shstk_observation_disabled(const struct li2_tf_shstk_observation *);
 struct li2_tf_owner {
     struct li2_step_owner step;
@@ -58,6 +60,10 @@ struct li2_tf_owner {
     long rdssp_query_result;
     uint64_t rdssp_features;
     struct li2_tf_shstk_observation rdssp_observation;
+    /* Canonical BND JMP only: attempted precedes XGETBV; complete follows it.
+       Both MPX XCR0 bits must be clear before any source RX transition. */
+    unsigned bnd_xcr0_attempted,bnd_xcr0_complete;
+    uint64_t bnd_xcr0;
 };
 
 /* Distinct proof: the CPU executes the original instruction. No emulated GPR,

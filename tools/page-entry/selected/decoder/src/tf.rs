@@ -71,6 +71,13 @@ fn canonical_padding_nop(instruction: &Instruction, bytes: &[u8]) -> bool {
         (Code::Nop_rm16, [0x66, 0x66, 0x2e, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00]))
 }
 
+// Exact original-PC BND indirect JMP only. Actual XCR0 MPX-disabled state
+// is observed again on the authenticated NX frame before source pages open.
+fn canonical_bnd_jmp_rip(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::Jmp_rm64
+        && matches!(bytes, [0xf2, 0xff, 0x25, _, _, _, _])
+}
+
 // Exact near-register NOTRACK forms in the existing no-user-CET profile.
 // RSP-source and memory forms remain outside this first native cohort. No
 // ignored REX bits, other prefixes, far transfers or operand-size override.
@@ -145,6 +152,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         if source[..instruction.len()] != [0x0f, 0x01, 0xd0] { return Ok(out); }
     } else if !canonical_padding_nop(&instruction, &source[..instruction.len()])
         && !canonical_notrack_register(&instruction, &source[..instruction.len()])
+        && !canonical_bnd_jmp_rip(&instruction, &source[..instruction.len()])
         && !canonical_lock_add_rip(&instruction, &source[..instruction.len()])
         && !canonical_lock_sub_rip(&instruction, &source[..instruction.len()])
         && !prefixes(&instruction, &source[..instruction.len()]) { return Ok(out); }

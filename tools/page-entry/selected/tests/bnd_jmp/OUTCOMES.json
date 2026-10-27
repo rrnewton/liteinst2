@@ -1,0 +1,320 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "bnd-jmp"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 15,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 15,
+        "refusals": 63,
+        "version": 1
+      },
+      "name": "positive",
+      "process_outcome": "Completed original-PC native/TF branch pairs with actual pre-open XCR0 observations.",
+      "stderr": "",
+      "stdout": "LI2_BND_JMP_TF_PASS pairs=15 bnd_jmp=14 selftest=1 old_refusal_bytes=47 new_refusal_bytes=16 full_state=15 full_memory=15 live_endpoints=15\n"
+    },
+    {
+      "argv": [
+        "bnd-jmp"
+      ],
+      "environment_delta": {
+        "LI2_BND_JMP_CONTROL": "load-fault"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 15,
+        "refusals": 63,
+        "version": 1
+      },
+      "name": "load-fault",
+      "process_outcome": "Genuine failed original-PC indirect pointer read: native/stepped page faults, no branch completion, both source pages revoked and synchronized.",
+      "stderr": "",
+      "stdout": "LI2_TF_EXPECTED_FAILURE 7\n"
+    },
+    {
+      "argv": [
+        "bnd-jmp"
+      ],
+      "environment_delta": {
+        "LI2_BND_JMP_CONTROL": "supplied-bndregs"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 2,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 8,
+        "owner_detail_negative": 0,
+        "owner_failure": 108,
+        "pairs": 15,
+        "refusals": 63,
+        "version": 1
+      },
+      "name": "supplied-bndregs",
+      "process_outcome": "Labeled nonissued XCR0 observation at genuine NX owner entry; exact MPX guard refusal before source opening, no enabled-MPX or target execution credit.",
+      "stderr": "",
+      "stdout": "LI2_BND_JMP_SUPPLIED_MPX_REFUSAL 8\n"
+    },
+    {
+      "argv": [
+        "bnd-jmp"
+      ],
+      "environment_delta": {
+        "LI2_BND_JMP_CONTROL": "supplied-bndcsr"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 3,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 16,
+        "owner_detail_negative": 0,
+        "owner_failure": 108,
+        "pairs": 15,
+        "refusals": 63,
+        "version": 1
+      },
+      "name": "supplied-bndcsr",
+      "process_outcome": "Labeled nonissued XCR0 observation at genuine NX owner entry; exact MPX guard refusal before source opening, no enabled-MPX or target execution credit.",
+      "stderr": "",
+      "stdout": "LI2_BND_JMP_SUPPLIED_MPX_REFUSAL 16\n"
+    },
+    {
+      "argv": [
+        "bnd-jmp"
+      ],
+      "environment_delta": {
+        "LI2_BND_JMP_CONTROL": "supplied-both"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 4,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 24,
+        "owner_detail_negative": 0,
+        "owner_failure": 108,
+        "pairs": 15,
+        "refusals": 63,
+        "version": 1
+      },
+      "name": "supplied-both",
+      "process_outcome": "Labeled nonissued XCR0 observation at genuine NX owner entry; exact MPX guard refusal before source opening, no enabled-MPX or target execution credit.",
+      "stderr": "",
+      "stdout": "LI2_BND_JMP_SUPPLIED_MPX_REFUSAL 24\n"
+    }
+  ],
+  "fault_scope": "An inaccessible complete eight-byte indirect pointer produces a genuine read #PF at the original source instruction. Target body is never executed. No transparent application fault delivery or arbitrary MPX-enabled operation claim.",
+  "new_refusal_count": 16,
+  "old_cohorts": "All original generic, NOTRACK and other suites remain separately required; no old row or comparator is changed.",
+  "old_refusal_count": 47,
+  "pairs": [
+    {
+      "bytes": "f2ff2540300000",
+      "code": 765,
+      "displacement": 12352,
+      "id": 2000,
+      "negative_displacement": false,
+      "tail": 7
+    },
+    {
+      "bytes": "f2ff253f300000",
+      "code": 765,
+      "displacement": 12351,
+      "id": 2001,
+      "negative_displacement": false,
+      "tail": 6
+    },
+    {
+      "bytes": "f2ff253e300000",
+      "code": 765,
+      "displacement": 12350,
+      "id": 2002,
+      "negative_displacement": false,
+      "tail": 5
+    },
+    {
+      "bytes": "f2ff253d300000",
+      "code": 765,
+      "displacement": 12349,
+      "id": 2003,
+      "negative_displacement": false,
+      "tail": 4
+    },
+    {
+      "bytes": "f2ff253c300000",
+      "code": 765,
+      "displacement": 12348,
+      "id": 2004,
+      "negative_displacement": false,
+      "tail": 3
+    },
+    {
+      "bytes": "f2ff253b300000",
+      "code": 765,
+      "displacement": 12347,
+      "id": 2005,
+      "negative_displacement": false,
+      "tail": 2
+    },
+    {
+      "bytes": "f2ff253a300000",
+      "code": 765,
+      "displacement": 12346,
+      "id": 2006,
+      "negative_displacement": false,
+      "tail": 1
+    },
+    {
+      "bytes": "f2ff2540d0ffff",
+      "code": 765,
+      "displacement": -12224,
+      "id": 2007,
+      "negative_displacement": true,
+      "tail": 7
+    },
+    {
+      "bytes": "f2ff253fd0ffff",
+      "code": 765,
+      "displacement": -12225,
+      "id": 2008,
+      "negative_displacement": true,
+      "tail": 6
+    },
+    {
+      "bytes": "f2ff253ed0ffff",
+      "code": 765,
+      "displacement": -12226,
+      "id": 2009,
+      "negative_displacement": true,
+      "tail": 5
+    },
+    {
+      "bytes": "f2ff253dd0ffff",
+      "code": 765,
+      "displacement": -12227,
+      "id": 2010,
+      "negative_displacement": true,
+      "tail": 4
+    },
+    {
+      "bytes": "f2ff253cd0ffff",
+      "code": 765,
+      "displacement": -12228,
+      "id": 2011,
+      "negative_displacement": true,
+      "tail": 3
+    },
+    {
+      "bytes": "f2ff253bd0ffff",
+      "code": 765,
+      "displacement": -12229,
+      "id": 2012,
+      "negative_displacement": true,
+      "tail": 2
+    },
+    {
+      "bytes": "f2ff253ad0ffff",
+      "code": 765,
+      "displacement": -12230,
+      "id": 2013,
+      "negative_displacement": true,
+      "tail": 1
+    }
+  ],
+  "preopen_controls": "Three explicitly supplied observations set bit3, bit4 or both. The actual XGETBV helper is separately retained and inspected; production has no supplied-value hook.",
+  "prospective_only": true,
+  "query_trailer": {
+    "bytes": 576,
+    "header_fields": [
+      "magic",
+      "version",
+      "bytes",
+      "native_queries",
+      "injected_control",
+      "injected_calls"
+    ],
+    "header_format": "<6Q",
+    "magic": 13867376769118796,
+    "negative_slot": 21,
+    "observation_count": 22,
+    "observation_fields": [
+      "attempted",
+      "complete",
+      "xcr0"
+    ],
+    "observation_format": "<3Q",
+    "version": 1
+  },
+  "record_extent": "header_bytes +22*actual sample_bytes +40 +576",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Canonical F2 FF25 disp32 indirect JMP with actual pre-open XCR0[4:3]==0 proof; finite singleton original-PC native/TF profile"
+}

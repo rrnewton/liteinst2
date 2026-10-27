@@ -116,7 +116,56 @@ static void tf_rdssp_begin(struct li2_tf_owner *owner,int sig,siginfo_t *si,ucon
     o->phase=LI2_STEP_RUNNING;o->in_handler=0;
 }
 
+/* XCR0 is read, never changed. The existing OSXSAVE precondition applies;
+   a fault cannot complete this observation or authorize source opening. */
+__attribute__((noinline)) uint64_t li2_tf_observe_xcr0(void) {
+    uint32_t a,d;
+    __asm__ volatile("xgetbv":"=a"(a),"=d"(d):"c"(0):"memory");
+    return (uint64_t)d<<32|a;
+}
+
+/* Complete old NX/open sequence with a fresh actual no-MPX observation.
+   CPL3 cannot write XCR0; the closed singleton runtime issues no application
+   syscall, signal handler or context-changing operation before sigreturn. */
+static void tf_bnd_jmp_begin(struct li2_tf_owner *owner,int sig,siginfo_t *si,ucontext_t *uc) {
+    struct li2_step_owner *o=&owner->step;
+    enter(o,LI2_STEP_ARMED,sig,si,uc);
+    greg_t *g=uc->uc_mcontext.gregs;
+    uintptr_t pc=o->request.decoded.pc;
+    require(o,sig==SIGSEGV && si->si_code==SEGV_ACCERR && !si->si_errno &&
+            (uintptr_t)g[REG_RIP]==pc && g[REG_TRAPNO]==14 && g[REG_ERR]==21 &&
+            (uintptr_t)si->si_addr==pc,LI2_STEP_FOREIGN_EVENT,sig);
+    require(o,(uint64_t)g[REG_EFL]==(o->request.original_flags|LI2_STEP_RF),LI2_STEP_INPUT_FLAGS,g[REG_EFL]);
+    frame(o,&o->before,uc);
+    require(o,equal((const void *)pc,o->request.decoded.bytes,o->request.decoded.length),LI2_STEP_PAGE_BINDING,2);
+    owner->bnd_xcr0=UINT64_MAX;
+    __asm__ volatile("":::"memory");owner->bnd_xcr0_attempted=1;
+    owner->bnd_xcr0=li2_tf_observe_xcr0();
+    __asm__ volatile("":::"memory");owner->bnd_xcr0_complete=1;
+    require(o,!(owner->bnd_xcr0&UINT64_C(0x18)),LI2_TF_MPX_ENABLED,
+            (long)(owner->bnd_xcr0&UINT64_C(0x18)));
+    o->phase=LI2_STEP_OPENING;
+    for(size_t i=0;i<o->request.page_count;i++) {
+        const struct li2_step_page *p=&o->request.pages[i];
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->closed_prot),LI2_STEP_PAGE_BINDING,(long)i);
+        o->open_started[i]=1;
+        o->open_result[i]=RAW(SYS_mprotect,p->address,LI2_STEP_PAGE,p->open_prot,0,0,0);
+        require(o,!o->open_result[i],LI2_STEP_OPEN,o->open_result[i]);o->opened[i]=1;
+        require(o,!o->hooks.authenticate(o->hooks.context,p,p->open_prot),LI2_STEP_PAGE_BINDING,(long)i);
+    }
+    o->open_sync=RAW(SYS_membarrier,32,0,0,0,0,0);
+    require(o,!o->open_sync,LI2_STEP_SYNC_OPEN,o->open_sync);
+    require(o,equal(uc->uc_mcontext.fpregs,o->before.fp,o->before.fp_bytes),LI2_STEP_FRAME,4);
+    g[REG_EFL]|=LI2_STEP_TF;
+    o->phase=LI2_STEP_RUNNING;o->in_handler=0;
+}
+
 void li2_tf_begin(struct li2_tf_owner *o,int sig,siginfo_t *si,ucontext_t *uc) {
+    const struct li2_decoded *d=&o->step.request.decoded;
+    if(o->classification.code==765 && d->length==7 &&
+       d->bytes[0]==0xf2 && d->bytes[1]==0xff && d->bytes[2]==0x25) {
+        tf_bnd_jmp_begin(o,sig,si,uc);return;
+    }
     if(o->classification.code==825) {
         tf_xgetbv_begin(&o->step,sig,si,uc);return;
     }
