@@ -8,6 +8,14 @@ Run the release comparison from a committed repository root with no tracked chan
 python3 evaluation/inprocess/dynamic.py --repeats 5
 ```
 
+Required repository validation is separate:
+
+```sh
+python3 evaluation/inprocess/checks.py --expect-revision "$(git rev-parse HEAD)"
+```
+
+This runs the existing 330 recorder controls, formatting, strict all-feature/all-target Clippy, workspace tests, all-feature/all-target checking, and the full serial launcher suite. It reuses the admission corpus/parser and process cleanup. Its explicitly named new profile gives workspace tests 900 wall seconds, including build time; prior 360-second failures remain failed records. The other five bounds remain unchanged. Validation requires all source inputs committed and writes compact receipts with raw logs retained under `target/evaluation/inprocess`.
+
 The runner builds with `tools/page-mode/build.sh`, pins each fresh child to one allowed CPU, compares reference/instrumented stdout, and records exact source revision/tree, compiler, CPU/kernel, commands, controlled environment, binary/capture hashes and numeric observations. Build products go to `target/page-mode`; exact tested copies and raw captures go to `target/evaluation/inprocess`. The typed receipt goes to `evaluation/inprocess/results`. No earlier measurement is substituted for this run.
 
 The real commands, each in the same fixed directory containing `alpha.txt`, `beta.txt` and `subdirectory`, are:

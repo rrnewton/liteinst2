@@ -1,11 +1,8 @@
 # Selected-site leaf
 
-This candidate adds only `src/selected.rs` and `src/selected/callbacks.rs` to the
-new `liteinst-inprocess` crate. Root integration is `pub mod selected;` in B0's
-`lib.rs`. Dependencies are the existing `liteinst2` core and `libc`; there is no
-ptrace path, INT3 shim, TLS registry, or signal-handler publication. Authored
-against core source `f33047b58a43068b083ba11eeb8f7e82936a5c8d`. No compiler,
-test, or native execution has been performed for this candidate.
+The `selected` module publishes CPUID, RDTSC and returning-SYSCALL replacements
+through the existing `liteinst2` core. Dependencies are that core and `libc`;
+there is no ptrace path, INT3 shim, TLS registry, or signal-handler publication.
 
 ## Preparation and ownership
 
@@ -36,7 +33,7 @@ publication cannot publish bytes.
 
 The finalizer must establish readable RX permissions without admitting
 execution, changing bytes/identity, or unwinding. Only after successful eager
-publication may the caller arm B0's NX gate while keeping the original real
+publication may the caller arm the NX gate while keeping the original real
 exclusion. The source mapping and installed owner must outlive gate disarm and
 all executing/saved references. The core's generated code/reverse-PC metadata
 remain process-lifetime resources; dropping this wrapper is not retirement.
@@ -68,7 +65,7 @@ modifies the saved extended-state descriptor.
 The embedding profile excludes application signal delivery/handlers, restarts,
 active rseq critical sections, signal returns, TLS/mapping/lifecycle changes,
 unsupported extended state (including AMX), concurrent execution/mutation, and
-code-as-data access. Core-owned SIGILL entry routes and B0's synchronous NX
+code-as-data access. Core-owned SIGILL entry routes and the synchronous NX
 fault handler are separate existing mechanisms, not application signal support.
 Native CPUID/RDTSC must be enabled for the thread. Syscall buffers must be
 caller-owned and disjoint from source, trampolines, callback state, and gate
@@ -86,12 +83,13 @@ original-context evidence. Supported syscalls still return their actual raw
 kernel result, including policy errors, without reinterpretation. The native
 fixtures do not establish equivalence under these policies.
 
-## Required subsequent evidence
+## Native validation
 
-B1's native fixture must execute the actual published sites without ptrace and
-compare original versus selected GPRs/flags/qualified XSTATE/red zone and real
-read/write memory effects. RDTSC requires a measured bracket rather than equal
-timestamps. The cross-page E9 case must prove the actual relocation tactic and
+The `native_probe` fixture executes the actual published sites without ptrace
+and compares original versus selected GPRs/flags/qualified XSTATE/red zone and
+real read/write memory effects. RDTSC uses a measured bracket rather than equal
+timestamps. The cross-page E9 case checks the actual relocation tactic and
 five-byte redirect geometry. Permission faults, first-touch counts and steady
-behavior belong to the genuine gate fixture. This source leaf supplies no
-execution, performance, signal-transparency, or arbitrary-program claim.
+behavior are observed through the gate. Run `evaluation/inprocess/run.py` for
+release measurements bound to the tested revision. These fixtures do not
+establish application-signal transparency or arbitrary-program coverage.
