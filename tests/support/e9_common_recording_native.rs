@@ -10,7 +10,12 @@ pub(super) struct Callback<'a> {
     pub core: bool,
 }
 
-pub(super) fn callback(child: &Tracee, callback: Callback<'_>, steps: &mut usize, trace: &mut File) {
+pub(super) fn callback(
+    child: &Tracee,
+    callback: Callback<'_>,
+    steps: &mut usize,
+    trace: &mut File,
+) {
     let Callback {
         start,
         code,
