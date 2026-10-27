@@ -39,7 +39,8 @@ def publish(path, r, private):
         qualification=[dict(name=x['name'], exit=x.get('exit'), status=x['status'],
             outcome=x.get('outcome'), record=x.get('record')) for x in r['qualification']],
         programs=[dict(name=x['name'], status=x['status'], native_exit=x.get('native_exit'),
-            gated_exit=x.get('gated_exit'), whole_process_ns=x.get('whole_process_ns'),
+            gated_exit=x.get('gated_exit'), whole_process_ns=(x.get('whole_process_ns')
+                if r['status'] == 'passed' and x['status'] == 'completed' else None),
             original=x['original'], interpreter=x['interpreter'], bridge=x['bridge'],
             report_sha256=digest(x.get('report')), namespace=x.get('namespace'),
             actual_environment_sha256=x.get('launch_environment_sha256'),
