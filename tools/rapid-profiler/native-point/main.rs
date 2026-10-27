@@ -408,7 +408,7 @@ fn report(c: &CodePointSession, epoch: Epoch, members: &[usize], base: u64) {
         assert_eq!(
             row.record.terminal,
             Some(Terminal::Completed {
-                value: pc,
+                value: invocation as u64,
                 disposition: Disposition::Retained { rank: 0 }
             })
         );
