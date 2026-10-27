@@ -1053,3 +1053,7 @@ mod tests;
 #[cfg(test)]
 #[path = "branch_module_tests.rs"]
 mod branch_tests;
+
+// Additive ordinary-symbol profile; every fixed grammar above remains unchanged.
+#[path = "ordinary/mod.rs"]
+pub(super) mod ordinary;

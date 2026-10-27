@@ -47,6 +47,7 @@ fn state(client: &IntervalClient) -> State {
         totals: PairTotals::default(),
         journal,
         failure: None,
+        timing: None,
     }
 }
 fn enter(s: &mut State, rsp: u64) {
