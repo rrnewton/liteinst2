@@ -129,6 +129,9 @@ static void selected_initialize(void) {
     checked(!li2_step_session_init(&selected_session,SELECTED_MASK),610,0);
     checked(!(li2_saved[16]&(SELECTED_TF|SELECTED_RF)),611,0);
     selected_logical_flags=li2_saved[16];selected_flags_known=1;
+#ifdef LI2_REGISTER_RUN
+    selected_run_initialize();
+#endif
 }
 static void selected_prepare(uintptr_t pc) {
     size_t bytes=PAGE-(pc&(PAGE-1));if(bytes>15)bytes=15;
@@ -306,6 +309,9 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
     if(!selected_selftesting && li2_repeat_candidate(&selected_decoded)) {
         selected_repeat_begin(sig,si,context,flags);return;
     }
+#ifdef LI2_REGISTER_RUN
+    if(!selected_selftesting && selected_run_try(sig,si,context,flags))return;
+#endif
     /* The descriptive Nopw candidate also includes canonical 66 90. The
        initial owner only qualifies single-byte 90; use the already-qualified
        generic padding owner for this exact two-byte form. */
