@@ -1,0 +1,331 @@
+{
+  "clock_diagnostic": {
+    "base_revision": "0af3ff75c9bca7d359e6c2f049eecffc988d78af",
+    "changed_source": "tools/rapid-profiler/native-baseline/main.rs",
+    "changed_source_sha256": "4c44b40a83a69c5bab3823f224383506871d861eab51e2c824d10efa620dee06",
+    "cpu_seconds": 20,
+    "file_bytes": 1048576,
+    "loop_cpu_ns": 0,
+    "only_source_change": "Failure-only panic payload prints immutable snapshots and resolution; no new sampling or success fallback.",
+    "owner_rescues": 0,
+    "replay": "At the base revision, apply only the panic-payload hunk from794ae10, rebuild release tree-native-baseline, and invoke it with the same DSO inputs and limits.",
+    "snapshots": [
+      {
+        "cpu": 1268316,
+        "wall_after": 1279359526715781,
+        "wall_before": 1279359526714949
+      },
+      {
+        "cpu": 4553661,
+        "wall_after": 1279359530060589,
+        "wall_before": 1279359530060108
+      },
+      {
+        "cpu": 4553661,
+        "wall_after": 1279359530156993,
+        "wall_before": 1279359530156853
+      },
+      {
+        "cpu": 4553661,
+        "wall_after": 1279359530983934,
+        "wall_before": 1279359530983724
+      }
+    ],
+    "status": "FAILED",
+    "wall_seconds": 30
+  },
+  "disposition": "All three formal attempts and the diagnostic remain failures. Their observations never enter the corrected65-process cohort or its estimates.",
+  "formal_failed_attempts": [
+    {
+      "cohort_statistics": null,
+      "failed_child": {
+        "child_cpu_us": 4937,
+        "child_system_us": 3947,
+        "child_user_us": 990,
+        "exit": 101,
+        "process_wall_ns": 5055793
+      },
+      "failed_stage": "tree-comparison-03-native",
+      "failed_trials": 1,
+      "functional_trials": 2,
+      "hardware": {
+        "architecture": "x86_64",
+        "build_affinity_cpus": 4,
+        "family": 26,
+        "model": 17,
+        "native_affinity_cpus": 1,
+        "native_affinity_scope": "single-worker checksum/exact clients and forced native qualification; state-oracle and timed affinities are separate",
+        "native_state_affinity_cpus": 4,
+        "owner_label": "AMD EPYC Zen 5 dev host",
+        "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+        "stepping": 0,
+        "streamed_controller_affinity_cpus": 1,
+        "streamed_total_active_cpus": 2,
+        "streamed_worker_affinity_cpus": 1,
+        "timed_controller_affinity_cpus": 1,
+        "timed_total_active_cpus": 2,
+        "timed_worker_affinity_cpus": 1,
+        "vendor": "AuthenticAMD"
+      },
+      "outer_receipt_sha256": "6f736696e07e08ca854f2b87f37f059bd8d1f14f7ac52c908c199905f121cba4",
+      "outer_seconds": 105.67518424009904,
+      "passed_stages": 58,
+      "reason": "Native metrics rejected its original four clock brackets. That first attempt did not print their values; no zero-delta value is inferred for it.",
+      "replay": "Run the main reproduction command with this exact revision and a fresh output directory; failures are conditional on Linux accounting and retained earlier logs.",
+      "rescues": 0,
+      "result_sha256": "23895e1729b27caebaa973ceb6ad47b922e0682eb1c3747e554f863da853be5f",
+      "revision": "0af3ff75c9bca7d359e6c2f049eecffc988d78af",
+      "status": "FAILED",
+      "successful_partial_observations": [
+        {
+          "actions": 128,
+          "batches": 192,
+          "block": 1,
+          "blocks": 64,
+          "calls": 1536,
+          "child_cpu_us": 2194602,
+          "child_instructions": 500736,
+          "clock_scope": "matched-consumer",
+          "closed": 0,
+          "collected_results": 1536,
+          "cpu_resolution_ns": 1,
+          "epochs": 64,
+          "events": 6144,
+          "input_unchanged": true,
+          "installed_roots": 1536,
+          "loop_cpu_ns": 2187619909,
+          "loop_wall_lower_ns": 2195551669,
+          "loop_wall_ns": 2195553182,
+          "mode": "k24",
+          "node_rows": 3072,
+          "originals": 0,
+          "phase": "warmup",
+          "position": 1,
+          "process_wall_ns": 2203139400,
+          "records_joined": true,
+          "reports": 3072,
+          "root_exclusive_instructions": 9216,
+          "root_inclusive_instructions": 509952,
+          "roots": 1536,
+          "s0_cpu": 899269,
+          "s0_wall_after": 1279224311456250,
+          "s0_wall_before": 1279224311455700,
+          "s1_cpu": 6438184,
+          "s1_wall_after": 1279224317463781,
+          "s1_wall_before": 1279224317463200,
+          "s2_cpu": 2194058093,
+          "s2_wall_after": 1279226513016382,
+          "s2_wall_before": 1279226513015450,
+          "s3_cpu": 2194058093,
+          "s3_wall_after": 1279226513202971,
+          "s3_wall_before": 1279226513202821,
+          "sampled": 3072,
+          "stage": "tree-comparison-01-k24",
+          "status": "FUNCTIONAL_PASS",
+          "stderr_digest": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stdout_digest": {
+            "bytes": 7979,
+            "sha256": "ddd9c069a2e5e44f2598f7f07f36eb98cfaca4a965b1e7aa9a580e26713cb5cd"
+          },
+          "timing_digest": {
+            "bytes": 441,
+            "sha256": "939f89a9ca7aa6b7f88315bcebdf7fbc2d7d0ee80d053817bc8f5f6c392c3dc1"
+          },
+          "trial": 1,
+          "wall_resolution_ns": 1,
+          "whole_cpu_ns": 2193158824,
+          "whole_wall_lower_ns": 2201746571,
+          "whole_wall_ns": 2201747271
+        },
+        {
+          "actions": 128,
+          "batches": 192,
+          "block": 1,
+          "blocks": 64,
+          "calls": 1536,
+          "child_cpu_us": 2177448,
+          "child_instructions": 500736,
+          "clock_scope": "matched-consumer",
+          "closed": 1792,
+          "collected_results": 1536,
+          "cpu_resolution_ns": 1,
+          "epochs": 64,
+          "events": 6144,
+          "input_unchanged": true,
+          "installed_roots": 1536,
+          "loop_cpu_ns": 2170102869,
+          "loop_wall_lower_ns": 2206241062,
+          "loop_wall_ns": 2206242945,
+          "mode": "k10",
+          "node_rows": 3072,
+          "originals": 0,
+          "phase": "warmup",
+          "position": 2,
+          "process_wall_ns": 2213509684,
+          "records_joined": true,
+          "reports": 1280,
+          "root_exclusive_instructions": 9216,
+          "root_inclusive_instructions": 509952,
+          "roots": 1536,
+          "s0_cpu": 794713,
+          "s0_wall_after": 1279226786838507,
+          "s0_wall_before": 1279226786837776,
+          "s1_cpu": 5944543,
+          "s1_wall_after": 1279226792621151,
+          "s1_wall_before": 1279226792620329,
+          "s2_cpu": 2176047412,
+          "s2_wall_after": 1279228998863274,
+          "s2_wall_before": 1279228998862213,
+          "s3_cpu": 2177041734,
+          "s3_wall_after": 1279228999050585,
+          "s3_wall_before": 1279228999050225,
+          "sampled": 1280,
+          "stage": "tree-comparison-02-k10",
+          "status": "FUNCTIONAL_PASS",
+          "stderr_digest": {
+            "bytes": 0,
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "stdout_digest": {
+            "bytes": 8112,
+            "sha256": "023e595aabff302d47b073e20bd2c941a30480d542f8dc9ab916592e458ba5c1"
+          },
+          "timing_digest": {
+            "bytes": 441,
+            "sha256": "d5fc6f204cefc0ffd7f6991f95c967db58c38c4a45315f6c1e03db591a4f6d8d"
+          },
+          "trial": 2,
+          "wall_resolution_ns": 1,
+          "whole_cpu_ns": 2176247021,
+          "whole_wall_lower_ns": 2212211718,
+          "whole_wall_ns": 2212212809
+        }
+      ],
+      "unrun_trials": 62,
+      "versions": {
+        "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+        "gcc": "11.5.0",
+        "git": "git version 2.52.0",
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rust": {
+          "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+          "host": "x86_64-unknown-linux-gnu",
+          "release": "1.97.1"
+        }
+      }
+    },
+    {
+      "cohort_statistics": null,
+      "failed_stage": "comparison-timer-controls",
+      "failed_trials": 0,
+      "functional_trials": 0,
+      "hardware": {
+        "architecture": "x86_64",
+        "build_affinity_cpus": 4,
+        "family": 26,
+        "model": 17,
+        "native_affinity_cpus": 1,
+        "native_affinity_scope": "single-worker checksum/exact clients and forced native qualification; state-oracle and timed affinities are separate",
+        "native_state_affinity_cpus": 4,
+        "owner_label": "AMD EPYC Zen 5 dev host",
+        "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+        "stepping": 0,
+        "streamed_controller_affinity_cpus": 1,
+        "streamed_total_active_cpus": 2,
+        "streamed_worker_affinity_cpus": 1,
+        "timed_controller_affinity_cpus": 1,
+        "timed_total_active_cpus": 2,
+        "timed_worker_affinity_cpus": 1,
+        "vendor": "AuthenticAMD"
+      },
+      "outer_receipt_sha256": "b7a6c6b057dbcafde006f5febc2615c88cb6553e8736d8a3f4dd02373aa2d487",
+      "outer_seconds": 98.10375208803453,
+      "passed_stages": 54,
+      "reason": "A basename-only private log collided with the preserved first campaign; no live timer control or timed trial began.",
+      "replay": "Run the main reproduction command with this exact revision and a fresh output directory; failures are conditional on Linux accounting and retained earlier logs.",
+      "rescues": 0,
+      "result_sha256": "4b637ae1040786ec2e3d94209cde3a5ace0bc8872c34ff80a9dc3de881979fd3",
+      "revision": "794ae10f71d42008017225daf2630534f711c856",
+      "status": "FAILED",
+      "successful_partial_observations": [],
+      "unrun_trials": 65,
+      "versions": {
+        "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+        "gcc": "11.5.0",
+        "git": "git version 2.52.0",
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rust": {
+          "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+          "host": "x86_64-unknown-linux-gnu",
+          "release": "1.97.1"
+        }
+      }
+    },
+    {
+      "cohort_statistics": null,
+      "completed_control_checks": 5,
+      "control_attempts": 6,
+      "failed_control": "closed-output",
+      "failed_stage": "comparison-timer-controls",
+      "failed_trials": 0,
+      "functional_trials": 0,
+      "hardware": {
+        "architecture": "x86_64",
+        "build_affinity_cpus": 4,
+        "family": 26,
+        "model": 17,
+        "native_affinity_cpus": 1,
+        "native_affinity_scope": "single-worker checksum/exact clients and forced native qualification; state-oracle and timed affinities are separate",
+        "native_state_affinity_cpus": 4,
+        "owner_label": "AMD EPYC Zen 5 dev host",
+        "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+        "stepping": 0,
+        "streamed_controller_affinity_cpus": 1,
+        "streamed_total_active_cpus": 2,
+        "streamed_worker_affinity_cpus": 1,
+        "timed_controller_affinity_cpus": 1,
+        "timed_total_active_cpus": 2,
+        "timed_worker_affinity_cpus": 1,
+        "vendor": "AuthenticAMD"
+      },
+      "outer_receipt_sha256": "898fe57485a11f7efbbd5c0b6edeeaf86f040ced5ae0bb865c3f159c7bf422d9",
+      "outer_seconds": 62.01164160086773,
+      "passed_stages": 54,
+      "reason": "The timeout fixture shared the timer process group. Group termination allowed the timer to reap its child before dying, so the required descendant rescue was not established. Fixed by detaching the child before it closes output; the original assertion remains.",
+      "replay": "Run the main reproduction command with this exact revision and a fresh output directory; failures are conditional on Linux accounting and retained earlier logs.",
+      "rescues": 0,
+      "result_sha256": "c4fadd9d98d45323574f5fa63b679b58b84bcdad69cedeade1b02e7bf6ba24a9",
+      "revision": "6c357b027be49720019ce8e01f5342e63ceec0e9",
+      "status": "FAILED",
+      "successful_partial_observations": [],
+      "unrun_trials": 65,
+      "versions": {
+        "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+        "gcc": "11.5.0",
+        "git": "git version 2.52.0",
+        "python": [
+          3,
+          12,
+          15
+        ],
+        "rust": {
+          "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+          "host": "x86_64-unknown-linux-gnu",
+          "release": "1.97.1"
+        }
+      }
+    }
+  ],
+  "schema": 1
+}
