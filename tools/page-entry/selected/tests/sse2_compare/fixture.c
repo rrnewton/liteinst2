@@ -3,7 +3,11 @@
 #define fixture_main li2_unchanged_generic_fixture_main
 #include "tests/generic/fixture.c"
 #undef fixture_main
+#ifdef LI2_PMAXUD_FIXTURE
+#include "../pmaxud/cases.inc"
+#else
 #include "cases.inc"
+#endif
 #ifndef SSE2_GROUP
 #error SSE2_GROUP must select one of the two bounded cohorts
 #endif
@@ -29,6 +33,9 @@ static void sse2_inputs(struct sample *s) {
         if(v->memory)memcpy((void *)data_page,v->b,16);
         else memcpy(sse2_vectors[v->source],v->b,16);
     }
+#ifdef LI2_PMAXUD_FIXTURE
+    pmaxud_inputs(s);
+#endif
     /* inputs() retains the genuine PROT_NONE data_fault RSI for control 1. */
 }
 static void sse2_prepare(struct sample *s,unsigned index) {
@@ -95,6 +102,7 @@ static void sse2_effects(struct sample *s) {
     for(size_t i=0;i<s->count;i++)need(actual_protection(s->pages[i].address,0)==PROT_READ,619);
     need(s->continuation.complete&&actual_protection(s->expected_post,0)==PROT_READ,620);
 }
+#ifndef LI2_PMAXUD_FIXTURE
 static void sse2_failure(void *context,const struct li2_step_owner *o) {
     struct sample *s=context;
     if(control==1&&s==&negative_sample) {
@@ -127,6 +135,7 @@ static void sse2_failure(void *context,const struct li2_step_owner *o) {
        revoke+sync, memory and held-fetch prefix, then the owner exits 125. */
     failure(context,o);
 }
+#endif
 static void sse2_pair(struct sample *s) {
     current=s;fixture_target=s->pc;sse2_inputs(s);borrow(s);lane=0;native_phase=0;fixture_enter();
     s->initial_flags=fixture_flags;s->live[0]=fixture_live_before;s->live[1]=fixture_live_after;
@@ -142,7 +151,11 @@ static void sse2_pair(struct sample *s) {
     struct li2_step_request request={.decoded=s->decoded,.page_count=s->count,.original_flags=s->initial_flags};
     for(size_t i=0;i<s->count;i++)request.pages[i]=(struct li2_step_page){s->pages[i].address,
         s->pages[i].allocation,s->pages[i].generation,s->pages[i].offset,PROT_READ,PROT_READ|PROT_EXEC};
+#ifdef LI2_PMAXUD_FIXTURE
+    struct li2_tf_hooks hooks={{s,authenticate,pmaxud_failure},continue_closed};
+#else
     struct li2_tf_hooks hooks={{s,authenticate,sse2_failure},continue_closed};
+#endif
     int error=li2_tf_arm(&s->owner,&session,&hooks,&request);
     if(error)li2_tf_abort(&s->owner,(unsigned)error,0);
     lane=1;fixture_enter();need(!(s==&negative_sample),105);
@@ -178,6 +191,7 @@ static void sse2_refusals(void) {
     }
     result.failed_refusal=SIZE_MAX;
 }
+#ifndef LI2_PMAXUD_FIXTURE
 int fixture_main(unsigned long *stack) {
     _Static_assert(sizeof(result)+sizeof(samples)+sizeof(negative_sample)+sizeof(refused_last)<16*1024*1024,
                    "unchanged complete private record bound");
@@ -206,3 +220,4 @@ int fixture_main(unsigned long *stack) {
 #endif
     return 0;
 }
+#endif

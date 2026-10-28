@@ -1,0 +1,791 @@
+{
+  "binaries_sha256": "d84bc6990bf8b6e9fe53bc5f493bae810a59adf338e5abd72aa0310c7edfe08a",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_artifacts": {
+    "bridge-selected.so": {
+      "bytes": 1974432,
+      "sha256": "111691743b0e7b4b1ea4e9f57677e8d9051960e00a5f0477a2f09c40f4a5c398"
+    },
+    "cc-version.txt": {
+      "bytes": 248,
+      "sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+    },
+    "decoder-cargo.txt": {
+      "bytes": 36,
+      "sha256": "1aedaa9cce116919d39b1eb303a58865771582bc24fc259aa8e26cb212e0f59e"
+    },
+    "decoder-rustc.txt": {
+      "bytes": 196,
+      "sha256": "b2bdf493bcf6d1dc55181a0efc2774b6d9cf7bf5c8dcc5bed592c994b2ad38c4"
+    },
+    "decoder.a": {
+      "bytes": 11029860,
+      "sha256": "957c11c63cca96928073da6b63207b6abdb93d79d71f067e2799368ac9917916"
+    },
+    "decoder.d": {
+      "bytes": 749,
+      "sha256": "32520e5993e515d1eee6aaf3e95a25d6df540b0d2b83a53ff570d777e3884e45"
+    },
+    "generic-observe": {
+      "bytes": 1503016,
+      "sha256": "a0f7992d206195f0764cec1fe1306a0547ab07c33cd58c788fe8fdb936778b4a"
+    },
+    "observe": {
+      "bytes": 1502040,
+      "sha256": "5e45607a01866ba150c69ee78d061a0210e1f4a39fff83a902762b9b26a37765"
+    }
+  },
+  "build_status": "passed",
+  "cases": [
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "header": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 83,
+        "sample_bytes": 720960,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "group0",
+      "operation_completed": true,
+      "process_outcome": "completed finite native/TF pair cohort",
+      "record": {
+        "bytes": 15861296,
+        "sha256": "9431afed4c29a88b1c3494aedb3763b9c61f3c18ee9be5ccbd3be4550e27131e"
+      },
+      "verified_memory_fault": false
+    },
+    {
+      "accepted": true,
+      "actual_exit": 0,
+      "header": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 83,
+        "sample_bytes": 720960,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "group1",
+      "operation_completed": true,
+      "process_outcome": "completed finite native/TF pair cohort",
+      "record": {
+        "bytes": 15861296,
+        "sha256": "f101b02b3055a04824cd280859f4c2f4350d61ef73695df27e39f67071c27c39"
+      },
+      "verified_memory_fault": false
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "header": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 83,
+        "sample_bytes": 720960,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "punpcklbw-load-fault",
+      "operation_completed": false,
+      "process_outcome": "Failed original-PC aligned memory source read; actual native/stepped #PF, unchanged full state/memory and revoke/sync/held-source prefix required. No completion credit or inferred memory-access width.",
+      "record": {
+        "bytes": 15861296,
+        "sha256": "940eece6dad1f1c708fefdafad6ead9eeea57a2938eaf6bfdcd035cb6b1051b8"
+      },
+      "verified_memory_fault": true
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "header": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 83,
+        "sample_bytes": 720960,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "punpcklwd-load-fault",
+      "operation_completed": false,
+      "process_outcome": "Failed original-PC aligned memory source read; actual native/stepped #PF, unchanged full state/memory and revoke/sync/held-source prefix required. No completion credit or inferred memory-access width.",
+      "record": {
+        "bytes": 15861296,
+        "sha256": "a394f323626dc2eee0f729db2879776b17104cb384031a75e72860b37bf3c3dd"
+      },
+      "verified_memory_fault": true
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "header": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 19,
+        "refusals": 83,
+        "sample_bytes": 720960,
+        "version": 1,
+        "xcr0": 743,
+        "xsave_bytes": 2440
+      },
+      "name": "pshufd-load-fault",
+      "operation_completed": false,
+      "process_outcome": "Failed original-PC aligned memory source read; actual native/stepped #PF, unchanged full state/memory and revoke/sync/held-source prefix required. No completion credit or inferred memory-access width.",
+      "record": {
+        "bytes": 15861296,
+        "sha256": "9bf25b0428f8bcb6eb575fe0051cd1cf55cbe96e9a7f5bc6846a60c0787a7368"
+      },
+      "verified_memory_fault": true
+    }
+  ],
+  "cases_sha256": "42da0e71ef8b647470d073ab1c61ab9bb0fa9c7f119ab8874679fa7c51d6fb16",
+  "catalogue": {
+    "counts": {
+      "crossing_pairs": 18,
+      "distinct_register": 12,
+      "memory": 12,
+      "new_pairs": 36,
+      "page_ending_pairs": 18,
+      "pshufd": 12,
+      "punpcklbw": 12,
+      "punpcklwd": 12,
+      "self_alias": 12
+    },
+    "rows_sha256": "07bcb8e9e27c62319dd3b70f7601cddd7b814419c0319e1466a51330abeba985",
+    "source": {
+      "bytes": 12375,
+      "sha256": "a06e54284a5a89b0da4a992c4129a592eac12a5e7cdbdb1f9478dfe8938c1252"
+    }
+  },
+  "command_count": 24,
+  "command_recipe": {
+    "actual_commands": "Complete ordered argv, environments and captures are retained privately and bound by commands_sha256.",
+    "control_variable": "LI2_STRING_SETUP_CONTROL",
+    "fixture_build": [
+      "sh",
+      "tools/page-entry/selected/tests/sse2_string_setup/build.sh",
+      "<retained decoder.a>",
+      "<private run directory>",
+      "tools/page-entry/selected"
+    ],
+    "native": [
+      [
+        "sse2-string-setup-0"
+      ],
+      [
+        "sse2-string-setup-1"
+      ],
+      [
+        "sse2-string-setup-0"
+      ],
+      [
+        "sse2-string-setup-0"
+      ],
+      [
+        "sse2-string-setup-0"
+      ]
+    ],
+    "native_environment_controls": [
+      "absent",
+      "absent",
+      "punpcklbw-load-fault",
+      "punpcklwd-load-fault",
+      "pshufd-load-fault"
+    ],
+    "selected_build": [
+      "sh",
+      "tools/page-entry/selected/build.sh"
+    ]
+  },
+  "commands_sha256": "2c16f3f9deb911552a309f99d3076c3d4b3ca63170bda829b4423a6b16c95277",
+  "cpu": 1,
+  "elf": {
+    "sse2-string-setup-0": {
+      "dynamic": false,
+      "interpreter": false,
+      "relocations": 0,
+      "tls": false,
+      "type": "ET_EXEC"
+    },
+    "sse2-string-setup-1": {
+      "dynamic": false,
+      "interpreter": false,
+      "relocations": 0,
+      "tls": false,
+      "type": "ET_EXEC"
+    }
+  },
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "61aa7f537b389f088b439e0591a690225f2ae6fb",
+  "failure_type": null,
+  "final_error_count": 0,
+  "fixtures": {
+    "sse2-string-setup-0": {
+      "bytes": 1844232,
+      "sha256": "da197e36d6fb98b2bd4cc43f40c03a4f29b7c2152ca726176712e6ce97eb661f"
+    },
+    "sse2-string-setup-1": {
+      "bytes": 1843640,
+      "sha256": "826e6a3c5055b76238c5b576a773bdc84cfa60b83eeed1f8a6e7815c0663390b"
+    }
+  },
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 1,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_sha256": "3f359f9ee51a1e8d5a4fe6cfa03103228485c16f4ef7cb8387015aac56d4a39f",
+  "native_commands": [
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15861296,
+          "sha256": "9431afed4c29a88b1c3494aedb3763b9c61f3c18ee9be5ccbd3be4550e27131e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 158,
+          "sha256": "d1c667ce354ff88b3a4fec6a0f6426b420ad5d487e268a312a52c207bb585cbd"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 22692240,
+      "environment_delta": {},
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "group0",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15861296,
+          "sha256": "f101b02b3055a04824cd280859f4c2f4350d61ef73695df27e39f67071c27c39"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 158,
+          "sha256": "cc9e2ee105cfb606470e8b9b7c08c8c6b492105dc1f0ff8671f29fef34e107ae"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 22530318,
+      "environment_delta": {},
+      "exit": 0,
+      "expected_exit": 0,
+      "name": "group1",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15861296,
+          "sha256": "940eece6dad1f1c708fefdafad6ead9eeea57a2938eaf6bfdcd035cb6b1051b8"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 26,
+          "sha256": "4a4cb301117318ed718f1f9f3c48718e2d964428d4ba8671f67315183272e00b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 10561492,
+      "environment_delta": {
+        "LI2_STRING_SETUP_CONTROL": "punpcklbw-load-fault"
+      },
+      "exit": 125,
+      "expected_exit": 125,
+      "name": "punpcklbw-load-fault",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15861296,
+          "sha256": "a394f323626dc2eee0f729db2879776b17104cb384031a75e72860b37bf3c3dd"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 26,
+          "sha256": "4a4cb301117318ed718f1f9f3c48718e2d964428d4ba8671f67315183272e00b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 11007452,
+      "environment_delta": {
+        "LI2_STRING_SETUP_CONTROL": "punpcklwd-load-fault"
+      },
+      "exit": 125,
+      "expected_exit": 125,
+      "name": "punpcklwd-load-fault",
+      "reaped": true,
+      "timed_out": false
+    },
+    {
+      "captures": {
+        "preparation": {
+          "bytes": 2213,
+          "sha256": "ff5ebd87097dc311b79140574b78894015c77270ec75971eeda5c359cb0d791c"
+        },
+        "record": {
+          "bytes": 15861296,
+          "sha256": "9bf25b0428f8bcb6eb575fe0051cd1cf55cbe96e9a7f5bc6846a60c0787a7368"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 26,
+          "sha256": "4a4cb301117318ed718f1f9f3c48718e2d964428d4ba8671f67315183272e00b"
+        }
+      },
+      "cleanup_error_count": 0,
+      "duration_ns": 10280922,
+      "environment_delta": {
+        "LI2_STRING_SETUP_CONTROL": "pshufd-load-fault"
+      },
+      "exit": 125,
+      "expected_exit": 125,
+      "name": "pshufd-load-fault",
+      "reaped": true,
+      "timed_out": false
+    }
+  ],
+  "private_receipt": {
+    "bytes": 183241,
+    "sha256": "b51ee5507078bf200e6a9a31078707e0fec3955a2df82d15516572864a69ece9"
+  },
+  "profile": "page-selected-sse2-string-setup-oracle-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_sse2_string_setup.py",
+    "--expect-revision",
+    "61aa7f537b389f088b439e0591a690225f2ae6fb"
+  ],
+  "schema_version": 1,
+  "scope": "Three additive legacy SSE2 unpack/shuffle Codes in two 19-pair cohorts: 36 new native/TF pairs plus two startup pairs, 47 old and 36 new supplied encoding refusals. Three actual native/stepped memory-fault comparisons remain failed operations. Complete source-bound C state predicates and private raw records are retained. Original generic, integer, padding, XGETBV, REP and connected suites remain required separately. MMX, VEX, EVEX and other unpack/shuffle Codes remain excluded. No every-encoding, loader, performance or full-B2 claim.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "61aa7f537b389f088b439e0591a690225f2ae6fb",
+    "source_manifest_sha256": "4a1f358734a1473e6ef7e81eca47525a5888ded04ad4ab93d68304e1c3d37378",
+    "tracked_clean": true,
+    "tree": "4d86fcabcc4ec9ffebf5d2d5fa2f50ad2f3463e0"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261027T215145.808998Z",
+  "status": "passed",
+  "tool_hashes": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "cp": {
+      "bytes": 144400,
+      "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustup": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "totals": {
+    "actual_native_failed_operations": 3,
+    "actual_stepped_failed_operations": 3,
+    "additional_negative_command_selftests": 3,
+    "distinct_register_pairs": 12,
+    "executed_refusal_checks": 415,
+    "generic_pairs": 36,
+    "memory_pairs": 12,
+    "new_crossing_pairs": 18,
+    "new_page_ending_pairs": 18,
+    "new_refusal_encodings": 36,
+    "old_refusal_encodings": 47,
+    "positive_pairs": 38,
+    "positive_selftest_pairs": 2,
+    "pshufd_pairs": 12,
+    "punpcklbw_pairs": 12,
+    "punpcklwd_pairs": 12,
+    "self_alias_pairs": 12,
+    "string_setup_pairs": 36,
+    "supplied_refusal_encodings": 83,
+    "verified_memory_fault_commands": 3
+  }
+}

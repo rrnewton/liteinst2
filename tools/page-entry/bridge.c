@@ -1,5 +1,8 @@
 #include "bridge.h"
 #include "sha256.h"
+#ifdef LI2_MAPS_PHASE_REUSE
+#include "selected/maps_phase.h"
+#endif
 
 struct metadata {
     char magic[8];
@@ -15,7 +18,13 @@ static struct image bridge_image;
 const char *const *bridge_environment(void) { return initial_environment; }
 const struct image *bridge_runtime_image(void) { return &bridge_image; }
 
+#ifdef LI2_MAPS_PHASE_REUSE
+long raw(long n,long a,long b,long c,long d,long e,long f) {
+    return li2_maps_raw(li2_raw6,n,a,b,c,d,e,f);
+}
+#else
 long raw(long n,long a,long b,long c,long d,long e,long f) { return li2_raw6(n,a,b,c,d,e,f); }
+#endif
 static int failed(long r) { return (unsigned long)r >= (unsigned long)-4095; }
 void copy(void *v,const void *w,size_t n) { unsigned char *d=v;const unsigned char *s=w;while(n--)*d++=*s++; }
 void *memcpy(void *d,const void *s,size_t n) { copy(d,s,n);return d; }

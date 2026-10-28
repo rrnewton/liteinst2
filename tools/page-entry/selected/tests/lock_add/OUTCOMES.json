@@ -1,0 +1,241 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "case_table": "CASES.json/cases.inc: four independent arithmetic classes times eight ending/crossing positions, one bounded source/data reservation",
+  "commands": [
+    {
+      "argv": [
+        "lock-add-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 62,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_LOCK_SUB_PROMOTED_ACCEPTANCES 1\nLI2_LOCK_ADD_TF_PASS group=0 pairs=17 lock_add=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=15 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "lock-add-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 17,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 17,
+        "refusals": 62,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_LOCK_SUB_PROMOTED_ACCEPTANCES 1\nLI2_LOCK_ADD_TF_PASS group=1 pairs=17 lock_add=16 selftest=1 old_refusal_bytes=47 new_refusal_bytes=15 full_state=17 full_memory=17 live_endpoints=17\n"
+    },
+    {
+      "argv": [
+        "lock-add-0"
+      ],
+      "environment_delta": {
+        "LI2_LOCK_ADD_CONTROL": "no-access"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 62,
+        "version": 1
+      },
+      "name": "no-access",
+      "process_outcome": "Genuine failed original-PC atomic RMW on no-access m32; native and stepped #PF, complete unchanged state/data and revoke/sync/held-borrow prefix required. No operation completion credit.",
+      "required_record": {
+        "code": 248,
+        "fetch_held": 1,
+        "memory_bytes": 4,
+        "native_after_ERR": 6,
+        "native_after_TRAPNO": 14,
+        "native_complete": 0,
+        "native_fault": 1,
+        "negative_verified": 1,
+        "owner_continuation_complete": 0,
+        "owner_continuation_started": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_phase": 6,
+        "owner_revoke_sync": 0,
+        "owner_revoke_sync_started": 1,
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_signal_code": 2,
+        "owner_signal_errno": 0,
+        "owner_signal_number": 11,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "source_pages": 2,
+        "step_endpoint_seen": 0
+      },
+      "stderr": "",
+      "stdout": "LI2_LOCK_SUB_PROMOTED_ACCEPTANCES 1\nLI2_TF_EXPECTED_FAILURE 7\n"
+    },
+    {
+      "argv": [
+        "lock-add-0"
+      ],
+      "environment_delta": {
+        "LI2_LOCK_ADD_CONTROL": "read-only"
+      },
+      "exit": 125,
+      "header_equals": {
+        "completed": 1,
+        "control": 1,
+        "decoder_result": 0,
+        "expected_failure_verified": 1,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 11,
+        "owner_detail_negative": 0,
+        "owner_failure": 7,
+        "pairs": 17,
+        "refusals": 62,
+        "version": 1
+      },
+      "name": "read-only",
+      "process_outcome": "Genuine failed original-PC atomic RMW on read-only m32; native and stepped #PF, complete unchanged state/data and revoke/sync/held-borrow prefix required. No operation completion credit.",
+      "required_record": {
+        "code": 248,
+        "fetch_held": 1,
+        "memory_bytes": 4,
+        "native_after_ERR": 7,
+        "native_after_TRAPNO": 14,
+        "native_complete": 0,
+        "native_fault": 1,
+        "negative_verified": 1,
+        "owner_continuation_complete": 0,
+        "owner_continuation_started": 0,
+        "owner_opened": [
+          1,
+          1
+        ],
+        "owner_phase": 6,
+        "owner_revoke_sync": 0,
+        "owner_revoke_sync_started": 1,
+        "owner_revoked": [
+          1,
+          1
+        ],
+        "owner_signal_code": 2,
+        "owner_signal_errno": 0,
+        "owner_signal_number": 11,
+        "owner_trace_seen": 0,
+        "owner_unexpected_frame_observed": 1,
+        "source_pages": 2,
+        "step_endpoint_seen": 0
+      },
+      "stderr": "",
+      "stdout": "LI2_LOCK_SUB_PROMOTED_ACCEPTANCES 1\nLI2_TF_EXPECTED_FAILURE 7\n"
+    }
+  ],
+  "literal_effects": "Exactly four data bytes and OF/SF/ZF/AF/CF/PF; all GPRs, other logical flags, initialized kernel/live FP, full stack and other data bytes unchanged. Complete old native/TF comparator stays mandatory.",
+  "native_pairs_per_group": [
+    17,
+    17
+  ],
+  "negative_endpoint": "Genuine original-PC RMW #PF with ERR6 for populated PROT_NONE or ERR7 for populated read-only; both source pages revoke and synchronize, no TRACE/continuation/completion. Four complete failed-operand page snapshots stay byte-exact.",
+  "new_lock_add_pairs_total": 32,
+  "new_refusal_count": 15,
+  "old_cohorts": "All original generic, integer, padding, XGETBV and REP sources/commands/predicates remain separately required.",
+  "old_refusal_count": 47,
+  "promoted_acceptances_per_command": 1,
+  "promotion": "Original neighbor row3 f0832d0000000001 now requires exact positive Code263 classification; all16 rows stay, other15 remain refused. Paired new SUB native oracle is separately required. Historical receipts remain unchanged.",
+  "prospective_only": true,
+  "record_extent": "header_bytes + 22*actual sample_bytes + 40 + 16512-byte failed-operand trailer",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Canonical f0 83 05 disp32 imm8 original-PC atomic ADD m32; finite singleton native/TF qualification",
+  "trailer_bytes": 16512,
+  "trailer_header_fields": [
+    "magic",
+    "version",
+    "bytes",
+    "control",
+    "operand",
+    "page",
+    "requested_protection",
+    "input",
+    "before_native_protection",
+    "before_step_protection",
+    "after_native_protection",
+    "after_step_protection",
+    "native_captured",
+    "step_captured",
+    "native_error",
+    "step_error"
+  ],
+  "trailer_header_format": "<16Q"
+}

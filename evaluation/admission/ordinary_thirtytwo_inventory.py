@@ -16,7 +16,7 @@ from parsing import require
 PRE_ORDINARY_THIRTYTWO_CORPUS_SHA256 = '5088c4e4cc75288a7a7b13498bbcb25846fce920b3379f77b1ce0dbbd79891fb'
 CURRENT_ORDINARY_THIRTYTWO_CORPUS_SHA256 = 'bf3808f67ced232b2f72d1b4bbb4fcd68224358d373f79b3cf8d58bf235a08fa'
 RUST_METHODS = {'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/thirtytwo.rs': ('runtime_ordinary_thirty_two_nops_fit_default_budget_and_retain_exact_history',)}
-SOURCE_SHA256 = {'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/isolation.rs': 'c323e377e67a1ee6f9b2c347d8dea1da2cdf820a8a6786734542307403c4d1cf',
+SOURCE_SHA256 = {'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/isolation.rs': '1d76c72dfcf35748ba0ea2ce45be4b9cacfc3f2f059ab69ccda85162f00b796d',
  'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/isolation/tests.rs': 'f6bfa57b93be33f518a6b82e56d186e233ff9bb529cf82dbe204fd45e665caaa',
  'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests.rs': '828598ae114f61df73ce811e2693769afeb383995d037eac5950626bfda6c213',
  'crates/liteinst-launch/src/linux/remote/dynamic/owner/admission/runtime/ordinary/native_tests/thirtytwo.rs': 'ea474d9f54592ba0b65f2abf52f9c42a1f587ebad31a95d7a905d66e570792ec'}

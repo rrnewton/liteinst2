@@ -1,0 +1,201 @@
+{
+  "version": 1,
+  "scope": "prospective actual handler-phase maps controls; no execution or performance claim",
+  "commands": [
+    {
+      "mode": 0,
+      "name": "shared-rows-unknown-call",
+      "argv": [
+        "maps-phase",
+        "0"
+      ],
+      "exit_code": 0,
+      "stdout": "LI2_MAPS_PHASE_OK\n",
+      "stderr": "",
+      "operation_failed": 0,
+      "fixture_error": 0,
+      "verified": 1,
+      "events": 1,
+      "actual_source_changes": 0,
+      "actual_signals": 0,
+      "nonissued_error_injections": 0,
+      "supplied_state_injections": 0
+    },
+    {
+      "mode": 1,
+      "name": "actual-protection-change",
+      "argv": [
+        "maps-phase",
+        "1"
+      ],
+      "exit_code": 125,
+      "stdout": "LI2_MAPS_PHASE_EXPECTED_FAILURE\n",
+      "stderr": "",
+      "operation_failed": 1,
+      "fixture_error": 0,
+      "verified": 1,
+      "events": 1,
+      "actual_source_changes": 0,
+      "actual_signals": 0,
+      "nonissued_error_injections": 0,
+      "supplied_state_injections": 0
+    },
+    {
+      "mode": 2,
+      "name": "actual-partial-mprotect",
+      "argv": [
+        "maps-phase",
+        "2"
+      ],
+      "exit_code": 125,
+      "stdout": "LI2_MAPS_PHASE_EXPECTED_FAILURE\n",
+      "stderr": "",
+      "operation_failed": 1,
+      "fixture_error": 0,
+      "verified": 1,
+      "events": 1,
+      "actual_source_changes": 0,
+      "actual_signals": 0,
+      "nonissued_error_injections": 0,
+      "supplied_state_injections": 0
+    },
+    {
+      "mode": 3,
+      "name": "actual-execution-boundary",
+      "argv": [
+        "maps-phase",
+        "3"
+      ],
+      "exit_code": 0,
+      "stdout": "LI2_MAPS_PHASE_OK\n",
+      "stderr": "",
+      "operation_failed": 0,
+      "fixture_error": 0,
+      "verified": 1,
+      "events": 2,
+      "actual_source_changes": 0,
+      "actual_signals": 0,
+      "nonissued_error_injections": 0,
+      "supplied_state_injections": 0
+    },
+    {
+      "mode": 4,
+      "name": "actual-nested-signal",
+      "argv": [
+        "maps-phase",
+        "4"
+      ],
+      "exit_code": 125,
+      "stdout": "LI2_MAPS_PHASE_EXPECTED_FAILURE\n",
+      "stderr": "",
+      "operation_failed": 1,
+      "fixture_error": 0,
+      "verified": 1,
+      "events": 2,
+      "actual_source_changes": 0,
+      "actual_signals": 1,
+      "nonissued_error_injections": 0,
+      "supplied_state_injections": 0
+    },
+    {
+      "mode": 5,
+      "name": "actual-source-corruption",
+      "argv": [
+        "maps-phase",
+        "5"
+      ],
+      "exit_code": 125,
+      "stdout": "LI2_MAPS_PHASE_EXPECTED_FAILURE\n",
+      "stderr": "",
+      "operation_failed": 1,
+      "fixture_error": 0,
+      "verified": 1,
+      "events": 1,
+      "actual_source_changes": 1,
+      "actual_signals": 0,
+      "nonissued_error_injections": 0,
+      "supplied_state_injections": 0
+    },
+    {
+      "mode": 6,
+      "name": "nonissued-adapter-error",
+      "argv": [
+        "maps-phase",
+        "6"
+      ],
+      "exit_code": 125,
+      "stdout": "LI2_MAPS_PHASE_EXPECTED_FAILURE\n",
+      "stderr": "",
+      "operation_failed": 1,
+      "fixture_error": 0,
+      "verified": 1,
+      "events": 1,
+      "actual_source_changes": 0,
+      "actual_signals": 0,
+      "nonissued_error_injections": 1,
+      "supplied_state_injections": 0
+    },
+    {
+      "mode": 7,
+      "name": "invalidation-counter-saturation",
+      "argv": [
+        "maps-phase",
+        "7"
+      ],
+      "exit_code": 125,
+      "stdout": "LI2_MAPS_PHASE_EXPECTED_FAILURE\n",
+      "stderr": "",
+      "operation_failed": 1,
+      "fixture_error": 0,
+      "verified": 1,
+      "events": 1,
+      "actual_source_changes": 0,
+      "actual_signals": 0,
+      "nonissued_error_injections": 0,
+      "supplied_state_injections": 1
+    },
+    {
+      "mode": 8,
+      "name": "mutation-epoch-saturation",
+      "argv": [
+        "maps-phase",
+        "8"
+      ],
+      "exit_code": 125,
+      "stdout": "LI2_MAPS_PHASE_EXPECTED_FAILURE\n",
+      "stderr": "",
+      "operation_failed": 1,
+      "fixture_error": 0,
+      "verified": 1,
+      "events": 1,
+      "actual_source_changes": 0,
+      "actual_signals": 0,
+      "nonissued_error_injections": 0,
+      "supplied_state_injections": 1
+    }
+  ],
+  "bounds": {
+    "external_cpus": 1,
+    "cpu_seconds": 5,
+    "address_space_bytes": 536870912,
+    "file_bytes": 16777216,
+    "wall_seconds": 15,
+    "core_bytes": 0
+  },
+  "record": {
+    "symbol": "li2_maps_record",
+    "type": "struct record",
+    "magic": 13880515257059660,
+    "version": 1,
+    "extent": "exact retained ELF symbol size and DWARF fields; no missing or trailing bytes",
+    "full_private_record_required": true
+  },
+  "old_regressions": {
+    "positive_processes": 4,
+    "semantic_pairs": 18,
+    "negative_processes": 14,
+    "original_expected_errors_and_predicates_unchanged": true
+  },
+  "required": "All source assertions plus independent retained-record replay; mutation and injected-operation failures remain exit125/operation_failed=1; no timing credit.",
+  "state_controls": "Only finite build defines LI2_MAPS_PHASE_TEST; one real internal counter is set to UINT64_MAX, then real raw/query paths must refuse 303 without I/O or wrap. Not a kernel error or successful operation."
+}

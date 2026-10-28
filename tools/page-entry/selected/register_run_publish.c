@@ -3,7 +3,13 @@
 #include <sys/mman.h>
 #include <sys/syscall.h>
 
+#ifdef LI2_MAPS_PHASE_REUSE
+/* This boundary also covers named nonissued raw-failure adapters. The real
+   bridge has its own hook; duplicate invalidation never duplicates I/O. */
+#define RAW(n,a,b,c,d,e,f) li2_maps_raw(li2_step_raw,n,(long)(a),(long)(b),(long)(c),(long)(d),(long)(e),(long)(f))
+#else
 #define RAW(n,a,b,c,d,e,f) li2_step_raw(n,(long)(a),(long)(b),(long)(c),(long)(d),(long)(e),(long)(f))
+#endif
 _Static_assert(LI2_RUN_CACHE_PAGES==64 && LI2_RUN_CACHE_BYTES==262144,"fixed arena");
 _Static_assert(LI2_RUN_CODE_BYTES<LI2_STEP_PAGE,"one immutable publication per page");
 struct li2_run_publication {
@@ -36,6 +42,10 @@ static int same(const void *a,const void *b,size_t n) {
 }
 static int kernel_error(long x) {return x<0 && x>=-4095;}
 static int error(struct li2_run_cache *c,unsigned code,long detail) {
+#ifdef LI2_MAPS_PHASE_REUSE
+    li2_maps_phase_fail();
+#endif
+
     if(!c->diagnostic.first_error){c->diagnostic.first_error=code;c->diagnostic.first_detail=detail;}
     c->diagnostic.phase=LI2_CACHE_FAILED;return (int)c->diagnostic.first_error;
 }

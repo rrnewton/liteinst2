@@ -1,0 +1,101 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "case_table": "Literal cases.inc: two instructions, five counts 0/1/15/16/255, XMM1/XMM9, ending and crossing placements.",
+  "commands": [
+    {
+      "argv": [
+        "sse2-byte-shift-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 77,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_BYTE_SHIFT_TF_PASS group=0 pairs=21 shifts=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=30 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "argv": [
+        "sse2-byte-shift-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 77,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_BYTE_SHIFT_TF_PASS group=1 pairs=21 shifts=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=30 full_state=21 full_memory=21 live_endpoints=21\n"
+    }
+  ],
+  "literal_effects": "Only the selected low 16 XMM bytes may change. Exact literal shifts or zeroing, all other initialized FP/live XSAVE bytes (including upper vectors), all GPR/RSP/flags/bases/selectors/stack/data remain exact. Original comparator and assembly are unchanged.",
+  "native_pairs_per_group": [
+    21,
+    21
+  ],
+  "negative_endpoint": "No target memory operand exists in these legacy forms. Thirty malformed/nonlegacy neighbors are supplied classification refusals, not executed failures. Original actual-fault suites remain required separately.",
+  "new_refusal_count": 30,
+  "new_sse2_pairs_total": 40,
+  "old_cohorts": "All original generic, integer, padding, XGETBV and REP sources/commands/predicates remain separately required.",
+  "old_refusal_count": 47,
+  "prospective_only": true,
+  "record_extent": "header_bytes + 22 * actual_DWARF_sample_bytes + 40; each group uses all21 original sample slots and leaves the negative sample zero.",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Two legacy register-only PSLLDQ/PSRLDQ codes; finite original-address native/TF oracle. No every-prefix, loader completion, performance or full-B2 claim."
+}

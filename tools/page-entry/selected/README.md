@@ -25,7 +25,7 @@ and its output names remain unchanged. A caller can explicitly use
 and the existing sealed-namespace `exec-loader` command with that carrier.
 
 Canonical NOP and register/immediate MOV retain their original typed owner.
-A separate owner executes a closed set of 544 decoder instruction codes at
+A separate owner executes a closed set of 564 decoder instruction codes at
 their original addresses: integer arithmetic and memory access, stack operations,
 near branches/CALL/RET, integer shifts/rotates, multiply/divide, conditional
 results, bit operations/exchanges, and selected SSE2 data operations. The CPU supplies the
@@ -179,14 +179,18 @@ builds the current product sources and retains raw records privately. The
 public receipt records actual iteration counts and preserves the fault as a
 failed operation.
 
-`tests/padding` qualifies the exact 1–10-byte canonical NOP palette, including
-`66 2e 0f 1f 84 00 00 00 00 00`. This single additional ten-byte encoding does
-not permit segment prefixes on other instructions. Run
+`tests/padding` covers the exact 1–10-byte palette and the observed eleven-byte
+`66 66 2e 0f 1f 84 00 00 00 00 00`, without permitting other repeated or segment
+prefixes. Run
 `python3 evaluation/inprocess/page_selected_padding.py --expect-revision REVISION`
-on one reserved CPU for twenty full-state native/stepped pairs: page-end
-placements and all nine splits of the ten-byte form. It retains the genuine
-startup pair, all 47 old refusal controls and twelve additional near-neighbor
-refusals. The original generic oracle, its actual failed-operation controls and
+on one reserved CPU. Two bounded processes retain the original twenty pairs and
+add eleven full-state native/stepped pairs: the new form ending at a page boundary
+and all ten crossing splits, plus two genuine startup pairs. Historical padding
+refusal entry two is intentionally promoted to accepted classification and these
+positive cases; its earlier refusal receipt stays historical. All 47 generic and
+the other eleven padding refusals remain, with two new neighbors (one extra 66 and
+a changed displacement) still refused. The complete record layout and resource
+bounds are unchanged; unused slots in the second record must be zero. The original generic oracle, its actual failed-operation controls and
 the connected REP cohort remain separate requirements. Padding support alone
 does not establish a completed real-linker run.
 
@@ -250,3 +254,66 @@ It retains all 18 semantic records and five capacity/fallback/hit records.
 The other capacity cycles retain in-process full-state checks and hashes.
 This finite oracle does not establish arbitrary relocation, application
 completion, signal/thread support or a performance result.
+
+`python3 evaluation/inprocess/page_selected_register_perf.py --expect-revision REVISION`
+measures the first publication and 1/10/100 later hits at the same original PC,
+with separate bracket-only controls. Run it on one reserved CPU. It uses the
+optimized opt-in bridge and records every raw interval in TSC ticks under
+`evaluation/inprocess/results/`. The intervals include clock, CPUID and page-gate
+work; they do not isolate publisher cost. Any workload or finalization failure
+withholds timing credit for the entire cohort. The separately qualified full-state,
+publication-failure and capacity oracles remain required.
+
+Additional original-address SSE2 qualification scripts are
+`page_selected_sse2_halves.py`, `page_selected_sse2_byte_shift.py` and
+`page_selected_sse2_movd.py` under `evaluation/inprocess/`. Each takes
+`--expect-revision REVISION` and requires one reserved CPU. They exercise finite
+literal full-state effects and instruction-page splits; memory suites also
+retain genuine failed native/stepped accesses. The exact eleven-byte alignment
+NOP is covered by `page_selected_padding.py`: that previously refused exact
+form is now positively qualified, while its historical failure remains recorded.
+All other prefix restrictions and owner predicates remain. Real dynamically
+linked applications still stop at unsupported instructions, as recorded in
+the evaluation receipts.
+
+Both selected builds share physical `/proc/self/maps` rows only within one
+uninterrupted handler phase. Each query retains its ownership, seals,
+permissions and source-byte checks. Execution, application syscalls, unwhitelisted raw calls,
+nested events and failures invalidate the rows; later handlers acquire fresh rows.
+`page_selected_maps.py` qualifies four existing positive/capacity cases, fourteen
+terminal controls and nine new acquisition/invalidation modes on one reserved
+CPU. The connected and first/hit measurement scripts exercise the production
+bridge separately. Exact revisions, commands and numeric results are recorded
+in `evaluation/inprocess/RESULTS.md`; finite timing results do not establish
+real-program completion.
+
+Canonical RDSSPQ r64 uses a separate observed-state entry. Two adjacent actual
+RDSSPQ reads must preserve distinct destination seeds before either source page
+opens. The status syscall remains diagnostic; errors do not grant permission.
+The original strict query entry remains available and retains its own refusal
+controls. Run `page_selected_rdssp_observed.py --expect-revision REVISION` on
+one reserved CPU for all 16 destinations, full native/TF state, and five failed
+pre-open controls. This qualifies only observed disabled shadow stacks, not
+enabled-CET execution or general CET support.
+
+`page_selected_sse2_movq.py` qualifies nine canonical MOVQ r64/m64 encodings,
+including the observed loader transfer, with full-state and genuine fault
+comparisons. The earlier MOVD suite explicitly retains and positively checks
+the two newly admitted neighbors; its other refusal cases remain.
+
+Canonical RIP-relative LOCK ADD/SUB m32 with sign-extended imm8 execute on the
+CPU at their original addresses. Only the exact `f0 83 05 disp32 imm8` and
+`f0 83 2d disp32 imm8` forms receive this prefix exception. Run
+`page_selected_lock_add.py` and `page_selected_lock_sub.py` with
+`--expect-revision REVISION` on one reserved CPU. Both share the full native/TF
+state comparator and retain actual no-access/read-only failed RMW controls.
+Their finite qualification covers aligned four-byte operands within one cache
+line; it does not establish concurrent atomicity, split-lock or device behavior.
+
+The real-program and legacy diagnostic failures remain visible in the numeric
+receipts. Current instruction coverage still does not complete the tested
+dynamically linked programs; their performance fields remain null.
+
+The selected profile additionally accepts five canonical PMAXUD forms, exact BND RIP-relative indirect JMP `f2 ff 25 disp32`, and exact unmasked VPBROADCASTB `62 e2 7d 48 7a c6` (ESI's low byte to ZMM16). BND requires a fresh actual XCR0 observation with MPX components disabled before opening source pages. These additions do not enable general F2/EVEX prefix acceptance or enabled-MPX execution.
+
+`python3 evaluation/inprocess/page_selected_register_time.py --expect-revision <full-commit> --program true --disable-rseq` enables the bounded fixed-site clock observer. Successful discovery and final program completion are mandatory before real timing is published. Its finite native/cache controls qualify clock capture and terminal error handling; they do not substitute for real-program completion. All observed real discovery runs through bb425428 remain failed with null real timing. See the exact per-workload commands and outcomes in the milestone evidence; no application speedup or complete dynamic-program coverage is claimed.
