@@ -68,9 +68,9 @@
       "sha256": "c046df2d3398e9ee28fc64041db51fca7e2fe7bf84dfc4ea3766709dfb065dab"
     },
     {
-      "bytes": 4760,
+      "bytes": 5014,
       "path": "tools/page-entry/selected/rseq_guard.h",
-      "sha256": "715500048018ef26dd2cd28c9f91c1a74e04838a66883922057c3cc1d1f7d758"
+      "sha256": "88c0a21a87d5304fd4ede60c0deae925ad31380a2425b770e248158963f92fc4"
     },
     {
       "bytes": 14407,

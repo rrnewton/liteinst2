@@ -84,8 +84,8 @@
     "sha256": "52e76bbd11bc6bc78ff0e16158c3d7230d657af1c54a805310cdfc9f7345157f"
   },
   "tools/page-entry/selected/native_epoch.c": {
-    "bytes": 7012,
-    "sha256": "35fc82059b900cfae9845554fa8dd3dab393701a7c7f1eca9e562bfda071b014"
+    "bytes": 7323,
+    "sha256": "aa43c811c1bbcd83d3100b01a675eae700e096482e7240cdf5c7029aa2b95b8c"
   },
   "tools/page-entry/selected/native_policy.c": {
     "bytes": 2520,
@@ -104,8 +104,8 @@
     "sha256": "b17ae37da60405d5d67c342deedb639c5d08ce318e93457a76cb9fb72e67db02"
   },
   "tools/page-entry/selected/runtime_loader.c": {
-    "bytes": 28888,
-    "sha256": "6f66c3b43d9649f3f0e430f9c12594269f986d20c0a99a78399a0e631a79051c"
+    "bytes": 29064,
+    "sha256": "f80b113eacace0e0be173bb91a74b1001efb690207bb8d3be398e4cddf149526"
   },
   "tools/page-entry/selected/selected_controller.inc": {
     "bytes": 32527,

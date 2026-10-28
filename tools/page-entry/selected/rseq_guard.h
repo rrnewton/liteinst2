@@ -1,5 +1,8 @@
 #ifndef LI2_RSEQ_GUARD_H
 #define LI2_RSEQ_GUARD_H
+#if defined(LI2_RSEQ_NATIVE_BOUNDARY) && (!defined(LI2_RSEQ_NATIVE) || LI2_RSEQ_NATIVE_BOUNDARY != 1)
+#error "Registered boundary retry requires its explicit native profile"
+#endif
 #include <signal.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -101,5 +104,8 @@ int li2_rseq_native_prepare(uintptr_t);
 int li2_rseq_native_publish(uintptr_t);
 int li2_rseq_native_enter(int,siginfo_t *,const ucontext_t *);
 int li2_rseq_native_closed(void);
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+#include "rseq_native_boundary.h"
+#endif
 #endif
 #endif

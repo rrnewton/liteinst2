@@ -365,8 +365,14 @@ static void native_zero(uint64_t *out) {
     if(*out)native_unsafe(LI2_RN_WORD,0);
     __asm__ volatile("":::"memory");native_rseq.checking=0;
 }
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+#include "rseq_native_boundary.inc"
+#endif
 void li2_rseq_native_preentry(void) {
     if(native_rseq.checking)native_unsafe(LI2_RN_REENTRY,1);
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+    if(boundary_preentry())return;
+#endif
     if(native_rseq.phase==LI2_RN_IDLE)return;
     native_zero(&native_rseq.word_entry);
     if(native_rseq.preentries==UINT64_MAX)native_unsafe(LI2_RN_OVERFLOW,0);
@@ -430,6 +436,9 @@ int li2_rseq_native_enter(int sig,siginfo_t *si,const ucontext_t *uc) {
     native_rseq.phase=LI2_RN_CLOSING;return 0;
 }
 int li2_rseq_native_closed(void) {
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+    if(native_boundary.phase==LI2_RNB_ENTERING)return boundary_observe();
+#endif
     if(native_rseq.phase==LI2_RN_IDLE && !state.registered)return 0;
     const struct li2_native_close *c=li2_lifecycle_native_close_progress();
     const struct li2_native_counts *n=li2_lifecycle_native_counts();
@@ -450,6 +459,9 @@ int li2_rseq_native_closed(void) {
        native_rseq.gs_selector_entry!=native_rseq.gs_selector_after)return native_bad(LI2_RN_TLS,1);
     native_zero(&native_rseq.word_after);
     ++native_rseq.tls_refreshes;++native_rseq.closed;
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+    if(native_boundary.phase==LI2_RNB_FIRST)return boundary_arm(c,n);
+#endif
     __asm__ volatile("":::"memory");native_rseq.phase=LI2_RN_IDLE;return 0;
 }
 #endif

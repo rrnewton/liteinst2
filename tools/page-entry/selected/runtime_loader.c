@@ -110,6 +110,9 @@ static void field(struct writer *w,const char *name,uint64_t n) { text(w,name); 
 #endif
 #ifdef LI2_RSEQ_NATIVE
 #include "rseq_native_report.inc"
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+#include "rseq_native_boundary_report.inc"
+#endif
 #endif
 #ifdef LI2_TF_HANDOFF
 static void selected_report(struct writer *,unsigned,unsigned,long);
@@ -199,6 +202,9 @@ static void report(unsigned status,unsigned code,long detail) {
 #endif
 #ifdef LI2_RSEQ_NATIVE
     selected_rseq_native_report(status,code,detail);
+#ifdef LI2_RSEQ_NATIVE_BOUNDARY
+    selected_rseq_boundary_report(status,code,detail);
+#endif
 #endif
 #ifdef LI2_TF_HANDOFF
     if(selected_chain.initialized)selected_chain_report(status,code,detail);

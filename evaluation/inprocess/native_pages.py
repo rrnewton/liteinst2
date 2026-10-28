@@ -11,6 +11,7 @@ import json
 import os
 from pathlib import Path
 import platform
+import re
 import resource
 import signal
 import shutil
@@ -28,6 +29,15 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def kernel_identity(release):
+    if type(release) is not str:
+        raise ValueError('kernel release type')
+    version = re.match(r'[0-9]+\.[0-9]+\.[0-9]+', release)
+    if version is None:
+        raise ValueError('kernel version invalid')
+    return dict(kernel_version=version[0], kernel_release_sha256=sha(release.encode()))
+
+
 def limits():
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
     resource.setrlimit(resource.RLIMIT_CPU, (30, 30))
@@ -43,9 +53,13 @@ def main():
     parser.add_argument('--cpuid-nx', action='store_true', help='explicit raw CPUID NX-only release profile')
     parser.add_argument('--rseq-native', action='store_true',
                         help='qualified original-PC rseq native epoch; requires --cpuid-nx')
+    parser.add_argument('--rseq-native-boundary', action='store_true',
+                        help='explicit registered current-PC boundary retry; requires --rseq-native --cpuid-nx')
     args = parser.parse_args()
     if args.rseq_native and not args.cpuid_nx:
         parser.error('--rseq-native requires --cpuid-nx')
+    if args.rseq_native_boundary and not (args.rseq_native and args.cpuid_nx):
+        parser.error('--rseq-native-boundary requires --rseq-native --cpuid-nx')
     if args.output.is_absolute():
         raise ValueError('public output must be repository-relative')
     os.chdir(ROOT)
@@ -62,7 +76,8 @@ def main():
     native_rseq_compare = None
     if args.rseq_native:
         spec = importlib.util.spec_from_file_location('native_page_rseq_native_reports',
-            ROOT/'tools/page-entry/selected/tests/rseq_native/reports.py')
+            ROOT/('tools/page-entry/selected/tests/rseq_native_boundary/reports.py' if args.rseq_native_boundary
+                  else 'tools/page-entry/selected/tests/rseq_native/reports.py'))
         native_rseq_compare = importlib.util.module_from_spec(spec)
         sys.modules[spec.name] = native_rseq_compare
         spec.loader.exec_module(native_rseq_compare)
@@ -106,7 +121,7 @@ def main():
         if key in os.environ:
             env[key] = os.environ[key]
     receipt = dict(schema=1, revision=revision, started_utc=stamp,
-                   hardware=dict(machine=platform.machine(), kernel=platform.release(),
+                   hardware=dict(machine=platform.machine(), **kernel_identity(platform.release()),
                                  model=next(line.split(':', 1)[1].strip() for line in
                                             Path('/proc/cpuinfo').read_text().splitlines()
                                             if line.startswith('model name')),
@@ -121,6 +136,9 @@ def main():
     if args.rseq_native:
         receipt['rseq_profile'] = 'original-pc-native-v1'
         receipt['reproduce'].append('--rseq-native')
+    if args.rseq_native_boundary:
+        receipt['rseq_profile'] = 'current-pc-native-boundary-v1'
+        receipt['reproduce'].append('--rseq-native-boundary')
     commands = []
     tool_paths, tool_aliases, tool_hashes = {}, {}, {}
     receipt['tool_sha256'] = tool_hashes
@@ -181,12 +199,16 @@ def main():
         recipe = 'tools/page-entry/selected/build-cpuid-nx.sh' if args.cpuid_nx else 'tools/page-entry/selected/build-native-pages.sh'
         if args.rseq_native:
             recipe = 'tools/page-entry/selected/build-rseq-native.sh'
+        if args.rseq_native_boundary:
+            recipe = 'tools/page-entry/selected/build-rseq-native-boundary.sh'
         status, _, _, _, _ = run('build', ['sh', recipe])
         if status:
             raise RuntimeError('release build failed')
         bridge = Path('target/page-entry/cpuid-nx/bridge-cpuid-nx.so' if args.cpuid_nx else 'target/page-entry/native-pages/bridge-native-pages.so')
         if args.rseq_native:
             bridge = Path('target/page-entry/rseq-native/bridge-rseq-native.so')
+        if args.rseq_native_boundary:
+            bridge = Path('target/page-entry/rseq-native-boundary/bridge-rseq-native-boundary.so')
         receipt['bridge_sha256'] = sha(bridge.read_bytes())
         artifacts[str(bridge)] = receipt['bridge_sha256']
         status, symbols, err, _, _ = run('runtime-memset-symbols', ['nm', '-S', '-n', str(bridge)])
