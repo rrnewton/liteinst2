@@ -109,7 +109,9 @@ pub struct IntervalSitePreparation {
 pub struct InstalledIntervalSite {
     pub(super) site: Arc<Site>,
 }
-unsafe extern "C" fn impossible_ordinary_dispatch(_: *mut HookContext) {
+pub(in crate::frontend_native::always_on) unsafe extern "C" fn impossible_ordinary_dispatch(
+    _: *mut HookContext,
+) {
     // SAFETY: the exact factory must emit managed actions, never this fallback.
     unsafe { libc::_exit(123) }
 }
@@ -141,7 +143,9 @@ fn entries(identity: CodeIdentity, scope: AddressRange, offsets: &[u64]) -> Lega
         entries: offsets.iter().map(|&n| LegalEntry { address: scope.start() + n, requires_endbr: false }).collect(),
         resumes: ResumeObligation::NoneExist }
 }
-fn base_allocation(entry: u64) -> Result<AllocationPolicy, SiteError> {
+pub(in crate::frontend_native::always_on) fn base_allocation(
+    entry: u64,
+) -> Result<AllocationPolicy, SiteError> {
     let allocation = AllocationPolicy::near(entry)?;
     if (
         allocation.max_candidates,
@@ -480,7 +484,7 @@ impl IntervalSitePreparation {
         })
     }
 }
-fn same_bundle(a: &BundlePlan, b: &BundlePlan) -> bool {
+pub(in crate::frontend_native::always_on) fn same_bundle(a: &BundlePlan, b: &BundlePlan) -> bool {
     a.identity() == b.identity()
         && a.originals() == b.originals()
         && a.final_bytes() == b.final_bytes()
@@ -488,7 +492,7 @@ fn same_bundle(a: &BundlePlan, b: &BundlePlan) -> bool {
         && a.locks() == b.locks()
         && a.memory() == b.memory()
 }
-unsafe fn check_image(
+pub(in crate::frontend_native::always_on) unsafe fn check_image(
     image: &TrampolineImage,
     executable: &ExecutableTrampoline,
 ) -> Result<(), SiteError> {

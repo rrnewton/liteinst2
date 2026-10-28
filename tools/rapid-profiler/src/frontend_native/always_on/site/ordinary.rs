@@ -103,12 +103,12 @@ impl PreparedOriginalCall<'_> {
     }
 }
 
-struct BlockActions {
-    block: AddressRange,
-    roles: Vec<usize>,
+pub(in crate::frontend_native::always_on) struct BlockActions {
+    pub(in crate::frontend_native::always_on) block: AddressRange,
+    pub(in crate::frontend_native::always_on) roles: Vec<usize>,
 }
 
-fn groups(
+pub(in crate::frontend_native::always_on) fn groups(
     entry: u64,
     returns: &[u64],
     blocks: &[(u64, u64)],
@@ -165,7 +165,10 @@ fn groups(
 }
 
 // Subtract complete already-owned ranges; never truncate a generated mapping.
-fn exclude(ranges: &mut Vec<AddressRange>, owned: AddressRange) -> Result<(), SiteError> {
+pub(in crate::frontend_native::always_on) fn exclude(
+    ranges: &mut Vec<AddressRange>,
+    owned: AddressRange,
+) -> Result<(), SiteError> {
     let mut remaining = Vec::new();
     for &range in ranges.iter() {
         if !range.overlaps(owned) {

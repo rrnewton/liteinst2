@@ -428,7 +428,16 @@ mod native {
                     // Older kernels may ignore MAP_FIXED_NOREPLACE. Reject and
                     // release an unintended mapping instead of accepting it.
                     // SAFETY: the returned mapping is owned by this call.
-                    unsafe { libc::munmap(pointer, len) };
+                    let unmapped = unsafe { libc::munmap(pointer, len) };
+                    if unmapped != 0 {
+                        // This alias contains every image in the shared backing.
+                        // Retain each new-profile selector/control owner on failed cleanup.
+                        for &owner in &group.image_indices {
+                            if plan.images[owner].precontext_selector().is_some() {
+                                core::mem::forget(plan.images[owner].clone());
+                            }
+                        }
+                    }
                     return Err(Refusal::AllocationUnavailable);
                 }
                 // SAFETY: this exact, fully initialized sealed RX extent is

@@ -670,6 +670,8 @@ impl HookContext {
 mod backedge_clock;
 mod original_nops;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+mod precontext;
+#[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 mod saved_pkru;
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
 pub use saved_pkru::SavedPkruView;
@@ -735,6 +737,8 @@ pub struct TrampolineImage {
     controls: Vec<ProbeControl>,
     clock: Option<crate::backedge_clock::BackedgeClock>,
     clock_gate: Option<crate::backedge_clock::ClockGateLayout>,
+    precontext_selector: Option<crate::precontext::PreContextSelector>,
+    precontext_gates: Vec<crate::precontext::PreContextGateLayout>,
     artifact: Option<ArtifactImageMetadata>,
 }
 
@@ -764,7 +768,8 @@ impl TrampolineImage {
     ///
     /// Controlled images embed pointers to their retained control blocks. A
     /// custom executable allocator copying these bytes must retain every
-    /// control and any `clock()` owner for the entire executable-code lifetime.
+    /// control, any `clock()` and any `precontext_selector()` owner for the
+    /// entire executable-code lifetime.
     /// The provided private
     /// and grouped allocators retain those references automatically.
     pub fn bytes(&self) -> &[u8] {
@@ -789,6 +794,16 @@ impl TrampolineImage {
         self.clock.as_ref()
     }
 
+    /// Separate selector ownership retained for an optional pre-context image.
+    pub fn precontext_selector(&self) -> Option<&crate::precontext::PreContextSelector> {
+        self.precontext_selector.as_ref()
+    }
+
+    /// Verified optional gate/fault/slow/body addresses, never return authority.
+    pub fn precontext_gates(&self) -> &[crate::precontext::PreContextGateLayout] {
+        &self.precontext_gates
+    }
+
     /// Returns the checked section lengths.
     pub const fn layout(&self) -> TrampolineLayout {
         self.layout
@@ -808,6 +823,8 @@ impl TrampolineImage {
     /// reverse-PC ranges used to report faults in instrumentation code.
     /// The explicit inline-clock profile enters its gate; only a zero boundary
     /// in Stop mode enters the callback. Counter mode never invokes it.
+    /// Optional pre-context routes enter their gate; the per-call Slow choice
+    /// alone visits the permanent observer. No fault endpoint is a source key.
     pub fn entry_routes(&self) -> &[(u64, u64)] {
         &self.entry_routes
     }
@@ -1112,6 +1129,7 @@ pub struct TrampolinePlan {
     actions: Vec<(u64, HookCallback, bool)>,
     controls: Vec<ControlledAction>,
     clock: Option<Box<crate::backedge_clock::BackedgeClockAction>>,
+    precontext_actions: Box<[crate::precontext::PreContextAction]>,
     instructions: Vec<Instruction>,
     source_nops: Vec<Option<Vec<u8>>>,
     logical_index: usize,
@@ -1207,6 +1225,7 @@ impl TrampolinePlan {
             actions: Vec::new(),
             controls: Vec::new(),
             clock: None,
+            precontext_actions: Box::default(),
             source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
@@ -1293,6 +1312,7 @@ impl TrampolinePlan {
             actions: Vec::new(),
             controls: Vec::new(),
             clock: None,
+            precontext_actions: Box::default(),
             source_nops: original_nops::capture(scan, &instructions)?,
             instructions,
             logical_index: 0,
@@ -1394,6 +1414,7 @@ impl TrampolinePlan {
             actions: Vec::new(),
             controls: Vec::new(),
             clock: None,
+            precontext_actions: Box::default(),
             source_nops: original_nops::capture(scan, &instructions)?,
             instructions,
             logical_index,
@@ -1458,6 +1479,7 @@ impl TrampolinePlan {
             actions: Vec::new(),
             controls: Vec::new(),
             clock: None,
+            precontext_actions: Box::default(),
             source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
@@ -1501,6 +1523,7 @@ impl TrampolinePlan {
             actions: Vec::new(),
             controls: Vec::new(),
             clock: None,
+            precontext_actions: Box::default(),
             source_nops: original_nops::capture(scan, &[*scanned.instruction()])?,
             instructions: vec![*scanned.instruction()],
             logical_index: 0,
@@ -1579,6 +1602,85 @@ impl TrampolinePlan {
             .collect();
         let mut plan = Self::from_actions(scan, physical, end, &static_actions)?;
         plan.controls = actions.to_vec();
+        Ok(plan)
+    }
+
+    /// Builds an explicitly optional, preserving entry/RET observing window.
+    /// Every original still executes; only an action's own context/callback span
+    /// may be bypassed. No arbitrary mutable controls or replacement actions mix
+    /// into this constructor. All actions share one separate selector; each has
+    /// a distinct permanent managed callback identity. Unsupported artifact,
+    /// fork-shared, ptrace-stack and frame-trace modes remain refused.
+    ///
+    /// # Safety
+    /// Before execution the caller must authenticate the complete bounded
+    /// readonly scalar leaf, sole logical entry, every literal C3 return, all
+    /// local edges and safe publication windows. No entry into the entry body,
+    /// recursion, signal-handler reentry, nonlocal exit, fork, unwind, CET or
+    /// concurrent source writer is admitted. This window check is not that CFG
+    /// or external-entry proof. Entry actions name the complete scan's first head.
+    ///
+    /// The actual CALL gate must put the exclusive live CallScratch header in
+    /// RBX, freshly initialized with CallScratch::armed(), valid aligned
+    /// storage/stack/return word, and no Rust reference
+    /// spanning CALL. Every original instruction excludes all RBX register and
+    /// address operands. Every callback preserves all saved HookContext/extended
+    /// state (including application RBX) and never accesses the scratch header;
+    /// arbitrary mutating callbacks are outside this profile. Source/input,
+    /// frame, callbacks and executable owners outlive all actual returns.
+    ///
+    /// The caller preflights room for a possible full Slow pair, validates real
+    /// PID/TID/site/sequence/entry/RET/continuation and outer return, and never
+    /// turns a refusal into FastBypass. ReturnObserved is before physical RET.
+    /// Invalid readable tags execute local UD2; it must not be registered as a
+    /// source entry or recovered into original execution by a signal handler.
+    pub unsafe fn from_precontext_actions(
+        scan: &ScanResult,
+        physical: u64,
+        end: u64,
+        actions: &[crate::precontext::PreContextAction],
+    ) -> Result<Self, TrampolineError> {
+        use crate::precontext::PreContextRole;
+        let first = actions
+            .first()
+            .ok_or_else(|| encoding_error("pre-context actions empty"))?;
+        if actions.len() > 5
+            || actions
+                .iter()
+                .any(|a| a.logical_pc == 0 || a.selector != first.selector)
+            || actions
+                .iter()
+                .filter(|a| a.role == PreContextRole::Entry)
+                .count()
+                > 1
+            || actions
+                .iter()
+                .filter(|a| a.role == PreContextRole::Return)
+                .count()
+                > 4
+            || actions.iter().any(|a| {
+                a.role == PreContextRole::Entry
+                    && scan.instructions().first().map(|i| i.address()) != Some(a.logical_pc)
+            })
+        {
+            return Err(encoding_error(
+                "pre-context action profile/selector differs",
+            ));
+        }
+        let controlled: Vec<_> = actions
+            .iter()
+            .map(|a| ControlledAction {
+                logical_pc: a.logical_pc,
+                control: a.control.clone(),
+            })
+            .collect();
+        let mut plan = Self::from_controlled_actions(scan, physical, end, &controlled)?;
+        if !cfg!(all(target_os = "linux", target_arch = "x86_64")) {
+            return Err(TrampolineError::UnsupportedPlatform);
+        }
+        #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
+        precontext::validate_window(scan, &plan.instructions, actions)?;
+        plan.precontext_actions = actions.into();
         Ok(plan)
     }
 
@@ -1682,6 +1784,9 @@ impl TrampolinePlan {
     ) -> Result<FrameEmission, TrampolineError> {
         if self.clock.is_some() {
             return Err(encoding_error("inline clock frame metadata unsupported"));
+        }
+        if !self.precontext_actions.is_empty() {
+            return Err(encoding_error("pre-context frame metadata unsupported"));
         }
         let origin = if self.ptrace_stops {
             FrameEntryOrigin::ControllerOwnedStack
@@ -1937,6 +2042,8 @@ impl TrampolinePlan {
             Ok(TrampolineImage {
                 clock: None,
                 clock_gate: None,
+                precontext_selector: None,
+                precontext_gates: Vec::new(),
                 artifact: None,
                 address,
                 bytes,
@@ -2025,6 +2132,18 @@ impl TrampolinePlan {
                 "inline clock supports only live ordinary emission",
             ));
         }
+        if !self.precontext_actions.is_empty()
+            && (artifact.is_some()
+                || frames.is_some()
+                || self.ptrace_stops
+                || self.clock.is_some()
+                || self.actions.len() != self.precontext_actions.len()
+                || self.actions.iter().any(|a| a.2))
+        {
+            return Err(encoding_error(
+                "pre-context supports only unmixed live observing emission",
+            ));
+        }
         let extended_state = match artifact {
             Some(input) => input.profile().saved_state(),
             None => SavedExtendedStateLayout::detect()?,
@@ -2079,6 +2198,7 @@ impl TrampolinePlan {
         let mut action_index = 0;
         let mut clock_spec = None;
         let mut clock_observer = None;
+        let mut precontext_specs = Vec::new();
         for (index, original) in self.instructions.iter().enumerate() {
             let entry_index = encoded_instructions.len();
             let mut entry = Instruction::with(Code::Zero_bytes);
@@ -2088,6 +2208,15 @@ impl TrampolinePlan {
                 .get(action_index)
                 .filter(|action| action.0 == original.ip());
             let clock_labels = if self.clock.is_some() {
+                Some((identity()?, identity()?))
+            } else {
+                None
+            };
+            let optional = self
+                .precontext_actions
+                .get(action_index)
+                .filter(|a| a.logical_pc == original.ip());
+            let optional_labels = if optional.is_some() {
                 Some((identity()?, identity()?))
             } else {
                 None
@@ -2107,6 +2236,21 @@ impl TrampolinePlan {
                 marker.set_ip(observer);
                 encoded_instructions.push(marker);
                 clock_observer = Some(observing_index);
+            }
+            if let Some(optional) = optional {
+                let (observer, body) = optional_labels.unwrap();
+                let spec = precontext::append(
+                    &mut encoded_instructions,
+                    optional,
+                    observer,
+                    body,
+                    &mut identity,
+                )?;
+                observing_index = encoded_instructions.len();
+                let mut marker = Instruction::with(Code::Zero_bytes);
+                marker.set_ip(observer);
+                encoded_instructions.push(marker);
+                precontext_specs.push((action_index, entry_index, observing_index, spec));
             }
             if let Some(&(_, hook, _)) = action {
                 // These helpers use only register/stack operands, absolute MOV
@@ -2161,7 +2305,7 @@ impl TrampolinePlan {
             }
             let body_index = encoded_instructions.len();
             let mut body = Instruction::with(Code::Zero_bytes);
-            body.set_ip(match clock_labels {
+            body.set_ip(match clock_labels.or(optional_labels) {
                 Some((_, body)) => body,
                 None => identity()?,
             });
@@ -2254,6 +2398,24 @@ impl TrampolinePlan {
             }),
             None => None,
         };
+        let mut precontext_gates = Vec::new();
+        for (action, entry, observer, spec) in &precontext_specs {
+            precontext::verify(spec, &encoded_instructions, address, &block.encoded)?;
+            let action = &self.precontext_actions[*action];
+            let body = heads
+                .iter()
+                .find(|head| head.0 == action.logical_pc)
+                .ok_or_else(|| encoding_error("pre-context original body missing"))?
+                .2;
+            precontext_gates.push(crate::precontext::PreContextGateLayout {
+                logical_pc: action.logical_pc,
+                role: action.role,
+                entry: generated(offset(*entry)?)?,
+                observing_entry: generated(offset(*observer)?)?,
+                original_body: generated(offset(body)?)?,
+                fault: generated(offset(spec.fault_index)?)?,
+            });
+        }
         let mut entry_routes = Vec::new();
         let mut instruction_boundaries = Vec::new();
         let mut program_counters = Vec::new();
@@ -2459,6 +2621,8 @@ impl TrampolinePlan {
         Ok(TrampolineImage {
             clock: self.clock.as_ref().map(|action| action.clock.clone()),
             clock_gate,
+            precontext_selector: self.precontext_actions.first().map(|a| a.selector.clone()),
+            precontext_gates,
             artifact,
             address,
             bytes,
@@ -3647,6 +3811,7 @@ impl TrampolineArena {
             program_counters: image.program_counters.into_boxed_slice(),
             controls: ManuallyDrop::new(image.controls),
             clock: ManuallyDrop::new(image.clock),
+            precontext_selector: ManuallyDrop::new(image.precontext_selector),
             program_counters_published: AtomicBool::new(false),
         })
     }
@@ -3689,6 +3854,7 @@ pub struct ExecutableTrampoline {
     // non-reclaimable arena slots retain them for the same process lifetime.
     controls: ManuallyDrop<Vec<ProbeControl>>,
     clock: ManuallyDrop<Option<crate::backedge_clock::BackedgeClock>>,
+    precontext_selector: ManuallyDrop<Option<crate::precontext::PreContextSelector>>,
 }
 
 /// Owns a staged executable image until its publication transaction commits.
@@ -3730,6 +3896,7 @@ impl PendingExecutableTrampoline {
                 program_counters: image.program_counters.clone().into_boxed_slice(),
                 controls: ManuallyDrop::new(image.controls.clone()),
                 clock: ManuallyDrop::new(image.clock.clone()),
+                precontext_selector: ManuallyDrop::new(image.precontext_selector.clone()),
                 program_counters_published: AtomicBool::new(false),
             }),
         }
@@ -3965,6 +4132,8 @@ impl ExecutableTrampoline {
                     unsafe { ManuallyDrop::drop(&mut this.controls) };
                     // Same unpublished-unmap proof retires the embedded data owner.
                     unsafe { ManuallyDrop::drop(&mut this.clock) };
+                    // The same successful-unmap condition releases selector ownership.
+                    unsafe { ManuallyDrop::drop(&mut this.precontext_selector) };
                 }
             }
         }
@@ -4433,6 +4602,7 @@ struct PendingMapping {
     writable: *mut libc::c_void,
     executable: *mut libc::c_void,
     len: usize,
+    precontext_owners: Option<(crate::precontext::PreContextSelector, Vec<ProbeControl>)>,
 }
 
 #[cfg(all(target_os = "linux", target_arch = "x86_64"))]
@@ -4480,6 +4650,7 @@ impl PendingMapping {
             writable: core::ptr::null_mut(),
             executable: core::ptr::null_mut(),
             len,
+            precontext_owners: None,
         };
         // SAFETY: fd is live and len is a positive page multiple.
         if unsafe { libc::ftruncate(fd, len as libc::off_t) } != 0 {
@@ -4634,6 +4805,12 @@ impl PendingMapping {
                 allocation_len: self.len,
             });
         }
+        // Retain all new-profile pointer owners before bytes enter an RX alias.
+        // A failed early cleanup must keep them even before an executable handle exists.
+        self.precontext_owners = image
+            .precontext_selector
+            .clone()
+            .map(|selector| (selector, image.controls.clone()));
         // SAFETY: the writable alias contains the complete destination range.
         unsafe {
             core::ptr::copy_nonoverlapping(
@@ -4671,6 +4848,7 @@ impl PendingMapping {
             program_counters: image.program_counters.clone().into_boxed_slice(),
             controls: ManuallyDrop::new(image.controls.clone()),
             clock: ManuallyDrop::new(image.clock.clone()),
+            precontext_selector: ManuallyDrop::new(image.precontext_selector.clone()),
             program_counters_published: AtomicBool::new(false),
         })
     }
@@ -4685,7 +4863,14 @@ impl Drop for PendingMapping {
         }
         if !self.executable.is_null() {
             // SAFETY: this object owns the live mapping.
-            unsafe { libc::munmap(self.executable, self.len) };
+            let unmapped = unsafe { libc::munmap(self.executable, self.len) };
+            if unmapped != 0 {
+                // Failed unmap leaves possible new-profile pointers in RX code.
+                // Retention is conservative failure custody, never success credit.
+                if let Some(owners) = self.precontext_owners.take() {
+                    core::mem::forget(owners);
+                }
+            }
         }
         if self.fd >= 0 {
             // SAFETY: this object owns the live descriptor.
@@ -6540,6 +6725,7 @@ mod tests {
             program_counters: Box::new([]),
             controls: core::mem::ManuallyDrop::new(Vec::new()),
             clock: core::mem::ManuallyDrop::new(None),
+            precontext_selector: core::mem::ManuallyDrop::new(None),
             program_counters_published: std::sync::atomic::AtomicBool::new(false),
         };
         assert_eq!(executable.ptrace_entry_stop_rip(), Some(trampoline + 1));

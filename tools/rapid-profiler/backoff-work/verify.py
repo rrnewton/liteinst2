@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the unchanged 27 prerequisites, then two finite functional backoff trials."""
+"""Run unchanged mandatory prerequisites and trials, or explicit optional qualification."""
 import argparse
 import csv
 import hashlib
@@ -85,6 +85,7 @@ def profile(artifact, test):
 def main():
     ap = argparse.ArgumentParser(description=__doc__); ap.add_argument('--revision', required=True)
     ap.add_argument('--worker-backpressure', action='store_true')
+    ap.add_argument('--optional', action='store_true', help='require 31 prerequisites, then use the optional CALL/RET facade')
     for key in ('raw', 'toolchain', 'user-home', 'cargo-home'): ap.add_argument('--'+key, type=Path, required=True)
     a = ap.parse_args(); repo = Path(__file__).resolve().parents[3]; raw = a.raw
     assert Path(__file__).resolve() == repo/'tools/rapid-profiler/backoff-work/verify.py'
@@ -102,7 +103,14 @@ def main():
     if a.worker_backpressure:
         receipt['worker_backpressure'] = 'bounded-wait'
         receipt['reproduce'].append('--worker-backpressure')
+    if a.optional:
+        receipt['profile'] = 'optional-pre-context'
+        receipt['reproduce'].append('--optional')
+        receipt['failure_history'].append('evaluation/backoff-independent/README.md')
+        receipt['scope'] = 'finite optional driver/metadata qualification; full input/journal/return and Report-count checks are source-attested; trial aggregates do not establish post-disable Fast-before-rearm; deterministic prerequisite control is separate; no new full-state, timing, cheap-off cost, performance or indefinite-service credit'
+    flags = FLAGS + ('optional-frontend', 'optional-backoff-control') if a.optional else FLAGS
     command = 'backoff-work-wait' if a.worker_backpressure else 'backoff-work'
+    if a.optional: command = 'optional-'+command
     save = lambda p, v: p.write_text(json.dumps(v, indent=2, sort_keys=True, allow_nan=False)+'\n')
     try:
         cpus = sorted(os.sched_getaffinity(0))[:4]; assert len(cpus) == 4
@@ -126,6 +134,9 @@ def main():
         names += ['tools/rapid-profiler/ordinary-interval/backoff.rs', 'tools/rapid-profiler/ordinary-interval/main.rs',
             'tools/rapid-profiler/src/frontend_native/mod.rs', 'tools/rapid-profiler/verify_ordinary_interval.py',
             'evaluation/admission/processes.py', 'tools/unwind-oracle/bounded_command.py']
+        if a.optional:
+            names += ['tools/rapid-profiler/ordinary-interval/backoff/optional.rs']
+            names += ['tools/rapid-profiler/optional-backoff-work/'+n for n in ('check_output.py', 'test_recipe.py', 'README.md')]
         names += git('ls-files', '-z', '--', 'tools/rapid-profiler/src/frontend_native/backoff/').decode().strip('\0').split('\0')
         assert '' not in names and len(names) == len(set(names))
         def sources(selected):
@@ -156,10 +167,10 @@ def main():
         receipt['stage'] = 'prerequisite'
         receipt['prerequisite']['status'] = 'FAILED'
         receipt['commands'] = [['$PYTHON', '-B', '$REPO/tools/rapid-profiler/verify_ordinary_interval.py', '--revision', a.revision,
-            '--raw', '$RAW/prerequisite', '--toolchain', '$TOOLCHAIN', '--user-home', '$USER_HOME', '--cargo-home', '$CARGO_HOME', *['--'+f for f in FLAGS]]]
+            '--raw', '$RAW/prerequisite', '--toolchain', '$TOOLCHAIN', '--user-home', '$USER_HOME', '--cargo-home', '$CARGO_HOME', *['--'+f for f in flags]]]
         prior_raw = raw/'prerequisite'
         argv = [str(tools['python']), '-B', str(old_path), '--revision', a.revision, '--raw', str(prior_raw),
-            '--toolchain', str(a.toolchain), '--user-home', str(a.user_home), '--cargo-home', str(a.cargo_home), *['--'+f for f in FLAGS]]
+            '--toolchain', str(a.toolchain), '--user-home', str(a.user_home), '--cargo-home', str(a.cargo_home), *['--'+f for f in flags]]
         prior_parent, prior_closed = parent('prerequisite-parent', argv, 900)
         prior = json.loads((prior_raw/'result.json').read_text())
         assert prior['status'] == 'PASS' and prior['revision'] == a.revision and prior['stage'] == 'complete'
@@ -168,7 +179,21 @@ def main():
         stages += [f'exact-{s}-k{k}' for s in ('short', 'long', 'alternating', 'late-long') for k in (24, 1, 10)]
         stages += ['concurrent-oracle', 'concurrent-test-build', 'concurrent-native', 'timed-native',
             'retirement-sixteen-epochs', 'retirement-function-closed', 'drain-native', 'streamed-native', 'history-native']
-        assert len(stages) == len(prior['commands']) == 27
+        if a.optional:
+            assert prior['optional_frontend_requested'] is prior['optional_backoff_control_requested'] is True
+            assert prior['optional_frontend']['status'] == prior['optional_backoff_control']['status'] == 'PASS'
+            assert prior['optional_backoff_control']['fresh_processes'] == 1
+            stages += ['optional-fast-state', 'optional-slow-state', 'optional-functional', 'optional-backoff-native']
+            assert len(stages) == len(prior['commands']) == 31
+            checker = load('optional_backoff_check', repo/'tools/rapid-profiler/optional-backoff-work/check_output.py')
+            control_dir = prior_raw/'optional-backoff-native'
+            control = checker.native_output((control_dir/'stdout.txt').read_bytes(), (control_dir/'stderr.txt').read_bytes())
+            assert prior['optional_backoff_control']['protocol'] == control
+            receipt['optional_control'] = dict(status='PASS', protocol=control,
+                scope='deterministic driver operations and stable Fast bracket; distinct from timed trial aggregates',
+                request=digest(control_dir/'request.json'), receipt=digest(control_dir/'receipt.json'))
+        else:
+            assert len(stages) == len(prior['commands']) == 27
         for stage in stages:
             r = prior[stage]
             assert r['process_exit'] == 0 and r['strict_cleanup'] is True
@@ -197,9 +222,12 @@ def main():
             hardware=dict(prior['hardware'], backoff_parent_affinity_cpus=4, backoff_worker_affinity_cpus=1, backoff_controller_affinity_cpus=1, backoff_sink_affinity_cpus=1, backoff_main_affinity_cpus=1, backoff_distinct_application_cpus=4),
             artifacts=dict(artifacts, libtest=test), dso=prior['dso'],
             prerequisite=dict(status='PASS', stages=27, result=digest(prior_raw/'result.json'), parent=digest(prior_parent/'parent-closed.json')))
+        if a.optional: receipt['prerequisite']['stages'] = 31
         binary = repo/'target/release/ordinary-interval'; helper = repo/'tools/unwind-oracle/bounded_command.py'
         for case in receipt['cases']:
-            k = case['k']; label = f'backoff-k{k}'; receipt['stage'] = label; case['status'] = 'FAILED'; products_stable()
+            k = case['k']; label = f'backoff-k{k}'
+            if a.optional: label = 'optional-'+label
+            receipt['stage'] = label; case['status'] = 'FAILED'; products_stable()
             directory = raw/label; directory.mkdir(); (directory/'tmp').mkdir()
             export = directory/'export.txt'
             argv = [str(binary), command, str(candidate), str(trusted), str(k), '520', '100000', str(export)]
@@ -220,7 +248,10 @@ def main():
             assert digest(directory/'stderr.txt')['bytes'] == 0
             exported = digest(export)
             with (directory/'stdout.txt').open('rb') as stream: data = stream.read(4097)
-            case.update(parse_terminal(data, k, exported['bytes'], worker_backpressure=a.worker_backpressure))
+            if a.optional:
+                case.update(checker.parse_terminal(data, k, exported['bytes'], worker_backpressure=a.worker_backpressure))
+            else:
+                case.update(parse_terminal(data, k, exported['bytes'], worker_backpressure=a.worker_backpressure))
             products_stable()
             case.update(status='PASS', export=exported, request=digest(directory/'request.json'), receipt=digest(directory/'receipt.json'),
                 parent=digest(parent_dir/'parent-closed.json'), operation_seconds=closed['seconds'], cpu_seconds=20, wall_seconds=30, file_bytes=64*MIB)
@@ -230,7 +261,13 @@ def main():
         (raw/'failure.txt').write_text(traceback.format_exc())
         receipt['error_class'] = type(error).__name__
     columns = ['k', 'status', *[k for k in FIELDS if k != 'k']]
-    if a.worker_backpressure: columns.append('worker_backpressure')
+    if a.optional:
+        # Defined even when preflight/prerequisites failed before checker import.
+        fields = ('originals calls fast slow sampled unsampled arms reports disabled actions history_batches call_batches max_entry_prefix '
+            'epoch_limit call_limit stop_reason max_arm_late_ns stop_ack_ns removed_ns controller_done_ns accepted_exports written_exports '
+            'written_bytes worker_detached actual_threads_joined export_synced result_input_rsp_checked worker_backpressure scope post_disable_rearm_coverage').split()
+        columns = ['k', 'status', *fields]
+    elif a.worker_backpressure: columns.append('worker_backpressure')
     with (public/'cases.csv').open('x', newline='') as stream:
         writer = csv.DictWriter(stream, fieldnames=columns, extrasaction='ignore', lineterminator='\n')
         writer.writeheader(); writer.writerows(receipt['cases'])

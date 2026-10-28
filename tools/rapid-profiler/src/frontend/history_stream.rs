@@ -180,6 +180,12 @@ fn output<T>(capacity: usize) -> Result<Vec<T>, ControlError> {
 }
 
 impl Session {
+    // Controls of both facades exercise the real shared output reservation.
+    #[cfg(test)]
+    pub(crate) fn test_history_reserve_failure(&self, fail: bool) {
+        FAIL_RESERVE.set(fail);
+    }
+
     // Only the sealed concurrent facade exposes this construction publicly.
     pub(crate) fn new_streaming_history(
         install: u64,

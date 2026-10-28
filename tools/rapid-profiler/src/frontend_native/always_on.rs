@@ -2,6 +2,7 @@
 //! This facade owns metadata only; site::seal retains the actual publication.
 mod drain;
 mod history;
+pub(super) mod optional;
 pub use crate::frontend::HistoryBinding;
 pub use history::{HistoryBatch, HistoryFormat, HistoryStream, HistoryWindow};
 pub(super) mod gate;
@@ -1204,6 +1205,15 @@ unsafe extern "C" fn exit_callback(context: *mut HookContext, control: ControlId
 
 #[cfg(test)]
 mod tests;
+
+// Existing native fixture helpers, visible only to the sibling backoff test.
+#[cfg(test)]
+pub(super) use tests::concurrent_native::{
+    CONTRACT as backoff_native_contract, FUNCTION as backoff_native_function,
+    expected_file as backoff_native_expected_file, guarded as backoff_native_guarded,
+    identity as backoff_native_identity, model as backoff_native_model, pin as backoff_native_pin,
+    stack as backoff_native_stack,
+};
 
 // Narrow sibling-test facade. These functions grant no native publication or
 // execution authority and are absent from non-test builds.

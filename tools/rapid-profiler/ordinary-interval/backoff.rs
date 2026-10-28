@@ -436,3 +436,16 @@ fn run_mode(
         sink.written,
     );
 }
+
+mod optional;
+pub(super) fn run_optional(
+    candidate: &Path,
+    trusted: &Path,
+    k: usize,
+    epochs: u32,
+    calls: u64,
+    path: &Path,
+    wait: bool,
+) {
+    optional::run(candidate, trusted, k, epochs, calls, path, wait);
+}

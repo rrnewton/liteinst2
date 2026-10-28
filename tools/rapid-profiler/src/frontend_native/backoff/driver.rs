@@ -289,94 +289,29 @@ impl Driver {
         result
     }
     fn run_inner(&mut self, start: Instant) -> Result<RunSummary, Error> {
-        let mut clock = Clock::new(start, self.policy)?;
-        let mut max_arm_lateness = Duration::ZERO;
-        let mut stop_acknowledged = None;
-        let mut removal_completed = None;
-        loop {
-            let polled = Instant::now();
-            let requested = self.shared.stop.load(Ordering::Acquire);
-            let arms = self.arms;
-            match clock.poll(polled, requested, arms).map_err(|error| {
-                self.remember_deadline(error, clock.poll_failure(polled, requested, arms))
-            })? {
-                Decision::Stop => {
-                    stop_acknowledged = Instant::now().checked_duration_since(start);
-                    self.shared.stop.store(true, Ordering::Release);
-                    self.close()?;
-                    removal_completed = Instant::now().checked_duration_since(start);
-                    self.history()?;
-                }
-                Decision::Arm(due) => {
-                    let arm_started = Instant::now();
-                    self.arm()?;
-                    // An arm itself consuming the fixed slack also refuses.
-                    let completed = Instant::now();
-                    arm_due(completed, due, self.policy.lateness()).map_err(|error| {
-                        self.remember_deadline(
-                            error,
-                            DeadlineFailure::at(
-                                DeadlinePhase::ArmOperation,
-                                start,
-                                Some(due),
-                                due.checked_add(self.policy.lateness()),
-                                completed,
-                                Some(arm_started),
-                                false,
-                            ),
-                        )
-                    })?;
-                    max_arm_lateness = max_arm_lateness.max(completed.duration_since(due));
-                }
-                Decision::Wait => (),
-            }
-            let wait = clock.wait_bound(Instant::now(), self.arms);
-            self.receive_one(wait)?;
-            self.retire()?;
-            if clock.stopping.is_some() {
-                if let Some(status) = self.shared.finished.get().copied() {
-                    finished_ok(Some(status))?;
-                    if status.totals == Some(self.cursor.totals)
-                        && self.slots.iter().all(Option::is_none)
-                    {
-                        self.history()?;
-                        // The preceding metadata/allocation work may have stalled
-                        // after the loop's check. Late completion is a failure,
-                        // even with all packets exported; this cannot cancel it.
-                        let completed = Instant::now();
-                        clock.check_deadline(completed).map_err(|error| {
-                            let deadline = clock.diagnostic_shutdown_deadline();
-                            self.remember_deadline(
-                                error,
-                                DeadlineFailure::at(
-                                    DeadlinePhase::FinalCompletion,
-                                    start,
-                                    Some(deadline),
-                                    Some(deadline),
-                                    completed,
-                                    None,
-                                    true,
-                                ),
-                            )
-                        })?;
-                        return Ok(RunSummary {
-                            arms: self.arms,
-                            reports: self.reports,
-                            actions: self.history_end,
-                            history_batches: self.history_number,
-                            call_batches: self.cursor.number,
-                            totals: self.cursor.totals,
-                            accepted_exports: self.exported,
-                            worker_detached: true,
-                            stop_reason: clock.stop_reason.ok_or(Error::Sequence)?,
-                            max_arm_lateness,
-                            stop_acknowledged,
-                            removal_completed,
-                            controller_completed: completed.checked_duration_since(start),
-                        });
-                    }
-                }
-            }
+        let done = run_loop(DriverRef::Mandatory(&mut *self), start)?;
+        Ok(RunSummary {
+            arms: self.arms,
+            reports: self.reports,
+            actions: self.history_end,
+            history_batches: self.history_number,
+            call_batches: self.cursor.number,
+            totals: self.cursor.totals,
+            accepted_exports: self.exported,
+            worker_detached: true,
+            stop_reason: done.stop_reason,
+            max_arm_lateness: done.max_arm_lateness,
+            stop_acknowledged: done.stop_acknowledged,
+            removal_completed: done.removal_completed,
+            controller_completed: done.controller_completed,
+        })
+    }
+    fn finished_ready(&self) -> Result<bool, Error> {
+        if let Some(status) = self.shared.finished.get().copied() {
+            finished_ok(Some(status))?;
+            Ok(status.totals == Some(self.cursor.totals) && self.slots.iter().all(Option::is_none))
+        } else {
+            Ok(false)
         }
     }
     /// Recover an unsent export after failure. No successful run/resume is implied.
@@ -559,6 +494,154 @@ pub(super) fn finished_ok(status: Option<WorkerStatus>) -> Result<(), Error> {
             Ok(())
         }
         _ => Err(Error::Worker),
+    }
+}
+
+// One scheduling implementation, with two statically selected typed endpoints.
+// No public extension trait or application callback enters this control loop.
+pub(super) struct LoopCompletion {
+    pub(super) stop_reason: StopReason,
+    pub(super) max_arm_lateness: Duration,
+    pub(super) stop_acknowledged: Option<Duration>,
+    pub(super) removal_completed: Option<Duration>,
+    pub(super) controller_completed: Option<Duration>,
+}
+enum DriverRef<'a> {
+    Mandatory(&'a mut Driver),
+    Optional(&'a mut super::optional::OptionalDriver),
+}
+macro_rules! both {
+    ($value:expr, $d:ident => $body:expr) => {
+        match $value {
+            DriverRef::Mandatory($d) => $body,
+            DriverRef::Optional($d) => $body,
+        }
+    };
+}
+impl DriverRef<'_> {
+    fn policy(&self) -> Policy {
+        both!(self, d => d.policy)
+    }
+    fn arms(&self) -> u32 {
+        both!(self, d => d.arms)
+    }
+    fn common(&self) -> &Shared {
+        match self {
+            Self::Mandatory(d) => &d.shared,
+            Self::Optional(d) => &d.shared.common,
+        }
+    }
+    fn remember(&mut self, e: Error, f: DeadlineFailure) -> Error {
+        both!(self, d => d.remember_deadline(e, f))
+    }
+    fn arm(&mut self) -> Result<(), Error> {
+        both!(self, d => d.arm())
+    }
+    fn close(&mut self) -> Result<(), Error> {
+        both!(self, d => d.close())
+    }
+    fn history(&mut self) -> Result<(), Error> {
+        both!(self, d => d.history())
+    }
+    fn receive(&mut self, wait: Duration) -> Result<(), Error> {
+        both!(self, d => d.receive_one(wait))
+    }
+    fn retire(&mut self) -> Result<(), Error> {
+        both!(self, d => d.retire())
+    }
+    fn ready(&self) -> Result<bool, Error> {
+        both!(self, d => d.finished_ready())
+    }
+    fn maintenance(&mut self) -> Result<(), Error> {
+        match self {
+            Self::Mandatory(_) => Ok(()),
+            Self::Optional(d) => d.scan(),
+        }
+    }
+}
+pub(super) fn run_optional(
+    driver: &mut super::optional::OptionalDriver,
+    start: Instant,
+) -> Result<LoopCompletion, Error> {
+    run_loop(DriverRef::Optional(driver), start)
+}
+fn run_loop(mut driver: DriverRef<'_>, start: Instant) -> Result<LoopCompletion, Error> {
+    let policy = driver.policy();
+    let mut clock = Clock::new(start, policy)?;
+    let mut max_arm_lateness = Duration::ZERO;
+    let mut stop_acknowledged = None;
+    let mut removal_completed = None;
+    loop {
+        let polled = Instant::now();
+        let requested = driver.common().stop.load(Ordering::Acquire);
+        let arms = driver.arms();
+        match clock
+            .poll(polled, requested, arms)
+            .map_err(|error| driver.remember(error, clock.poll_failure(polled, requested, arms)))?
+        {
+            Decision::Stop => {
+                stop_acknowledged = Instant::now().checked_duration_since(start);
+                driver.common().stop.store(true, Ordering::Release);
+                driver.close()?;
+                removal_completed = Instant::now().checked_duration_since(start);
+                driver.history()?;
+            }
+            Decision::Arm(due) => {
+                let arm_started = Instant::now();
+                driver.arm()?;
+                let completed = Instant::now();
+                arm_due(completed, due, policy.lateness()).map_err(|error| {
+                    driver.remember(
+                        error,
+                        DeadlineFailure::at(
+                            DeadlinePhase::ArmOperation,
+                            start,
+                            Some(due),
+                            due.checked_add(policy.lateness()),
+                            completed,
+                            Some(arm_started),
+                            false,
+                        ),
+                    )
+                })?;
+                max_arm_lateness = max_arm_lateness.max(completed.duration_since(due));
+            }
+            Decision::Wait => (),
+        }
+        // Mandatory is an exact no-op. Optional scan work remains charged to
+        // the same original clock and never runs after stop acknowledgement.
+        if clock.stopping.is_none() {
+            driver.maintenance()?;
+        }
+        let wait = clock.wait_bound(Instant::now(), driver.arms());
+        driver.receive(wait)?;
+        driver.retire()?;
+        if clock.stopping.is_some() && driver.ready()? {
+            driver.history()?;
+            let completed = Instant::now();
+            clock.check_deadline(completed).map_err(|error| {
+                let deadline = clock.diagnostic_shutdown_deadline();
+                driver.remember(
+                    error,
+                    DeadlineFailure::at(
+                        DeadlinePhase::FinalCompletion,
+                        start,
+                        Some(deadline),
+                        Some(deadline),
+                        completed,
+                        None,
+                        true,
+                    ),
+                )
+            })?;
+            return Ok(LoopCompletion {
+                stop_reason: clock.stop_reason.ok_or(Error::Sequence)?,
+                max_arm_lateness,
+                stop_acknowledged,
+                removal_completed,
+                controller_completed: completed.checked_duration_since(start),
+            });
+        }
     }
 }
 

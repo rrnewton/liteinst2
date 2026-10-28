@@ -121,3 +121,66 @@ env -u PYTHONOPTIMIZE python3 -B tools/rapid-profiler/backoff-work/test_recipe.p
 Both entry points refuse optimized Python before work. This recipe does not
 claim a result by its existence; each execution records its exact committed
 revision and observed outcomes in the receipt.
+
+## Optional pre-context sampling
+
+The API and mandatory qualification above remain available unchanged. For an
+RBX-free leaf certified for the optional profile, build and publish an
+`OptionalSitePreparation`, then pass its sealed site to
+`backoff::prepare_optional(site, install, function, policy)`. The returned
+`OptionalPrepared` contains an `OptionalDriver`, one `OptionalClient`, a stop
+handle and a bounded receiver. Attach, invoke, flush and finish on the actual
+worker; retain input, code and the real thread handles through join.
+
+The optional driver uses the same clock loop, policy, queue limits and error
+custody. It scans the current generation and disables selection once K closes,
+then rearms at the next scheduled epoch. A replacement does not change an
+already admitted Slow call's owner. `OptionalCallResult` distinguishes a
+physically returned `FastBypass` from a `Slow` observation. Count physical
+calls separately from raw rows: a four-call packet can contain no Slow rows,
+and Fast calls are not unsampled Slow calls. A history window's `enabled`
+field describes recorded history; it is not a read of the live selector.
+
+Select the optional qualification explicitly:
+
+```sh
+env -u PYTHONOPTIMIZE python3 -B tools/rapid-profiler/backoff-work/verify.py \
+  --revision "$REVISION" --raw "$REPO/ignored/optional-backoff-run" \
+  --toolchain "$TOOLCHAIN" --user-home "$USER_HOME" --cargo-home "$CARGO_HOME" \
+  --optional --worker-backpressure
+```
+
+This first requires all 30 existing mandatory/optional frontend stages and one
+new 13-call native control, then runs fresh optional K10 and K1000 trials.
+The native control holds the controller unchanged around one real Fast call
+after disable and before rearm, and checks an entered B call returning to B
+after C replaces it. It exercises driver operations and queues, not the clock
+loop. The two 520-epoch trials exercise that loop independently at the original
+cadence. They keep the same 2 ms lateness, absolute shutdown, 20 CPU/30 wall
+seconds, 64 MiB file limit and 55-second parent. No failed attempt is retried.
+
+Without `--worker-backpressure`, the optional worker refuses Full immediately;
+with it, only the existing bounded worker wait is enabled. The commands are
+`optional-backoff-work` and `optional-backoff-work-wait`. Both emit their
+requested policy explicitly. Omitting `--optional` preserves the original
+mandatory commands, prerequisite set, parser and CSV fields.
+
+Optional qualification requires 520 arms/reports and `521 + D` history
+actions/batches, where D is the actual Disabled count, 0 through 520. Physical
+calls equal Fast plus Slow, and sampled plus unsampled counts equal Slow.
+Every Disabled generation accounts for K sampled completions by successful
+finish. K10 requires a positive D and Fast count; K1000 need not close K or
+make 1000 calls. Both require actual Slow entry prefix above 512, complete
+batch/export counts, synced size and actual joins. These aggregate checks do
+not locate a Fast call between disable and rearm: the trial keeps
+`post_disable_rearm_coverage=not-qualified`. Only the separate deterministic
+control supplies that bracket evidence.
+
+Whole input, journal, return and Report assertions in the native control are
+source-attested; the wrapper parses its exact one-test terminal and strict
+closure. Timed trials export Report counts, not independent complete Report
+replay. Neither run adds full-state, cost, timing accuracy, arbitrary ABI or
+indefinite-service qualification. The earlier seven mandatory campaigns remain
+FAILED in [backoff-independent](../../../evaluation/backoff-independent/README.md),
+including attempts with a passing K10 prefix and a failed or unrun K1000 case.
+See [the optional recipe controls](../optional-backoff-work/README.md).
