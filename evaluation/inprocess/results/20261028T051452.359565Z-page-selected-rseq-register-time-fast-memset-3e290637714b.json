@@ -1,0 +1,832 @@
+{
+  "artifacts_sha256": "284cd5a5a9339a71795f60b035bcecffcc194f22b340b0ac14c29ed4be5b14bd",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "finite": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      3,
+      536870912,
+      16777216,
+      15
+    ],
+    "program": [
+      30,
+      536870912,
+      16777216,
+      60
+    ]
+  },
+  "build_evidence_sha256": "273601bb549543075d318e753fedac65730eaeea39cf75e8b22ab52e08cdbde0",
+  "build_status": "passed",
+  "cleanup_complete": true,
+  "command_count": 89,
+  "command_rows_sha256": "b267cc9e2e5d3de56032a00ab45ba2cdf424514c4aaa4f4daa430e55b70a873e",
+  "configuration_sha256": "e52e535aeeca0c77007b1335e5780eb4e950e6bdd27b835198ed153bf70c9243",
+  "cpu": 4,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "LD_BIND_NOW": "1",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "3e290637714b71d71941dbada7fba9083c0ec393",
+  "failure_type": null,
+  "fast_extraction_sha256": "7203440450ab8c9d411908caec97c37cf2fe3dbf9f72f69d95b247dbe52a45de",
+  "fast_memset_body": {
+    "bytes": 15,
+    "sha256": "9b0962fabb10968cfa175213396b8a63e6e8b81cce83547aea6e90223d21ec9f"
+  },
+  "fast_qualification_sha256": "1caa2224864812affa5c7f3121ab2a3860017e649bcafb644c9dfe0fa1bfe525",
+  "final_error_count": 0,
+  "finite_build_sha256": "da6309ef444bd15d9c2d4cd080801dccefc48ca40870cadd1fa409e7786cce67",
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 4,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "header_aliases_sha256": "89256f75cc1880484c8965b08053dd74f67b0fe10165b996dc567f0e668e8c35",
+  "inputs_sha256": "3cfc1816f1169b000c4f2bdc2b825d6fb8812364b4d64f46519220a96883ddfa",
+  "interval_scope": "All 22 CLOCK_MONOTONIC_RAW interval values from one frozen interpreter site. Service begins after source fetch/plan and ends after genuine generated NX exit/reset, before guard dispatch. API interval ends before arm. No per-site native baseline or frequency conversion.",
+  "private_receipt": {
+    "bytes": 8175115,
+    "sha256": "bf9a5db17e5e1a46beed4b2abf1eb44054a3078b3e9c8487cc82d99e81b7e503"
+  },
+  "profile": "page-selected-rseq-register-time-fast-memset-v1",
+  "programs": [
+    {
+      "actual_environment_sha256": "ec6b8cca52164e9f8ee4dd1b571ba060bf3ee5a3d6d831d6eacf6fd8fbd4aea3",
+      "bridge": {
+        "bytes": 2361672,
+        "sha256": "46c5d599f9a81913827a9c19e5f950274dcc8b2a2f4a553cbe5b2fd317fe0426"
+      },
+      "counters": {
+        "failure_code": 0,
+        "forwarded": 47,
+        "nx_faults": 23093,
+        "source_syscalls": 47,
+        "status": 0
+      },
+      "gated_exit": 0,
+      "interpreter": {
+        "bytes": 939216,
+        "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+      },
+      "name": "discovery",
+      "namespace": {
+        "launch.json": {
+          "bytes": 675,
+          "sha256": "947d8637d2e34de23f49fa919cc40f7722b781ca3274f0a47fb18c49b6cd1c44"
+        },
+        "namespace.json": {
+          "bytes": 1561,
+          "sha256": "8acc196907d7d2d21c5395f607be301dff9349826754834e0e311a5d62a9156f"
+        }
+      },
+      "native_exit": 0,
+      "original": {
+        "bytes": 27936,
+        "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+      },
+      "report_sha256": "2b0640c32a8e6719a3bc3c7e81f5093e2aec64588672c8bb26565dcd054802c1",
+      "status": "completed",
+      "whole_process_ns": {
+        "gated": 11600194917,
+        "native": 3690377
+      }
+    },
+    {
+      "actual_environment_sha256": "1adffe48345dce37374faf4c0ca19fb53e07e50cb08c038e41919650214053ac",
+      "bridge": {
+        "bytes": 2361672,
+        "sha256": "131acdee08d924cf76f45e1010d03e727d89227b6f9dc864889c62d9634108df"
+      },
+      "counters": {
+        "failure_code": 0,
+        "forwarded": 47,
+        "nx_faults": 23093,
+        "source_syscalls": 47,
+        "status": 0
+      },
+      "gated_exit": 0,
+      "interpreter": {
+        "bytes": 939216,
+        "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9"
+      },
+      "name": "measurement",
+      "namespace": {
+        "launch.json": {
+          "bytes": 677,
+          "sha256": "d5a0696d330919b6a196cf1950be9f2f36292084426485c9a5056a78cda5c78d"
+        },
+        "namespace.json": {
+          "bytes": 1563,
+          "sha256": "71ec8e417cb3fc549543c0c12f32b57de701799fdf8fc74d4137d590993c1590"
+        }
+      },
+      "native_exit": 0,
+      "original": {
+        "bytes": 27936,
+        "sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171"
+      },
+      "report_sha256": "45fa5cc417c8f2a5eb226edd63b54eb8b19b19848c256c132e4bbd92e57b04c7",
+      "status": "completed",
+      "whole_process_ns": {
+        "gated": 11759137354,
+        "native": 3592719
+      }
+    }
+  ],
+  "qualification": [
+    {
+      "exit": 0,
+      "name": "register-timing-0",
+      "outcome": {
+        "clock_calls": 33,
+        "completed": 11,
+        "intervals": [
+          [
+            35464,
+            440001
+          ],
+          [
+            6269,
+            301302
+          ],
+          [
+            5488,
+            307732
+          ],
+          [
+            5579,
+            301392
+          ],
+          [
+            5378,
+            306350
+          ],
+          [
+            5378,
+            298989
+          ],
+          [
+            5378,
+            307322
+          ],
+          [
+            5409,
+            298989
+          ],
+          [
+            5368,
+            330626
+          ],
+          [
+            5358,
+            310647
+          ],
+          [
+            5368,
+            333471
+          ]
+        ],
+        "native_references": 11,
+        "observer_error": 0,
+        "operation": "completed",
+        "retained_full_records": 11
+      },
+      "record": {
+        "bytes": 11169752,
+        "sha256": "e63ecdba1ba76ad7f554f364b676b191bfd4cf4b1ed766b8a8593bd20df3d52a"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "exit": 125,
+      "name": "register-timing-1",
+      "outcome": {
+        "clock_calls": 1,
+        "completed": 0,
+        "expected_failure_verified": true,
+        "intervals": null,
+        "native_references": 1,
+        "observer_error": 803,
+        "operation": "failed",
+        "retained_full_records": 1
+      },
+      "record": {
+        "bytes": 11169752,
+        "sha256": "5262e941c65c864815ede3bfcfab133a701e14e1ebcab20576a1aa25b233612c"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "exit": 125,
+      "name": "register-timing-2",
+      "outcome": {
+        "clock_calls": 2,
+        "completed": 0,
+        "expected_failure_verified": true,
+        "intervals": null,
+        "native_references": 1,
+        "observer_error": 808,
+        "operation": "failed",
+        "retained_full_records": 1
+      },
+      "record": {
+        "bytes": 11169752,
+        "sha256": "c26c11bcde470c51792cd856a0eacfd7195b95808c1eefa2d7ef47c576e4a14f"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "exit": 0,
+      "name": "fast-register-timing-0",
+      "outcome": {
+        "clock_calls": 33,
+        "completed": 11,
+        "intervals": [
+          [
+            35563,
+            440251
+          ],
+          [
+            6560,
+            302304
+          ],
+          [
+            5458,
+            307451
+          ],
+          [
+            5528,
+            300881
+          ],
+          [
+            5438,
+            298869
+          ],
+          [
+            5849,
+            301092
+          ],
+          [
+            5448,
+            301793
+          ],
+          [
+            5358,
+            301312
+          ],
+          [
+            5408,
+            298889
+          ],
+          [
+            5459,
+            305449
+          ],
+          [
+            5377,
+            300100
+          ]
+        ],
+        "native_references": 11,
+        "observer_error": 0,
+        "operation": "completed",
+        "retained_full_records": 11
+      },
+      "record": {
+        "bytes": 11169752,
+        "sha256": "c1a2233c4aefae7829ff6764a3f4ba4283d28b9d64caadcbbc05b9ad96fdbbcc"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "exit": 125,
+      "name": "fast-register-timing-1",
+      "outcome": {
+        "clock_calls": 1,
+        "completed": 0,
+        "expected_failure_verified": true,
+        "intervals": null,
+        "native_references": 1,
+        "observer_error": 803,
+        "operation": "failed",
+        "retained_full_records": 1
+      },
+      "record": {
+        "bytes": 11169752,
+        "sha256": "966c74a86ad899f0017aee7f43089854a76c3e5d3fd9fed21707c99b16c1a9e1"
+      },
+      "status": "accepted_observation"
+    },
+    {
+      "exit": 125,
+      "name": "fast-register-timing-2",
+      "outcome": {
+        "clock_calls": 2,
+        "completed": 0,
+        "expected_failure_verified": true,
+        "intervals": null,
+        "native_references": 1,
+        "observer_error": 808,
+        "operation": "failed",
+        "retained_full_records": 1
+      },
+      "record": {
+        "bytes": 11169752,
+        "sha256": "c0b9327230891ab66df198bef2ef11f0b2ca92e6a261986d2654e82659e61436"
+      },
+      "status": "accepted_observation"
+    }
+  ],
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_register_time.py",
+    "--expect-revision",
+    "3e290637714b71d71941dbada7fba9083c0ec393",
+    "--program",
+    "true",
+    "--rseq-fast-memset"
+  ],
+  "rseq_programs": [
+    {
+      "chain": {
+        "error": 0,
+        "fallbacks": 11198,
+        "nx_entries": 11198,
+        "preparations": 129561,
+        "releases": 140759,
+        "steps": 129528,
+        "trace_entries": 118330,
+        "unexpected": 0
+      },
+      "name": "discovery",
+      "registration_owner": {
+        "epoch": 1,
+        "held": 1,
+        "phase": 3,
+        "registered": 1
+      },
+      "rseq": {
+        "counts": [
+          1,
+          1,
+          0,
+          0,
+          107486,
+          12151,
+          0,
+          1164,
+          5
+        ],
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "status": 0
+      },
+      "status": "completed"
+    },
+    {
+      "chain": {
+        "error": 0,
+        "fallbacks": 11197,
+        "nx_entries": 11197,
+        "preparations": 129568,
+        "releases": 140765,
+        "steps": 129535,
+        "trace_entries": 118338,
+        "unexpected": 0
+      },
+      "name": "measurement",
+      "registration_owner": {
+        "epoch": 1,
+        "held": 1,
+        "phase": 3,
+        "registered": 1
+      },
+      "rseq": {
+        "counts": [
+          1,
+          1,
+          0,
+          0,
+          107486,
+          12151,
+          0,
+          1164,
+          5
+        ],
+        "detail_abs": 0,
+        "detail_negative": 0,
+        "failure_code": 0,
+        "status": 0
+      },
+      "status": "completed"
+    }
+  ],
+  "schema": 1,
+  "scope": "Finite observer qualification followed by completed discovery and one completed real-program timed run; lowest eligible interpreter offset fixed before measurement. No full B2/B3 or transparent-namespace claim. Explicit registered-inactive rseq and TRACE composition; no active critical-section claim.",
+  "selected_configuration": {
+    "bytes": 485,
+    "sha256": "f0f62639d2ab2876ee4fffe8a132b123955d7203a45013a05ca550180228559e"
+  },
+  "selection": {
+    "discovery_completed": 135,
+    "discovery_hits": 134,
+    "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+    "key": {
+      "guard_code": 126,
+      "guard_length": 2,
+      "instructions": 2,
+      "offset": 42828,
+      "run_length": 6,
+      "source_hex": "4989d54489c241545589cd410fb64900",
+      "source_length": 15
+    },
+    "rule": "lowest interpreter ELF offset with at least ten completed same-site hits"
+  },
+  "source": {
+    "head_sources_match": true,
+    "revision": "3e290637714b71d71941dbada7fba9083c0ec393",
+    "source_manifest_sha256": "c6dddc90a5f25a545ac27ca5f9516b96b1da3effbe4e13e0c10d02f78353dbe3",
+    "tracked_clean": true,
+    "tree": "e9b45c012ac41b06be372bfa0ff045dc8f8129c1"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T051452.359565Z",
+  "status": "passed",
+  "timing": {
+    "clock": "CLOCK_MONOTONIC_RAW",
+    "clock_id": 4,
+    "dropped_samples": 0,
+    "first_publication_api_ns": 35163,
+    "first_service_ns": 174001,
+    "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+    "resolution_nanoseconds": 1,
+    "resolution_seconds": 0,
+    "samples": 11,
+    "scope": "Service starts after source fetch/plan, immediately before publish; ends after genuine NX exit/reset and before guard dispatch. API subinterval ends before arm. No per-site native baseline.",
+    "site": {
+      "guard_code": 126,
+      "guard_length": 2,
+      "instructions": 2,
+      "offset": 42828,
+      "run_length": 6,
+      "source_hex": "4989d54489c241545589cd410fb64900",
+      "source_length": 15
+    },
+    "steady_hit_api_ns": [
+      7852,
+      7602,
+      8032,
+      7972,
+      9424,
+      9624,
+      9944,
+      9384,
+      9424,
+      8824
+    ],
+    "steady_service_ns": [
+      155193,
+      146190,
+      146440,
+      151237,
+      156575,
+      155643,
+      156134,
+      161142,
+      160010,
+      154111
+    ],
+    "total_completed_hits": 134
+  },
+  "timing_builds_sha256": "bdcef05afdbaab8dce507cc4bd7acab21c549deadd0989ba7051f2a6b963e3ca",
+  "tool_hashes": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "cp": {
+      "bytes": 144400,
+      "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+    },
+    "gdb": {
+      "bytes": 17179552,
+      "sha256": "cf8ae9d5192667cf681eabedf50ef39ecd11fac784c15cea6e3961880d3a16ed"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "objcopy": {
+      "bytes": 189816,
+      "sha256": "0459bbce1337dfba2b8c7510ab4a47f51baa9a00c4d3c46be6fddfdbb01d9c4a"
+    },
+    "objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustup": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "objcopy": [
+      2,
+      35,
+      2
+    ],
+    "objdump": [
+      2,
+      35,
+      2
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "whole_process_scope": "Separate original native baseline and instrumented fresh exec for each phase. Gated duration includes namespace preparation; neither is a same-site steady interval.",
+  "workload": {
+    "program": "true",
+    "rseq_disabled": false,
+    "rseq_fast_memset": true
+  }
+}
