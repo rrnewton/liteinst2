@@ -230,6 +230,9 @@ static void selected_initialize(void) {
     checked(!li2_decoder_initialize(selected_arena,sizeof selected_arena,&selected_initial_stats) &&
             selected_initial_stats.phase==2,608,0);
     checked(!li2_selected_observe_hardware(&selected_hardware),609,0);
+#ifdef LI2_SELECTED_PROVIDER
+    selected_provider_configure();
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
     checked(!li2_step_session_init_oneshot(&selected_session,SELECTED_MASK),610,0);
 #else
@@ -361,6 +364,9 @@ static void selected_builtin(ucontext_t *context) {
     struct selected_builtin_prefix *p=&selected_builtin_prefix;
     *p=(struct selected_builtin_prefix){.kind=selected_decoded.kind};
     uint32_t a,d,c=0,b=0;
+#ifdef LI2_SELECTED_PROVIDER
+    uint32_t policy_leaf=0,policy_subleaf=0;
+#endif
     p->phase=1; /* enable operation entered, no result claimed */
     if(p->kind==LI2_CPUID) p->enable_result=raw(SYS_arch_prctl,ARCH_SET_CPUID,1,0,0,0,0);
     else p->enable_result=raw(SYS_prctl,PR_SET_TSC,PR_TSC_ENABLE,0,0,0,0);
@@ -369,6 +375,9 @@ static void selected_builtin(ucontext_t *context) {
     p->phase=3; /* exactly one sample attempted */
     if(p->kind==LI2_CPUID) {
         a=(uint32_t)g[REG_RAX];c=(uint32_t)g[REG_RCX];
+#ifdef LI2_SELECTED_PROVIDER
+        policy_leaf=a;policy_subleaf=c;
+#endif
         __asm__ volatile("cpuid":"+a"(a),"=b"(b),"+c"(c),"=d"(d)::"memory");
     } else if(p->kind==LI2_RDTSCP) __asm__ volatile("rdtscp":"=a"(a),"=d"(d),"=c"(c)::"memory");
     else __asm__ volatile("rdtsc":"=a"(a),"=d"(d)::"memory");
@@ -378,11 +387,18 @@ static void selected_builtin(ucontext_t *context) {
     else p->restore_result=raw(SYS_prctl,PR_SET_TSC,PR_TSC_SIGSEGV,0,0,0,0);
     p->phase=6;
     checked(!p->restore_result,648,p->restore_result);
+#ifdef LI2_SELECTED_PROVIDER
+    if(p->kind==LI2_CPUID && selected_provider_state.mode)
+        selected_provider_cpuid(policy_leaf,policy_subleaf,&a,&b,&c,&d);
+#endif
     g[REG_RAX]=a;g[REG_RDX]=d;
     if(p->kind==LI2_CPUID) {g[REG_RBX]=b;g[REG_RCX]=c;++cpuid_count;}
     else if(p->kind==LI2_RDTSCP) {g[REG_RCX]=c;++tscp_count;}else ++tsc_count;
     g[REG_EFL]=(greg_t)selected_logical_flags;g[REG_RIP]=(greg_t)selected_decoded.next_pc;
     p->phase=7; /* selected context committed */
+#ifdef LI2_SELECTED_PROVIDER
+    if(p->kind==LI2_CPUID && selected_provider_state.mode)selected_provider_cpuid_committed();
+#endif
 }
 
 /* Shared owned-source effect ingress. Caller holds a fresh exact source borrow;
@@ -423,7 +439,12 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
         checked(!selected_selftesting,628,0);
         struct li2_selected_request request={&selected_decoded,selected_view.bytes,selected_view.length,
             flags,LI2_SELECTED_NX_KNOWN_INPUT,si};
+#ifdef LI2_SELECTED_PROVIDER
+        int status=selected_provider_state.mode?selected_provider_random(context,&request):
+            li2_selected_complete_native(context,&request,&selected_hardware,&selected_completion);
+#else
         int status=li2_selected_complete_native(context,&request,&selected_hardware,&selected_completion);
+#endif
         checked(!status,629,status);
         ++selected_provider_calls[selected_decoded.kind-LI2_RDRAND];
         selected_logical_flags=(uint64_t)g[REG_EFL];selected_release();return;

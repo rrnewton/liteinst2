@@ -39,8 +39,10 @@ static int selected_oneshot_try(int sig,siginfo_t *si,ucontext_t *uc) {
         li2_lifecycle_fetch_interlock()==LI2_FETCH_BUSY,1562,0);
 #ifdef LI2_RSEQ_INACTIVE
     const struct li2_rseq_state *rs=li2_rseq_snapshot();
-    checked(rs->initialized && !rs->first_error && !rs->held,1563,0);
-    if(rs->registered) {checked(rs->phase==LI2_RSEQ_ACTIVE,1563,1);return 0;}
+    checked(rs->initialized && !rs->first_error,1563,0);
+    /* ACTIVE retains the rseq ownership pin: ordinary dispatch must keep it. */
+    if(rs->registered) {checked(rs->registered==1 && rs->phase==LI2_RSEQ_ACTIVE && rs->held==1,1563,1);return 0;}
+    checked(!rs->held,1563,0);
     checked(rs->phase==LI2_RSEQ_IDLE,1563,2);
 #endif
     uintptr_t original_pc=selected_decoded.pc,original_next=selected_decoded.next_pc;
