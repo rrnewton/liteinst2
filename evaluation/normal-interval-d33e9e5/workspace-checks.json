@@ -1,0 +1,233 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reaped_descendants": 0,
+        "seconds": 6.4914327941369265,
+        "start_utc": "2026-10-28T15:37:17.516029+00:00",
+        "termination": null
+      },
+      "name": "fmt",
+      "totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "c7ed3b825c35f9c22e280a8ac3fbcc82d18ec92781a8ee804c3cff4d65b64271",
+        "reaped_descendants": 0,
+        "seconds": 6.55746003286913,
+        "start_utc": "2026-10-28T15:37:24.021202+00:00",
+        "termination": null
+      },
+      "name": "clippy",
+      "totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "83012d3e39ab3681ca3bcabbe156b92ac58bf57309f6d4cadac98f9639b5cdab",
+        "reaped_descendants": 0,
+        "seconds": 4.4343862540554255,
+        "start_utc": "2026-10-28T15:37:30.593592+00:00",
+        "termination": null
+      },
+      "name": "check",
+      "totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 0
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "78d2cf2de79c3fac9429ea3cae7b9387e25a11f06318483a9522c6492d0e056a",
+        "reaped_descendants": 0,
+        "seconds": 331.1609146480914,
+        "start_utc": "2026-10-28T15:37:35.043344+00:00",
+        "termination": null
+      },
+      "name": "workspace-default",
+      "totals": {
+        "failed": 0,
+        "ignored": 33,
+        "passed": 2962
+      },
+      "wall_limit_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "a69ac333df0a5578b990a2c463cea5e709e675925c8ddc844accb9d6ff271512",
+        "reaped_descendants": 0,
+        "seconds": 124.75216768099926,
+        "start_utc": "2026-10-28T15:43:06.218946+00:00",
+        "termination": null
+      },
+      "name": "serial-launch",
+      "totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 1039
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "f3af379d877f4eeaa926095833915354dde6f8a8a09bf31307ba807dadb8e8e5",
+        "reaped_descendants": 0,
+        "seconds": 0.03506334382109344,
+        "start_utc": "2026-10-28T15:45:10.991651+00:00",
+        "termination": null
+      },
+      "name": "staged-allocation",
+      "totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 3
+      },
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "bcaf25b6bd62d1c771fec00c6853e310ffc6f2eddc82b95c9bee7832ef0935b8",
+        "reaped_descendants": 0,
+        "seconds": 1.2970394659787416,
+        "start_utc": "2026-10-28T15:45:11.043437+00:00",
+        "termination": null
+      },
+      "name": "prefixed-pun",
+      "totals": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 36
+      },
+      "wall_limit_seconds": 180
+    }
+  ],
+  "compiler_jobs": 4,
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+  "historical_regressions": {
+    "admitted_exec_native_first_user_and_retired_history_are_exact": "PASS",
+    "admitted_exec_native_source_profile_bound_refuses_after_exec": "PASS",
+    "admitted_exec_native_source_reply_refusal_keeps_new_mm_held": "PASS",
+    "native_state_covers_every_prefixed_pun_and_original_successor": "PASS",
+    "observing_control_staged_drop_unmaps_before_releasing_last_owners": "PASS",
+    "original_exec_replacement_matches_raw_replay_and_native_full_state": "PASS",
+    "stale_exec_source_reply_preserves_actual_replacement_without_commit": "PASS"
+  },
+  "kernel_version": "7.1.3",
+  "parallelism": "No affinity change or RUST_TEST_THREADS override; libtest uses its default except explicitly serial-launch.",
+  "raw_receipt": {
+    "bytes": 21876,
+    "sha256": "605fbfff6af302a37923b34c7ef8042adfac5c6a78decc74eeee79ff5c548399"
+  },
+  "recipe": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only",
+  "revision": "d33e9e50a87409c0e19852deb51df1168d469f0f",
+  "runner_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Functional validation. Seconds are command wall durations, not throughput or profiler accuracy. Seven merge checks only; no repeated issue-specific campaign.",
+  "status": "PASS",
+  "whole_recipe_owner": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "1ba0f1dcc09f1ccefb5322c57340935f0d3c9abfce765a7399919a79a29b7665",
+    "reaped_descendants": 0,
+    "seconds": 475.0065303170122,
+    "start_utc": "2026-10-28T15:37:17.438868+00:00",
+    "termination": null
+  }
+}
