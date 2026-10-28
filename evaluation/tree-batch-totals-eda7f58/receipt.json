@@ -1,0 +1,327 @@
+{
+  "claim": 4,
+  "prior_attempt": {
+    "executed_stages": 0,
+    "private_receipt": {
+      "bytes": 2422,
+      "sha256": "96885a0cdd310d96c47ef38fd4e23942783aa3d90fd2070fdeccd395ea366d36"
+    },
+    "reason": "Operator supplied an incorrect full revision; exact Git revision preflight refused before tests. Correct input used for the complete subsequent campaign.",
+    "stage": "setup",
+    "status": "FAILED"
+  },
+  "qualifications": {
+    "owner": {
+      "artifacts": {
+        "cargo_fresh": false,
+        "dso": {
+          "bytes": 13400,
+          "sha256": "e1bddc78f41d7a03b189d13b5102b78b79d741ae8f2257a651f9bd2b90239449"
+        },
+        "profile": {
+          "debug_assertions": true,
+          "debuginfo": 0,
+          "opt_level": "3",
+          "overflow_checks": true,
+          "test": true
+        },
+        "test_binary": {
+          "bytes": 8506600,
+          "sha256": "118a0c83d00295eb4c7abd0ce4e889b29b47dd01ee169fd57b8ce624cd228ba4"
+        }
+      },
+      "batch_pure_controls": {
+        "failed": 0,
+        "filtered": 374,
+        "ignored": 0,
+        "names": [
+          "source_batch_caught_unwind_leaves_owner_busy_until_abandoned",
+          "source_batch_cumulative_delta_preserves_sampled_and_closed_partitions",
+          "source_batch_first_failure_retains_exact_error_across_abandonment",
+          "source_batch_input_snapshots_reject_every_changed_byte_extent_and_alignment",
+          "source_batch_latch_requires_exact_count_and_cannot_reenter_busy",
+          "source_batch_observation_caught_unwind_never_reopens_owner",
+          "source_batch_observation_completion_requires_the_same_busy_count",
+          "source_batch_observation_preserves_every_count_and_call_finish_threshold",
+          "source_batch_observation_refuses_closed_busy_and_invalid_counts",
+          "source_batch_observation_retains_first_error_through_repeat_and_drop"
+        ],
+        "passed": 10,
+        "status": "PASS"
+      },
+      "cases": 20,
+      "closure": {
+        "echild": 25,
+        "normal": 25,
+        "rescues": 0
+      },
+      "command": [
+        "python3",
+        "-B",
+        "tools/rapid-profiler/tree-work/verify_batch_owners.py",
+        "--revision",
+        "eda7f58f91304f06ddb9f438a1577f2c8834909d",
+        "--raw",
+        "$RAW",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--user-home",
+        "$USER_HOME",
+        "--cargo-home",
+        "$CARGO_HOME"
+      ],
+      "csv": {
+        "bytes": 1110,
+        "name": "owner-cases.csv",
+        "sha256": "29b90450c61b474b08c6e2661825e5b7154ef4e81dbed2d6896b16dab3463f86"
+      },
+      "hardware": {
+        "architecture": "x86_64",
+        "build_affinity_cpus": 4,
+        "family": 26,
+        "model": 17,
+        "native_actual_caller_and_helper_shared_cpus": 1,
+        "owner_label": "AMD EPYC Zen 5 dev host",
+        "owner_label_origin": "owner specified",
+        "stepping": 0,
+        "vendor": "AuthenticAMD"
+      },
+      "legacy_totals": {
+        "helper_joins": 2,
+        "installed_roots": 61,
+        "original_roots": 29,
+        "successful_batch_finishes": 8
+      },
+      "old_owner_prerequisite": {
+        "entries": 2,
+        "events": 4,
+        "helper_joined": true,
+        "originals": 1,
+        "reports": [
+          1,
+          1,
+          0
+        ],
+        "returns": 2,
+        "roots": 1,
+        "rows": 2,
+        "sampled": 2,
+        "source_attested": "root A remains outstanding at root RET; child B remains outstanding before child RET and finishes only at its original continuation under C; root finishes after actual outer return/postflight; complete input, rows, journal, history, original-owner Reports and retirement joins",
+        "status": "PASS"
+      },
+      "private_receipt": {
+        "bytes": 70453,
+        "sha256": "f3428538c061c4c2f2a3af312733dcf289e653aad87f4b18d7b82d1252a39e1a"
+      },
+      "sources": {
+        "canonical_manifest": {
+          "bytes": 24643,
+          "sha256": "63f49300a8876c0bae12be6845254c7ff0aade394ca088ca3910b9bfdfda4b88"
+        },
+        "count": 175
+      },
+      "stages": 25,
+      "status": "PASS",
+      "tools": {
+        "cargo": {
+          "bytes": 42839824,
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+        },
+        "gcc": {
+          "bytes": 1093144,
+          "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+        },
+        "git": {
+          "bytes": 4397400,
+          "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+        },
+        "python": {
+          "bytes": 15448,
+          "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+        },
+        "rustc": {
+          "bytes": 645000,
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+        }
+      },
+      "totals": {
+        "helper_joins": 2,
+        "installed_roots": 62,
+        "original_roots": 29,
+        "successful_batch_finishes": 8
+      },
+      "versions": {
+        "gcc": "11.5.0",
+        "python": [
+          3,
+          9,
+          25
+        ],
+        "rust": {
+          "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+          "host": "x86_64-unknown-linux-gnu",
+          "release": "1.97.1"
+        }
+      }
+    },
+    "state": {
+      "artifacts": {
+        "binary": {
+          "bytes": 5387136,
+          "sha256": "8e07ebf6416a3824545d51b33d58b4ab4a2836f3e9333c1c356bef4cf252469f"
+        },
+        "cargo_fresh": true,
+        "dso": {
+          "bytes": 13400,
+          "sha256": "e1bddc78f41d7a03b189d13b5102b78b79d741ae8f2257a651f9bd2b90239449"
+        },
+        "profile": {
+          "debug_assertions": true,
+          "debuginfo": 0,
+          "opt_level": "3",
+          "overflow_checks": true,
+          "test": false
+        }
+      },
+      "calibrations": {
+        "binary": {
+          "bytes": 1898352,
+          "sha256": "4a803d0ac8125ca73bac21543baa870cb7c8361348c2e89704ca883dc0ad801d"
+        },
+        "cargo_fresh": false,
+        "profile": {
+          "debug_assertions": true,
+          "debuginfo": 0,
+          "opt_level": "3",
+          "overflow_checks": true,
+          "test": true
+        }
+      },
+      "closure": {
+        "echild": 9,
+        "normal": 9,
+        "rescues": 0
+      },
+      "command": [
+        "python3",
+        "-B",
+        "tools/rapid-profiler/tree-work/verify_hardware_stop.py",
+        "--revision",
+        "eda7f58f91304f06ddb9f438a1577f2c8834909d",
+        "--raw",
+        "$RAW",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--user-home",
+        "$USER_HOME",
+        "--cargo-home",
+        "$CARGO_HOME",
+        "--batch-state"
+      ],
+      "csv": {
+        "bytes": 910,
+        "name": "state-tree-batch-pairs.csv",
+        "sha256": "3eb93ae83b771250ff431f5553af05739ab76a65ad8f6895d4c58369bef4337b"
+      },
+      "hardware": {
+        "affinity_cpus": 4,
+        "architecture": "x86_64",
+        "family": 26,
+        "model": 17,
+        "owner_label": "AMD EPYC Zen 5 dev host",
+        "stepping": 0,
+        "vendor": "AuthenticAMD"
+      },
+      "hardware_control": {
+        "children": 1,
+        "debug_restored": true,
+        "echild": 1,
+        "exit": 0,
+        "hardware_stops": 2,
+        "reaped": 1,
+        "rf_clear_after_each_step": true,
+        "single_steps": 2,
+        "state_unchanged": true,
+        "status": "PASS",
+        "steps_exposing_tf_bits": 0,
+        "stops_exposing_rf": 2
+      },
+      "private_receipt": {
+        "bytes": 15812,
+        "sha256": "27f0a51fa7543c55fd19a68cecbb39049fc4f04583b7f9d791e6f5ce361abc1b"
+      },
+      "scope": "Four finite pairs; only indices0/7 receive full-state and original operand inspection. The six middle calls have functional and actual transfer checks. Continued instructions are not counted SINGLESTEP operations. No timing, hardware-cache, accuracy or performance claim.",
+      "sources": {
+        "canonical_manifest": {
+          "bytes": 48520,
+          "sha256": "6edd8be1ac11de51518161b78c5dc694944afbab0931c0c27ac1b6221875713e"
+        },
+        "count": 348
+      },
+      "stages": 9,
+      "status": "PASS",
+      "summary": {
+        "candidate_events": 128,
+        "candidate_report_records": 64,
+        "candidate_rows": 64,
+        "children": 8,
+        "comparisons": 2744,
+        "full_indices": [
+          0,
+          7
+        ],
+        "hardware_stops": 304,
+        "middle": "functional-only",
+        "normal_reaps": 8,
+        "outer_calls": 64,
+        "outer_returns": 64,
+        "pairs": 4,
+        "roots": 64,
+        "selected_call_pairs": 8,
+        "selected_original_visits": 2656,
+        "source_attested_finishes": 8,
+        "status": "PASS",
+        "tree_transfers": 192
+      },
+      "tools": {
+        "cargo": {
+          "bytes": 42839824,
+          "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+        },
+        "gcc": {
+          "bytes": 1093144,
+          "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+        },
+        "git": {
+          "bytes": 4397400,
+          "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+        },
+        "python": {
+          "bytes": 15448,
+          "sha256": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576"
+        },
+        "rustc": {
+          "bytes": 645000,
+          "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+        }
+      },
+      "versions": {
+        "gcc": "11.5.0",
+        "python": [
+          3,
+          9,
+          25
+        ],
+        "rust": {
+          "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+          "host": "x86_64-unknown-linux-gnu",
+          "release": "1.97.1"
+        }
+      }
+    }
+  },
+  "revision": "eda7f58f91304f06ddb9f438a1577f2c8834909d",
+  "schema": 1,
+  "scope": "Actual source-batch totals and retained first refusal; finite owner/state qualification, no throughput or full-A5 result.",
+  "status": "PASS"
+}

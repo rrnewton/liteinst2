@@ -1,0 +1,130 @@
+{
+  "allocator": {
+    "command": [
+      "cpuset-alloc",
+      "run",
+      "--cores",
+      "4",
+      "--tag",
+      "li2core-tree-batch",
+      "--"
+    ],
+    "enforcement": "systemd scope AllowedCPUs; same four-CPU affinity joined to all182 top-level stage owners",
+    "engine": "python",
+    "observed_cpus": [
+      3,
+      6,
+      10,
+      15
+    ],
+    "scope": "Cooperative reservation and hard process-tree CPU pin; no exclusive-host-isolation claim"
+  },
+  "continuation": {
+    "main_parent": "43d7a40e5d112beac436ab646b834f4a6f9bce86",
+    "measured_sources_identical": 341,
+    "merged_revision": "cd92902dda8965d3d07c3071b73186aa3d7c6dcc",
+    "method": "Every recorded source descriptor matched current bytes and merged Git blob"
+  },
+  "launches": [
+    {
+      "attempt": 1,
+      "cleanup_complete": true,
+      "exit_code": 1,
+      "log": {
+        "bytes": 904,
+        "sha256": "fc07b700b96d01257f921a7a5d207c965b9231d436f3753c821cc8de5514d197"
+      },
+      "reaped_descendants": 0,
+      "receipt": {
+        "bytes": 1488,
+        "sha256": "2138114ebd4400e125c3ee1fb34012cbf3d3a3adf9176b20bb0d74cfc6959a53"
+      },
+      "start_utc": "2026-10-28T12:48:22.038604+00:00",
+      "status": "FAILED_PRELAUNCH: sanitized PATH selected Python3.9, incompatible with allocator type unions",
+      "verifier_started": false
+    },
+    {
+      "attempt": 2,
+      "cleanup_complete": true,
+      "exit_code": 3,
+      "log": {
+        "bytes": 341,
+        "sha256": "0bd5d039eab8e14fb2d8f58a6b790e463f1aaccfcae67fe0f967169d271e7eae"
+      },
+      "reaped_descendants": 0,
+      "receipt": {
+        "bytes": 1485,
+        "sha256": "3ffad4bb680f4ea83ccceb9751a5dab051d4c7f10d7f495cd1e23c5dc4bccb5a"
+      },
+      "start_utc": "2026-10-28T12:48:36.114761+00:00",
+      "status": "FAILED_PRELAUNCH: launcher omitted systemd session variables; hard cpuset enforcement refused",
+      "verifier_started": false
+    },
+    {
+      "attempt": 3,
+      "cleanup_complete": true,
+      "exit_code": 0,
+      "log": {
+        "bytes": 506649,
+        "sha256": "c86cd2795ba1c72da28e88223ddbc7ea1913679e33423a509198199b191e11c3"
+      },
+      "reaped_descendants": 0,
+      "receipt": {
+        "bytes": 1486,
+        "sha256": "485a9d7f838cb689cec03da424caf1138a591e84a82f621cb2460f684795aacf"
+      },
+      "start_utc": "2026-10-28T12:49:10.042083+00:00",
+      "status": "COMPLETE_COHORT",
+      "verifier_started": true
+    }
+  ],
+  "outer_launcher": {
+    "cwd": "Authenticated process helper explicitly selects repository root",
+    "engine": "AGENT_UTILS_ENGINE=python",
+    "environment_keys_preserved": [
+      "XDG_RUNTIME_DIR",
+      "DBUS_SESSION_BUS_ADDRESS"
+    ],
+    "log_limit_bytes": 8388608,
+    "python_path": "Python3.12 precedes system Python3.9; toolchain bin remains first",
+    "source": {
+      "bytes": 2411,
+      "sha256": "8847247f335d6de9c18d793959a7c00078088b78bf4da9802fddb6c6c5a2b96a"
+    },
+    "source_binding": "Root-retained source; the outer runtime receipt does not contain its own launcher/environment digest",
+    "wall_limit_seconds": 1200
+  },
+  "premerge_gates": {
+    "receipt": {
+      "bytes": 21759,
+      "sha256": "e7030abd128d3d22a543f2dba6f6fa73f150b4c7e0025bde99ff3d194982caef"
+    },
+    "status": "PASS",
+    "workspace_failed": 0,
+    "workspace_ignored": 33,
+    "workspace_passed": 2887
+  },
+  "projection_history": [
+    {
+      "log": {
+        "bytes": 435,
+        "sha256": "0904af19bcdf3d44103d1f17ea8224e7815bcf3dfbd7ec8b9b1b479690a8970b"
+      },
+      "reason": "Projector omitted main-only tests/call_tree_truth.rs from its exact source catalog",
+      "status": "FAILED_BEFORE_IMPORT_OR_OUTPUT",
+      "version": 2
+    },
+    {
+      "log": {
+        "bytes": 475,
+        "sha256": "9dc2e28e210a59435e72d0a055ae0fef9ca714afb83f2f3afa27396de8598cb5"
+      },
+      "reason": "Outer Python alias resolves to a dispatcher, not directly to the recorded interpreter",
+      "status": "FAILED_BEFORE_OUTPUT",
+      "version": 3
+    }
+  ],
+  "revision": "e8f38e278864cb4d7b2bfb2e4c83d99cfc1286ee",
+  "scope": "No benchmark retry or observation deletion. Earlier launcher failures produced no cohort. Projector correction preserves exact producer source-set equality and all cohort predicates.",
+  "status": "ROOT_LAUNCH_JOIN_COMPLETE"
+}
