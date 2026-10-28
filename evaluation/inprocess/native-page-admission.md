@@ -4,6 +4,59 @@ trap after each instruction. The runtime uses no ptrace supervisor. Pages
 that contain selected or excluded opcode patterns remain with the existing
 NX/TF controller. Selected source patches remain zero.
 
+The merged successor contains upstream main
+`c0ddeee62aad2d06458f2a32cb775343730efb89`. It adds canonical register
+VPTESTMB to the original-PC TF owner. All six checks pass at
+`470e5110e2bbe22dda1b3342b68903d90a14404b`:
+350 recorder tests (41.81 s), formatting (6.02 s), clippy with warnings denied
+(15.70 s), workspace tests (355.46 s: **2,705 passed, zero failed, 11 ignored**,
+101 harnesses), all-feature/all-target check (10.55 s), and serial launch
+(130.32 s: **1,039 passed**, 27 harnesses). The 22 added upstream test identities
+are included; historical assertions and required native protocols remain.
+Source/configuration and cleanup checks passed. All six saved log hashes and
+the complete original qualification parser were replayed successfully.
+[New required-check receipt](results/20261028T064405.408729Z-checks-470e5110e2bb.json).
+
+The merged-tree native instruction runs at
+`d81a77a658cef48075eac62eb128822e33f33a64` pass:
+[VPTESTMB](results/20261028T063808.399300Z-page-selected-vptestmb-d81a77a658ce.json)
+76 pairs,
+[VPTESTNMB](results/20261028T063824.139343Z-page-selected-vptestnmb-d81a77a658ce.json)
+19 pairs, and
+[VPCMPB](results/20261028T063832.780108Z-page-selected-vpcmpb-d81a77a658ce.json)
+189 pairs. Independent replay verifies all **284 full-state pairs**, 1,774
+refusals and 14 separately counted typed promotions. Promoted byte strings
+remain in their original cohorts and require positive classification and
+write-footprint checks. The current runtime, fixture and runner source files are
+byte-identical: the only five files changed between this native revision and
+`470e5110` are the admission check inventory and its calibration test.
+
+The [successor real-program matrix](results/native-pages-d81a77a.json)
+remains **failed, three of five cases passed**. Its release bridge SHA256 is
+`1b5a84ab6701e145ea17ec982e3512be4e90b7659c463b5db1807f3da7cb97d6`.
+All source/tool/artifact/input closure checks pass, with no final errors.
+The hardware, exact commands and all raw integer timing samples are in the
+receipt; timing scope and bounds remain those described below.
+
+| Successor case | Result | Admitted / closed | Native command | Gated command |
+| --- | --- | ---: | ---: | ---: |
+| `true`, default rseq | completed, identical output | 415 / 415 | 3.605 ms | 10.638 s |
+| `true`, rseq disabled | completed, identical output | 1,389 / 1,389 | 2.923 ms | 7.833 s |
+| `ls -d .`, default rseq | SIGKILL, no terminal report | unavailable | 3.413 ms | 30.190 s |
+| `ls -d .`, rseq disabled | exit 125, failure 100 | 4,928 / 4,928 | 3.487 ms | 19.902 s |
+| Boundary fixture, rseq disabled | completed, identical 128 bytes | 174 / 174 | 3.426 ms | 1.318 s |
+
+The rseq-disabled `ls` terminal now confirms VPTESTMB completed and then
+refuses `KMOVQ RAX,K0`, bytes `c4 e1 fb 93 c0`, code 1933. Equal admission
+counts do not imply that the stopping instruction stayed unchanged. The
+completed `true` runs have first admission service times of 78.448 and
+79.580 microseconds, and median services over 16 revisits of 78.3025 and
+82.8095 microseconds, respectively. These remain admission-service samples,
+not full first-touch latency or steady-state application throughput.
+This successor supports claims 2 and 4; selected source patches remain zero
+and neither `ls` failure becomes a completion result. The earlier receipts
+and their original outcomes follow unchanged.
+
 The opt-in release bridge is built by
 `tools/page-entry/selected/build-native-pages.sh`: C at `-O2`, Rust decoder
 with `--release`. The live owner verifies the complete page, executable
