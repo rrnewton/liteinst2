@@ -136,7 +136,7 @@ PROVIDER_SCALARS=set('version status failure_code initialized attempts busy cpui
 def _extensions(stderr,nx,configured):
     need(type(nx)is bool and type(configured)is bool and type(stderr)is bytes and stderr.endswith(b'\n'),'literal lane and complete report')
     lines=stderr[:-1].split(b'\n');extras={};at=2
-    for enabled,name,key in ((nx,b'LI2_CPUID_NX ','cpuid_nx'),(configured,b'LI2_PROVIDER ','provider')):
+    for enabled,name,key in ((configured,b'LI2_PROVIDER ','provider'),(nx,b'LI2_CPUID_NX ','cpuid_nx')):
         if not enabled:continue
         need(at<len(lines)and lines[at].startswith(name)and len(lines[at])+1<=4096,'exact extension position '+key)
         row=rseq.decode(lines[at][len(name):]);extras[key]=row;at+=1
