@@ -31,7 +31,7 @@ failed_commands timing_scope build_status register_build_status finite_build_sta
 required_cohort_commands required_native_processes attempted_native_processes
 command_count case_count catalogue old_negative_operations_completed
 interval_scope whole_process_scope qualification programs workload selection
-selected_configuration timing""".split()
+selected_configuration timing result""".split()
 CASE = """name accepted classification process_outcome actual_exit native_exit
 gated_exit operation_completed verified_memory_fault verified_native_fault
 verified_pre_open_refusal status environment environment_delta expected_operation
@@ -47,7 +47,7 @@ COMMAND_COLUMNS = ["name", "profile", "exit", "expected_exit", "timed_out", "rea
 PROFILES = {"page-selected-" + suffix for suffix in (
     "chain-oracle-v1", "chain-real-v1", "vmovdqu64-oracle-v1", "vpbroadcast-oracle-v1",
     "generic-oracle-v1", "maps-v1", "register-controls-v1", "register-connected-v1",
-    "vptestnmb-oracle-v1", "kmovq-oracle-v1",
+    "vptestnmb-oracle-v1", "kmovq-oracle-v1", "strrchr-short-v1", "write-footprint-v1",
     "register-time-v1")} | {"inprocess-required-checks-v1"}
 
 
@@ -120,7 +120,8 @@ def project(input_path):
                 row[key] = receipt[key]
         if "cases" in receipt:
             if receipt["profile"] in ("page-selected-chain-oracle-v1", "page-selected-vmovdqu64-oracle-v1",
-                                      "page-selected-vptestnmb-oracle-v1", "page-selected-kmovq-oracle-v1"):
+                                      "page-selected-vptestnmb-oracle-v1", "page-selected-kmovq-oracle-v1",
+                                      "page-selected-strrchr-short-v1"):
                 row["cases"] = receipt["cases"]  # Complete new observations, including failures.
             else:
                 row["cases"] = [selected(case, CASE) for case in receipt["cases"]]

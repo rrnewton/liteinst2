@@ -1,0 +1,96 @@
+{
+  "receipts": [
+    {
+      "bytes": 3234,
+      "kind": "source_guard_failure",
+      "name": "20261028T022951.524404Z-page-selected-strrchr-short-b791464724d1.json",
+      "sha256": "c768ed6bd30b359dc5f75695effcf58d6ab0f0caceb90b2d69760366c2fadb3f"
+    },
+    {
+      "bytes": 26079,
+      "kind": "run",
+      "name": "20261028T023001.339052Z-page-selected-strrchr-short-b791464acca9.json",
+      "sha256": "12a358a78d5d4377ef29be773d8fe3a04f80677cf520a6862b77c03c843321cb"
+    },
+    {
+      "bytes": 11015,
+      "kind": "run",
+      "name": "20261028T023021.917820Z-checks-b791464acca9.json",
+      "sha256": "616ea3dbebc939edf1a1f70027c6114079ee600db65786cf4aeb949a44e6fcf4"
+    },
+    {
+      "bytes": 15998,
+      "kind": "run",
+      "name": "20261028T023102.439425Z-page-selected-chain-real-b791464acca9.json",
+      "sha256": "fa7456f1f208d53673d15293d6415886f4417b9aaa5f6baecb6c3274e1f89f4d"
+    },
+    {
+      "bytes": 13869,
+      "kind": "run",
+      "name": "20261028T023221.171130Z-page-selected-write-footprint-b791464acca9.json",
+      "sha256": "74cf26bb21a9c8d00ad0d09e76211bf315d7df5523127e36d9a8006896b941bd"
+    },
+    {
+      "bytes": 14417,
+      "kind": "run",
+      "name": "20261028T023228.141260Z-page-selected-kmovq-b791464acca9.json",
+      "sha256": "d3ebf76b778449d1419e4fc3b08bf5963d0c406815e5f49eb81e8a828e0689a9"
+    },
+    {
+      "bytes": 14437,
+      "kind": "run",
+      "name": "20261028T023236.528199Z-page-selected-vptestnmb-b791464acca9.json",
+      "sha256": "239d88b7f5598faa61cdbe6b1dbb83d089db47888fa46b1a1dd33e76dade82e8"
+    },
+    {
+      "bytes": 27834,
+      "kind": "run",
+      "name": "20261028T023244.966562Z-page-selected-vmovdqu64-b791464acca9.json",
+      "sha256": "d1462ee09395b75a9f1aeddf9a16bee70e96e01b8d88db7ed95727f983e33f1b"
+    },
+    {
+      "bytes": 25792,
+      "kind": "run",
+      "name": "20261028T023256.083955Z-page-selected-chain-oracle-b791464acca9.json",
+      "sha256": "54ff90be04fcc24756254ce82a4953c5f0f6b7e6b5458af6f253fbaf9a07f924"
+    },
+    {
+      "bytes": 18642,
+      "kind": "run",
+      "name": "20261028T023313.951728Z-page-selected-vpbroadcast-b791464acca9.json",
+      "sha256": "1b851cc6d08b7e326d44e1299b21f117068cbb702bfe65c3a29fda9dd5a06424"
+    },
+    {
+      "bytes": 16230,
+      "kind": "run",
+      "name": "20261028T023324.316810Z-page-selected-generic-oracle-b791464acca9.json",
+      "sha256": "b468dda25b211304e2ee53f920c561d65a24cc2162913ece7af06ce5ff0a6e4e"
+    },
+    {
+      "bytes": 40016,
+      "kind": "run",
+      "name": "20261028T023333.144656Z-page-selected-maps-b791464acca9.json",
+      "sha256": "1c763cdbb014bcd43a7ec1bc529a8950f97d2dbbc8e9e15e448d5786d07e361e"
+    },
+    {
+      "bytes": 8621,
+      "kind": "run",
+      "name": "20261028T023408.425184Z-page-selected-register-controls-b791464acca9.json",
+      "sha256": "6c8281acc45fd1b528d3163cecb5f5fe4a4d23ed68fdb0144917580714ae6106"
+    },
+    {
+      "bytes": 13366,
+      "kind": "run",
+      "name": "20261028T023420.526705Z-page-selected-register-connected-b791464acca9.json",
+      "sha256": "81391ad2aced5e2860c1e9f68339a0e3c0155482d632469484a9e26c09818c20"
+    },
+    {
+      "bytes": 12251,
+      "kind": "run",
+      "name": "20261028T023433.767782Z-page-selected-register-time-b791464acca9.json",
+      "sha256": "dbf1a7f4a874577bb22522203de120dc1bcc5986345ecc235deafc2e85fbf5f1"
+    }
+  ],
+  "schema_version": 1,
+  "summary_reader_sha256": "3e478b2016050245cd0ba37eb874a74c5ad0661ecf25a3532573f607a517ef97"
+}
