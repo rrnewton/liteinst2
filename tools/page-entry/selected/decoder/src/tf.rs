@@ -115,6 +115,14 @@ fn canonical_lock_sub_rip(instruction: &Instruction, bytes: &[u8]) -> bool {
         && matches!(bytes, [0xf0, 0x83, 0x2d, _, _, _, _, _])
 }
 
+// Exact observed LOCK CMPXCHG dword [R13+0],EDX only. Both comparison
+// outcomes retain the CPU's write cycle; this grants no general LOCK/HLE,
+// width, address or register-form permission.
+fn canonical_lock_cmpxchg_r13(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::Cmpxchg_rm32_r32
+        && bytes == [0xf0, 0x41, 0x0f, 0xb1, 0x55, 0x00]
+}
+
 // Five exact legacy SSE4.1 PMAXUD forms qualified by the finite oracle.
 // No ignored REX bits, other address modes, prefix aliases or VEX/EVEX.
 // Memory alignment/faults remain CPU effects at the original source PC.
@@ -178,6 +186,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         && !canonical_bnd_jmp_rip(&instruction, &source[..instruction.len()])
         && !canonical_lock_add_rip(&instruction, &source[..instruction.len()])
         && !canonical_lock_sub_rip(&instruction, &source[..instruction.len()])
+        && !canonical_lock_cmpxchg_r13(&instruction, &source[..instruction.len()])
         && !prefixes(&instruction, &source[..instruction.len()]) { return Ok(out); }
     // Exact Code enumeration, never a catch-all mnemonic/valid-decode permit.
     let (flow, family) = match instruction.code() {
