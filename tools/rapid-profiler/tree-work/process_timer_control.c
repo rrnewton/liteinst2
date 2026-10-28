@@ -32,6 +32,10 @@ int main(int argc, char **argv) {
         assert(kill(getpid(), SIGTERM) == 0);
         abort();
     } else if (!strcmp(argv[1], "closed-output")) {
+        /* Survive the timer group's timeout kill so the owner must adopt and
+           reap this live subject. Otherwise the timer can reap its killed
+           child before dying, making the expected descendant rescue race. */
+        assert(setsid() >= 0);
         close(STDOUT_FILENO); close(STDERR_FILENO);
         for (;;) pause();
     } else if (!strcmp(argv[1], "kill-timer")) {
