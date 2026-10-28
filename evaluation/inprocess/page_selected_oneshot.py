@@ -156,7 +156,7 @@ def main():
         for name in ('li2_admission_oneshot_plan','li2_admission_oneshot_bind','li2_admission_oneshot_transition','li2_admission_oneshot_fail'):need(names.count(name)==1,'actual retained publisher '+name)
         _,assembly,err=run('bridge-memset',[tools['objdump'],'-d','-w','-M','att','--disassemble=memset',bridge]);need(not err,'actual bridge reset instructions')
         proof=body_check(bridge,out,assembly,'fast',symbol_name='memset');r['reset']=hidden_memset(bridge,proof)
-        _,out,err=run('bridge-undefined',[tools['nm'],'-u',bridge]);need(not out and not err,'no bridge imports')
+        _,out,err=run('oneshot-bridge-undefined',[tools['nm'],'-u',bridge]);need(not out and not err,'no bridge imports')
         r['bridge_elf']=bridge_check(bridge)
         pin('/bin/true');interp_name=namespace.parse(Path('/bin/true').read_bytes())['interpreter'];interp=pin(interp_name)
         root=a.library_root.resolve(strict=True);need(root.is_dir(),'actual dependency root')
