@@ -6093,7 +6093,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 742
+        "tests": 745
       }
     },
     "workspace_tests": {
@@ -6467,7 +6467,7 @@
       },
       "unit/liteinst_launch/lib": {
         "ignored": 0,
-        "tests": 742
+        "tests": 745
       },
       "unit/liteinst_preempt/main": {
         "ignored": 0,
@@ -6483,11 +6483,11 @@
       },
       "unit/ordinary_interval/main": {
         "ignored": 0,
-        "tests": 14
+        "tests": 27
       },
       "unit/rapid_profiler/lib": {
-        "ignored": 0,
-        "tests": 186
+        "ignored": 4,
+        "tests": 214
       },
       "unit/rapid_profiler/main": {
         "ignored": 0,

@@ -8,12 +8,14 @@ import re
 
 from parsing import require
 
-DATA_SHA256 = 'e1feb27983daf3950e884225d223a0a5802e937d14908e53b3443cf96d8e1d79'
+DATA_SHA256 = 'bdea03e1f24150ab46dfa196782fb4866378d8cf00f8291745d89de21593cf14'
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
 require(hashlib.sha256(RAW).hexdigest() == DATA_SHA256, 'cc846_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
+AC0963 = DATA['ac0963']
+LIVE = AC0963['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 RECORDER_TESTS = 340
 PYTHON_CURRENT = '462da94e73e635ac5c3b46192cba7b991de92b72ec871853204e45d529943b3f'
@@ -26,8 +28,57 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
+def source_before_ac0963(path, data, error):
+    """Authenticate the complete new source before its exact historical inverse."""
+    if path not in AC0963['projections']:
+        return data
+    row = AC0963['projections'][path]
+    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = data[:start] + old.encode() + data[end:]
+        last = start
+    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    return data
+
+
+def require_ac0963_sources():
+    for path, expected in AC0963['sources'].items():
+        try:
+            data = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, 'ac0963_source_inventory_differs')
+        require(hashlib.sha256(data).hexdigest() == expected, 'ac0963_source_inventory_differs')
+        if path in AC0963['methods']:
+            rows = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', data.decode())
+            expected_methods = AC0963['methods'][path]
+            require([name for _, name in rows] == expected_methods['all']
+                    and [name for attrs, name in rows if re.search(r'#\[ignore(?:\]|\s*=)', attrs)]
+                    == expected_methods['ignored'] and data.count(b'#[test]') == len(rows),
+                    'ac0963_source_inventory_differs')
+
+
+def before_ac0963(declared):
+    """Peel only four exact live count rows; every other catalog byte is bound."""
+    require(type(declared) is dict and digest(declared) == LIVE, 'ac0963_inventory_differs')
+    require_ac0963_sources()
+    old = copy.deepcopy(declared)
+    for cohort, changes in AC0963['changes'].items():
+        for identity, (previous, current) in changes.items():
+            require(old['harness_test_counts'][cohort][identity] == current, 'ac0963_inventory_differs')
+            old['harness_test_counts'][cohort][identity] = copy.deepcopy(previous)
+    require(digest(old) == AC0963['previous_corpus_sha256'] == CURRENT, 'ac0963_inventory_differs')
+    return old
+
+
+def peel_ac0963(declared):
+    return before_ac0963(declared) if type(declared) is dict and digest(declared) == LIVE else declared
+
+
 def source_before_cc846(path, data, error):
     """Whole-new-blob authentication, exact sparse inverse, whole-old-blob check."""
+    data = source_before_ac0963(path, data, error)
     if path not in DATA['projections']:
         return data
     row = DATA['projections'][path]
@@ -45,6 +96,7 @@ def require_sources():
     for path, expected in DATA['sources'].items():
         try:
             data = (ROOT / path).read_bytes()
+            data = source_before_ac0963(path, data, 'cc846_source_inventory_differs')
         except OSError:
             require(False, 'cc846_source_inventory_differs')
         require(hashlib.sha256(data).hexdigest() == expected, 'cc846_source_inventory_differs')
@@ -58,6 +110,7 @@ def require_sources():
 
 def before_exec_parser(declared):
     """Authenticate the whole live corpus before peeling exactly two parser rows."""
+    declared = peel_ac0963(declared)
     require(type(declared) is dict and digest(declared) == CURRENT, 'cc846_inventory_differs')
     require_sources()
     old = copy.deepcopy(declared)
@@ -70,6 +123,7 @@ def before_exec_parser(declared):
 
 
 def before_cc846(declared):
+    declared = peel_ac0963(declared)
     require(type(declared) is dict and digest(declared) == CURRENT, 'cc846_inventory_differs')
     require_sources()
     old = before_exec_parser(declared)
@@ -86,6 +140,7 @@ def before_cc846(declared):
 
 
 def peel_current(declared):
+    declared = peel_ac0963(declared)
     return before_cc846(declared) if type(declared) is dict and digest(declared) == CURRENT else declared
 
 
@@ -103,6 +158,7 @@ def peel_python(identities):
 
 def require_current(declared):
     """Live preflight has no historical-catalog acceptance path."""
+    require(type(declared) is dict and digest(declared) == LIVE, 'ac0963_inventory_differs')
     before_cc846(declared)
     identities = []
     for path in sorted(Path(__file__).parent.glob('test_*.py')):

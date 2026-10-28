@@ -5,6 +5,7 @@ import hashlib
 import json
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 import backing_cleanup as old_cleanup
 import backing_cleanup_query as cleanup
@@ -54,6 +55,19 @@ class MainQueryInventoryTests(unittest.TestCase):
     def test_exact_sources_catalog_and_historical_denominators(self):
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
         inventory.require_current(declared)
+        current = copy.deepcopy(declared)
+        for cohort, harnesses, total, ignored in [('workspace_tests', 100, 2579, 8),
+                                                  ('serial_launch', 27, 1039, 0)]:
+            rows = declared['harness_test_counts'][cohort]
+            self.assertEqual((len(rows), sum(row['tests'] for row in rows.values()),
+                              sum(row['ignored'] for row in rows.values())), (harnesses, total, ignored))
+        self.assertEqual(sum(len(row['all']) for row in inventory.AC0963['methods'].values()), 44)
+        self.assertEqual(sum(len(row['ignored']) for row in inventory.AC0963['methods'].values()), 4)
+        declared = inventory.before_ac0963(declared)
+        self.assertEqual(inventory.digest(declared), inventory.CURRENT)
+        self.assertEqual(current, json.loads(Path(__file__).with_name('corpus.json').read_bytes()))
+        for name in set(declared) - {'harness_test_counts'}:
+            self.assertEqual(declared[name], current[name])
         old = inventory.before_cc846(declared)
         self.assertEqual(inventory.digest(old), inventory.PREVIOUS)
         self.assertEqual(old['recorder_tests'], 330)
@@ -73,6 +87,38 @@ class MainQueryInventoryTests(unittest.TestCase):
 
     def test_catalog_source_and_python_mutations_cannot_enter_history(self):
         declared = json.loads(Path(__file__).with_name('corpus.json').read_bytes())
+        historical = inventory.before_ac0963(declared)
+        for changed in (historical, inventory.before_cc846(declared)):
+            with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                inventory.require_current(changed)
+        for cohort, changes in inventory.AC0963['changes'].items():
+            for identity in changes:
+                for field in ('tests', 'ignored'):
+                    for value in (None, False, float(declared['harness_test_counts'][cohort][identity][field]),
+                                  declared['harness_test_counts'][cohort][identity][field] + 1):
+                        changed = copy.deepcopy(declared)
+                        changed['harness_test_counts'][cohort][identity][field] = value
+                        with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_inventory_differs$'):
+                            inventory.before_ac0963(changed)
+        original_read = Path.read_bytes
+        for path in inventory.AC0963['sources']:
+            for missing in (False, True):
+                def altered(candidate):
+                    if candidate == inventory.ROOT / path:
+                        if missing:
+                            raise OSError('PRIVATE_SENTINEL')
+                        return original_read(candidate) + b'\n'
+                    return original_read(candidate)
+                with patch.object(Path, 'read_bytes', altered):
+                    with self.assertRaisesRegex(parsing.InvalidEvidence, '^ac0963_source_inventory_differs$'):
+                        inventory.before_ac0963(declared)
+        for path, row in inventory.AC0963['projections'].items():
+            data = (inventory.ROOT / path).read_bytes()
+            restored = inventory.source_before_ac0963(path, data, 'source_changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for changed in (data + b'\n', data[:-1]):
+                with self.assertRaisesRegex(parsing.InvalidEvidence, '^source_changed$'):
+                    inventory.source_before_ac0963(path, changed, 'source_changed')
         for key in declared:
             changed = copy.deepcopy(declared)
             changed[key] = None

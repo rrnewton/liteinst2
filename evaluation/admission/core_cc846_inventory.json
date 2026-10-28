@@ -1,4 +1,611 @@
 {
+  "ac0963": {
+    "base": "5233b43c795aa6f8c82276da83e772068fb96fc4",
+    "changes": {
+      "serial_launch": {
+        "unit/liteinst_launch/lib": [
+          {
+            "ignored": 0,
+            "tests": 742
+          },
+          {
+            "ignored": 0,
+            "tests": 745
+          }
+        ]
+      },
+      "workspace_tests": {
+        "unit/liteinst_launch/lib": [
+          {
+            "ignored": 0,
+            "tests": 742
+          },
+          {
+            "ignored": 0,
+            "tests": 745
+          }
+        ],
+        "unit/ordinary_interval/main": [
+          {
+            "ignored": 0,
+            "tests": 14
+          },
+          {
+            "ignored": 0,
+            "tests": 27
+          }
+        ],
+        "unit/rapid_profiler/lib": [
+          {
+            "ignored": 0,
+            "tests": 186
+          },
+          {
+            "ignored": 4,
+            "tests": 214
+          }
+        ]
+      }
+    },
+    "current_corpus_sha256": "26e58579444efb8707f96e6697cc7f5e9343e43676bc6d65b95fc9a41406944a",
+    "merged_revision": "a9f311b7cca8c824839f585e097a921edabc4596",
+    "merged_source_tree": "1dac3086b18d200ab5399695e911c25b6972371b",
+    "methods": {
+      "crates/liteinst-launch/src/linux/remote/dynamic/owner/tests/event_identity.rs": {
+        "all": [
+          "creation_candidate_cannot_acquire_another_tracer_threads_child",
+          "creation_custody_accepts_unready_application_but_excludes_helper_and_nonchild",
+          "replaced_creation_payload_cannot_authorize_an_exit_status_as_a_task"
+        ],
+        "harness": "unit/liteinst_launch/lib",
+        "ignored": [],
+        "instances": 1
+      },
+      "tools/rapid-profiler/ordinary-interval/streamed/check_tests.rs": {
+        "all": [
+          "twenty_real_model_reports_and_forty_complete_batch_views_join",
+          "ids_owners_call_returns_clock_and_action_brackets_refuse",
+          "missing_stable_windows_and_fixed_replacement_cutoffs_refuse",
+          "missing_duplicate_stale_counters_prefixes_and_full_page_tail_refuse",
+          "report_payload_ownership_global_sequence_and_population_refuse",
+          "bounded_export_returns_the_exact_unsent_owner_on_full_and_disconnect",
+          "single_completed_call_after_window_end_refuses_with_coverage_intact",
+          "final_retirement_after_window_end_refuses_with_all_old_joins_intact"
+        ],
+        "harness": "unit/ordinary_interval/main",
+        "ignored": [],
+        "instances": 1
+      },
+      "tools/rapid-profiler/ordinary-interval/timed/check_tests.rs": {
+        "all": [
+          "three_epochs_and_actual_old_owner_completion_after_remove_join_exactly",
+          "wrong_identity_boundary_result_stack_clock_and_owner_refuse",
+          "report_payload_terminal_and_cross_epoch_sequence_are_not_replaceable",
+          "missed_off_window_is_failure_without_dropping_or_rescheduling_calls",
+          "changed_deadlines_or_invented_totals_refuse"
+        ],
+        "harness": "unit/ordinary_interval/main",
+        "ignored": [],
+        "instances": 1
+      },
+      "tools/rapid-profiler/src/frontend/interval_entry/tests/concurrent.rs": {
+        "all": [
+          "waiting_entry_observes_complete_publication_and_removal",
+          "waiting_registry_keeps_writer_authority_until_reservation",
+          "waiting_poison_is_refused_without_reservation_or_slot_mutation",
+          "old_return_needs_no_controller_lock_after_rearm"
+        ],
+        "harness": "unit/rapid_profiler/lib",
+        "ignored": [],
+        "instances": 1
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/drain/tests.rs": {
+        "all": [
+          "three_full_batches_keep_one_registration_lifetime_history_and_held_reports",
+          "failed_checkpoint_is_sticky_but_preflight_capacity_never_clears_it",
+          "report_ready_at_completed_gate_is_not_drain_authority",
+          "old_inflight_owner_survives_rearm_and_drain_never_completes_it",
+          "hidden_pair_is_refused_even_when_both_depths_are_zero",
+          "malformed_join_or_counter_never_consumes_any_buffer",
+          "attachment_health_profile_and_allocation_refusals_are_atomic"
+        ],
+        "harness": "unit/rapid_profiler/lib",
+        "ignored": [],
+        "instances": 1
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/drain_tests.rs": {
+        "all": [
+          "drain_checkpoint_requires_every_idle_word_and_preserves_sequence"
+        ],
+        "harness": "unit/rapid_profiler/lib",
+        "ignored": [],
+        "instances": 1
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent.rs": {
+        "all": [
+          "concurrent_bridge_waits_for_complete_binding_and_keeps_exact_journal",
+          "controller_scope_refuses_same_thread_entry_and_nested_controls_without_mutation",
+          "controller_scope_unwinds_without_leaking_thread_marker"
+        ],
+        "harness": "unit/rapid_profiler/lib",
+        "ignored": [],
+        "instances": 1
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native.rs": {
+        "all": [
+          "ordinary_native_concurrent_arm_remove_and_old_owner"
+        ],
+        "harness": "unit/rapid_profiler/lib",
+        "ignored": [
+          "ordinary_native_concurrent_arm_remove_and_old_owner"
+        ],
+        "instances": 1
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/drain_native.rs": {
+        "all": [
+          "ordinary_native_two_completed_batches"
+        ],
+        "harness": "unit/rapid_profiler/lib",
+        "ignored": [
+          "ordinary_native_two_completed_batches"
+        ],
+        "instances": 1
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/retirement_native.rs": {
+        "all": [
+          "ordinary_native_retirement_sixteen_epochs",
+          "ordinary_native_retirement_function_closed_receipt"
+        ],
+        "harness": "unit/rapid_profiler/lib",
+        "ignored": [
+          "ordinary_native_retirement_sixteen_epochs",
+          "ordinary_native_retirement_function_closed_receipt"
+        ],
+        "instances": 1
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/retirement.rs": {
+        "all": [
+          "retirement_reports_hold_the_last_permit_and_stale_tokens_never_rebind",
+          "retirement_sixteen_epochs_keep_one_registration_ordinals_and_complete_history",
+          "retirement_vacancies_are_explicit_and_setup_failure_preserves_them",
+          "retirement_refuses_open_current_and_outstanding_owners_before_removal",
+          "retirement_function_closed_receipt_keeps_permit_until_exit_consumption",
+          "retirement_authenticates_key_index_generation_process_and_controller_scope",
+          "retirement_refuses_terminal_and_writer_poison_without_taking_the_slot",
+          "retirement_reuses_slots_but_never_refunds_the_256_action_history"
+        ],
+        "harness": "unit/rapid_profiler/lib",
+        "ignored": [],
+        "instances": 1
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/timing/drain_tests.rs": {
+        "all": [
+          "drain_copy_rejects_hidden_missing_and_unreserved_storage_without_writes"
+        ],
+        "harness": "unit/rapid_profiler/lib",
+        "ignored": [],
+        "instances": 1
+      }
+    },
+    "previous_corpus_sha256": "360d9acb4d6b631d5a697cb46585c43d2ce256e0fb6795b49dda30c44f7dfb47",
+    "projections": {
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "7f25140314c10951fb0cafad0b428b9e877bb2adbc0c5552cca2e165e28a961c",
+        "edits": [
+          [
+            33925,
+            34051,
+            "    if args.get(1).and_then(|s| s.to_str()) == Some(\"exact-state\") {\n"
+          ],
+          [
+            34558,
+            34771,
+            "        ordinary::run_exact(&subject, &expected, &output);\n"
+          ]
+        ],
+        "previous_sha256": "099274237b7ade7190e3920a1b745bdfd3e3e6d380242e9aae03ae59df30b266"
+      },
+      "tools/rapid-profiler/native-interval/ordinary.rs": {
+        "current_sha256": "f596e349ac2436a43032d183cb51007cc9c81a5762feb59390d5eed4e34d0fe7",
+        "edits": [
+          [
+            3696,
+            3718,
+            ""
+          ],
+          [
+            7656,
+            7879,
+            "        let (mut controller, client) = unsafe { prepared.activate() }.unwrap();\n"
+          ],
+          [
+            16427,
+            16486,
+            "    run_selected(subject, expected, output, false);\n"
+          ],
+          [
+            16556,
+            16614,
+            "    run_selected(subject, expected, output, true);\n"
+          ],
+          [
+            16617,
+            16852,
+            "fn run_selected(subject: &Path, expected: &Path, output: &Path, exact: bool) {\n"
+          ],
+          [
+            18925,
+            18965,
+            ""
+          ],
+          [
+            19966,
+            20002,
+            ""
+          ],
+          [
+            22149,
+            22263,
+            ""
+          ],
+          [
+            22281,
+            22492,
+            "            \"native-exact:required=4:pairs=4:children=8:comparisons={comparisons}:truth-instructions=800:conditional=130:taken=126:input-reads=130:return-reads=4:short-ret-refusals=1:real-outer-ret=8:complete\"\n"
+          ]
+        ],
+        "previous_sha256": "fea66a28888bfd8805a9217da94b8cfd6f9bbc4d65a2e408520f3e35f2ddc53e"
+      },
+      "tools/rapid-profiler/ordinary-interval/exact.rs": {
+        "current_sha256": "665f1dc894c9cd8da1398dde4a496ad73f47ae708fd5ccffe9638ea0a4d54b26",
+        "edits": [
+          [
+            172,
+            194,
+            "mod truth;\n"
+          ]
+        ],
+        "previous_sha256": "eccd04aaff02023916c200fbfd7025fd304a3b440cf24b5aec933a1441ee4b9f"
+      },
+      "tools/rapid-profiler/ordinary-interval/main.rs": {
+        "current_sha256": "7b2659ba12dda5d917795ae93055fdedab0de7169451cf0b23df9017118992d5",
+        "edits": [
+          [
+            866,
+            891,
+            ""
+          ],
+          [
+            12119,
+            12694,
+            ""
+          ]
+        ],
+        "previous_sha256": "dba750072a07fd83dd765d34bc53115b6528cf0d42c4b27f5ffb119349ee58f5"
+      },
+      "tools/rapid-profiler/src/frontend.rs": {
+        "current_sha256": "48da7848bc85d613345cdd128c127e8a2d72cdad6324c5c8e21e4b287598d416",
+        "edits": [
+          [
+            13393,
+            13445,
+            ""
+          ],
+          [
+            16583,
+            16677,
+            ""
+          ]
+        ],
+        "previous_sha256": "82bc3c5a5f086673450190378b7ae3099cb8f9e968834e3bb28494edcacee4cd"
+      },
+      "tools/rapid-profiler/src/frontend/interval_entry.rs": {
+        "current_sha256": "f909901256e188e654d23a8e3de1a7ff6a02fcb0c2a525aa902d3a5b0885cb6a",
+        "edits": [
+          [
+            4466,
+            5310,
+            ""
+          ],
+          [
+            5915,
+            6271,
+            ""
+          ],
+          [
+            6624,
+            6999,
+            ""
+          ],
+          [
+            16308,
+            16606,
+            ""
+          ]
+        ],
+        "previous_sha256": "163e87d7c10eedd4ea5ba3e1648848ffa6eaa1ff5678676651a2121eb8126d81"
+      },
+      "tools/rapid-profiler/src/frontend/interval_entry/tests.rs": {
+        "current_sha256": "e307c215ca8200721054f98910dfd620a8fde95bfc72a226c14a08dd25ef053d",
+        "edits": [
+          [
+            120,
+            137,
+            ""
+          ]
+        ],
+        "previous_sha256": "5022697b2bfdde8a7367eaa01a9b96fd830578875e0fb3556fad22bcb6ecae62"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": {
+        "current_sha256": "735819b568bba28ce0e4f46bf386a1e810b877ef909f8b7668da8651d25628e0",
+        "edits": [
+          [
+            166,
+            177,
+            ""
+          ],
+          [
+            231,
+            261,
+            ""
+          ],
+          [
+            1417,
+            1474,
+            ""
+          ],
+          [
+            1953,
+            2160,
+            ""
+          ],
+          [
+            3036,
+            3074,
+            "    epochs: Vec<EpochHandle>,\n"
+          ],
+          [
+            3168,
+            3211,
+            "    epochs: &mut Vec<EpochHandle>,\n"
+          ],
+          [
+            3293,
+            3517,
+            "    if epochs.len() == limits.epochs {\n"
+          ],
+          [
+            3705,
+            3720,
+            "        index: epochs.len(),\n"
+          ],
+          [
+            3767,
+            3939,
+            "    epochs.push(owner); // Exact capacity was reserved before any publication.\n"
+          ],
+          [
+            5840,
+            7028,
+            ""
+          ],
+          [
+            7830,
+            7885,
+            ""
+          ],
+          [
+            8295,
+            8404,
+            ""
+          ],
+          [
+            8854,
+            8892,
+            "    epochs: Vec<EpochHandle>,\n"
+          ],
+          [
+            9074,
+            9229,
+            "        let owner = self.epochs.get(epoch.index).ok_or(error(Cause::Epoch))?;\n"
+          ],
+          [
+            9407,
+            9568,
+            "    /// Stage without recycling a lifetime slot or dropping an old owner.\n"
+          ],
+          [
+            10025,
+            10073,
+            ""
+          ],
+          [
+            10423,
+            10471,
+            ""
+          ],
+          [
+            10914,
+            12718,
+            ""
+          ],
+          [
+            12861,
+            12909,
+            ""
+          ],
+          [
+            13282,
+            13334,
+            "        for epoch in &self.epochs {\n"
+          ],
+          [
+            17110,
+            17998,
+            ""
+          ],
+          [
+            18222,
+            18295,
+            ""
+          ],
+          [
+            18583,
+            18876,
+            "    /// The installed fixed grammar, caller-certified single-thread/signal and\n    /// readable-stack contract holds until an empty explicit detach. A real\n"
+          ],
+          [
+            21047,
+            21177,
+            ""
+          ],
+          [
+            22580,
+            22746,
+            "    /// Copy raw completed endpoints while the attached thread has no live pair.\n"
+          ],
+          [
+            25155,
+            25356,
+            ""
+          ],
+          [
+            25885,
+            25979,
+            ""
+          ],
+          [
+            30672,
+            30806,
+            ""
+          ],
+          [
+            31941,
+            32410,
+            "        let receipt = self\n            .model\n            .enter_interval(\n                self.binding.install,\n                self.binding.function,\n                start.map_or(self.next, |value| value.ticks),\n                &mut slot,\n            )\n            .map_err(|e| error(Cause::Entry(e)))?;\n"
+          ],
+          [
+            33457,
+            33742,
+            ""
+          ]
+        ],
+        "previous_sha256": "137f87093954004be88ed7706d400da06cf004df534e84a0e90d46d6f1b463a6"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/gate.rs": {
+        "current_sha256": "adcf5eeb201d15a1c9f7d99e7997697cda1ae7d438c651b6b121d46c5073250d",
+        "edits": [
+          [
+            10910,
+            11154,
+            ""
+          ],
+          [
+            11170,
+            11674,
+            ""
+          ],
+          [
+            20940,
+            20982,
+            ""
+          ]
+        ],
+        "previous_sha256": "00176fda7a34b9e70fd27f55c4c9252d0af8d56dcde429406a2d2e32cd165cf2"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests.rs": {
+        "current_sha256": "54634cad5b01f867ff48f077509d0c31d0b2dbf2921f70b2989d3773b099580f",
+        "edits": [
+          [
+            193,
+            210,
+            ""
+          ],
+          [
+            16389,
+            16519,
+            ""
+          ]
+        ],
+        "previous_sha256": "43e231b6500edbc0e75fd92681e664ef6cf38576dfc3a16bfcb6084ee79bdc9b"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/timing.rs": {
+        "current_sha256": "7ad2ed48f4b4c731ac8120d537952293b20262f7b244d0f7f5bbae201c855cad",
+        "edits": [
+          [
+            896,
+            1058,
+            ""
+          ],
+          [
+            4618,
+            5268,
+            ""
+          ],
+          [
+            7165,
+            7196,
+            ""
+          ]
+        ],
+        "previous_sha256": "1d381750abc68c0e2124729acba3dbbad35136f7e5a9768c4ef7a4ebd3dcfd45"
+      },
+      "tools/rapid-profiler/src/frontend_native/mod.rs": {
+        "current_sha256": "b1ca5048e953e450ac2337afb69fc7ce8193fe0982a746ec8312eb34bfb020c8",
+        "edits": [
+          [
+            1458,
+            1558,
+            "    BridgeError, IntervalClient, IntervalController, IntervalEpoch, IntervalJournal,\n"
+          ]
+        ],
+        "previous_sha256": "37358a18e972f0c0a39530b4b6860b1ae0bdb7851edf522487c72bb34320aee9"
+      }
+    },
+    "sources": {
+      "Cargo.lock": "f7bc877c96a909fb5335ffa9b41196405e34e321c6a1867f2938fef6a1cae088",
+      "Cargo.toml": "4f19980341acf68a101ee80cb748cc5d0894e7a35e3fddf35a6df422855a0dea",
+      "crates/liteinst-launch/Cargo.toml": "e716ad4afe5265c269346e978063ec3025cfc8974d437c8d11a16b65b3ed7e54",
+      "crates/liteinst-launch/src/lib.rs": "c8d827203fa69169bfee7aa25d90e7bbd673224a8e0bc8852670f6fe42794e63",
+      "crates/liteinst-launch/src/linux.rs": "a3a9bbf74a0fe7dfabb7aa0ee3af73aa80de6acd9ffa72993da842e3a9d9c1a0",
+      "crates/liteinst-launch/src/linux/remote.rs": "9aa6fdeb5713b9c649557e939c3a005833935a8ada4c7e05d56bd02f6cb0cc6d",
+      "crates/liteinst-launch/src/linux/remote/dynamic.rs": "bcff8fe503d3579c6a904370e88ca531df98596e16c7ff5dc74e93d697cdbb5a",
+      "crates/liteinst-launch/src/linux/remote/dynamic/owner.rs": "032d4ad23e72de8657ac1d590d12e8a2e5c1f2f08bd0ad6878f82ce0590c187b",
+      "crates/liteinst-launch/src/linux/remote/dynamic/owner/lifecycle.rs": "6a958ab6657dc64bc307c7f4277439f5890bacf49dd83b46c227e2504c4582b5",
+      "crates/liteinst-launch/src/linux/remote/dynamic/owner/tests.rs": "76d2d459d30e53caa1f13c65f01b2263bde7b31a97f977cc3a54ba1ad7bdbc48",
+      "crates/liteinst-launch/src/linux/remote/dynamic/owner/tests/event_identity.rs": "20fb27ed14a65257673ce60e16900cc4e76508f084b0007279cf55ec24f59522",
+      "tools/rapid-profiler/Cargo.toml": "44a10ae94825a0bad3d09776065fe2aff56082dcb41263a5efe28230a746c685",
+      "tools/rapid-profiler/native-interval/main.rs": "7f25140314c10951fb0cafad0b428b9e877bb2adbc0c5552cca2e165e28a961c",
+      "tools/rapid-profiler/native-interval/ordinary.rs": "f596e349ac2436a43032d183cb51007cc9c81a5762feb59390d5eed4e34d0fe7",
+      "tools/rapid-profiler/ordinary-interval/exact.rs": "665f1dc894c9cd8da1398dde4a496ad73f47ae708fd5ccffe9638ea0a4d54b26",
+      "tools/rapid-profiler/ordinary-interval/main.rs": "7b2659ba12dda5d917795ae93055fdedab0de7169451cf0b23df9017118992d5",
+      "tools/rapid-profiler/ordinary-interval/streamed.rs": "996e6b5838226332d41c92f4434e734558ed0941478aecc60da5e226c7e68e06",
+      "tools/rapid-profiler/ordinary-interval/streamed/check.rs": "2951e3871ccb187102e84574785c77802cf4af312e946f51e9123ff93bc43c46",
+      "tools/rapid-profiler/ordinary-interval/streamed/check_tests.rs": "4eb75ec1a81dad4bae92f1c224467b67cde42ef8c914d9a1bd7fe575080be896",
+      "tools/rapid-profiler/ordinary-interval/timed.rs": "7b3923eb69bb3f80743172ed689299c40a3cf02b5502361eda459a371aedf4ef",
+      "tools/rapid-profiler/ordinary-interval/timed/check.rs": "e0f0ccc39e0c8166db62bc673a8eb8dcee67e64fa05f4e97c8e7e5f826de16b3",
+      "tools/rapid-profiler/ordinary-interval/timed/check_tests.rs": "6813428dee8f33b25eda42e3d77ee0ed7dc631894cef08bdea4abfdf5dc68eb1",
+      "tools/rapid-profiler/src/frontend.rs": "48da7848bc85d613345cdd128c127e8a2d72cdad6324c5c8e21e4b287598d416",
+      "tools/rapid-profiler/src/frontend/interval_entry.rs": "f909901256e188e654d23a8e3de1a7ff6a02fcb0c2a525aa902d3a5b0885cb6a",
+      "tools/rapid-profiler/src/frontend/interval_entry/tests.rs": "e307c215ca8200721054f98910dfd620a8fde95bfc72a226c14a08dd25ef053d",
+      "tools/rapid-profiler/src/frontend/interval_entry/tests/concurrent.rs": "197cb79dc160cd1dd79dc2180aabba21b269e625db60e7d533733c239cb57d4e",
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": "735819b568bba28ce0e4f46bf386a1e810b877ef909f8b7668da8651d25628e0",
+      "tools/rapid-profiler/src/frontend_native/always_on/drain.rs": "a2ebdbd6c18343aa0e44ed91081290c998a5c46227f77a9cb23e5f875d43065b",
+      "tools/rapid-profiler/src/frontend_native/always_on/drain/tests.rs": "f302eafbc53af39765ed598d7ac2215a5dbf6789cd0f02b244b029a2c0d3792e",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate.rs": "adcf5eeb201d15a1c9f7d99e7997697cda1ae7d438c651b6b121d46c5073250d",
+      "tools/rapid-profiler/src/frontend_native/always_on/gate/drain_tests.rs": "815fa25a57bcb2387594fcdf1e9fb8e36b1a62c73a34fe5ea6e048e81a87bf5a",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests.rs": "54634cad5b01f867ff48f077509d0c31d0b2dbf2921f70b2989d3773b099580f",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent.rs": "9c8d0f504bbd746bb9b26172eab711b5fed96ab57a0c0493c0276e49e0a45862",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native.rs": "1880024674cbbc1c30fd8a756d841b04c9558cd4fc02aa4da8ce821da5885ac7",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/drain_native.rs": "06539a8d9b253ebfd693dc776058535aad4c1bbd277f12db6d7e3ca320a5f7e4",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/retirement_native.rs": "b9ec4125d1ce4c9b43222877b1f0e1152a2d32a7b3564b7b5144773e293aedb2",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/retirement.rs": "91eb7da533d2c52ae6fa82bf486a5a14da4fc5de9d77e160f3c717dfd60dd546",
+      "tools/rapid-profiler/src/frontend_native/always_on/timing.rs": "7ad2ed48f4b4c731ac8120d537952293b20262f7b244d0f7f5bbae201c855cad",
+      "tools/rapid-profiler/src/frontend_native/always_on/timing/drain_tests.rs": "27c43e74043fda1d5f34e39623535ea2bb40f4904bbdd1bb729935ebc89fab07",
+      "tools/rapid-profiler/src/frontend_native/mod.rs": "b1ca5048e953e450ac2337afb69fc7ce8193fe0982a746ec8312eb34bfb020c8",
+      "tools/rapid-profiler/src/lib.rs": "52b54ed20f6e8daa509846e2ac543ff5ef6e8099b1d69cc8623b94421e3c363d"
+    }
+  },
   "added": {
     "test/coalesced_composition": {
       "ignored": 0,
