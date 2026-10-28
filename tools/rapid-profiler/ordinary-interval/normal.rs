@@ -22,6 +22,7 @@ use super::strnlen::cases;
 use caller::{CallerOwner, Request};
 use cases::{CASES, LABEL};
 mod lifecycle;
+pub(super) mod observer;
 pub(super) mod reference;
 pub(super) mod session;
 
