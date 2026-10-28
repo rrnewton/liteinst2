@@ -123,7 +123,9 @@ def publish(path, record, receipt):
                 'actual_exit': c.get('actual_exit'), 'operation_completed': c.get('operation_completed'),
                 'verified_memory_fault': c.get('verified_memory_fault'),
                 'header': c.get('header'), 'record': c.get('record'),
-                'observations': c.get('observations')} for c in record['cases']],
+                'observations': c.get('observations'),
+                'promoted_encoding_checks': c.get('promoted_encoding_checks'),
+                'promoted_footprint_queries': c.get('promoted_footprint_queries')} for c in record['cases']],
         command_recipe={
             'selected_build': ['sh', 'tools/page-entry/selected/build.sh'],
             'fixture_build': ['sh', 'tools/page-entry/selected/tests/vpbroadcast/build.sh',
@@ -154,7 +156,7 @@ def main():
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
     record = {'schema_version': 1, 'profile': 'page-selected-vpbroadcast-oracle-v1', 'status': 'failed',
-        'scope': 'Exact unmasked 62e27d487ac6/Code3210, ESI low byte to all64 ZMM16 bytes. Two19-pair cohorts:36 new plus2 startup; all32ZMM/all8opmask independently seeded before both lanes, actual standard-layout CPUID records, complete unchanged native/TF/kernelFP/liveXSAVE/memory comparisons. All47 old+30 new supplied encoding refusals remain. No target data-memory operand or executed data-fault claim; original fault suites remain required separately. No general EVEX, enabled-CET, hardware masking, loader completion, performance or full-B2 claim',
+        'scope': 'Exact unmasked 62e27d487ac6/Code3210, ESI low byte to all64 ZMM16 bytes. Two19-pair cohorts:36 new plus2 startup; all32ZMM/all8opmask independently seeded before both lanes, actual standard-layout CPUID records, complete unchanged native/TF/kernelFP/liveXSAVE/memory comparisons. All47 common+26 retained supplied encoding refusals remain; all four formerly unsupported byte rows require exact typed classification and NONE acceptance. The new512 register pairing oracle is separately mandatory. No target data-memory operand or executed data-fault claim; original fault suites remain required separately. No general EVEX, enabled-CET, hardware masking, loader completion, performance or full-B2 claim',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
@@ -162,7 +164,7 @@ def main():
                    'supplied_refusal_encodings': 0, 'old_refusal_encodings': 0,
                    'new_refusal_encodings': 0, 'broadcast_pairs': 0,
                    'new_page_ending_pairs': 0, 'new_crossing_pairs': 0,
-                   'executed_refusal_checks': 0},
+                   'executed_refusal_checks': 0, 'promoted_encoding_checks': 0, 'promoted_footprint_queries': 0},
         'reproduce': ['python3', 'evaluation/inprocess/page_selected_vpbroadcast.py',
                       '--expect-revision', args.expect_revision]}
     pins, binaries = {}, {}
@@ -231,11 +233,12 @@ def main():
              [c['exit'] for c in outcomes['commands']] == [0, 0] and
              [c['argv'] for c in outcomes['commands']] == [['vpbroadcast-0'], ['vpbroadcast-1']] and
              [c['environment_delta'] for c in outcomes['commands']] == [{}, {}] and
+             all(c['promoted_encoding_checks'] == c['promoted_footprint_queries'] == 4 for c in outcomes['commands']) and
              outcomes['bounds'] == dict(cpu_seconds=5, address_space_bytes=512 << 20,
                  file_size_bytes=16 << 20, wall_seconds=15, cpu_affinity_count=1),
              'exact broadcast names, environments, exits, header schema and bounds')
         need(fact(FIXTURE/'OUTCOMES.json')['sha256'] ==
-             'd62446b2fed7494c640704aa8e7f52a2b4cebc79449d11958f81c7fcafcbf455',
+             '80e7847328455f5de136044f0ed082db1dbd24d25a3f360ecabc51973c3d79b8',
              'exact reviewed two-command outcomes')
         for case in outcomes['commands']:
             name = case['name']
@@ -263,6 +266,9 @@ def main():
             need(not any(data[end:end+3*header['sample_bytes']]), 'two unused slots and negative sample remain zero')
             result['observations'] = observations(data[-5000:], int(name[-1]), header)
             result['operation_completed'] = True
+            result['promoted_encoding_checks'] = result['promoted_footprint_queries'] = 4
+            record['totals']['promoted_encoding_checks'] += 4
+            record['totals']['promoted_footprint_queries'] += 4
             record['totals']['positive_pairs'] += 19
             record['totals']['generic_pairs'] += 18
             record['totals']['broadcast_pairs'] += 18
@@ -270,13 +276,13 @@ def main():
             record['totals']['new_page_ending_pairs'] += 3
             record['totals']['new_crossing_pairs'] += 15
             record['totals']['executed_refusal_checks'] += header['refusals']
-            record['totals'].update(supplied_refusal_encodings=77,
-                old_refusal_encodings=47, new_refusal_encodings=30)
+            record['totals'].update(supplied_refusal_encodings=73,
+                old_refusal_encodings=47, new_refusal_encodings=26)
             result['accepted'] = True
         need(record['totals'] == dict(positive_pairs=38, generic_pairs=36, broadcast_pairs=36,
-                 positive_selftest_pairs=2, supplied_refusal_encodings=77, old_refusal_encodings=47,
-                 new_refusal_encodings=30, new_page_ending_pairs=6, new_crossing_pairs=30,
-                 executed_refusal_checks=154) and len(record['cases']) == 2 and
+                 positive_selftest_pairs=2, supplied_refusal_encodings=73, old_refusal_encodings=47,
+                 new_refusal_encodings=26, new_page_ending_pairs=6, new_crossing_pairs=30,
+                 executed_refusal_checks=146, promoted_encoding_checks=8, promoted_footprint_queries=8) and len(record['cases']) == 2 and
              all(c['accepted'] for c in record['cases']),
              'complete two19-pair broadcast cohorts; original fault suites remain separate')
         record['status'] = 'passed'

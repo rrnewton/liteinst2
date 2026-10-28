@@ -14,7 +14,7 @@ EXPORTS = ('li2_admission_oneshot_plan', 'li2_admission_oneshot_bind',
            'li2_admission_oneshot_transition', 'li2_admission_oneshot_fail')
 MACROS = {'-DLI2_TF_HANDOFF=1', '-DLI2_REGISTER_RUN=1', '-DLI2_MAPS_PHASE_REUSE=1',
           '-DLI2_RSEQ_INACTIVE=1', '-DLI2_NATIVE_PAGES=1', '-DLI2_FAST_MEMSET=1',
-          '-DLI2_ONESHOT_PUBLICATION=1'}
+          '-DLI2_ONESHOT_PUBLICATION=1', '-DLI2_FAST_EQUAL=1'}
 
 
 def commands(path, builder, output, archive, pin):
