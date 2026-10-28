@@ -78,7 +78,19 @@ static uintptr_t rounded(size_t length) {
 }
 static int overlaps(uintptr_t a,uintptr_t b,uintptr_t c,uintptr_t d) { return a<d && c<b; }
 static struct owned_page *current(uintptr_t address) {
-    for (size_t i=used;i;i--) if (records[i-1].live && records[i-1].address==address) return &records[i-1];
+    /* Positive location memo only. Records are append-only; retirement clears
+       live without reviving a slot. All mutable facts remain in the live row.
+       Like records/used, this private helper has the singleton caller contract. */
+    static uintptr_t memo_address;
+    static size_t memo_used,memo_slot;
+    if (memo_slot && memo_slot<=used && memo_used==used && memo_address==address) {
+        struct owned_page *p=&records[memo_slot-1];
+        if (p->live && p->address==address) return p;
+    }
+    for (size_t i=used;i;i--) if (records[i-1].live && records[i-1].address==address) {
+        memo_address=address; memo_used=used; memo_slot=i;
+        return &records[i-1];
+    }
     return 0;
 }
 static const struct map_row *mapping(uintptr_t address) {

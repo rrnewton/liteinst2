@@ -1,6 +1,6 @@
 //! Conservative writes for the closed original-address TF profile.
 //! No allocator, instruction-info factory, memory access, or execution authority.
-use iced_x86::{Code, Decoder, DecoderOptions, MemorySize, Mnemonic, OpKind, Register};
+use iced_x86::{Code, Instruction, MemorySize, Mnemonic, OpKind, Register};
 
 #[repr(C)]
 #[derive(Clone, Copy, Default)]
@@ -89,14 +89,14 @@ fn register_value(state: &Registers, register: Register) -> Option<u64> {
 }
 
 pub(crate) fn one(pc: u64, source: &[u8], state: &Registers) -> Result<Footprint, u32> {
-    let qualified = crate::tf::one(pc, source)?;
+    let mut instruction = Instruction::default();
+    let qualified = crate::tf::one_with_instruction(pc, source, &mut instruction)?;
     let out = Footprint {
         pc: qualified.pc, next_pc: qualified.next_pc, abi_version: 1,
         code: qualified.code, length: qualified.length, policy: UNSUPPORTED,
         ..Footprint::default()
     };
     if qualified.policy != 1 { return Ok(out); }
-    let instruction = Decoder::with_ip(64, source, pc, DecoderOptions::NONE).decode();
     if instruction.is_invalid() || instruction.code() as u32 != out.code
         || instruction.len() as u32 != out.length || instruction.next_ip() != out.next_pc
     { return Ok(out); }
