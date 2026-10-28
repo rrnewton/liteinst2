@@ -118,6 +118,22 @@ REFERENCE_WORK_CONTROLS = (
 )
 
 
+REFERENCE_LEG_STAGES = ('reference-leg-parser-controls', 'reference-leg-controls',
+    'reference-leg-original', 'reference-leg-installed')
+REFERENCE_LEG_PREFIXES = ('normal::reference::leg::', 'normal::reference::check::leg_tests::')
+REFERENCE_LEG_CONTROLS = (
+    'normal::reference::leg::tests::leg_arguments_require_closed_phase_mode_and_canonical_nonzero_trial',
+    'normal::reference::leg::tests::leg_storage_requires_exact_fresh_or_completed_prefix',
+    'normal::reference::leg::tests::leg_rows_and_terminal_preserve_manifest_and_original_absence',
+    'normal::reference::check::leg_tests::leg_valid_local_population_and_zero_endpoints',
+    'normal::reference::check::leg_tests::leg_identity_and_48_row_boundary_are_distinct',
+    'normal::reference::check::leg_tests::leg_population_scalar_case_and_order_are_exact',
+    'normal::reference::check::leg_tests::leg_clock_aux_stack_and_pair_rsp_are_exact',
+    'normal::reference::check::leg_tests::installed_leg_keeps_metadata_record_and_full_journal_joins',
+    'normal::reference::check::leg_tests::installed_leg_keeps_report_and_history_joins',
+)
+
+
 def load(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
@@ -139,10 +155,12 @@ def main():
     ap.add_argument('--revision', required=True)
     ap.add_argument('--reference-exact', action='store_true', help='Append four old Exact37 and four reference Exact37 pairs after all ordinary prerequisites.')
     ap.add_argument('--reference-work', action='store_true', help='Require --reference-exact and append the finite uncalibrated24+24 ordinary-call collector.')
+    ap.add_argument('--reference-leg', action='store_true', help='Require --reference-work and --reference-exact; append fresh qualification/trial1 original and installed processes,24 calls each.')
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'):
         ap.add_argument('--'+name, type=Path, required=True)
     a = ap.parse_args()
     assert not a.reference_work or a.reference_exact, '--reference-work requires --reference-exact'
+    assert not a.reference_leg or (a.reference_work and a.reference_exact), '--reference-leg requires --reference-work and --reference-exact'
     repo = Path(__file__).resolve().parents[2]
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
     for p in (repo, a.toolchain, a.user_home, a.cargo_home):
@@ -181,6 +199,11 @@ def main():
         required.update('tools/rapid-profiler/'+name for name in (
             'normal-work/reference_work.py', 'normal-work/test_reference_work.py',
             'ordinary-interval/normal/reference.rs', 'ordinary-interval/normal/reference/check.rs'))
+    if a.reference_leg:
+        required.update('tools/rapid-profiler/'+name for name in (
+            'normal-work/reference_leg.py', 'normal-work/test_reference_leg.py',
+            'ordinary-interval/normal/reference/leg.rs',
+            'ordinary-interval/normal/reference/check/leg_tests.rs'))
     names = git('ls-files', '-z', '--', 'src', 'tests/support', 'tools/rapid-profiler',
         'Cargo.toml', 'Cargo.lock', 'README.md', 'build.rs', ':(glob)**/Cargo.toml', *sorted(required)).decode().rstrip('\0').split('\0')
     assert all(names) and len(names) == len(set(names)) and required.issubset(names)
@@ -199,6 +222,8 @@ def main():
         reference_native = load('normal_reference_output', repo/'tools/rapid-profiler/normal-work/reference_native.py')
     if a.reference_work:
         reference_work = load('normal_reference_work_output', repo/'tools/rapid-profiler/normal-work/reference_work.py')
+    if a.reference_leg:
+        reference_leg = load('normal_reference_leg_output', repo/'tools/rapid-profiler/normal-work/reference_leg.py')
     a.raw.mkdir(mode=0o700)
     save(a.raw/'sources-before.json', before)
     result = dict(schema=1, status='FAILED', stage='setup', revision=a.revision,
@@ -220,6 +245,13 @@ def main():
             stages=[dict(name=name, status='UNRUN') for name in REFERENCE_WORK_STAGES],
             collector=dict(status='UNRUN', originals=24, installed=24),
             scope='Finite one-caller raw reference/callback enclosures and complete functional joins only; no calibrated accuracy, perturbation, session-temporal, performance or full-A5 claim.')
+    if a.reference_leg:
+        result['command'].append('--reference-leg')
+        result['reference_leg'] = dict(status='UNRUN', required_stages=list(REFERENCE_LEG_STAGES),
+            stages=[dict(name=name, status='UNRUN') for name in REFERENCE_LEG_STAGES],
+            legs=[dict(status='UNRUN', phase='qualification', trial=1, leg=leg, calls=24)
+                for leg in ('original', 'installed')],
+            scope='Two fresh finite single-leg processes with all24 raw rows each. No calibration campaign, estimate, cross-process clock/address identity, accuracy, performance or full-A5 claim.')
     artifacts = {}
     tool_paths = {}
     def unchanged():
@@ -546,7 +578,10 @@ def main():
             assert re.fullmatch(rb'\.{10}\n-+\nRan 10 tests in [0-9]+\.[0-9]+s\n\nOK\n', (d/'stderr.txt').read_bytes())
             reference_done(pending, row, passed=10)
             binary, inventory, authority = ordinary_test
-            assert {n for n in inventory if n.startswith(REFERENCE_WORK_PREFIXES)} == set(REFERENCE_WORK_CONTROLS)
+            # New leg namespaces are always compiled under this broad prefix.
+            # Require their exact union: no subset check or hidden extra controls.
+            # This old stage still runs only the unchanged thirteen work methods.
+            assert {n for n in inventory if n.startswith(REFERENCE_WORK_PREFIXES)} == set(REFERENCE_WORK_CONTROLS + REFERENCE_LEG_CONTROLS)
             d, pending, row = reference_stage('reference-work-controls',
                 [binary, *REFERENCE_WORK_CONTROLS, '--exact', '--test-threads=1'])
             controls = census.controls((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes(),
@@ -577,8 +612,55 @@ def main():
             assert tuple(r['name'] for r in group['stages']) == REFERENCE_WORK_STAGES
             assert all(r['status'] == 'PASS' for r in group['stages'])
             group.update(status='PASS', closure=dict(owned_stages=3, normal_helpers=3, outer_owners=3, rescues=0))
+        if a.reference_leg:
+            assert result['reference_exact']['status'] == result['reference_work']['status'] == 'PASS'
+            group = result['reference_leg']; group['status'] = 'FAILED'
+            d, pending, row = reference_stage('reference-leg-parser-controls',
+                [python, '-B', repo/'tools/rapid-profiler/normal-work/test_reference_leg.py'])
+            assert (d/'stdout.txt').read_bytes() == b''
+            assert re.fullmatch(rb'\.{12}\n-+\nRan 12 tests in [0-9]+\.[0-9]+s\n\nOK\n', (d/'stderr.txt').read_bytes())
+            reference_done(pending, row, passed=12)
+            binary, inventory, authority = ordinary_test
+            assert {n for n in inventory if n.startswith(REFERENCE_LEG_PREFIXES)} == set(REFERENCE_LEG_CONTROLS)
+            d, pending, row = reference_stage('reference-leg-controls',
+                [binary, *REFERENCE_LEG_CONTROLS, '--exact', '--test-threads=1'])
+            controls = census.controls((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes(),
+                REFERENCE_LEG_CONTROLS, inventory)
+            reference_done(pending, row, controls=controls, artifact=authority)
+            assert [(c['phase'], c['trial'], c['leg']) for c in group['legs']] == [
+                ('qualification', 1, 'original'), ('qualification', 1, 'installed')]
+            for cohort in group['legs']:
+                assert cohort['status'] == 'UNRUN'
+                cohort['status'] = 'FAILED'
+                phase, trial, leg = cohort['phase'], cohort['trial'], cohort['leg']
+                assert exact_fixture.authenticate(exact_candidate, exact_final, details['elf_va'], 37,
+                    selection_file, artifacts[selection_file]['sha256']) == details
+                name = 'reference-leg-'+leg
+                d, pending, row = reference_stage(name, [binaries['ordinary-interval'],
+                    'normal-reference-leg', phase, str(trial), leg,
+                    exact_candidate, exact_final, str(details['elf_va']), '37',
+                    reference_candidate, reference_final])
+                observed = reference_leg.check((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes(),
+                    phase, trial, leg)
+                assert observed['status'] == 'FUNCTIONAL_PASS' and len(observed['rows']) == observed['calls'] == 24
+                assert (observed['phase'], observed['trial'], observed['leg']) == (phase, trial, leg)
+                assert (observed['helper_calls'], observed['reference_cells'], observed['records']) == (12, 24, 0 if leg == 'original' else 24)
+                exported = a.raw/('normal-reference-leg-'+leg+'.csv')
+                with exported.open('xb') as stream: stream.write(observed['table'])
+                artifacts[exported] = digest(exported)
+                cohort.update(observation={k:v for k,v in observed.items() if k not in ('rows', 'table')},
+                    table=artifacts[exported], binary=artifacts[binaries['ordinary-interval']],
+                    subject=artifacts[exact_final], selection=artifacts[selection_file],
+                    helper=artifacts[reference_final], helper_authority=artifacts[caller_authority],
+                    source_stage=name, process_cpu_seconds=20, process_wall_seconds=30, file_bytes=MIB)
+                unchanged()
+                cohort['status'] = 'PASS'
+                reference_done(pending, row, phase=phase, trial=trial, leg=leg, calls=24, rows=24, table=artifacts[exported])
+            assert tuple(r['name'] for r in group['stages']) == REFERENCE_LEG_STAGES
+            assert all(r['status'] == 'PASS' for r in group['stages']) and all(c['status'] == 'PASS' for c in group['legs'])
+            group.update(status='PASS', closure=dict(owned_stages=4, normal_helpers=4, outer_owners=4, rescues=0))
         unchanged(); save(a.raw/'sources-after.json', {n: digest(repo/n) for n in names})
-        assert tuple(r['name'] for r in result['stages']) == STAGES + (REFERENCE_STAGES if a.reference_exact else ()) + (REFERENCE_WORK_STAGES if a.reference_work else ()) and all(r['status'] == 'PASS' for r in result['stages'])
+        assert tuple(r['name'] for r in result['stages']) == STAGES + (REFERENCE_STAGES if a.reference_exact else ()) + (REFERENCE_WORK_STAGES if a.reference_work else ()) + (REFERENCE_LEG_STAGES if a.reference_leg else ()) and all(r['status'] == 'PASS' for r in result['stages'])
         result.update(status='PASS', stage='complete',
             artifacts=dict(subject=artifacts[trusted], caller=artifacts[caller], **{n: artifacts[p] for n, p in binaries.items()}),
             outputs={n: digest(a.raw/n) for n in ('normal-pairs.csv', 'normal-rows.csv')},
@@ -589,7 +671,7 @@ def main():
                 generations=2, events=16, journal_words=512, reports=2, worker_joins=1),
             abandonment=dict(cases=2, original_calls=16, installed_calls=4, checkpoints=0,
                 pending_after_tls_exit=2, reattach_refusals=2, worker_joins=2),
-            closure=dict(owned_stages=10 + (len(REFERENCE_STAGES) if a.reference_exact else 0) + (len(REFERENCE_WORK_STAGES) if a.reference_work else 0), nested_normal_helpers=46, nested_outer_owners=48, rescues=0),
+            closure=dict(owned_stages=10 + (len(REFERENCE_STAGES) if a.reference_exact else 0) + (len(REFERENCE_WORK_STAGES) if a.reference_work else 0) + (len(REFERENCE_LEG_STAGES) if a.reference_leg else 0), nested_normal_helpers=46, nested_outer_owners=48, rescues=0),
             prior_failures='Fresh attempt with no retries; prior failures remain failures.')
     except BaseException as error:
         result['error_type'] = type(error).__name__

@@ -6,6 +6,7 @@ use rapid_profiler::frontend_native::GateError;
 mod check;
 #[path = "../../src/frontend_native/always_on/gate/reference/hardware.rs"]
 mod hardware;
+pub(crate) mod leg;
 
 const LABEL: &str = "normal-reference-exact-37-v1";
 const INSTALL: u64 = 0x6e72_6566;

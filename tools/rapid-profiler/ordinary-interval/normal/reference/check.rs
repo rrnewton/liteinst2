@@ -146,6 +146,58 @@ fn collected(originals: &[Collected], installed: &[Collected]) -> Result<()> {
     Ok(())
 }
 
+// A standalone process has one complete leg, with local identities 1..24.
+// Keep collected() independent: its installed leg remains 25..48 and its
+// chronology/AUX scope still crosses the original/installed boundary.
+fn collected_leg(rows: &[Collected]) -> Result<()> {
+    require(rows.len() == CALLS, Error::Population)?;
+    let mut previous = None;
+    let mut aux = None;
+    for (i, row) in rows.iter().enumerate() {
+        let seed_index = (i % 8) / 4;
+        let length = if (i / 2) % 2 == 0 { 1 } else { 64 };
+        let input: [u8; 64] = std::array::from_fn(|j| (37 * j + 11 + seed_index) as u8);
+        let value = truth::checksum(&input[..length]).map_err(|_| Error::Record)?;
+        let literal = input[..length]
+            .iter()
+            .map(|b| u64::from(b ^ 0x5a))
+            .sum::<u64>()
+            ^ 0x9e37_79b9_7f4a_7c15;
+        require(
+            value == literal
+                && row.seed_index == seed_index
+                && row.length == length
+                && row.value == value,
+            Error::Record,
+        )?;
+        let view = row.reference;
+        require(
+            view.external_id == i as u64 + 1 && view.sequence == i as u64 + 1,
+            Error::Identity,
+        )?;
+        let p = view.observed_pre_call_rsp;
+        require(
+            p != 0
+                && p % 16 == 0
+                && p.checked_sub(136).is_some()
+                && p.checked_add(48).is_some()
+                && (i % 2 == 0 || p == rows[i - 1].reference.observed_pre_call_rsp),
+            Error::Stack,
+        )?;
+        let r = view.enclosure;
+        require(
+            r.start.aux == r.end.aux
+                && r.start.ticks <= r.end.ticks
+                && aux.is_none_or(|a| a == r.start.aux)
+                && previous.is_none_or(|end| end <= r.start.ticks),
+            Error::Clock,
+        )?;
+        aux = Some(r.start.aux);
+        previous = Some(r.end.ticks);
+    }
+    Ok(())
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct Metadata {
     legacy: bool,
@@ -176,12 +228,7 @@ fn complete() -> NormalTotals {
         unsampled: 0,
     }
 }
-fn all(
-    e: Expected,
-    originals: &[Collected],
-    installed: &[Collected],
-    p: Parts<'_>,
-) -> Result<[Gaps; CALLS]> {
+fn identity(e: Expected) -> Result<()> {
     require(
         e.pid != 0
             && e.tid == u64::from(e.pid)
@@ -193,8 +240,19 @@ fn all(
             && e.entry.checked_add(37).is_some()
             && e.caller.checked_add(295).is_some(),
         Error::Identity,
-    )?;
+    )
+}
+fn all(
+    e: Expected,
+    originals: &[Collected],
+    installed: &[Collected],
+    p: Parts<'_>,
+) -> Result<[Gaps; CALLS]> {
+    identity(e)?;
     collected(originals, installed)?;
+    installed_join(e, installed, p)
+}
+fn installed_join(e: Expected, installed: &[Collected], p: Parts<'_>) -> Result<[Gaps; CALLS]> {
     require(
         p.meta
             == Metadata {
@@ -365,24 +423,73 @@ pub(super) fn validate(
     )
 }
 
+/// Pure join only. The producer must already have authenticated the actual
+/// helper return and complete source/input/cell postflight; these copied stores
+/// do not independently prove a physical return or body-duration accuracy.
+pub(super) fn validate_original_leg(rows: &[Collected]) -> Result<()> {
+    collected_leg(rows)
+}
+fn all_installed_leg(e: Expected, rows: &[Collected], p: Parts<'_>) -> Result<[Gaps; CALLS]> {
+    identity(e)?;
+    collected_leg(rows)?;
+    installed_join(e, rows, p)
+}
+/// Same actual-return/postflight/checkpoint/detach/disarm obligations as validate().
+/// Local reference sequence and external ID are 1..24; no original SDK row exists.
+pub(super) fn validate_installed_leg(
+    e: Expected,
+    rows: &[Collected],
+    batch: &NormalBatch,
+    report: &Report,
+    history: &ControllerSnapshot,
+) -> Result<[Gaps; CALLS]> {
+    let reports: Vec<_> = report.records().collect();
+    all_installed_leg(
+        e,
+        rows,
+        Parts {
+            meta: Metadata {
+                legacy: batch.history_stream().is_none() && batch.history_high_water().is_none(),
+                pid: batch.pid(),
+                tid: batch.tid(),
+                registration: batch.registration(),
+                install: batch.install(),
+                function: batch.function(),
+                number: batch.number(),
+                totals: batch.totals(),
+                sequences: batch.completed_sequences(),
+                next: batch.next_ordinal(),
+            },
+            rows: batch.records(),
+            journal: batch.journal(),
+            report_generation: report.generation().get(),
+            reports: &reports,
+            history,
+        },
+    )
+}
+
+#[cfg(test)]
+mod leg_tests;
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use rapid_profiler::frontend::{Action, Payload};
     use rapid_profiler::frontend_native::{RawInterval, RawTimestamp};
     use rapid_profiler::generation::{Admission, Config, Epoch, Record};
-    struct Fixture {
-        e: Expected,
-        originals: Vec<Collected>,
-        installed: Vec<Collected>,
-        meta: Metadata,
-        rows: Vec<NormalRecord>,
-        journal: [u64; 512],
-        reports: Vec<RecordObservation>,
-        history: ControllerSnapshot,
+    pub(super) struct Fixture {
+        pub(super) e: Expected,
+        pub(super) originals: Vec<Collected>,
+        pub(super) installed: Vec<Collected>,
+        pub(super) meta: Metadata,
+        pub(super) rows: Vec<NormalRecord>,
+        pub(super) journal: [u64; 512],
+        pub(super) reports: Vec<RecordObservation>,
+        pub(super) history: ControllerSnapshot,
     }
     impl Fixture {
-        fn check(&self) -> Result<[Gaps; 24]> {
+        pub(super) fn check(&self) -> Result<[Gaps; 24]> {
             all(
                 self.e,
                 &self.originals,
@@ -398,7 +505,7 @@ mod tests {
             )
         }
     }
-    fn fixture() -> Fixture {
+    pub(super) fn fixture() -> Fixture {
         // Only allocate an opaque generation identity, never a fake native batch.
         let g = Epoch::new(
             &[FunctionId(1)],
