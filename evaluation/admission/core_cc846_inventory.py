@@ -8,7 +8,7 @@ import re
 
 from parsing import require
 
-DATA_SHA256 = 'd3fe1cd59080fae48973bf0eb9961238626c9b3a99603ffd35d8bba987237059'
+DATA_SHA256 = 'e1feb27983daf3950e884225d223a0a5802e937d14908e53b3443cf96d8e1d79'
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
 require(hashlib.sha256(RAW).hexdigest() == DATA_SHA256, 'cc846_inventory_data_differs')
@@ -56,10 +56,23 @@ def require_sources():
     require((ROOT / path).read_bytes().count(b'```compile_fail') == 4, 'cc846_source_inventory_differs')
 
 
-def before_cc846(declared):
+def before_exec_parser(declared):
+    """Authenticate the whole live corpus before peeling exactly two parser rows."""
     require(type(declared) is dict and digest(declared) == CURRENT, 'cc846_inventory_differs')
     require_sources()
     old = copy.deepcopy(declared)
+    rows = old['native_validation_fixtures']
+    require(len(rows) == 110 and rows[108:] == DATA['exec_parser_controls'],
+            'cc846_inventory_differs')
+    old['native_validation_fixtures'] = rows[:108]
+    require(digest(old) == DATA['before_exec_parser_corpus_sha256'], 'cc846_inventory_differs')
+    return old
+
+
+def before_cc846(declared):
+    require(type(declared) is dict and digest(declared) == CURRENT, 'cc846_inventory_differs')
+    require_sources()
+    old = before_exec_parser(declared)
     for cohort, changes in DATA['changes'].items():
         for identity, (previous, current) in changes.items():
             require(old['harness_test_counts'][cohort][identity]['tests'] == current, 'cc846_inventory_differs')

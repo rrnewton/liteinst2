@@ -10,6 +10,7 @@
     }
   },
   "base": "cdac5a7fd5d95c090048ec7be3d7ce901d4fbfee",
+  "before_exec_parser_corpus_sha256": "6cd433f4d3ed6e8cb9411d94fa1036fda026d73a5895c416eae5c229e454bd6b",
   "changes": {
     "serial_launch": {
       "test/b3_exec_admission": [
@@ -48,7 +49,19 @@
       ]
     }
   },
-  "current_corpus_sha256": "6cd433f4d3ed6e8cb9411d94fa1036fda026d73a5895c416eae5c229e454bd6b",
+  "current_corpus_sha256": "360d9acb4d6b631d5a697cb46585c43d2ce256e0fb6795b49dda30c44f7dfb47",
+  "exec_parser_controls": [
+    {
+      "cohort": "b3_exec_parser_control",
+      "harness": "test/b3_exec_admission",
+      "test": "b3_exec::self_maps_parser_tests::self_capture_still_requires_exact_count_complete_bytes_and_order"
+    },
+    {
+      "cohort": "b3_exec_parser_control",
+      "harness": "test/b3_exec_admission",
+      "test": "b3_exec::self_maps_parser_tests::self_capture_uses_actual_rows_but_child_still_refuses_513"
+    }
+  ],
   "merged_revision": "73a66c91f9b680cb6615068616908090871ff8c7",
   "merged_source_tree": "81398c03e14b34170534d8c68ed0a196b5321e1f",
   "methods": {

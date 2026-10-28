@@ -64,6 +64,9 @@ class MainQueryInventoryTests(unittest.TestCase):
             self.assertEqual((len(rows), sum(x['tests'] for x in rows.values()),
                               sum(x['ignored'] for x in rows.values())), (harnesses, tests, ignored))
         self.assertEqual(sum(len(row['added']) for row in inventory.DATA['methods'].values()), 68)
+        self.assertEqual(declared['native_validation_fixtures'][108:], inventory.DATA['exec_parser_controls'])
+        declared = inventory.before_exec_parser(declared)
+        self.assertEqual(inventory.digest(declared), inventory.DATA['before_exec_parser_corpus_sha256'])
         for name in ('native_cases', 'dynamic_admission_fixtures', 'dynamic_matrix_cases',
                      'native_validation_fixtures'):
             self.assertEqual(declared[name], old[name])

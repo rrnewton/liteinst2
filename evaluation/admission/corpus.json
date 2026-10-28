@@ -7541,6 +7541,16 @@
       "cohort": "b3_runtime_ordinary",
       "harness": "unit/liteinst_launch/lib",
       "test": "linux::remote::dynamic::owner::admission::runtime::ordinary::native_tests::thirtytwo::runtime_ordinary_thirty_two_nops_fit_default_budget_and_retain_exact_history"
+    },
+    {
+      "cohort": "b3_exec_parser_control",
+      "harness": "test/b3_exec_admission",
+      "test": "b3_exec::self_maps_parser_tests::self_capture_still_requires_exact_count_complete_bytes_and_order"
+    },
+    {
+      "cohort": "b3_exec_parser_control",
+      "harness": "test/b3_exec_admission",
+      "test": "b3_exec::self_maps_parser_tests::self_capture_uses_actual_rows_but_child_still_refuses_513"
     }
   ],
   "recorder_tests": 340,
