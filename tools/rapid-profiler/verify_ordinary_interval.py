@@ -194,6 +194,7 @@ def main():
     ap.add_argument('--concurrent-epochs', action='store_true', help='also require concurrent-mode state, forced native contention and autonomous timed epochs; requires --exact-work')
     ap.add_argument('--retire-epochs', action='store_true', help='also require two fresh native epoch-retirement controls; requires --concurrent-epochs')
     ap.add_argument('--drain-completed', action='store_true', help='also require two full native completed-record batches; requires --retire-epochs')
+    ap.add_argument('--streamed-epochs', action='store_true', help='also require a finite 160-call streamed epoch trial; requires --drain-completed')
     a = ap.parse_args(); repo = Path(__file__).resolve().parents[2]; raw = a.raw
     assert Path(__file__).resolve() == repo/'tools/rapid-profiler/verify_ordinary_interval.py'
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
@@ -203,11 +204,17 @@ def main():
     assert not a.concurrent_epochs or a.exact_work
     assert not a.retire_epochs or a.concurrent_epochs
     assert not a.drain_completed or a.retire_epochs
+    assert not a.streamed_epochs or a.drain_completed
     raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight', exact_work_requested=a.exact_work, concurrent_epochs_requested=a.concurrent_epochs,
         native_setup='Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.',
         scope='uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim', native_state_qualification='PENDING: gate entry through post-POP; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim')
     result['retire_epochs_requested'] = a.retire_epochs
     result['drain_completed_requested'] = a.drain_completed
+    result['streamed_epochs_requested'] = a.streamed_epochs
+    if a.streamed_epochs:
+        result['streamed_epochs'] = dict(status='UNRUN',
+            scope='finite 160-call, 20-epoch trial; mandatory entry/RET hooks remain active; no indefinite service, timing accuracy, throughput or new full-register-state qualification',
+            source_attested='Rust checks whole guarded input, original calls, full 512-word journal pages, batch identity, complete Report/terminal payloads, owned retirement and real gate returns; CSV exports only the stated projections')
     if a.drain_completed:
         result['completed_drain'] = dict(status='UNRUN', test=DRAIN_TEST,
             scope='two finite 32-call batches in one thread/registration; source-attested actual returns, entire input/raw/journal/report joins and capacity refusals; no new full-register oracle, indefinite service, timing accuracy or performance credit')
@@ -255,6 +262,12 @@ def main():
             'tools/rapid-profiler/src/frontend_native/always_on/timing/drain_tests.rs'])
         if a.drain_completed:
             names.append('tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/drain_native.rs')
+        if a.streamed_epochs:
+            names.extend(['tools/rapid-profiler/ordinary-interval/streamed.rs',
+                'tools/rapid-profiler/ordinary-interval/streamed/check.rs',
+                'tools/rapid-profiler/ordinary-interval/streamed/check_tests.rs',
+                'tools/rapid-profiler/streamed-work/check_output.py', 'tools/rapid-profiler/streamed-work/test_recipe.py',
+                'tools/rapid-profiler/streamed-work/README.md'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -279,6 +292,8 @@ def main():
                 owner_label='AMD EPYC Zen 5 dev host', owner_label_origin='owner-specified; not inferred from observed CPU fields'))
         if a.concurrent_epochs:
             result['hardware'].update(timed_worker_affinity_cpus=1, timed_controller_affinity_cpus=1, timed_total_active_cpus=2)
+        if a.streamed_epochs:
+            result['hardware'].update(streamed_worker_affinity_cpus=1, streamed_controller_affinity_cpus=1, streamed_total_active_cpus=2)
         spec = importlib.util.spec_from_file_location('ordinary_processes', repo/'evaluation/admission/processes.py')
         processes = importlib.util.module_from_spec(spec); spec.loader.exec_module(processes)
         log_root = repo/'target/evaluation'; log_root.mkdir(parents=True, exist_ok=True)
@@ -464,6 +479,30 @@ def main():
             summary = drain_output((observed/'stdout.txt').read_bytes())
             exact_stable(); assert digest(test_binary) == test_hash
             drained.update(summary, status='PASS', fresh_processes=1)
+        if a.streamed_epochs:
+            streamed = result['streamed_epochs']; streamed['status'] = 'FAILED'
+            exact_stable(); assert digest(test_binary) == test_hash
+            result['commands'].append(['$REPO/target/release/ordinary-interval', 'streamed-work', '$RAW/exact-candidate.so', '$RAW/exact-trusted.so'])
+            observed = stage('streamed-native', [str(binary), 'streamed-work', str(exact_candidate), str(exact_trusted)], 20, 30, MIB)
+            assert (observed/'stderr.txt').read_bytes() == b''
+            spec = importlib.util.spec_from_file_location('streamed_check', repo/'tools/rapid-profiler/streamed-work/check_output.py')
+            checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(checker)
+            parsed = checker.parse((observed/'stdout.txt').read_bytes())
+            assert {parsed['worker_cpu'], parsed['controller_cpu']} <= set(cpus)
+            tables = ('transitions', 'calls', 'batches', 'retirement', 'reports')
+            exported = {}
+            for label in tables:
+                path = raw/('streamed-'+label+'.csv')
+                with path.open('x', newline='') as stream:
+                    rows = parsed[label]; writer = csv.DictWriter(stream, fieldnames=list(rows[0]), lineterminator='\n')
+                    writer.writeheader(); writer.writerows(rows)
+                exported[label] = dict(file=path.name, rows=len(rows), **digest(path))
+            exact_stable(); assert digest(test_binary) == test_hash
+            streamed.update({k: v for k, v in parsed.items() if k not in tables})
+            streamed.update(status='PASS', originals=160, calls=160, entries=160, returns=160, epochs=20, slots=3, retired=20, replacements=17,
+                batches=40, raw_rows=160, events=320, actions=40, reports=parsed['sampled'], active_coverage=20, off_coverage=20,
+                requested_active_ms=30, requested_inactive_ms=10, nominal_window_ms=800, schedule_deadline_ms=2000,
+                replacement_cutoff_before_arm_ms=10, calls_per_batch=4, channel_capacity=2, tables=exported, fresh_processes=1)
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:
