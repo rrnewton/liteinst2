@@ -1318,3 +1318,6 @@ pub(super) fn backoff_test_control_error(cause: ControlError) -> BridgeError {
 pub(super) fn backoff_test_epoch_limit() -> BridgeError {
     error(Cause::Setup(SetupError::EpochLimit))
 }
+
+// Separate fixed two-function tree; existing leaf paths stay unchanged.
+pub(super) mod tree;
