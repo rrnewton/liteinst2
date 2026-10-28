@@ -185,6 +185,19 @@ def drain_output(data):
     return {key: int(value) if value.isdecimal() else True if value == 'true' else value for key, value in fields.items()}
 
 
+HISTORY_TEST = 'frontend_native::always_on::tests::concurrent_native::history_native::ordinary_native_history_stream_old_owner'
+HISTORY_PASS = 'history-native PASS originals=2 calls=2 sampled=2 rows=2 events=4 actions=600 history_batches=77 max_resident=8 epochs=300 retired=300 replacements=298 interval_batches=2 registrations=1 old_prefix=1 new_prefix=599 history_full_refusals=1 not_drained_refusals=1 report_permit_refusals=1 stale_refusals=1 empty_drains=2 replay_refusals=4 joined=true'
+
+
+def history_output(data, stderr):
+    assert stderr == b''
+    assert 0 < len(data) <= MIB and data.endswith(b'\n') and b'\r' not in data
+    protocol = '\nrunning 1 test\ntest '+HISTORY_TEST+' ... '+HISTORY_PASS+'\nok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; '
+    assert re.fullmatch(re.escape(protocol)+r'[0-9]+ filtered out; finished in [0-9]+\.[0-9]+s\n\n', data.decode('ascii'))
+    fields = dict(word.split('=', 1) for word in HISTORY_PASS.split()[2:])
+    return {key: int(value) if value.isdecimal() else True if value == 'true' else value for key, value in fields.items()}
+
+
 def main():
     if sys.flags.optimize: raise SystemExit('assertions required')
     sys.dont_write_bytecode = True
@@ -195,6 +208,7 @@ def main():
     ap.add_argument('--retire-epochs', action='store_true', help='also require two fresh native epoch-retirement controls; requires --concurrent-epochs')
     ap.add_argument('--drain-completed', action='store_true', help='also require two full native completed-record batches; requires --retire-epochs')
     ap.add_argument('--streamed-epochs', action='store_true', help='also require a finite 160-call streamed epoch trial; requires --drain-completed')
+    ap.add_argument('--stream-history', action='store_true', help='also require the finite native absolute-history/old-owner control; requires --streamed-epochs')
     a = ap.parse_args(); repo = Path(__file__).resolve().parents[2]; raw = a.raw
     assert Path(__file__).resolve() == repo/'tools/rapid-profiler/verify_ordinary_interval.py'
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
@@ -205,12 +219,18 @@ def main():
     assert not a.retire_epochs or a.concurrent_epochs
     assert not a.drain_completed or a.retire_epochs
     assert not a.streamed_epochs or a.drain_completed
+    assert not a.stream_history or a.streamed_epochs
     raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight', exact_work_requested=a.exact_work, concurrent_epochs_requested=a.concurrent_epochs,
         native_setup='Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.',
         scope='uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim', native_state_qualification='PENDING: gate entry through post-POP; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim')
     result['retire_epochs_requested'] = a.retire_epochs
     result['drain_completed_requested'] = a.drain_completed
     result['streamed_epochs_requested'] = a.streamed_epochs
+    result['stream_history_requested'] = a.stream_history
+    if a.stream_history:
+        result['history_stream'] = dict(status='UNRUN', test=HISTORY_TEST,
+            scope='one finite cfg(test) history/owner control; no new full-register-state, indefinite-service, timing-accuracy or performance qualification',
+            source_attested='Rust checks complete 600-Action replay, carry-in/stream identity, two whole 512-word journals, original/installed CALL/RET, raw/report joins and retained-owner release; protocol exports only its literal fields')
     if a.streamed_epochs:
         result['streamed_epochs'] = dict(status='UNRUN',
             scope='finite 160-call, 20-epoch trial; mandatory entry/RET hooks remain active; no indefinite service, timing accuracy, throughput or new full-register-state qualification',
@@ -268,6 +288,13 @@ def main():
                 'tools/rapid-profiler/ordinary-interval/streamed/check_tests.rs',
                 'tools/rapid-profiler/streamed-work/check_output.py', 'tools/rapid-profiler/streamed-work/test_recipe.py',
                 'tools/rapid-profiler/streamed-work/README.md'])
+        names.extend(['tools/rapid-profiler/src/frontend/history_stream.rs',
+            'tools/rapid-profiler/src/frontend/history_stream/tests.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/history.rs',
+            'tools/rapid-profiler/src/frontend_native/always_on/history/tests.rs'])
+        if a.stream_history:
+            names.extend(['tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/history_native.rs',
+                'tools/rapid-profiler/history-stream/README.md', 'tools/rapid-profiler/history-stream/test_recipe.py'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -503,6 +530,17 @@ def main():
                 batches=40, raw_rows=160, events=320, actions=40, reports=parsed['sampled'], active_coverage=20, off_coverage=20,
                 requested_active_ms=30, requested_inactive_ms=10, nominal_window_ms=800, schedule_deadline_ms=2000,
                 replacement_cutoff_before_arm_ms=10, calls_per_batch=4, channel_capacity=2, tables=exported, fresh_processes=1)
+        if a.stream_history:
+            history = result['history_stream']; history['status'] = 'FAILED'
+            exact_stable(); assert digest(test_binary) == test_hash
+            test_flags = ['--exact', HISTORY_TEST, '--ignored', '--nocapture', '--test-threads=1']
+            result['commands'].append(['$RAPID_LIBTEST', *test_flags])
+            observed = stage('history-native', [str(test_binary), *test_flags], 10, 15, MIB,
+                dict(RAPID_CONCURRENT_CANDIDATE=str(candidate), RAPID_CONCURRENT_EXPECTED=str(trusted)))
+            parsed = history_output((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            exact_stable(); assert digest(test_binary) == test_hash
+            history.update(status='PASS', protocol=parsed, fresh_processes=1,
+                source_assertions=dict(epoch_limit=2, retained_owner_release=[2, 1, 0], full_journal_pages=2, words_per_journal_page=512))
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:
