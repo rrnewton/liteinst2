@@ -51,5 +51,31 @@ python3 -B tools/rapid-profiler/exact-work/test_recipe.py \
 These are bounded functional trials. Mandatory native hooks remain active during
 inactive epochs. Raw RDTSCP starts precede any controller wait and are neither
 calibrated duration nor original-work truth. This does not implement indefinite
-daemon service, epoch retirement, arbitrary-function discovery, or a performance
+daemon service, arbitrary-function discovery, or a performance
 claim. The existing epoch, history, thread and journal limits remain enforced.
+
+`ordinary-interval streamed-work CANDIDATE TRUSTED` combines completed-buffer
+draining and explicit epoch retirement. It checks 160 original calls, then runs
+160 alternating 1/64-byte calls across twenty 30 ms active / 10 ms inactive
+windows. Three epoch slots hold the current and upcoming owners. After a batch
+proves that a call returned wholly after disarm, the controller retires the old
+epoch, checks and drops its final report, and stages a replacement before its
+fixed cutoff. Retirement does not establish code-unload quiescence.
+
+The worker exports forty owned four-call batches through a channel of capacity
+two. Each batch carries the complete journal and raw rows; the controller checks
+them against actual returned-call observations and cumulative accounting. The
+32-row local buffer can be reused without resetting ordinals, completion
+sequences, registration or history. Export backpressure, a missed staging cutoff,
+or missing actual whole-call coverage fails the trial. There is no per-call
+acknowledgement or shifted timer schedule. Calls and retirements must finish by
+the recorded window end, within the fixed two-second deadline.
+
+Add `--retire-epochs --drain-completed --streamed-epochs` to the release command
+above to require this client alongside every preceding qualification stage.
+The resulting CSV records actual transitions, calls, batches, retirement and
+reports. The complete journal arrays are checked in process and are not exported.
+On an ordinary error, the client preserves the validated prefix and the worker's
+unsent or partial result; disconnecting the channel can discard queued packets.
+This finite example retains forty history actions and twenty report summaries;
+it does not provide an indefinitely running sink or timing-accuracy evidence.

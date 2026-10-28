@@ -131,6 +131,21 @@ impl Rows {
             .map(|x| x.expect("committed timing row"))
             .collect()
     }
+    // No allocation and no mutation of this storage; the caller preallocates.
+    pub(super) fn copy_committed(&self, output: &mut Vec<RawInterval>) -> Result<(), BridgeError> {
+        if !output.is_empty()
+            || self.len > self.rows.len()
+            || self.rows[..self.len].iter().any(Option::is_none)
+            || self.rows[self.len..].iter().any(Option::is_some)
+        {
+            return Err(error(Cause::Invariant));
+        }
+        if output.capacity() < self.rows.len() {
+            return Err(error(Cause::Capacity));
+        }
+        output.extend(self.rows[..self.len].iter().flatten().copied());
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -182,3 +197,6 @@ mod tests {
         assert_eq!(before.len(), 32);
     }
 }
+
+#[cfg(test)]
+mod drain_tests;

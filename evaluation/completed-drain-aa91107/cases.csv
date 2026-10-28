@@ -1,0 +1,2 @@
+case,status,originals,calls,sampled,batches,rows,events,actions,registrations,capacity_refusals,empty_drains,report_records,detached,input_unchanged
+two-completed-batches,PASS,64,64,64,2,64,128,2,1,2,3,64,true,true
