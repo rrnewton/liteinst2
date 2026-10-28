@@ -1,0 +1,4 @@
+case,status,refusal
+named-final,expected-refusal,SymbolOwner
+wrong-whole-file,expected-refusal,SourceBytes
+changed-selected-byte,expected-refusal,SourceBytes

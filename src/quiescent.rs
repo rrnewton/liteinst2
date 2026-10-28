@@ -15,6 +15,12 @@ use crate::scanner::{InstructionScanner, ScanResult};
 use crate::search::{RefusalClass, SearchDomain, SearchEvidence, SearchScope};
 use crate::trampoline::{ExecutableTrampoline, HookCallback, TrampolineImage, TrampolinePlan};
 
+mod whole_function;
+pub use whole_function::{
+    WholeFunctionRequest, plan_whole_function_controlled_detailed,
+    plan_whole_function_controlled_detailed_after,
+};
+
 /// Install-once ordering, with explicit modes for forced tactic qualification.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub enum TacticPolicy {
@@ -1311,6 +1317,56 @@ fn plan_at_with_controls(
             }
         }
     }
+    emit_relocation_window(
+        request,
+        scan,
+        source,
+        occupied,
+        (controls, clock),
+        RelocationWindow {
+            physical,
+            end,
+            displaced,
+            instructions,
+            whole_function: None,
+        },
+        search_evidence,
+    )
+}
+
+// Only whole_function::Verified can authorize a closed multi-block window.
+// Legacy callers reach this seam after their unchanged same-block checks.
+struct RelocationWindow<'a> {
+    physical: u64,
+    end: u64,
+    displaced: AddressRange,
+    instructions: Vec<&'a crate::scanner::ScannedInstruction>,
+    whole_function: Option<&'a whole_function::Verified>,
+}
+
+fn emit_relocation_window(
+    request: &PlanningRequest<'_>,
+    scan: &ScanResult,
+    source: AddressRange,
+    occupied: &[AddressRange],
+    (controls, clock): (
+        Option<CoalescedActions<'_>>,
+        Option<&crate::backedge_clock::BackedgeClockAction>,
+    ),
+    window: RelocationWindow<'_>,
+    search_evidence: &mut SearchEvidence,
+) -> Result<PlannedInstall, Refusal> {
+    let RelocationWindow {
+        physical,
+        end,
+        displaced,
+        instructions,
+        whole_function,
+    } = window;
+    let scope = SearchScope {
+        physical_pc: Some(physical),
+        ..SearchScope::default()
+    };
     // Positive direct targets in the supplied snapshot cannot be omitted even
     // by an erroneous Complete entry list. Alternate streams remain refused.
     let mut heads: Vec<u64> = request.entries.entries.iter().map(|e| e.address).collect();
@@ -1419,6 +1475,12 @@ fn plan_at_with_controls(
                 continue;
             }
         };
+        if let Some(proof) = whole_function {
+            let Some(CoalescedActions::Controlled(actions)) = controls else {
+                return Err(Refusal::InvalidPlan);
+            };
+            proof.verify_image(scan, actions, &image)?;
+        }
         let page_start = target & !4095;
         let page_end = target
             .checked_add(image.bytes().len() as u64)

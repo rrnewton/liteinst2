@@ -1,0 +1,16 @@
+{
+  "blob": "b44f8ab2194710a91dfde4be07384f1fbdeec79a",
+  "commit": "10e31f0946d820d53adc58b7d013b969e4a9a8ed",
+  "compiler_eligibility": "UNRUN",
+  "header_closure": "Pending; source includes string.h, planned Linux LP64 host declarations without source modification",
+  "license": "BSD-2-Clause; original source notice retained verbatim",
+  "path": "lib/libc/string/strnlen.c",
+  "qualification": "UNRUN",
+  "repository": "https://git.FreeBSD.org/src.git",
+  "signature_validation": "Not performed; source fetched through the named HTTPS Git endpoint and Git object identity verified.",
+  "source_bytes": 1584,
+  "source_sha256": "969eb826cd618ff799cdc4fcc9d61edd044a314bd39208479787eda622c4f336",
+  "tag": "refs/tags/release/14.1.0",
+  "tag_object": "9699c03aaf9a4530f1a5eb193591e1e919f075e8",
+  "tree": "bb3b280fa0833a35db994ade7d2834911c65a638"
+}

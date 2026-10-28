@@ -1,0 +1,1364 @@
+{
+  "artifacts": {
+    "frontend-native-oracle": {
+      "binary": {
+        "bytes": 5728456,
+        "sha256": "ba46c4b73d34f39b010f0bc06aa41dac7320ab288501543555dff8ec37b5856a"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    "ordinary-interval": {
+      "binary": {
+        "bytes": 5176800,
+        "sha256": "75c0f5991d47ea8d614c83d4c57f1ab0a321fc3eda2f4e91c39b805938c32d4f"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": false
+      }
+    },
+    "state-validator": {
+      "binary": {
+        "bytes": 3471296,
+        "sha256": "e327b7fdc802b5a5407c7ab6d799511e1d98de2972ae98e0a1249b07ab817c46"
+      },
+      "cargo_fresh": true,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      }
+    },
+    "whole-core": {
+      "binary": {
+        "bytes": 5847944,
+        "sha256": "a452c5e58f6423cea6c79d8de8f7bd3db2c784d754b3c4a16e66c9ce8def67f1"
+      },
+      "cargo_fresh": false,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      }
+    },
+    "whole-front": {
+      "binary": {
+        "bytes": 8562496,
+        "sha256": "1ac8ae730be3502808fe65ff5c76139bdd17f3de928432f8d07d39e13e8f0fac"
+      },
+      "cargo_fresh": true,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      }
+    },
+    "work-validator": {
+      "binary": {
+        "bytes": 1913912,
+        "sha256": "c5f92c4f3d260546aaee54537f96569a8801f3929ccda8e5609006ae1310e429"
+      },
+      "cargo_fresh": true,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      }
+    }
+  },
+  "attempts": {
+    "complete_strnlen_release_qualifications": 1,
+    "development": "Earlier structural compiler check and pure controls. Preserved initial module-path and unused-reexport compile failures, duplicate-module Clippy failure, and formatting-continuity bookkeeping failure; no earlier strnlen native attempt. Source review corrected final-output hash ordering before first execution.",
+    "failed_strnlen_release_qualifications": 0
+  },
+  "closure": {
+    "nested_owned_stages": 22,
+    "normal_helpers": 46,
+    "outer_owners": 48,
+    "owned_stages": 24,
+    "rescues": 0
+  },
+  "command": [
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_strnlen_interval.py",
+    "--revision",
+    "f547c199ef01d40ed341657be5c5aaf0ec3adf0e",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+  ],
+  "commands": [
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/strnlen-work/test_provenance.py"
+      ],
+      "cpu_seconds": 10,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "provenance-controls",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 15
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/strnlen-work/test_recipe.py"
+      ],
+      "cpu_seconds": 10,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "parser-controls",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 15
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$CARGO",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cpu_seconds": 120,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "name": "whole-core-build",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 180
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/liteinst2-513876a03f596b64",
+        "--list"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "whole-core-list",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/liteinst2-513876a03f596b64",
+        "quiescent::whole_function::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "whole-core-controls",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$CARGO",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--lib",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cpu_seconds": 120,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "name": "whole-front-build",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 180
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/rapid_profiler-2a27e1565eb04145",
+        "--list"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "whole-front-list",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/rapid_profiler-2a27e1565eb04145",
+        "frontend_native::always_on::site::ordinary::whole::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "whole-front-controls",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$CARGO",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--test",
+        "frontend-native-calibrations",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cpu_seconds": 120,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "name": "state-validator-build",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 180
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+        "--list"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "state-validator-list",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+        "oracle::native_ordinary::strnlen::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "state-validator-controls",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$CARGO",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cpu_seconds": 120,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "name": "work-validator-build",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 180
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/ordinary_interval-9a9a8634c2bd38e4",
+        "--list"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "work-validator-list",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/ordinary_interval-9a9a8634c2bd38e4",
+        "strnlen::check::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "work-validator-controls",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$GCC",
+        "-O2",
+        "-fPIC",
+        "-shared",
+        "-nostdlib",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fomit-frame-pointer",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-unwind-tables",
+        "-fcf-protection=none",
+        "-Wl,-z,now",
+        "-Wl,-z,noexecstack",
+        "-Wl,--version-script=$REPO/tools/rapid-profiler/strnlen-work/localize.map",
+        "-M",
+        "-MT",
+        "strnlen-inputs",
+        "$REPO/tools/rapid-profiler/strnlen-work/strnlen.c"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "header-closure",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$GCC",
+        "-O2",
+        "-fPIC",
+        "-shared",
+        "-nostdlib",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fomit-frame-pointer",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-unwind-tables",
+        "-fcf-protection=none",
+        "-Wl,-z,now",
+        "-Wl,-z,noexecstack",
+        "-Wl,--version-script=$REPO/tools/rapid-profiler/strnlen-work/localize.map",
+        "-E",
+        "-P",
+        "$REPO/tools/rapid-profiler/strnlen-work/strnlen.c"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "preprocess",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$GCC",
+        "-O2",
+        "-fPIC",
+        "-shared",
+        "-nostdlib",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fomit-frame-pointer",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-unwind-tables",
+        "-fcf-protection=none",
+        "-Wl,-z,now",
+        "-Wl,-z,noexecstack",
+        "-Wl,--version-script=$REPO/tools/rapid-profiler/strnlen-work/localize.map",
+        "-E",
+        "-dM",
+        "$REPO/tools/rapid-profiler/strnlen-work/strnlen.c"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "macros",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$GCC",
+        "-O2",
+        "-fPIC",
+        "-shared",
+        "-nostdlib",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fomit-frame-pointer",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-unwind-tables",
+        "-fcf-protection=none",
+        "-Wl,-z,now",
+        "-Wl,-z,noexecstack",
+        "-Wl,--version-script=$REPO/tools/rapid-profiler/strnlen-work/localize.map",
+        "-MD",
+        "-MF",
+        "$RAW/compiled.d",
+        "-MT",
+        "strnlen-inputs",
+        "$REPO/tools/rapid-profiler/strnlen-work/strnlen.c",
+        "-o",
+        "$RAW/prestrip.so"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "strnlen-c-build",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$READELF",
+        "--wide",
+        "--symbols",
+        "$RAW/prestrip.so"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "prestrip-symbols",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$STRIP",
+        "--strip-all",
+        "-o",
+        "$RAW/final.so",
+        "$RAW/prestrip.so"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "strip",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$READELF",
+        "--wide",
+        "--symbols",
+        "$RAW/final.so"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "final-symbols",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/ordinary-interval",
+        "strnlen-refusals",
+        "$RAW/prestrip.so",
+        "$RAW/final.so",
+        "$RAW/mutated.so",
+        "4096",
+        "41"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "strnlen-refusals",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/frontend-native-oracle",
+        "strnlen-state",
+        "$RAW/candidate.so",
+        "$RAW/final.so",
+        "4096",
+        "41",
+        "$RAW/strnlen-output"
+      ],
+      "cpu_seconds": 90,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "strnlen-state",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 90
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/ordinary-interval",
+        "strnlen-work",
+        "$RAW/candidate.so",
+        "$RAW/final.so",
+        "4096",
+        "41"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "strnlen-work",
+      "rescues": 0,
+      "scope": "strnlen",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/selected-work/test_provenance.py"
+      ],
+      "cpu_seconds": 10,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "provenance-controls",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 15
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/selected-work/test_recipe.py"
+      ],
+      "cpu_seconds": 10,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "parser-controls",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 15
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$CARGO",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--lib",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cpu_seconds": 120,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "name": "admission-build",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 180
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/rapid_profiler-2a27e1565eb04145",
+        "--list"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "admission-list",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/rapid_profiler-2a27e1565eb04145",
+        "frontend_native::module::ordinary::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "admission-controls",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$CARGO",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--test",
+        "frontend-native-calibrations",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cpu_seconds": 120,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "name": "state-validator-build",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 180
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+        "--list"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "state-validator-list",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/frontend_native_calibrations-4ba111b9643cd534",
+        "oracle::native_ordinary::selected::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "state-validator-controls",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$CARGO",
+        "test",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "--no-run",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cpu_seconds": 120,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "name": "work-validator-build",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 180
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/ordinary_interval-9a9a8634c2bd38e4",
+        "--list"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "work-validator-list",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/deps/ordinary_interval-9a9a8634c2bd38e4",
+        "selected::check::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "work-validator-controls",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$GCC",
+        "-O2",
+        "-fPIC",
+        "-shared",
+        "-nostdlib",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fomit-frame-pointer",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-unwind-tables",
+        "-fcf-protection=none",
+        "-Wl,-z,now",
+        "-Wl,-z,noexecstack",
+        "-Wl,--version-script=$REPO/tools/rapid-profiler/selected-work/localize.map",
+        "$REPO/tools/rapid-profiler/native-interval/ordinary_checksum.c",
+        "-o",
+        "$RAW/prestrip.so"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "selected-c-build",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$READELF",
+        "--wide",
+        "--symbols",
+        "$RAW/prestrip.so"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "prestrip-symbols",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$STRIP",
+        "--strip-all",
+        "-o",
+        "$RAW/final.so",
+        "$RAW/prestrip.so"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "strip",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$READELF",
+        "--wide",
+        "--symbols",
+        "$RAW/final.so"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "final-symbols",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/ordinary-interval",
+        "selected-refusals",
+        "$RAW/prestrip.so",
+        "$RAW/final.so",
+        "$RAW/mutated.so",
+        "4160",
+        "44"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "selected-refusals",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/frontend-native-oracle",
+        "selected-state",
+        "$RAW/candidate.so",
+        "$RAW/final.so",
+        "4160",
+        "44",
+        "$RAW/selected-output"
+      ],
+      "cpu_seconds": 90,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "selected-state",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 90
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/ordinary-interval",
+        "selected-work",
+        "$RAW/candidate.so",
+        "$RAW/final.so",
+        "4160",
+        "44"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "selected-work",
+      "rescues": 0,
+      "scope": "selected",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$GCC",
+        "-O2",
+        "-fPIC",
+        "-shared",
+        "-nostdlib",
+        "-fno-builtin",
+        "-fno-stack-protector",
+        "-fomit-frame-pointer",
+        "-fno-tree-vectorize",
+        "-fno-tree-slp-vectorize",
+        "-fno-asynchronous-unwind-tables",
+        "-fno-unwind-tables",
+        "-fcf-protection=none",
+        "-Wl,-z,now",
+        "-Wl,-z,noexecstack",
+        "$REPO/tools/rapid-profiler/native-interval/ordinary_checksum.c",
+        "-o",
+        "$RAW/ordinary-prerequisite/trusted.so"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "c-build",
+      "rescues": 0,
+      "scope": "named",
+      "wall_seconds": 30
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$CARGO",
+        "build",
+        "--locked",
+        "--offline",
+        "--release",
+        "--jobs",
+        "4",
+        "-p",
+        "rapid-profiler",
+        "--bin",
+        "ordinary-interval",
+        "--bin",
+        "frontend-native-oracle",
+        "--message-format=json-render-diagnostics"
+      ],
+      "cpu_seconds": 120,
+      "exit": 0,
+      "file_bytes": 134217728,
+      "name": "build",
+      "rescues": 0,
+      "scope": "named",
+      "wall_seconds": 180
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/frontend-native-oracle",
+        "ordinary-state",
+        "$RAW/ordinary-prerequisite/candidate.so",
+        "$RAW/ordinary-prerequisite/trusted.so",
+        "$RAW/ordinary-prerequisite/oracle-output"
+      ],
+      "cpu_seconds": 90,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "oracle",
+      "rescues": 0,
+      "scope": "named",
+      "wall_seconds": 90
+    },
+    {
+      "absence_proof": "ECHILD",
+      "argv": [
+        "$REPO/target/release/ordinary-interval",
+        "$RAW/ordinary-prerequisite/candidate.so",
+        "$RAW/ordinary-prerequisite/trusted.so"
+      ],
+      "cpu_seconds": 20,
+      "exit": 0,
+      "file_bytes": 1048576,
+      "name": "native",
+      "rescues": 0,
+      "scope": "named",
+      "wall_seconds": 30
+    }
+  ],
+  "hardware": {
+    "architecture": "x86_64",
+    "build_cpus": 4,
+    "caller_and_helper_shared_cpus": 1,
+    "family": 26,
+    "model": 17,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "state_allowed_cpus": 4,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "prerequisites": {
+    "selected": {
+      "closure": {
+        "nested_owned_stages": 4,
+        "normal_helpers": 22,
+        "outer_owners": 23,
+        "owned_stages": 18,
+        "rescues": 0
+      },
+      "named_calls": 8,
+      "named_comparisons": 978,
+      "named_originals": 8,
+      "ordinary_pairs": 4,
+      "ordinary_short_ret_refusal": true,
+      "outer_closed": {
+        "bytes": 343,
+        "sha256": "7121bbf6251b09676ef90d3fd712d43c9c4dd21674668168a92ad95d0c398571"
+      },
+      "outer_command": {
+        "bytes": 1479,
+        "sha256": "c225ab8bf4529215cacd133b3ddab628cb97cafd83f19bf4d29fcc605173527d"
+      },
+      "result": {
+        "bytes": 48592,
+        "sha256": "ac32bf006a67de20246126823fc4f24a5fa9049714ea750d4d9b249754d78f7e"
+      },
+      "selected_calls": 8,
+      "selected_originals": 8,
+      "selected_pairs": 4,
+      "state_summary": {
+        "children": 8,
+        "comparisons": 978,
+        "pairs": 4,
+        "real_outer_returns": 8,
+        "status": "PASS"
+      },
+      "status": "PASS",
+      "work_summary": {
+        "actions": 4,
+        "batches": 1,
+        "calls": 8,
+        "closed": 3,
+        "completed": 4,
+        "entries": 8,
+        "events": 16,
+        "generations": [
+          1,
+          2
+        ],
+        "originals": 8,
+        "raw_rows": 8,
+        "removed": 1,
+        "reports": [
+          2,
+          2
+        ],
+        "returns": 8,
+        "sampled": 4,
+        "status": "PASS",
+        "unsampled": 4
+      }
+    },
+    "state-validator": {
+      "failed": 0,
+      "filtered": 99,
+      "ignored": 0,
+      "passed": 6,
+      "status": "PASS"
+    },
+    "whole-core": {
+      "failed": 0,
+      "filtered": 255,
+      "ignored": 0,
+      "passed": 7,
+      "status": "PASS"
+    },
+    "whole-front": {
+      "failed": 0,
+      "filtered": 391,
+      "ignored": 0,
+      "passed": 6,
+      "status": "PASS"
+    },
+    "work-validator": {
+      "failed": 0,
+      "filtered": 71,
+      "ignored": 0,
+      "passed": 7,
+      "status": "PASS"
+    }
+  },
+  "publication": "Summary plus complete compact state/accounting/refusal CSV rows; raw compiler/header manifests, environments and logs remain ignored. Callback ticks are uncalibrated and establish no performance or accuracy result.",
+  "python_controls": {
+    "failed": 0,
+    "parser_methods": 9,
+    "provenance_methods": 8
+  },
+  "qualifications": {
+    "refusals": {
+      "cases": 3,
+      "expected_refusals": 3,
+      "scope": "Preload public-loader refusals; no native malformed pointer or wrong-runtime-base credit.",
+      "status": "PASS",
+      "subject_calls": 0
+    },
+    "state": {
+      "source_attested": "Full original/candidate state and input, actual input operand containment, complete head/edge/RET union, source/image/Report joins and normal reaps. Scalar CSV cannot independently replay those complete checks.",
+      "status": "PASS",
+      "summary": {
+        "children": 32,
+        "comparisons": 1668,
+        "coverage_seeds": 2,
+        "input_bytes": 284,
+        "input_reads": 284,
+        "pairs": 16,
+        "real_outer_returns": 32,
+        "ret_offsets": [
+          34,
+          40
+        ],
+        "status": "PASS"
+      }
+    },
+    "work": {
+      "scope": "Uncalibrated raw callback ticks; no accuracy, performance or full-A5 claim.",
+      "source_attested": "Actual original/installed calls, complete guarded input, return/sequence joins, two handshakes, all512 journal words, complete Reports, detach and real worker join; not a CSV replay of full state.",
+      "status": "PASS",
+      "summary": {
+        "actions": 4,
+        "batches": 1,
+        "calls": 8,
+        "closed": 3,
+        "completed": 4,
+        "entries": 8,
+        "events": 16,
+        "generations": [
+          1,
+          2
+        ],
+        "originals": 8,
+        "raw_rows": 8,
+        "removed": 1,
+        "reports": [
+          2,
+          2
+        ],
+        "returns": 8,
+        "sampled": 4,
+        "status": "PASS",
+        "unsampled": 4
+      }
+    }
+  },
+  "raw_result": {
+    "bytes": 63540,
+    "sha256": "51f18075ba5d7874a2f4b9e3f8cd1620d13e3fe4720e69106fd840a4df032abb"
+  },
+  "review_bindings": {
+    "checker_reuse": "8e0e07c3fa59e512fe48b6dc868a5051fd234b74129f832b6294eae1bb30a152",
+    "consumer": "a98401cd6507c7d02f7f4b7f60cc3ad407f86c995fe73434ba09ee69aeae5e72",
+    "integration": "a3e3d499cdfd73ab9d380bff6cf5a1373c723d421929a2e5d7618a84cc5b1fc5",
+    "runner": "0d0c6440fa5abd37807aa9f5190167ddf1f1a0ad1db0043e4f5422a0e3c803d4",
+    "runner_correction": "9c4a36345b95425c602657b5c4cb6213287c50347d6ab5e9a7b49ac52f0ff41d",
+    "state": "849f5951bf9107d8a0f8f144c905471802f36517987c4ec21eac65096f370b68",
+    "strnlen_provenance": "7889c7e276cb57a6a2cfb52be7fa884099d89e101bf6c363dd42c693eb0b1b85",
+    "whole_function": "22785d3651e3dfc588e82d73951e8ed6e3caf77246571288f2bbaad05db7f61d"
+  },
+  "revision": "f547c199ef01d40ed341657be5c5aaf0ec3adf0e",
+  "schema": 1,
+  "scope": "Unchanged pinned FreeBSD strnlen in a controlled DSO; no deployed-libc, hardware, accuracy, performance or full-A5 claim.",
+  "selection": {
+    "abi": {
+      "architecture": "x86_64",
+      "char_bits": 8,
+      "data_model": "LP64",
+      "function_body": "exact pinned strnlen definition after preprocessing",
+      "operating_system": "linux",
+      "pointer_bits": 64,
+      "size_t_bits": 64
+    },
+    "candidate": {
+      "bytes": 13072,
+      "sha256": "8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d"
+    },
+    "changed_byte": {
+      "bytes": 13072,
+      "sha256": "dc6f8680d8f5154ca255bf8dadbfec591062b4806c2a1d9d784a66ba351b600c"
+    },
+    "elf_va": 4096,
+    "file_offset": 4096,
+    "final": {
+      "bytes": 13072,
+      "sha256": "8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d"
+    },
+    "header_count": 16,
+    "headers": {
+      "bytes": 5721,
+      "sha256": "00d56c45f463e796ac6faa321d44ebdc612a38747610c8b47ef144c47a2b3af3"
+    },
+    "label": "freebsd-strnlen-14.1-v1",
+    "length": 41,
+    "macros": {
+      "bytes": 19949,
+      "sha256": "14fbd8da8c282e44c32325f46ef6bf33b408b09e043e021d5fb00fb2afd8046f"
+    },
+    "manifest": {
+      "bytes": 14847,
+      "sha256": "3702b865d09f0d449f32c7a068a030484e14f12718df0c727f2f179e1d25648a"
+    },
+    "preprocessed": {
+      "bytes": 9038,
+      "sha256": "63381152720028302538df762876d8f44f4918b120bde887ab46785ef461a1ad"
+    },
+    "prestrip": {
+      "bytes": 13552,
+      "sha256": "9709038834242820cedb4e767ac4216f3b2969de4689848d8a3b24258e34e85e"
+    },
+    "selected_code": {
+      "bytes": 41,
+      "sha256": "0b254dc402a298e20daa7f5b09c4ec19b97f12cea2835595895e43523ac4839e"
+    }
+  },
+  "sources": {
+    "count": 386,
+    "manifest": {
+      "bytes": 61327,
+      "sha256": "d2e952f91e1983f1cdaac5ea458a77f3234cf5f8e20f11baf93514492408c59a"
+    }
+  },
+  "status": "PASS",
+  "tables": {
+    "ordinary-pairs.csv": {
+      "bytes": 361,
+      "sha256": "264ff6961a0c478fe5651e23c48a2443fc4f2064bf0a5c6da172f9a3c6afe7e7"
+    },
+    "ordinary-refusals.csv": {
+      "bytes": 59,
+      "sha256": "1c9a0c71c8229757a01d58fe9585126d2eeaafc97f9f48bf0bf12dcfd7cfd2f8"
+    },
+    "ordinary-rows.csv": {
+      "bytes": 959,
+      "sha256": "0ea0250723cd9141c4edd2fe5d2e131f4042c4d9b13ef69b6720ecef591bc932"
+    },
+    "selected-pairs.csv": {
+      "bytes": 361,
+      "sha256": "d7fe90ffe284ac0de715db8697d561c88f63aa9f2a71bb53cd27820a5f0f59b4"
+    },
+    "selected-refusals.csv": {
+      "bytes": 158,
+      "sha256": "f128d067692ab6bd2a9bb870e270498eb33b8c26642ad17d56403b665dd4b7c0"
+    },
+    "selected-rows.csv": {
+      "bytes": 987,
+      "sha256": "9eac9fd0996fc4172f19222a069b6c9123bb80deb182cad75270636acf6689d8"
+    },
+    "strnlen-pairs.csv": {
+      "bytes": 1483,
+      "sha256": "ef8e3148ad9ff8403ca1765881f9056bf517272afb9150bd026b86e96bc4b043"
+    },
+    "strnlen-refusals.csv": {
+      "bytes": 158,
+      "sha256": "f128d067692ab6bd2a9bb870e270498eb33b8c26642ad17d56403b665dd4b7c0"
+    },
+    "strnlen-rows.csv": {
+      "bytes": 783,
+      "sha256": "39e3d10e236f54a1e3640ef3cc1b2f538527488a37aa013632cb9ddd5863e4b5"
+    }
+  },
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "strip": {
+      "bytes": 189816,
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    }
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "git": "git version 2.52.0",
+    "ld": "GNU ld version 2.35.2-72.el9",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "readelf": "GNU readelf version 2.35.2-72.el9",
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    },
+    "strip": "GNU strip version 2.35.2-72.el9"
+  },
+  "whole_recipe_owner": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "64e47276c9561afd037f1d7961f7aa55f9ed52bce3f86841216d8d621e81425c",
+    "reaped_descendants": 0,
+    "seconds": 95.96768090105616,
+    "start_utc": "2026-10-28T14:33:35.488978+00:00",
+    "termination": null
+  }
+}

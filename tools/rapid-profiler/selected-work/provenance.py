@@ -16,6 +16,15 @@ U64 = 1 << 64
 NAME = 'ordinary_checksum_nonempty'
 LABEL = 'selected-checksum-v1'
 VERSION_SCRIPT = b'{ global: ordinary_checksum; local: *; };\n'
+STRNLEN_NAME = 'strnlen'
+STRNLEN_LABEL = 'freebsd-strnlen-14.1-v1'
+
+
+def _selected_name(profile):
+    if profile == LABEL:
+        return NAME
+    assert profile == STRNLEN_LABEL
+    return STRNLEN_NAME
 
 
 def digest(data):
@@ -139,7 +148,8 @@ def elf(data):
     return dict(ph=ph, loads=loads, sections=sections, tables=tables)
 
 
-def readelf_symbols(text, parsed):
+def readelf_symbols(text, parsed, profile=LABEL):
+    selected_name = _selected_name(profile)
     assert type(text) is bytes and 0 < len(text) <= MIB and text.endswith(b'\n')
     assert all(c == 10 or 32 <= c < 127 for c in text)
     current = None
@@ -147,11 +157,12 @@ def readelf_symbols(text, parsed):
     for line in text.decode('ascii').split('\n'):
         if not line:
             continue
-        header = re.fullmatch(r"Symbol table '(\.dynsym|\.symtab)' contains ([0-9]+) entries:", line)
+        header = re.fullmatch(r"Symbol table '(\.dynsym|\.symtab)' contains ([0-9]+) (entry|entries):", line)
         if header:
             current = header[1]
             assert current not in counts
             counts[current] = int(header[2])
+            assert header[3] == ('entry' if counts[current] == 1 else 'entries')
             rows[current] = []
             continue
         assert current is not None
@@ -169,22 +180,25 @@ def readelf_symbols(text, parsed):
         for printed, binary in zip(rows[name], symbols):
             _, value, size, kind, bind, vis, index, name = printed
             assert int(value, 16) == binary[4] and int(size) == binary[5]
-            if binary[0] == NAME or name == NAME:
-                assert name == binary[0] == NAME and kind == 'FUNC' and bind == 'LOCAL'
+            if binary[0] == selected_name or name == selected_name:
+                assert name == binary[0] == selected_name and kind == 'FUNC' and bind == 'LOCAL'
                 assert vis == 'DEFAULT' and index.isdecimal() and int(index) == binary[3]
     return rows
 
 
-def validate(prestrip, final, pre_symbols, final_symbols):
+def _validate(prestrip, final, pre_symbols, final_symbols, profile):
+    selected_name = _selected_name(profile)
     pre, post = elf(prestrip), elf(final)
-    readelf_symbols(pre_symbols, pre)
-    readelf_symbols(final_symbols, post)
+    readelf_symbols(pre_symbols, pre, profile)
+    readelf_symbols(final_symbols, post, profile)
     assert '.symtab' in pre['tables'] and '.symtab' not in post['tables']
     assert not any(name.startswith(('.debug', '.zdebug')) or name in ('.gnu_debuglink', '.gnu_debugaltlink')
                    for name, _ in post['sections'])
     for p in (pre, post):
-        assert not any(s[0] == NAME for s in p['tables']['.dynsym'])
-    selected = [s for s in pre['tables']['.symtab'] if s[0] == NAME]
+        assert not any(s[0] == selected_name for s in p['tables']['.dynsym'])
+        if profile == STRNLEN_LABEL:
+            assert p['tables']['.dynsym'] == [('', 0, 0, 0, 0, 0)]
+    selected = [s for s in pre['tables']['.symtab'] if s[0] == selected_name]
     assert len(selected) == 1
     _, info, other, section, address, size = selected[0]
     assert info == 2 and other == 0 and 0 < section < len(pre['sections'])
@@ -204,14 +218,23 @@ def validate(prestrip, final, pre_symbols, final_symbols):
             assert extent(prestrip, load[2], load[5]) == extent(final, load[2], load[5])
             executable.append(dict(offset=load[2], elf_va=load[3], **digest(extent(final, load[2], load[5]))))
     assert executable and prestrip != final
-    return dict(schema=1, label=LABEL, name=NAME, elf_va=address, length=size,
+    return dict(schema=1, label=profile, name=selected_name, elf_va=address, length=size,
         file_offset=offset, selected_code=digest(code), prestrip=digest(prestrip), final=digest(final),
         geometry=geometry(post), executable_loads=executable,
         selected_dynamic_definition=False, final_static_symbols=False, final_debug_sections=False,
         scope='Structural strip equality and externally supplied compiler metadata; runner separately binds commands/tools and whole-file authority before candidate copy.')
 
 
-def main():
+def validate(prestrip, final, pre_symbols, final_symbols):
+    return _validate(prestrip, final, pre_symbols, final_symbols, LABEL)
+
+
+def validate_strnlen(prestrip, final, pre_symbols, final_symbols):
+    return _validate(prestrip, final, pre_symbols, final_symbols, STRNLEN_LABEL)
+
+
+def _main(profile):
+    _selected_name(profile)
     ap = argparse.ArgumentParser(description=__doc__)
     for name in ('prestrip', 'final', 'pre-symbols', 'final-symbols', 'output'):
         ap.add_argument('--' + name, type=Path, required=True)
@@ -221,10 +244,18 @@ def main():
             data = stream.read(MIB + 1)
         assert len(data) <= MIB
         return data
-    result = validate(bounded(a.prestrip), bounded(a.final), bounded(a.pre_symbols), bounded(a.final_symbols))
+    result = _validate(bounded(a.prestrip), bounded(a.final), bounded(a.pre_symbols), bounded(a.final_symbols), profile)
     with a.output.open('x') as stream:
         json.dump(result, stream, sort_keys=True, indent=2, allow_nan=False)
         stream.write('\n')
+
+
+def main():
+    _main(LABEL)
+
+
+def main_strnlen():
+    _main(STRNLEN_LABEL)
 
 
 if __name__ == '__main__':
