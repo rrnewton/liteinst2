@@ -1,4 +1,5 @@
 """Exact main813 source/catalog successor; no execution credit from declarations."""
+import ast
 import copy
 import hashlib
 import json
@@ -9,7 +10,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '4c3ddf264710ad0816c0c905d336febe8045305ba348070c3279ad730a83c604', 'main813_inventory_data_differs')
+require(hashlib.sha256(RAW).hexdigest() == 'fe59b17c7dbd771b8a762599146f110620ca32c599432d82e3e8b382f640519f', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -23,7 +24,9 @@ CURRENTE797 = MAINE797['current_corpus_sha256']
 MAINF0EF = DATA['mainf0ef']
 CURRENTF0EF = MAINF0EF['current_corpus_sha256']
 MAIN7CDC = DATA['main7cdc']
-LATEST = MAIN7CDC['current_corpus_sha256']
+CURRENT7CDC = MAIN7CDC['current_corpus_sha256']
+MAIN43D7 = DATA['main43d7']
+LATEST = MAIN43D7['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -34,8 +37,74 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 
+def source_before_43d7(path, data, error):
+    """Only the fixed 43d7 whole blob may reach its exact historical source."""
+    if path not in MAIN43D7['projections']:
+        return data
+    row = MAIN43D7['projections'][path]
+    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = data[:start] + old.encode() + data[end:]
+        last = start
+    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    return data
+
+
+def require_43d7_sources(error='main43d7_source_inventory_differs'):
+    for path, expected in MAIN43D7['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        if path in MAIN43D7['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN43D7['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found) + MAIN43D7['macros'].get(path, {}).get('test_attributes', 0), error)
+
+    for path, row in MAIN43D7['macros'].items():
+        require((ROOT / path).read_text().count(row['literal']) == 1, error)
+    for path, rows in MAIN43D7['doctests'].items():
+        lines = (ROOT / path).read_text().splitlines()
+        for row in rows:
+            require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
+    metadata = MAIN43D7['python_metadata']
+    tree = ast.parse((ROOT / metadata['path']).read_bytes())
+    for name, expected in metadata['assignments'].items():
+        values = [ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
+                  and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)]
+        require(values == [expected], error)
+    for path, facts in metadata['qualification_facts'].items():
+        raw = (ROOT / path).read_text()
+        require(all(raw.count(literal) == 1 for literal in facts), error)
+
+
+def before_43d7(declared, error='main43d7_inventory_differs', source_error='main43d7_source_inventory_differs'):
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_43d7_sources(source_error)
+    old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN43D7['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN43D7['previous_corpus_sha256'] == CURRENT7CDC, error)
+    return old
+
+
+def peel_43d7(declared, error, source_error):
+    return before_43d7(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
 def source_before_7cdc(path, data, error):
     """Only the fixed 7cdc whole blob may reach its exact historical source."""
+    data = source_before_43d7(path, data, error)
     if path not in MAIN7CDC['projections']:
         return data
     row = MAIN7CDC['projections'][path]
@@ -50,11 +119,13 @@ def source_before_7cdc(path, data, error):
 
 
 def require_7cdc_sources(error='main7cdc_source_inventory_differs'):
+    require_43d7_sources(error)
     for path, expected in MAIN7CDC['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = source_before_43d7(path, raw, error)
         require(hashlib.sha256(raw).hexdigest() == expected, error)
         if path in MAIN7CDC['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -65,7 +136,8 @@ def require_7cdc_sources(error='main7cdc_source_inventory_differs'):
 
 
 def before_7cdc(declared, error='main7cdc_inventory_differs', source_error='main7cdc_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    declared = peel_43d7(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENT7CDC, error)
     require_7cdc_sources(source_error)
     old = copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -80,7 +152,8 @@ def before_7cdc(declared, error='main7cdc_inventory_differs', source_error='main
 
 
 def peel_7cdc(declared, error, source_error):
-    return before_7cdc(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_43d7(declared, error, source_error)
+    return before_7cdc(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT7CDC else declared
 
 
 def source_before_f0ef(path, data, error):

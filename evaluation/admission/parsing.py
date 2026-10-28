@@ -146,7 +146,8 @@ def parse_harnesses(output, expected, exit_code):
                 require(re.fullmatch(r"all doctests ran in \d+(?:\.\d+)?s; "
                                      r"merged doctests compilation took \d+(?:\.\d+)?s", line)
                         and current["outer"] is None and not stack
-                        and [p["declared_tests"] for p in current["partitions"]] == [2, 36]
+                        and [p["declared_tests"] for p in current["partitions"]]
+                        == {38: [2, 36], 45: [2, 43]}[current["expected_tests"]]
                         and all(p["summary"] is not None for p in current["partitions"]),
                         "incomplete_doc_partitions")
                 summaries = [p["summary"] for p in current["partitions"]]
@@ -165,8 +166,9 @@ def parse_harnesses(output, expected, exit_code):
                 count = int(start[1])
                 if current["declared_outer_tests"] is None:
                     current["declared_outer_tests"] = count
-                    if (current["id"], current["expected_tests"], current["expected_ignored"], count) == (
-                            "doc/rapid_profiler", 38, 0, 2):
+                    if (current["id"], current["expected_tests"], current["expected_ignored"], count) in (
+                            ("doc/rapid_profiler", 38, 0, 2),
+                            ("doc/rapid_profiler", 45, 0, 2)):
                         # Retain actual declarations/summaries; the outer counts
                         # are aggregated only after both and rustdoc's terminal.
                         current["partitions"] = [{"declared_tests": 2, "summary": None}]
@@ -174,7 +176,8 @@ def parse_harnesses(output, expected, exit_code):
                         require(count == current["expected_tests"], "changed_outer_cohort")
                 elif "partitions" in current:
                     require(not stack and len(current["partitions"]) == 1
-                            and current["partitions"][0]["summary"] is not None and count == 36,
+                            and current["partitions"][0]["summary"] is not None
+                            and count == {38: 36, 45: 43}[current["expected_tests"]],
                             "changed_doc_partition")
                     current["partitions"].append({"declared_tests": count, "summary": None})
                 else:

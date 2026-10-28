@@ -316,7 +316,7 @@ class Main813InventoryTests(unittest.TestCase):
                     main813.source_before_f0ef(path, bad, 'changed')
 
         self.assertEqual(main813.digest(main813.before_7cdc(actual)), main813.CURRENTF0EF)
-        current_rows = actual['harness_test_counts']['workspace_tests']
+        current_rows = main813.before_43d7(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
                           sum(x['ignored'] for x in current_rows.values())), (103, 2864, 12))
         self.assertEqual(sum(len(x['all']) for x in main813.MAIN7CDC['methods'].values()), 10)
@@ -360,6 +360,60 @@ class Main813InventoryTests(unittest.TestCase):
             for bad in (raw + b'\n', raw[:-1], restored):
                 with self.subTest(main7cdc_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
                     main813.source_before_7cdc(path, bad, 'changed')
+
+        self.assertEqual(main813.digest(main813.before_43d7(actual)), main813.CURRENT7CDC)
+        current_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
+                          sum(x['ignored'] for x in current_rows.values())), (103, 2910, 32))
+        self.assertEqual(sum(len(x) for x in main813.MAIN43D7['added_methods'].values()), 39)
+        self.assertEqual(sum(len(main813.MAIN43D7['added_methods'][p]) * len(v)
+                             for p, v in main813.MAIN43D7['instances'].items()), 39)
+        self.assertEqual(main813.MAIN43D7['declared_delta'],
+                         {'rust_tests': 39, 'doctests': 7, 'ignored': 20, 'harnesses': 0})
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(main813.before_43d7(actual))
+        for name, change in main813.MAIN43D7['workspace_changes'].items():
+            self.assertEqual(current_rows[name], change['current'])
+            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
+                          True, float(change['current']['tests'])):
+                changed = copy.deepcopy(actual)
+                changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
+                with self.subTest(main43d7_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
+                    inventory.require_current(changed)
+            changed = copy.deepcopy(actual)
+            del changed['harness_test_counts']['workspace_tests'][name]
+            with self.subTest(main43d7_missing=name), self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(changed)
+        for key in actual:
+            changed = copy.deepcopy(actual); changed[key] = None
+            with self.subTest(main43d7_field=key), self.assertRaises(parsing.InvalidEvidence):
+                main813.before_43d7(changed)
+        for path in main813.MAIN43D7['sources']:
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate == main813.ROOT / path:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return read_bytes(candidate) + b'\n'
+                    return read_bytes(candidate)
+                with self.subTest(main43d7_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(actual)
+        for path, row in main813.MAIN43D7['projections'].items():
+            raw = (main813.ROOT / path).read_bytes()
+            restored = main813.source_before_43d7(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.subTest(main43d7_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_43d7(path, bad, 'changed')
+
+        self.assertEqual(sum(len(x) for x in main813.MAIN43D7['doctests'].values()), 7)
+        metadata = main813.MAIN43D7['python_metadata']
+        self.assertEqual(len(metadata['assignments']['CALIBRATION_TESTS']), 94)
+        self.assertEqual(len(metadata['previous_calibration_tests']), 82)
+        self.assertEqual(len(metadata['added_calibration_tests']), 12)
+        self.assertTrue(all(metadata['assignments']['CALIBRATION_TESTS'][k] == v
+                            for k, v in metadata['previous_calibration_tests'].items()))
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
@@ -506,4 +560,46 @@ class Main813InventoryTests(unittest.TestCase):
         failed = doc.replace(summary(36), summary(35, failed=1))
         row = parsing.parse_harnesses(failed, expected, 1)[0]
         self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']), ('FAILED', 37, 1))
+        self.assertEqual(row['partitions'][1]['summary']['failed'], 1)
+
+        # Exact incoming 45-doc cohort; retain the complete 38-doc controls above.
+        doc = '\n'.join(('   Doc-tests rapid_profiler', 'running 2 tests', summary(2),
+                         'running 43 tests', summary(43),
+                         'all doctests ran in 0.51s; merged doctests compilation took 0.21s'))
+        expected = {'doc/rapid_profiler': counts(45)}
+        row = parsing.parse_harnesses(doc, expected, 0)[0]
+        self.assertEqual(row['outer'], dict(passed=45, failed=0, ignored=0, measured=0, filtered=0, result='ok'))
+        self.assertEqual(row['declared_outer_tests'], 2)
+        self.assertEqual([p['declared_tests'] for p in row['partitions']], [2, 43])
+        self.assertEqual([p['summary']['passed'] for p in row['partitions']], [2, 43])
+        self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (0, 0))
+        changes = [doc.replace('rapid_profiler', 'example'),
+                   doc.replace('running 2 tests', 'running 3 tests'),
+                   doc.replace('running 43 tests', 'running 42 tests'),
+                   doc.replace('running 43 tests', 'running 44 tests'),
+                   doc.replace(summary(2), summary(1)),
+                   doc.replace(summary(43), summary(42)),
+                   doc.replace(summary(2), summary(2, filtered=1)),
+                   doc.replace(summary(43), summary(43, filtered=1)),
+                   doc.replace(summary(43), summary(42, ignored=1)),
+                   doc.replace(summary(43), summary(42, measured=1)),
+                   doc.replace(summary(43), summary(42, failed=1)),
+                   doc.replace(summary(43), summary(43, result='FAILED')),
+                   doc.replace('running 43 tests', 'running 43 tests\nrunning 43 tests'),
+                   doc.replace(summary(2), summary(2)+'\n'+summary(2)),
+                   doc.replace(summary(43), ''),
+                   doc.replace(summary(2), ''),
+                   '\n'.join(doc.splitlines()[:-1]),
+                   doc+'\n'+doc.splitlines()[-1],
+                   doc+'\nrunning 1 test\n'+summary(1),
+                   doc.replace('all doctests ran in 0.51s;', 'all doctests ran in NaNs;')]
+        for bad in changes:
+            with self.subTest(doc_partition=bad), self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, expected, 0)
+        for total, ignored in ((44, 0), (46, 0), (45, 1)):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(doc, {'doc/rapid_profiler': counts(total, ignored)}, 0)
+        failed = doc.replace(summary(43), summary(42, failed=1))
+        row = parsing.parse_harnesses(failed, expected, 1)[0]
+        self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']), ('FAILED', 44, 1))
         self.assertEqual(row['partitions'][1]['summary']['failed'], 1)

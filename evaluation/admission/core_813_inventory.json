@@ -167,6 +167,902 @@
     ]
   },
   "listing_revision": "18f8c106fe4167dce41b77956917f8e45c583b42",
+  "main43d7": {
+    "added_methods": {
+      "tests/support/native_tree_batch.rs": [
+        "batch_armed_all_fields_and_retained_lifetime_refuse_corruption",
+        "batch_checkpoint_exact_idle_refuses_missing_or_early_return",
+        "batch_checkpoint_requires_exact_self_thread_signal",
+        "batch_outer_call_checks_actual_instruction_successor_word_and_rf"
+      ],
+      "tests/support/native_tree_hardware.rs": [
+        "hardware_event_requires_exact_owned_trap",
+        "hardware_initial_owner_and_offsets_are_closed",
+        "hardware_peek_preserves_valid_minus_one",
+        "hardware_harness_only_removes_authenticated_rf",
+        "hardware_partial_install_and_restore_keep_custody",
+        "hardware_readback_and_exact_restoration",
+        "hardware_cleanup_does_not_touch_running_or_terminal_child",
+        "hardware_targets_authenticate_closed_tree_and_literal_bytes"
+      ],
+      "tests/support/native_tree_hardware_control.rs": [
+        "owned_execution_breakpoint_restores_then_steps_then_stops"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native/batch_owner_native.rs": [
+        "finish_reuse_capacity",
+        "sampled_abc",
+        "closed_abc",
+        "original_drop_0",
+        "original_drop_1",
+        "original_forget_0",
+        "original_forget_1",
+        "original_first_error",
+        "original_caller_unwind",
+        "original_early_finish",
+        "original_extra_call",
+        "installed_drop_0",
+        "installed_drop_1",
+        "installed_forget_0",
+        "installed_forget_1",
+        "installed_first_error",
+        "installed_caller_unwind",
+        "installed_early_finish",
+        "installed_extra_call"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/batch.rs": [
+        "source_batch_latch_requires_exact_count_and_cannot_reenter_busy",
+        "source_batch_first_failure_retains_exact_error_across_abandonment",
+        "source_batch_caught_unwind_leaves_owner_busy_until_abandoned",
+        "source_batch_input_snapshots_reject_every_changed_byte_extent_and_alignment",
+        "source_batch_cumulative_delta_preserves_sampled_and_closed_partitions"
+      ],
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs": [
+        "source_batch_admission_is_nonreserving_and_checks_all_ids_and_storage_bounds"
+      ],
+      "tools/rapid-profiler/src/frontend_native/ordinary/tests.rs": [
+        "full_live_page_comparison_rejects_every_mutation_without_masks"
+      ]
+    },
+    "base": "a1112911ea760fb84ee40855a234b8529928f4cb",
+    "current_corpus_sha256": "480d690a4900a576a49cf37fa851ac5ff5fe761f347a6bbfa2710c8feb27e96d",
+    "declared_delta": {
+      "doctests": 7,
+      "harnesses": 0,
+      "ignored": 20,
+      "rust_tests": 39
+    },
+    "doctests": {
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/batch.rs": [
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 168,
+          "marker": "///"
+        },
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 173,
+          "marker": "///"
+        },
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 302,
+          "marker": "///"
+        },
+        {
+          "attributes": "compile_fail,E0277",
+          "line": 307,
+          "marker": "///"
+        },
+        {
+          "attributes": "compile_fail,E0499",
+          "line": 312,
+          "marker": "///"
+        },
+        {
+          "attributes": "compile_fail,E0502",
+          "line": 320,
+          "marker": "///"
+        },
+        {
+          "attributes": "compile_fail,E0515",
+          "line": 329,
+          "marker": "///"
+        }
+      ]
+    },
+    "instances": {
+      "tests/support/native_tree_batch.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::tree_batch::tests::"
+      },
+      "tests/support/native_tree_hardware.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::hardware::tests::"
+      },
+      "tests/support/native_tree_hardware_control.rs": {
+        "test/frontend_native_calibrations": "oracle::native_ordinary::hardware::control::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native/batch_owner_native.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::tests::concurrent_native::tree_native::batch_owner_native::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/batch.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::tree::batch::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::always_on::tree::runtime::tests::"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/tests.rs": {
+        "unit/rapid_profiler/lib": "frontend_native::ordinary::tests::"
+      }
+    },
+    "macros": {
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native/batch_owner_native.rs": {
+        "ignored": [
+          "original_drop_0",
+          "original_drop_1",
+          "original_forget_0",
+          "original_forget_1",
+          "original_first_error",
+          "original_caller_unwind",
+          "original_early_finish",
+          "original_extra_call",
+          "installed_drop_0",
+          "installed_drop_1",
+          "installed_forget_0",
+          "installed_forget_1",
+          "installed_first_error",
+          "installed_caller_unwind",
+          "installed_early_finish",
+          "installed_extra_call"
+        ],
+        "literal": "macro_rules! failure_tests {\n    ($runner:ident; $($name:ident => $mode:expr),+ $(,)?) => {$(\n        #[test]\n        #[ignore = \"requires release tree batch fixture reproducer; one fresh process\"]\n        fn $name() { $runner(stringify!($name), $mode); }\n    )+};\n}\nfailure_tests!(original_failure;\n    original_drop_0 => Failure::Drop(0), original_drop_1 => Failure::Drop(1),\n    original_forget_0 => Failure::Forget(0), original_forget_1 => Failure::Forget(1),\n    original_first_error => Failure::First, original_caller_unwind => Failure::Unwind,\n    original_early_finish => Failure::Early, original_extra_call => Failure::Extra,\n);\nfailure_tests!(installed_failure;\n    installed_drop_0 => Failure::Drop(0), installed_drop_1 => Failure::Drop(1),\n    installed_forget_0 => Failure::Forget(0), installed_forget_1 => Failure::Forget(1),\n    installed_first_error => Failure::First, installed_caller_unwind => Failure::Unwind,\n    installed_early_finish => Failure::Early, installed_extra_call => Failure::Extra,\n);\n",
+        "names": [
+          "original_drop_0",
+          "original_drop_1",
+          "original_forget_0",
+          "original_forget_1",
+          "original_first_error",
+          "original_caller_unwind",
+          "original_early_finish",
+          "original_extra_call",
+          "installed_drop_0",
+          "installed_drop_1",
+          "installed_forget_0",
+          "installed_forget_1",
+          "installed_first_error",
+          "installed_caller_unwind",
+          "installed_early_finish",
+          "installed_extra_call"
+        ],
+        "test_attributes": 1
+      }
+    },
+    "methods": {
+      "tests/support/native_tree_batch.rs": {
+        "all": [
+          "batch_armed_all_fields_and_retained_lifetime_refuse_corruption",
+          "batch_checkpoint_exact_idle_refuses_missing_or_early_return",
+          "batch_checkpoint_requires_exact_self_thread_signal",
+          "batch_outer_call_checks_actual_instruction_successor_word_and_rf"
+        ],
+        "ignored": []
+      },
+      "tests/support/native_tree_hardware.rs": {
+        "all": [
+          "hardware_event_requires_exact_owned_trap",
+          "hardware_initial_owner_and_offsets_are_closed",
+          "hardware_peek_preserves_valid_minus_one",
+          "hardware_harness_only_removes_authenticated_rf",
+          "hardware_partial_install_and_restore_keep_custody",
+          "hardware_readback_and_exact_restoration",
+          "hardware_cleanup_does_not_touch_running_or_terminal_child",
+          "hardware_targets_authenticate_closed_tree_and_literal_bytes"
+        ],
+        "ignored": []
+      },
+      "tests/support/native_tree_hardware_control.rs": {
+        "all": [
+          "owned_execution_breakpoint_restores_then_steps_then_stops"
+        ],
+        "ignored": [
+          "owned_execution_breakpoint_restores_then_steps_then_stops"
+        ]
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native/batch_owner_native.rs": {
+        "all": [
+          "finish_reuse_capacity",
+          "sampled_abc",
+          "closed_abc"
+        ],
+        "ignored": [
+          "finish_reuse_capacity",
+          "sampled_abc",
+          "closed_abc"
+        ]
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/batch.rs": {
+        "all": [
+          "source_batch_latch_requires_exact_count_and_cannot_reenter_busy",
+          "source_batch_first_failure_retains_exact_error_across_abandonment",
+          "source_batch_caught_unwind_leaves_owner_busy_until_abandoned",
+          "source_batch_input_snapshots_reject_every_changed_byte_extent_and_alignment",
+          "source_batch_cumulative_delta_preserves_sampled_and_closed_partitions"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs": {
+        "all": [
+          "mixed_owners_remain_pending_until_child_ack_and_root_postflight",
+          "child_ack_rejects_early_wrong_fields_and_duplicate_without_completion",
+          "paired_return_checks_stream_function_registration_slot_and_stack",
+          "root_postflight_claim_cannot_consume_pending_owner_with_wrong_fields",
+          "two_full_buffers_keep_absolute_identity_and_held_pages_unchanged",
+          "whole_page_validator_refuses_every_word_and_sparse_row_corruption",
+          "sampled_unsampled_parent_child_combinations_keep_real_receipt_owners",
+          "epoch_retirement_authenticates_stale_tokens_and_last_report_permit",
+          "controller_reentry_failed_prefix_and_legacy_history_limit_remain_refusals",
+          "preflight_refuses_depth_budget_identity_overflow_and_poison_atomically",
+          "function_closed_receipts_retain_epoch_through_child_ack_and_root_finish",
+          "source_batch_admission_is_nonreserving_and_checks_all_ids_and_storage_bounds"
+        ],
+        "ignored": []
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/tests.rs": {
+        "all": [
+          "complete_scalar_cfg_has_both_returns_and_explicit_padding",
+          "control_edges_must_land_on_local_heads",
+          "stack_system_call_and_noninteger_forms_refuse",
+          "bounds_and_unreachable_code_are_not_coverage_exemptions",
+          "explicit_external_contract_refusals_remain_separate",
+          "complete_elf_symbol_parser_accepts_bounded_synthetic_owner",
+          "elf_owner_symbol_and_runtime_loading_extensions_refuse",
+          "aligned_empty_load_has_no_file_symbol_or_mapping_ownership",
+          "empty_load_fields_and_real_overlaps_still_refuse",
+          "elf_entry_metadata_does_not_replace_selected_symbol_authority",
+          "elf_entry_requires_one_nonempty_executable_file_interval",
+          "full_live_page_comparison_rejects_every_mutation_without_masks"
+        ],
+        "ignored": []
+      }
+    },
+    "origin": "43d7a40e5d112beac436ab646b834f4a6f9bce86",
+    "predecessor": "f59600ce70bc1b140fac499c08abe2ba855c5a72",
+    "previous_corpus_sha256": "d2d2ce9b96cc1b733cc12c8429392b54e11c7ba9e3bd3d6c6bceedb07182075a",
+    "projections": {
+      "tests/support/native_ordinary.rs": {
+        "current_sha256": "c5603b8780f8a992d09311ad5b95dab6c0a50ddfb957e8a52058e022d0172328",
+        "edits": [
+          [
+            51290,
+            51556,
+            ""
+          ]
+        ],
+        "previous_sha256": "78258ca0c088b4672aca4989a7325b88a6d6649684f204fd79fc20f685a0eb74"
+      },
+      "tools/rapid-profiler/native-interval/main.rs": {
+        "current_sha256": "1fe86d81af9df2626efdadb4d6760769e8d4b97a6cf7859b2c1173d3f6580f29",
+        "edits": [
+          [
+            33992,
+            34656,
+            ""
+          ]
+        ],
+        "previous_sha256": "45c722bf160e1f341ce46a5c967d8e65144021a1970439df792cb0a4ceb65c14"
+      },
+      "tools/rapid-profiler/native-interval/tree.rs": {
+        "current_sha256": "d0603d8adc3faf901ae813b50f56dfbc3b1c2a859ed648384991c1a0dc3f6b61",
+        "edits": [
+          [
+            26002,
+            26025,
+            ""
+          ]
+        ],
+        "previous_sha256": "c4d01f036ea9a931d52b3a8dbac88e82efab1078e11070b35230bba5c937ef29"
+      },
+      "tools/rapid-profiler/reference-work/check_output.py": {
+        "current_sha256": "a5e0683ade47a94913afb53a15123a53b316172d8d9936f3a925b8a2b64b7189",
+        "edits": [
+          [
+            1652,
+            2953,
+            ""
+          ],
+          [
+            13585,
+            13991,
+            ""
+          ],
+          [
+            14115,
+            14301,
+            "    pattern = (r'\\nrunning 82 tests\\n((?:test [A-Za-z0-9_:]+(?: - should panic)? \\.\\.\\. ok\\n){82})\\n'\n        r'test result: ok\\. 82 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in [0-9]+\\.[0-9]+s\\n\\n')\n"
+          ],
+          [
+            14370,
+            14778,
+            "    names = [line.split()[1] for line in match.group(1).splitlines()]\n    assert len(set(names)) == 82\n    observed = {line.split()[1]: ' - should panic ... ok' in line for line in match.group(1).splitlines()}\n"
+          ]
+        ],
+        "previous_sha256": "eb2439971085a752abbe0a0ccea4c5718743ad3e31fa53a2f2ffc1e9f655fbc8"
+      },
+      "tools/rapid-profiler/reference-work/test_recipe.py": {
+        "current_sha256": "f87b22db42df5604a2d585be98a20e421b0315c4c79b9b9a1d56e6c562a7b198",
+        "edits": [
+          [
+            3101,
+            3189,
+            "    def test_full_calibration_population_no_ignored_or_duplicate_names(self):\n"
+          ],
+          [
+            3220,
+            3300,
+            "            return ('\\nrunning 82 tests\\n'+''.join(\n"
+          ],
+          [
+            3403,
+            3539,
+            "                '\\ntest result: ok. 82 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s\\n\\n').encode('ascii')\n"
+          ],
+          [
+            3779,
+            3873,
+            "            for changed in ((name, not panic), (name+'wrong', panic), items[(index+1) % 82]):\n"
+          ],
+          [
+            4185,
+            4477,
+            "                    data.replace(b'82 passed', b'81 passed'), data.replace(b'0 ignored', b'1 ignored'),\n"
+          ]
+        ],
+        "previous_sha256": "72968b82bef75ed5521c64f6ca1c2fd19608eb835ea3c485f21b643e7c463313"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native.rs": {
+        "current_sha256": "19c58f2c1326b36ecefc7113aff602e5e4be8effa025524ec12dc912508d35ea",
+        "edits": [
+          [
+            17645,
+            17670,
+            ""
+          ]
+        ],
+        "previous_sha256": "e94aadb79349860a8f369dfc5d3dc705a981a3b0285889e44a9b3b9cac740629"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/drain.rs": {
+        "current_sha256": "03de5627d706a68b107b6c683656c351bd2c84936262bebc9db5e6cca649275f",
+        "edits": [
+          [
+            9624,
+            9693,
+            ""
+          ]
+        ],
+        "previous_sha256": "6aba4fe205dd9bae93afab10150d0ca07c09fcb0a7b0b827468dc6c8e4cb05e4"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/mod.rs": {
+        "current_sha256": "3204bc3d76dcdbd0b583c3ca49c2df670fe463593af489c95918a466eca85bfc",
+        "edits": [
+          [
+            244,
+            255,
+            ""
+          ],
+          [
+            266,
+            329,
+            ""
+          ],
+          [
+            382,
+            527,
+            ""
+          ],
+          [
+            12364,
+            12389,
+            ""
+          ],
+          [
+            14760,
+            14809,
+            ""
+          ],
+          [
+            15449,
+            15712,
+            ""
+          ],
+          [
+            17339,
+            17408,
+            ""
+          ],
+          [
+            18640,
+            18684,
+            ""
+          ],
+          [
+            20064,
+            20400,
+            "                    self.live.verify().map_err(TreeError::Site)\n"
+          ]
+        ],
+        "previous_sha256": "464af707485ae4bff8ffdf0f576a55e457e529664b5e3092a7c25f66f55ba34b"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/prepared.rs": {
+        "current_sha256": "133d4f7898ee98a549c6b365f1e8a4f671b92eaebf30f51047bef57f8ff37ac2",
+        "edits": [
+          [
+            2992,
+            3018,
+            "fn checkpoint(\n"
+          ],
+          [
+            4459,
+            4681,
+            "        unsafe { thread.invoke_prepared(bytes, input, external_id, before) }\n"
+          ]
+        ],
+        "previous_sha256": "036d21dc83c647f91399a26f8ac60079a2a03b202c30f04c9a431ffbe44b86fa"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/runtime.rs": {
+        "current_sha256": "c9d3cfec3fdb9f6341bc0d3d23b05a4b33aa1f6ca3e07d850234d59b925394c4",
+        "edits": [
+          [
+            1162,
+            2103,
+            ""
+          ],
+          [
+            3314,
+            4721,
+            ""
+          ]
+        ],
+        "previous_sha256": "56362e6122b0044c8ed39787503817b99643c2f78bf858434b8bf2ce3f0f4a18"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs": {
+        "current_sha256": "a7615fb20411e704df54a67584ed36ec0f21797e6b61bf6575f573fe907d326d",
+        "edits": [
+          [
+            27747,
+            30087,
+            ""
+          ]
+        ],
+        "previous_sha256": "619c25cb4a0f94346f797562a4c3f23823e2dfba6ac746ccd9fdd025437c8157"
+      },
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/site.rs": {
+        "current_sha256": "50ca0ed48387d26b958fde548763e450651dace8b1f25a880a2784aebc6f842a",
+        "edits": [
+          [
+            1287,
+            1323,
+            ""
+          ],
+          [
+            1724,
+            1810,
+            "    pub(super) fn verify(&mut self) -> Result<(), SiteError> {\n        let prep = &mut self.prep;\n"
+          ],
+          [
+            2720,
+            2870,
+            ""
+          ],
+          [
+            3935,
+            4480,
+            ""
+          ],
+          [
+            4507,
+            5651,
+            ""
+          ],
+          [
+            16154,
+            16195,
+            ""
+          ],
+          [
+            16978,
+            17047,
+            ""
+          ],
+          [
+            17943,
+            18012,
+            ""
+          ],
+          [
+            18871,
+            19162,
+            ""
+          ],
+          [
+            19874,
+            20205,
+            "                self.prep.owner.verify_original().map_err(SiteError::Source)\n"
+          ]
+        ],
+        "previous_sha256": "8c592338f646ab114dc016c66becdab059eba778a7f3eb4d24a79a083bf023f4"
+      },
+      "tools/rapid-profiler/src/frontend_native/mod.rs": {
+        "current_sha256": "0e593cd242be9a3a7876ab157710ba9eb4779603c677eab4c37054bee2065889",
+        "edits": [
+          [
+            5778,
+            6163,
+            "    InstalledTreeSite, OriginalTreeCallResult, PreparedOriginalTreeCall, PreparedTreeCall,\n    PreparedTreeController, TreeBatch, TreeCallGate, TreeCallResult, TreeClient, TreeController,\n    TreeError, TreeRecord, TreeSitePreparation, TreeThread, TreeTotals,\n"
+          ]
+        ],
+        "previous_sha256": "690b2bfaab7d166c234ed7854f2ff0c2a1932f0ce64b0bbb82132934a7d241aa"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": {
+        "current_sha256": "9f60eef5c7f49ecf204ff1d5ec87c230c1c000623e90eb6629041a03a6469f28",
+        "edits": [
+          [
+            558,
+            616,
+            ""
+          ],
+          [
+            21815,
+            22302,
+            ""
+          ],
+          [
+            22341,
+            22386,
+            "        || expected.len() != parsed.code.len()\n"
+          ],
+          [
+            24430,
+            24628,
+            ""
+          ],
+          [
+            25739,
+            26088,
+            "    // SAFETY: caller's retained readable mapping contract, plus complete\n    // current file-backed page ownership/protection validation above.\n"
+          ]
+        ],
+        "previous_sha256": "d5bb9a1ececf4ecb0be449a73899ba4b1495e3c46ac153854a6ed7c1d57430e7"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/tests.rs": {
+        "current_sha256": "7c88ddd971361be6d2023446f14dc88c954e090fcfd04fd2aa1a41c0d21487c1",
+        "edits": [
+          [
+            12716,
+            13474,
+            ""
+          ]
+        ],
+        "previous_sha256": "3d1ca70d9e617b5595edf48a2d4005c88a88a25733dac0f5335608e823b69fd6"
+      },
+      "tools/rapid-profiler/src/frontend_native/ordinary/tree.rs": {
+        "current_sha256": "ecbbaa0135db64f3ab6bb9b44259b580b456e3e6fc1fa615e65a31e8e53b2133",
+        "edits": [
+          [
+            7700,
+            7989,
+            ""
+          ],
+          [
+            8011,
+            9403,
+            ""
+          ]
+        ],
+        "previous_sha256": "f69e205a8ab84dd8764d05b1ee11856e13d041c57eca14988cd5725a0e616c75"
+      },
+      "tools/rapid-profiler/verify_ordinary_interval.py": {
+        "current_sha256": "40d7b01652bf6f412f3e1fe2a1efa2bbc5d807959e40f9f3f6a58532eaa9f8be",
+        "edits": [
+          [
+            29351,
+            29568,
+            ""
+          ],
+          [
+            71822,
+            71914,
+            "            reference['calibrations'] = dict(status='PASS', passed=82, failed=0, ignored=0,\n"
+          ],
+          [
+            77841,
+            77929,
+            "            cache['calibrations'] = dict(status='PASS', passed=82, failed=0, ignored=0,\n"
+          ]
+        ],
+        "previous_sha256": "0f9395e51425b8d2fdb4c828f30020da0923a48f3a210fea418e9bc02be59e6a"
+      }
+    },
+    "python_metadata": {
+      "added_calibration_tests": [
+        "oracle::native_ordinary::hardware::tests::hardware_cleanup_does_not_touch_running_or_terminal_child",
+        "oracle::native_ordinary::hardware::tests::hardware_event_requires_exact_owned_trap",
+        "oracle::native_ordinary::hardware::tests::hardware_harness_only_removes_authenticated_rf",
+        "oracle::native_ordinary::hardware::tests::hardware_initial_owner_and_offsets_are_closed",
+        "oracle::native_ordinary::hardware::tests::hardware_partial_install_and_restore_keep_custody",
+        "oracle::native_ordinary::hardware::tests::hardware_peek_preserves_valid_minus_one",
+        "oracle::native_ordinary::hardware::tests::hardware_readback_and_exact_restoration",
+        "oracle::native_ordinary::hardware::tests::hardware_targets_authenticate_closed_tree_and_literal_bytes",
+        "oracle::native_ordinary::tree_batch::tests::batch_armed_all_fields_and_retained_lifetime_refuse_corruption",
+        "oracle::native_ordinary::tree_batch::tests::batch_checkpoint_exact_idle_refuses_missing_or_early_return",
+        "oracle::native_ordinary::tree_batch::tests::batch_checkpoint_requires_exact_self_thread_signal",
+        "oracle::native_ordinary::tree_batch::tests::batch_outer_call_checks_actual_instruction_successor_word_and_rf"
+      ],
+      "assignments": {
+        "CALIBRATION_TESTS": {
+          "oracle::calibration::rejects_application_memory_corruption": true,
+          "oracle::calibration::rejects_defined_flag_corruption": true,
+          "oracle::calibration::rejects_fault_address_corruption": true,
+          "oracle::calibration::rejects_gpr_corruption": true,
+          "oracle::calibration::rejects_redzone_corruption": true,
+          "oracle::calibration::rejects_simd_corruption": true,
+          "oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact": false,
+          "oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags": false,
+          "oracle::native_ordinary::cache::model::tests::cache_model_foreign_cross_line_width_and_wrap_refused": false,
+          "oracle::native_ordinary::cache::model::tests::cache_model_literal_case_totals_and_set_rotation": false,
+          "oracle::native_ordinary::cache::model::tests::cache_model_literal_lru_policy_discriminator": false,
+          "oracle::native_ordinary::cache::model::tests::cache_model_literal_per_operand_miss_positions": false,
+          "oracle::native_ordinary::cache::model::tests::cache_model_missing_duplicate_reordered_or_relabelled_reads_refused": false,
+          "oracle::native_ordinary::cache::model::tests::cache_model_ret_uses_full_address_and_each_call_starts_invalid": false,
+          "oracle::native_ordinary::cache::tests::cache_actual_dec_jnz_requires_counter_zf_and_successor": false,
+          "oracle::native_ordinary::cache::tests::cache_actual_qword_reads_require_address_width_and_all_bytes": false,
+          "oracle::native_ordinary::cache::tests::cache_actual_ret_requires_full_word_and_physical_successor": false,
+          "oracle::native_ordinary::cache::tests::cache_complete_visit_sequence_refuses_omission_insertion_and_reorder": false,
+          "oracle::native_ordinary::cache::truth::tests::cache_all_cases_join_independent_cycles_scalar_counts_and_ret": false,
+          "oracle::native_ordinary::cache::truth::tests::cache_every_changed_opcode_bit_is_refused": false,
+          "oracle::native_ordinary::cache::truth::tests::cache_invalid_header_links_extent_and_wrap_are_refused": false,
+          "oracle::native_ordinary::cache::truth::tests::cache_literal_fixture_and_first_iteration": false,
+          "oracle::native_ordinary::cache::truth::tests::cache_valid_link_or_payload_mutation_cannot_relabel_the_case": false,
+          "oracle::native_ordinary::call_tree::model::tests::tree_model_every_foreign_address_width_and_geometry_refuses": false,
+          "oracle::native_ordinary::call_tree::model::tests::tree_model_lru_and_dirty_state_kernel_controls": false,
+          "oracle::native_ordinary::call_tree::model::tests::tree_model_missing_reordered_wrong_function_and_kind_refuse": false,
+          "oracle::native_ordinary::call_tree::model::tests::tree_model_no_write_allocate_and_child_reset_are_observable": false,
+          "oracle::native_ordinary::call_tree::model::tests::tree_model_one_cache_exact_literal_vectors_and_attribution": false,
+          "oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_injection_changes_only_the_authenticated_word": false,
+          "oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_rejects_application_or_gate_resumption": false,
+          "oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_requires_normal_exact_exit123": false,
+          "oracle::native_ordinary::call_tree::tests::tree_native_actual_payload_link_and_dec_flags_are_authenticated": false,
+          "oracle::native_ordinary::call_tree::tests::tree_native_actual_transfer_bytes_pc_rsp_and_saved_word": false,
+          "oracle::native_ordinary::call_tree::tests::tree_native_call_store_preserves_every_other_protected_byte": false,
+          "oracle::native_ordinary::call_tree::tests::tree_native_closed_source_gap_heads_returns_and_call_map": false,
+          "oracle::native_ordinary::call_tree::tests::tree_native_complete_shape_refuses_missing_extra_reordered_and_node": false,
+          "oracle::native_ordinary::call_tree::tests::tree_native_pending_frame_rejects_idle_leaf_phase_and_each_word": false,
+          "oracle::native_ordinary::call_tree::tests::tree_native_transfer_population_order_and_original_call_pc": false,
+          "oracle::native_ordinary::call_tree::truth::tests::tree_truth_boundaries_and_non64_count_refuse": false,
+          "oracle::native_ordinary::call_tree::truth::tests::tree_truth_every_opcode_bit_refuses_and_case_cannot_be_relabelled": false,
+          "oracle::native_ordinary::call_tree::truth::tests::tree_truth_real_call_two_returns_and_nested_order": false,
+          "oracle::native_ordinary::hardware::tests::hardware_cleanup_does_not_touch_running_or_terminal_child": false,
+          "oracle::native_ordinary::hardware::tests::hardware_event_requires_exact_owned_trap": false,
+          "oracle::native_ordinary::hardware::tests::hardware_harness_only_removes_authenticated_rf": false,
+          "oracle::native_ordinary::hardware::tests::hardware_initial_owner_and_offsets_are_closed": false,
+          "oracle::native_ordinary::hardware::tests::hardware_partial_install_and_restore_keep_custody": false,
+          "oracle::native_ordinary::hardware::tests::hardware_peek_preserves_valid_minus_one": false,
+          "oracle::native_ordinary::hardware::tests::hardware_readback_and_exact_restoration": false,
+          "oracle::native_ordinary::hardware::tests::hardware_targets_authenticate_closed_tree_and_literal_bytes": false,
+          "oracle::native_ordinary::native_call::tests::actual_target_input_length_and_alignment_are_required": false,
+          "oracle::native_ordinary::native_call::tests::callback_order_count_and_stack_geometry_are_exact": false,
+          "oracle::native_ordinary::native_call::tests::every_callee_save_must_restore_before_harness": false,
+          "oracle::native_ordinary::native_call::tests::literal_native_profile_has_no_transient_exclusions_or_legacy_alias": false,
+          "oracle::native_ordinary::native_call::tests::outer_call_requires_exact_instruction_target_stack_successor_and_saved_word": false,
+          "oracle::native_ordinary::native_call::tests::wrapper_semantics_compare_all_unaffected_state_and_complete_stack": false,
+          "oracle::native_ordinary::optional_frontend::tests::optional_frontend_complete_frame_phase_and_owner_refuse": false,
+          "oracle::native_ordinary::optional_frontend::tests::optional_frontend_gate_bytes_offsets_and_extent_refuse": false,
+          "oracle::native_ordinary::optional_frontend::tests::optional_frontend_observer_omission_extra_and_order_refuse": false,
+          "oracle::native_ordinary::optional_frontend::tests::optional_frontend_ready_full_mapping_and_observer_identity_refuse": false,
+          "oracle::native_ordinary::reference::tests::reference_cell_cannot_alias_frame_data_stack_or_executable_ranges": false,
+          "oracle::native_ordinary::reference::tests::reference_complete_cell_identity_spills_and_canary_are_material": false,
+          "oracle::native_ordinary::reference::tests::reference_layout_requires_every_byte_and_actual_label": false,
+          "oracle::native_ordinary::reference::tests::reference_profile_and_complete_ret_inventory_refuse_substitution": false,
+          "oracle::native_ordinary::reference::tests::reference_reader_transparency_keeps_full_state_and_physical_pcs": false,
+          "oracle::native_ordinary::reference::tests::reference_result_requires_both_restorations_real_rax_and_leg": false,
+          "oracle::native_ordinary::reference::tests::reference_result_wire_rejects_clock_geometry_missing_duplicate_and_tail": false,
+          "oracle::native_ordinary::reference::tests::reference_stores_require_actual_unique_rdtscp_outputs": false,
+          "oracle::native_ordinary::tests::ordinary_actual_frame_data_and_tls_mismatch_refuse": false,
+          "oracle::native_ordinary::tests::ordinary_full_data_and_redzone_comparator_refuses": false,
+          "oracle::native_ordinary::tests::ordinary_gate_and_ready_identity_refuse": false,
+          "oracle::native_ordinary::tests::ordinary_harness_resume_only_removes_debugger_tf": false,
+          "oracle::native_ordinary::tests::ordinary_map_missing_and_duplicate_ret_refuse": false,
+          "oracle::native_ordinary::tree_batch::tests::batch_armed_all_fields_and_retained_lifetime_refuse_corruption": false,
+          "oracle::native_ordinary::tree_batch::tests::batch_checkpoint_exact_idle_refuses_missing_or_early_return": false,
+          "oracle::native_ordinary::tree_batch::tests::batch_checkpoint_requires_exact_self_thread_signal": false,
+          "oracle::native_ordinary::tree_batch::tests::batch_outer_call_checks_actual_instruction_successor_word_and_rf": false,
+          "oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip": true,
+          "oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip": true,
+          "oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip": true,
+          "oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc": true,
+          "oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc": true,
+          "oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity": false,
+          "oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write": true,
+          "oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status": true,
+          "oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation": true,
+          "oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication": true,
+          "oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity": true,
+          "oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record": false,
+          "oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status": true,
+          "oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization": true,
+          "oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field": true,
+          "oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity": true,
+          "oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process": true,
+          "oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction": true
+        },
+        "HARDWARE_IGNORED": "test oracle::native_ordinary::hardware::control::owned_execution_breakpoint_restores_then_steps_then_stops ... ignored, requires explicit fresh-process release hardware-stop prerequisite"
+      },
+      "path": "tools/rapid-profiler/reference-work/check_output.py",
+      "previous_calibration_tests": {
+        "oracle::calibration::rejects_application_memory_corruption": true,
+        "oracle::calibration::rejects_defined_flag_corruption": true,
+        "oracle::calibration::rejects_fault_address_corruption": true,
+        "oracle::calibration::rejects_gpr_corruption": true,
+        "oracle::calibration::rejects_redzone_corruption": true,
+        "oracle::calibration::rejects_simd_corruption": true,
+        "oracle::campaign_initialization_calibration::campaign_initializer_keeps_default_memory_and_flags_exact": false,
+        "oracle::campaign_initialization_calibration::campaign_initializer_matches_independent_memory_vectors_and_flags": false,
+        "oracle::native_ordinary::cache::model::tests::cache_model_foreign_cross_line_width_and_wrap_refused": false,
+        "oracle::native_ordinary::cache::model::tests::cache_model_literal_case_totals_and_set_rotation": false,
+        "oracle::native_ordinary::cache::model::tests::cache_model_literal_lru_policy_discriminator": false,
+        "oracle::native_ordinary::cache::model::tests::cache_model_literal_per_operand_miss_positions": false,
+        "oracle::native_ordinary::cache::model::tests::cache_model_missing_duplicate_reordered_or_relabelled_reads_refused": false,
+        "oracle::native_ordinary::cache::model::tests::cache_model_ret_uses_full_address_and_each_call_starts_invalid": false,
+        "oracle::native_ordinary::cache::tests::cache_actual_dec_jnz_requires_counter_zf_and_successor": false,
+        "oracle::native_ordinary::cache::tests::cache_actual_qword_reads_require_address_width_and_all_bytes": false,
+        "oracle::native_ordinary::cache::tests::cache_actual_ret_requires_full_word_and_physical_successor": false,
+        "oracle::native_ordinary::cache::tests::cache_complete_visit_sequence_refuses_omission_insertion_and_reorder": false,
+        "oracle::native_ordinary::cache::truth::tests::cache_all_cases_join_independent_cycles_scalar_counts_and_ret": false,
+        "oracle::native_ordinary::cache::truth::tests::cache_every_changed_opcode_bit_is_refused": false,
+        "oracle::native_ordinary::cache::truth::tests::cache_invalid_header_links_extent_and_wrap_are_refused": false,
+        "oracle::native_ordinary::cache::truth::tests::cache_literal_fixture_and_first_iteration": false,
+        "oracle::native_ordinary::cache::truth::tests::cache_valid_link_or_payload_mutation_cannot_relabel_the_case": false,
+        "oracle::native_ordinary::call_tree::model::tests::tree_model_every_foreign_address_width_and_geometry_refuses": false,
+        "oracle::native_ordinary::call_tree::model::tests::tree_model_lru_and_dirty_state_kernel_controls": false,
+        "oracle::native_ordinary::call_tree::model::tests::tree_model_missing_reordered_wrong_function_and_kind_refuse": false,
+        "oracle::native_ordinary::call_tree::model::tests::tree_model_no_write_allocate_and_child_reset_are_observable": false,
+        "oracle::native_ordinary::call_tree::model::tests::tree_model_one_cache_exact_literal_vectors_and_attribution": false,
+        "oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_injection_changes_only_the_authenticated_word": false,
+        "oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_rejects_application_or_gate_resumption": false,
+        "oracle::native_ordinary::call_tree::refusal::tests::tree_refusal_requires_normal_exact_exit123": false,
+        "oracle::native_ordinary::call_tree::tests::tree_native_actual_payload_link_and_dec_flags_are_authenticated": false,
+        "oracle::native_ordinary::call_tree::tests::tree_native_actual_transfer_bytes_pc_rsp_and_saved_word": false,
+        "oracle::native_ordinary::call_tree::tests::tree_native_call_store_preserves_every_other_protected_byte": false,
+        "oracle::native_ordinary::call_tree::tests::tree_native_closed_source_gap_heads_returns_and_call_map": false,
+        "oracle::native_ordinary::call_tree::tests::tree_native_complete_shape_refuses_missing_extra_reordered_and_node": false,
+        "oracle::native_ordinary::call_tree::tests::tree_native_pending_frame_rejects_idle_leaf_phase_and_each_word": false,
+        "oracle::native_ordinary::call_tree::tests::tree_native_transfer_population_order_and_original_call_pc": false,
+        "oracle::native_ordinary::call_tree::truth::tests::tree_truth_boundaries_and_non64_count_refuse": false,
+        "oracle::native_ordinary::call_tree::truth::tests::tree_truth_every_opcode_bit_refuses_and_case_cannot_be_relabelled": false,
+        "oracle::native_ordinary::call_tree::truth::tests::tree_truth_real_call_two_returns_and_nested_order": false,
+        "oracle::native_ordinary::native_call::tests::actual_target_input_length_and_alignment_are_required": false,
+        "oracle::native_ordinary::native_call::tests::callback_order_count_and_stack_geometry_are_exact": false,
+        "oracle::native_ordinary::native_call::tests::every_callee_save_must_restore_before_harness": false,
+        "oracle::native_ordinary::native_call::tests::literal_native_profile_has_no_transient_exclusions_or_legacy_alias": false,
+        "oracle::native_ordinary::native_call::tests::outer_call_requires_exact_instruction_target_stack_successor_and_saved_word": false,
+        "oracle::native_ordinary::native_call::tests::wrapper_semantics_compare_all_unaffected_state_and_complete_stack": false,
+        "oracle::native_ordinary::optional_frontend::tests::optional_frontend_complete_frame_phase_and_owner_refuse": false,
+        "oracle::native_ordinary::optional_frontend::tests::optional_frontend_gate_bytes_offsets_and_extent_refuse": false,
+        "oracle::native_ordinary::optional_frontend::tests::optional_frontend_observer_omission_extra_and_order_refuse": false,
+        "oracle::native_ordinary::optional_frontend::tests::optional_frontend_ready_full_mapping_and_observer_identity_refuse": false,
+        "oracle::native_ordinary::reference::tests::reference_cell_cannot_alias_frame_data_stack_or_executable_ranges": false,
+        "oracle::native_ordinary::reference::tests::reference_complete_cell_identity_spills_and_canary_are_material": false,
+        "oracle::native_ordinary::reference::tests::reference_layout_requires_every_byte_and_actual_label": false,
+        "oracle::native_ordinary::reference::tests::reference_profile_and_complete_ret_inventory_refuse_substitution": false,
+        "oracle::native_ordinary::reference::tests::reference_reader_transparency_keeps_full_state_and_physical_pcs": false,
+        "oracle::native_ordinary::reference::tests::reference_result_requires_both_restorations_real_rax_and_leg": false,
+        "oracle::native_ordinary::reference::tests::reference_result_wire_rejects_clock_geometry_missing_duplicate_and_tail": false,
+        "oracle::native_ordinary::reference::tests::reference_stores_require_actual_unique_rdtscp_outputs": false,
+        "oracle::native_ordinary::tests::ordinary_actual_frame_data_and_tls_mismatch_refuse": false,
+        "oracle::native_ordinary::tests::ordinary_full_data_and_redzone_comparator_refuses": false,
+        "oracle::native_ordinary::tests::ordinary_gate_and_ready_identity_refuse": false,
+        "oracle::native_ordinary::tests::ordinary_harness_resume_only_removes_debugger_tf": false,
+        "oracle::native_ordinary::tests::ordinary_map_missing_and_duplicate_ret_refuse": false,
+        "oracle::ordered_trace::boundary_signal::calibration::rejects_duplicate_roundtrip": true,
+        "oracle::ordered_trace::boundary_signal::calibration::rejects_missing_terminal_roundtrip": true,
+        "oracle::ordered_trace::boundary_signal::calibration::rejects_uncompleted_roundtrip": true,
+        "oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_logical_pc": true,
+        "oracle::ordered_trace::boundary_signal::calibration::rejects_wrong_physical_pc": true,
+        "oracle::ordered_trace::boundary_signal::calibration::repeated_boundaries_keep_order_and_physical_identity": false,
+        "oracle::ordered_trace::parked_signal::calibration::rejects_extra_source_write": true,
+        "oracle::ordered_trace::parked_signal::calibration::rejects_failed_publication_status": true,
+        "oracle::ordered_trace::parked_signal::calibration::rejects_frame_mutation": true,
+        "oracle::ordered_trace::parked_signal::calibration::rejects_old_source_after_publication": true,
+        "oracle::ordered_trace::parked_signal::calibration::rejects_wrong_receipt_identity": true,
+        "oracle::ordered_trace::word_sync::word_calibration::accepts_exact_child_publication_record": false,
+        "oracle::ordered_trace::word_sync::word_calibration::rejects_failed_publication_status": true,
+        "oracle::ordered_trace::word_sync::word_calibration::rejects_missing_synchronization": true,
+        "oracle::ordered_trace::word_sync::word_calibration::rejects_trailing_receipt_field": true,
+        "oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_bound_patch_identity": true,
+        "oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_child_process": true,
+        "oracle::ordered_trace::word_sync::word_calibration::rejects_wrong_transition_direction": true
+      },
+      "qualification_facts": {
+        "tools/rapid-profiler/verify_ordinary_interval.py": [
+          "reference['calibrations'] = dict(status='PASS', passed=94, failed=0, ignored=1,",
+          "cache['calibrations'] = dict(status='PASS', passed=94, failed=0, ignored=1,"
+        ]
+      }
+    },
+    "scope": "39 new compiled Rust tests (20 explicitly ignored) plus seven compile-fail doctests; no old test is ignored or removed. No new Cargo target/custom harness. Existing82 calibration rows retain exact expected-panic values;12 pure rows and one named ignored prerequisite are additive. No execution credit.",
+    "sources": {
+      "Cargo.toml": "ecce3a7b4be0e615e1b353389892d84c8f1ad8f463094ae0727647ec68b9c5e8",
+      "evaluation/precontext/verify.py": "9336515811ee0a9867e5cfbb14336a87bba63874b3489e6cda8a62bc882599fe",
+      "tests/precontext_native.rs": "8e6dab1322c7afee04214111784ba8fe48fa1d9a7025b03aa1d198f926d5f58b",
+      "tests/support/native_interval_oracle.rs": "bbe091d18e001851410c9a26a9fe23ad55e809b58920b14e53b950cec19a6460",
+      "tests/support/native_ordinary.rs": "c5603b8780f8a992d09311ad5b95dab6c0a50ddfb957e8a52058e022d0172328",
+      "tests/support/native_tree_batch.rs": "4713d18179e5a244773c942141863c26195f03b62eedf1a458fe99f02cb7acaf",
+      "tests/support/native_tree_hardware.rs": "64f9f24d9faa92c9425dce091d23e1ac45ec8c9db48d593a04679fd8ec612836",
+      "tests/support/native_tree_hardware_control.rs": "0e0c96c88ccd7de2253bfe08dd3fcd39991a42f9ed32e00d0f360f00095a99f3",
+      "tools/rapid-profiler/Cargo.toml": "96d89b47bb9d7e6059225cb94209552db1f8e81e64f46f3358ab81bf8c849e8a",
+      "tools/rapid-profiler/native-interval/calibrations.rs": "f9c7f96424095442e28c541a38196800f1481482237e9f2739aba2392d811e1f",
+      "tools/rapid-profiler/native-interval/main.rs": "1fe86d81af9df2626efdadb4d6760769e8d4b97a6cf7859b2c1173d3f6580f29",
+      "tools/rapid-profiler/native-interval/tree.rs": "d0603d8adc3faf901ae813b50f56dfbc3b1c2a859ed648384991c1a0dc3f6b61",
+      "tools/rapid-profiler/native-interval/tree/batch.rs": "d6bc80ce68b37d16990da6db01721fea83792890d2bc2f0cf353653148967062",
+      "tools/rapid-profiler/native-point/main.rs": "048c360a005888defc66998cc924014d9ecaebe7594ec92f20be40539d2a5645",
+      "tools/rapid-profiler/reference-work/check_output.py": "a5e0683ade47a94913afb53a15123a53b316172d8d9936f3a925b8a2b64b7189",
+      "tools/rapid-profiler/reference-work/test_recipe.py": "f87b22db42df5604a2d585be98a20e421b0315c4c79b9b9a1d56e6c562a7b198",
+      "tools/rapid-profiler/src/frontend_native/always_on.rs": "1da7f27fe39af03e8061e91b7b8b89975b455f4b4e965cb507415ede6d158130",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests.rs": "54634cad5b01f867ff48f077509d0c31d0b2dbf2921f70b2989d3773b099580f",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native.rs": "8205e69cbfbedd9d98545f27cb2a9f877a8bef418a5ac71116ef2267d80399dc",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native.rs": "19c58f2c1326b36ecefc7113aff602e5e4be8effa025524ec12dc912508d35ea",
+      "tools/rapid-profiler/src/frontend_native/always_on/tests/concurrent_native/tree_native/batch_owner_native.rs": "84c4b5b832a7889226c09e74d6217274bac3a65e42dd5eb7130c9364a90c7498",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/batch.rs": "9472327c65f11f38c5e6f7affc7a406c2ab5be83a107ed7af7632c8e30c3a02f",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/drain.rs": "03de5627d706a68b107b6c683656c351bd2c84936262bebc9db5e6cca649275f",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/mod.rs": "3204bc3d76dcdbd0b583c3ca49c2df670fe463593af489c95918a466eca85bfc",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/native_checks.rs": "6b6f1c017205b937268d5d8436a8bb5aff5b45624fcc995376e8dff68cf4d440",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/prepared.rs": "133d4f7898ee98a549c6b365f1e8a4f671b92eaebf30f51047bef57f8ff37ac2",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/runtime.rs": "c9d3cfec3fdb9f6341bc0d3d23b05a4b33aa1f6ca3e07d850234d59b925394c4",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/runtime/tests.rs": "a7615fb20411e704df54a67584ed36ec0f21797e6b61bf6575f573fe907d326d",
+      "tools/rapid-profiler/src/frontend_native/always_on/tree/site.rs": "50ca0ed48387d26b958fde548763e450651dace8b1f25a880a2784aebc6f842a",
+      "tools/rapid-profiler/src/frontend_native/mod.rs": "0e593cd242be9a3a7876ab157710ba9eb4779603c677eab4c37054bee2065889",
+      "tools/rapid-profiler/src/frontend_native/ordinary/mod.rs": "9f60eef5c7f49ecf204ff1d5ec87c230c1c000623e90eb6629041a03a6469f28",
+      "tools/rapid-profiler/src/frontend_native/ordinary/tests.rs": "7c88ddd971361be6d2023446f14dc88c954e090fcfd04fd2aa1a41c0d21487c1",
+      "tools/rapid-profiler/src/frontend_native/ordinary/tree.rs": "ecbbaa0135db64f3ab6bb9b44259b580b456e3e6fc1fa615e65a31e8e53b2133",
+      "tools/rapid-profiler/src/lib.rs": "222ed3673f26976330afed905910bc8ca0ff86df962cc0ed6504faeeb8261e01",
+      "tools/rapid-profiler/tree-work/check_batch.py": "1524e8180239581472acea02ec9b0da953a029f26ce94474aa8a8aa69f9e8bf1",
+      "tools/rapid-profiler/tree-work/test_batch_owners.py": "57a85af874133c58f1a168342e942da536f562197d97cef5d13e2a20aa989bd0",
+      "tools/rapid-profiler/tree-work/test_batch_recipe.py": "91c714bafb12325cdc108a9980eb43131ac14ea2bc27f437de72e23cc0e6aff5",
+      "tools/rapid-profiler/tree-work/test_hardware_stop.py": "ba427042ca4fa88676b570bfa55994e81cf39da4232e2efc939e8eef027e02fd",
+      "tools/rapid-profiler/tree-work/verify_batch_owners.py": "203504d764d197c6a85d430c2ba0c7989d26ca266f943fc469c40219dcab9247",
+      "tools/rapid-profiler/tree-work/verify_hardware_stop.py": "6251dd663c559159b839c88cc270f954286e747dc099bd943cb465f64e67d3c0",
+      "tools/rapid-profiler/verify_ordinary_interval.py": "40d7b01652bf6f412f3e1fe2a1efa2bbc5d807959e40f9f3f6a58532eaa9f8be"
+    },
+    "workspace_changes": {
+      "doc/rapid_profiler": {
+        "current": {
+          "ignored": 0,
+          "tests": 45
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 38
+        }
+      },
+      "test/frontend_native_calibrations": {
+        "current": {
+          "ignored": 1,
+          "tests": 95
+        },
+        "previous": {
+          "ignored": 0,
+          "tests": 82
+        }
+      },
+      "unit/rapid_profiler/lib": {
+        "current": {
+          "ignored": 27,
+          "tests": 378
+        },
+        "previous": {
+          "ignored": 8,
+          "tests": 352
+        }
+      }
+    }
+  },
   "main690": {
     "base": "e0d94eb766db5e070ef853ad28c5b9d52ad0dcf3",
     "current_corpus_sha256": "61e6fe15da8d2484b9abf1cbe9d1e9fbaf91896ec5aeea31f4fc1d3365617548",
