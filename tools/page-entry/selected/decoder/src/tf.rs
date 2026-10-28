@@ -298,6 +298,10 @@ fn classify(
     } else if instruction.code() == Code::VEX_Blsmsk_r64_rm64 {
         // Only RSI <- (RSI-1)^RSI. CPU retains all defined/undefined flag effects.
         if source[..instruction.len()] != [0xc4, 0xe2, 0xc8, 0xf3, 0xd6] { return Ok(out); }
+    } else if instruction.code() == Code::VEX_Bzhi_r64_rm64_r64 {
+        // Exact observed register form RBX <- BZHI(RDX, R11[7:0]). The original
+        // CPU instruction owns every flag bit, including undefined AF/PF.
+        if source[..instruction.len()] != [0xc4, 0xe2, 0xa0, 0xf5, 0xda] { return Ok(out); }
     } else if instruction.code() == Code::VEX_Kmovq_r64_kr {
         if !canonical_kmovq_register(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Pmaxud_xmm_xmmm128 {
@@ -316,7 +320,7 @@ fn classify(
         && !prefixes(&instruction, &source[..instruction.len()]) { return Ok(out); }
     // Exact Code enumeration, never a catch-all mnemonic/valid-decode permit.
     let (flow, family) = match instruction.code() {
-        Code::VEX_Blsmsk_r64_rm64 | Code::Rdsspq_r64 | Code::Xgetbv | Code::Endbr64 | Code::Nopw | Code::Nopd | Code::Nopq
+        Code::VEX_Bzhi_r64_rm64_r64 | Code::VEX_Blsmsk_r64_rm64 | Code::Rdsspq_r64 | Code::Xgetbv | Code::Endbr64 | Code::Nopw | Code::Nopd | Code::Nopq
         | Code::Nop_rm16 | Code::Nop_rm32 | Code::Nop_rm64
         | Code::Mov_rm8_r8 | Code::Mov_rm16_r16 | Code::Mov_rm32_r32
         | Code::Mov_rm64_r64 | Code::Mov_r8_rm8 | Code::Mov_r16_rm16
