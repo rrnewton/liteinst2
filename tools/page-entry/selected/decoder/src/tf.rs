@@ -155,6 +155,15 @@ fn canonical_pmaxud(instruction: &Instruction, bytes: &[u8]) -> bool {
             [0x66, 0x44, 0x0f, 0x38, 0x3f, 0x26])
 }
 
+// Canonical EVEX.512.W0 VPCMPB register forms. The opmask destination has
+// no extension bits; z/b, non-512 widths, memory and reserved imm8 bits stay closed.
+fn canonical_vpcmpb(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8
+        && matches!(bytes, [0x62, p0, p1, p2, 0x3f, m, imm]
+            if (*p0 & 0x9f) == 0x93 && (*p1 & 0x87) == 0x05
+                && (*p2 & 0xf0) == 0x40 && (*m & 0xc0) == 0xc0 && *imm < 8)
+}
+
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
@@ -185,6 +194,10 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // Exact observed unmasked register form: K0[i] = (ZMM17.byte[i] == 0).
         // Other destinations, sources, masks, widths and memory forms stay closed.
         if source[..instruction.len()] != [0x62, 0xb2, 0x76, 0x40, 0x26, 0xc1] { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8 {
+        if !canonical_vpcmpb(&instruction, &source[..instruction.len()]) {
+            return Ok(out);
+        }
     } else if instruction.code() == Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512 {
         // Only K1 <- byte equality(ZMM17,ZMM16), unmasked EVEX.512.
         if source[..instruction.len()] != [0x62, 0xb1, 0x75, 0x40, 0x74, 0xc8] { return Ok(out); }
@@ -486,6 +499,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512
+        | Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8
         | Code::VEX_Kmovq_r64_kr
         | Code::Pmovmskb_r32_xmm
         // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.
