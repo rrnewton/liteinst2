@@ -1,5 +1,10 @@
 /* Partial all-NX controller prototype. One owned instruction at a time. */
+#ifdef LI2_ONESHOT_PUBLICATION
+#include "oneshot.h"
+#define SELECTED_MASK LI2_ONESHOT_MASK
+#else
 #define SELECTED_MASK (UINT64_MAX & ~(UINT64_C(1)<<(SIGSEGV-1)) & ~(UINT64_C(1)<<(SIGTRAP-1)) & ~(UINT64_C(1)<<(SIGSYS-1)) & ~(UINT64_C(1)<<(SIGKILL-1)) & ~(UINT64_C(1)<<(SIGSTOP-1)))
+#endif
 #define SELECTED_RF UINT64_C(0x10000)
 #define SELECTED_TF UINT64_C(0x100)
 #ifdef LI2_REGISTER_RUN
@@ -23,6 +28,9 @@ static struct li2_step_owner selected_step;
 /* The old pending bit continues to guard every existing dispatch boundary.
    This tag chooses the sole cleanup owner; it is never execution authority. */
 enum selected_pending_route { SELECTED_NO_STEP, SELECTED_OLD_STEP, SELECTED_GENERIC_TF, SELECTED_REPEAT
+#ifdef LI2_ONESHOT_PUBLICATION
+    , SELECTED_ONESHOT
+#endif
 #ifdef LI2_REGISTER_RUN
     , SELECTED_REGISTER_RUN
 #endif
@@ -79,3 +87,13 @@ struct selected_builtin_prefix {
     uint32_t a,b,c,d;
 };
 static struct selected_builtin_prefix selected_builtin_prefix;
+
+#ifdef LI2_ONESHOT_PUBLICATION
+static struct li2_oneshot_owner selected_oneshot_owners[LI2_ONESHOT_LIFECYCLE_SLOTS];
+static struct li2_oneshot_owner *selected_oneshot_active;
+static struct li2_oneshot_plan selected_oneshot_request;
+static struct li2_oneshot_handoff selected_oneshot_handoff;
+static volatile unsigned selected_oneshot_used,selected_oneshot_failing;
+static volatile unsigned selected_oneshot_effect_started[LI2_ONESHOT_LIFECYCLE_SLOTS];
+static volatile unsigned selected_oneshot_effect_returned[LI2_ONESHOT_LIFECYCLE_SLOTS];
+#endif

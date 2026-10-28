@@ -1,0 +1,19 @@
+{
+  "schema": 1,
+  "profile": "selected-oneshot-integrated-v1",
+  "required_cases": 1,
+  "name": "initial-main-rdtsc-restored-code-as-data",
+  "environment": {"GLIBC_TUNABLES": "glibc.pthread.rseq=0", "LD_BIND_NOW": "1", "LANG": "C", "LC_ALL": "C", "TZ": "UTC", "PATH": "/usr/bin:/bin"},
+  "program_bounds": [30,536870912,16777216,60],
+  "native_exit": 0,
+  "native_stderr": "",
+  "gated_exit": 0,
+  "stdout_bytes": 338,
+  "clock_word_offsets": [26,34,170,186],
+  "oneshot": {"owners":6,"published":6,"restored":6,"completed":5,"syscall_patches":4,"rdtsc_patches":2,"effect_started":6,"effect_returned":5,"active_phase":7},
+  "main_admissions": 2,
+  "main_refaults": 0,
+  "rseq_calls": 0,
+  "performance_credit": false,
+  "execution_credit": false
+}

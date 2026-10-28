@@ -230,7 +230,11 @@ static void selected_initialize(void) {
     checked(!li2_decoder_initialize(selected_arena,sizeof selected_arena,&selected_initial_stats) &&
             selected_initial_stats.phase==2,608,0);
     checked(!li2_selected_observe_hardware(&selected_hardware),609,0);
+#ifdef LI2_ONESHOT_PUBLICATION
+    checked(!li2_step_session_init_oneshot(&selected_session,SELECTED_MASK),610,0);
+#else
     checked(!li2_step_session_init(&selected_session,SELECTED_MASK),610,0);
+#endif
 #ifdef LI2_TF_HANDOFF
     checked(!li2_tf_chain_init(&selected_chain,&selected_session,selected_chain_failure),910,0);
 #endif
@@ -381,6 +385,20 @@ static void selected_builtin(ucontext_t *context) {
     p->phase=7; /* selected context committed */
 }
 
+/* Shared owned-source effect ingress. Caller holds a fresh exact source borrow;
+   no synthetic signal frame is constructed for restored publication handoff. */
+static void selected_owned_syscall(ucontext_t *context,uint64_t flags) {
+    greg_t *g=context->uc_mcontext.gregs;
+    checked(!selected_step_pending && li2_lifecycle_fetch_interlock()==LI2_FETCH_BUSY &&
+            selected_decoded.kind==LI2_SYSCALL,1560,0);
+    long number=g[REG_RAX];
+    g[REG_RIP]=(greg_t)selected_decoded.next_pc;g[REG_RCX]=g[REG_RIP];
+    g[REG_EFL]=(greg_t)flags;g[REG_R11]=(greg_t)flags;
+    selected_release();++selected_source_syscalls;dispatch_operation(number,context);
+}
+#ifdef LI2_ONESHOT_PUBLICATION
+#include "selected_oneshot.inc"
+#endif
 static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
     greg_t *g=context->uc_mcontext.gregs;uintptr_t pc=(uintptr_t)g[REG_RIP];
     checked(!selected_step_pending && !li2_lifecycle_fetch_interlock() && selected_flags_known &&
@@ -398,6 +416,9 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
         if(image_code(&original_main,pc))++main_faults;
         else if(image_code(&original_interpreter,pc))++interpreter_faults;else ++dependency_faults;
     }
+#ifdef LI2_ONESHOT_PUBLICATION
+    if(!selected_selftesting && selected_oneshot_try(sig,si,context))return;
+#endif
     if(selected_decoded.kind>=LI2_RDRAND && selected_decoded.kind<=LI2_RDPID) {
         checked(!selected_selftesting,628,0);
         struct li2_selected_request request={&selected_decoded,selected_view.bytes,selected_view.length,
@@ -412,10 +433,7 @@ static void selected_fetch(int sig,siginfo_t *si,ucontext_t *context) {
     }
     if(selected_decoded.kind==LI2_SYSCALL) {
         checked(!selected_selftesting,631,0);
-        long number=g[REG_RAX];
-        g[REG_RIP]=(greg_t)selected_decoded.next_pc;g[REG_RCX]=g[REG_RIP];
-        g[REG_EFL]=(greg_t)flags;g[REG_R11]=(greg_t)flags;
-        selected_release();++selected_source_syscalls;dispatch_operation(number,context);return;
+        selected_owned_syscall(context,flags);return;
     }
 #ifdef LI2_RSEQ_INACTIVE
     if(!selected_selftesting) {

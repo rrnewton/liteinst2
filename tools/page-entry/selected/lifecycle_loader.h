@@ -119,3 +119,47 @@ int li2_lifecycle_fetch_interlock(void);
 const struct li2_fetch_progress *li2_lifecycle_fetch_progress(void);
 void li2_lifecycle_fetch_partial_view(struct li2_fetch_view *out);
 #endif
+
+#ifdef LI2_ONESHOT_PUBLICATION
+#ifndef LI2_LIFECYCLE_ONESHOT_H
+#define LI2_LIFECYCLE_ONESHOT_H
+#include "oneshot.h"
+#define LI2_ONESHOT_LIFECYCLE_SLOTS 8U
+#define LI2_ONESHOT_LIFECYCLE_MAPS 12U
+struct li2_oneshot_lifecycle;
+struct li2_oneshot_lifecycle_progress {
+    volatile uint32_t prepared,held,released,first_error;
+    volatile int64_t first_detail;
+    uint64_t sequence,allocation_epoch,generation_epoch,transactions_epoch;
+    size_t records_epoch;
+    unsigned phase_epoch;
+    long pid,tid;
+    volatile uint32_t maps_started,maps_returned,observations,generation_steps;
+    struct li2_fetch_map_progress maps[LI2_ONESHOT_LIFECYCLE_MAPS];
+    volatile uint32_t backing_started[2],backing_returned[2],backing_verified[2];
+    volatile int64_t backing_result[2];
+    struct li2_fetch_backing backing[2];
+};
+/* Before application entry: caller owns/registers the whole landing page in
+   the actual protected-range table and completes RX+sync first. This function
+   independently checks every byte's protection coverage, actual private RX
+   maps, initial-image identity and literal UD2. It allocates nothing. Kind is
+   IMAGE_MAIN(1) or IMAGE_INTERPRETER(2); registering only main deliberately
+   leaves interpreter sites unsupported. One immutable landing per image. */
+int li2_lifecycle_oneshot_register_landing(unsigned image_kind,uintptr_t landing);
+/* Descriptive setup only; caller already installed the pending route. It must
+   supply the exact currently held selected_borrow. Clean unsupported geometry,
+   image, landing reach or slot exhaustion returns REFUSED_UNTOUCHED. Otherwise
+   success returns a zero-redirect request for li2_oneshot_nx and a fixed private
+   context. Actual frame/session/no-other-owner checks stay in the controller
+   and C owner. No old borrow is released by this preparation function. */
+int li2_lifecycle_oneshot_prepare(const struct li2_fetch_ref *,unsigned kind,
+                                 struct li2_oneshot_plan *,struct li2_oneshot_lifecycle **);
+int li2_lifecycle_oneshot_transfer(void *,const struct li2_oneshot_plan *,struct li2_oneshot_transfer *);
+int li2_lifecycle_oneshot_advance(void *,const struct li2_oneshot_plan *,unsigned,
+                                 struct li2_oneshot_generation *);
+int li2_lifecycle_oneshot_observe(void *,const struct li2_oneshot_plan *,struct li2_oneshot_observation *);
+int li2_lifecycle_oneshot_release(void *,const struct li2_oneshot_plan *,struct li2_oneshot_release *);
+const struct li2_oneshot_lifecycle_progress *li2_lifecycle_oneshot_progress(const void *);
+#endif
+#endif

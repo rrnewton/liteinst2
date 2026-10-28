@@ -12,6 +12,7 @@ mod abi;
 mod arena;
 mod decode;
 mod scan;
+mod admission_oneshot;
 
 pub use abi::{Decoded, DecoderStats, Scan};
 

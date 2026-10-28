@@ -56,9 +56,9 @@
       "sha256": "e5e7690309267be887cee9b04d26e90a29f8d379110e22214948922c857a139a"
     },
     {
-      "bytes": 13358,
+      "bytes": 13382,
       "path": "evaluation/inprocess/page_selected_generic_build.py",
-      "sha256": "8309ebe938d1ea5db386a3f65997f7c99b3b94a8195bca7f4729c40cccb9ff18"
+      "sha256": "d6d7ea7c9e83c9fd1d39e62d25876c2b4ddc86910bbe582fb7b335ce0c5e4864"
     },
     {
       "bytes": 11633,
@@ -131,9 +131,9 @@
       "sha256": "b7948615ebfb766620e9b082e3cda8b8a480326427d9742c23f4076f7f493160"
     },
     {
-      "bytes": 8104,
+      "bytes": 8127,
       "path": "tools/page-entry/selected/decoder/src/lib.rs",
-      "sha256": "64c47f9459d304eb1763c30698b0958a6b1b8af8ccff0cbd4330eacc89384875"
+      "sha256": "d92bb24241bfdcd8efb3b8c9700670455617afe0b33ad9cbe8966a18742ceee6"
     },
     {
       "bytes": 2626,
@@ -151,14 +151,14 @@
       "sha256": "52e76bbd11bc6bc78ff0e16158c3d7230d657af1c54a805310cdfc9f7345157f"
     },
     {
-      "bytes": 36919,
+      "bytes": 38000,
       "path": "tools/page-entry/selected/lifecycle_loader.c",
-      "sha256": "6d64e5a40f165e6e793777e3bc5477b0f563827534fb1b2c6889ffe58e1b9352"
+      "sha256": "79626dd9e16e366866e787118ac66d481ad4534e8e3767eee9ed098d1904c269"
     },
     {
-      "bytes": 5426,
+      "bytes": 8010,
       "path": "tools/page-entry/selected/lifecycle_loader.h",
-      "sha256": "afcc78199d577b3c87fe5d45e64b5adb8b248509ba491921bd2f0138dd1f74e7"
+      "sha256": "1a6476c364586b1563701e1a82484eb63ac907e0a33508b392bc69fc11f88d7a"
     },
     {
       "bytes": 1711,
@@ -191,9 +191,9 @@
       "sha256": "c046df2d3398e9ee28fc64041db51fca7e2fe7bf84dfc4ea3766709dfb065dab"
     },
     {
-      "bytes": 23242,
+      "bytes": 25210,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "3e8f29a9b18b16ce865f41683db5e83ebbf31b52a8ae0f9e288c1201041eb803"
+      "sha256": "ed54e7798f1a808ec6db6b1025553eec3017ade0c50be56da0d5cb7bd322b824"
     },
     {
       "bytes": 4648,
@@ -201,24 +201,24 @@
       "sha256": "aa628e331cf54cb1dea86c87b44656b543c6856d91a2a4637195bda35802ef0c"
     },
     {
-      "bytes": 29097,
+      "bytes": 29865,
       "path": "tools/page-entry/selected/selected_controller.inc",
-      "sha256": "0484f4d7be75b9d5a4c591626533a08eebdc6176ae4ff4ed030da616c9c8289b"
+      "sha256": "ef62809d5e7968361180782347fef01d41d948920bf671d01b818e1c489ff0da"
     },
     {
-      "bytes": 4071,
+      "bytes": 4784,
       "path": "tools/page-entry/selected/selected_globals.inc",
-      "sha256": "c1a403cf38a884c60060980475b662a304a5ef4624702bdaea42bce87f75f43e"
+      "sha256": "c06fc1a1101674ee2dcbab7a467150034333aa85974f205227fffacdff1358c0"
     },
     {
-      "bytes": 12527,
+      "bytes": 13416,
       "path": "tools/page-entry/selected/step_owner.c",
-      "sha256": "dffdd29600db39727825b04d169d6d653fd8cdc96377e9ecd21b03078462b610"
+      "sha256": "056d511b1b6116f2313ab9f9d4c74f53c59a86c8431ceac6231e4f04ebf2fc28"
     },
     {
-      "bytes": 4176,
+      "bytes": 4364,
       "path": "tools/page-entry/selected/step_owner.h",
-      "sha256": "d1415c405bf08a3acd8989c893e35fa074d14dbb3ef03809734820307ba134d8"
+      "sha256": "aee2b97ec3a10d950066ac1db03a5f01f66717306fb8b7948696e66cad49059a"
     },
     {
       "bytes": 3971,

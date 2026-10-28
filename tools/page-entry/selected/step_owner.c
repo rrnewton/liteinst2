@@ -80,6 +80,21 @@ int li2_step_session_init(struct li2_step_session *s,uint64_t mask) {
     if(s->sync_register)return LI2_STEP_SELFTEST;
     s->initialized=1;return 0;
 }
+#ifdef LI2_ONESHOT_PUBLICATION
+int li2_step_session_init_oneshot(struct li2_step_session *s,uint64_t mask) {
+    if(!s || s->initialized || s->pid || s->tid)return LI2_STEP_REUSE;
+    const uint64_t allowed=(UINT64_C(1)<<(SIGILL-1))|(UINT64_C(1)<<(SIGSEGV-1))|(UINT64_C(1)<<(SIGTRAP-1))|(UINT64_C(1)<<(SIGSYS-1))|
+                           (UINT64_C(1)<<(SIGKILL-1))|(UINT64_C(1)<<(SIGSTOP-1));
+    if(mask!=(UINT64_MAX&~allowed))return LI2_STEP_ARGUMENT;
+    s->application_mask=mask;s->pid=RAW(SYS_getpid,0,0,0,0,0,0);s->tid=RAW(SYS_gettid,0,0,0,0,0,0);
+    if(s->pid<=0 || s->pid!=s->tid)return LI2_STEP_IDENTITY;
+    s->sync_query=RAW(SYS_membarrier,0,0,0,0,0,0);
+    if(s->sync_query<0 || (s->sync_query&96)!=96)return LI2_STEP_SELFTEST;
+    s->sync_register=RAW(SYS_membarrier,64,0,0,0,0,0);
+    if(s->sync_register)return LI2_STEP_SELFTEST;
+    s->initialized=1;return 0;
+}
+#endif
 static int encoding(struct li2_step_owner *o) {
     const struct li2_decoded *d=&o->request.decoded;
     if(d->abi_version!=1 || d->reserved || d->decode_status!=LI2_VALID || d->kind!=LI2_NONE ||

@@ -55,11 +55,19 @@ struct object {
     struct load_segment segments[ELF_HEADERS];
     size_t segment_count;
     uint64_t loader_extent;
+#ifdef LI2_ONESHOT_PUBLICATION
+    const unsigned char *initial_source;
+    size_t initial_source_size;
+    unsigned initial_kind;
+#endif
 };
 static struct object objects[OBJECTS];
 static size_t object_count;
 static struct transaction tx;
 static struct li2_lifecycle_counts counts;
+#ifdef LI2_ONESHOT_PUBLICATION
+static volatile unsigned oneshot_held;
+#endif
 #define RAW(n,a,b,c,d,e,f) hooks.raw((n),(long)(a),(long)(b),(long)(c),(long)(d),(long)(e),(long)(f))
 #define DIE(code,detail) hooks.fail((code),(detail))
 
@@ -375,6 +383,10 @@ void li2_lifecycle_register_initial(const struct image *image) {
     if (!active || object_count==OBJECTS || !image || !image->source || image->backing_fd<0 ||
         (image->kind!=IMAGE_MAIN && image->kind!=IMAGE_INTERPRETER)) DIE(185,0);
     unsigned object=(unsigned)object_count; struct object *o=&objects[object];
+#ifdef LI2_ONESHOT_PUBLICATION
+    o->initial_source=image->source;o->initial_source_size=image->source_size;
+    o->initial_kind=image->kind;
+#endif
     o->original_fd=image->backing_fd;
     long fd=RAW(SYS_fcntl,image->backing_fd,F_DUPFD_CLOEXEC,200,0,0,0);
     if (fd<0) DIE(122,fd);
@@ -423,6 +435,9 @@ int li2_lifecycle_known_code(uintptr_t first,size_t bytes) {
     return 1;
 }
 int li2_lifecycle_admit(uintptr_t pc,uintptr_t fault_address) {
+#ifdef LI2_ONESHOT_PUBLICATION
+    if(oneshot_held)DIE(LI2_ONESHOT_REENTRY,1);
+#endif
     if (!active || !li2_lifecycle_known_code(pc,1) || fault_address<pc || fault_address-pc>14) return 0;
     uintptr_t address=fault_address&~(PAGE-1);
     struct owned_page *p=current(address);
@@ -611,6 +626,9 @@ static long unmap_call(const long a[6]) {
     ++counts.reconciliations; tx.phase=REVOKED; finish(); return result;
 }
 int li2_lifecycle_dispatch(long n,const long a[6],long *result) {
+#ifdef LI2_ONESHOT_PUBLICATION
+    if(oneshot_held)DIE(LI2_ONESHOT_REENTRY,n);
+#endif
     if (!active) return 0;
     if (n==SYS_mmap) *result=map_call(a);
     else if (n==SYS_mprotect) *result=protect_call(a);
@@ -619,6 +637,9 @@ int li2_lifecycle_dispatch(long n,const long a[6],long *result) {
     return 1;
 }
 void li2_lifecycle_before_other(long n,const long a[6]) {
+#ifdef LI2_ONESHOT_PUBLICATION
+    if(oneshot_held)DIE(LI2_ONESHOT_REENTRY,n);
+#endif
     if (!active) return;
     if (n==SYS_close) for (size_t i=0;i<object_count;i++)
         if ((unsigned int)a[0]==(unsigned int)objects[i].retained_fd ||
@@ -661,6 +682,9 @@ static size_t fork_protected_used;
 static unsigned fork_protected_complete;
 
 void li2_lifecycle_fork_verify(void) {
+#ifdef LI2_ONESHOT_PUBLICATION
+    if(oneshot_held)DIE(LI2_ONESHOT_REENTRY,2);
+#endif
     if (!active || tx.guard || (tx.phase!=REVOKED && tx.phase!=ADMITTED)) DIE(191,tx.phase);
     for (size_t i=0;i<object_count;i++) {
         const struct object *o=&objects[i]; struct stat st;
@@ -706,7 +730,15 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 }
 
 /* Private non-authoritative fetch borrow; no permission-changing operations. */
+#ifdef LI2_ONESHOT_PUBLICATION
+#define li2_lifecycle_fetch_prepare li2_lifecycle_fetch_prepare_unpatched
+#define li2_lifecycle_fetch_interlock li2_lifecycle_fetch_interlock_unpatched
+#endif
 #include "fetch_loader.inc"
+#ifdef LI2_ONESHOT_PUBLICATION
+#undef li2_lifecycle_fetch_prepare
+#undef li2_lifecycle_fetch_interlock
+#endif
 
 /* Runtime-private code inspection: does not register application sources. */
 #include "private_code_query.inc"
@@ -716,4 +748,8 @@ void li2_lifecycle_fork_capture(const struct li2_fork_range *ranges,size_t n) {
 
 #ifdef LI2_NATIVE_PAGES
 #include "native_lifecycle.inc"
+#endif
+
+#ifdef LI2_ONESHOT_PUBLICATION
+#include "oneshot_lifecycle.inc"
 #endif
