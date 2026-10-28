@@ -1,0 +1,22 @@
+[
+  {
+    "before": "    lines = stderr[:-1].split(b'\\n')\n",
+    "after": "    lines = stderr[:-1].split(b'\\n')\n    need(len(lines) in (7,8) and lines[2].startswith(b'LI2_PROVIDER ') and len(lines[2])+1<=4096,\n         'one actual configured provider report in fixed position')\n    provider=rseq.decode(lines[2][13:]);lines=lines[:2]+lines[3:]\n    keys=set(('version status failure_code initialized attempts busy cpuid_completed rdrand_completed rdseed_completed rdpid_completed random_entered random_returned random_committed random_error cpuid_entered cpuid_returned cpuid_committed').split())\n    need(type(provider)is dict and set(provider)==keys|{'scope','policy'} and\n         provider['scope']=='configured_cpuid_random_id' and provider['policy']=='mask-random-v1' and\n         all(type(provider[k])is int and 0<=provider[k]<1<<64 for k in keys) and provider['version']==1,\n         'exact configured provider schema/types/policy')\n"
+  },
+  {
+    "before": "return dict(loader=loader, native=native, repeat=repeat, run=run, chain=c, rseq=registration, oneshot=o)",
+    "after": "need(all(provider[k]==loader[k]for k in ('status','failure_code')),'same actual configured terminal outcome')\n    return dict(loader=loader, native=native, repeat=repeat, run=run, chain=c, rseq=registration, oneshot=o, provider=provider)"
+  },
+  {
+    "before": "def completed(parsed, pid):",
+    "after": "def completed(parsed, pid, variant):"
+  },
+  {
+    "before": "native['main_admissions'] == 2",
+    "after": "native['main_admissions'] == 32"
+  },
+  {
+    "before": "'both actual native flag-capture entries and selected effects'",
+    "after": "'all 16 actual native seed and 16 actual live capture entries and selected effects'"
+  }
+]

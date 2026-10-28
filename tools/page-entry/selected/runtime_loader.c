@@ -41,6 +41,9 @@ static long last_syscall=-1;
 static uintptr_t vdso_first,vdso_end;
 static unsigned long vdso_selected;
 static void fail(unsigned,long) __attribute__((noreturn));
+#ifdef LI2_SELECTED_PROVIDER
+static void selected_provider_report(unsigned,unsigned);
+#endif
 #ifdef LI2_ONESHOT_PUBLICATION
 static void selected_oneshot_report(unsigned,unsigned,long);
 static _Noreturn void selected_oneshot_abort(unsigned,long);
@@ -147,6 +150,9 @@ static void report(unsigned status,unsigned code,long detail) {
     for(size_t i=0;i<nc->revisit_count;i++){if(i)text(&w,",");number(&w,nc->revisit_ns[i]);}
     text(&w,"]");
     text(&w,"}\n");(void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
+#endif
+#ifdef LI2_SELECTED_PROVIDER
+    selected_provider_report(status,code);
 #endif
     if(selected_repeat_attempts)selected_repeat_report(status,code,detail);
 #ifdef LI2_ONESHOT_PUBLICATION
@@ -326,6 +332,9 @@ static void dispatch_operation(long n,ucontext_t *context) {
 static void dispatch(siginfo_t *si,ucontext_t *context) {
     (void)si;(void)context;fail(602,0);
 }
+#ifdef LI2_SELECTED_PROVIDER
+#include "selected_provider.inc"
+#endif
 #include "selected_controller.inc"
 #ifdef LI2_REGISTER_RUN
 #include "selected_register_run.inc"

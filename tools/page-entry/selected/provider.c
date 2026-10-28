@@ -151,3 +151,32 @@ int li2_selected_complete_scripted(ucontext_t *frame,const struct li2_selected_r
        || !outcome_ok(out,script->value,script->carry)) return refuse(out,LI2_SELECTED_SCRIPT);
     commit(frame,out,script->value,script->carry);return LI2_SELECTED_OK;
 }
+
+#include "provider_callback.h"
+int li2_selected_complete_callback(ucontext_t *frame,const struct li2_selected_request *request,
+    li2_selected_callback callback,struct li2_selected_callback_progress *progress,
+    struct li2_selected_completion *out) {
+    if(progress)*progress=(struct li2_selected_callback_progress){.abi_version=1};
+    int status=prepare(frame,request,out,LI2_SELECTED_SCRIPTED);
+    if(status) {if(progress)progress->first_error=(uint32_t)status;return status;}
+    if(!callback || !progress) {
+        if(progress)progress->first_error=LI2_SELECTED_ARGUMENT;
+        return refuse(out,LI2_SELECTED_ARGUMENT);
+    }
+    progress->input=(struct li2_selected_callback_input){1,out->kind,out->width_bits,
+        out->destination,out->pc,out->next_pc,out->logical_flags,out->input_destination};
+    __asm__ volatile("":::"memory");progress->entered=1;
+    __asm__ volatile("":::"memory");
+    progress->callback_status=callback(&progress->input,&progress->script);
+    __asm__ volatile("":::"memory");progress->returned=1;
+    __asm__ volatile("":::"memory");
+    const struct li2_selected_script *script=&progress->script;
+    if(progress->callback_status || script->reserved || script->kind!=out->kind ||
+       script->width_bits!=out->width_bits || !outcome_ok(out,script->value,script->carry)) {
+        progress->first_error=LI2_SELECTED_SCRIPT;
+        return refuse(out,LI2_SELECTED_SCRIPT);
+    }
+    commit(frame,out,script->value,script->carry);
+    __asm__ volatile("":::"memory");progress->committed=1;
+    return LI2_SELECTED_OK;
+}
