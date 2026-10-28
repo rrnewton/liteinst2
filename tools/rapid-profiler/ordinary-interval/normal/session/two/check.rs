@@ -35,6 +35,7 @@ pub(super) struct Ledger {
     returns: BTreeSet<u64>,
     stream: HistoryStream,
     k: usize,
+    subject: Subject,
 }
 impl Ledger {
     pub fn new(
@@ -44,8 +45,30 @@ impl Ledger {
         stream: HistoryStream,
         k: usize,
     ) -> Self {
+        Self::for_subject(tids, entry, returns, stream, k, Subject::Strnlen41)
+    }
+    pub fn new_exact(
+        tids: [u64; 2],
+        entry: u64,
+        returns: BTreeSet<u64>,
+        stream: HistoryStream,
+        k: usize,
+    ) -> Self {
+        Self::for_subject(tids, entry, returns, stream, k, Subject::Exact37)
+    }
+    fn for_subject(
+        tids: [u64; 2],
+        entry: u64,
+        returns: BTreeSet<u64>,
+        stream: HistoryStream,
+        k: usize,
+        subject: Subject,
+    ) -> Self {
         assert!(tids[0] != 0 && tids[1] != 0 && tids[0] != tids[1]);
-        assert_eq!(returns, [entry + 34, entry + 40].into());
+        match subject {
+            Subject::Strnlen41 => assert_eq!(returns, [entry + 34, entry + 40].into()),
+            Subject::Exact37 => exact::returns(entry, &returns),
+        }
         Self {
             accepted: Vec::with_capacity(protocol::COMMANDS),
             local: std::array::from_fn(|_| Cursor::default()),
@@ -58,6 +81,7 @@ impl Ledger {
             returns,
             stream,
             k,
+            subject,
         }
     }
     pub fn prefixes(&self) -> [u64; 2] {
@@ -65,6 +89,9 @@ impl Ledger {
     }
     pub fn accept(&mut self, command: Command) -> Pending {
         assert!(self.accepted.len() < protocol::COMMANDS);
+        if self.subject == Subject::Exact37 {
+            exact::command(&command).unwrap();
+        }
         let pending = match &command {
             Command::Call { id, bound, bytes } => {
                 let worker = self.calls % 2;
@@ -125,19 +152,27 @@ impl Ledger {
                     bytes: call.bytes.clone()
                 })
             );
-            assert_eq!(call.value, scalar(&call.bytes, call.bound));
+            match self.subject {
+                Subject::Strnlen41 => assert_eq!(call.value, scalar(&call.bytes, call.bound)),
+                Subject::Exact37 => exact::value(call.value, &call.bytes, call.bound),
+            }
             let raw = record.raw;
             assert_eq!(raw.ordinal, local.totals.confirmed + 1);
             assert_eq!(raw.entry_pc, self.entry);
             assert!(self.returns.contains(&raw.return_pc));
-            assert_eq!(
-                raw.return_pc - self.entry,
-                if call.bound != 0 && call.value == call.bound as u64 {
-                    40
-                } else {
-                    34
+            match self.subject {
+                Subject::Strnlen41 => {
+                    assert_eq!(
+                        raw.return_pc - self.entry,
+                        if call.bound != 0 && call.value == call.bound as u64 {
+                            40
+                        } else {
+                            34
+                        }
+                    );
                 }
-            );
+                Subject::Exact37 => exact::return_pc(self.entry, raw.return_pc),
+            }
             assert_eq!(record.entry_rsp & 15, 8);
             assert_ne!(record.return_word, 0);
             acknowledgement(*record, i + 1 == calls.len());

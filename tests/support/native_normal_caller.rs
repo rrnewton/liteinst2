@@ -19,6 +19,86 @@ pub enum Mode {
     Stable,
     CrossedOwner,
 }
+/// Closed Exact37 input; the independent binary-level interpreter checks every
+/// original instruction. This scalar is only the harness's transfer expectation.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ExactCase {
+    seed_index: usize,
+    length: usize,
+}
+impl ExactCase {
+    pub fn new(seed: u64, length: usize) -> Self {
+        let seed_index = SEEDS
+            .iter()
+            .position(|&s| s == seed)
+            .expect("closed Exact seed");
+        assert!(matches!(length, 1 | 64));
+        Self { seed_index, length }
+    }
+    pub fn length(self) -> usize {
+        self.length
+    }
+    pub fn input(self) -> [u8; 64] {
+        std::array::from_fn(|j| (37 * j + 11 + self.seed_index) as u8)
+    }
+    pub fn scalar(self) -> u64 {
+        self.input()[..self.length]
+            .iter()
+            .map(|b| u64::from(*b ^ 0x5a))
+            .sum::<u64>()
+            ^ 0x9e37_79b9_7f4a_7c15
+    }
+    pub fn counts(self) -> (usize, usize, usize, usize) {
+        (
+            6 * self.length + 5,
+            self.length,
+            self.length - 1,
+            self.length + 1,
+        )
+    }
+}
+#[derive(Clone, Copy)]
+enum Body {
+    Strnlen(Case),
+    Exact(ExactCase),
+}
+impl Body {
+    fn input(self) -> [u8; 64] {
+        match self {
+            Self::Strnlen(case) => strnlen::cases::input(case),
+            Self::Exact(case) => case.input(),
+        }
+    }
+    fn bound(self) -> usize {
+        match self {
+            Self::Strnlen(case) => case.bound,
+            Self::Exact(case) => case.length(),
+        }
+    }
+    fn scalar(self) -> u64 {
+        match self {
+            Self::Strnlen(case) => strnlen::cases::scalar(case),
+            Self::Exact(case) => case.scalar(),
+        }
+    }
+    fn strnlen(self) -> Case {
+        match self {
+            Self::Strnlen(case) => case,
+            Self::Exact(_) => panic!("not a strnlen case"),
+        }
+    }
+}
+/// Borrowed ORIGINAL subject slice, bounded by authenticated actual C CALL/RET.
+/// It has no gate frame or invented OriginalObservation authority.
+pub struct OriginalBody<'a> {
+    pub entry: u64,
+    pub continuation: u64,
+    pub code: &'a [u8],
+    pub input_address: u64,
+    pub input: &'a [u8],
+    pub steps: &'a [OriginalStep<'a>],
+}
+
 #[derive(Clone, Debug)]
 pub struct JournalReady {
     pub address: u64,
@@ -463,7 +543,7 @@ pub struct NormalOracle {
     data: Mapping,
     stack: Mapping,
     seed: u64,
-    case: Case,
+    body: Body,
     extent: usize,
     deadline: Deadline,
     mode: Mode,
@@ -499,7 +579,13 @@ impl NormalContext<'_> {
         self.oracle.caller_rsp()
     }
     pub fn case(&self) -> Case {
-        self.oracle.case
+        self.oracle.body.strnlen()
+    }
+    pub fn exact_case(&self) -> Option<ExactCase> {
+        match self.oracle.body {
+            Body::Exact(case) => Some(case),
+            Body::Strnlen(_) => None,
+        }
     }
     pub fn deadline(&self) -> Deadline {
         self.oracle.deadline
@@ -535,15 +621,23 @@ impl NormalOracle {
     pub fn new(seed: u64, case: Case, extent: usize, deadline: Deadline, mode: Mode) -> Self {
         deadline.check();
         mode_case(seed, case, extent, mode);
+        Self::new_body(seed, Body::Strnlen(case), extent, deadline, mode)
+    }
+    pub fn new_exact(seed: u64, length: usize, deadline: Deadline) -> Self {
+        deadline.check();
+        let case = ExactCase::new(seed, length);
+        Self::new_body(seed, Body::Exact(case), 37, deadline, Mode::Stable)
+    }
+    fn new_body(seed: u64, body: Body, extent: usize, deadline: Deadline, mode: Mode) -> Self {
         let data = Mapping::new(PAGE);
         let mut bytes: Vec<_> = (0..PAGE)
             .map(|i| (i as u64 * 37 + 11 + seed) as u8)
             .collect();
-        bytes[INPUT..INPUT + 64].copy_from_slice(&strnlen::cases::input(case));
+        bytes[INPUT..INPUT + 64].copy_from_slice(&body.input());
         let address = data.address() + INPUT as u64;
         for at in [REQUESTS, REQUESTS + 16] {
             bytes[at..at + 8].copy_from_slice(&address.to_le_bytes());
-            bytes[at + 8..at + 16].copy_from_slice(&(case.bound as u64).to_le_bytes());
+            bytes[at + 8..at + 16].copy_from_slice(&(body.bound() as u64).to_le_bytes());
         }
         bytes[RESULTS..RESULTS + 16].fill(0);
         data.initialize(0, &bytes);
@@ -568,7 +662,7 @@ impl NormalOracle {
             data,
             stack,
             seed,
-            case,
+            body,
             extent,
             deadline,
             mode,
@@ -852,6 +946,46 @@ impl NormalOracle {
     where
         F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
     {
+        let case = self.body.strnlen();
+        let (result, trace) = self.pair_observed(setup, |ready, points| {
+            let trace = self.inspect(ready, points);
+            let visits = trace.bodies.each_ref().map(|t| t.visits);
+            (trace, visits)
+        });
+        validate_pair(case, &result, &trace);
+        self.deadline.check();
+        (result, trace)
+    }
+    pub fn pair_exact<F, O>(
+        &self,
+        setup: F,
+        mut inspect: O,
+    ) -> (NormalPairResult, [(usize, usize, usize, usize); 2])
+    where
+        F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
+        O: for<'a> FnMut(usize, OriginalBody<'a>) -> (usize, usize, usize, usize),
+    {
+        let Body::Exact(case) = self.body else {
+            panic!("not an Exact pair")
+        };
+        let (result, counts) = self.pair_observed(setup, |ready, points| {
+            assert_eq!(ready.returns, [ready.entry.checked_add(36).unwrap()]);
+            let mut visits = [0; 2];
+            let counts = self.inspect_bodies(ready, points, |i, body| {
+                visits[i] = body.steps.len();
+                inspect(i, body)
+            });
+            (counts, visits)
+        });
+        validate_exact_pair(case, &result, &counts);
+        self.deadline.check();
+        (result, counts)
+    }
+    fn pair_observed<F, O, T>(&self, setup: F, inspect: O) -> (NormalPairResult, T)
+    where
+        F: for<'a> Fn(bool, NormalContext<'a>) -> i32,
+        O: FnOnce(&NormalReady, &[Snapshot]) -> (T, [usize; 2]),
+    {
         self.deadline.check();
         assert_eq!(
             unsafe { libc::syscall(libc::SYS_gettid) },
@@ -1034,7 +1168,7 @@ impl NormalOracle {
                         n,
                         self.caller_rsp(),
                         self.data.address(),
-                        self.case.bound,
+                        self.body.bound(),
                     );
                 }
                 if let Some(logical_ret) = ret {
@@ -1043,14 +1177,7 @@ impl NormalOracle {
                     assert_eq!(walk.child.memory(pc, 1), [0xc3]);
                     let regs = walk.child.registers();
                     let word = word_at(&walk.child.memory(regs.rsp, 8), regs.rsp, regs.rsp);
-                    ret_before(
-                        &regs,
-                        r,
-                        n,
-                        self.caller_rsp(),
-                        strnlen::cases::scalar(self.case),
-                        word,
-                    );
+                    ret_before(&regs, r, n, self.caller_rsp(), self.body.scalar(), word);
                     returns[index].push(logical_ret);
                     if index == 1 {
                         let j = r.journal.as_ref().unwrap();
@@ -1091,28 +1218,18 @@ impl NormalOracle {
                     let regs = walk.child.registers();
                     let address = self.caller_rsp() - SUBJECT_RSP_DELTA;
                     let word = word_at(&walk.child.memory(address, 8), address, address);
-                    ret_after(
-                        &regs,
-                        r,
-                        n,
-                        self.caller_rsp(),
-                        strnlen::cases::scalar(self.case),
-                        word,
-                    );
+                    ret_after(&regs, r, n, self.caller_rsp(), self.body.scalar(), word);
                 }
             }
             assert_eq!(calls[index], 2);
             assert_eq!(returns[index].len(), 2);
             let actual = walk.child.registers();
             callee_saves(&seeded[index], &actual);
-            assert_eq!(
-                actual.rax,
-                strnlen::cases::scalar(self.case).wrapping_mul(2)
-            );
+            assert_eq!(actual.rax, self.body.scalar().wrapping_mul(2));
             final_data(
                 self.data.bytes(),
                 &walk.child.memory(self.data.address(), PAGE),
-                strnlen::cases::scalar(self.case),
+                self.body.scalar(),
             );
         }
         assert_eq!(compared, points.len());
@@ -1173,13 +1290,13 @@ impl NormalOracle {
             self.data.address(),
             self.stack_start(),
         );
-        let trace = self.inspect(&ready[0], &points);
-        let value = strnlen::cases::scalar(self.case);
+        let (trace, visits) = inspect(&ready[0], &points);
+        let value = self.body.scalar();
         let result = NormalPairResult {
             comparisons: compared,
             original_steps: walks[0].steps,
             candidate_steps: walks[1].steps,
-            visits: trace.bodies.each_ref().map(|t| t.visits),
+            visits,
             returns: returns[0].clone().try_into().unwrap(),
             declared_returns: ready[0].returns.iter().copied().collect(),
             values: [value; 2],
@@ -1189,7 +1306,6 @@ impl NormalOracle {
             outer_returns: 2,
             normal_reaps: 2,
         };
-        validate_pair(self.case, &result, &trace);
         self.deadline.check();
         (result, trace)
     }
@@ -1215,6 +1331,28 @@ impl NormalOracle {
         }
     }
     fn inspect(&self, ready: &NormalReady, points: &[Snapshot]) -> NormalTrace {
+        let case = self.body.strnlen();
+        let bodies = self.inspect_bodies(ready, points, |_, body| {
+            strnlen::inspect_normal_body(
+                case,
+                body.entry,
+                body.continuation,
+                body.input_address,
+                body.code,
+                body.steps,
+            )
+        });
+        NormalTrace { bodies }
+    }
+    fn inspect_bodies<T, O>(
+        &self,
+        ready: &NormalReady,
+        points: &[Snapshot],
+        mut inspect: O,
+    ) -> [T; 2]
+    where
+        O: for<'a> FnMut(usize, OriginalBody<'a>) -> T,
+    {
         let steps: Vec<_> = points
             .windows(2)
             .map(|w| OriginalStep {
@@ -1238,7 +1376,7 @@ impl NormalOracle {
             ready.entry,
             self.extent,
         );
-        let bodies = std::array::from_fn(|index| {
+        std::array::from_fn(|index| {
             let start = starts[index];
             assert_eq!(steps[start - 1].before.rip, ready.caller + CALLS[index]);
             let finish = (start..steps.len())
@@ -1246,16 +1384,18 @@ impl NormalOracle {
                 .unwrap();
             assert!(index == 1 || finish < starts[1]);
             assert_eq!(steps[finish].after.rip, ready.caller + CONTINUATIONS[index]);
-            strnlen::inspect_normal_body(
-                self.case,
-                ready.entry,
-                ready.caller + CONTINUATIONS[index],
-                self.data.address() + INPUT as u64,
-                code,
-                &steps[start..=finish],
+            inspect(
+                index,
+                OriginalBody {
+                    entry: ready.entry,
+                    continuation: ready.caller + CONTINUATIONS[index],
+                    input_address: self.data.address() + INPUT as u64,
+                    input: &self.data.bytes()[INPUT..INPUT + self.body.bound()],
+                    code,
+                    steps: &steps[start..=finish],
+                },
             )
-        });
-        NormalTrace { bodies }
+        })
     }
 }
 
@@ -1501,6 +1641,31 @@ fn validate_pair(case: Case, pair: &NormalPairResult, trace: &NormalTrace) {
         );
     }
 }
+fn validate_exact_pair(
+    case: ExactCase,
+    pair: &NormalPairResult,
+    counts: &[(usize, usize, usize, usize); 2],
+) {
+    assert_eq!(*counts, [case.counts(); 2]);
+    assert_eq!(pair.visits, [case.counts().0; 2]);
+    assert_eq!(pair.comparisons, HEADS.len() + 2 * case.counts().0);
+    assert!((pair.comparisons..=MAX_STEPS).contains(&pair.original_steps));
+    assert!((pair.comparisons..=MAX_STEPS).contains(&pair.candidate_steps));
+    assert_eq!(pair.values, [case.scalar(); 2]);
+    assert_eq!(pair.outer_value, case.scalar().wrapping_mul(2));
+    assert_eq!(pair.returns, [pair.returns[0]; 2]);
+    assert_eq!(pair.declared_returns, BTreeSet::from([pair.returns[0]]));
+    assert_eq!(
+        (
+            pair.target_calls,
+            pair.target_returns,
+            pair.outer_returns,
+            pair.normal_reaps
+        ),
+        (4, 4, 2, 2)
+    );
+}
+
 #[derive(Default)]
 pub struct Population {
     next: usize,
@@ -1976,6 +2141,120 @@ mod tests {
                 _ => p.visits[1] = 0,
             };
             rejects(|| validate_pair(CASES[7], &p, &t));
+        }
+    }
+}
+
+#[cfg(test)]
+mod exact_tests {
+    use super::*;
+    fn rejects(f: impl FnOnce() + std::panic::UnwindSafe) {
+        assert!(std::panic::catch_unwind(f).is_err());
+    }
+    fn pair(case: ExactCase) -> NormalPairResult {
+        let comparisons = 24 + 2 * case.counts().0;
+        NormalPairResult {
+            comparisons,
+            original_steps: comparisons,
+            candidate_steps: comparisons,
+            visits: [case.counts().0; 2],
+            returns: [0x1024; 2],
+            declared_returns: BTreeSet::from([0x1024]),
+            values: [case.scalar(); 2],
+            outer_value: case.scalar().wrapping_mul(2),
+            target_calls: 4,
+            target_returns: 4,
+            outer_returns: 2,
+            normal_reaps: 2,
+        }
+    }
+    #[test]
+    fn exact_normal_closed_cases_input_and_counts() {
+        for (index, seed) in SEEDS.into_iter().enumerate() {
+            for length in [1, 64] {
+                let case = ExactCase::new(seed, length);
+                assert_eq!(case.length(), length);
+                assert_eq!(
+                    case.input(),
+                    std::array::from_fn(|j| ((37 * j + 11 + index) % 256) as u8)
+                );
+                let sum = (0..length).fold(0_u64, |sum, j| {
+                    sum + u64::from(((37 * j + 11 + index) % 256) as u8 ^ 0x5a)
+                });
+                assert_eq!(case.scalar(), sum ^ 0x9e3779b97f4a7c15);
+                assert_eq!(
+                    case.counts(),
+                    if length == 1 {
+                        (11, 1, 0, 2)
+                    } else {
+                        (389, 64, 63, 65)
+                    }
+                );
+                assert_eq!(Body::Exact(case).bound(), length);
+                assert_eq!(Body::Exact(case).input(), case.input());
+                assert_eq!(Body::Exact(case).scalar(), case.scalar());
+                rejects(|| {
+                    Body::Exact(case).strnlen();
+                });
+            }
+        }
+        for length in [0, 2, 63, 65, usize::MAX] {
+            rejects(|| {
+                ExactCase::new(SEEDS[0], length);
+            });
+        }
+        rejects(|| {
+            ExactCase::new(0, 1);
+        });
+        for case in CASES {
+            assert_eq!(Body::Strnlen(case).strnlen(), case);
+            assert_eq!(Body::Strnlen(case).bound(), case.bound);
+            assert_eq!(Body::Strnlen(case).input(), strnlen::cases::input(case));
+            assert_eq!(Body::Strnlen(case).scalar(), strnlen::cases::scalar(case));
+        }
+    }
+    #[test]
+    fn exact_normal_pair_rejects_count_step_return_value_or_reap_drift() {
+        for seed in SEEDS {
+            for length in [1, 64] {
+                let case = ExactCase::new(seed, length);
+                validate_exact_pair(case, &pair(case), &[case.counts(); 2]);
+                for field in 0..13 {
+                    let mut bad = pair(case);
+                    match field {
+                        0 => bad.comparisons += 1,
+                        1 => bad.original_steps = bad.comparisons - 1,
+                        2 => bad.candidate_steps = MAX_STEPS + 1,
+                        3 => bad.visits[1] += 1,
+                        4 => bad.values[0] ^= 1,
+                        5 => bad.outer_value ^= 1,
+                        6 => bad.returns[1] += 1,
+                        7 => {
+                            bad.declared_returns.insert(0x1025);
+                        }
+                        8 => bad.target_calls -= 1,
+                        9 => bad.target_returns -= 1,
+                        10 => bad.outer_returns -= 1,
+                        11 => bad.normal_reaps -= 1,
+                        12 => bad.original_steps = MAX_STEPS + 1,
+                        _ => unreachable!(),
+                    }
+                    rejects(|| validate_exact_pair(case, &bad, &[case.counts(); 2]));
+                }
+                for index in 0..2 {
+                    for field in 0..4 {
+                        let mut counts = [case.counts(); 2];
+                        match field {
+                            0 => counts[index].0 += 1,
+                            1 => counts[index].1 += 1,
+                            2 => counts[index].2 += 1,
+                            3 => counts[index].3 += 1,
+                            _ => unreachable!(),
+                        }
+                        rejects(|| validate_exact_pair(case, &pair(case), &counts));
+                    }
+                }
+            }
         }
     }
 }

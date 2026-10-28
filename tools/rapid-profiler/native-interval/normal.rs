@@ -12,6 +12,7 @@ mod caller;
 use caller::CallerOwner;
 use caller_bytes::Request;
 mod check;
+pub(super) mod exact;
 use check::{Facts, rows_match};
 use oracle::native_ordinary::strnlen::{Arguments, CASES, Deadline, LABEL, SEEDS, cases};
 use rapid_profiler::frontend::{
@@ -238,11 +239,20 @@ fn child(
     current_single_main();
     context.deadline().check();
     let crossed = mode == Mode::CrossedOwner;
-    let case = context.case();
-    let input = cases::input(case);
-    assert_eq!(context.input(), input);
-    assert_eq!(selection.label(), LABEL);
-    // SAFETY: independently pinned complete final strnlen ELF and compiler
+    let exact_case = context.exact_case();
+    let (bound, expected) = if let Some(case) = exact_case {
+        assert_eq!(mode, Mode::Stable);
+        assert_eq!(context.input(), case.input());
+        assert_eq!(selection.label(), exact::LABEL);
+        (case.length(), case.scalar())
+    } else {
+        let case = context.case();
+        let input = cases::input(case);
+        assert_eq!(context.input(), input);
+        assert_eq!(selection.label(), LABEL);
+        (case.bound, cases::scalar(case))
+    };
+    // SAFETY: independently pinned complete final admitted scalar ELF and compiler
     // helper; no constructors, foreign caller, active CET, signals, alias writer,
     // unload or nonlocal exit. Both real C calls obey the separate normal ABI.
     let owner = unsafe { LoadedNormalLeaf::load_selected(subject, selection, CONTRACT) }.unwrap();
@@ -250,6 +260,9 @@ fn child(
     let entry = owner.entry();
     let heads = owner.certificate().heads().to_vec();
     let returns = owner.certificate().returns().to_vec();
+    if exact_case.is_some() {
+        super::ordinary::exact_body::source(owner.code(), entry, &heads, &returns);
+    }
     let source = (owner.source_range().0, owner.original_source().to_vec());
     let original_source = source.1.clone();
     let caller_source = caller.source();
@@ -276,7 +289,7 @@ fn child(
     for request in requests {
         assert_eq!(
             (request.data as usize as u64, request.bound),
-            (data_address + 128, case.bound as u64)
+            (data_address + 128, bound as u64)
         );
     }
     let results_address = context.results_address();
@@ -286,7 +299,6 @@ fn child(
     );
     let mut expected_data =
         unsafe { std::slice::from_raw_parts(data_address as usize as *const u8, 4096) }.to_vec();
-    let expected = cases::scalar(case);
     expected_data[320..328].copy_from_slice(&expected.to_le_bytes());
     expected_data[328..336].copy_from_slice(&expected.to_le_bytes());
     let caller_rsp = context.caller_rsp();

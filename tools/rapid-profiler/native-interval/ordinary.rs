@@ -15,6 +15,8 @@ use std::collections::BTreeSet;
 use std::fs::File;
 use std::io::Read;
 use std::os::unix::fs::MetadataExt;
+#[path = "ordinary/exact_body.rs"]
+pub(super) mod exact_body;
 
 unsafe extern "C" {
     // Address-only linkage to the actual library assembly. Never called here.
@@ -550,107 +552,21 @@ pub(super) fn check_exact(observed: OriginalObservation<'_>) -> (usize, usize, u
         .filter_map(|(i, s)| (s.before.rip == observed.entry).then_some(i))
         .collect();
     assert_eq!(starts.len(), 1, "one actual external entry");
-    let first = &steps[starts[0]];
-    assert_eq!(
-        (first.before.rdi, first.before.rsi),
-        (observed.input_address, observed.input.len() as u64)
-    );
-    let input = bytes_at(
-        first.data,
-        first.data_address,
-        first.before.rdi,
-        observed.input.len(),
-    );
-    assert_eq!(input, observed.input);
-    let return_word = u64::from_le_bytes(
-        bytes_at(first.stack, first.stack_address, first.before.rsp, 8)
-            .try_into()
-            .unwrap(),
-    );
-    assert_eq!(return_word, observed.continuation);
-    let expected = truth::interpret(
+    let length = truth::counts(observed.input.len()).unwrap().0;
+    let body = &steps[starts[0]..starts[0].checked_add(length).unwrap()];
+    let counts = exact_body::check(
         code,
-        input,
+        observed.input,
         observed.entry,
-        first.before.rdi,
-        first.before.rsp,
-        return_word,
-    )
-    .unwrap();
-    let body = &steps[starts[0]..starts[0].checked_add(expected.steps.len()).unwrap()];
-    assert_eq!(
-        body.iter()
-            .map(|s| s.before.rip - observed.entry)
-            .collect::<BTreeSet<_>>(),
-        truth::HEADS
-            .iter()
-            .map(|&p| u64::from(p))
-            .collect::<BTreeSet<_>>()
+        observed.input_address,
+        observed.continuation,
+        body,
     );
-    let (mut conditional, mut taken, mut reads) = (0, 0, 0);
-    for (actual, predicted) in body.iter().zip(&expected.steps) {
-        assert_eq!(
-            (actual.before.rip, actual.after.rip),
-            (predicted.pc, predicted.next_pc)
-        );
-        assert_eq!(
-            bytes_at(
-                actual.data,
-                actual.data_address,
-                observed.input_address,
-                input.len()
-            ),
-            input
-        );
-        if let Some(branch) = predicted.branch_taken {
-            conditional += 1;
-            let actual_taken = actual.before.eflags & 1 != 0; // Fixed JB consumes CMP's CF.
-            assert_eq!(actual_taken, branch);
-            taken += usize::from(actual_taken);
-        }
-        if let Some(read) = predicted.read {
-            reads += 1;
-            match read.kind {
-                truth::ReadKind::InputByte => {
-                    assert_eq!((read.address, read.width), (actual.before.rdi, 1));
-                    assert_eq!(
-                        read.value,
-                        u64::from(
-                            bytes_at(actual.data, actual.data_address, actual.before.rdi, 1)[0]
-                        )
-                    );
-                    assert_eq!(actual.after.rcx, read.value); // MOVZX really consumed that byte.
-                }
-                truth::ReadKind::ReturnWord => {
-                    assert_eq!((read.address, read.width), (actual.before.rsp, 8));
-                    assert_eq!(
-                        read.value,
-                        u64::from_le_bytes(
-                            bytes_at(actual.stack, actual.stack_address, actual.before.rsp, 8)
-                                .try_into()
-                                .unwrap()
-                        )
-                    );
-                    assert_eq!(actual.after.rip, read.value);
-                    assert_eq!(actual.after.rsp, actual.before.rsp.checked_add(8).unwrap());
-                }
-            }
-        }
-    }
-    let last = body.last().unwrap();
-    assert_eq!(last.before.rip, observed.entry + 36);
-    assert_eq!(
-        (last.after.rip, last.after.rsp, last.after.rax),
-        (return_word, expected.resumed_rsp, expected.value)
-    );
-    assert_eq!(last.after.rax, truth::checksum(input).unwrap());
     assert_eq!(
         steps[starts[0] + body.len()].before.rip,
         observed.continuation,
         "subject RET followed immediately by actual gate continuation"
     );
-    let counts = (body.len(), conditional, taken, reads);
-    assert_eq!(counts, truth::counts(input.len()).unwrap());
     counts
 }
 

@@ -6,8 +6,10 @@ use rapid_profiler::frontend_native::{
     TwoCallerNormalLeafContract, TwoCallerNormalSitePreparation,
 };
 mod check;
+mod exact;
 mod worker;
 use check::Ledger;
+use exact::Subject;
 
 struct Engine {
     controller: IntervalController,
@@ -324,7 +326,48 @@ pub(crate) fn run(
         std::process::exit(1);
     }
 }
+pub(crate) fn run_exact(
+    candidate: &Path,
+    trusted: &Path,
+    elf_va: u64,
+    length: u64,
+    k: usize,
+    epochs: u32,
+) {
+    if let Err(error) = run_subject(
+        Subject::Exact37,
+        candidate,
+        trusted,
+        elf_va,
+        length,
+        k,
+        epochs,
+    ) {
+        eprintln!("normal-session-two-exact FAILED: {error}");
+        // Identical fail-stop ownership: no partial population or join credit.
+        std::process::exit(1);
+    }
+}
 fn run_checked(
+    candidate: &Path,
+    trusted: &Path,
+    elf_va: u64,
+    length: u64,
+    k: usize,
+    epochs: u32,
+) -> Result<(), String> {
+    run_subject(
+        Subject::Strnlen41,
+        candidate,
+        trusted,
+        elf_va,
+        length,
+        k,
+        epochs,
+    )
+}
+fn run_subject(
+    subject: Subject,
     candidate: &Path,
     trusted: &Path,
     elf_va: u64,
@@ -335,19 +378,24 @@ fn run_checked(
     single_main();
     let cpus = cpus();
     let policy = Policy::ten_ms(k, epochs, protocol::COMMANDS as u64).map_err(failure)?;
-    assert_eq!(
-        length, 41,
-        "qualified strnlen extent, not arbitrary discovery"
-    );
+    match subject {
+        Subject::Strnlen41 => {
+            assert_eq!(
+                length, 41,
+                "qualified strnlen extent, not arbitrary discovery"
+            );
+        }
+        Subject::Exact37 => exact::extent(length),
+    }
     let bytes = expected_file(candidate, trusted);
     let selection = TrustedFunctionSelection::new(
         &bytes,
         elf_va,
         usize::try_from(length).map_err(failure)?,
-        LABEL,
+        subject.label(),
     )
     .map_err(failure)?;
-    // SAFETY: independently authenticated unchanged strnlen ELF/extent, exact ABI,
+    // SAFETY: independently authenticated closed-subject ELF/extent, exact ABI,
     // read-only input and sole entry. Publication is globally quiescent; both
     // actual workers attach before dispatch. No signal/reentry/unwind/CET/writer,
     // unload/fork or code reclamation; all installed owners are process-lived.
@@ -365,7 +413,16 @@ fn run_checked(
     .map_err(failure)?;
     let entry = owner.entry();
     let returns: BTreeSet<_> = owner.certificate().returns().iter().copied().collect();
-    assert_eq!(returns, [entry + 34, entry + 40].into());
+    match subject {
+        Subject::Strnlen41 => assert_eq!(returns, [entry + 34, entry + 40].into()),
+        Subject::Exact37 => exact::geometry(
+            entry,
+            owner.certificate().range(),
+            owner.code(),
+            owner.certificate().heads(),
+            &returns,
+        ),
+    }
     owner.verify_original().map_err(failure)?;
     let prep = TwoCallerNormalSitePreparation::new_whole_function(owner, identity(entry))
         .map_err(failure)?;
@@ -424,7 +481,15 @@ fn run_checked(
         let client = client.clone();
         let spans = Arc::clone(&spans);
         let handle = thread::spawn(move || {
-            worker::run(entry, client, spans, rx, events, cpus[i + 1], i as u64 + 1)
+            worker::run(
+                (entry, subject),
+                client,
+                spans,
+                rx,
+                events,
+                cpus[i + 1],
+                i as u64 + 1,
+            )
         });
         (tx, replies, Some(handle))
     });
@@ -449,16 +514,24 @@ fn run_checked(
         }
         tids[i] = tid;
     }
-    let mut ledger = Ledger::new(tids, entry, returns, stream, k);
+    let mut ledger = match subject {
+        Subject::Strnlen41 => Ledger::new(tids, entry, returns, stream, k),
+        Subject::Exact37 => Ledger::new_exact(tids, entry, returns, stream, k),
+    };
     let mut ids = protocol::Ids::default();
     let mut dispatch = Dispatch::default();
     let mut requested = false;
     let mut finished = [None; 2];
     let mut prefer = 0;
     let mut final_output = false;
-    io.emit(format!(
-        "READY,normal-two-session-v1,{k},{epochs},10,2,4096,4096,2,1,2,1,4,2,4096\n"
-    ))?;
+    match subject {
+        Subject::Strnlen41 => io.emit(format!(
+            "READY,normal-two-session-v1,{k},{epochs},10,2,4096,4096,2,1,2,1,4,2,4096\n"
+        ))?,
+        Subject::Exact37 => io.emit(format!(
+            "READY,normal-two-exact-v1,{k},{epochs},10,2,4096,4096,2,1,2,1,4,2,4096\n"
+        ))?,
+    }
     for (i, tid) in tids.into_iter().enumerate() {
         io.emit(format!("WORKER,{},{},{tid}\n", i + 1, i + 1))?;
     }
@@ -543,7 +616,7 @@ fn run_checked(
                 if command == Command::Stop {
                     requested = true;
                 } else {
-                    ids.accept(&command).map_err(str::to_string)?;
+                    subject.accept(&mut ids, &command)?;
                     dispatch.pending = Some(ledger.accept(command));
                 }
                 progress = true;
@@ -572,7 +645,10 @@ fn run_checked(
                 u64::from(schedule.armed()) + 1
             );
             let counts = ledger.finish(&engine.reports, &mut io)?;
-            assert!(output_bound(ledger.calls, ledger.flushes, schedule.armed()) < 4 * 1024 * 1024);
+            assert!(
+                subject.output_bound(ledger.calls, ledger.flushes, schedule.armed())
+                    < 4 * 1024 * 1024
+            );
             assert_eq!(ids.len(), ledger.accepted.len());
             single_main();
             unsafe { immutable(&spans) };
