@@ -1,0 +1,856 @@
+{
+  "artifacts_unchanged": true,
+  "bounds": {
+    "cpu_seconds": 30,
+    "file_bytes": 16777216,
+    "memory_bytes": 536870912,
+    "wall_seconds": 60
+  },
+  "bridge_sha256": "6eb0576dff23e85605ebaf3b09d1a3face3c5cf52a0cc2e787c2acd32f2810d5",
+  "cases": [
+    {
+      "dependencies": [
+        {
+          "names": [
+            "libc.so.6"
+          ],
+          "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+          "size": 2553784
+        },
+        {
+          "names": [
+            "ld-linux-x86-64.so.2"
+          ],
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "size": 939216
+        }
+      ],
+      "gated_exit": 0,
+      "gated_whole_process_ns": 15172253687,
+      "input_sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "loader": {
+        "admissions": 415,
+        "cpuid": 38,
+        "failure_code": 0,
+        "nx_faults": 22146,
+        "rdtsc": 10,
+        "rdtscp": 0,
+        "source_syscalls": 47,
+        "status": 0
+      },
+      "name": "true-default",
+      "native_exit": 0,
+      "native_whole_process_ns": 2860984,
+      "output_equal": true,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pages": {
+        "admissions": 415,
+        "attempts": 3157,
+        "blocked": 2742,
+        "close_busy": 0,
+        "close_complete": 1,
+        "close_error": 0,
+        "closed": 415,
+        "epoch_error": 0,
+        "epoch_exits": 415,
+        "failure_code": 0,
+        "first_admission_ns": 82454,
+        "first_source_offset": 118784,
+        "low_address_refusals": 0,
+        "main_admissions": 0,
+        "main_refaults": 0,
+        "refaults": 5,
+        "revisit_count": 16,
+        "revisit_ns": [
+          80841,
+          138238,
+          138448,
+          83826,
+          144086,
+          146240,
+          85128,
+          306731,
+          80021,
+          81953,
+          79429,
+          80080,
+          79359,
+          135123,
+          139589,
+          137867
+        ],
+        "status": 0,
+        "version": 1
+      },
+      "passed": true,
+      "report_error": null
+    },
+    {
+      "dependencies": [
+        {
+          "names": [
+            "libc.so.6"
+          ],
+          "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+          "size": 2553784
+        },
+        {
+          "names": [
+            "ld-linux-x86-64.so.2"
+          ],
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "size": 939216
+        }
+      ],
+      "gated_exit": 0,
+      "gated_whole_process_ns": 7585637343,
+      "input_sha256": "b9b6ec37ac996b4152caca5a87e5ae23abb649bbc82dc6e1ca1d423d7bf4c171",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "loader": {
+        "admissions": 1389,
+        "cpuid": 38,
+        "failure_code": 0,
+        "nx_faults": 14283,
+        "rdtsc": 10,
+        "rdtscp": 0,
+        "source_syscalls": 48,
+        "status": 0
+      },
+      "name": "true-disabled",
+      "native_exit": 0,
+      "native_whole_process_ns": 4988699,
+      "output_equal": true,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pages": {
+        "admissions": 1389,
+        "attempts": 13721,
+        "blocked": 12332,
+        "close_busy": 0,
+        "close_complete": 1,
+        "close_error": 0,
+        "closed": 1389,
+        "epoch_error": 0,
+        "epoch_exits": 1389,
+        "failure_code": 0,
+        "first_admission_ns": 83014,
+        "first_source_offset": 118784,
+        "low_address_refusals": 0,
+        "main_admissions": 4,
+        "main_refaults": 0,
+        "refaults": 28,
+        "revisit_count": 16,
+        "revisit_ns": [
+          84087,
+          83094,
+          81812,
+          92689,
+          83105,
+          85078,
+          82213,
+          85018,
+          80330,
+          81983,
+          82094,
+          85239,
+          80120,
+          87561,
+          80251,
+          85167
+        ],
+        "status": 0,
+        "version": 1
+      },
+      "passed": true,
+      "report_error": null
+    },
+    {
+      "dependencies": [
+        {
+          "names": [
+            "libselinux.so.1"
+          ],
+          "sha256": "c265777e75d52d549e52ec3b24df4f760d26fb439cc468b260d34175d1bac0e5",
+          "size": 175624
+        },
+        {
+          "names": [
+            "libcap.so.2"
+          ],
+          "sha256": "29a6c106d86e91a4f3c6cbbe4645a2e08fc792522849ae21dcb1e605fa17144a",
+          "size": 36296
+        },
+        {
+          "names": [
+            "libc.so.6"
+          ],
+          "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+          "size": 2553784
+        },
+        {
+          "names": [
+            "libpcre2-8.so.0"
+          ],
+          "sha256": "2f9276d0d881d95db4513d415b749a0f871fc7dc996ba813e48c50d784b84c10",
+          "size": 636720
+        },
+        {
+          "names": [
+            "ld-linux-x86-64.so.2"
+          ],
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "size": 939216
+        }
+      ],
+      "gated_exit": -9,
+      "gated_whole_process_ns": 30294875641,
+      "input_sha256": "eec29318f59647c9a13b619e2738575164e3c43c7a1ee2b8509f36cb09019315",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "loader": {
+        "admissions": null,
+        "cpuid": null,
+        "failure_code": null,
+        "nx_faults": null,
+        "rdtsc": null,
+        "rdtscp": null,
+        "source_syscalls": null,
+        "status": null
+      },
+      "name": "ls-default",
+      "native_exit": 0,
+      "native_whole_process_ns": 3460926,
+      "output_equal": false,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pages": {},
+      "passed": false,
+      "report_error": "ValueError: complete stderr report terminator"
+    },
+    {
+      "dependencies": [
+        {
+          "names": [
+            "libselinux.so.1"
+          ],
+          "sha256": "c265777e75d52d549e52ec3b24df4f760d26fb439cc468b260d34175d1bac0e5",
+          "size": 175624
+        },
+        {
+          "names": [
+            "libcap.so.2"
+          ],
+          "sha256": "29a6c106d86e91a4f3c6cbbe4645a2e08fc792522849ae21dcb1e605fa17144a",
+          "size": 36296
+        },
+        {
+          "names": [
+            "libc.so.6"
+          ],
+          "sha256": "4fe244b698006f2a5cc7d1e6008c195dfb3ac4038ea79a6500bdde4205efb523",
+          "size": 2553784
+        },
+        {
+          "names": [
+            "libpcre2-8.so.0"
+          ],
+          "sha256": "2f9276d0d881d95db4513d415b749a0f871fc7dc996ba813e48c50d784b84c10",
+          "size": 636720
+        },
+        {
+          "names": [
+            "ld-linux-x86-64.so.2"
+          ],
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "size": 939216
+        }
+      ],
+      "gated_exit": 125,
+      "gated_whole_process_ns": 21609878161,
+      "input_sha256": "eec29318f59647c9a13b619e2738575164e3c43c7a1ee2b8509f36cb09019315",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "loader": {
+        "admissions": 5013,
+        "cpuid": 38,
+        "failure_code": 100,
+        "nx_faults": 40062,
+        "rdtsc": 10,
+        "rdtscp": 0,
+        "source_syscalls": 91,
+        "status": 125
+      },
+      "name": "ls-disabled",
+      "native_exit": 0,
+      "native_whole_process_ns": 3524039,
+      "output_equal": false,
+      "output_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "pages": {
+        "admissions": 5013,
+        "attempts": 38771,
+        "blocked": 33758,
+        "close_busy": 0,
+        "close_complete": 1,
+        "close_error": 0,
+        "closed": 5013,
+        "epoch_error": 0,
+        "epoch_exits": 5013,
+        "failure_code": 100,
+        "first_admission_ns": 137085,
+        "first_source_offset": 118784,
+        "low_address_refusals": 0,
+        "main_admissions": 0,
+        "main_refaults": 0,
+        "refaults": 45,
+        "revisit_count": 16,
+        "revisit_ns": [
+          88793,
+          88582,
+          83695,
+          1030277,
+          86510,
+          90096,
+          86069,
+          90826,
+          91777,
+          83476,
+          81382,
+          81663,
+          81852,
+          82193,
+          86420,
+          82914
+        ],
+        "status": 125,
+        "version": 1
+      },
+      "passed": false,
+      "report_error": "ValueError: complete genuine native admission and revocation"
+    },
+    {
+      "dependencies": [
+        {
+          "names": [
+            "ld-linux-x86-64.so.2"
+          ],
+          "sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+          "size": 939216
+        }
+      ],
+      "gated_exit": 0,
+      "gated_whole_process_ns": 1432703993,
+      "input_sha256": "b9f692a4f323b7081ef9ae20108882450d743e67c36da904d9f80ab43f78fd57",
+      "interpreter_sha256": "34c232018a619b0091e97add6805072d00db3250937fc049a1ef968cecfa99c9",
+      "loader": {
+        "admissions": 174,
+        "cpuid": 39,
+        "failure_code": 0,
+        "nx_faults": 2578,
+        "rdtsc": 6,
+        "rdtscp": 0,
+        "source_syscalls": 13,
+        "status": 0
+      },
+      "name": "boundary-disabled",
+      "native_exit": 0,
+      "native_whole_process_ns": 2813793,
+      "output_equal": true,
+      "output_sha256": "47857045a53a35433d2500c799bcb6d8b36e6f207ce421064ec746f1e116cf32",
+      "pages": {
+        "admissions": 174,
+        "attempts": 2376,
+        "blocked": 2202,
+        "close_busy": 0,
+        "close_complete": 1,
+        "close_error": 0,
+        "closed": 174,
+        "epoch_error": 0,
+        "epoch_exits": 174,
+        "failure_code": 0,
+        "first_admission_ns": 91758,
+        "first_source_offset": 118784,
+        "low_address_refusals": 0,
+        "main_admissions": 4,
+        "main_refaults": 1,
+        "refaults": 5,
+        "revisit_count": 16,
+        "revisit_ns": [
+          95924,
+          87411,
+          85929,
+          84076,
+          85488,
+          87461,
+          85368,
+          89365,
+          82323,
+          83636,
+          83426,
+          82134,
+          82604,
+          85869,
+          81202,
+          93260
+        ],
+        "status": 0,
+        "version": 1
+      },
+      "passed": true,
+      "report_error": null
+    }
+  ],
+  "commands": [
+    {
+      "command": [
+        "rustup",
+        "which",
+        "cargo"
+      ],
+      "elapsed_ns": 8065095,
+      "exit": 0,
+      "name": "resolve-cargo",
+      "pid": 2233103,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "794362539ea27188bc2cddb8221271ae691aa74e934324d761c98e0f5ea1aa34"
+    },
+    {
+      "command": [
+        "rustup",
+        "which",
+        "rustc"
+      ],
+      "elapsed_ns": 9820720,
+      "exit": 0,
+      "name": "resolve-rustc",
+      "pid": 2233321,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "5e776b2193b77c28e08d0506ee7ba7aefe1fbe72a6cca79df4cdfa0bab8f3610"
+    },
+    {
+      "command": [
+        "cc",
+        "-print-prog-name=cc1"
+      ],
+      "elapsed_ns": 2483788,
+      "exit": 0,
+      "name": "resolve-cc1",
+      "pid": 2233359,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "59fa4bbf4edf0b03fa2943dc05d8062c3f7d2a749836dd8ef99c85c5bd3db4ed"
+    },
+    {
+      "command": [
+        "cc",
+        "-print-prog-name=collect2"
+      ],
+      "elapsed_ns": 2555135,
+      "exit": 0,
+      "name": "resolve-collect2",
+      "pid": 2233457,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "61a1f98fe2340c0787d504b6f91ed72f29ba84d4f9065d368a5103dbd7c1e48c"
+    },
+    {
+      "command": [
+        "cc",
+        "-print-prog-name=as"
+      ],
+      "elapsed_ns": 2310067,
+      "exit": 0,
+      "name": "resolve-as",
+      "pid": 2233466,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "8b97bca79750847558d488e2ea4de79903c9c71c9af27ecf1b3dff5dba2abdd9"
+    },
+    {
+      "command": [
+        "cc",
+        "-print-prog-name=ld"
+      ],
+      "elapsed_ns": 2200372,
+      "exit": 0,
+      "name": "resolve-ld",
+      "pid": 2233468,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "3b6cb8ae51045d062a7c7de7cc488ad8785144cfbc0a7fc9546ed52429e0d97f"
+    },
+    {
+      "command": [
+        "sh",
+        "tools/page-entry/selected/build-native-pages.sh"
+      ],
+      "elapsed_ns": 4632721336,
+      "exit": 0,
+      "name": "build",
+      "pid": 2233474,
+      "stderr_sha256": "8891688152b3682ac33cac049b7f47af9e151be35242f35d1894ba784331e3a7",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "nm",
+        "-S",
+        "-n",
+        "target/page-entry/native-pages/bridge-native-pages.so"
+      ],
+      "elapsed_ns": 2891841,
+      "exit": 0,
+      "name": "runtime-memset-symbols",
+      "pid": 2248935,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "4cd5ba23d1ca3c1f03809647fd186ac3541329a9b9fbecb6b11349ab9bfc49d5"
+    },
+    {
+      "command": [
+        "objdump",
+        "-d",
+        "--disassemble=memset",
+        "target/page-entry/native-pages/bridge-native-pages.so"
+      ],
+      "elapsed_ns": 9566007,
+      "exit": 0,
+      "name": "runtime-memset-body",
+      "pid": 2248951,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "d30b41ff081d9cd17ab57a8d6e67ab4905419279ff1142e47b4aaf84d49bb5d6"
+    },
+    {
+      "command": [
+        "cc",
+        "-dumpfullversion"
+      ],
+      "elapsed_ns": 2984639,
+      "exit": 0,
+      "name": "compiler-version",
+      "pid": 2248968,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "1469df2ef34ff2700bdfabed251223bc235a44f68b1a549fcebcc5ce0f43a5af"
+    },
+    {
+      "command": [
+        "cc",
+        "-nostdlib",
+        "-pie",
+        "-Wl,--dynamic-linker,/lib64/ld-linux-x86-64.so.2",
+        "-Wl,-T,tools/page-entry/selected/tests/native_pages/linker.ld,-z,max-page-size=4096,--build-id=none,--no-as-needed",
+        "-L/usr/lib64",
+        "-l:ld-linux-x86-64.so.2",
+        "tools/page-entry/selected/tests/native_pages/boundary.S",
+        "-o",
+        "target/native-pages/20261028T082214Z/boundary"
+      ],
+      "elapsed_ns": 17859825,
+      "exit": 0,
+      "name": "build-boundary",
+      "pid": 2248975,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "make",
+        "/bin/true",
+        "target/page-entry/native-pages/bridge-native-pages.so",
+        "target/native-pages/20261028T082214Z/true-carrier"
+      ],
+      "elapsed_ns": 217175662,
+      "exit": 0,
+      "name": "carrier-true",
+      "pid": 2249029,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "59c90caf30337a066c505475810fd34f490b7e3b8ac599f9fd7d37de53c4608d"
+    },
+    {
+      "command": [
+        "/bin/true"
+      ],
+      "elapsed_ns": 2860984,
+      "exit": 0,
+      "name": "true-default-native",
+      "pid": 2249553,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "/usr/lib64",
+        "--namespace",
+        "target/native-pages/20261028T082214Z/true-default-ns",
+        "target/native-pages/20261028T082214Z/true-carrier",
+        "/bin/true",
+        "--",
+        "/bin/true"
+      ],
+      "elapsed_ns": 15172253687,
+      "exit": 0,
+      "name": "true-default-gated",
+      "pid": 2249556,
+      "stderr_sha256": "86a80942041128cb924eddaff7e793da57ce49a55a19b54532716e6d811f022b",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "/bin/true"
+      ],
+      "elapsed_ns": 4988699,
+      "exit": 0,
+      "name": "true-disabled-native",
+      "pid": 2292596,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "/usr/lib64",
+        "--namespace",
+        "target/native-pages/20261028T082214Z/true-disabled-ns",
+        "--disable-rseq",
+        "target/native-pages/20261028T082214Z/true-carrier",
+        "/bin/true",
+        "--",
+        "/bin/true"
+      ],
+      "elapsed_ns": 7585637343,
+      "exit": 0,
+      "name": "true-disabled-gated",
+      "pid": 2292598,
+      "stderr_sha256": "7b4bd59dec0dacdaa18ed0fa666162c2dc3b2c38c97b38499ab0a97bd48954e4",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "make",
+        "/bin/ls",
+        "target/page-entry/native-pages/bridge-native-pages.so",
+        "target/native-pages/20261028T082214Z/ls-carrier"
+      ],
+      "elapsed_ns": 267391538,
+      "exit": 0,
+      "name": "carrier-ls",
+      "pid": 2314855,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "6d682bbf6e697a0ef676d3b0724255e6f0932910fceda275c3a4ae3b444c7db0"
+    },
+    {
+      "command": [
+        "/bin/ls",
+        "-d",
+        "."
+      ],
+      "elapsed_ns": 3460926,
+      "exit": 0,
+      "name": "ls-default-native",
+      "pid": 2315264,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "/usr/lib64",
+        "--namespace",
+        "target/native-pages/20261028T082214Z/ls-default-ns",
+        "target/native-pages/20261028T082214Z/ls-carrier",
+        "/bin/ls",
+        "--",
+        "/bin/ls",
+        "-d",
+        "."
+      ],
+      "elapsed_ns": 30294875641,
+      "exit": -9,
+      "name": "ls-default-gated",
+      "pid": 2315267,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "/bin/ls",
+        "-d",
+        "."
+      ],
+      "elapsed_ns": 3524039,
+      "exit": 0,
+      "name": "ls-disabled-native",
+      "pid": 2414344,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "eb4bd64f7014f7d42e9d358035802242741b974e8dfcd37c59f9c21ce29d781e"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "/usr/lib64",
+        "--namespace",
+        "target/native-pages/20261028T082214Z/ls-disabled-ns",
+        "--disable-rseq",
+        "target/native-pages/20261028T082214Z/ls-carrier",
+        "/bin/ls",
+        "--",
+        "/bin/ls",
+        "-d",
+        "."
+      ],
+      "elapsed_ns": 21609878161,
+      "exit": 125,
+      "name": "ls-disabled-gated",
+      "pid": 2414365,
+      "stderr_sha256": "77cd9e542c5dd6a0df3b3bc88374efe488b5c2dec849d143b79ce8d18334b912",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "make",
+        "target/native-pages/20261028T082214Z/boundary",
+        "target/page-entry/native-pages/bridge-native-pages.so",
+        "target/native-pages/20261028T082214Z/boundary-carrier"
+      ],
+      "elapsed_ns": 221246506,
+      "exit": 0,
+      "name": "carrier-boundary",
+      "pid": 2550750,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "2b43d4fa0418dfb7976de2b555908f022703c05ecfd39aa031f39fc4a018ff3c"
+    },
+    {
+      "command": [
+        "target/native-pages/20261028T082214Z/boundary"
+      ],
+      "elapsed_ns": 2813793,
+      "exit": 0,
+      "name": "boundary-disabled-native",
+      "pid": 2552435,
+      "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "stdout_sha256": "47857045a53a35433d2500c799bcb6d8b36e6f207ce421064ec746f1e116cf32"
+    },
+    {
+      "command": [
+        "python3",
+        "tools/page-entry/carrier.py",
+        "exec-loader",
+        "--library-root",
+        "/usr/lib64",
+        "--namespace",
+        "target/native-pages/20261028T082214Z/boundary-disabled-ns",
+        "--disable-rseq",
+        "target/native-pages/20261028T082214Z/boundary-carrier",
+        "target/native-pages/20261028T082214Z/boundary",
+        "--",
+        "target/native-pages/20261028T082214Z/boundary"
+      ],
+      "elapsed_ns": 1432703993,
+      "exit": 0,
+      "name": "boundary-disabled-gated",
+      "pid": 2552451,
+      "stderr_sha256": "b773b8c6f89f9768b90144706e541da88a8137fb3df302ee07a98c27f6ac248f",
+      "stdout_sha256": "47857045a53a35433d2500c799bcb6d8b36e6f207ce421064ec746f1e116cf32"
+    }
+  ],
+  "compiler": "11.5.0",
+  "final_errors": [],
+  "hardware": {
+    "kernel": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "machine": "x86_64",
+    "model": "AMD EPYC 9D85 158-Core Processor",
+    "reserved_cpu_count": 1
+  },
+  "inputs_unchanged": true,
+  "passed": false,
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/native_pages.py",
+    "--expect-revision",
+    "8ac9fa3ffde115298fb544fde2f82edd9319c8b9",
+    "--output",
+    "evaluation/inprocess/results/native-pages-8ac9fa3.json",
+    "--library-root",
+    "/usr/lib64"
+  ],
+  "revision": "8ac9fa3ffde115298fb544fde2f82edd9319c8b9",
+  "runtime_memset": {
+    "address": 22720,
+    "bytes": 15,
+    "code_hex": "4989f84889d189f0fcf3aa4c89c0c3",
+    "instructions": [
+      {
+        "address": 22720,
+        "bytes": "4989f8",
+        "text": "mov    %rdi,%r8"
+      },
+      {
+        "address": 22723,
+        "bytes": "4889d1",
+        "text": "mov    %rdx,%rcx"
+      },
+      {
+        "address": 22726,
+        "bytes": "89f0",
+        "text": "mov    %esi,%eax"
+      },
+      {
+        "address": 22728,
+        "bytes": "fc",
+        "text": "cld"
+      },
+      {
+        "address": 22729,
+        "bytes": "f3aa",
+        "text": "rep stos %al,%es:(%rdi)"
+      },
+      {
+        "address": 22731,
+        "bytes": "4c89c0",
+        "text": "mov    %r8,%rax"
+      },
+      {
+        "address": 22734,
+        "bytes": "c3",
+        "text": "ret"
+      }
+    ],
+    "sha256": "9b0962fabb10968cfa175213396b8a63e6e8b81cce83547aea6e90223d21ec9f"
+  },
+  "schema": 1,
+  "source_manifest_sha256": "6c5334b56f99613ff978c392aacd9d8069921f672d476894f3ad019ae7272ee2",
+  "source_unchanged": true,
+  "started_utc": "20261028T082214Z",
+  "timing_scope": "CLOCK_MONOTONIC_RAW admission service from owner entry through live byte, backing, halo, permission and post-publication verification; first admitted page and at most16 revisits to that exact address/allocation/generation. Excludes signal delivery. Whole-process gated time includes namespace preparation. Single observations on a shared host; no instrumentation-only overhead claim.",
+  "tool_sha256": {
+    "app_python": "9cfdf1a01d07dadb394dd2dc9fd8316254c36764076d23dc2c895c8401735576",
+    "as": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56",
+    "cargo": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953",
+    "cc": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0",
+    "cc1": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5",
+    "collect2": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e",
+    "cp": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2",
+    "dirname": "dcccd2b58cda47c25292457d1153e612a68599ad7086c3b90a66ed568ab8950b",
+    "evaluator_python": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b",
+    "git": "99829804d23bc7a10242e70febfb3f7b4242e04b338dd4d1c66fe8203b29ab93",
+    "ld": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42",
+    "mkdir": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993",
+    "nm": "1e9d014468a356a030a32edf4f709b521cac91112fe2dda10a505c6e4189e4ed",
+    "objdump": "02e21a57741c6d64f20b1f148c533ffb7373d064b46594d439c05dc4f66d0216",
+    "python3": "b9bdddd7b79073264e92aed71233f2a3a8f9d81f7c3e1e2b04d6d6e34830b01b",
+    "rustc": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea",
+    "rustup": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71",
+    "sh": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+  },
+  "tools_unchanged": true
+}

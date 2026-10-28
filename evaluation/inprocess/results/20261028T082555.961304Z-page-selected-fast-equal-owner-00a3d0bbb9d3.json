@@ -1,0 +1,2665 @@
+{
+  "aliases_sha256": "f2a0d6a89f53b1300a6f29c14f06003b30f4b112dbd63504bfe730671d129fba",
+  "artifacts_sha256": "d0250c2deeeb136efdebb2cebc9a251536fde9cf888dca6e197a993520d860ea",
+  "attempted_native_processes": 45,
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_status": "passed",
+  "cleanup_complete": true,
+  "cohorts": [
+    {
+      "attempted_processes": 4,
+      "build_sha256": "70f2016ad4f129948c3024cc9b97d5ba5dafe70290228ec508b7ecf13d30019c",
+      "cases": [
+        {
+          "accepted": true,
+          "header": {
+            "completed": 21,
+            "control": 0,
+            "decoder_result": 0,
+            "expected_failure_verified": 0,
+            "failed_refusal": 18446744073709551615,
+            "fixture_failure": 0,
+            "header_bytes": 136,
+            "magic": 3550605999948051020,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "pairs": 21,
+            "refusals": 47,
+            "sample_bytes": 721088,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "positive",
+          "process_outcome": "completed finite pair cohort",
+          "record": {
+            "bytes": 15864112,
+            "sha256": "139a1fc012c05db8fccb6dc61f96c73ce256512f1fb1d7fdf8b86b89f8bea316"
+          }
+        },
+        {
+          "accepted": true,
+          "header": {
+            "completed": 1,
+            "control": 1,
+            "decoder_result": 0,
+            "expected_failure_verified": 1,
+            "failed_refusal": 18446744073709551615,
+            "fixture_failure": 0,
+            "header_bytes": 136,
+            "magic": 3550605999948051020,
+            "owner_detail_abs": 11,
+            "owner_detail_negative": 0,
+            "owner_failure": 7,
+            "pairs": 21,
+            "refusals": 47,
+            "sample_bytes": 721088,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "load-fault",
+          "process_outcome": "failed operation; expected refusal and actual cleanup verified separately",
+          "record": {
+            "bytes": 15864112,
+            "sha256": "786470c52ef6a73e97296565728f3d00187ceab71a343421647e22553a8f155e"
+          }
+        },
+        {
+          "accepted": true,
+          "header": {
+            "completed": 1,
+            "control": 2,
+            "decoder_result": 0,
+            "expected_failure_verified": 1,
+            "failed_refusal": 18446744073709551615,
+            "fixture_failure": 0,
+            "header_bytes": 136,
+            "magic": 3550605999948051020,
+            "owner_detail_abs": 305,
+            "owner_detail_negative": 0,
+            "owner_failure": 101,
+            "pairs": 21,
+            "refusals": 47,
+            "sample_bytes": 721088,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "unowned-target",
+          "process_outcome": "failed operation; expected refusal and actual cleanup verified separately",
+          "record": {
+            "bytes": 15864112,
+            "sha256": "76fbfae265f42ca2d6b773c0d565f553c6f122f1fa0454813042d692fe895fa1"
+          }
+        },
+        {
+          "accepted": true,
+          "header": {
+            "completed": 1,
+            "control": 3,
+            "decoder_result": 0,
+            "expected_failure_verified": 1,
+            "failed_refusal": 18446744073709551615,
+            "fixture_failure": 0,
+            "header_bytes": 136,
+            "magic": 3550605999948051020,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 103,
+            "pairs": 21,
+            "refusals": 47,
+            "sample_bytes": 721088,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "rsp-domain",
+          "process_outcome": "failed operation; expected refusal and actual cleanup verified separately",
+          "record": {
+            "bytes": 15864112,
+            "sha256": "bae059b924618870bcbfaeed9479bb7012772366565b7357c5bf2014e07e62fb"
+          }
+        }
+      ],
+      "cases_sha256": "c7014d04916c7468ad0dd563130d155d9ed81941197c03c7493f6d234b5515df",
+      "name": "generic",
+      "processes": [
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "positive",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "load-fault",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "unowned-target",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "rsp-domain",
+          "reaped": true,
+          "timed_out": false
+        }
+      ],
+      "required_processes": 4,
+      "status": "passed",
+      "totals": {
+        "additional_negative_command_selftests": 3,
+        "generic_pairs": 20,
+        "positive_pairs": 21,
+        "positive_selftest_pairs": 1,
+        "supplied_refusal_encodings": 47,
+        "verified_failed_operations": 3
+      }
+    },
+    {
+      "attempted_processes": 23,
+      "build_sha256": "0838ebf658f15607aabc10c7ae9ae4e7915d62e1450921418e09d4ba82adde87",
+      "cases": [
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "0"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "arithmetic-ending",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "74361e5e4e9763c757aeebcf3d539269dbfa8919c78091a049808b2ca7dd259d"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "1"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "arithmetic-crossing",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "72f2588c9f35d007550b0390336d646fd2693c191a92be24997bf0f1a9a6a629"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "2"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "sse-ending",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "ac145b47a03a7e6591b6dd4f5320da8e10f0e8ae727446b9b62d7f14ee27e570"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "3"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "sse-crossing",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "addb8ab82079473e1739cf6583f9979a508d033fe213e985c9d95b414ef7ccd2"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "4"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "memory",
+          "outcome": {
+            "genuine_trace_entries": 3,
+            "lanes": 3,
+            "nx": [
+              2,
+              5,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              4,
+              4
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "cb7280d431104d348c5d4f0afb46b940028efad50534ff5fbab05dca8fbcbe1e"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "5"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "loop",
+          "outcome": {
+            "genuine_trace_entries": 6,
+            "lanes": 3,
+            "nx": [
+              2,
+              8,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              7,
+              7
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "2d97ab5ebbf8a95eb94f470b82e65b13cc167d57e77d5650b1c4bc33fc1df49e"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "6"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "indirect",
+          "outcome": {
+            "genuine_trace_entries": 1,
+            "lanes": 3,
+            "nx": [
+              2,
+              3,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              2,
+              2
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "2ab5b9a5b45b4f6f901653dadd099d526d1756db357ce19a0532f66eabf456d6"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "7"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "boundary-call-ret",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              2
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "062764f1987dbf20cd279ef5268d7c4ea4b18bb779ee2c60229efa971450e296"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "8"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "selected-first",
+          "outcome": {
+            "genuine_trace_entries": 1,
+            "lanes": 3,
+            "nx": [
+              2,
+              4,
+              3
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 1,
+            "trace": [
+              0,
+              2,
+              2
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "a9a4d510f6264d13bf93fc0708a8d672ac9a60ea0b170322570913947b23aa27"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "9"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "embedded-selected",
+          "outcome": {
+            "genuine_trace_entries": 1,
+            "lanes": 3,
+            "nx": [
+              2,
+              5,
+              4
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 1,
+            "trace": [
+              0,
+              3,
+              3
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "08bea9555ace82de145f1cbfa941173f842100717ef5a5e881aca9edbd06c106"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "10"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "old-mov-fallback",
+          "outcome": {
+            "genuine_trace_entries": 1,
+            "lanes": 3,
+            "nx": [
+              2,
+              5,
+              4
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              4,
+              4
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "85e2d7e6caaae19ecf03c16ff524092271cfbc1cc253e70dce3819381be3133a"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CASE": "11"
+          },
+          "exit": 0,
+          "expected_operation": "completed",
+          "name": "xgetbv-fallback",
+          "outcome": {
+            "genuine_trace_entries": 2,
+            "lanes": 3,
+            "nx": [
+              2,
+              5,
+              3
+            ],
+            "old_startup_pairs": 1,
+            "operation": "completed",
+            "programs": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15,
+            "selected_callbacks": 0,
+            "trace": [
+              0,
+              4,
+              4
+            ]
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "85f76f4aa8aba9984b9765092af75ae6358090df741a961cb0bfe63c08f88814"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CONTROL": "1"
+          },
+          "exit": 125,
+          "expected_operation": "failed",
+          "name": "operand-fault",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 1,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 7,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "bd340d83e9c6674d78bff8e5ebf76e73ead8152140e70dad853f77211ef0b329"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CONTROL": "2"
+          },
+          "exit": 125,
+          "expected_operation": "failed",
+          "name": "unowned-continuation",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 1,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 101,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "42f6fc2779158e0143f9e3b07e2d7bdf8c17da0558a0f12820a479c15c00bc10"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CONTROL": "3"
+          },
+          "exit": 125,
+          "expected_operation": "failed",
+          "name": "source-cow-change",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 6,
+            "real_effects": 1,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "c959674de44c6522fe4e0c5f5b99ae3023fc098fc99f8a99a7c4b7e49a4af1f7"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CONTROL": "4"
+          },
+          "exit": 125,
+          "expected_operation": "failed",
+          "name": "writable-alias",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 6,
+            "real_effects": 1,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "0f6c2d7fcb58629180979ae5242dfcbd4ec5ac9a89725ee93907f0a617ca66f6"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CONTROL": "5"
+          },
+          "exit": 125,
+          "expected_operation": "failed",
+          "name": "generation-reuse",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 903,
+            "real_effects": 1,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "89210cc2377669c5d704e7a2bbc547599d2d9d4e8b8461c6f725b424a8d61d81"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CONTROL": "6"
+          },
+          "exit": 125,
+          "expected_operation": "failed",
+          "name": "open-error",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 1,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 10,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "4916468b765cc4a0d1a47fd9b36758ac954490d81516bf75c37df0df6212389b"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CONTROL": "7"
+          },
+          "exit": 125,
+          "expected_operation": "failed",
+          "name": "sync-error",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 1,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 11,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "7767ca69a2de06acfac867066c76643e9c665cafa0ff6007671d28c76cecd936"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CONTROL": "8"
+          },
+          "exit": 125,
+          "expected_operation": "failed",
+          "name": "revoke-error",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 1,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 12,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "6fee1a8797b80771077a47009c8e3d1c34d98fdacc8e68246be65a7b181802e2"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CONTROL": "9"
+          },
+          "exit": 125,
+          "expected_operation": "failed",
+          "name": "nested-tgkill",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 7,
+            "real_effects": 0,
+            "real_signals": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "7e9686880b191561da348628b83ee158e509751f97fe512fb774a7881980b74c"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CONTROL": "10"
+          },
+          "exit": 125,
+          "expected_operation": "failed",
+          "name": "wrong-trace-int3",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 7,
+            "real_effects": 0,
+            "real_signals": 1,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "a4116541d053800298e9769baf5ef20440e31e6dbb561518e7d83080ffc8b632"
+          },
+          "status": "accepted_observation"
+        },
+        {
+          "environment_delta": {
+            "LI2_CHAIN_CONTROL": "11"
+          },
+          "exit": 125,
+          "expected_operation": "failed",
+          "name": "consumed-proof-replay",
+          "outcome": {
+            "completed": 0,
+            "expected_failure_verified": true,
+            "native_failed_observations": 0,
+            "nonissued_negative_returns": 0,
+            "old_startup_pairs": 1,
+            "operation": "failed",
+            "owner_error": 906,
+            "real_effects": 0,
+            "real_signals": 0,
+            "refusal_bytes": 47,
+            "route_controls": 15
+          },
+          "record": {
+            "bytes": 8029376,
+            "sha256": "17d5ee51a1b8c8c08bca2a590c35758a5e813d8ce6305e6a46d0d312d4427787"
+          },
+          "status": "accepted_observation"
+        }
+      ],
+      "cases_sha256": "6ab58d44dd9a17e40a547e2d4ef7a787791235ea43b0358424b43dc84f397b15",
+      "name": "chain",
+      "processes": [
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "arithmetic-ending",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "arithmetic-crossing",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "sse-ending",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "sse-crossing",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "memory",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "loop",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "indirect",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "boundary-call-ret",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "selected-first",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "embedded-selected",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "old-mov-fallback",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "xgetbv-fallback",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "operand-fault",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "unowned-continuation",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "source-cow-change",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "writable-alias",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "generation-reuse",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "open-error",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "sync-error",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "revoke-error",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "nested-tgkill",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "wrong-trace-int3",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "consumed-proof-replay",
+          "reaped": true,
+          "timed_out": false
+        }
+      ],
+      "required_processes": 23,
+      "status": "passed",
+      "totals": {
+        "completed_lanes": 36,
+        "completed_programs": 12,
+        "native_failed_observations": 2,
+        "old_refusal_checks": 1081,
+        "old_startup_pairs": 23,
+        "route_checks": 345,
+        "verified_failed_operations": 11
+      }
+    },
+    {
+      "attempted_processes": 4,
+      "build_sha256": "e92d5ae53715161d85b880d47a2494f0f3625767b5181eee0efb2e5d22a87ec3",
+      "cases": [
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 1,
+            "completed_capacity": 0,
+            "completed_records": 6,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 0,
+            "header_bytes": 216,
+            "hit_runs": 3,
+            "magic": 3552870968096606540,
+            "native_references": 6,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 6,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 3,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "register-run-0",
+          "record": {
+            "bytes": 6564888,
+            "sha256": "1015e9885d4cd051cd0261427b3074a56957f363ecf2676569b1f2b607c84196"
+          },
+          "sections": {
+            "capacity_full_hashes_checked": 0,
+            "capacity_rows": 0,
+            "full_records": 6
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 1,
+            "completed_capacity": 0,
+            "completed_records": 6,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 1,
+            "header_bytes": 216,
+            "hit_runs": 3,
+            "magic": 3552870968096606540,
+            "native_references": 6,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 6,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 3,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "register-run-1",
+          "record": {
+            "bytes": 6564888,
+            "sha256": "1d54d3b869f4d046ebc632ae7aabd6cf8527d9615cb2af36ad02826603c3bfcc"
+          },
+          "sections": {
+            "capacity_full_hashes_checked": 0,
+            "capacity_rows": 0,
+            "full_records": 6
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 1,
+            "completed_capacity": 0,
+            "completed_records": 6,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 2,
+            "header_bytes": 216,
+            "hit_runs": 3,
+            "magic": 3552870968096606540,
+            "native_references": 6,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 6,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 3,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "register-run-2",
+          "record": {
+            "bytes": 6564888,
+            "sha256": "24f93f5d8445b7d68e620f4c837dc4a9168d984ced5e576315fca7660c63553b"
+          },
+          "sections": {
+            "capacity_full_hashes_checked": 0,
+            "capacity_rows": 0,
+            "full_records": 6
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 0,
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 1,
+            "completed_capacity": 64,
+            "completed_records": 66,
+            "fallback_runs": 1,
+            "fallback_trace_events": 2,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 3,
+            "header_bytes": 216,
+            "hit_runs": 1,
+            "magic": 3552870968096606540,
+            "native_references": 65,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 65,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 65,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "register-run-3",
+          "record": {
+            "bytes": 6564888,
+            "sha256": "4f3ff9614e3a06c1abc25241375ad06cb6e41a333623b98bd64e5f0b5b4b950d"
+          },
+          "sections": {
+            "capacity_full_hashes_checked": 3,
+            "capacity_rows": 64,
+            "capacity_rows_sha256": "03d7d89496a04a3dd8c3d517f9e8835a50bceed767aa4ed8fd8f0c9252155b73",
+            "full_records": 5,
+            "intermediate_full_records_retained": false
+          }
+        }
+      ],
+      "cases_sha256": "ebb799811dac3c6c8255d13eb9442194bef1537920084fe65c838675d3e8342c",
+      "name": "register",
+      "processes": [
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "register-run-0",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "register-run-1",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "register-run-2",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 0,
+          "expected_exit": 0,
+          "name": "register-run-3",
+          "reaped": true,
+          "timed_out": false
+        }
+      ],
+      "required_processes": 4,
+      "status": "passed",
+      "totals": {
+        "capacity_fallbacks": 1,
+        "capacity_hit_after_full": 1,
+        "capacity_publications": 64,
+        "capacity_record_hashes_checked": 3,
+        "capacity_rows": 64,
+        "executed_refusal_checks": 188,
+        "fallback_trace_events": 2,
+        "full_capacity_records": 5,
+        "full_semantic_records": 18,
+        "generated_trace_events": 0,
+        "native_references": 83,
+        "refusal_encodings": 47,
+        "semantic_hits": 9,
+        "semantic_misses": 9,
+        "semantic_pairs": 18,
+        "startup_pairs": 4
+      }
+    },
+    {
+      "attempted_processes": 14,
+      "build_sha256": "017a79785c67d2001b8c09fda2af726657537db61c15fbbc7a38d114f6964c80",
+      "cases": [
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 751,
+            "expected_failure_verified": 1,
+            "injections": 0,
+            "magic": 3552304727946578252,
+            "mode": 0,
+            "operation_result": 751,
+            "primary_error": 751,
+            "publication_returned": 1,
+            "publication_started": 1,
+            "raw_calls": 9,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "corrupt-hit",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "020eaecbd2560fb2d810b48178873305530d15f227bc5dd20a13ca1093ced624"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 750,
+            "expected_failure_verified": 1,
+            "injections": 0,
+            "magic": 3552304727946578252,
+            "mode": 1,
+            "operation_result": 750,
+            "primary_error": 750,
+            "publication_returned": 1,
+            "publication_started": 1,
+            "raw_calls": 9,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "non-rx-hit",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "bfe68c5f05639acafbfba4a5e121f1813f2865fe3ed4cc455bf787798b9fb32d"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 746,
+            "expected_failure_verified": 1,
+            "injections": 0,
+            "magic": 3552304727946578252,
+            "mode": 2,
+            "operation_result": 746,
+            "primary_error": 746,
+            "publication_returned": 1,
+            "publication_started": 1,
+            "raw_calls": 5,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "wrong-plan",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "0e1e0f31059b4a9bbcf4d67c09036e3b0e62f62ceac8730318f7d853af630f39"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 745,
+            "expected_failure_verified": 1,
+            "injections": 0,
+            "magic": 3552304727946578252,
+            "mode": 3,
+            "operation_result": 745,
+            "primary_error": 745,
+            "publication_returned": 1,
+            "publication_started": 1,
+            "raw_calls": 5,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "released-borrow",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "4816c639b1676661b6278fa0fb09412af4040fdd3d1ffd7a4cfc03427e910ad3"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 706,
+            "expected_failure_verified": 1,
+            "injections": 0,
+            "magic": 3552304727946578252,
+            "mode": 4,
+            "operation_result": 706,
+            "primary_error": 706,
+            "publication_returned": 1,
+            "publication_started": 1,
+            "raw_calls": 9,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "wrong-publication",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "3341a1ab3ef65aa54f22c893c4394715ac1c54432db74f26e32ae39258f05e41"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 745,
+            "expected_failure_verified": 1,
+            "injections": 0,
+            "magic": 3552304727946578252,
+            "mode": 5,
+            "operation_result": 745,
+            "primary_error": 745,
+            "publication_returned": 1,
+            "publication_started": 1,
+            "raw_calls": 5,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "source-mutation",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "8900ca214c5d8368c0f78f9317a68642fdd4dc71b1bb7eafca5867ff1631d5a2"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 754,
+            "expected_failure_verified": 1,
+            "injections": 0,
+            "magic": 3552304727946578252,
+            "mode": 6,
+            "operation_result": 0,
+            "primary_error": 754,
+            "publication_returned": 1,
+            "publication_started": 1,
+            "raw_calls": 9,
+            "secondary_detail": 3,
+            "secondary_error": 754,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "premature-reset",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "3ba223f6ecfa609cdb1ba09c4c5484deff71be975bd11b63358cc88f3a52c763"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 706,
+            "expected_failure_verified": 1,
+            "injections": 0,
+            "magic": 3552304727946578252,
+            "mode": 7,
+            "operation_result": 706,
+            "primary_error": 706,
+            "publication_returned": 1,
+            "publication_started": 1,
+            "raw_calls": 9,
+            "secondary_detail": 3,
+            "secondary_error": 754,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "failed-reset",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "64bf3c680dedb56e8e465cfe76b6e5241db68eb8b9f2803f86e6b397c1c01f46"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 155,
+            "expected_failure_verified": 1,
+            "injections": 0,
+            "magic": 3552304727946578252,
+            "mode": 8,
+            "operation_result": 0,
+            "primary_error": 155,
+            "publication_returned": 1,
+            "publication_started": 1,
+            "raw_calls": 7,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "protected-mprotect",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "989f70d3a4408ca47b611051012bd70922579b9c722134d3c89ee20480e9b3ce"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 753,
+            "expected_failure_verified": 1,
+            "injections": 0,
+            "magic": 3552304727946578252,
+            "mode": 9,
+            "operation_result": 753,
+            "primary_error": 753,
+            "publication_returned": 0,
+            "publication_started": 0,
+            "raw_calls": 6,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 0,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 0,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "brk-hole",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "238782dfa21409e9b68cf45c6b999f06eb5bdbd112de6df169d50589eb61f47f"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 748,
+            "expected_failure_verified": 1,
+            "injections": 1,
+            "magic": 3552304727946578252,
+            "mode": 10,
+            "operation_result": 748,
+            "primary_error": 748,
+            "publication_returned": 1,
+            "publication_started": 1,
+            "raw_calls": 8,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "raw-rx-error",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "3ac0d014e290df7bbd163561a83c642df26685342e9e202e55bdeeadfeecd871"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 749,
+            "expected_failure_verified": 1,
+            "injections": 1,
+            "magic": 3552304727946578252,
+            "mode": 11,
+            "operation_result": 749,
+            "primary_error": 749,
+            "publication_returned": 1,
+            "publication_started": 1,
+            "raw_calls": 9,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "raw-sync-error",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "393277b904e185cd1fdc6e2e6cb8a055c291f14c0b7ec3ee0821003e003be1ab"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 752,
+            "expected_failure_verified": 1,
+            "injections": 0,
+            "magic": 3552304727946578252,
+            "mode": 12,
+            "operation_result": 752,
+            "primary_error": 752,
+            "publication_returned": 0,
+            "publication_started": 1,
+            "raw_calls": 8,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 1,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 1,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 1,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "nested-writing",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "7e98047571e164234f42e57bac54009d77240a98bc2e9ae816ac7de83ae01cc0"
+          }
+        },
+        {
+          "accepted": true,
+          "actual_exit": 125,
+          "attempted_operation_status": "failed",
+          "control_expected_failure_verified": true,
+          "control_prefix": {
+            "bytes": 369152,
+            "expected_error": 744,
+            "expected_failure_verified": 1,
+            "injections": 1,
+            "magic": 3552304727946578252,
+            "mode": 13,
+            "operation_result": 0,
+            "primary_error": 744,
+            "publication_returned": 0,
+            "publication_started": 0,
+            "raw_calls": 3,
+            "secondary_detail": 0,
+            "secondary_error": 0,
+            "signals": 0,
+            "version": 1
+          },
+          "header": {
+            "capacity_row_bytes": 192,
+            "capacity_rows": 64,
+            "complete": 0,
+            "completed_capacity": 0,
+            "completed_records": 0,
+            "fallback_runs": 0,
+            "fallback_trace_events": 0,
+            "fixture_failure": 0,
+            "generated_trace_events": 0,
+            "group": 4,
+            "header_bytes": 216,
+            "hit_runs": 0,
+            "magic": 3552870968096606540,
+            "native_references": 0,
+            "owner_detail_abs": 0,
+            "owner_detail_negative": 0,
+            "owner_failure": 0,
+            "published_runs": 0,
+            "record_bytes": 882816,
+            "records_kept": 6,
+            "refusals": 47,
+            "source_restorations": 0,
+            "startup_bytes": 721088,
+            "tail_bytes": 534400,
+            "version": 1,
+            "xcr0": 743,
+            "xsave_bytes": 2440
+          },
+          "name": "raw-allocation-error",
+          "operation_completed": false,
+          "record": {
+            "bytes": 6934040,
+            "sha256": "cdedc22eca668989ef89359f2942a0ce1ef663feb44042d9a9dc479b49411453"
+          }
+        }
+      ],
+      "cases_sha256": "90d65bfaba7fc98c2763876e75a5cc635dbed51a5130fba9cb9898cf8bf33261",
+      "name": "controls",
+      "processes": [
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "corrupt-hit",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "non-rx-hit",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "wrong-plan",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "released-borrow",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "wrong-publication",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "source-mutation",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "premature-reset",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "failed-reset",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "protected-mprotect",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "brk-hole",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "raw-rx-error",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "raw-sync-error",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "nested-writing",
+          "reaped": true,
+          "timed_out": false
+        },
+        {
+          "exit": 125,
+          "expected_exit": 125,
+          "name": "raw-allocation-error",
+          "reaped": true,
+          "timed_out": false
+        }
+      ],
+      "required_processes": 14,
+      "status": "passed",
+      "totals": {
+        "actual_injected_signals": 1,
+        "completed_operations": 0,
+        "executed_refusal_checks": 658,
+        "explicit_raw_failure_injections": 3,
+        "failed_operations": 14,
+        "generated_executions": 0,
+        "native_reference_captures": 12,
+        "refusal_encodings": 47,
+        "startup_pairs": 14,
+        "verified_failure_controls": 14
+      }
+    },
+    {
+      "attempted_processes": 0,
+      "build_sha256": "b4961aad20d42fdb9890140e5492d696a9db8006c85541915e38d0a67032b352",
+      "cases": [],
+      "cases_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "name": "repeat",
+      "processes": [],
+      "required_processes": 2,
+      "status": "failed",
+      "totals": {
+        "old_refusal_encodings": 0,
+        "positive_pairs": 0,
+        "positive_selftest_pairs": 0,
+        "repeat_traces": 0,
+        "stosq_refusal_encodings": 0,
+        "verified_failed_operations": 0
+      }
+    }
+  ],
+  "command_count": 151,
+  "commands_sha256": "82c152279cc398be69c5664a83fbfc27ac638abc8f39c2f0ed901046a9781400",
+  "cpu": 6,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "equal_owner_bodies_sha256": "af59cdf9740a3c3238b90520fcc2628f57292038eb5371b2aca6fb762473fdf0",
+  "equal_owner_objects": 8,
+  "equal_prerequisite": {
+    "application_performance_credit": false,
+    "commands": 50,
+    "fast_object": {
+      "bytes": 330968,
+      "mode": 420,
+      "sha256": "b8d7f40f2d70f10930e4bdc02af287dc34db4fda4e2b70ce772c649a6444a90e"
+    },
+    "functional_processes": 2,
+    "inspection_sha256": "afd0521152e57afdf549b6670ade8faa74f9aed62962c1dfbb4ed97d9b48a667",
+    "processes": 6,
+    "raw_intervals": [
+      7049593,
+      7035202,
+      7036284,
+      7055813,
+      7040900,
+      7035843,
+      7039248,
+      7047450,
+      1178990,
+      1180292,
+      1177919,
+      1179090,
+      1180022,
+      1180413,
+      1177748,
+      1185009,
+      1170948,
+      1169706,
+      1173922,
+      1170868,
+      1166652,
+      1171569,
+      1168645,
+      1168815,
+      6937215,
+      6950114,
+      6959048,
+      6943614,
+      6940951,
+      6940140,
+      6939038,
+      6940189
+    ],
+    "receipt": {
+      "bytes": 225055,
+      "sha256": "5a199db787f1c313bdb1b825716b74261637e8434687926acb2dda1e31335928"
+    },
+    "revision": "00a3d0bbb9d334c10a0ac3dbf34935be46a7e7ac",
+    "status": "passed"
+  },
+  "expected_revision": "00a3d0bbb9d334c10a0ac3dbf34935be46a7e7ac",
+  "extraction_sha256": "b9954cae5f38b3d7ea038ce3636eee22df22d9f62a832ada3460d66781b4a8ba",
+  "extraction_status": "passed",
+  "failure_type": "ValueError",
+  "final_error_count": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 6,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "inputs_sha256": "cc50fb5159eea271bf909339ad4da0d263aeb813f8655b4225c2a0f0ee1edbbc",
+  "interpretation": "Exact old47 full-state cases with LI2_FAST_EQUAL in actual owner TUs; existing fast bridge memset baseline retained. Primitive intervals are prerequisite measurements, not owner or application measurements. Required failed operations stay failed. No runtime enablement, real-program completion or full-B2/B3 claim.",
+  "primitive_reference": {
+    "fast_function": {
+      "bytes": 15,
+      "code_hex": "4989f84889d189f0fcf3aa4c89c0c3",
+      "sha256": "9b0962fabb10968cfa175213396b8a63e6e8b81cce83547aea6e90223d21ec9f"
+    },
+    "inspection_sha256": "49d8e897bf6b02400e4898097017c0fff52d1484cff169933bdc34fe6a7f68cd",
+    "meaning": "Actual completed scalar/fast primitive qualification; this binding supplies only the exact required emitted function. All five full-state cohorts below still require fresh native execution.",
+    "private_receipt": {
+      "bytes": 384218,
+      "sha256": "92cd76504021ce1f23f9ebe7aea5ee8060cc68ba5affa2bb76dbaffa68efbe98"
+    },
+    "public_receipt": {
+      "bytes": 11600,
+      "sha256": "5f5d5b5e9dea1beab60413866c985fef2233b94a693983bd0cadea237b0bf352"
+    },
+    "revision": "af08160895fb9af7ab06d6245c75d06027e08329",
+    "slot_bytes": 200896
+  },
+  "private_receipt": {
+    "bytes": 2962041,
+    "sha256": "3779e4b76269886224446843a202cdb2942aeac6e3f881d4ee68901c1c6fc6d6"
+  },
+  "profile": "page-selected-fast-equal-owner-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_fast_equal_owner.py",
+    "--expect-revision",
+    "00a3d0bbb9d334c10a0ac3dbf34935be46a7e7ac",
+    "--primitive-receipt",
+    "${PASSED_SAME_REVISION_PRIMITIVE_RECEIPT}"
+  ],
+  "required_native_processes": 47,
+  "schema": 1,
+  "scope": "Actual LI2_FAST_EQUAL owner in unchanged generic, TRACE, register positive/capacity/control and REP finite oracles, retaining the qualified fast-memset fixture baseline. All47 processes required; no default/runtime recipe change or owner/application performance credit.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "00a3d0bbb9d334c10a0ac3dbf34935be46a7e7ac",
+    "source_manifest_sha256": "e06bff884f2e73357ce7c914b6e0c73d282343910e3d603093891ec763dbbc43",
+    "tracked_clean": true,
+    "tree": "8bad541457db1aef6c177bc724230441d5acb2ea"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T082555.961304Z",
+  "status": "failed",
+  "tool_hashes": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "cp": {
+      "bytes": 144400,
+      "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+    },
+    "gdb": {
+      "bytes": 17179552,
+      "sha256": "cf8ae9d5192667cf681eabedf50ef39ecd11fac784c15cea6e3961880d3a16ed"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "objcopy": {
+      "bytes": 189816,
+      "sha256": "0459bbce1337dfba2b8c7510ab4a47f51baa9a00c4d3c46be6fddfdbb01d9c4a"
+    },
+    "objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustup": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "gdb": [
+      17,
+      2,
+      0
+    ],
+    "objcopy": [
+      2,
+      35,
+      2
+    ],
+    "objdump": [
+      2,
+      35,
+      2
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  }
+}

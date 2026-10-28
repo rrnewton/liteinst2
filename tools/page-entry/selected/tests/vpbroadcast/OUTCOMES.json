@@ -26,13 +26,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 77,
+        "refusals": 73,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 4,
+      "promoted_footprint_queries": 4,
       "stderr": "",
-      "stdout": "LI2_VPB_TF_PASS group=0 pairs=19 broadcasts=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=30 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VPB_TF_PASS group=0 pairs=19 broadcasts=18 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=26 promoted_encoding_checks=4 promoted_footprint_queries=4 full_state=19 full_memory=19 live_endpoints=19\n"
     },
     {
       "argv": [
@@ -53,13 +55,15 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 77,
+        "refusals": 73,
         "version": 1
       },
       "name": "group1",
       "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 4,
+      "promoted_footprint_queries": 4,
       "stderr": "",
-      "stdout": "LI2_VPB_TF_PASS group=1 pairs=19 broadcasts=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=30 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VPB_TF_PASS group=1 pairs=19 broadcasts=18 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=26 promoted_encoding_checks=4 promoted_footprint_queries=4 full_state=19 full_memory=19 live_endpoints=19\n"
     }
   ],
   "literal_effects": "ZMM16 becomes64 copies of actual RSI low byte; independent nonzero all32ZMM/all8opmask inputs; all other initialized kernelFP/liveXSAVE bytes and all prior state/memory comparisons exact. Standard layout CPUID tuple/range/nonoverlap authenticated. No header or XSTATE_BV normalization.",
@@ -67,10 +71,12 @@
     19,
     19
   ],
-  "negative_endpoint": "No data memory operand. All47 old plus30 new supplied encoding refusals remain classification-only; original executed-fault suites separately required.",
+  "negative_endpoint": "All47 common plus26 retained supplied encoding refusals remain. Four unchanged original byte rows are explicitly promoted with exact Code3210/FALLTHROUGH/SIMD and typed NONE predicates; new all512 register oracle is separately mandatory. No executed data-memory fault credit.",
   "new_broadcast_pairs_total": 36,
-  "new_refusal_count": 30,
+  "new_refusal_count": 26,
   "old_refusal_count": 47,
+  "promoted_encoding_checks_per_group": 4,
+  "promoted_footprint_queries_per_group": 4,
   "prospective_only": true,
   "record_extent": "header_bytes + 22 * sample_bytes + 40 + 5000; original21 sample slots retained, final2 unused and negative sample zero; exact appended actual CPUID/BV trailer.",
   "record_header_fields": [
@@ -95,5 +101,5 @@
   "record_header_format": "<17Q",
   "record_limit_bytes": 16777216,
   "schema_version": 1,
-  "scope": "Exact unmasked EVEX512 62e27d487ac6/Code3210 only; no general EVEX, hardware masking, loader completion or performance claim."
+  "scope": "Original unmasked EVEX512 ZMM16,ESI six-seed/all-six-fetch-position oracle remains unchanged; four formerly unsupported register encodings now require explicit typed acceptance. Canonical512 register family is qualified separately; no masks/memory/narrow forms or performance claim."
 }

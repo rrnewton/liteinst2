@@ -181,6 +181,14 @@ fn canonical_vptestmb(instruction: &Instruction, bytes: &[u8]) -> bool {
                 && (*p2 & 0xf0) == 0x40 && (*m & 0xc0) == 0xc0)
 }
 
+// Canonical unmasked EVEX.512.W0 VPBROADCASTB ZMM0..31,r32 (all16 GPRs).
+// Reserved X/vvvv/V', other widths, writemasks, zeroing, memory and prefixes stay closed.
+fn canonical_vpbroadcastb(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::EVEX_Vpbroadcastb_zmm_k1z_r32
+        && matches!(bytes, [0x62, p0, 0x7d, 0x48, 0x7a, m]
+            if (*p0 & 0x4f) == 0x42 && (*m & 0xc0) == 0xc0)
+}
+
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
@@ -200,9 +208,11 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     } else if matches!(instruction.code(), Code::Movq_xmm_rm64 | Code::Movq_rm64_xmm) {
         if !canonical_movq_integer(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vpbroadcastb_zmm_k1z_r32 {
-        // Only the observed unmasked EVEX.512 register form, ZMM16 <- RSI[7:0].
-        // This exact gate grants no other EVEX, masking, width or register form.
-        if source[..instruction.len()] != [0x62, 0xe2, 0x7d, 0x48, 0x7a, 0xc6] { return Ok(out); }
+        if !canonical_vpbroadcastb(&instruction, &source[..instruction.len()]) { return Ok(out); }
+    } else if instruction.code() == Code::VEX_Vmovdqu_xmm_xmmm128 {
+        // Exact VEX.128 load XMM0 <- 16 bytes at [RSI]; upper ZMM0 bits clear.
+        // No added address, register, prefix, store or wider VEX form.
+        if source[..instruction.len()] != [0xc5, 0xfa, 0x6f, 0x06] { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512 {
         // Exact observed unmasked EVEX.512 load, ZMM17 <- 64 bytes at [RDI].
         // No other EVEX, mask, width, register, address or added prefix is granted.
@@ -218,8 +228,10 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
             return Ok(out);
         }
     } else if instruction.code() == Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512 {
-        // Only K1 <- byte equality(ZMM17,ZMM16), unmasked EVEX.512.
-        if source[..instruction.len()] != [0x62, 0xb1, 0x75, 0x40, 0x74, 0xc8] { return Ok(out); }
+        // Exact unmasked EVEX.512 forms: K1 <- equality(ZMM17,ZMM16),
+        // or K0 <- equality(ZMM17,64 bytes at [RDI]). No added mask/address/prefix.
+        if source[..instruction.len()] != [0x62, 0xb1, 0x75, 0x40, 0x74, 0xc8]
+            && source[..instruction.len()] != [0x62, 0xf1, 0x75, 0x40, 0x74, 0x07] { return Ok(out); }
     } else if instruction.code() == Code::VEX_Blsmsk_r64_rm64 {
         // Only RSI <- (RSI-1)^RSI. CPU retains all defined/undefined flag effects.
         if source[..instruction.len()] != [0xc4, 0xe2, 0xc8, 0xf3, 0xd6] { return Ok(out); }
@@ -513,6 +525,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // Exact unmasked EVEX512 broadcast, checked before this Code arm.
         | Code::EVEX_Vpbroadcastb_zmm_k1z_r32
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
+        | Code::VEX_Vmovdqu_xmm_xmmm128
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512
