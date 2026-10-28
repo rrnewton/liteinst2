@@ -1,0 +1,256 @@
+{
+  "artifact": {
+    "fresh": true,
+    "path": "target/release/deps/precontext_native-b1ea73b15ab28e66",
+    "sha256": "f0beefc94431c4c4c48e3a3933b3504683270d9db65305d13208d1479979b4e2"
+  },
+  "commands": [
+    {
+      "argv": [
+        "$PYTHON",
+        "-B",
+        "evaluation/precontext/test_verify.py"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "b95b5805bef96b568b1b2424b637003cd6f306e6312d682e4f2e4e23f635b26a",
+        "reaped_descendants": 0,
+        "seconds": 0.06512231007218361,
+        "start_utc": "2026-10-28T03:36:43.505280+00:00",
+        "termination": null
+      },
+      "name": "recipe-controls",
+      "wall_seconds": 30
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "precontext::"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "df6ddd8cb88ad467942d5b4444b55114c9ca0011edfcdf307d83ad6895b9f0a6",
+        "reaped_descendants": 0,
+        "seconds": 0.03705364093184471,
+        "start_utc": "2026-10-28T03:36:43.587829+00:00",
+        "termination": null
+      },
+      "libtest": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 6
+      },
+      "name": "core-controls",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "liteinst2",
+        "--doc",
+        "precontext"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "db418e330cd1931f48e470f6b8416c5048cd8076cac9470f05f2f5c38093c7f9",
+        "reaped_descendants": 0,
+        "seconds": 0.3093182179145515,
+        "start_utc": "2026-10-28T03:36:43.642391+00:00",
+        "termination": null
+      },
+      "libtest": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 2
+      },
+      "name": "compile-fail-contracts",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "liteinst2",
+        "--test",
+        "precontext_planning"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "ed0527785c4515d87be4e9b55886d5ebda057fe30b1387a142bca80852b147ea",
+        "reaped_descendants": 0,
+        "seconds": 0.026412335224449635,
+        "start_utc": "2026-10-28T03:36:43.965611+00:00",
+        "termination": null
+      },
+      "libtest": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 8
+      },
+      "name": "planner-controls",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "rapid-profiler",
+        "--test",
+        "frontend-native-calibrations"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "f56e23cd54e028bb0109f0626f6a00d7898097c0848398161aa1d97dc50ab22f",
+        "reaped_descendants": 0,
+        "seconds": 0.04286295501515269,
+        "start_utc": "2026-10-28T03:36:44.006442+00:00",
+        "termination": null
+      },
+      "libtest": {
+        "failed": 0,
+        "ignored": 0,
+        "passed": 31
+      },
+      "name": "oracle-calibrations",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--release",
+        "-p",
+        "liteinst2",
+        "--test",
+        "precontext_native",
+        "--no-run",
+        "--message-format=json"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "c6c28662f6a0b9d46280832f1a558a8ac4dde5b3dd20b20cface5945265f0f0c",
+        "reaped_descendants": 0,
+        "seconds": 0.022715939907357097,
+        "start_utc": "2026-10-28T03:36:44.063642+00:00",
+        "termination": null
+      },
+      "name": "build",
+      "wall_seconds": 180
+    },
+    {
+      "argv": [
+        "$PYTHON",
+        "-B",
+        "tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "$RAW/native-request.json",
+        "--receipt",
+        "$RAW/native-closed.json"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 0.49511995003558695,
+        "start_utc": "2026-10-28T03:36:44.105192+00:00",
+        "termination": null
+      },
+      "name": "native",
+      "wall_seconds": 55
+    }
+  ],
+  "compiler_jobs": 4,
+  "hardware": {
+    "affinity": [
+      0,
+      1,
+      2,
+      3
+    ],
+    "label": "AMD EPYC Zen 5 dev host",
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    }
+  },
+  "helpers": {
+    "bounded": "c0d8d24d9538e2ffd9dee09f8b7efc8a68eb2bfd41b0744d47167d7932d8df44",
+    "process": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f"
+  },
+  "kernel": "7.1.3",
+  "limits": {
+    "cpu_seconds": 20,
+    "file_bytes": 1048576,
+    "wall_seconds": 30
+  },
+  "native": "PASS",
+  "native_closed": {
+    "aborted": false,
+    "absence_proof": "ECHILD",
+    "cleanup_error": false,
+    "cleanup_events": 0,
+    "elapsed_seconds": 0.4530295729637146,
+    "exit": 0,
+    "inputs_unchanged": true,
+    "metadata_sha256": "56c3cdb895201f50049c69119204dce473d87a5f571fdaaecd9afc9ff4f77ff6",
+    "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "stdout_sha256": "98d1cae471bbdd328dc3503878cc5155785c361b98d6feafa4af75203505bef0",
+    "unexpected_descendants": 0,
+    "wall_timeout": false
+  },
+  "profile": {
+    "debug_assertions": true,
+    "debuginfo": 0,
+    "opt_level": "3",
+    "overflow_checks": true,
+    "test": true
+  },
+  "recipe": [
+    "python3",
+    "-B",
+    "evaluation/precontext/verify.py",
+    "--revision",
+    "21b5cab3477ddf602c8acecf1a538184411b9eba",
+    "--raw",
+    "$REPO/ignored/NEW_RUN",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--cargo-home",
+    "$CARGO_HOME"
+  ],
+  "revision": "21b5cab3477ddf602c8acecf1a538184411b9eba",
+  "runner_sha256": "2abec126937b0f1393f3edd218db585a257219f835d37e54302fdea87f822cb6",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Fixed functional state qualification. Command durations are not performance measurements.",
+  "source_tree": "c11956625f912aa1db1dbe6c7471d995b904fd45",
+  "status": "PASS"
+}
