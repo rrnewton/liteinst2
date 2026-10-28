@@ -4,6 +4,23 @@ mod gate;
 mod history;
 #[cfg(test)]
 pub(crate) use history::metadata_site;
+#[cfg(test)]
+pub(in crate::frontend_native) use tests::native::{
+    EntryPause as BackoffEntryPause, publish as backoff_native_publish,
+};
+
+#[cfg(test)]
+pub(in crate::frontend_native) fn backoff_gate_checkpoint(gate: &OptionalCallGate) -> u64 {
+    gate.idle_checkpoint().expect("actual optional gate idle")
+}
+
+#[cfg(test)]
+impl OptionalController {
+    pub(in crate::frontend_native) fn backoff_install_pause(&self, pause: Arc<BackoffEntryPause>) {
+        self.binding.healthy().unwrap();
+        assert!(self.binding.native_entry_pause.set(pause).is_ok());
+    }
+}
 mod site;
 use super::*;
 pub use drain::OptionalIntervalBatch;

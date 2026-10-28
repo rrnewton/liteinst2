@@ -344,3 +344,5 @@ fn optional_shared_scheduler_refuses_unstarted_duplicate_and_disconnected_worker
         assert_eq!(driver.close_attempted, mode == 2);
     }
 }
+
+mod native;

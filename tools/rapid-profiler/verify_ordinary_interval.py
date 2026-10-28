@@ -210,6 +210,7 @@ def main():
     ap.add_argument('--streamed-epochs', action='store_true', help='also require a finite 160-call streamed epoch trial; requires --drain-completed')
     ap.add_argument('--stream-history', action='store_true', help='also require the finite native absolute-history/old-owner control; requires --streamed-epochs')
     ap.add_argument('--optional-frontend', action='store_true', help='also require real optional Fast/Slow state pairs and finite reuse; requires --stream-history')
+    ap.add_argument('--optional-backoff-control', action='store_true', help='also require the deterministic real optional driver control; requires --optional-frontend')
     a = ap.parse_args(); repo = Path(__file__).resolve().parents[2]; raw = a.raw
     assert Path(__file__).resolve() == repo/'tools/rapid-profiler/verify_ordinary_interval.py'
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
@@ -222,6 +223,7 @@ def main():
     assert not a.streamed_epochs or a.drain_completed
     assert not a.stream_history or a.streamed_epochs
     assert not a.optional_frontend or a.stream_history
+    assert not a.optional_backoff_control or a.optional_frontend
     raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight', exact_work_requested=a.exact_work, concurrent_epochs_requested=a.concurrent_epochs,
         native_setup='Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.',
         scope='uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim', native_state_qualification='PENDING: gate entry through post-POP; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim')
@@ -230,6 +232,11 @@ def main():
     result['streamed_epochs_requested'] = a.streamed_epochs
     result['stream_history_requested'] = a.stream_history
     result['optional_frontend_requested'] = a.optional_frontend
+    result['optional_backoff_control_requested'] = a.optional_backoff_control
+    if a.optional_backoff_control:
+        result['optional_backoff_control'] = dict(status='UNRUN',
+            scope='one deterministic 13-call real driver-operation/queue control; not a timed scheduler trial, new full-state cohort or performance result',
+            source_attested='actual stable post-disable Fast bracket, later sampled rearm and retained B owner across C rearm; whole input, full journals, reports and real worker join')
     if a.optional_frontend:
         result['optional_frontend'] = dict(status='UNRUN', state_modes={}, functional='UNRUN',
             scope='actual optional TLS gate with eight full-state pairs and a separate 96-call functional/accounting case; no joint full-state coverage, timing accuracy, cheap-off or performance claim',
@@ -315,6 +322,26 @@ def main():
                 'tools/rapid-profiler/src/frontend_native/always_on/optional/tests/native.rs',
                 'tools/rapid-profiler/optional-work/check_output.py', 'tools/rapid-profiler/optional-work/test_recipe.py',
                 'tools/rapid-profiler/optional-work/README.md'])
+        if a.optional_backoff_control:
+            names.extend(['tools/rapid-profiler/ordinary-interval/backoff.rs',
+                'tools/rapid-profiler/ordinary-interval/backoff/optional.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/mod.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/driver.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/worker.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/tests.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/driver/tests.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/driver/backpressure_tests.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/worker/tests.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/optional.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/optional/cursor.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/optional/worker.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/optional/tests.rs',
+                'tools/rapid-profiler/src/frontend_native/backoff/optional/tests/native.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/optional/history.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/optional/tests/history.rs',
+                'tools/rapid-profiler/optional-backoff-work/check_output.py',
+                'tools/rapid-profiler/optional-backoff-work/test_recipe.py',
+                'tools/rapid-profiler/optional-backoff-work/README.md'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -592,6 +619,20 @@ def main():
             with (raw/'optional-functional.csv').open('x', newline='') as stream:
                 writer = csv.DictWriter(stream, fieldnames=list(parsed), lineterminator='\n'); writer.writeheader(); writer.writerow(parsed)
             optional.update(status='PASS', state_pairs=8, state_children=16, state_helper_joins=8, functional_helper_joins=1)
+        if a.optional_backoff_control:
+            control = result['optional_backoff_control']; control['status'] = 'FAILED'
+            spec = importlib.util.spec_from_file_location('optional_backoff_check', repo/'tools/rapid-profiler/optional-backoff-work/check_output.py')
+            checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(checker)
+            exact_stable(); assert digest(test_binary) == test_hash
+            flags = ['--exact', checker.TEST, '--ignored', '--nocapture', '--test-threads=1']
+            result['commands'].append(['$RAPID_LIBTEST', *flags])
+            observed = stage('optional-backoff-native', [str(test_binary), *flags], 10, 15, MIB,
+                dict(RAPID_CONCURRENT_CANDIDATE=str(candidate), RAPID_CONCURRENT_EXPECTED=str(trusted)))
+            parsed = checker.native_output((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            exact_stable(); assert digest(test_binary) == test_hash
+            control.update(status='PASS', protocol=parsed, fresh_processes=1)
+            with (raw/'optional-backoff-control.csv').open('x', newline='') as stream:
+                writer = csv.DictWriter(stream, fieldnames=list(parsed), lineterminator='\n'); writer.writeheader(); writer.writerow(parsed)
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:

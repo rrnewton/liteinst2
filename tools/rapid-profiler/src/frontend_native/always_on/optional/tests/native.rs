@@ -23,14 +23,24 @@ const WAIT: Duration = Duration::from_secs(2);
 // The callback only reaches this fixed atomic pause after its real Pair and
 // journal entry are committed and after Session has released model locks.
 // There is no scratch read/write or replaceable callback in this test seam.
-pub(in crate::frontend_native::always_on::optional) struct EntryPause {
+pub(in crate::frontend_native) struct EntryPause {
     ordinal: u64,
     entered: AtomicBool,
     resume: AtomicBool,
     cancelled: AtomicBool,
 }
 impl EntryPause {
-    fn new(ordinal: u64) -> Self {
+    pub(in crate::frontend_native) fn entered(&self) -> bool {
+        self.entered.load(Ordering::Acquire)
+    }
+    pub(in crate::frontend_native) fn release(&self) {
+        self.resume.store(true, Ordering::Release);
+    }
+    pub(in crate::frontend_native) fn cancel(&self) {
+        self.cancelled.store(true, Ordering::Release);
+        self.release();
+    }
+    pub(in crate::frontend_native) fn new(ordinal: u64) -> Self {
         Self {
             ordinal,
             entered: AtomicBool::new(false),
@@ -104,7 +114,7 @@ impl Drop for Helper {
     }
 }
 
-fn publish(prep: OptionalSitePreparation) -> InstalledOptionalSite {
+pub(in crate::frontend_native) fn publish(prep: OptionalSitePreparation) -> InstalledOptionalSite {
     // One exact test in a fresh process: the passive libtest harness has no
     // DSO/gate/owner capability. This test loaded the constructor/dependency-free
     // RTLD_LOCAL fixture; no subject pointer escaped and no helper exists yet.
