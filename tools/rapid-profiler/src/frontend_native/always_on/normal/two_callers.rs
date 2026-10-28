@@ -128,6 +128,9 @@ impl NormalClient {
 }
 
 #[cfg(test)]
+mod native;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::frontend::PayloadOutcome;

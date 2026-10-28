@@ -92,3 +92,40 @@ eligible internal function without requiring its exported name; it does not add
 sectionless ELF, dependencies, constructors, relocations or a broader instruction
 grammar. Native qualification of this new selection path is separate from the
 named-function evidence linked above.
+
+## Ordinary application callers
+
+The separate normal-caller API lets application code call the installed function
+through its original C ABI. Attach the worker once, then acknowledge its returned
+calls at a batch checkpoint. The entry and pre-RET callbacks retain each call's
+original epoch until that worker's next entry or explicit checkpoint confirms
+return. Seeing a pre-RET callback, a ready report, or another worker finish does
+not confirm this worker's return.
+
+`LoadedNormalLeaf`, `NormalSitePreparation` and `PreparedNormalController` carry
+the single-caller contract. The corresponding two-caller types are
+`LoadedTwoCallerNormalLeaf`, `TwoCallerNormalSitePreparation` and
+`PreparedTwoCallerNormalController`. Their contracts are distinct: increasing a
+single-caller controller's thread limit cannot turn it into a two-caller site.
+The two-caller controller requires concurrent activation and exactly two
+lifetime registrations, each with depth one. Both workers must attach with
+`NormalClient::attach_two_callers` and report ready before either calls the
+function. The application supplies this barrier.
+
+Each `NormalThread` stays on its actual worker thread. It owns that thread's
+pending return, journal and sequence counters. Before acknowledging a batch,
+the caller verifies its immutable input and source/generated code under the
+continuous loader contract. A final empty checkpoint and explicit detach release
+metadata only; executable owners remain alive until process exit. Registration
+identities cannot be recycled after detach.
+
+The per-function sampling budget counts retained completions. With two callers,
+both may be admitted before the budget closes; a completed admission can therefore
+be `DroppedAfterBudget`. A consumer must account for those completions and join
+records by generation, invocation and worker identity. Completion rank and the
+order in which the controller receives results need not match invocation order.
+The report does not turn dropped records into unsampled calls.
+
+These profiles retain the bounded read-only leaf, complete-function, ordinary
+CALL/RET, no-reentry and no-unload requirements above. They do not add recursive
+calls, arbitrary worker counts or general shared-library instrumentation.
