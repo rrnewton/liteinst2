@@ -156,10 +156,17 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // Exact observed unmasked register form: K0[i] = (ZMM17.byte[i] == 0).
         // Other destinations, sources, masks, widths and memory forms stay closed.
         if source[..instruction.len()] != [0x62, 0xb2, 0x76, 0x40, 0x26, 0xc1] { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512 {
+        // Only K1 <- byte equality(ZMM17,ZMM16), unmasked EVEX.512.
+        if source[..instruction.len()] != [0x62, 0xb1, 0x75, 0x40, 0x74, 0xc8] { return Ok(out); }
+    } else if instruction.code() == Code::VEX_Blsmsk_r64_rm64 {
+        // Only RSI <- (RSI-1)^RSI. CPU retains all defined/undefined flag effects.
+        if source[..instruction.len()] != [0xc4, 0xe2, 0xc8, 0xf3, 0xd6] { return Ok(out); }
     } else if instruction.code() == Code::VEX_Kmovq_r64_kr {
-        // Exact observed register transfer: RSI[63:0] <- K0[63:0].
-        // No other VEX, direction, width, destination, source or memory form.
-        if source[..instruction.len()] != [0xc4, 0xe1, 0xfb, 0x93, 0xf0] { return Ok(out); }
+        // Two separately qualified transfers only: RSI<-K0 or RAX<-K1.
+        // No other VEX, direction, width, register pairing or memory form.
+        if !matches!(&source[..instruction.len()],
+            [0xc4, 0xe1, 0xfb, 0x93, 0xf0 | 0xc1]) { return Ok(out); }
     } else if instruction.code() == Code::Pmaxud_xmm_xmmm128 {
         if !canonical_pmaxud(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Xgetbv {
@@ -174,7 +181,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         && !prefixes(&instruction, &source[..instruction.len()]) { return Ok(out); }
     // Exact Code enumeration, never a catch-all mnemonic/valid-decode permit.
     let (flow, family) = match instruction.code() {
-        Code::Rdsspq_r64 | Code::Xgetbv | Code::Endbr64 | Code::Nopw | Code::Nopd | Code::Nopq
+        Code::VEX_Blsmsk_r64_rm64 | Code::Rdsspq_r64 | Code::Xgetbv | Code::Endbr64 | Code::Nopw | Code::Nopd | Code::Nopq
         | Code::Nop_rm16 | Code::Nop_rm32 | Code::Nop_rm64
         | Code::Mov_rm8_r8 | Code::Mov_rm16_r16 | Code::Mov_rm32_r32
         | Code::Mov_rm64_r64 | Code::Mov_r8_rm8 | Code::Mov_r16_rm16
@@ -447,6 +454,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::EVEX_Vpbroadcastb_zmm_k1z_r32
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
+        | Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512
         | Code::VEX_Kmovq_r64_kr
         | Code::Pmovmskb_r32_xmm
         // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.
