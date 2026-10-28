@@ -223,6 +223,7 @@ def main():
     ap.add_argument('--call-tree', action='store_true', help='also require four loaded caller/child state pairs and actual A/B/C ownership control; requires --cache-work and --concurrent-epochs')
     ap.add_argument('--tree-population', action='store_true', help='also require three 24-root finite populations at K=1/10/24; requires --call-tree')
     ap.add_argument('--tree-native-baseline', action='store_true', help='also measure65 fresh five-mode comparisons; requires the full functional profile')
+    ap.add_argument('--tree-batch-comparison', action='store_true', help='also qualify batch owners/state/consumer and measure117 nine-mode processes; requires the full functional profile')
     ap.add_argument('--tree-throughput', action='store_true', help='also measure 52 frozen paired SDK-consumer trials; requires --tree-population')
     ap.add_argument('--exact-work', action='store_true', help='also require exact native work truth and all 12 fresh 24-call populations')
     ap.add_argument('--concurrent-epochs', action='store_true', help='also require concurrent-mode state, forced native contention and autonomous timed epochs; requires --exact-work')
@@ -244,6 +245,8 @@ def main():
     assert not a.tree_population or a.call_tree
     assert not a.tree_throughput or a.tree_population
     assert not a.tree_native_baseline or (a.tree_population and a.reference_timing and a.counter_probe)
+    assert not a.tree_batch_comparison or (a.tree_population and a.reference_timing and a.counter_probe)
+    assert not a.tree_batch_comparison or not (a.tree_native_baseline or a.tree_throughput)
     assert not a.call_tree or a.cache_work
     assert not a.call_tree or a.concurrent_epochs
     assert not a.concurrent_epochs or a.exact_work
@@ -270,6 +273,7 @@ def main():
     result['tree_population_requested'] = a.tree_population
     result['tree_throughput_requested'] = a.tree_throughput
     result['tree_native_baseline_requested'] = a.tree_native_baseline
+    result['tree_batch_comparison_requested'] = a.tree_batch_comparison
     if a.tree_throughput:
         result['tree_throughput'] = dict(status='UNRUN', trials=[],
             scope='Release guarded SDK consumer cost against original SDK, including source/input checks and installed joins; no bare-native or timing-accuracy claim')
@@ -469,6 +473,15 @@ def main():
             spec = importlib.util.spec_from_file_location('comparison_runner', repo/'tools/rapid-profiler/tree-work/comparison_runner.py')
             comparison_runner = importlib.util.module_from_spec(spec); spec.loader.exec_module(comparison_runner)
             names.extend(comparison_runner.FILES + ['tools/rapid-profiler/native-baseline/main.rs'])
+        if a.tree_batch_comparison:
+            spec = importlib.util.spec_from_file_location('batch_comparison_runner', repo/'tools/rapid-profiler/tree-work/batch_comparison_runner.py')
+            batch_comparison_runner = importlib.util.module_from_spec(spec); spec.loader.exec_module(batch_comparison_runner)
+            names.extend(batch_comparison_runner.FILES)
+            # Bind the complete local library, client and shared-oracle source
+            # closure for this new route, including nested qualification recipes.
+            names.extend(git('ls-files', '-z', '--', 'src', 'tests/support', 'tools/rapid-profiler',
+                'Cargo.toml', 'Cargo.lock', 'README.md').rstrip('\0').split('\0'))
+            names = sorted(set(names))
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -486,6 +499,8 @@ def main():
                 trials=[dict(request, status='UNRUN') for request in throughput_plan])
         if a.tree_native_baseline:
             comparison_runner.prepare(raw, result, save, digest)
+        if a.tree_batch_comparison:
+            batch_comparison_runner.prepare(raw, result, save, digest)
         rust_text = command([str(tools['rustc']), '--version', '--verbose']); (raw/'rustc-version.txt').write_text(rust_text)
         rust = dict(line.split(': ', 1) for line in rust_text.splitlines() if ': ' in line)
         assert re.fullmatch('[0-9A-Za-z.+_-]+', rust['release']) and re.fullmatch('[0-9a-f]{40}', rust['commit-hash'])
@@ -999,6 +1014,9 @@ def main():
         if a.tree_native_baseline:
             comparison_runner.run(repo, raw, result, tools, binaries, stage, tree_stable,
                 tree_candidate, tree_trusted, digest, save)
+        if a.tree_batch_comparison:
+            batch_comparison_runner.run(repo, raw, result, tools, binaries, stage, tree_stable,
+                tree_candidate, tree_trusted, digest, save, a)
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:
