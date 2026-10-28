@@ -290,7 +290,7 @@
         "unit/rapid_profiler/lib": "frontend_native::always_on::tree::runtime::tests::"
       },
       "tools/rapid-profiler/src/frontend_native/ordinary/tests.rs": {
-        "unit/rapid_profiler/lib": "frontend_native::ordinary::tests::"
+        "unit/rapid_profiler/lib": "frontend_native::module::ordinary::tests::"
       }
     },
     "macros": {
