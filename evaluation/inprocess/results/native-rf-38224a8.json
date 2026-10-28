@@ -1,0 +1,790 @@
+{
+  "architecture_reference": {
+    "document": "Intel SDM Vol.3 325384-078US, section 18.3.1.1",
+    "pdf_page": 647,
+    "pdf_sha256": "8b988bc23b81bc97a7ea6d0cac8bf3ce9e47db106fbb7a2b9d11aa412c93859b"
+  },
+  "binary": {
+    "bytes": 49736,
+    "sha256": "eb6728fe862154f0c58a0705bcb3be8404d045c208747eca7a4a324476d890d8"
+  },
+  "commands": [
+    {
+      "argv": [
+        "gcc",
+        "--version"
+      ],
+      "elapsed_seconds": 0.0048949760384857655,
+      "environment": {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "exit_code": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 3,
+        "file_bytes": 2097152,
+        "memory_bytes": 268435456,
+        "wall_seconds": 8
+      },
+      "name": "compiler_version",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 248,
+        "sha256": "74566d49f091dd3143355e3cb50b5b52bed2973dde7c37139e4e7c69247091b0"
+      }
+    },
+    {
+      "argv": [
+        "gcc",
+        "-O2",
+        "-g",
+        "-std=gnu11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-fno-pie",
+        "-no-pie",
+        "-fcf-protection=none",
+        "-mno-red-zone",
+        "-MD",
+        "-MF",
+        "target/page-native-rf-validation/20261028T060731.011528Z/compile.d",
+        "tools/page-entry/selected/tests/native_pages/rf_probe.c",
+        "-o",
+        "target/page-native-rf-validation/20261028T060731.011528Z/rf_probe"
+      ],
+      "elapsed_seconds": 0.16553728701546788,
+      "environment": {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "exit_code": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 5,
+        "file_bytes": 16777216,
+        "memory_bytes": 536870912,
+        "wall_seconds": 10
+      },
+      "name": "compile",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "argv": [
+        "nm",
+        "-S",
+        "--defined-only",
+        "target/page-native-rf-validation/20261028T060731.011528Z/rf_probe"
+      ],
+      "elapsed_seconds": 0.017383656930178404,
+      "environment": {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "exit_code": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 3,
+        "file_bytes": 2097152,
+        "memory_bytes": 268435456,
+        "wall_seconds": 8
+      },
+      "name": "symbols",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 1855,
+        "sha256": "674c6b49f9864236eab1929b87dc4fda2a1fd78dacd2d0e7d849d7c1067f3b29"
+      }
+    },
+    {
+      "argv": [
+        "objdump",
+        "-d",
+        "target/page-native-rf-validation/20261028T060731.011528Z/rf_probe"
+      ],
+      "elapsed_seconds": 0.008644682820886374,
+      "environment": {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "exit_code": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 3,
+        "file_bytes": 2097152,
+        "memory_bytes": 268435456,
+        "wall_seconds": 8
+      },
+      "name": "disassembly",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 55522,
+        "sha256": "3ac7807884600745564f0837270d2cc8bae049703ef1a168f75d09ef70c8fe0b"
+      }
+    },
+    {
+      "argv": [
+        "target/page-native-rf-validation/20261028T060731.011528Z/rf_probe"
+      ],
+      "elapsed_seconds": 0.002464558929204941,
+      "environment": {
+        "LANG": "C",
+        "LC_ALL": "C",
+        "PATH": "/usr/bin:/bin"
+      },
+      "exit_code": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 3,
+        "file_bytes": 2097152,
+        "memory_bytes": 268435456,
+        "wall_seconds": 8
+      },
+      "name": "native",
+      "record": {
+        "bytes": 107520,
+        "sha256": "c651bf0494fcbd0cd001f0b4a9ea281e6f02bb100d5baff5f28c659b1721604c"
+      },
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 2158,
+        "sha256": "d2b48116d950878fcac16fd32f286b0c4bc31d54a956351ba567b33666ef1492"
+      }
+    }
+  ],
+  "comparison": {
+    "full_flags": true,
+    "full_xsave": false,
+    "gpr_words_per_lane": 16,
+    "legacy_fxsave_bytes_per_lane": 512,
+    "production_native_epoch_owner_exercised": false,
+    "rdtsc_exercised": false,
+    "same_original_pc": true
+  },
+  "error": null,
+  "hardware": {
+    "cpu": {
+      "cpu family": "26",
+      "flags": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd amd_ppin cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq la57 rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d debug_swap amd_lbr_pmc_freeze",
+      "microcode": "0xb101066",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "kernel": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "machine": "x86_64",
+    "reserved_cpu": 23,
+    "reserved_cpu_count": 1
+  },
+  "private_receipt_sha256": "7160fae0d24b7506eec182835ff63599d8316e3946833aff31b15dbb4ed3c2cf",
+  "profile": "native_rf_architecture_component",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/native_rf.py",
+    "--expect-revision",
+    "38224a816ec03bc62907f88197a8c9bbceeab653",
+    "--output",
+    "evaluation/inprocess/results/native-rf-38224a8.json"
+  ],
+  "result": {
+    "cases": 48,
+    "native_operations": 48,
+    "nx_operations": 48,
+    "rows": [
+      [
+        0,
+        0,
+        0,
+        0,
+        514,
+        66050,
+        514,
+        514,
+        514
+      ],
+      [
+        1,
+        0,
+        1,
+        0,
+        66050,
+        66050,
+        514,
+        514,
+        514
+      ],
+      [
+        2,
+        0,
+        0,
+        0,
+        515,
+        66051,
+        515,
+        515,
+        515
+      ],
+      [
+        3,
+        0,
+        1,
+        0,
+        66051,
+        66051,
+        515,
+        515,
+        515
+      ],
+      [
+        4,
+        0,
+        0,
+        0,
+        582,
+        66118,
+        582,
+        582,
+        582
+      ],
+      [
+        5,
+        0,
+        1,
+        0,
+        66118,
+        66118,
+        582,
+        582,
+        582
+      ],
+      [
+        6,
+        0,
+        0,
+        0,
+        2710,
+        68246,
+        2710,
+        2710,
+        2710
+      ],
+      [
+        7,
+        0,
+        1,
+        0,
+        68246,
+        68246,
+        2710,
+        2710,
+        2710
+      ],
+      [
+        8,
+        0,
+        0,
+        0,
+        1538,
+        67074,
+        1538,
+        1538,
+        1538
+      ],
+      [
+        9,
+        0,
+        1,
+        0,
+        67074,
+        67074,
+        1538,
+        1538,
+        1538
+      ],
+      [
+        10,
+        0,
+        0,
+        0,
+        3799,
+        69335,
+        3799,
+        3799,
+        3799
+      ],
+      [
+        11,
+        0,
+        1,
+        0,
+        69335,
+        69335,
+        3799,
+        3799,
+        3799
+      ],
+      [
+        12,
+        0,
+        0,
+        1,
+        514,
+        66135,
+        599,
+        599,
+        599
+      ],
+      [
+        13,
+        0,
+        1,
+        1,
+        66050,
+        66135,
+        599,
+        599,
+        599
+      ],
+      [
+        14,
+        0,
+        0,
+        1,
+        515,
+        66135,
+        599,
+        599,
+        599
+      ],
+      [
+        15,
+        0,
+        1,
+        1,
+        66051,
+        66135,
+        599,
+        599,
+        599
+      ],
+      [
+        16,
+        0,
+        0,
+        1,
+        582,
+        66135,
+        599,
+        599,
+        599
+      ],
+      [
+        17,
+        0,
+        1,
+        1,
+        66118,
+        66135,
+        599,
+        599,
+        599
+      ],
+      [
+        18,
+        0,
+        0,
+        1,
+        2710,
+        66135,
+        599,
+        599,
+        599
+      ],
+      [
+        19,
+        0,
+        1,
+        1,
+        68246,
+        66135,
+        599,
+        599,
+        599
+      ],
+      [
+        20,
+        0,
+        0,
+        1,
+        1538,
+        67159,
+        1623,
+        1623,
+        1623
+      ],
+      [
+        21,
+        0,
+        1,
+        1,
+        67074,
+        67159,
+        1623,
+        1623,
+        1623
+      ],
+      [
+        22,
+        0,
+        0,
+        1,
+        3799,
+        67159,
+        1623,
+        1623,
+        1623
+      ],
+      [
+        23,
+        0,
+        1,
+        1,
+        69335,
+        67159,
+        1623,
+        1623,
+        1623
+      ],
+      [
+        24,
+        1,
+        0,
+        0,
+        514,
+        66050,
+        514,
+        514,
+        1393753991812647867
+      ],
+      [
+        25,
+        1,
+        1,
+        0,
+        66050,
+        66050,
+        514,
+        514,
+        1393753991812647867
+      ],
+      [
+        26,
+        1,
+        0,
+        0,
+        515,
+        66051,
+        515,
+        515,
+        1393753991812647867
+      ],
+      [
+        27,
+        1,
+        1,
+        0,
+        66051,
+        66051,
+        515,
+        515,
+        1393753991812647867
+      ],
+      [
+        28,
+        1,
+        0,
+        0,
+        582,
+        66118,
+        582,
+        582,
+        1393753991812647867
+      ],
+      [
+        29,
+        1,
+        1,
+        0,
+        66118,
+        66118,
+        582,
+        582,
+        1393753991812647867
+      ],
+      [
+        30,
+        1,
+        0,
+        0,
+        2710,
+        68246,
+        2710,
+        2710,
+        1393753991812647867
+      ],
+      [
+        31,
+        1,
+        1,
+        0,
+        68246,
+        68246,
+        2710,
+        2710,
+        1393753991812647867
+      ],
+      [
+        32,
+        1,
+        0,
+        0,
+        1538,
+        67074,
+        1538,
+        1538,
+        1393753991812647867
+      ],
+      [
+        33,
+        1,
+        1,
+        0,
+        67074,
+        67074,
+        1538,
+        1538,
+        1393753991812647867
+      ],
+      [
+        34,
+        1,
+        0,
+        0,
+        3799,
+        69335,
+        3799,
+        3799,
+        1393753991812647867
+      ],
+      [
+        35,
+        1,
+        1,
+        0,
+        69335,
+        69335,
+        3799,
+        3799,
+        1393753991812647867
+      ],
+      [
+        36,
+        1,
+        0,
+        1,
+        514,
+        66135,
+        599,
+        599,
+        1393753991812647867
+      ],
+      [
+        37,
+        1,
+        1,
+        1,
+        66050,
+        66135,
+        599,
+        599,
+        1393753991812647867
+      ],
+      [
+        38,
+        1,
+        0,
+        1,
+        515,
+        66135,
+        599,
+        599,
+        1393753991812647867
+      ],
+      [
+        39,
+        1,
+        1,
+        1,
+        66051,
+        66135,
+        599,
+        599,
+        1393753991812647867
+      ],
+      [
+        40,
+        1,
+        0,
+        1,
+        582,
+        66135,
+        599,
+        599,
+        1393753991812647867
+      ],
+      [
+        41,
+        1,
+        1,
+        1,
+        66118,
+        66135,
+        599,
+        599,
+        1393753991812647867
+      ],
+      [
+        42,
+        1,
+        0,
+        1,
+        2710,
+        66135,
+        599,
+        599,
+        1393753991812647867
+      ],
+      [
+        43,
+        1,
+        1,
+        1,
+        68246,
+        66135,
+        599,
+        599,
+        1393753991812647867
+      ],
+      [
+        44,
+        1,
+        0,
+        1,
+        1538,
+        67159,
+        1623,
+        1623,
+        1393753991812647867
+      ],
+      [
+        45,
+        1,
+        1,
+        1,
+        67074,
+        67159,
+        1623,
+        1623,
+        1393753991812647867
+      ],
+      [
+        46,
+        1,
+        0,
+        1,
+        3799,
+        67159,
+        1623,
+        1623,
+        1393753991812647867
+      ],
+      [
+        47,
+        1,
+        1,
+        1,
+        69335,
+        67159,
+        1623,
+        1623,
+        1393753991812647867
+      ]
+    ],
+    "same_pc": true,
+    "schema": 1
+  },
+  "revision": "38224a816ec03bc62907f88197a8c9bbceeab653",
+  "row_fields": [
+    "id",
+    "operation_0_syscall_1_cpuid",
+    "restored_rf",
+    "arithmetic_epoch",
+    "input_flags",
+    "actual_fault_flags",
+    "native_pushfq",
+    "completed_pushfq",
+    "native_r11"
+  ],
+  "runner": {
+    "bytes": 10423,
+    "path": "evaluation/inprocess/native_rf.py",
+    "sha256": "8f4f6e0e918932e937595eb26431f4f543fab3656194e493fff2ffb480bf9a0f"
+  },
+  "schema": 1,
+  "source": {
+    "bytes": 11417,
+    "path": "tools/page-entry/selected/tests/native_pages/rf_probe.c",
+    "sha256": "42811f1cc2e14bc1d2fad286b5c769cb96afb0675994b31a8807107a2f561aa7"
+  },
+  "status": "passed",
+  "tools": {
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "objdump": {
+      "bytes": 423000,
+      "sha256": "0a1b558f444ed2bca7fb467dede7416a651bc490b1abc77705ab470d99c527c1"
+    }
+  },
+  "working_tree_scope": "Only the hash-bound new probe is linked; concurrent product changes are not exercised."
+}

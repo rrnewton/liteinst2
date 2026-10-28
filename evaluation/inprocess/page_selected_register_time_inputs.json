@@ -240,10 +240,10 @@
       "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
     },
     {
-      "bytes": 30046,
+      "bytes": 31484,
       "origin": "qualified exact LOCK CMPXCHG successor",
       "path": "tools/page-entry/selected/decoder/src/tf.rs",
-      "sha256": "e9b86eb655e7e5ebc12d4e9d1c283960485d993f3079d8e05377ac596a0ce299"
+      "sha256": "d677281765ad6c07a4da19d32d0f64a88623e55c55f84f124b8b2d92719412a3"
     },
     {
       "bytes": 2900,
@@ -252,10 +252,10 @@
       "sha256": "e8927647513805dc1684b56912cccc1a9f54260e65a267c7bbfcd3cb53831b8e"
     },
     {
-      "bytes": 36855,
+      "bytes": 36919,
       "origin": "committed composition input",
       "path": "tools/page-entry/selected/lifecycle_loader.c",
-      "sha256": "569aecdecb70d4254d63ab721a22e9048ed045cbdfc4794d49d0204e3dac1047"
+      "sha256": "6d64e5a40f165e6e793777e3bc5477b0f563827534fb1b2c6889ffe58e1b9352"
     },
     {
       "bytes": 5426,
@@ -330,10 +330,10 @@
       "sha256": "cdc38ac5592beadef79472d0d366baef4911316b4f779bf65aa7aaf1e6a14f4b"
     },
     {
-      "bytes": 20803,
+      "bytes": 23242,
       "origin": "timing V2 3842a4be; TRACE d2f00cd3/report-route36c9 composition",
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "f9f3e290b337327f2b0cb20675e19a024d8e5117d0f6fdc2d8ec64e5de626ded"
+      "sha256": "3e8f29a9b18b16ce865f41683db5e83ebbf31b52a8ae0f9e288c1201041eb803"
     },
     {
       "bytes": 29097,

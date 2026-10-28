@@ -317,3 +317,61 @@ dynamically linked programs; their performance fields remain null.
 The selected profile additionally accepts five canonical PMAXUD forms, exact BND RIP-relative indirect JMP `f2 ff 25 disp32`, and exact unmasked VPBROADCASTB `62 e2 7d 48 7a c6` (ESI's low byte to ZMM16). BND requires a fresh actual XCR0 observation with MPX components disabled before opening source pages. These additions do not enable general F2/EVEX prefix acceptance or enabled-MPX execution.
 
 `python3 evaluation/inprocess/page_selected_register_time.py --expect-revision <full-commit> --program true --disable-rseq` enables the bounded fixed-site clock observer. Successful discovery and final program completion are mandatory before real timing is published. Its finite native/cache controls qualify clock capture and terminal error handling; they do not substitute for real-program completion. All observed real discovery runs through bb425428 remain failed with null real timing. See the exact per-workload commands and outcomes in the milestone evidence; no application speedup or complete dynamic-program coverage is claimed.
+
+## Unchanged-page native execution
+
+`sh tools/page-entry/selected/build-native-pages.sh` builds the opt-in
+`target/page-entry/native-pages/bridge-native-pages.so`. It retains the selected
+controller for pages that cannot be admitted, and lets certified unchanged pages
+execute without a trap after every instruction. It does not publish selected
+source patches; `source_patches` remains zero.
+
+The owner authenticates the full sealed page and each logically executable
+14-byte halo, compares live bytes with the retained sealed backing, checks
+aliases, and rejects every selected opcode core regardless of host CPUID.
+Additional raw patterns exclude state/domain transfers and hardware lock
+elision. Invalid decoding at an arbitrary byte does not imply permission to
+execute a selected instruction: the byte certificate covers its opcode core,
+and ordinary illegal instructions remain terminal faults.
+
+Before each admission, every actual executable mapping, including runtime and
+generated code, must lie at or above 8 GiB. Compatibility-mode segment base and
+instruction offset are each at most 32 bits; their sum is below that bound.
+Consequently a far transfer to compatibility mode faults before executing its
+first instruction, and its saved selector is rejected before interpreting RIP.
+This checked address constraint replaces a blanket rejection of far-return
+bytes embedded in ordinary code. Low-address pages are never natively admitted.
+
+An installed seccomp filter permits only x86-64 syscalls from the private raw
+and signal-return gateway. It rejects compatibility and x32 entries and the
+kernel's emulated legacy vsyscalls, which SUD alone does not intercept. SUD
+remains enabled independently. This is the existing cooperative runtime
+contract: application jumps into the private gateway or writes to runtime
+storage are unsupported; this mechanism is not an adversarial sandbox.
+
+Every exit from native execution closes and synchronizes all admitted pages
+before the old instruction owner can borrow source bytes. A cross-page fetch
+can report a fault address on the next page while RIP still points into the
+previous page. The controller retains that genuine frame, closes the pages,
+returns the frame unchanged and requires a second actual NX fault at the same
+RIP. It compares the saved registers and complete FP image, allowing only the
+expected change in CR2. The second fault uses the old instruction owner rather
+than readmitting the first page. A CALL at an admitted page boundary can push a
+return address onto a never-executed next page; that page stays NX until its
+actual first fetch.
+
+Native execution can change flags freely. The new ingress retains the genuine
+NX frame and normalizes RF for the next successful instruction start, as Intel
+SDM volume 3 section 18.3.1.1 specifies. It does not reconstruct pre-fault RF.
+The no-debugger, reserved-signal and terminal-other-fault restrictions remain.
+TF at ingress refuses. Registration of even an inactive rseq area disables
+native page admission, preserving the existing per-instruction rseq write
+checks. Mapping and rseq syscalls occur only after verified page closure.
+
+The `LI2_NATIVE` terminal record gives admission/closure counts and bounded
+service timings. Timings cover the owner call through backing, halo, permission
+and post-publication verification, excluding signal delivery. After the first
+admission it retains at most 16 revisits to that same address, allocation and
+generation. This measures repeated admission service, not native instruction
+throughput. `evaluation/inprocess/native_pages.py` runs native and gated real
+programs with the same explicit environment and preserves failed cases.

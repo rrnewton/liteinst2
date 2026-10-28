@@ -1,0 +1,309 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "vpcmpb-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 119,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "argv": [
+        "vpcmpb-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 119,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "argv": [
+        "vpcmpb-2"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 119,
+        "version": 1
+      },
+      "name": "group2",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "argv": [
+        "vpcmpb-3"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 119,
+        "version": 1
+      },
+      "name": "group3",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "argv": [
+        "vpcmpb-4"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 119,
+        "version": 1
+      },
+      "name": "group4",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "argv": [
+        "vpcmpb-5"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 119,
+        "version": 1
+      },
+      "name": "group5",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "argv": [
+        "vpcmpb-6"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 119,
+        "version": 1
+      },
+      "name": "group6",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "argv": [
+        "vpcmpb-7"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 119,
+        "version": 1
+      },
+      "name": "group7",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "argv": [
+        "vpcmpb-8"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 119,
+        "version": 1
+      },
+      "name": "group8",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    }
+  ],
+  "literal_effects": "Signed per-byte SRC1 OP SRC2 mask with independent literal expected64-bit result. Pre-state writemask applies even if destination aliases it; masked-off bits zero. All other architecture unchanged through complete old native/TF comparator.",
+  "native_pairs_per_group": [
+    21,
+    21,
+    21,
+    21,
+    21,
+    21,
+    21,
+    21,
+    21
+  ],
+  "negative_endpoint": "All47 original generic plus32 retained original VPT plus40 new supplied refusals; no operand-memory fault credit for register-only forms. Exact retained row17 is now a mandatory typed SIMD/NONE acceptance, counted separately; every other refusal is unchanged.",
+  "new_mask_pairs_total": 180,
+  "new_refusal_count": 40,
+  "old_refusal_count": 79,
+  "promoted_encodings": [
+    {
+      "code": 2785,
+      "family": 6,
+      "flow": 1,
+      "footprint_policy": 1,
+      "hex": "62b2754026c1",
+      "length": 6,
+      "native_qualification": "page_selected_vptestmb.py: all three patterns and six fetch geometries",
+      "old_row": 17,
+      "per_command_checks": 1,
+      "policy": 1
+    }
+  ],
+  "prospective_only": true,
+  "record_extent": "136 +22*sample_bytes+40 +5176 CPUID/BV bytes +9024 actual-before footprint query bytes;21 positive slots and original negative slot zero.",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Canonical EVEX512.W0 register-only Code3891; all vector/K indices, predicates0..7 and opmask-zeroing semantics; no memory forms or other EVEX authority."
+}

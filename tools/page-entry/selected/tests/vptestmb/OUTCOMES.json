@@ -1,0 +1,168 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "vptestmb-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 156,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=119 new_refusal_bytes=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+    },
+    {
+      "argv": [
+        "vptestmb-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 156,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=119 new_refusal_bytes=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+    },
+    {
+      "argv": [
+        "vptestmb-2"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 156,
+        "version": 1
+      },
+      "name": "group2",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=119 new_refusal_bytes=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+    },
+    {
+      "argv": [
+        "vptestmb-3"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 156,
+        "version": 1
+      },
+      "name": "group3",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_VPTESTMB_TF_PASS pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=119 new_refusal_bytes=37 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=36 full_state=19 full_memory=19 live_endpoints=19\n"
+    }
+  ],
+  "literal_effects": "Destination K bit i equals1 iff the independently seeded source bytes have nonzero bitwise AND and the old input writemask allows that bit (aaa0 means unmasked). Masked-off bits zero, including destination/writemask aliases. All32 ZMM, other7 K, GPR, flags, complete kernelFP/liveXSAVE, stack/data exact; no XSTATE_BV/header normalization.",
+  "native_pairs_per_group": [
+    19,
+    19,
+    19,
+    19
+  ],
+  "negative_endpoint": "No data-memory operand. All47 generic plus72 retained supplied neighbors and37 new encoding refusals per command. Exact retained old row17 is a mandatory positive typed SIMD/NONE query. Existing actual-fault suites remain separate.",
+  "new_mask_pairs_total": 72,
+  "new_refusal_count": 37,
+  "old_refusal_count": 119,
+  "promoted_encodings": [
+    {
+      "code": 2785,
+      "family": 6,
+      "flow": 1,
+      "footprint_policy": 1,
+      "hex": "62b2754026c1",
+      "length": 6,
+      "old_row": 17,
+      "per_command_checks": 1,
+      "policy": 1
+    }
+  ],
+  "prospective_only": true,
+  "record_extent": "header_bytes +22*sample_bytes +40 +5000 +9024; original21 positive slots retained with final2 unused and negative sample zero. Exact CPUID/BV and actual-before footprint trailers; four unused footprint rows zero.",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Canonical EVEX512.W0 register-only VPTESTMB Code2785. All vector/opmask indices, zero-masking and aliases; exact observed masked and promoted unmasked forms cover all six fetch geometries. No memory/fault, other widths, real-program completion, performance or B2 completion credit."
+}

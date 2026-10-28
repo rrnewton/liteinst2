@@ -141,9 +141,9 @@
       "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
     },
     {
-      "bytes": 30046,
+      "bytes": 31484,
       "path": "tools/page-entry/selected/decoder/src/tf.rs",
-      "sha256": "e9b86eb655e7e5ebc12d4e9d1c283960485d993f3079d8e05377ac596a0ce299"
+      "sha256": "d677281765ad6c07a4da19d32d0f64a88623e55c55f84f124b8b2d92719412a3"
     },
     {
       "bytes": 10296,
@@ -151,9 +151,9 @@
       "sha256": "52e76bbd11bc6bc78ff0e16158c3d7230d657af1c54a805310cdfc9f7345157f"
     },
     {
-      "bytes": 36855,
+      "bytes": 36919,
       "path": "tools/page-entry/selected/lifecycle_loader.c",
-      "sha256": "569aecdecb70d4254d63ab721a22e9048ed045cbdfc4794d49d0204e3dac1047"
+      "sha256": "6d64e5a40f165e6e793777e3bc5477b0f563827534fb1b2c6889ffe58e1b9352"
     },
     {
       "bytes": 5426,
@@ -191,9 +191,9 @@
       "sha256": "c046df2d3398e9ee28fc64041db51fca7e2fe7bf84dfc4ea3766709dfb065dab"
     },
     {
-      "bytes": 20803,
+      "bytes": 23242,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "f9f3e290b337327f2b0cb20675e19a024d8e5117d0f6fdc2d8ec64e5de626ded"
+      "sha256": "3e8f29a9b18b16ce865f41683db5e83ebbf31b52a8ae0f9e288c1201041eb803"
     },
     {
       "bytes": 4648,
@@ -306,9 +306,9 @@
       "sha256": "f1291a73b3ca925d43b4f673af7ca8c415e577dc816358521e2616fd03ba5f73"
     },
     {
-      "bytes": 20188,
+      "bytes": 20357,
       "path": "tools/page-entry/selected/tf_entry_route.inc",
-      "sha256": "f0586abf11c58c5106ebb6584d0213ddf4580526f0965f1f9b6910fa52a3c918"
+      "sha256": "bc7f3fa659624be4671239eac54c7a7dd4e96f0c51670139cd46686e9503bc67"
     },
     {
       "bytes": 5024,

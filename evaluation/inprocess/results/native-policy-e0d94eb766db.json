@@ -1,0 +1,378 @@
+{
+  "binary": {
+    "bytes": 35000,
+    "sha256": "c0105520be602dcf27fc5a1c69b787ab8b8e7eb6f66667b75dd5b35c76404b50"
+  },
+  "check_groups": [
+    "all-offset prefixed cores",
+    "all-offset HLE",
+    "all-offset barrier-free patterns",
+    "ModRM seam matrix",
+    "actual inaccessible buffer neighbors"
+  ],
+  "commands": [
+    {
+      "argv": [
+        "cc",
+        "-print-prog-name=cc1"
+      ],
+      "elapsed_ns": 21650200,
+      "exit": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 3,
+        "file_bytes": 1048576,
+        "memory_bytes": 268435456,
+        "wall_seconds": 10
+      },
+      "name": "resolve-cc1",
+      "owned_group_closed": true,
+      "pid": 1088568,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 44,
+        "sha256": "59fa4bbf4edf0b03fa2943dc05d8062c3f7d2a749836dd8ef99c85c5bd3db4ed"
+      }
+    },
+    {
+      "argv": [
+        "cc",
+        "-print-prog-name=collect2"
+      ],
+      "elapsed_ns": 22513986,
+      "exit": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 3,
+        "file_bytes": 1048576,
+        "memory_bytes": 268435456,
+        "wall_seconds": 10
+      },
+      "name": "resolve-collect2",
+      "owned_group_closed": true,
+      "pid": 1088823,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 49,
+        "sha256": "61a1f98fe2340c0787d504b6f91ed72f29ba84d4f9065d368a5103dbd7c1e48c"
+      }
+    },
+    {
+      "argv": [
+        "cc",
+        "-print-prog-name=as"
+      ],
+      "elapsed_ns": 21620476,
+      "exit": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 3,
+        "file_bytes": 1048576,
+        "memory_bytes": 268435456,
+        "wall_seconds": 10
+      },
+      "name": "resolve-as",
+      "owned_group_closed": true,
+      "pid": 1088868,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 3,
+        "sha256": "8b97bca79750847558d488e2ea4de79903c9c71c9af27ecf1b3dff5dba2abdd9"
+      }
+    },
+    {
+      "argv": [
+        "cc",
+        "-print-prog-name=ld"
+      ],
+      "elapsed_ns": 21653776,
+      "exit": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 3,
+        "file_bytes": 1048576,
+        "memory_bytes": 268435456,
+        "wall_seconds": 10
+      },
+      "name": "resolve-ld",
+      "owned_group_closed": true,
+      "pid": 1088925,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 3,
+        "sha256": "3b6cb8ae51045d062a7c7de7cc488ad8785144cfbc0a7fc9546ed52429e0d97f"
+      }
+    },
+    {
+      "argv": [
+        "cc",
+        "-O2",
+        "-g",
+        "-std=gnu11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Itools/page-entry/selected",
+        "-M",
+        "tools/page-entry/selected/tests/native_pages/policy_probe.c"
+      ],
+      "elapsed_ns": 21682990,
+      "exit": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 3,
+        "file_bytes": 1048576,
+        "memory_bytes": 268435456,
+        "wall_seconds": 10
+      },
+      "name": "dependencies-0",
+      "owned_group_closed": true,
+      "pid": 1088980,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 1785,
+        "sha256": "086a1636a08aa8e820d7563d7ac7b6c4f3e2a51bc0f13c70c5d73ce398272027"
+      }
+    },
+    {
+      "argv": [
+        "cc",
+        "-O2",
+        "-g",
+        "-std=gnu11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Itools/page-entry/selected",
+        "-M",
+        "tools/page-entry/selected/native_policy.c"
+      ],
+      "elapsed_ns": 23450211,
+      "exit": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 3,
+        "file_bytes": 1048576,
+        "memory_bytes": 268435456,
+        "wall_seconds": 10
+      },
+      "name": "dependencies-1",
+      "owned_group_closed": true,
+      "pid": 1089014,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 724,
+        "sha256": "a554a749d583fd2e3a9711a420f98b835f8084bd90ccdfeb4b05daafe981e88d"
+      }
+    },
+    {
+      "argv": [
+        "cc",
+        "-O2",
+        "-g",
+        "-std=gnu11",
+        "-Wall",
+        "-Wextra",
+        "-Werror",
+        "-Itools/page-entry/selected",
+        "tools/page-entry/selected/tests/native_pages/policy_probe.c",
+        "tools/page-entry/selected/native_policy.c",
+        "-o",
+        "target/native-policy/20261028T061053.381039Z/policy-probe"
+      ],
+      "elapsed_ns": 142224769,
+      "exit": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 5,
+        "file_bytes": 16777216,
+        "memory_bytes": 536870912,
+        "wall_seconds": 15
+      },
+      "name": "compile",
+      "owned_group_closed": true,
+      "pid": 1089076,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "argv": [
+        "nm",
+        "-S",
+        "--defined-only",
+        "target/native-policy/20261028T061053.381039Z/policy-probe"
+      ],
+      "elapsed_ns": 21800446,
+      "exit": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 3,
+        "file_bytes": 1048576,
+        "memory_bytes": 268435456,
+        "wall_seconds": 10
+      },
+      "name": "symbols",
+      "owned_group_closed": true,
+      "pid": 1089173,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 1618,
+        "sha256": "4f3be634bfe7e2a5bfa0a62320706cd314fefdc4498476ebab98db2f23bf9db8"
+      }
+    },
+    {
+      "argv": [
+        "target/native-policy/20261028T061053.381039Z/policy-probe"
+      ],
+      "elapsed_ns": 4379707035,
+      "exit": 0,
+      "limits": {
+        "core_bytes": 0,
+        "cpu_seconds": 30,
+        "file_bytes": 1048576,
+        "memory_bytes": 268435456,
+        "wall_seconds": 45
+      },
+      "name": "oracle",
+      "owned_group_closed": true,
+      "pid": 1089179,
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 129,
+        "sha256": "4b2333664e57414f1a4fc32afc969765edbdbffe81a45c3c13a0b948a3f7dc12"
+      }
+    }
+  ],
+  "dependency_count": 53,
+  "dependency_manifest_sha256": "ab91bb0a5955e0a9c8eb544e308737637e50d2382a3eff6d2b6fce581df3696d",
+  "error": null,
+  "final_errors": [],
+  "hardware": {
+    "cpu": {
+      "cpu family": "26",
+      "flags": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 pcid sse4_1 sse4_2 x2apic movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpuid_fault cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd amd_ppin cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold avic v_vmsave_vmload vgif x2avic v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq la57 rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d debug_swap amd_lbr_pmc_freeze",
+      "microcode": "0xb101066",
+      "model": "17",
+      "model name": "AMD EPYC 9D85 158-Core Processor",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "kernel": "7.1.3-0_fbk0_rc18_0_gd373cd4b8dbf",
+    "machine": "x86_64",
+    "reserved_cpu": 19,
+    "reserved_cpu_count": 1
+  },
+  "private_receipt_sha256": "770bbee59a58b90821f14cc53a19e72db7de409f8936733a022b5578bdaaac82",
+  "profile": "native_policy_byte_component",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/native_policy.py",
+    "--expect-revision",
+    "e0d94eb766db5e070ef853ad28c5b9d52ad0dcf3",
+    "--output",
+    "evaluation/inprocess/results/native-policy-e0d94eb766db.json"
+  ],
+  "result": {
+    "checks": [
+      420307,
+      246999,
+      74203,
+      9216,
+      69
+    ],
+    "pattern_straddles": [
+      682,
+      882,
+      58
+    ],
+    "patterns": [
+      102,
+      60,
+      18
+    ],
+    "version": 1,
+    "window_bytes": 4124
+  },
+  "revision": "e0d94eb766db5e070ef853ad28c5b9d52ad0dcf3",
+  "schema": 1,
+  "scope": "Finite byte-pattern and buffer-boundary component only; no mode, map, rseq or production admission qualification.",
+  "sources": {
+    "evaluation/inprocess/native_policy.py": {
+      "bytes": 8718,
+      "sha256": "42bda8c29596331acb0c83362b63667fd4d21baaa8932ac1667d584856599935"
+    },
+    "tools/page-entry/selected/native_policy.c": {
+      "bytes": 2520,
+      "sha256": "196d63d3a00258634ce4cf765759ee37418618d440e5a4f9cc11c9bc8b1d8ecc"
+    },
+    "tools/page-entry/selected/native_policy.h": {
+      "bytes": 506,
+      "sha256": "2fcdf9a8fdcf5708f5d37b8f3a82b0250c3610abed6a51ab7f5589ab63679a37"
+    },
+    "tools/page-entry/selected/tests/native_pages/policy_probe.c": {
+      "bytes": 5663,
+      "sha256": "665c97e76be603957af8e60573c8c8a3e26cd0716c3a619fb6645cca17d04f21"
+    }
+  },
+  "status": "passed",
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    }
+  }
+}

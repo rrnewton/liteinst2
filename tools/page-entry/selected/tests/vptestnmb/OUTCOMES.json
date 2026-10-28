@@ -26,23 +26,37 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 80,
+        "refusals": 79,
         "version": 1
       },
       "name": "group0",
       "process_outcome": "completed finite native/TF pair cohort",
       "stderr": "",
-      "stdout": "LI2_VTN_TF_PASS group=0 pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=33 full_state=19 full_memory=19 live_endpoints=19\n"
+      "stdout": "LI2_VTN_TF_PASS group=0 pairs=19 mask_tests=18 selftest=1 old_refusal_bytes=47 new_refusal_bytes=32 promoted_encoding_checks=1 promoted_footprint_queries=1 full_state=19 full_memory=19 live_endpoints=19\n"
     }
   ],
   "literal_effects": "K0 bit i equals1 iff actual independently seeded ZMM17 byte i iszero. Three literal patterns yield all0/all1/mixed64-bit masks, each initialK0 is nonzero/distinct. All32ZMM/other7K, GPR/flags/kernelFP/liveXSAVE/stack/data exact; no XSTATE_BV/header normalization.",
   "native_pairs_per_group": [
     19
   ],
-  "negative_endpoint": "No data memory operand. All47 generic plus33 new supplied encoding refusals; original actual-fault suites remain separate.",
+  "negative_endpoint": "No data memory operand. All47 generic plus32 retained supplied encoding refusals; original actual-fault suites remain separate. Exact retained row17 is now a mandatory typed SIMD/NONE acceptance, counted separately; every other refusal is unchanged.",
   "new_mask_pairs_total": 18,
-  "new_refusal_count": 33,
+  "new_refusal_count": 32,
   "old_refusal_count": 47,
+  "promoted_encodings": [
+    {
+      "code": 2785,
+      "family": 6,
+      "flow": 1,
+      "footprint_policy": 1,
+      "hex": "62b2754026c1",
+      "length": 6,
+      "native_qualification": "page_selected_vptestmb.py: all three patterns and six fetch geometries",
+      "old_row": 17,
+      "per_command_checks": 1,
+      "policy": 1
+    }
+  ],
   "prospective_only": true,
   "record_extent": "header_bytes + 22 * sample_bytes + 40 + 5000; original21 sample slots retained, final2 unused and negative sample zero; exact appended actual CPUID/BV trailer.",
   "record_header_fields": [
