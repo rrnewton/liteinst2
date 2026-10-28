@@ -196,7 +196,7 @@ static void v64_failure(void *context,const struct li2_step_owner *o) {
         for(unsigned i=0;i<16;i++)need(s->native_before.frame.greg[regs[i]]==
             s->native_after.frame.greg[regs[i]]&&o->before.greg[regs[i]]==o->after.greg[regs[i]],1200);
         need(s->native_before.frame.greg[REG_EFL]==s->native_after.frame.greg[REG_EFL]&&
-             (o->before.greg[REG_EFL]|LI2_STEP_TF)==o->after.greg[REG_EFL]&&
+             ((uint64_t)o->before.greg[REG_EFL]|LI2_STEP_TF)==(uint64_t)o->after.greg[REG_EFL]&&
              s->native_before.frame.fp_bytes==s->native_after.frame.fp_bytes&&
              o->before.fp_bytes==o->after.fp_bytes&&
              !memcmp(s->native_before.frame.fp,s->native_after.frame.fp,s->native_before.frame.fp_bytes)&&
