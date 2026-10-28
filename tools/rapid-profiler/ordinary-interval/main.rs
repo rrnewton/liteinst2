@@ -435,6 +435,15 @@ fn main() {
         timed::run(Path::new(&args[2]), Path::new(&args[3]));
         return;
     }
+    if args.get(1).and_then(|s| s.to_str()) == Some("exact-reference") {
+        assert_eq!(
+            args.len(),
+            4,
+            "ordinary-interval exact-reference CANDIDATE TRUSTED"
+        );
+        exact::run_reference(Path::new(&args[2]), Path::new(&args[3]));
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("exact-work") {
         assert_eq!(
             args.len(),
