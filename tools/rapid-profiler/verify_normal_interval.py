@@ -99,6 +99,25 @@ REFERENCE_STAGES = ('reference-fixture-controls', 'reference-exact-parser-contro
     'reference-old-exact-state', 'reference-state')
 
 
+REFERENCE_WORK_STAGES = ('reference-work-parser-controls', 'reference-work-controls', 'reference-work')
+REFERENCE_WORK_PREFIXES = ('normal::reference::', 'normal::caller::reference_bytes::returned_tests::')
+REFERENCE_WORK_CONTROLS = (
+    'normal::reference::tests::fixed_population_preserves_inputs_scalars_and_complete_work',
+    'normal::reference::tests::full_cell_page_guards_and_disjoint_extents_are_required',
+    'normal::reference::tests::original_rows_keep_sdk_fields_absent_and_full_width_endpoints',
+    'normal::reference::check::tests::reference_population_requires_all48_ordered_case_identity_and_values',
+    'normal::reference::check::tests::reference_record_joins_stack_continuation_owner_ack_and_metadata',
+    'normal::reference::check::tests::reference_journal_checks_every_word_and_coherent_prefix_corruption',
+    'normal::reference::check::tests::reference_report_requires_all_slots_ranks_payloads_and_terminal_identity',
+    'normal::reference::check::tests::reference_history_requires_exact_publish_remove_and_no_failed_owner',
+    'normal::reference::check::tests::reference_gap_arithmetic_retains_zero_and_refuses_aux_order_or_overflow',
+    'normal::caller::reference_bytes::returned_tests::returned_view_requires_exact_identity_phase_value_and_cell_words',
+    'normal::caller::reference_bytes::returned_tests::returned_view_checks_whole_stack_range_without_wrap_or_holes',
+    'normal::caller::reference_bytes::returned_tests::returned_view_retains_zero_full_width_and_refuses_reversed_endpoints',
+    'normal::reference::hardware::tests::admission_requires_every_explicit_feature_and_user_access',
+)
+
+
 def load(name, path):
     spec = importlib.util.spec_from_file_location(name, path)
     module = importlib.util.module_from_spec(spec)
@@ -119,9 +138,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument('--revision', required=True)
     ap.add_argument('--reference-exact', action='store_true', help='Append four old Exact37 and four reference Exact37 pairs after all ordinary prerequisites.')
+    ap.add_argument('--reference-work', action='store_true', help='Require --reference-exact and append the finite uncalibrated24+24 ordinary-call collector.')
     for name in ('raw', 'toolchain', 'user-home', 'cargo-home'):
         ap.add_argument('--'+name, type=Path, required=True)
     a = ap.parse_args()
+    assert not a.reference_work or a.reference_exact, '--reference-work requires --reference-exact'
     repo = Path(__file__).resolve().parents[2]
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
     for p in (repo, a.toolchain, a.user_home, a.cargo_home):
@@ -156,6 +177,10 @@ def main():
             'normal-work/reference_owner.rs', 'native-interval/normal/reference.rs'))
         required.update(('tests/support/native_normal_reference.rs',
             'tests/support/native_normal_reference_tests.rs'))
+    if a.reference_work:
+        required.update('tools/rapid-profiler/'+name for name in (
+            'normal-work/reference_work.py', 'normal-work/test_reference_work.py',
+            'ordinary-interval/normal/reference.rs', 'ordinary-interval/normal/reference/check.rs'))
     names = git('ls-files', '-z', '--', 'src', 'tests/support', 'tools/rapid-profiler',
         'Cargo.toml', 'Cargo.lock', 'README.md', 'build.rs', ':(glob)**/Cargo.toml', *sorted(required)).decode().rstrip('\0').split('\0')
     assert all(names) and len(names) == len(set(names)) and required.issubset(names)
@@ -172,6 +197,8 @@ def main():
         exact_fixture = load('normal_reference_fixture', repo/'tools/rapid-profiler/normal-work/exact_fixture.py')
         exact_native = load('normal_reference_exact_output', repo/'tools/rapid-profiler/normal-work/exact_native.py')
         reference_native = load('normal_reference_output', repo/'tools/rapid-profiler/normal-work/reference_native.py')
+    if a.reference_work:
+        reference_work = load('normal_reference_work_output', repo/'tools/rapid-profiler/normal-work/reference_work.py')
     a.raw.mkdir(mode=0o700)
     save(a.raw/'sources-before.json', before)
     result = dict(schema=1, status='FAILED', stage='setup', revision=a.revision,
@@ -187,6 +214,12 @@ def main():
             subject=dict(status='UNRUN'), caller=dict(status='UNRUN'),
             old_exact=dict(status='UNRUN', required_pairs=4), reference=dict(status='UNRUN', required_pairs=4),
             scope='Fixed physical reference-reader/store/return provenance and complete architectural comparisons; no duration accuracy, performance or complete-A5 claim.')
+    if a.reference_work:
+        result['command'].append('--reference-work')
+        result['reference_work'] = dict(status='UNRUN', required_stages=list(REFERENCE_WORK_STAGES),
+            stages=[dict(name=name, status='UNRUN') for name in REFERENCE_WORK_STAGES],
+            collector=dict(status='UNRUN', originals=24, installed=24),
+            scope='Finite one-caller raw reference/callback enclosures and complete functional joins only; no calibrated accuracy, perturbation, session-temporal, performance or full-A5 claim.')
     artifacts = {}
     tool_paths = {}
     def unchanged():
@@ -502,8 +535,50 @@ def main():
                 complete_populations=dict(old_exact_pairs=4, reference_pairs=4, children=16,
                     old_exact_comparisons=1696, reference_comparisons=1736,
                     reference_reader_checks=32, reference_output_stores=96, reference_returned_cells=16))
+        if a.reference_work:
+            assert result['reference_exact']['status'] == 'PASS'
+            # Reuse the same bounded stage/receipt helpers with a distinct group
+            # declared UNRUN before any observation. Prior group remains complete.
+            group = result['reference_work']; group['status'] = 'FAILED'
+            d, pending, row = reference_stage('reference-work-parser-controls',
+                [python, '-B', repo/'tools/rapid-profiler/normal-work/test_reference_work.py'])
+            assert (d/'stdout.txt').read_bytes() == b''
+            assert re.fullmatch(rb'\.{10}\n-+\nRan 10 tests in [0-9]+\.[0-9]+s\n\nOK\n', (d/'stderr.txt').read_bytes())
+            reference_done(pending, row, passed=10)
+            binary, inventory, authority = ordinary_test
+            assert {n for n in inventory if n.startswith(REFERENCE_WORK_PREFIXES)} == set(REFERENCE_WORK_CONTROLS)
+            d, pending, row = reference_stage('reference-work-controls',
+                [binary, *REFERENCE_WORK_CONTROLS, '--exact', '--test-threads=1'])
+            controls = census.controls((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes(),
+                REFERENCE_WORK_CONTROLS, inventory)
+            reference_done(pending, row, controls=controls, artifact=authority)
+            assert exact_fixture.authenticate(exact_candidate, exact_final, details['elf_va'], 37,
+                selection_file, artifacts[selection_file]['sha256']) == details
+            group['collector']['status'] = 'FAILED'
+            d, pending, row = reference_stage('reference-work', [binaries['ordinary-interval'],
+                'normal-reference-work', exact_candidate, exact_final, str(details['elf_va']), '37',
+                reference_candidate, reference_final])
+            observed = reference_work.check((d/'stdout.txt').read_bytes(), (d/'stderr.txt').read_bytes())
+            assert observed['status'] == 'FUNCTIONAL_PASS' and len(observed['rows']) == 48
+            assert (observed['originals'], observed['installed'], observed['records']) == (24, 24, 24)
+            exported = a.raw/'normal-reference-rows.csv'
+            with exported.open('xb') as stream: stream.write(observed['table'])
+            artifacts[exported] = digest(exported)
+            group['collector'].update(
+                observation={k:v for k,v in observed.items() if k not in ('rows', 'table')},
+                table=artifacts[exported], binary=artifacts[binaries['ordinary-interval']],
+                subject=artifacts[exact_final], selection=artifacts[selection_file],
+                helper=artifacts[reference_final], helper_authority=artifacts[caller_authority],
+                source_stage='reference-work', process_cpu_seconds=20, process_wall_seconds=30,
+                file_bytes=MIB)
+            unchanged()
+            group['collector']['status'] = 'PASS'
+            reference_done(pending, row, originals=24, installed=24, rows=48, table=artifacts[exported])
+            assert tuple(r['name'] for r in group['stages']) == REFERENCE_WORK_STAGES
+            assert all(r['status'] == 'PASS' for r in group['stages'])
+            group.update(status='PASS', closure=dict(owned_stages=3, normal_helpers=3, outer_owners=3, rescues=0))
         unchanged(); save(a.raw/'sources-after.json', {n: digest(repo/n) for n in names})
-        assert tuple(r['name'] for r in result['stages']) == STAGES + (REFERENCE_STAGES if a.reference_exact else ()) and all(r['status'] == 'PASS' for r in result['stages'])
+        assert tuple(r['name'] for r in result['stages']) == STAGES + (REFERENCE_STAGES if a.reference_exact else ()) + (REFERENCE_WORK_STAGES if a.reference_work else ()) and all(r['status'] == 'PASS' for r in result['stages'])
         result.update(status='PASS', stage='complete',
             artifacts=dict(subject=artifacts[trusted], caller=artifacts[caller], **{n: artifacts[p] for n, p in binaries.items()}),
             outputs={n: digest(a.raw/n) for n in ('normal-pairs.csv', 'normal-rows.csv')},
@@ -514,7 +589,7 @@ def main():
                 generations=2, events=16, journal_words=512, reports=2, worker_joins=1),
             abandonment=dict(cases=2, original_calls=16, installed_calls=4, checkpoints=0,
                 pending_after_tls_exit=2, reattach_refusals=2, worker_joins=2),
-            closure=dict(owned_stages=10 + (len(REFERENCE_STAGES) if a.reference_exact else 0), nested_normal_helpers=46, nested_outer_owners=48, rescues=0),
+            closure=dict(owned_stages=10 + (len(REFERENCE_STAGES) if a.reference_exact else 0) + (len(REFERENCE_WORK_STAGES) if a.reference_work else 0), nested_normal_helpers=46, nested_outer_owners=48, rescues=0),
             prior_failures='Fresh attempt with no retries; prior failures remain failures.')
     except BaseException as error:
         result['error_type'] = type(error).__name__

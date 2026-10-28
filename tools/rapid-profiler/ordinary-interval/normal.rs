@@ -4,6 +4,16 @@ use rapid_profiler::frontend_native::{
     LoadedNormalLeaf, NormalAcknowledgement, NormalBatch, NormalLeafContract,
     NormalSitePreparation, NormalTotals, PreparedNormalController, TrustedFunctionSelection,
 };
+// Closed fixture registration: the ordinary collector consumes this one
+// production owner/geometry instance. Existing ordinary test identities remain.
+macro_rules! register_reference_fixture {
+    () => {
+        #[path = "reference_owner.rs"]
+        pub mod reference;
+        #[path = "reference_bytes.rs"]
+        pub mod reference_bytes;
+    };
+}
 #[path = "../normal-work/caller.rs"]
 mod caller;
 #[path = "../normal-work/caller_bytes.rs"]
@@ -12,6 +22,7 @@ use super::strnlen::cases;
 use caller::{CallerOwner, Request};
 use cases::{CASES, LABEL};
 mod lifecycle;
+pub(super) mod reference;
 pub(super) mod session;
 
 #[derive(Clone, Copy, Eq, PartialEq)]

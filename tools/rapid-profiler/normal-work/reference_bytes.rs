@@ -673,3 +673,141 @@ mod tests {
         assert_eq!((max.start.ticks, max.end.ticks), (u64::MAX, u64::MAX));
     }
 }
+
+/// Data-only view after the consumer's separately established actual helper
+/// return. The stored RSP and phase are internal consistency observations, not
+/// independent proof of a physical return, stack identity, or a runtime receipt.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct ReturnedView {
+    pub sequence: u64,
+    pub external_id: u64,
+    pub observed_pre_call_rsp: u64,
+    pub enclosure: Enclosure,
+}
+impl ReferenceCell {
+    /// Validate the complete cell's existing consistency predicates and the
+    /// observed protected stack range against independently retained rw-p bounds.
+    /// This reads no mapping. The consumer must keep actual source/input/stack
+    /// custody through real helper return and postflight. After transfer, installed
+    /// rows must independently join entry_rsp+8 and the saved continuation.
+    pub fn returned_view(
+        &self,
+        sequence: u64,
+        external_id: u64,
+        value: u64,
+        stack_bounds: (u64, u64),
+    ) -> Result<ReturnedView> {
+        let p = self.pre_call_rsp;
+        let enclosure = self.enclosure(sequence, external_id, p, value)?;
+        // S=P+40; subject entry=P-8; full subject red zone starts P-136.
+        let start = p.checked_sub(136).ok_or(Error::Range)?;
+        let end = p.checked_add(48).ok_or(Error::Range)?;
+        require(
+            stack_bounds.0 < stack_bounds.1 && stack_bounds.0 <= start && end <= stack_bounds.1,
+            Error::Range,
+        )?;
+        Ok(ReturnedView {
+            sequence,
+            external_id,
+            observed_pre_call_rsp: p,
+            enclosure,
+        })
+    }
+}
+
+#[cfg(test)]
+mod returned_tests {
+    use super::*;
+    fn cell() -> ReferenceCell {
+        let mut c = fresh_cells(25, [1, 2]).unwrap()[0];
+        c.phase = END_READER_STORED;
+        c.pre_call_rsp = 0x8000;
+        c.resumed_rsp = 0x8000;
+        c.after_rax = 91;
+        c.start_lo = 13;
+        c.end_lo = 29;
+        c.start_aux = 5;
+        c.end_aux = 5;
+        c
+    }
+    #[test]
+    fn returned_view_requires_exact_identity_phase_value_and_cell_words() {
+        let c = cell();
+        assert!(c.returned_view(25, 1, 91, (0x7000, 0x9000)).is_ok());
+        assert_eq!(
+            c.returned_view(26, 1, 91, (0x7000, 0x9000)),
+            Err(Error::Identity)
+        );
+        assert_eq!(
+            c.returned_view(25, 2, 91, (0x7000, 0x9000)),
+            Err(Error::Identity)
+        );
+        assert_eq!(
+            c.returned_view(25, 1, 90, (0x7000, 0x9000)),
+            Err(Error::Cell)
+        );
+        for k in 0..11 {
+            let mut bad = c;
+            match k {
+                0 => bad.phase = ARMED,
+                1 => bad.canary ^= 1,
+                2 => bad.resumed_rsp += 16,
+                3 => bad.pre_call_rsp += 8,
+                4 => bad.start_lo |= 1 << 32,
+                5 => bad.start_hi |= 1 << 32,
+                6 => bad.start_aux |= 1 << 32,
+                7 => bad.end_lo |= 1 << 32,
+                8 => bad.end_hi |= 1 << 32,
+                9 => bad.end_aux |= 1 << 32,
+                _ => bad.end_aux += 1,
+            }
+            assert_eq!(
+                bad.returned_view(25, 1, 91, (0x7000, 0x9000)),
+                Err(Error::Cell)
+            );
+        }
+    }
+    #[test]
+    fn returned_view_checks_whole_stack_range_without_wrap_or_holes() {
+        let c = cell();
+        let bounds = (0x8000 - 136, 0x8000 + 48);
+        let view = c.returned_view(25, 1, 91, bounds).unwrap();
+        assert_eq!(view.observed_pre_call_rsp, 0x8000);
+        for bad in [
+            (bounds.0 + 1, bounds.1),
+            (bounds.0, bounds.1 - 1),
+            (8, 8),
+            (9, 8),
+        ] {
+            assert_eq!(c.returned_view(25, 1, 91, bad), Err(Error::Range));
+        }
+        for p in [16, u64::MAX - 15] {
+            let mut bad = c;
+            bad.pre_call_rsp = p;
+            bad.resumed_rsp = p;
+            assert_eq!(
+                bad.returned_view(25, 1, 91, (0, u64::MAX)),
+                Err(Error::Range)
+            );
+        }
+    }
+    #[test]
+    fn returned_view_retains_zero_full_width_and_refuses_reversed_endpoints() {
+        let mut c = cell();
+        for (hi, lo) in [(0, 0), (u32::MAX as u64, u32::MAX as u64)] {
+            c.start_hi = hi;
+            c.end_hi = hi;
+            c.start_lo = lo;
+            c.end_lo = lo;
+            let v = c.returned_view(25, 1, 91, (0x7000, 0x9000)).unwrap();
+            assert_eq!(v.enclosure.start.ticks, (hi << 32) | lo);
+            assert_eq!(v.enclosure.start, v.enclosure.end);
+        }
+        c = cell();
+        c.end_lo = 12;
+        assert_eq!(
+            c.returned_view(25, 1, 91, (0x7000, 0x9000)),
+            Err(Error::Cell)
+        );
+    }
+}

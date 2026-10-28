@@ -7,6 +7,18 @@ use oracle::native_ordinary::normal_caller::{
     self as native, ControlStatus, JournalReady, Mode, NormalContext, NormalOracle, NormalReady,
     Population,
 };
+// Preserve the native target's existing test-only fixture registrations.
+// Its production reference route keeps the canonical oracle geometry alias.
+macro_rules! register_reference_fixture {
+    () => {
+        #[cfg(test)]
+        #[path = "reference_owner.rs"]
+        pub mod reference;
+        #[cfg(test)]
+        #[path = "reference_bytes.rs"]
+        pub mod reference_bytes;
+    };
+}
 #[path = "../normal-work/caller.rs"]
 mod caller;
 use caller::CallerOwner;

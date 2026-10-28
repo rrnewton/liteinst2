@@ -13,14 +13,10 @@ use std::rc::Rc;
 
 use super::caller_bytes;
 use caller_bytes as bytes;
-// Ordinary-target controls instantiate this fixed owner here; the native route
-// registers the same owner with its single canonical oracle geometry module.
-#[cfg(test)]
-#[path = "reference_owner.rs"]
-pub mod reference;
-#[cfg(test)]
-#[path = "reference_bytes.rs"]
-pub mod reference_bytes;
+// Both binary parents provide this closed registration. Ordinary production
+// consumes the same modules as its existing tests; native registration is
+// unchanged and test-only, with its separate canonical oracle alias in production.
+register_reference_fixture!();
 pub use bytes::{
     BYTES, CALLS, CONTINUATIONS, HEADS, OUTER_RET, PROTECTED_STACK_BELOW_CALLER, Request,
     SUBJECT_RSP_DELTA, SYMBOL,
