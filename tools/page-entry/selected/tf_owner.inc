@@ -1,6 +1,7 @@
 /* Append to the unchanged step_owner.c translation unit. Reuses its actual
    identity/frame/revoke/first-error helpers; never changes its old trace. */
 #include "tf_owner.h"
+#include "tf_entry_route.inc"
 
 int li2_tf_arm(struct li2_tf_owner *o,struct li2_step_session *s,
                const struct li2_tf_hooks *hooks,const struct li2_step_request *request) {
@@ -161,20 +162,14 @@ static void tf_bnd_jmp_begin(struct li2_tf_owner *owner,int sig,siginfo_t *si,uc
 }
 
 void li2_tf_begin(struct li2_tf_owner *o,int sig,siginfo_t *si,ucontext_t *uc) {
-    const struct li2_decoded *d=&o->step.request.decoded;
-    if(o->classification.code==765 && d->length==7 &&
-       d->bytes[0]==0xf2 && d->bytes[1]==0xff && d->bytes[2]==0x25) {
-        tf_bnd_jmp_begin(o,sig,si,uc);return;
+    /* The same positive route decision is consumed by the TRACE entry. */
+    switch(li2_tf_entry_route(&o->step.request.decoded)) {
+    case LI2_TF_ENTRY_BND:tf_bnd_jmp_begin(o,sig,si,uc);return;
+    case LI2_TF_ENTRY_XGETBV:tf_xgetbv_begin(&o->step,sig,si,uc);return;
+    case LI2_TF_ENTRY_RDSSPQ:tf_rdssp_begin(o,sig,si,uc);return;
+    case LI2_TF_ENTRY_PLAIN:li2_step_begin(&o->step,sig,si,uc);return;
+    default:li2_tf_abort(o,LI2_TF_CLASSIFICATION,o->classification.code);
     }
-    if(o->classification.code==825) {
-        tf_xgetbv_begin(&o->step,sig,si,uc);return;
-    }
-    if(o->classification.code==1053) {
-        tf_rdssp_begin(o,sig,si,uc);return;
-    }
-    /* This old function performs no emulated-result check: exact real NX
-       entry, immutable source, installed open prefixes, sync, then TF only. */
-    li2_step_begin(&o->step,sig,si,uc);
 }
 
 _Noreturn void li2_tf_abort(struct li2_tf_owner *o,unsigned code,long detail) {
@@ -295,7 +290,7 @@ static void tf_rdssp_observed_begin(struct li2_tf_owner *owner,int sig,siginfo_t
 }
 
 void li2_tf_begin_observed_shstk(struct li2_tf_owner *o,int sig,siginfo_t *si,ucontext_t *uc) {
-    if(o->classification.code==1053) {
+    if(li2_tf_entry_route(&o->step.request.decoded)==LI2_TF_ENTRY_RDSSPQ) {
         tf_rdssp_observed_begin(o,sig,si,uc);return;
     }
     li2_tf_begin(o,sig,si,uc);

@@ -69,7 +69,7 @@ def main():
     admission.require(not public.exists(), 'duplicate_run_id')
     record = {'schema_version': 1, 'profile': 'inprocess-required-checks-v1', 'status': 'preflight',
               'expected_revision': args.expect_revision, 'source': None, 'source_unchanged': None,
-              'configuration_unchanged': None, 'started_utc': stamp, 'backing_cleanup_required': True,
+              'configuration_unchanged': None, 'started_utc': stamp, 'backing_cleanup_required': True, 'backing_cleanup_query_required': True,
               'runner_sha256': file_digest(Path(__file__)),
               'environment': admission.ENV | {'CARGO_TARGET_DIR': 'target', 'TMPDIR': 'private_run/tmp',
                                                'LANG': 'C.UTF-8', 'LC_ALL': 'C.UTF-8', 'RLIMIT_CORE': 0},
@@ -89,8 +89,9 @@ def main():
         data = (ADMISSION / 'corpus.json').read_bytes()
         record['corpus_sha256'] = admission.sha(data)
         corpus = json.loads(data)
-        admission.require(corpus['schema_version'] == 1 and corpus['recorder_tests'] == 330, 'changed_recorder_corpus')
-        admission.backing_cleanup.require_inventory(corpus)
+        admission.require(corpus['schema_version'] == 1 and corpus['recorder_tests'] == admission.core_cc846_inventory.RECORDER_TESTS, 'changed_recorder_corpus')
+        admission.backing_cleanup_query.require_inventory(corpus)
+        admission.core_cc846_inventory.require_current(corpus)
         resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
         record['status'] = 'running'
         for command in record['commands']:

@@ -1,0 +1,191 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "short-leaf-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 0,
+      "header_equals": {
+        "completed": 19,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 19,
+        "refusals": 135,
+        "version": 1
+      },
+      "kind": "leaf",
+      "name": "leaf0",
+      "process_outcome": "completed original-PC native/TF instruction pairs",
+      "stderr": "",
+      "stdout": "LI2_SHORT_LEAF_PASS group=0 pairs=19\n"
+    },
+    {
+      "argv": [
+        "short-leaf-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 1,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 135,
+        "version": 1
+      },
+      "kind": "leaf",
+      "name": "leaf1",
+      "process_outcome": "completed original-PC native/TF instruction pairs",
+      "stderr": "",
+      "stdout": "LI2_SHORT_LEAF_PASS group=1 pairs=21\n"
+    },
+    {
+      "argv": [
+        "short-leaf-2"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 2,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 135,
+        "version": 1
+      },
+      "kind": "leaf",
+      "name": "leaf2",
+      "process_outcome": "completed original-PC native/TF instruction pairs",
+      "stderr": "",
+      "stdout": "LI2_SHORT_LEAF_PASS group=2 pairs=21\n"
+    },
+    {
+      "argv": [
+        "short-connected"
+      ],
+      "case": 12,
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "12"
+      },
+      "exit": 0,
+      "kind": "connected",
+      "name": "short-return-match",
+      "nx": [
+        2,
+        9,
+        2
+      ],
+      "process_outcome": "completed native/all-NX/chained literal return block",
+      "stderr": "",
+      "stdout": "LI2_CHAIN_PROGRAM_PASS short-return-match\n",
+      "steps": 8,
+      "trace": [
+        0,
+        8,
+        8
+      ]
+    },
+    {
+      "argv": [
+        "short-connected"
+      ],
+      "case": 13,
+      "environment_delta": {
+        "LI2_CHAIN_CASE": "13"
+      },
+      "exit": 0,
+      "kind": "connected",
+      "name": "short-return-null",
+      "nx": [
+        2,
+        7,
+        2
+      ],
+      "process_outcome": "completed native/all-NX/chained literal return block",
+      "stderr": "",
+      "stdout": "LI2_CHAIN_PROGRAM_PASS short-return-null\n",
+      "steps": 6,
+      "trace": [
+        0,
+        6,
+        6
+      ]
+    }
+  ],
+  "connected_record_extent": "actual DWARF chain record + one startup sample + actual control trailer +5176",
+  "individual_record_extent": "136+22*actual_sample_bytes+40+5176; group0 unused two slots and all negative slots zero",
+  "prospective_only": true,
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "required_existing_suites": [
+    "page_selected_kmovq.py: unchanged21pairs/80refusals",
+    "page_selected_chain_oracle.py: unchanged12programs+11failed operations",
+    "all other currently required native suites and six workspace checks"
+  ],
+  "schema_version": 1,
+  "scope": "Only exact three register forms and two literal29-byte short-return programs. Actual CPU TRACE required; no memory operand/fault, general EVEX/VEX/BMI, rseq, longer strrchr path, real-program completion or performance claim.",
+  "totals": {
+    "connected_lanes": 6,
+    "connected_old_refusals_per_process": 47,
+    "connected_programs": 2,
+    "connected_route_checks_per_process": 15,
+    "connected_startups": 2,
+    "individual_pairs": 61,
+    "individual_refusals_per_process": 135,
+    "individual_startups": 3,
+    "new_instruction_pairs": 58
+  }
+}

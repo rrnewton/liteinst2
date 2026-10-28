@@ -23,6 +23,8 @@ from dynamic_admission import fixture_results
 from dynamic_matrix import matrix_receipts
 from native_fixtures import fixture_outcomes
 import backing_cleanup
+import backing_cleanup_query
+import core_cc846_inventory
 
 ENV = {"CARGO_INCREMENTAL": "0", "CARGO_BUILD_JOBS": "4",
        "CARGO_NET_OFFLINE": "true", "RUST_TEST_THREADS": "4",
@@ -215,7 +217,10 @@ def command_evidence(command, output, corpus):
     # main authenticates the mandatory current inventory before effects.
     # Historical synthetic callers without the table retain their old scope.
     if "backing_cleanup_harnesses" in corpus:
-        libtest_output, rows, error = backing_cleanup.separate(
+        inventory = corpus["backing_cleanup_harnesses"][command["id"]]
+        cleanup_reader = (backing_cleanup_query if backing_cleanup.typed_equal(
+            inventory, [backing_cleanup_query.specification()]) else backing_cleanup)
+        libtest_output, rows, error = cleanup_reader.separate(
             output, corpus["backing_cleanup_harnesses"][command["id"]],
             command["status"] == "passed")
         command["backing_cleanup_harnesses"] = rows
@@ -271,7 +276,8 @@ def qualify(record):
         commands = {command["id"]: command for command in record["commands"]}
         for identity in ("workspace_tests", "serial_launch"):
             rows = commands.get(identity, {}).get("backing_cleanup_harnesses", [])
-            passed &= len(rows) == 1 and backing_cleanup.is_complete(rows[0])
+            cleanup_reader = backing_cleanup_query if record.get("backing_cleanup_query_required") is True else backing_cleanup
+            passed &= len(rows) == 1 and cleanup_reader.is_complete(rows[0])
     record["status"] = "passed" if passed else "failed"
     for command in record["commands"]:
         for field in ("native_cases", "dynamic_admission_fixtures", "dynamic_matrix_cases",
@@ -315,7 +321,7 @@ def main():
               "claim_targets": [1, 2, 4], "complete_claims_established": [],
               "preemption_clock": "not_evaluated", "performance_claim": None,
               "status": "preflight", "commands": [], "source_unchanged": None,
-              "backing_cleanup_required": True}
+              "backing_cleanup_required": True, "backing_cleanup_query_required": True}
     for name, argv, timeout in COMMANDS:
         record["commands"].append({"id": name, "argv": argv, "timeout_seconds": timeout,
                                    "environment_delta": {"LITEINST_EVALUATION": "1"}
@@ -333,7 +339,8 @@ def main():
         record["corpus_sha256"] = sha(corpus_data)
         corpus = json.loads(corpus_data)
         require(corpus["schema_version"] == 1, "unknown_corpus_schema")
-        backing_cleanup.require_inventory(corpus)
+        backing_cleanup_query.require_inventory(corpus)
+        core_cc846_inventory.require_current(corpus)
         record["configuration"] = cargo_configuration(env)
         record["hardware"] = hardware()
         record["toolchain"] = {name: {"version": tool_version(name, env),

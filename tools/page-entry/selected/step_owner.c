@@ -230,3 +230,6 @@ void li2_step_trace(struct li2_step_owner *o,int sig,siginfo_t *si,ucontext_t *u
 
 #include "tf_owner.inc"
 #include "repeat_owner.inc"
+#ifdef LI2_TF_HANDOFF
+#include "tf_chain.inc"
+#endif

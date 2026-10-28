@@ -1,0 +1,71 @@
+{
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "argv": [
+        "kmovq-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 80,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "stderr": "",
+      "stdout": "LI2_KMV_TF_PASS group=0 pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 new_refusal_bytes=33 full_state=21 full_memory=21 live_endpoints=21\n"
+    }
+  ],
+  "literal_effects": "RSI receives all64 bits of actual independently seeded K0. Zero/all1/high-bit/mixed sources and complementary initialRSI distinguish stale and truncated results. All32ZMM/all8K, other15GPR/flags/kernelFP/liveXSAVE/stack/data remain exact; no XSTATE_BV/header normalization.",
+  "native_pairs_per_group": [
+    21
+  ],
+  "negative_endpoint": "No data memory operand. All47 generic plus33 new supplied encoding refusals; original actual-fault suites remain separate.",
+  "new_refusal_count": 33,
+  "new_register_move_pairs_total": 20,
+  "old_refusal_count": 47,
+  "prospective_only": true,
+  "record_extent": "header_bytes + 22 * sample_bytes + 40 + 5176; all21 positive slots occupied, negative sample remains zero; exact appended actual CPUID/BV trailer.",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Exact c4e1fb93f0/Code1933 KMOVQ RSI,K0. Register-only; four full-width patterns and every five-byte fetch geometry. No operand-fault or real-program/performance claim."
+}

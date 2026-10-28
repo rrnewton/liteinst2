@@ -27,6 +27,10 @@ static long last_syscall=-1;
 static uintptr_t vdso_first,vdso_end;
 static unsigned long vdso_selected;
 static void fail(unsigned,long) __attribute__((noreturn));
+#ifdef LI2_TF_HANDOFF
+static void selected_chain_failure(const struct li2_tf_chain *);
+static void selected_chain_report(unsigned,unsigned,long);
+#endif
 #ifdef LI2_REGISTER_RUN
 static void selected_run_initialize(void);
 static void selected_run_report(unsigned,unsigned,long);
@@ -54,7 +58,11 @@ static void number(struct writer *w,uint64_t n) {
     while (used) { if(w->used==sizeof(w->bytes)) li2_fail("loader report overflow"); w->bytes[w->used++]=b[--used]; }
 }
 static void field(struct writer *w,const char *name,uint64_t n) { text(w,name); number(w,n); }
+#ifdef LI2_TF_HANDOFF
+static void selected_report(struct writer *,unsigned,unsigned,long);
+#else
 static void selected_report(struct writer *);
+#endif
 static void selected_repeat_report(unsigned,unsigned,long);
 static void report(unsigned status,unsigned code,long detail) {
     if(reported) return;
@@ -84,9 +92,16 @@ static void report(unsigned status,unsigned code,long detail) {
     field(&w,",\"partial_errors\":",lc.partial_errors); field(&w,",\"live_pages\":",lc.live_pages);
     field(&w,",\"last_syscall\":",last_syscall<0?0:(uint64_t)last_syscall);
     field(&w,",\"last_mapping_syscall\":",lc.last_syscall); field(&w,",\"last_phase\":",lc.last_phase);
+#ifdef LI2_TF_HANDOFF
+    selected_report(&w,status,code,detail);
+#else
     selected_report(&w);
+#endif
     text(&w,"}\n"); (void)raw(SYS_write,report_fd<0?2:report_fd,(long)w.bytes,w.used,0,0,0);
     if(selected_repeat_attempts)selected_repeat_report(status,code,detail);
+#ifdef LI2_TF_HANDOFF
+    if(selected_chain.initialized)selected_chain_report(status,code,detail);
+#endif
 #ifdef LI2_REGISTER_RUN
     selected_run_report(status,code,detail);
 #ifdef LI2_RUN_TIMING
@@ -103,7 +118,11 @@ static void fail(unsigned code,long detail) {
     if(selected_pending_route==SELECTED_REGISTER_RUN)selected_run_abort(code,detail);
 #endif
     if(selected_pending_route==SELECTED_REPEAT) li2_repeat_abort(&selected_repeat,code,detail);
+#ifdef LI2_TF_HANDOFF
+    if(selected_pending_route==SELECTED_GENERIC_TF) li2_tf_chain_abort(&selected_chain,code,detail);
+#else
     if(selected_pending_route==SELECTED_GENERIC_TF) li2_tf_abort(&selected_tf,code,detail);
+#endif
     if(selected_step_pending) li2_step_abort(&selected_step,code,detail);
     li2_lifecycle_abort(); report(125,code,detail);
     (void)raw(SYS_exit_group,125,0,0,0,0,0); __builtin_trap();
@@ -220,6 +239,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_event_boundary(); /* First action, including nested/foreign events. */
 #endif
+#ifdef LI2_TF_HANDOFF
+    li2_tf_chain_event_boundary(&selected_chain);
+#endif
 #ifdef LI2_REGISTER_RUN
     if(selected_pending_route==SELECTED_REGISTER_RUN &&
        (handling || !selected_step_pending || !si || !ptr ||
@@ -246,7 +268,11 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
            si->si_signo!=SIGTRAP || si->si_code!=TRAP_TRACE || si->si_errno ||
            uc->uc_mcontext.gregs[REG_TRAPNO]!=1 || uc->uc_mcontext.gregs[REG_ERR] ||
            (uintptr_t)si->si_addr!=(uintptr_t)uc->uc_mcontext.gregs[REG_RIP])
+#ifdef LI2_TF_HANDOFF
+            li2_tf_chain_unexpected(&selected_chain,sig,si,uc);
+#else
             li2_tf_unexpected(&selected_tf,sig,si,uc);
+#endif
     }
     checked(!handling && si && ptr,218,sig); handling=1;
 #ifdef LI2_MAPS_PHASE_REUSE
@@ -275,6 +301,9 @@ static void handler(int sig,siginfo_t *si,void *ptr) {
     }
     else if(sig==SIGSYS) dispatch(si,ptr);
     else fail(219,sig);
+#ifdef LI2_TF_HANDOFF
+    li2_tf_chain_handler_end(&selected_chain);
+#endif
 #ifdef LI2_MAPS_PHASE_REUSE
     li2_maps_phase_end(); /* Before sigreturn, hence before generated/app execution. */
 #endif

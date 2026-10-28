@@ -1,0 +1,68 @@
+{
+  "final_revision": "2a747e7bdffeeecc83557dd8bc9ab7d1fd109f12",
+  "full_projection_script_sha256": "755cddeefb1b3436c9f4d43700e919b3c97c6aef7fe246c5d1b73a574f5be1d1",
+  "receipts": [
+    {
+      "bytes": 11010,
+      "kind": "recorded_run",
+      "name": "20261028T013328.614200Z-checks-2a747e7bdffe.json",
+      "sha256": "cbb2b8b9e9f5d0ae5349fe66d78611f7b1f074105cf005a0a7068ab0f810c360"
+    },
+    {
+      "bytes": 27844,
+      "kind": "recorded_run",
+      "name": "20261028T013329.118443Z-page-selected-vmovdqu64-2a747e7bdffe.json",
+      "sha256": "2c7b8b660f4c5c9f21edeeb1931bc88acb6047f2f6d120ca8d5d282af8483671"
+    },
+    {
+      "bytes": 25794,
+      "kind": "recorded_run",
+      "name": "20261028T013340.369696Z-page-selected-chain-oracle-2a747e7bdffe.json",
+      "sha256": "6dbc4c739445a2d1133068efd6d9085165b3f2e332a9fd12797656c3ce178ee6"
+    },
+    {
+      "bytes": 18648,
+      "kind": "recorded_run",
+      "name": "20261028T013358.188270Z-page-selected-vpbroadcast-2a747e7bdffe.json",
+      "sha256": "140a5898884c22572daa55522dcbfeaaad456abffbf291ea73b120248f5ab6f7"
+    },
+    {
+      "bytes": 16232,
+      "kind": "recorded_run",
+      "name": "20261028T013408.768465Z-page-selected-generic-oracle-2a747e7bdffe.json",
+      "sha256": "03f6a2000a886e13f96305c2ecf6db8002e1eb0fd4f19f0663752cfde1973c7c"
+    },
+    {
+      "bytes": 40018,
+      "kind": "recorded_run",
+      "name": "20261028T013417.747788Z-page-selected-maps-2a747e7bdffe.json",
+      "sha256": "d6b3d52f8dfd179236c6c5adbf23d427cd2671446453156589d4defe2fd1a88b"
+    },
+    {
+      "bytes": 8623,
+      "kind": "recorded_run",
+      "name": "20261028T013453.488641Z-page-selected-register-controls-2a747e7bdffe.json",
+      "sha256": "4dbbab7c290b95a170d503599a64c0d685265f25572ed369f1928dbe369242cd"
+    },
+    {
+      "bytes": 13370,
+      "kind": "recorded_run",
+      "name": "20261028T013505.624529Z-page-selected-register-connected-2a747e7bdffe.json",
+      "sha256": "d8f9955d73cb711e555948e352e6c1ec1e4887868ef847924bd136c9c767314d"
+    },
+    {
+      "bytes": 12254,
+      "kind": "recorded_run",
+      "name": "20261028T013518.764968Z-page-selected-register-time-2a747e7bdffe.json",
+      "sha256": "0e25745caf641c0da2bbddbe0690460027ef1978ee21e4938485ba285f5baa3b"
+    },
+    {
+      "bytes": 16000,
+      "kind": "recorded_run",
+      "name": "20261028T013552.384254Z-page-selected-chain-real-2a747e7bdffe.json",
+      "sha256": "f939826429eb670d583392e86147a969a055cb3d0a8c17d41a38d1146e010ed4"
+    }
+  ],
+  "schema_version": 1,
+  "summary_reader_sha256": "3e478b2016050245cd0ba37eb874a74c5ad0661ecf25a3532573f607a517ef97"
+}

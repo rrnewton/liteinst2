@@ -1,0 +1,127 @@
+{
+  "final_revision": "cdac5a7fd5d95c090048ec7be3d7ce901d4fbfee",
+  "receipts": [
+    {
+      "bytes": 9081,
+      "kind": "run",
+      "name": "20261028T000737.771009Z-page-selected-chain-oracle-dd05a9e9ccf4.json",
+      "sha256": "b38f1e99564011eb5b8112bff6a7795d753f76cfdf7769b109f777e4e1a8c329"
+    },
+    {
+      "bytes": 9081,
+      "kind": "run",
+      "name": "20261028T001000.113345Z-page-selected-chain-oracle-70a457247cfb.json",
+      "sha256": "2e52864b9fcca24282418c1e487700807558d6f7dbd500910703dfb0aa9e83c6"
+    },
+    {
+      "bytes": 25792,
+      "kind": "run",
+      "name": "20261028T001345.273994Z-page-selected-chain-oracle-15b7e996a4fb.json",
+      "sha256": "376955d1f3a450320a2bb4dbc3f7cacb56cb74d0c0e7e5f93f50fd30a47bdec1"
+    },
+    {
+      "bytes": 16230,
+      "kind": "run",
+      "name": "20261028T001433.447652Z-page-selected-generic-oracle-15b7e996a4fb.json",
+      "sha256": "c7534a0102f9247c603f660a57581a7fac97c5855bea0ba1835767256e8e0a3c"
+    },
+    {
+      "bytes": 40016,
+      "kind": "run",
+      "name": "20261028T001442.231563Z-page-selected-maps-15b7e996a4fb.json",
+      "sha256": "28420624589a952de7af372f8ffb056adb68b90f07d2b4feed8ae64c6451fc5d"
+    },
+    {
+      "bytes": 8621,
+      "kind": "run",
+      "name": "20261028T001518.157395Z-page-selected-register-controls-15b7e996a4fb.json",
+      "sha256": "0d4f97c1a13e69c6de6f0e540a02aad32468ec7c52d9584e8628ad09b4bd31aa"
+    },
+    {
+      "bytes": 13366,
+      "kind": "run",
+      "name": "20261028T001530.250306Z-page-selected-register-connected-15b7e996a4fb.json",
+      "sha256": "6869bd2e017411e0a0197a913fc9a01793e0006d05b9abcc63ee43aa1f495550"
+    },
+    {
+      "bytes": 15998,
+      "kind": "run",
+      "name": "20261028T001543.725610Z-page-selected-chain-real-15b7e996a4fb.json",
+      "sha256": "6f4dad9f053327f435b60474432334bd9c02717852659d2a094f0d434c9dcd1e"
+    },
+    {
+      "bytes": 10340,
+      "kind": "run",
+      "name": "20261028T001801.106371Z-page-selected-vmovdqu64-057442d3a7df.json",
+      "sha256": "57c2db9bc54ec20cf283e24d4a39ebeee4d3875b54071ec92f45e423c75e027c"
+    },
+    {
+      "bytes": 3767,
+      "kind": "source_guard_failure",
+      "name": "20261028T001950.975976Z-page-selected-vmovdqu64-5737d065d25b.json",
+      "sha256": "af0e36dce487c04eef1a8a9bbac9f39daeb386bbc4c9cd5fd00d573f1593f872"
+    },
+    {
+      "bytes": 27838,
+      "kind": "run",
+      "name": "20261028T002001.034008Z-page-selected-vmovdqu64-cdac5a7fd5d9.json",
+      "sha256": "afe37d73220f7a9eca3ac0a95e1f8172c7398875fc772283581a28545e514967"
+    },
+    {
+      "bytes": 25792,
+      "kind": "run",
+      "name": "20261028T002045.287004Z-page-selected-chain-oracle-cdac5a7fd5d9.json",
+      "sha256": "bcb44f3eeade39773b712a9c76be4faa3442024d079ce49d6b72eb3f19579947"
+    },
+    {
+      "bytes": 10966,
+      "kind": "run",
+      "name": "20261028T002045.543030Z-checks-cdac5a7fd5d9.json",
+      "sha256": "bc1304a2a3b3f78c3dac4e06acb711a7c022808d5f775115ee7ffb8200a8c545"
+    },
+    {
+      "bytes": 18642,
+      "kind": "run",
+      "name": "20261028T002102.777560Z-page-selected-vpbroadcast-cdac5a7fd5d9.json",
+      "sha256": "839fba8bf0aab9b26bbb2a0e2525bc20756e2a65741df70bccf45b48ebb68c25"
+    },
+    {
+      "bytes": 16230,
+      "kind": "run",
+      "name": "20261028T002113.150577Z-page-selected-generic-oracle-cdac5a7fd5d9.json",
+      "sha256": "c268e4e2c51509cde41015749658cd921ecc0314fce8198d801ffb4e6852300a"
+    },
+    {
+      "bytes": 40016,
+      "kind": "run",
+      "name": "20261028T002121.971296Z-page-selected-maps-cdac5a7fd5d9.json",
+      "sha256": "8a7e03f4525eb80c4b4fb51095b91feb0253cd5cdc94d71723bb2fb2ce67968d"
+    },
+    {
+      "bytes": 8621,
+      "kind": "run",
+      "name": "20261028T002157.615662Z-page-selected-register-controls-cdac5a7fd5d9.json",
+      "sha256": "2cc465e5b3d4a82eae1d9969433d6dc1789016247e906a0a439210ab8d28ed3d"
+    },
+    {
+      "bytes": 13366,
+      "kind": "run",
+      "name": "20261028T002209.643306Z-page-selected-register-connected-cdac5a7fd5d9.json",
+      "sha256": "a5adb6f4246bf93c0fba8c256a4bbd8c721314fd19cdaeb64093539d8ce83e6b"
+    },
+    {
+      "bytes": 12251,
+      "kind": "run",
+      "name": "20261028T002222.835188Z-page-selected-register-time-cdac5a7fd5d9.json",
+      "sha256": "5475e66a7878991730b4a2ff4c2dd9612e476065b35c0d098cd994b932f6a440"
+    },
+    {
+      "bytes": 15998,
+      "kind": "run",
+      "name": "20261028T002258.216997Z-page-selected-chain-real-cdac5a7fd5d9.json",
+      "sha256": "fcb813f5b168c8e1f7578e7a8a9721a183e9b57c1477d1ecd593c85451c8d936"
+    }
+  ],
+  "schema_version": 1,
+  "summary_reader_sha256": "3e478b2016050245cd0ba37eb874a74c5ad0661ecf25a3532573f607a517ef97"
+}

@@ -44,6 +44,14 @@ def block(split=False):
     return "\n".join(lines) + "\n"
 
 
+def exec_parser_block():
+    rows = list(fixtures.EXEC_PARSER_ROWS)
+    text = (header(fixtures.EXEC_REFERENCE) + "\nrunning 2 tests\n"
+            + "".join(f"test {row['test']} ... PRIVATE_SENTINEL\nok\n" for row in rows)
+            + summary(2))
+    return text, rows
+
+
 def outcome(text, succeeded=True):
     return fixtures.fixture_outcomes(text, CASES, succeeded)
 
@@ -65,6 +73,14 @@ class NamedFixtureParsingTests(unittest.TestCase):
                     "status": "complete", "test_result": "ok", "command_succeeded": True,
                     "qualified_run": False} for row in CASES])
 
+        text, expected = exec_parser_block()
+        actual = fixtures.fixture_outcomes(text, expected, True)
+        self.assertEqual(actual, [row | {
+            "status": "complete", "test_result": "ok", "command_succeeded": True,
+            "qualified_run": False} for row in expected])
+        self.assertEqual({row["cohort"] for row in actual}, {"b3_exec_parser_control"})
+        self.assertNotIn("PRIVATE_SENTINEL", json.dumps(actual))
+
     def test_missing_duplicate_and_malformed_harnesses_refuse(self):
         self.refuse("PRIVATE_SENTINEL", "missing_native_fixture_harness")
         self.refuse(block() + block(), "duplicate_native_fixture_harness")
@@ -82,6 +98,17 @@ class NamedFixtureParsingTests(unittest.TestCase):
         self.refuse(block().replace("test four_lanes ...", "test unknown ..."),
                     "native_fixture_cohort_differs")
 
+        text, expected = exec_parser_block()
+        first = f"test {expected[0]['test']} ... PRIVATE_SENTINEL\nok\n"
+        for changed, code in ((text.replace(first, ""), "native_fixture_cohort_differs"),
+                              (text.replace(first, first + first), "duplicate_native_fixture_test"),
+                              (text.replace(expected[0]["test"], fixtures.EXEC_PARSER_PREFIX + "unknown"),
+                               "native_fixture_cohort_differs")):
+            with self.subTest(parser_control=code), self.assertRaisesRegex(InvalidEvidence, "^" + code + "$") as caught:
+                fixtures.fixture_outcomes(changed, expected, True)
+            self.assertEqual(len(caught.exception.partial), 2)
+            self.assertFalse(any(row["qualified_run"] for row in caught.exception.partial))
+
     def test_exact_names_cannot_be_replaced_by_suffix_or_prefix_lookalikes(self):
         for name in (CASES[0]["test"] + "_extra", CASES[0]["test"].rsplit("::", 1)[-1],
                      CASES[0]["test"].replace("::native::", "::nativex::")):
@@ -94,6 +121,12 @@ class NamedFixtureParsingTests(unittest.TestCase):
                     "native_fixture_wrong_harness")
         self.refuse(block().replace("test four_lanes ... ok", first.strip()),
                     "native_fixture_wrong_harness")
+
+        text, expected = exec_parser_block()
+        for foreign in (fixtures.UNIT, "test/foreign"):
+            with self.subTest(parser_control_harness=foreign), self.assertRaisesRegex(
+                    InvalidEvidence, "^native_fixture_wrong_harness$"):
+                fixtures.fixture_outcomes(text.replace(header(fixtures.EXEC_REFERENCE), header(foreign)), expected, True)
 
     def test_all_tests_in_monitored_unit_harness_have_exact_terminal_structure(self):
         ordinary = "test ordinary::model_test ... ok\n"
@@ -124,6 +157,17 @@ class NamedFixtureParsingTests(unittest.TestCase):
                 self.assertEqual(rows[-1]["test_result"], "FAILED" if terminal == "FAILED" else "ignored")
                 self.assertEqual(rows[0]["test_result"], "ok")
 
+        text, expected = exec_parser_block()
+        for terminal in ("FAILED", "ignored", "ignored, reason"):
+            changed = text.replace("PRIVATE_SENTINEL\nok\n", "PRIVATE_SENTINEL\n" + terminal + "\n", 1)
+            with self.subTest(parser_control_terminal=terminal), self.assertRaisesRegex(
+                    InvalidEvidence, "^native_fixture_not_passed$") as caught:
+                fixtures.fixture_outcomes(changed, expected, True)
+            self.assertEqual(caught.exception.partial[0]["status"], "failed")
+            self.assertEqual(caught.exception.partial[0]["test_result"],
+                             "FAILED" if terminal == "FAILED" else "ignored")
+            self.assertFalse(any(row["qualified_run"] for row in caught.exception.partial))
+
     def test_partial_failure_exports_only_declared_identities_and_typed_fields(self):
         rows = self.refuse(block().replace("test four_lanes ... ok", "test PRIVATE_SENTINEL ... ok"),
                            "native_fixture_cohort_differs")
@@ -150,6 +194,13 @@ class NamedFixtureParsingTests(unittest.TestCase):
         for rows in invalid:
             with self.subTest(rows=rows), self.assertRaises(InvalidEvidence):
                 fixtures.fixture_outcomes(block(), rows, True)
+
+        text, expected = exec_parser_block()
+        for changes in ({"cohort": "b3_exec"}, {"cohort": "b3_exec_parser_control_extra"},
+                        {"harness": fixtures.UNIT}, {"test": expected[0]["test"] + "_extra"}):
+            with self.subTest(parser_control_scope=changes), self.assertRaisesRegex(
+                    InvalidEvidence, "^invalid_native_fixture_scope$"):
+                fixtures.fixture_outcomes(text, [expected[0] | changes], True)
 
     def test_explicit_empty_historical_catalog_still_requires_exact_command_types(self):
         self.assertEqual(fixtures.fixture_outcomes("historical cohort", [], True), [])

@@ -24,6 +24,16 @@ EXEC_TESTS = frozenset((
     "blocked_exec_resolver_uses_original_deadline_and_owner_cleanup",
     "exec_full_comparator_rejects_each_state_input_map_and_identity_corruption",
 ))
+# Exact supplied-byte parser controls compiled into the integration harness.
+# These are named parser outcomes, never executed exec-replacement traces.
+EXEC_PARSER_PREFIX = "b3_exec::self_maps_parser_tests::"
+EXEC_PARSER_NAMES = (
+    "self_capture_still_requires_exact_count_complete_bytes_and_order",
+    "self_capture_uses_actual_rows_but_child_still_refuses_513",
+)
+EXEC_PARSER_ROWS = tuple({"cohort": "b3_exec_parser_control", "harness": EXEC_REFERENCE,
+                          "test": EXEC_PARSER_PREFIX + name} for name in EXEC_PARSER_NAMES)
+EXEC_PARSER_IDENTITIES = {row["test"]: row for row in EXEC_PARSER_ROWS}
 EXEC_PRIVATE_PREFIX = "linux::remote::dynamic::owner::admission::exec::tests::native::"
 EXEC_PRIVATE_TESTS = frozenset(EXEC_PRIVATE_PREFIX + name for name in (
     "admitted_exec_native_first_user_and_retired_history_are_exact",
@@ -246,6 +256,7 @@ def catalog(fixtures):
                     and row["test"] in EXEC_PRIVATE_TESTS)
                 or (row["cohort"] == "b3_exec_failure" and row["harness"] == UNIT
                     and row["test"] in EXEC_FAILURE_TESTS)
+                or row == EXEC_PARSER_IDENTITIES.get(row["test"])
                 or row == RUNTIME_IDENTITIES.get(row["test"])
                 or row == WAIT_CUSTODY_ROW
                 or row == RUNTIME_KERNEL_IDENTITIES.get(row["test"])

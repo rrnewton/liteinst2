@@ -1,0 +1,201 @@
+{
+  "final_revision": "577ac6823ca2a7f2cdbd3bf0241a2e875eaf6d98",
+  "full_projection_script_sha256": "755cddeefb1b3436c9f4d43700e919b3c97c6aef7fe246c5d1b73a574f5be1d1",
+  "predecessor_count": 15,
+  "predecessor_projection_script_sha256": "7ca14c7ef8f40d37039a56c84759064e58f71b0c6af3c9b46e41ca42f4c22d72",
+  "predecessor_receipts": [
+    {
+      "bytes": 27840,
+      "name": "20261028T003840.571297Z-page-selected-vmovdqu64-73a66c91f9b6.json",
+      "revision": "73a66c91f9b680cb6615068616908090871ff8c7",
+      "sha256": "ba25a8246e1da735c62cbec68b263d18539c811388755a1220e10351298e50f8",
+      "status": "passed"
+    },
+    {
+      "bytes": 25794,
+      "name": "20261028T003851.864324Z-page-selected-chain-oracle-73a66c91f9b6.json",
+      "revision": "73a66c91f9b680cb6615068616908090871ff8c7",
+      "sha256": "6a1e81b13fd345ffead2d59d5c362538d551652d1d62c8b9d647d90519c8533b",
+      "status": "passed"
+    },
+    {
+      "bytes": 18646,
+      "name": "20261028T003909.685563Z-page-selected-vpbroadcast-73a66c91f9b6.json",
+      "revision": "73a66c91f9b680cb6615068616908090871ff8c7",
+      "sha256": "887dcc66d0d2bdcfb5d0424cbedf84c71ab9fb3cdb41766b6a557202677324fb",
+      "status": "passed"
+    },
+    {
+      "bytes": 16231,
+      "name": "20261028T003920.408145Z-page-selected-generic-oracle-73a66c91f9b6.json",
+      "revision": "73a66c91f9b680cb6615068616908090871ff8c7",
+      "sha256": "56df627abb37cf923a23ec4fb1b4b974a71867ad31e7bd93a6cb9c1f38953650",
+      "status": "passed"
+    },
+    {
+      "bytes": 40018,
+      "name": "20261028T003929.398944Z-page-selected-maps-73a66c91f9b6.json",
+      "revision": "73a66c91f9b680cb6615068616908090871ff8c7",
+      "sha256": "e2047315cb5a631772b584676899c5866744a3a48f14080bbd6a5304bfd7dbfc",
+      "status": "passed"
+    },
+    {
+      "bytes": 8623,
+      "name": "20261028T004005.657850Z-page-selected-register-controls-73a66c91f9b6.json",
+      "revision": "73a66c91f9b680cb6615068616908090871ff8c7",
+      "sha256": "747f03d9178d811390b85a137f032e6a615d28040f7f983460413592c431edf3",
+      "status": "passed"
+    },
+    {
+      "bytes": 13370,
+      "name": "20261028T004017.943695Z-page-selected-register-connected-73a66c91f9b6.json",
+      "revision": "73a66c91f9b680cb6615068616908090871ff8c7",
+      "sha256": "ec67121c190d4dcac2056e6f4a4cf55e763a9dd03db59014bb10767df9eb8d28",
+      "status": "passed_finite_cohort"
+    },
+    {
+      "bytes": 12253,
+      "name": "20261028T004031.495696Z-page-selected-register-time-73a66c91f9b6.json",
+      "revision": "73a66c91f9b680cb6615068616908090871ff8c7",
+      "sha256": "139b824a8bc62136d19c2fdef5cf0ef04013c7c8ce7efe5a979771332f0c64d6",
+      "status": "failed"
+    },
+    {
+      "bytes": 16000,
+      "name": "20261028T004104.954725Z-page-selected-chain-real-73a66c91f9b6.json",
+      "revision": "73a66c91f9b680cb6615068616908090871ff8c7",
+      "sha256": "0b903d42fed4a0328bd5f68f3f5218f974e3c5f6dc2406985eeec2ea0a8cd46f",
+      "status": "failed"
+    },
+    {
+      "bytes": 27838,
+      "name": "20261028T004905.624605Z-page-selected-vmovdqu64-0969d5d37ceb.json",
+      "revision": "0969d5d37ceb616f0d6514b62786d787f4ecd863",
+      "sha256": "8f701b979e31fd4e55b75b05a34844d0d71bcc074a206216d1254092be6c00b0",
+      "status": "passed"
+    },
+    {
+      "bytes": 18644,
+      "name": "20261028T004917.687432Z-page-selected-vpbroadcast-0969d5d37ceb.json",
+      "revision": "0969d5d37ceb616f0d6514b62786d787f4ecd863",
+      "sha256": "a6d718d00a0285da66d3ccb015c6b6559b3afbcc182eb50d06123fb79ecb190a",
+      "status": "passed"
+    },
+    {
+      "bytes": 16230,
+      "name": "20261028T004928.260200Z-page-selected-generic-oracle-0969d5d37ceb.json",
+      "revision": "0969d5d37ceb616f0d6514b62786d787f4ecd863",
+      "sha256": "8b3c59eab8ad5f05b7ebcfcd71f280f6815fb0abb0d315c72976e030711b5547",
+      "status": "passed"
+    },
+    {
+      "bytes": 8621,
+      "name": "20261028T004938.120011Z-page-selected-register-controls-0969d5d37ceb.json",
+      "revision": "0969d5d37ceb616f0d6514b62786d787f4ecd863",
+      "sha256": "1e7ac41079ba81187f253287e068be7d70e3415e3a77f408602f09fe97f9db59",
+      "status": "passed"
+    },
+    {
+      "bytes": 13366,
+      "name": "20261028T004950.361962Z-page-selected-register-connected-0969d5d37ceb.json",
+      "revision": "0969d5d37ceb616f0d6514b62786d787f4ecd863",
+      "sha256": "e57ddece40e1527408931fd8f0c44651f327972838eebb534d466c239eb09c3e",
+      "status": "passed_finite_cohort"
+    },
+    {
+      "bytes": 15998,
+      "name": "20261028T005004.837750Z-page-selected-chain-real-0969d5d37ceb.json",
+      "revision": "0969d5d37ceb616f0d6514b62786d787f4ecd863",
+      "sha256": "6ce07ead57fbbc3eff88f91d7139e25af26b0289d4e4f12e7c62eda071626d26",
+      "status": "failed"
+    }
+  ],
+  "receipts": [
+    {
+      "bytes": 11085,
+      "kind": "recorded_run",
+      "name": "20261028T004905.214353Z-checks-0969d5d37ceb.json",
+      "sha256": "d96e67c20e041fdff7f4a7af2ec4a1616bd9c41e18c4a446c718b4fab5f34689"
+    },
+    {
+      "bytes": 6481,
+      "kind": "recorded_run",
+      "name": "20261028T004916.873237Z-page-selected-chain-oracle-0969d5d37ceb.json",
+      "sha256": "f0d3a499d24912669861a77ded54b8d31eeda72ccf7716fd693e5365cc530805"
+    },
+    {
+      "bytes": 5710,
+      "kind": "recorded_run",
+      "name": "20261028T004937.240662Z-page-selected-maps-0969d5d37ceb.json",
+      "sha256": "1a28d9728efedf0ee793d9e33fda7d41b7f0dd12b5383c66167cabccc1642f8c"
+    },
+    {
+      "bytes": 6539,
+      "kind": "recorded_run",
+      "name": "20261028T005004.009934Z-page-selected-register-time-0969d5d37ceb.json",
+      "sha256": "0b1dac40f8c6e5f17efe3029ca110abfa1c5d65c66ecf5f46fbd03a7b6617b13"
+    },
+    {
+      "bytes": 27840,
+      "kind": "recorded_run",
+      "name": "20261028T010904.792561Z-page-selected-vmovdqu64-577ac6823ca2.json",
+      "sha256": "5fa9947a5f0959e15ae085e5efd66e8de229bc6ba9cdab68a84f05269a05951e"
+    },
+    {
+      "bytes": 11014,
+      "kind": "recorded_run",
+      "name": "20261028T010905.463496Z-checks-577ac6823ca2.json",
+      "sha256": "186c0c95544c4977e3a57218964e0cae00b8d31ee401d08cc541c865b470ca30"
+    },
+    {
+      "bytes": 25794,
+      "kind": "recorded_run",
+      "name": "20261028T010916.336306Z-page-selected-chain-oracle-577ac6823ca2.json",
+      "sha256": "c84559540b443604921f0cf692ea834894dcaad69fba752c6201a1a48955b884"
+    },
+    {
+      "bytes": 18646,
+      "kind": "recorded_run",
+      "name": "20261028T010935.173108Z-page-selected-vpbroadcast-577ac6823ca2.json",
+      "sha256": "c94af587dac18473de8eec7f7306846869b911d0d69f822d4e671ac2951d516c"
+    },
+    {
+      "bytes": 16231,
+      "kind": "recorded_run",
+      "name": "20261028T010946.698309Z-page-selected-generic-oracle-577ac6823ca2.json",
+      "sha256": "2f0d025cd709279e9f02bb493013e14e16e71e7b59ace3c859e0b7c8720a223b"
+    },
+    {
+      "bytes": 40018,
+      "kind": "recorded_run",
+      "name": "20261028T010955.919905Z-page-selected-maps-577ac6823ca2.json",
+      "sha256": "e424926ebc61ae7aa1e56b1bd96b462c59c04d0b93dbb94bc2f51bb52efc1288"
+    },
+    {
+      "bytes": 8623,
+      "kind": "recorded_run",
+      "name": "20261028T011033.679565Z-page-selected-register-controls-577ac6823ca2.json",
+      "sha256": "afbe6d7b975ea671968daaee060ae3bbbc5ff4abb2695de83d981dd16bf8728c"
+    },
+    {
+      "bytes": 13370,
+      "kind": "recorded_run",
+      "name": "20261028T011046.245509Z-page-selected-register-connected-577ac6823ca2.json",
+      "sha256": "a1265f25db403b1a263a9aa98bda8ecd2bdb0b0cec06e346745d3cde4ee5f21f"
+    },
+    {
+      "bytes": 12253,
+      "kind": "recorded_run",
+      "name": "20261028T011059.967723Z-page-selected-register-time-577ac6823ca2.json",
+      "sha256": "c16727a464ccdd0bc5d1b75b427cae2132a79d3f2bd422a787805bc344408218"
+    },
+    {
+      "bytes": 16000,
+      "kind": "recorded_run",
+      "name": "20261028T011135.674801Z-page-selected-chain-real-577ac6823ca2.json",
+      "sha256": "a2a43895295a2c4482a80b0da3b1c7daac7ab0e1706d8269e137291f4b311252"
+    }
+  ],
+  "schema_version": 1,
+  "summary_reader_sha256": "3e478b2016050245cd0ba37eb874a74c5ad0661ecf25a3532573f607a517ef97"
+}
