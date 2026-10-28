@@ -144,6 +144,7 @@ def main():
         build_status='not_started', rust_archive_used=False)
     pins, aliases, artifacts, modes, tools, versions, configurations = {}, {}, {}, {}, {}, {}, {}
     build = private/'build';env = dict(ENV)
+    gdb_env = dict(env, XDG_CACHE_HOME=str(private/'gdb-cache'))
     def pin(path):
         need(path is not None, 'input/tool present');lexical = str(Path(path) if Path(path).is_absolute() else Path.cwd()/path)
         p = Path(lexical).resolve(strict=True)
@@ -182,7 +183,8 @@ def main():
             need(value and not err, 'C subtool observation')
             tools[n] = pin(value if Path(value).is_absolute() else shutil.which(value,path=ENV['PATH']))
         for n in ('cc','python','gdb','objdump'):
-            _,out,err = run('version-'+n,[tools[n],'--version']);need(not err, 'version stderr')
+            _,out,err = run('version-'+n,[tools[n],'--version'], environment=gdb_env if n == 'gdb' else None)
+            need(not err, 'version stderr')
             m = re.search(r'\b([0-9]+)\.([0-9]+)(?:\.([0-9]+))?\b',out.decode())
             need(m is not None, 'actual numeric version');versions[n] = [int(m[1]),int(m[2]),int(m[3] or 0)]
         for name in ('crt1.o','Scrt1.o','crti.o','crtn.o','crtbegin.o','crtbeginS.o','crtend.o','crtendS.o','libgcc.a','libgcc_s.so','libc.so'):
@@ -232,7 +234,8 @@ def main():
             _,out,err = run(mode+'-body',[tools['objdump'],'-d','-w','-M','att','--disassemble=li2_test_memset',path],profile='inspect');need(not err,'objdump stderr')
             body = body_check(path,symbols,out,mode)
             _,out,err = run(mode+'-dwarf',[tools['gdb'],'-q','-nx','-batch','-iex','set auto-load off','-iex','set debuginfod enabled off',
-                '-iex','maintenance set worker-threads 1','--readnow','--se='+str(path),'-x',FIXTURE/'layout.py'])
+                '-iex','set index-cache enabled off','-iex','maintenance set worker-threads 1','--readnow',
+                '--se='+str(path),'-x',FIXTURE/'layout.py'], environment=gdb_env)
             need(not err,'file-only DWARF stderr');layout = decode(out);slot = layout_check(layout,record_size);sizes.append(slot)
             data,_,ph = elf(path)
             need(sum(p[0] == 1 and p[1]&2 and p[3] <= record_address and record_address+record_size <= p[3]+p[6] for p in ph) == 1, 'actual full BSS record owner')
