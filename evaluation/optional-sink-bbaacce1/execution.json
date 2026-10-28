@@ -1,0 +1,99 @@
+{
+  "allocator_environment": {
+    "AGENT_UTILS_ENGINE": "python",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "PYTHONNOUSERSITE": "1"
+  },
+  "allocator_sources": {
+    "bin/cpuset-alloc": {
+      "bytes": 7588,
+      "sha256": "2c3ac95c8d8c70a423dd9efe0da0540f8ae3c70f589b7924ecec74cc634bc1f5"
+    },
+    "py/bin/cpuset-alloc": {
+      "bytes": 18512,
+      "sha256": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da"
+    },
+    "py/dagrun/cpuset_allocator.py": {
+      "bytes": 18512,
+      "sha256": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da"
+    },
+    "py/dagrun/reservation.py": {
+      "bytes": 18980,
+      "sha256": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    }
+  },
+  "closed": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "da236c49a8cbcde9245eee5275f6b3c95fc6df7004330f83a089479f70d8f575",
+    "reaped_descendants": 0,
+    "seconds": 67.9649698769208,
+    "start_utc": "2026-10-28T04:53:12.380682+00:00",
+    "termination": null
+  },
+  "command": [
+    "$AGENT_UTILS/bin/cpuset-alloc",
+    "run",
+    "--cores",
+    "4",
+    "--tag",
+    "$RESERVATION_TAG",
+    "--",
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/backoff-work/verify.py",
+    "--revision",
+    "bbaacce1dedbe5188fa6eb1d2ececacd18a57c4e",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME",
+    "--optional",
+    "--worker-backpressure",
+    "--sink-backpressure"
+  ],
+  "command_normalization": "AGENT_UTILS, PYTHON, REPO, RAW, TOOLCHAIN, USER_HOME and CARGO_HOME are local absolute paths; RESERVATION_TAG is an arbitrary job label.",
+  "hardware": {
+    "architecture": "x86_64",
+    "backoff_controller_affinity_cpus": 1,
+    "backoff_distinct_application_cpus": 4,
+    "backoff_main_affinity_cpus": 1,
+    "backoff_parent_affinity_cpus": 4,
+    "backoff_sink_affinity_cpus": 1,
+    "backoff_worker_affinity_cpus": 1,
+    "build_affinity_cpus": 4,
+    "family": 26,
+    "model": 17,
+    "native_affinity_cpus": 1,
+    "native_affinity_scope": "single-worker checksum/exact clients and forced native qualification; state-oracle and timed affinities are separate",
+    "native_state_affinity_cpus": 4,
+    "owner_label": "AMD EPYC Zen 5 dev host",
+    "owner_label_origin": "owner-specified; not inferred from observed CPU fields",
+    "stepping": 0,
+    "streamed_controller_affinity_cpus": 1,
+    "streamed_total_active_cpus": 2,
+    "streamed_worker_affinity_cpus": 1,
+    "timed_controller_affinity_cpus": 1,
+    "timed_total_active_cpus": 2,
+    "timed_worker_affinity_cpus": 1,
+    "vendor": "AuthenticAMD"
+  },
+  "output_limit_bytes": 1048576,
+  "private_record_sha256": "db15ef91a190294fa0a6e068fb3cd29d7b884926828665aa74c40f8c9ee3a115",
+  "reservation_scope": "Allocator reported a shared-ledger reservation and AllowedCPUs for four CPUs; recipe independently checked actual affinity. No exclusive-host or real-time guarantee.",
+  "revision": "bbaacce1dedbe5188fa6eb1d2ececacd18a57c4e",
+  "schema": 1,
+  "scope": "One functional campaign on changed source. Operational seconds are not performance or accuracy measurements. Prior campaigns remain failed.",
+  "selected_logical_cpus": [
+    13,
+    15,
+    19,
+    25
+  ],
+  "wall_limit_seconds": 1200
+}

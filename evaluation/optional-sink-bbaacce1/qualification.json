@@ -1,0 +1,281 @@
+{
+  "authority": {
+    "closed_manifest": {
+      "bytes": 16124,
+      "sha256": "c96cd16885663d642365c0b2f12a3efe0230c3389d8eac5bd44353fce8810ed8"
+    },
+    "prerequisite_result": {
+      "bytes": 60648,
+      "sha256": "6f34500a0dc72199f16edc10da2413d4751856298976ff8b1d6170873f811c61"
+    },
+    "root_failure_summary": null,
+    "source_descriptors_checked_against_git": 97
+  },
+  "gates": {
+    "scope": "Separate validation evidence; no gate outcome inferred here.",
+    "status": "NOT_INCLUDED"
+  },
+  "native_setup": "Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.",
+  "native_state_qualification": "PASS: gate entry through post-POP; full inherited GPR/flags/XSAVE/data and exact [S-128, stack_end) comparisons; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim",
+  "optional_control": {
+    "protocol_in": "receipt.json#/optional_control/protocol",
+    "source_attested": "actual stable post-disable Fast bracket, later sampled rearm and retained B owner across C rearm; whole input, full journals, reports and real worker join",
+    "status": "PASS"
+  },
+  "optional_frontend_scope": "actual optional TLS gate with eight full-state pairs and a separate 96-call functional/accounting case; no joint full-state coverage, timing accuracy, cheap-off or performance claim",
+  "prerequisites": {
+    "counts": {
+      "checksum": {
+        "calls": 8,
+        "completed": 6,
+        "originals": 8,
+        "reports": [
+          4,
+          2
+        ],
+        "unsampled": 2
+      },
+      "completed_drain": {
+        "batches": 2,
+        "calls": 64,
+        "capacity_refusals": 2,
+        "empty_drains": 3,
+        "events": 128,
+        "originals": 64,
+        "report_records": 64,
+        "sampled": 64
+      },
+      "concurrent_state": {
+        "children": 8,
+        "comparisons": 844,
+        "pairs": 4,
+        "scope": "concurrent activation without a competing controller; same complete original-state comparator and truth checks"
+      },
+      "exact_populations": {
+        "calls": 288,
+        "closed": 148,
+        "fresh_processes": 12,
+        "originals": 288,
+        "sampled": 140
+      },
+      "exact_state": {
+        "children": 8,
+        "comparisons": 844,
+        "conditional_branches": 130,
+        "input_reads": 130,
+        "original_instructions": 800,
+        "pairs": 4,
+        "return_reads": 4,
+        "taken_branches": 126
+      },
+      "forced_concurrent": {
+        "calls": 6,
+        "closed": 1,
+        "inflight_rearm": 1,
+        "registry_contentions": 0,
+        "removed": 1,
+        "sampled": 4,
+        "writer_contentions": 2
+      },
+      "history": {
+        "actions": 600,
+        "calls": 2,
+        "epochs": 300,
+        "history_batches": 77,
+        "new_prefix": 599,
+        "old_prefix": 1,
+        "retired": 300,
+        "sampled": 2
+      },
+      "optional_functional": {
+        "actions": 5,
+        "batches": 3,
+        "calls": 96,
+        "capacity_refusals": 2,
+        "detached": true,
+        "empty_drains": 3,
+        "epochs": 2,
+        "events": 128,
+        "fast": 32,
+        "fresh_processes": 1,
+        "helper_joins": 1,
+        "input_unchanged": true,
+        "originals": 96,
+        "registrations": 1,
+        "report_records": 64,
+        "rows": 64,
+        "sampled": 64,
+        "short_ret_refusals": 1,
+        "slow": 64,
+        "status": "PASS",
+        "unsampled": 0
+      },
+      "optional_state": {
+        "fast": {
+          "children": 8,
+          "comparisons": 978,
+          "controller_transitions": 4,
+          "helper_joins": 4,
+          "observer_entries": 0,
+          "pairs": 4,
+          "status": "PASS"
+        },
+        "slow": {
+          "children": 8,
+          "comparisons": 978,
+          "controller_transitions": 4,
+          "helper_joins": 4,
+          "observer_entries": 8,
+          "pairs": 4,
+          "status": "PASS"
+        }
+      },
+      "ordinary_state": {
+        "children": 8,
+        "comparisons": 978,
+        "pairs": 4
+      },
+      "retirement": [
+        {
+          "actions": 32,
+          "calls": 16,
+          "case": "sixteen-epochs",
+          "epochs": 16,
+          "events": 32,
+          "joined": true,
+          "originals": 16,
+          "registrations": 1,
+          "report_permit_refusals": 16,
+          "rows": 16,
+          "sampled": 16,
+          "status": "PASS"
+        },
+        {
+          "actions": 2,
+          "calls": 2,
+          "case": "function-closed",
+          "closed": 1,
+          "events": 4,
+          "joined": true,
+          "originals": 2,
+          "post_return_stage": true,
+          "receipt_permit_refusal": 1,
+          "report_ready_before_return": true,
+          "rows": 2,
+          "sampled": 1,
+          "status": "PASS"
+        }
+      ],
+      "streamed": {
+        "batches": 40,
+        "calls": 160,
+        "coverage": [
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2
+        ],
+        "epochs": 20,
+        "events": 320,
+        "originals": 160,
+        "replacements": 17,
+        "sampled": 120,
+        "slots": 3,
+        "unsampled": 40
+      },
+      "timed": {
+        "calls": 24,
+        "coverage": [
+          6,
+          2,
+          6,
+          2,
+          6,
+          2
+        ],
+        "originals": 24,
+        "sampled": 18,
+        "unsampled": 6
+      }
+    },
+    "failed": 0,
+    "passed": 31,
+    "unrun": 0
+  },
+  "revision": "bbaacce1dedbe5188fa6eb1d2ececacd18a57c4e",
+  "schema": 1,
+  "scope": "Projection of pinned CLOSED JSON/CSV metadata and source hashes, not independent stream/state replay. Whole input, journal, Report and return checks in controls are source-attested; timed trials check journal contents and Report counts.",
+  "sink_backpressure": {
+    "mode": "bounded-poll-window",
+    "poll_ns": 250000,
+    "retry_ns": 1000000
+  },
+  "status": "PREREQUISITES_PASS_TIMED_CAMPAIGN_PASS",
+  "timed_status_authority": "Pinned wrapper receipt and source-attested complete terminal predicates; no independent stream replay.",
+  "timed_trials": [
+    {
+      "helper_exit": 0,
+      "helper_receipt": {
+        "bytes": 587,
+        "sha256": "e645bde980d5c74f21f3c13964ffadbe6e2a0084588ea57982c54a4eac53fe86"
+      },
+      "k": 10,
+      "parent_exit": 0,
+      "parent_receipt": {
+        "bytes": 343,
+        "sha256": "01d94d8815c42fffdd80ae250384a29af90be4d74bc827ad9ea3dcc12610cf65"
+      },
+      "status": "PASS"
+    },
+    {
+      "helper_exit": 0,
+      "helper_receipt": {
+        "bytes": 587,
+        "sha256": "2fe9322d80b14889cc974792988c1f95eabbf6197967a6b1fca2bec9f834b681"
+      },
+      "k": 1000,
+      "parent_exit": 0,
+      "parent_receipt": {
+        "bytes": 343,
+        "sha256": "bbb773e918c2698e674ac14a2589b04126c11af7dc2ce961832519c62853b41d"
+      },
+      "status": "PASS"
+    }
+  ]
+}
