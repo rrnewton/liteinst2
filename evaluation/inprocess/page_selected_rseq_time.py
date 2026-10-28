@@ -3,6 +3,7 @@ import hashlib
 from pathlib import Path
 import re
 import shutil
+import struct
 
 from page_selected import fact, need
 from page_selected_register_time_compare import decode
@@ -21,6 +22,54 @@ FAST = bytes.fromhex('4989f84889d189f0fcf3aa4c89c0c3')
 FAST_SHA256 = '9b0962fabb10968cfa175213396b8a63e6e8b81cce83547aea6e90223d21ec9f'
 REFERENCE = '20261028T035139.737337Z-page-selected-fast-memset-af08160895fb.json'
 REFERENCE_FACT = dict(bytes=11600, sha256='5f5d5b5e9dea1beab60413866c985fef2233b94a693983bd0cadea237b0bf352')
+
+
+def hidden_memset(path, inspected):
+    """Authenticate the local function in the hidden-visibility timing DSO.
+
+    The extracted relocatable helper still requires its original global symbol.
+    This separate check joins the actual local symbol to the full ELF/objdump
+    body already checked by body_check; no symbol or executable is rewritten.
+    """
+    data = Path(path).read_bytes()
+    need(len(data) >= 64 and data[:7] == b'\x7fELF\x02\x01\x01', 'actual hidden ELF64 little endian')
+    head = struct.unpack_from('<16sHHIQQQIHHHHHH', data)
+    need(head[1:4] == (3,62,1) and head[11] == 64 and 0 < head[12] < 65536 and
+         head[13] < head[12] and head[6]+64*head[12] <= len(data), 'whole hidden DSO section table')
+    sections = [struct.unpack_from('<IIQQQQIIQQ', data, head[6]+64*i) for i in range(head[12])]
+    def content(index):
+        section = sections[index]
+        need(section[1] != 8 and section[4]+section[5] <= len(data), 'whole hidden file-backed section')
+        return data[section[4]:section[4]+section[5]]
+    found = []
+    need(sum(section[1] == 2 for section in sections) == 1, 'one actual hidden static symbol table')
+    for index, section in enumerate(sections):
+        if section[1] not in (2,11):continue
+        need(section[9] == 24 and section[5] % 24 == 0 and section[6] < len(sections) and
+             sections[section[6]][1] == 3, 'complete hidden symbol table and strings')
+        strings, symbols = content(section[6]), content(index)
+        for offset in range(0,len(symbols),24):
+            name, info, other, owner, address, size = struct.unpack_from('<IBBHQQ', symbols, offset)
+            need(name < len(strings) and b'\0' in strings[name:], 'bounded hidden symbol name')
+            if strings[name:strings.index(0,name)] == b'memset':
+                need(section[1] == 2, 'hidden memset is not dynamically exported')
+                found.append((info,other,owner,address,size))
+    need(len(found) == 1, 'one actual hidden memset symbol')
+    info, other, index, address, size = found[0]
+    need(info == 0x02 and other == 0 and 0 < index < len(sections) and size == len(FAST),
+         'exact local function binding, visibility and size')
+    section = sections[index];offset = address-section[3]
+    need(section[2]&6 == 6 and not section[2]&1 and 0 <= offset and offset+size <= section[5],
+         'whole local function in executable readonly section')
+    for relocation in sections:
+        if relocation[1] in (4,9) and relocation[7] == index:
+            need(relocation[5] == 0, 'local memset has no relocations')
+    body = content(index)[offset:offset+size]
+    need(body == FAST and hashlib.sha256(body).hexdigest() == FAST_SHA256 and
+         (address,size,body.hex()) == (inspected['address'],inspected['bytes'],inspected['code_hex']),
+         'hidden symbol, actual ELF, objdump and qualified primitive agree')
+    return dict(binding='STB_LOCAL',type='STT_FUNC',visibility='STV_DEFAULT',
+                address=address,bytes=size,sha256=FAST_SHA256)
 
 
 def validate(pin):
@@ -188,6 +237,5 @@ def interpreter(name, configuration, builder, products, root, private, pin, bina
                             profile='inspect',env=builder.environment)
     need(not err, 'actual reset body')
     state['fast_memset_body'] = body_check(path,symbols,assembly,'fast',symbol_name='memset')
-    need(fast.memset_body(path)['body'] == FAST == bytes.fromhex(state['fast_memset_body']['code_hex']),
-         'timed/discovery bridge body exactly equals independently qualified primitive')
+    state['hidden_memset'] = hidden_memset(path,state['fast_memset_body'])
     state.update(status='passed',artifact=fact(path));return path
