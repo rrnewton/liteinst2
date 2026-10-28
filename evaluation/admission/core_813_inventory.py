@@ -10,7 +10,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '1c1f3ef9b29801cabe244572fcbba260d85c818ce5de9607ba83fc86242e46fa', 'main813_inventory_data_differs')
+require(hashlib.sha256(RAW).hexdigest() == '79581f17949fb41f9e85a8a1d14d372eff287ae7919b358f35e896f473b7ad4e', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -28,7 +28,9 @@ CURRENT7CDC = MAIN7CDC['current_corpus_sha256']
 MAIN43D7 = DATA['main43d7']
 CURRENT43D7 = MAIN43D7['current_corpus_sha256']
 MAIN0DF8 = DATA['main0df8']
-LATEST = MAIN0DF8['current_corpus_sha256']
+CURRENT0DF8 = MAIN0DF8['current_corpus_sha256']
+MAIN0A8 = DATA['main0a8']
+LATEST = MAIN0A8['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -39,8 +41,76 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 
+def source_before_0a8(path, data, error):
+    """Only the fixed 0a8 whole blob may reach its exact historical source."""
+    if path not in MAIN0A8['projections']:
+        return data
+    row = MAIN0A8['projections'][path]
+    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = data[:start] + old.encode() + data[end:]
+        last = start
+    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    return data
+
+
+def require_0a8_sources(error='main0a8_source_inventory_differs'):
+    for path, expected in MAIN0A8['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        if path in MAIN0A8['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAIN0A8['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found) + MAIN0A8['macros'].get(path, {}).get('test_attributes', 0), error)
+
+    for path, row in MAIN0A8['macros'].items():
+        require((ROOT / path).read_text().count(row['literal']) == 1, error)
+    for path, rows in MAIN0A8['doctests'].items():
+        lines = (ROOT / path).read_text().splitlines()
+        for row in rows:
+            require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
+    metadata = MAIN0A8['python_metadata']
+    tree = ast.parse((ROOT / metadata['path']).read_bytes())
+    for name, expected in metadata['assignments'].items():
+        values = [ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
+                  and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)]
+        if name in metadata['tuple_assignments']:
+            expected = tuple(expected)
+        require(values == [expected], error)
+    for path, facts in metadata['qualification_facts'].items():
+        raw = (ROOT / path).read_text()
+        require(all(raw.count(literal) == 1 for literal in facts), error)
+
+
+def before_0a8(declared, error='main0a8_inventory_differs', source_error='main0a8_source_inventory_differs'):
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_0a8_sources(source_error)
+    old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAIN0A8['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == MAIN0A8['previous_corpus_sha256'] == CURRENT0DF8, error)
+    return old
+
+
+def peel_0a8(declared, error, source_error):
+    return before_0a8(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
 def source_before_0df8(path, data, error):
     """Only the fixed 0df8 whole blob may reach its exact historical source."""
+    data = source_before_0a8(path, data, error)
     if path not in MAIN0DF8['projections']:
         return data
     row = MAIN0DF8['projections'][path]
@@ -55,11 +125,13 @@ def source_before_0df8(path, data, error):
 
 
 def require_0df8_sources(error='main0df8_source_inventory_differs'):
+    require_0a8_sources(error)
     for path, expected in MAIN0DF8['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = source_before_0a8(path, raw, error)
         require(hashlib.sha256(raw).hexdigest() == expected, error)
         if path in MAIN0DF8['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -69,13 +141,14 @@ def require_0df8_sources(error='main0df8_source_inventory_differs'):
                     raw.count(b'#[test]') == len(found) + MAIN0DF8['macros'].get(path, {}).get('test_attributes', 0), error)
 
     for path, row in MAIN0DF8['macros'].items():
-        require((ROOT / path).read_text().count(row['literal']) == 1, error)
+        raw = source_before_0a8(path, (ROOT / path).read_bytes(), error)
+        require(raw.decode().count(row['literal']) == 1, error)
     for path, rows in MAIN0DF8['doctests'].items():
-        lines = (ROOT / path).read_text().splitlines()
+        lines = source_before_0a8(path, (ROOT / path).read_bytes(), error).decode().splitlines()
         for row in rows:
             require(lines[row['line'] - 1].strip() == row['marker'] + ' ```' + row['attributes'], error)
     metadata = MAIN0DF8['python_metadata']
-    tree = ast.parse((ROOT / metadata['path']).read_bytes())
+    tree = ast.parse(source_before_0a8(metadata['path'], (ROOT / metadata['path']).read_bytes(), error))
     for name, expected in metadata['assignments'].items():
         values = [ast.literal_eval(node.value) for node in tree.body if isinstance(node, ast.Assign)
                   and any(isinstance(target, ast.Name) and target.id == name for target in node.targets)]
@@ -83,12 +156,13 @@ def require_0df8_sources(error='main0df8_source_inventory_differs'):
             expected = tuple(expected)
         require(values == [expected], error)
     for path, facts in metadata['qualification_facts'].items():
-        raw = (ROOT / path).read_text()
+        raw = source_before_0a8(path, (ROOT / path).read_bytes(), error).decode()
         require(all(raw.count(literal) == 1 for literal in facts), error)
 
 
 def before_0df8(declared, error='main0df8_inventory_differs', source_error='main0df8_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    declared = peel_0a8(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENT0DF8, error)
     require_0df8_sources(source_error)
     old = copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -103,7 +177,8 @@ def before_0df8(declared, error='main0df8_inventory_differs', source_error='main
 
 
 def peel_0df8(declared, error, source_error):
-    return before_0df8(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_0a8(declared, error, source_error)
+    return before_0df8(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENT0DF8 else declared
 
 
 def source_before_43d7(path, data, error):
