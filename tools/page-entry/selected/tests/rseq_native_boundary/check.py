@@ -37,7 +37,7 @@ def elf(data,interpreter,case,native_policy):
     def read(a,n):
         p=next((p for p in loads if p[3]<=a and a+n<=p[3]+p[5]),None)
         need(p is not None,'retained mapped file bytes');return extent(p[2]+a-p[3],n)
-    expected={'_start':MAIN,'rn_seed':MAIN+4096,'rn_body':BODY,'rn_tail':TAIL,'rn_guard':GUARD,'rn_guard_write':GUARD,
+    expected={'_start':MAIN,'rn_seed':MAIN+4096,'rn_body':BODY,'rn_tail':TAIL,'rn_guard':GUARD,'rn_guard_write':GUARD+1,
       'rn_data':DATA,'rn_data_end':DATA+16384,'rn_case':DATA+8,'rn_mode':DATA+16,'rn_active':DATA+24,
       'rn_registration_result':DATA+32,'rn_rounds':DATA+40,'rn_commit':DATA+48,'rn_abort_seen':DATA+56,
       'rn_final_fs':DATA+64,'rn_final_gs':DATA+72,'rn_store':DATA+128,'rn_descriptor':DATA+256,
@@ -62,11 +62,15 @@ def elf(data,interpreter,case,native_policy):
     need(read(fault,len(encoding))==encoding,'fixed real split/ending instruction bytes')
     if case==3:need(read(start,4)==bytes.fromhex('48894708') and ret-start==7 and TAIL-abort==14,'publication in actual interval and current-PC boundary limit')
     target=GUARD if case in(0,3)else symbols['rn_capture']
-    need(read(ret,1)==b'\xe9' and ret+5+struct.unpack('<i',read(ret+1,4))[0]==target,'exact original return continuation')
+    need(read(GUARD,1)==b'\x90','exact one-byte old-step NOP at the required callee/continuation NX PC')
+    jump=ret+int(case in(1,2))
+    if case in(1,2):need(read(ret,1)==b'\x90','exact one-byte old-step NOP at the unchanged CALL return PC')
+    need(read(jump,1)==b'\xe9' and jump+5+struct.unpack('<i',read(jump+1,4))[0]==target,'exact original return continuation after the identity NOP')
     if case in(1,2):
-        need(read(GUARD,7)==bytes.fromhex('4c8b1c244c891d') and GUARD+11+struct.unpack('<i',read(GUARD+7,4))[0]==DATA+80 and
-             read(GUARD+11,3)==bytes.fromhex('488925') and GUARD+18+struct.unpack('<i',read(GUARD+14,4))[0]==DATA+88 and
-             read(GUARD+18,1)==b'\xc3','actual callee observes one pushed word/RSP then genuine RET')
+        callee=GUARD+1
+        need(read(callee,7)==bytes.fromhex('4c8b1c244c891d') and callee+11+struct.unpack('<i',read(callee+7,4))[0]==DATA+80 and
+             read(callee+11,3)==bytes.fromhex('488925') and callee+18+struct.unpack('<i',read(callee+14,4))[0]==DATA+88 and
+             read(callee+18,1)==b'\xc3','actual callee observes one pushed word/RSP then genuine RET')
     need(read(symbols['rn_restorer'],9)==bytes.fromhex('b80f0000000f050f0b'),'actual rt_sigreturn restorer')
     interp=interpreter.read_bytes();ih=struct.unpack_from('<16sHHIQQQIHHHHHH',interp)
     entry=bytes.fromhex('0fa248b8')+struct.pack('<Q',MAIN)+bytes.fromhex('ffe0')

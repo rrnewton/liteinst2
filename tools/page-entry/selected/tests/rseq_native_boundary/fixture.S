@@ -202,6 +202,9 @@ rn_tail:
 rn_cs_end:
 .global rn_return
 rn_return:
+#if RN_CASE == 1 || RN_CASE == 2
+    .byte 0x90 /* exact old-step NOP: require the genuine return-PC NX event */
+#endif
 #if RN_CASE == 0 || RN_CASE == 3
     jmp rn_guard
 #else
@@ -213,6 +216,7 @@ rn_return:
 
 .section .text.guard,"ax",@progbits
 rn_guard:
+    .byte 0x90 /* exact old-step NOP: require the genuine callee/continuation NX event */
 rn_guard_write:
 #if RN_CASE == 1 || RN_CASE == 2
     mov (%rsp),%r11
