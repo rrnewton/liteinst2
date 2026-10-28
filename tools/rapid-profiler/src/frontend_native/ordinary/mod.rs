@@ -15,6 +15,8 @@ use std::path::Path;
 mod cfg;
 mod normal;
 pub use normal::{LoadedNormalLeaf, NormalLeafContract};
+mod two_callers;
+pub use two_callers::{LoadedTwoCallerNormalLeaf, TwoCallerNormalLeafContract};
 mod selection;
 mod tree;
 pub use selection::TrustedFunctionSelection;

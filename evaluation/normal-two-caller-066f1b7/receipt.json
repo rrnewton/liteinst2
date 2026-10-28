@@ -1,0 +1,785 @@
+{
+  "binary": {
+    "content": {
+      "bytes": 5719160,
+      "sha256": "3c4dc03af3d821439aaf00243249a0808b029083dd7bf6b34b41f9d5da9402eb"
+    },
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": true,
+      "test": false
+    }
+  },
+  "closure": {
+    "absence": "ECHILD",
+    "normal_helper_reaps": 12,
+    "owned_stages": 12,
+    "owner_rescues": 0,
+    "producer_child_reaps": 6,
+    "producer_rescues": 0
+  },
+  "command": [
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_normal_session_two.py",
+    "--revision",
+    "066f1b76bb5ba9ac54514907ebce5661ad74b754",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+  ],
+  "development_failures": [
+    {
+      "case": "strict Clippy",
+      "cause": "manual_contains in consumer ledger; equivalent contains predicate corrected; strict Clippy then passed."
+    },
+    {
+      "case": "v4 parser controls",
+      "cause": "Replacement fixture declared two epochs in checker/DONE but one in READY; exact header corrected; all fifteen methods then passed."
+    }
+  ],
+  "execution_policy": {
+    "controller": "Fixed-target active waits during timed phase; may occupy one CPU.",
+    "cpu_count": 4,
+    "cpus": [
+      3,
+      8,
+      63,
+      108
+    ],
+    "exclusive_host": false,
+    "reservation": {
+      "command_prefix": [
+        "$PYTHON",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "4",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-normal-two-066f1b7",
+        "--"
+      ],
+      "revision": "d0c2867be75b495eb64239e664c6306af9747783",
+      "source_hashes": {
+        "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+        "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+      },
+      "tool": "cpuset-alloc"
+    }
+  },
+  "failed_qualification_attempts": [
+    {
+      "cause": "Old selected-admission namespace census included the new owner test; later stages UNRUN.",
+      "outer_closure": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "b99250b0607a7bd1a7ba3c5135d895e7813d17595d4aba521d3f4d4aa3f44783",
+        "reaped_descendants": 0,
+        "seconds": 66.3480174089782,
+        "start_utc": "2026-10-28T17:36:26.299934+00:00",
+        "termination": null
+      },
+      "result": {
+        "bytes": 3787,
+        "sha256": "579fe57303dc7a78db4f063a2db5172547ac519d529cbc5d9f2c76b5d89ca917"
+      },
+      "revision": "5d541db0b0855fc20cdf91fb3b8249f3507d25d3",
+      "stage": "single-prerequisite",
+      "status": "FAILED"
+    },
+    {
+      "cause": "First native K1 worker-zero control passed; wrapper rejected singular libtest header. Later native controls and six new external cases UNRUN.",
+      "outer_closure": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "private_log_sha256": "9893be4adab55050968d57c87e1d4e6add77cbc366fc6fbd6542d928302dd6d5",
+        "reaped_descendants": 0,
+        "seconds": 103.58304346189834,
+        "start_utc": "2026-10-28T17:42:59.122170+00:00",
+        "termination": null
+      },
+      "result": {
+        "bytes": 15109,
+        "sha256": "52dda9e889ffce175782583a90f87c476925c21286a8be821b5451c9ab81f1b0"
+      },
+      "revision": "7378cd3206fa21b4e7648c9dea81ffe9591c6c40",
+      "stage": "native-k1-zero",
+      "status": "FAILED"
+    }
+  ],
+  "fresh_prerequisite": {
+    "abandonment": {
+      "cases": 2,
+      "checkpoints": 0,
+      "installed_calls": 4,
+      "original_calls": 16,
+      "pending_after_tls_exit": 2,
+      "reattach_refusals": 2,
+      "worker_joins": 2
+    },
+    "normal_consumer": {
+      "checkpoint_acknowledgements": 1,
+      "events": 16,
+      "function_closed": 2,
+      "generations": 2,
+      "installed_calls": 8,
+      "journal_words": 512,
+      "next_entry_acknowledgements": 7,
+      "original_calls": 8,
+      "removed": 2,
+      "reports": 2,
+      "sampled": 4,
+      "worker_joins": 1
+    },
+    "normal_result": {
+      "bytes": 19719,
+      "sha256": "a0c58926d86b37ec8b9912c3358c0927dd51c5d8cfa93b2382f0e109f53bdb82"
+    },
+    "normal_state": {
+      "children": 34,
+      "comparisons": 4044,
+      "crossed_pairs": 1,
+      "helper_joins": 1,
+      "input_bytes": 696,
+      "input_reads": 696,
+      "outer_returns": 34,
+      "pairs": 17,
+      "stable_pairs": 16,
+      "target_calls": 68,
+      "target_returns": 68
+    },
+    "scope": "Fixed inherited state cases are separate from the two-caller external population; named, selected and gated whole-function prerequisites also remain mandatory.",
+    "single_closure": {
+      "absence": "ECHILD",
+      "normal_helper_reaps": 9,
+      "owned_stages": 9,
+      "owner_rescues": 0,
+      "producer_child_reaps": 6,
+      "producer_rescues": 0
+    },
+    "single_result": {
+      "bytes": 29810,
+      "sha256": "46c45378e108d2505cba341d925a5ef493c73ba2f6d2a3340f2f5b84c8ad2f91"
+    },
+    "status": "PASS"
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "description": "AMD EPYC Zen 5 dev host",
+    "family": 26,
+    "model": 17,
+    "qualification_affinity_cpus": 4,
+    "session_controller_cpus": 1,
+    "session_worker_cpus": 2,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "interpretation": "Complete intended external population plus source-attested full journal/Report checks. Three finite two-thread owner controls and fixed inherited state cases do not establish arbitrary concurrent interleavings or full A5.",
+  "limits": {
+    "arm_lateness_ms": 2,
+    "backpressure_stdout_delay_ms": 250,
+    "epochs": 520,
+    "period_ms": 10,
+    "producer_absolute_seconds": 15,
+    "producer_cpu_seconds": 20,
+    "producer_file_bytes": 4194304,
+    "producer_wall_seconds": 30,
+    "shutdown_seconds": 2
+  },
+  "numeric_outputs": {
+    "normal-pairs.csv": {
+      "bytes": 1958,
+      "sha256": "dd8258b27fcd054a3c9d3fdcd6c3da6e3a9cdfe93b49b3b0d77e164fb780cec8"
+    },
+    "normal-rows.csv": {
+      "bytes": 835,
+      "sha256": "5016938ade5ee19b468f95d81ff95ef61d2d2a57cc215423535926353df9fa24"
+    },
+    "sessions-two.csv": {
+      "bytes": 824,
+      "sha256": "e147e60e99c88857439f907b12ede85bfcbd8dbcb8e906f506de14c12e49d986"
+    },
+    "single-sessions.csv": {
+      "bytes": 679,
+      "sha256": "9872004d813086030c9d06b1409a3ccc492f548bb07b53b5748d786019632b91"
+    }
+  },
+  "outer_closure": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "825b64284599cefc365917c68c8712e5cfde57868e24e2e8dd7173e357e25ee3",
+    "reaped_descendants": 0,
+    "seconds": 115.16545377788134,
+    "start_utc": "2026-10-28T17:45:48.938440+00:00",
+    "termination": null
+  },
+  "qualification_result": {
+    "bytes": 37733,
+    "sha256": "6dc9763f6c9e2dcf1e8dd0a9ebdd1f0003c496b1d290b6dad177b0e2eb80cf13"
+  },
+  "revision": "066f1b76bb5ba9ac54514907ebce5661ad74b754",
+  "schema": 1,
+  "scope": "Bounded two ordinary callers with complete external population; source-attested journal/receipt checks. No all-interleaving, timing, performance, executable reclamation or full-A5 claim.",
+  "selection": {
+    "candidate": {
+      "bytes": 13072,
+      "sha256": "8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d"
+    },
+    "elf_va": 4096,
+    "final": {
+      "bytes": 13072,
+      "sha256": "8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d"
+    },
+    "length": 41,
+    "manifest": {
+      "bytes": 14847,
+      "sha256": "b649b18f577d4bbc121eabbf62da29badd0269e4029e6795e793a1509a017a38"
+    },
+    "qualification_result": {
+      "bytes": 19719,
+      "sha256": "a0c58926d86b37ec8b9912c3358c0927dd51c5d8cfa93b2382f0e109f53bdb82"
+    },
+    "return_offsets": [
+      34,
+      40
+    ],
+    "selected_code": {
+      "bytes": 41,
+      "sha256": "0b254dc402a298e20daa7f5b09c4ec19b97f12cea2835595895e43523ac4839e"
+    }
+  },
+  "source_review": {
+    "bindings": {
+      "checker_and_recipe": "fbdddc95ff659f7642999480666fd8321f54fa1869b0c385909cc148fdda391f",
+      "consumer": "636e767d986df449ef774b4e00d33ee2c86e46df7b365b49307538ac7833d8b1",
+      "native": "bfb7581371f38aa4884dda723612320035e23c56e13c79f3a50da7e7f6ee042e",
+      "sdk": "8556bdb20fe3868a83b75c0480e9ed55c1be7f76ae5a31f4361289f225a4afa0",
+      "singleton_parser": "81743db22ace2783a39bd2f473a76f6fff0830667046bd8c2f8ea9b50236d930"
+    },
+    "verdict": "Approved source only; root separately owns execution evidence."
+  },
+  "sources": {
+    "count": 479,
+    "manifest": {
+      "bytes": 75759,
+      "sha256": "38926d879e3d7a2b7079a7b8290ce6ecdf0a3b763d15ceadcbcac9c851cf8be6"
+    }
+  },
+  "stage_results": [
+    {
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/test_session_two.py"
+      ],
+      "name": "parser-controls",
+      "passed": 15,
+      "receipt": {
+        "bytes": 587,
+        "sha256": "682837842091d00ac4d87f7d22c91919018d03e05cd3df1ca160ed618fe36858"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 114,
+        "sha256": "13a9873150b453eea4246c127dd61d00ebfaf909f4772001ee9f66bf13d1924a"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    {
+      "binary": {
+        "bytes": 8963960,
+        "sha256": "ff8affc3bacc279fdd3d2abaa316dc114f15944654cd6a4ac6fa9a38174758b6"
+      },
+      "command": [
+        "$REPO/target/release/deps/rapid_profiler-2a27e1565eb04145",
+        "frontend_native::module::ordinary::two_callers::tests::two_caller_contract_refuses_missing_facts_before_source_access",
+        "frontend_native::always_on::normal::two_callers::tests::two_caller_profile_requires_exact_site_limits_and_concurrent_mode",
+        "frontend_native::always_on::normal::two_callers::tests::two_registration_limit_and_identity_reuse_refuse_without_recycling",
+        "frontend_native::always_on::normal::two_callers::tests::two_pending_owners_confirm_locally_with_retained_dropped_and_closed_results",
+        "--exact",
+        "--test-threads=1"
+      ],
+      "failed": 0,
+      "filtered": 420,
+      "full_census": 424,
+      "ignored": 0,
+      "name": "sdk-controls",
+      "passed": 4,
+      "receipt": {
+        "bytes": 589,
+        "sha256": "c32fb3ccee33f17b97e66276817a13821db1e974197283eaba323266c7e40a85"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 658,
+        "sha256": "c80a745363ed6ce48b1ebfd842fbd29a3f6419746674892a7a55b8c65198d25c"
+      }
+    },
+    {
+      "binary": {
+        "bytes": 3515328,
+        "sha256": "b4dad6c6207325166d9d3b0fdb22d6785049315ef9a57a5f6f87093e2504fdd4"
+      },
+      "command": [
+        "$REPO/target/release/deps/ordinary_interval-9a9a8634c2bd38e4",
+        "normal::session::two::tests::partial_broadcast_full_acknowledgements_and_stop_keep_exact_custody",
+        "normal::session::two::tests::full_call_and_partial_disconnected_broadcast_never_reroute_or_disappear",
+        "normal::session::two::tests::complete_output_envelope_retains_maximum_ids_and_population",
+        "normal::session::two::check::tests::global_slots_and_retained_ranks_accept_out_of_order_but_refuse_corruption",
+        "normal::session::two::check::tests::both_dispositions_join_actual_registration_sequence_and_raw_endpoints",
+        "normal::session::two::check::tests::local_identity_acknowledgement_and_whole_page_cannot_cross_workers",
+        "--exact",
+        "--test-threads=1"
+      ],
+      "failed": 0,
+      "filtered": 92,
+      "full_census": 98,
+      "ignored": 0,
+      "name": "consumer-controls",
+      "passed": 6,
+      "receipt": {
+        "bytes": 589,
+        "sha256": "b240f5a49d95274057c81ae584633bdda05614eda7be3c048c063e9853f4e830"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 792,
+        "sha256": "323aab54814abb9533f0c4e3cf20cd4bad71322edd3a375a56860f5e873b97cd"
+      }
+    },
+    {
+      "actual_caller_threads": 2,
+      "binary": {
+        "bytes": 8963960,
+        "sha256": "ff8affc3bacc279fdd3d2abaa316dc114f15944654cd6a4ac6fa9a38174758b6"
+      },
+      "command": [
+        "$REPO/target/release/deps/rapid_profiler-2a27e1565eb04145",
+        "frontend_native::always_on::normal::two_callers::native::two_caller_native_k1_first_worker_zero",
+        "--exact",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "failed": 0,
+      "filtered": 423,
+      "fixture_env": {
+        "RAPID_NORMAL_TWO_CANDIDATE": "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "RAPID_NORMAL_TWO_ELF_VA": "4096",
+        "RAPID_NORMAL_TWO_EXPECTED": "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/final.so",
+        "RAPID_NORMAL_TWO_LENGTH": "41"
+      },
+      "full_census": 424,
+      "ignored": 0,
+      "internal_absolute_seconds": 15,
+      "name": "native-k1-zero",
+      "passed": 1,
+      "receipt": {
+        "bytes": 588,
+        "sha256": "929d6d40f625a3ef7b3d7c15b5483772407e4fc84c60637312c7c7ae04d061ec"
+      },
+      "required_worker_joins": 2,
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 222,
+        "sha256": "0b860b0a9d9bb7247c6ad5a560748e0c6d72490b0ddb07cbba6ab7a40176c08f"
+      }
+    },
+    {
+      "actual_caller_threads": 2,
+      "binary": {
+        "bytes": 8963960,
+        "sha256": "ff8affc3bacc279fdd3d2abaa316dc114f15944654cd6a4ac6fa9a38174758b6"
+      },
+      "command": [
+        "$REPO/target/release/deps/rapid_profiler-2a27e1565eb04145",
+        "frontend_native::always_on::normal::two_callers::native::two_caller_native_k1_first_worker_one",
+        "--exact",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "failed": 0,
+      "filtered": 423,
+      "fixture_env": {
+        "RAPID_NORMAL_TWO_CANDIDATE": "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "RAPID_NORMAL_TWO_ELF_VA": "4096",
+        "RAPID_NORMAL_TWO_EXPECTED": "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/final.so",
+        "RAPID_NORMAL_TWO_LENGTH": "41"
+      },
+      "full_census": 424,
+      "ignored": 0,
+      "internal_absolute_seconds": 15,
+      "name": "native-k1-one",
+      "passed": 1,
+      "receipt": {
+        "bytes": 589,
+        "sha256": "1c66e3780f44524dac43c523c2077270460066ca1a125a08f8edfca06204054c"
+      },
+      "required_worker_joins": 2,
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 221,
+        "sha256": "68cb95a014f79d11cb6b551c9a6309c1328f5e2a10c3542b7247639ea24f0377"
+      }
+    },
+    {
+      "actual_caller_threads": 2,
+      "binary": {
+        "bytes": 8963960,
+        "sha256": "ff8affc3bacc279fdd3d2abaa316dc114f15944654cd6a4ac6fa9a38174758b6"
+      },
+      "command": [
+        "$REPO/target/release/deps/rapid_profiler-2a27e1565eb04145",
+        "frontend_native::always_on::normal::two_callers::native::two_caller_native_closed_owners_fill_e4_until_local_confirmation",
+        "--exact",
+        "--ignored",
+        "--test-threads=1"
+      ],
+      "failed": 0,
+      "filtered": 423,
+      "fixture_env": {
+        "RAPID_NORMAL_TWO_CANDIDATE": "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "RAPID_NORMAL_TWO_ELF_VA": "4096",
+        "RAPID_NORMAL_TWO_EXPECTED": "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/final.so",
+        "RAPID_NORMAL_TWO_LENGTH": "41"
+      },
+      "full_census": 424,
+      "ignored": 0,
+      "internal_absolute_seconds": 15,
+      "name": "native-e4",
+      "passed": 1,
+      "receipt": {
+        "bytes": 589,
+        "sha256": "1b79613ebec0605d19ca7b8e77c363327dd6d04139780432cca464a36b2b0878"
+      },
+      "required_worker_joins": 2,
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 248,
+        "sha256": "2694a365ba9c96f33c4bf96f362830a5c14af808cebbd86ec6b6c83f94fcad5e"
+      }
+    },
+    {
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_two_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/full-k10/producer",
+        "--k",
+        "10",
+        "--mode",
+        "full"
+      ],
+      "name": "full-k10",
+      "receipt": {
+        "bytes": 587,
+        "sha256": "f11d6141562a0426cf8301b571f43ce21b80610fe71177a6131b2feb5bb4e2f5"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 931,
+        "sha256": "e5285c5fd01ee1bc5af8037f56fafe7a067fb49cc036709101f41821f5ef2405"
+      }
+    },
+    {
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_two_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/full-k1000/producer",
+        "--k",
+        "1000",
+        "--mode",
+        "full"
+      ],
+      "name": "full-k1000",
+      "receipt": {
+        "bytes": 587,
+        "sha256": "adf31cdfe2a91c56728829c03cc1131fc0eb5a41d87eba2b131a14ea7dbf6c25"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 917,
+        "sha256": "15e6b96660f0a3db4ff6c110e279696e74701063ad957780bfc0d9ae6a0b3bcc"
+      }
+    },
+    {
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_two_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/stop-k10/producer",
+        "--k",
+        "10",
+        "--mode",
+        "stop"
+      ],
+      "name": "stop-k10",
+      "receipt": {
+        "bytes": 589,
+        "sha256": "214f03408d6b8d72d29456a7eec26fb92319cd06f8804150d3e4d66b8257b945"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 931,
+        "sha256": "54ab5a2574efdd4abbb3975ea5301dfb46d71aed1c34837b7a33a9d45b31426b"
+      }
+    },
+    {
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_two_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/duplicate-k10/producer",
+        "--k",
+        "10",
+        "--mode",
+        "duplicate"
+      ],
+      "name": "duplicate-k10",
+      "receipt": {
+        "bytes": 589,
+        "sha256": "099fb05496038a345f1402c3fce13f4bde9cdce3551700577f1edf490a865dbd"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 336,
+        "sha256": "efd80b9c3e909816ad1f540cdbb9dba638c79d0b237d867b3c22cf5988bb3f6c"
+      }
+    },
+    {
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_two_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/eof-k10/producer",
+        "--k",
+        "10",
+        "--mode",
+        "eof"
+      ],
+      "name": "eof-k10",
+      "receipt": {
+        "bytes": 589,
+        "sha256": "276a52ba19457035445ab1700237684048711beba2166566e5d35eca6b448336"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 324,
+        "sha256": "20638a6a35ff98f4fb46d382c84a3596508b34057960e147d911bdf7def9b0d2"
+      }
+    },
+    {
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_two_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/single-prerequisite/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/backpressure-k10/producer",
+        "--k",
+        "10",
+        "--mode",
+        "backpressure"
+      ],
+      "name": "backpressure-k10",
+      "receipt": {
+        "bytes": 587,
+        "sha256": "44a3250fb5badfe52e358942b9ab13cf29a4ee1bed07bfafb4bc38060e78004a"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 955,
+        "sha256": "617618ea835822734dc5f8ab896cb1d4e99344bfc4e1f14ff4b41870e6766989"
+      }
+    }
+  ],
+  "status": "PASS",
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "strip": {
+      "bytes": 189816,
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    }
+  },
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "git": "git version 2.52.0",
+    "ld": "GNU ld version 2.35.2-72.el9",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "readelf": "GNU readelf version 2.35.2-72.el9",
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    },
+    "strip": "GNU strip version 2.35.2-72.el9"
+  }
+}

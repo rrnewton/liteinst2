@@ -347,8 +347,15 @@ def main():
             result['artifacts'][label] = dict(binary=artifacts[binary], profile=product['profile'], cargo_fresh=product['fresh'])
             listed = stage(label+'-list', [str(binary), '--list'], 20, 30, MIB)
             inventory = check.census((listed/'stdout.txt').read_bytes(), (listed/'stderr.txt').read_bytes())
-            assert set(n for n in inventory if n.startswith(prefix)) == set(expected)
-            observed = stage(label+'-controls', [str(binary), prefix, '--test-threads=1'], 20, 30, MIB)
+            if label == 'admission':
+                # The distinct two-caller contract has its own exact qualification.
+                assert {n for n in inventory if n.startswith(prefix)
+                    and not n.startswith(prefix+'two_callers::')} == set(expected)
+                argv = [str(binary), *expected, '--exact', '--test-threads=1']
+            else:
+                assert set(n for n in inventory if n.startswith(prefix)) == set(expected)
+                argv = [str(binary), prefix, '--test-threads=1']
+            observed = stage(label+'-controls', argv, 20, 30, MIB)
             result['prerequisites'][label] = check.controls((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes(), expected, inventory)
             result['prerequisites'][label]['full_census'] = dict(count=len(inventory), listing=digest(listed/'stdout.txt'))
         test_group('admission', ['--lib'], 'rapid_profiler', 'src/lib.rs', ['lib'], ['lib'], ADMISSION_PREFIX, ADMISSION)

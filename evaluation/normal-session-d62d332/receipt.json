@@ -1,0 +1,1342 @@
+{
+  "binary": {
+    "content": {
+      "bytes": 5583704,
+      "sha256": "effccd7f06976b44e082b1ff10ff5687c7620cce41342ddc507a2ba4da4464fb"
+    },
+    "profile": {
+      "debug_assertions": true,
+      "debuginfo": 0,
+      "opt_level": "3",
+      "overflow_checks": true,
+      "test": false
+    }
+  },
+  "closure": {
+    "absence": "ECHILD",
+    "normal_helper_reaps": 9,
+    "owned_stages": 9,
+    "owner_rescues": 0,
+    "producer_child_reaps": 6,
+    "producer_rescues": 0
+  },
+  "command": [
+    "$PYTHON",
+    "-B",
+    "$REPO/tools/rapid-profiler/verify_normal_session.py",
+    "--revision",
+    "d62d332eaa1b9cc95c02021345c7765f13a41715",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+  ],
+  "execution_policy": {
+    "controller": "fixed-target active waits during timed phase; may occupy one CPU; unchanged sleeps during shutdown",
+    "qualification_ancestor_main": "09fe6a0ebc5fc28e2da4581327f03828e9872f62",
+    "reservation": {
+      "command_prefix": [
+        "$PYTHON",
+        "-B",
+        "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+        "run",
+        "--cores",
+        "4",
+        "--sample-s",
+        "1",
+        "--tag",
+        "li2core-normal-session-d62d332",
+        "--"
+      ],
+      "cpu_count": 4,
+      "cpus": [
+        3,
+        6,
+        23,
+        52
+      ],
+      "exclusive_host": false,
+      "revision": "d0c2867be75b495eb64239e664c6306af9747783",
+      "tool": "cpuset-alloc"
+    }
+  },
+  "hardware": {
+    "architecture": "x86_64",
+    "description": "AMD EPYC Zen 5 dev host",
+    "family": 26,
+    "model": 17,
+    "qualification_affinity_cpus": 4,
+    "session_controller_cpus": 1,
+    "session_worker_cpus": 1,
+    "stepping": 0,
+    "vendor": "AuthenticAMD"
+  },
+  "interpretation": "Full input/journal/Report checks remain source-attested; the producer independently joins its intended request population. Prior native state evidence covers its fixed calls, not this session. EAGAIN count is an actual transport counter, not a throughput score.",
+  "limits": {
+    "arm_lateness_ms": 2,
+    "backpressure_stdout_delay_ms": 250,
+    "epochs": 520,
+    "period_ms": 10,
+    "producer_cpu_seconds": 20,
+    "producer_file_bytes": 4194304,
+    "producer_wall_seconds": 30,
+    "shutdown_seconds": 2
+  },
+  "numeric_outputs": {
+    "normal-pairs.csv": {
+      "bytes": 1958,
+      "sha256": "37013674359dc204c2f798277f3b4586601667c7dd7b193e9a24c42e90de2031"
+    },
+    "normal-rows.csv": {
+      "bytes": 835,
+      "sha256": "88942b4dd45b42717af74105b46b485a0ea36b05355a035e454f7bb735871a54"
+    },
+    "sessions.csv": {
+      "bytes": 679,
+      "sha256": "f60c6521228305be6a41d3a21de51ed78c1d3c62053d9b3863447620c0c28aaf"
+    },
+    "wait-diagnostics.csv": {
+      "bytes": 589,
+      "sha256": "9fe76a8d991c7d9646a6a60be9306966dd9ccd070ca4c69ec259e41c43e536fb"
+    }
+  },
+  "outer_owner": {
+    "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+    "cleanup_complete": true,
+    "exit_code": 0,
+    "private_log_sha256": "4dffb94b9f9e9ccaf59f5e3cad90c7857765bd2f77131b9c713318056255336b",
+    "reaped_descendants": 0,
+    "seconds": 135.5837309830822,
+    "start_utc": "2026-10-28T16:52:38.490737+00:00",
+    "termination": null
+  },
+  "output": {
+    "bytes": 679,
+    "sha256": "f60c6521228305be6a41d3a21de51ed78c1d3c62053d9b3863447620c0c28aaf"
+  },
+  "prerequisite": {
+    "abandonment": {
+      "cases": 2,
+      "checkpoints": 0,
+      "installed_calls": 4,
+      "original_calls": 16,
+      "pending_after_tls_exit": 2,
+      "reattach_refusals": 2,
+      "worker_joins": 2
+    },
+    "abandonment_cases": 2,
+    "closed": {
+      "bytes": 344,
+      "sha256": "0278137664fe3ed54e0b0676e4f52d9d895e49e9e93b310391c44ffb12872d37"
+    },
+    "closure": {
+      "nested_normal_helpers": 46,
+      "nested_outer_owners": 48,
+      "owned_stages": 10,
+      "rescues": 0
+    },
+    "command": {
+      "bytes": 1485,
+      "sha256": "8eb887098a2e5d25dbb093d83e70615101a7b7fb88ace3190f493f2d32708936"
+    },
+    "crossed_pairs": 1,
+    "functional_installed": 8,
+    "functional_originals": 8,
+    "log": {
+      "bytes": 36,
+      "sha256": "9e6f8734b4dac4bf89da75809a2751c225eed07150af92c4f76f87e765b2b4d2"
+    },
+    "native": {
+      "children": 34,
+      "comparisons": 4044,
+      "crossed_pairs": 1,
+      "helper_joins": 1,
+      "input_bytes": 696,
+      "input_reads": 696,
+      "outer_returns": 34,
+      "pairs": 17,
+      "stable_pairs": 16,
+      "target_calls": 68,
+      "target_returns": 68
+    },
+    "result": {
+      "bytes": 19719,
+      "sha256": "8e10823bc215d4391675134a1529f2857e60e8585ef9ef437339ee6adef7a7d8"
+    },
+    "runtime_controls": 12,
+    "stable_pairs": 16,
+    "status": "PASS",
+    "work": {
+      "checkpoint_acknowledgements": 1,
+      "events": 16,
+      "function_closed": 2,
+      "generations": 2,
+      "installed_calls": 8,
+      "journal_words": 512,
+      "next_entry_acknowledgements": 7,
+      "original_calls": 8,
+      "removed": 2,
+      "reports": 2,
+      "sampled": 4,
+      "worker_joins": 1
+    }
+  },
+  "prior_attempts": [
+    {
+      "child_result": {
+        "child_exit": 1,
+        "error": "AssertionError: ",
+        "k": 10,
+        "mode": "full",
+        "rescue": false,
+        "status": "FAILED"
+      },
+      "child_stderr": {
+        "bytes": 85,
+        "sha256": "27143ebf6133cbb921d5a11680b58c1b0b0c28321de41deeba0d63ce15492f55"
+      },
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/verify_normal_session.py",
+        "--revision",
+        "36deb0c3e1cc71441b477233db7349ea5791957e",
+        "--raw",
+        "$RAW",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--user-home",
+        "$USER_HOME",
+        "--cargo-home",
+        "$CARGO_HOME"
+      ],
+      "committed_arms": 130,
+      "completed_arms": 130,
+      "execution_affinity": {
+        "policy": "first four permitted CPUs",
+        "reserved_cpus": null
+      },
+      "later_trials": "UNRUN",
+      "policy": "sleep-unreserved",
+      "reason": "clock poll Deadline",
+      "result": {
+        "bytes": 13307,
+        "sha256": "2e8cfdac2e69b8aab736880f39be59511e5efdc4f44f4ba4c1f69e2f55367314"
+      },
+      "revision": "36deb0c3e1cc71441b477233db7349ea5791957e",
+      "stage": "full-k10",
+      "status": "FAILED"
+    },
+    {
+      "child_result": {
+        "child_exit": 1,
+        "error": "AssertionError: ",
+        "k": 10,
+        "mode": "full",
+        "rescue": false,
+        "status": "FAILED"
+      },
+      "child_stderr": {
+        "bytes": 83,
+        "sha256": "1402f7c1093a955a85e21fde5401df3c6eec6ca68cf71afac79f65238364dbda"
+      },
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/verify_normal_session.py",
+        "--revision",
+        "36deb0c3e1cc71441b477233db7349ea5791957e",
+        "--raw",
+        "$RAW",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--user-home",
+        "$USER_HOME",
+        "--cargo-home",
+        "$CARGO_HOME"
+      ],
+      "committed_arms": 62,
+      "completed_arms": 62,
+      "execution_affinity": {
+        "policy": "same pinned cpuset-alloc revision and four-CPU reservation as successful attempt",
+        "reserved_cpus": [
+          50,
+          217,
+          258,
+          267
+        ]
+      },
+      "later_trials": "UNRUN",
+      "policy": "sleep-reserved",
+      "reason": "clock poll Deadline",
+      "result": {
+        "bytes": 13307,
+        "sha256": "6a08fae1b94d6452e266924ac8f783593dc7cb856d85a075aca5b403b140e3b2"
+      },
+      "revision": "36deb0c3e1cc71441b477233db7349ea5791957e",
+      "stage": "full-k10",
+      "status": "FAILED"
+    },
+    {
+      "child_result": {
+        "child_exit": 1,
+        "error": "AssertionError: ",
+        "k": 10,
+        "mode": "full",
+        "rescue": false,
+        "status": "FAILED"
+      },
+      "child_stderr": {
+        "bytes": 401,
+        "sha256": "17936825dd07e968a4bcbdfd52bddc6bfe1f27bafc5d79bd359a8e4d320ae111"
+      },
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/verify_normal_session.py",
+        "--revision",
+        "c0499d62ad712cdc81713d698659c3a42f6cea7b",
+        "--raw",
+        "$RAW",
+        "--toolchain",
+        "$TOOLCHAIN",
+        "--user-home",
+        "$USER_HOME",
+        "--cargo-home",
+        "$CARGO_HOME"
+      ],
+      "committed_arms": 327,
+      "completed_arms": 327,
+      "execution_affinity": {
+        "policy": "same pinned cpuset-alloc revision and four-CPU reservation as successful attempt",
+        "reserved_cpus": [
+          211,
+          216,
+          249,
+          279
+        ]
+      },
+      "later_trials": "UNRUN",
+      "policy": "guarded-sleep-reserved",
+      "reason": "clock poll Deadline",
+      "result": {
+        "bytes": 13407,
+        "sha256": "f1eb66b246eaa511b866e48bbfc07cfba4a0727a2de1435faeebb5d42c9e6031"
+      },
+      "revision": "c0499d62ad712cdc81713d698659c3a42f6cea7b",
+      "stage": "full-k10",
+      "status": "FAILED"
+    }
+  ],
+  "prior_failures": "Three earlier full qualifications failed; all retained here. A fixed five-run sleep diagnostic cohort also failed in every case. This successful run uses the changed active-wait source and is not a repetition selected from runs of this revision.",
+  "revision": "d62d332eaa1b9cc95c02021345c7765f13a41715",
+  "schema": 1,
+  "scope": "Finite externally driven normal-caller sessions; raw callbacks and caller acknowledgements. No throughput, accuracy, general-application, unload or complete-A5 claim.",
+  "selection": {
+    "candidate": {
+      "bytes": 13072,
+      "sha256": "8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d"
+    },
+    "elf_va": 4096,
+    "final": {
+      "bytes": 13072,
+      "sha256": "8a238b77d4cf32c3dcea5aa0fc2a9ec55e58dbc8dc233c7c9d4100e998bd491d"
+    },
+    "length": 41,
+    "manifest": {
+      "bytes": 14847,
+      "sha256": "b1a65ca765727ced187926094d404693ce064e87062d90799ce1cab157b335f7"
+    },
+    "qualification_result": {
+      "bytes": 19719,
+      "sha256": "8e10823bc215d4391675134a1529f2857e60e8585ef9ef437339ee6adef7a7d8"
+    },
+    "return_offsets": [
+      34,
+      40
+    ],
+    "selected_code": {
+      "bytes": 41,
+      "sha256": "0b254dc402a298e20daa7f5b09c4ec19b97f12cea2835595895e43523ac4839e"
+    }
+  },
+  "source_inheritance": {
+    "all_literal_git_blobs": true,
+    "included_main": "63642aee94979d2f2b0ac9e84572d7e6fdf70acc",
+    "input_files_compared": 464,
+    "interpretation": "Source inheritance only; the native session qualification was not rerun after this merge.",
+    "measured_revision": "d62d332eaa1b9cc95c02021345c7765f13a41715",
+    "merged_revision": "d61bd7c62db4229f61e3891682e699ee5bd94871"
+  },
+  "source_reviews": [
+    {
+      "binding": {
+        "bytes": 4552,
+        "sha256": "46eb7934392199aa9a8a975a950d69727e9654114e9f61dae2a0ba122e44f0ce"
+      },
+      "scope": "a5-normal-stream-review-v1"
+    },
+    {
+      "binding": {
+        "bytes": 5662,
+        "sha256": "4f2af9346db7759afbf0779abac2c1d366ac68c6e653b0049c0dd0392973be04"
+      },
+      "scope": "a5-normal-schedule-review-v1"
+    },
+    {
+      "binding": {
+        "bytes": 13814,
+        "sha256": "ac06e4611af2ac46cf63fe13447f899f9789089e0cae4c93fbc29a4022be0164"
+      },
+      "scope": "a5-normal-session-source-review-v1"
+    },
+    {
+      "binding": {
+        "bytes": 7228,
+        "sha256": "38e245cdaf2bcde48bb9ad515aff4c4f3d37ea2d6cee8b4194593789c1515753"
+      },
+      "scope": "a5-normal-session-producer-review-v2"
+    },
+    {
+      "binding": {
+        "bytes": 20337,
+        "sha256": "bd569b93b2b091f80fb2d92aa62f4067bfc8c415bec6de3c6dce69eb15ed5350"
+      },
+      "scope": "normal-session-qualification-review-v1"
+    },
+    {
+      "binding": {
+        "bytes": 3592,
+        "sha256": "9d1b78aa6b3e3b66224ded41ca54c74f12c6605747891f32e488954c0c5d7a18"
+      },
+      "scope": "normal-session-wait-diagnostic-review-v1"
+    },
+    {
+      "binding": {
+        "bytes": 5839,
+        "sha256": "acbbf753a028f281a0ef65b383eface795205ad7f3df6c81c05b074f5875a2e5"
+      },
+      "scope": "normal-session-guard-review-v1"
+    },
+    {
+      "binding": {
+        "bytes": 4350,
+        "sha256": "9aaa70a9579a7d6a2f2f696d98ba8f758495f056bf24abf6f1c36a2de8d27442"
+      },
+      "scope": "normal-session-active-review-v1"
+    }
+  ],
+  "sources": {
+    "count": 464,
+    "manifest": {
+      "bytes": 73091,
+      "sha256": "1ea5d2bbe48eec214ff4b3b8920c14d55a13839c42f144d991c3ae3f3c0f509f"
+    }
+  },
+  "stage": "complete",
+  "stages": [
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "a35eb38c48d25fc5346d38f016cb69b094f9be87bcc4885113d31ca2b2570353"
+      },
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/test_session.py"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 4194304,
+      "name": "parser-controls",
+      "owner_wall_seconds": 55,
+      "parent": {
+        "bytes": 97,
+        "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "parent_command": {
+        "bytes": 1411,
+        "sha256": "7ed20a683f4e30bf98011fe97a2c0aada4b415dc23ed1d39daa5deb241e260db"
+      },
+      "passed": 11,
+      "receipt": {
+        "bytes": 588,
+        "sha256": "e2231fbaa5113bf91392a5b6fdfe6232f7bfdb8d278bb748dca7053934584b39"
+      },
+      "request": {
+        "bytes": 1591,
+        "sha256": "ebd6aee0abfea0b4494e32bfd4f1c37f24f0a4e7c0630f8fdcd86953c36c9d73"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 110,
+        "sha256": "404e3ede6372af82c4c59ae50e7e0200973613bf5443cee8bc04b33de393cdcc"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "binary": {
+        "bytes": 3423984,
+        "sha256": "4cb7bde32cca18ed3cb700b49c6874b21efba1cb49251718b4fa6bef643dda2b"
+      },
+      "cargo_fresh": true,
+      "closed": {
+        "bytes": 345,
+        "sha256": "8bcbb67db0912f568bf010a9cf55a7da0660ea4cb2876d05fd291fddbd574694"
+      },
+      "command": [
+        "$REPO/target/release/deps/ordinary_interval-9a9a8634c2bd38e4",
+        "normal::session::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "failed": 0,
+      "file_bytes": 4194304,
+      "filtered": 82,
+      "full_census": 92,
+      "ignored": 0,
+      "name": "session-controls",
+      "names": [
+        "normal::session::check::tests::coherent_shift_and_premature_closed_cannot_relabel_sample_population",
+        "normal::session::check::tests::report_payload_sequence_endpoint_and_terminal_are_independently_joined",
+        "normal::session::check::tests::whole_journal_tail_prefix_and_return_word_corruptions_refuse",
+        "normal::session::io::tests::full_output_retains_exact_unsent_bytes_then_drains_without_duplication",
+        "normal::session::io::tests::partial_input_eof_and_multiple_lines_preserve_exact_frames",
+        "normal::session::protocol::tests::duplicate_ids_and_finite_capacity_are_shared_by_calls_and_barriers",
+        "normal::session::protocol::tests::exact_requests_include_empty_nul_and_arbitrary_external_ids",
+        "normal::session::protocol::tests::malformed_requests_never_enter_the_population",
+        "normal::session::tests::accepted_full_queue_retains_pending_before_stop_and_disconnect",
+        "normal::session::tests::guarded_wait_preserves_original_due_end_and_shutdown_boundaries"
+      ],
+      "owner_wall_seconds": 55,
+      "parent": {
+        "bytes": 97,
+        "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "parent_command": {
+        "bytes": 1413,
+        "sha256": "d138445d413a4da0230c7df197430f9b78dfb7db88c21e9190f6e130a1f86f23"
+      },
+      "passed": 10,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      },
+      "receipt": {
+        "bytes": 589,
+        "sha256": "71cb9c43beedd3cac7b3afda2ace7e13e04f1100c003d1d0e6ecb14bf91866c4"
+      },
+      "request": {
+        "bytes": 1587,
+        "sha256": "87853cf3bafe9efc0ec505dfe5f7d57615289a662569ff0f2cb35efc8ade2422"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 1166,
+        "sha256": "120d2ace302b18dcc8535c18bf22ad9fcae7bcc4d7bbb0b75565083bc48a63a7"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "binary": {
+        "bytes": 8721328,
+        "sha256": "537379e3fe53c2c478da04385e91a223d85b3139c6d36adec9dc58d2ff3cf200"
+      },
+      "cargo_fresh": true,
+      "closed": {
+        "bytes": 344,
+        "sha256": "fe53129618dea7e62911128e06fb9b0e46de8e605fc0ee005443ac6d07378b54"
+      },
+      "command": [
+        "$REPO/target/release/deps/rapid_profiler-2a27e1565eb04145",
+        "frontend_native::backoff::driver::schedule::tests::",
+        "--test-threads=1"
+      ],
+      "cpu_seconds": 20,
+      "failed": 0,
+      "file_bytes": 4194304,
+      "filtered": 410,
+      "full_census": 417,
+      "ignored": 0,
+      "name": "schedule-controls",
+      "names": [
+        "frontend_native::backoff::driver::schedule::tests::arm_acknowledgements_require_a_grant_and_cannot_precede_due",
+        "frontend_native::backoff::driver::schedule::tests::both_fixed_policies_issue_520_arms_and_complete_only_after_original_end",
+        "frontend_native::backoff::driver::schedule::tests::missed_original_arm_and_incomplete_epoch_limit_refuse_without_catchup",
+        "frontend_native::backoff::driver::schedule::tests::pending_arm_refuses_another_poll_without_count_or_deadline_reset",
+        "frontend_native::backoff::driver::schedule::tests::post_arm_history_observation_accepts_equality_but_refuses_one_nanosecond_late",
+        "frontend_native::backoff::driver::schedule::tests::requested_stop_is_once_only_and_uses_exclusive_original_capped_shutdown",
+        "frontend_native::backoff::driver::schedule::tests::wait_caps_follow_original_due_end_and_stop_without_poll_extension"
+      ],
+      "owner_wall_seconds": 55,
+      "parent": {
+        "bytes": 97,
+        "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "parent_command": {
+        "bytes": 1415,
+        "sha256": "04742c082ad75de604d6818e3e7e62a4d24b4bab7e0e2fee402a5288f89f01df"
+      },
+      "passed": 7,
+      "profile": {
+        "debug_assertions": true,
+        "debuginfo": 0,
+        "opt_level": "3",
+        "overflow_checks": true,
+        "test": true
+      },
+      "receipt": {
+        "bytes": 589,
+        "sha256": "adcc4e68c4c7dd0ae0b9fe956b350062ea871e4d731058bb71b8a2367a1e9c51"
+      },
+      "request": {
+        "bytes": 1621,
+        "sha256": "872f4dc47d09baf240fe982b3af0605bdf9f2bae2709e118f18d52724d9314e4"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 1039,
+        "sha256": "a5c5bdeb1e63617fea3af81c0d7674d140468b61ba6f0f739479dd54787273ef"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 343,
+        "sha256": "312ef82214842e38590316c3347d362504ac53cc6dd509640880650723fb6a46"
+      },
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/full-k10/producer",
+        "--k",
+        "10",
+        "--mode",
+        "full"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 4194304,
+      "name": "full-k10",
+      "owner_wall_seconds": 55,
+      "parent": {
+        "bytes": 97,
+        "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "parent_command": {
+        "bytes": 1397,
+        "sha256": "037dad720de9921e200c78a3d9b44df467753879790b1243282af4269e4660d0"
+      },
+      "receipt": {
+        "bytes": 588,
+        "sha256": "6783fd0ebaf4845ed5971c8fa099f35148f73bc4ff14040c9750606687a381bf"
+      },
+      "request": {
+        "bytes": 2322,
+        "sha256": "c37bbcd414603f46bafbc46d252f9cb377b67fbb036bb53fdfcf983df4b87082"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 550,
+        "sha256": "a202abcd25aa622dce528e18e09818aac0a01c997e0aa17fb862cdf1ac159df0"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 343,
+        "sha256": "3f8cc9c9cbc0399db498350208322cf7744cde95eefa0d683896c72def824ff5"
+      },
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/full-k1000/producer",
+        "--k",
+        "1000",
+        "--mode",
+        "full"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 4194304,
+      "name": "full-k1000",
+      "owner_wall_seconds": 55,
+      "parent": {
+        "bytes": 97,
+        "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "parent_command": {
+        "bytes": 1401,
+        "sha256": "2ed7fa389157b2f0f1b689cbe3e8e41fd791f2749620fb81ed3fd735f9021988"
+      },
+      "receipt": {
+        "bytes": 587,
+        "sha256": "2940c3c9e0f744a5500deceb9005673bc6650b4f9ab0238f36fda0adf3c96aa9"
+      },
+      "request": {
+        "bytes": 2332,
+        "sha256": "d022f508d40c68beee9b2a5038fa7fbdd09eb546de06fef88d100b7c7ed5d3cb"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 537,
+        "sha256": "ba43958acc827963859b18190591e62fe15562624f83cbc5a4a0ce2d7e8137af"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "4c978b5ba73d06442bd6d39ea3d37b1f90d73dabecc7932533c9600cf4db0657"
+      },
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/stop-k10/producer",
+        "--k",
+        "10",
+        "--mode",
+        "stop"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 4194304,
+      "name": "stop-k10",
+      "owner_wall_seconds": 55,
+      "parent": {
+        "bytes": 97,
+        "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "parent_command": {
+        "bytes": 1397,
+        "sha256": "ee6ee50575e0fa9ec291d42104ca6d19d6fbbddf63be897465d8ea492c08da6f"
+      },
+      "receipt": {
+        "bytes": 589,
+        "sha256": "c15beef0dc062d0ebf3110e82a817b23b67b6111eee759d768d4c49e8e1ea39f"
+      },
+      "request": {
+        "bytes": 2322,
+        "sha256": "5f4a7021058aa4bdc01022e0ff3ae7e814bfd2a321ded069b0a0b61998b831cc"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 541,
+        "sha256": "f92763840450fa98dc7b2f49bd79e3b941ce2bde0f4750207c5dd943a26b9732"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "bf1ed7f0391e21b40ef48d1aba486c8fad6284afb668dc231e0686e7b73b6e3b"
+      },
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/duplicate-k10/producer",
+        "--k",
+        "10",
+        "--mode",
+        "duplicate"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 4194304,
+      "name": "duplicate-k10",
+      "owner_wall_seconds": 55,
+      "parent": {
+        "bytes": 97,
+        "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "parent_command": {
+        "bytes": 1407,
+        "sha256": "1e673802f2b464f39cef169610ec8cfc5e5f692e1bb90fd565beeac96d481ce3"
+      },
+      "receipt": {
+        "bytes": 588,
+        "sha256": "340127f62eeead63ee30249ef16deaa839e5b6cded80faa731bd201a76093721"
+      },
+      "request": {
+        "bytes": 2347,
+        "sha256": "6e1bd802d028e6951f2e9d2c98d4e7bae6d83e50956e629b36067ffde092d3b5"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 314,
+        "sha256": "b3a0f5ff6fd5aac6c314b21c0c9382326937c28717c10572a17307c0fd607185"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "fedc0ea9ef513fa85e8e479f583bc2ce40cf58fe5dab79ba331385bf7af2332a"
+      },
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/eof-k10/producer",
+        "--k",
+        "10",
+        "--mode",
+        "eof"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 4194304,
+      "name": "eof-k10",
+      "owner_wall_seconds": 55,
+      "parent": {
+        "bytes": 97,
+        "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "parent_command": {
+        "bytes": 1395,
+        "sha256": "8f5b12bd7d1b75ba0fe344b5260137e6d7ac3b235d1adf5288fb64a0e84bf577"
+      },
+      "receipt": {
+        "bytes": 589,
+        "sha256": "be856112ab414a1a06897e570bff8d7d3e24de60ce122fe0846a56ba269c4e3a"
+      },
+      "request": {
+        "bytes": 2317,
+        "sha256": "582fb4a561f0f0ecb78178a1ab8c12b2df9c4c8783ad4f3c4664f9d57583728c"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 302,
+        "sha256": "8d5a54c3a170d718e37d5803809012a2cdb6679f44c05925ef372f46ecf3f97e"
+      },
+      "wall_seconds": 30
+    },
+    {
+      "closed": {
+        "bytes": 344,
+        "sha256": "331b36a85fd66085e2207f0943b5bfcefb99a1619d0bf126fa0e1b4761fde995"
+      },
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/candidate.so",
+        "--trusted",
+        "$RAW/normal-prerequisite/strnlen-prerequisite/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--output",
+        "$RAW/backpressure-k10/producer",
+        "--k",
+        "10",
+        "--mode",
+        "backpressure"
+      ],
+      "cpu_seconds": 20,
+      "file_bytes": 4194304,
+      "name": "backpressure-k10",
+      "owner_wall_seconds": 55,
+      "parent": {
+        "bytes": 97,
+        "sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76"
+      },
+      "parent_command": {
+        "bytes": 1413,
+        "sha256": "2b41f8230f92a62c76e85cdf18334f408c3f71055fdddd64eae7b072a6ed67f6"
+      },
+      "receipt": {
+        "bytes": 587,
+        "sha256": "9be804765c819b408f2ef9949180c4f58d2b669e05bbc920c0ea2d3000de0614"
+      },
+      "request": {
+        "bytes": 2362,
+        "sha256": "0123b73aeb30650150c5ee14b470920814dd80ba6ac320100f5a0e261e1e283c"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "stdout": {
+        "bytes": 571,
+        "sha256": "7d63941fdc615e8f77302b50a88b971af42e671421f54cacc6dc55a70d8a9541"
+      },
+      "wall_seconds": 30
+    }
+  ],
+  "status": "PASS",
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "strip": {
+      "bytes": 189816,
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    }
+  },
+  "totals": {
+    "actions": 1565,
+    "arms": 1561,
+    "calls": 1168,
+    "detach": 4,
+    "flushes": 11,
+    "joins": 4,
+    "sampled": 88,
+    "unsampled": 1080
+  },
+  "trials": [
+    {
+      "k": 10,
+      "mode": "full",
+      "name": "full-k10",
+      "outcome": "COMPLETE",
+      "result": {
+        "bytes": 614,
+        "sha256": "7499b85d990c1b5ee478e94cb7ec542027b72c288b86d9a35b6d6fd21f1ac4ea"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "summary": {
+        "accepted": 45,
+        "actions": 521,
+        "arms": 520,
+        "batches": 28,
+        "calls": 40,
+        "child_exit": 0,
+        "detach": 1,
+        "flushes": 5,
+        "input_bytes": 29551,
+        "joins": 1,
+        "maximum_batch_calls": 4,
+        "maximum_entry_prefix": 513,
+        "normal_reaps": 1,
+        "owners": {
+          "closed": 22,
+          "sampled": 18
+        },
+        "rescues": 0,
+        "sampled": 18,
+        "stop_reason": "EpochLimit",
+        "transcript_bytes": 27804,
+        "unsampled": 22,
+        "write_blocked_at_finalize": 0
+      },
+      "transcript": {
+        "bytes": 27804,
+        "sha256": "e16f326f3d0381833399b63ab946ef7d7ddaaa778f36e8000697d9a02a776ad8"
+      }
+    },
+    {
+      "k": 1000,
+      "mode": "full",
+      "name": "full-k1000",
+      "outcome": "COMPLETE",
+      "result": {
+        "bytes": 597,
+        "sha256": "640c998d684003830582b9727bfd5d46660e5ed4cc92569b93c51e24ab76befe"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "summary": {
+        "accepted": 45,
+        "actions": 521,
+        "arms": 520,
+        "batches": 28,
+        "calls": 40,
+        "child_exit": 0,
+        "detach": 1,
+        "flushes": 5,
+        "input_bytes": 29551,
+        "joins": 1,
+        "maximum_batch_calls": 4,
+        "maximum_entry_prefix": 513,
+        "normal_reaps": 1,
+        "owners": {
+          "sampled": 40
+        },
+        "rescues": 0,
+        "sampled": 40,
+        "stop_reason": "EpochLimit",
+        "transcript_bytes": 29213,
+        "unsampled": 0,
+        "write_blocked_at_finalize": 0
+      },
+      "transcript": {
+        "bytes": 29213,
+        "sha256": "e72098cc82ec5db479d13adc177416a18ed4077fef1063a6bd94fba59a15f74e"
+      }
+    },
+    {
+      "k": 10,
+      "mode": "stop",
+      "name": "stop-k10",
+      "outcome": "COMPLETE",
+      "result": {
+        "bytes": 605,
+        "sha256": "9d71dc3b39430a891851ee4824cf55a217370a6c43df26133155ab15e1fa5974"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "summary": {
+        "accepted": 64,
+        "actions": 2,
+        "arms": 1,
+        "batches": 36,
+        "calls": 64,
+        "child_exit": 0,
+        "detach": 1,
+        "flushes": 0,
+        "input_bytes": 9157,
+        "joins": 1,
+        "maximum_batch_calls": 4,
+        "maximum_entry_prefix": 1,
+        "normal_reaps": 1,
+        "owners": {
+          "closed": 54,
+          "sampled": 10
+        },
+        "rescues": 0,
+        "sampled": 10,
+        "stop_reason": "Requested",
+        "transcript_bytes": 7847,
+        "unsampled": 54,
+        "write_blocked_at_finalize": 0
+      },
+      "transcript": {
+        "bytes": 7847,
+        "sha256": "86f48df676eff554bfd01cdea0b50fee07c4b1e453bf90a90f50b40ae9149001"
+      }
+    },
+    {
+      "k": 10,
+      "mode": "duplicate",
+      "name": "duplicate-k10",
+      "outcome": "EXPECTED_REFUSAL",
+      "result": {
+        "bytes": 342,
+        "sha256": "ba119014b2f84d986e1965bcf4397fc1161a844f0248661e31006c5edaf4e700"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 267,
+        "sha256": "727aca240525f7f42bf383466adf939c995429024834e4814fecf783d93233b8"
+      },
+      "summary": {
+        "child_exit": 1,
+        "input_bytes": 21,
+        "normal_reaps": 1,
+        "rescues": 0,
+        "transcript_bytes": 74
+      },
+      "transcript": {
+        "bytes": 74,
+        "sha256": "377911e0c5970caa7fd0229fea105ddbf6bdcea10f2091588629cb0b51da5a95"
+      }
+    },
+    {
+      "k": 10,
+      "mode": "eof",
+      "name": "eof-k10",
+      "outcome": "EXPECTED_REFUSAL",
+      "result": {
+        "bytes": 330,
+        "sha256": "72bed341cb12e5c9a41a0c9ab09a2b8e95e6ecbd7a3d49fd354a859823be9fd2"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 291,
+        "sha256": "e87f24f98412023c2798920bb9ea49b94354af792d80779c7b8ca00c4cbbdd39"
+      },
+      "summary": {
+        "child_exit": 1,
+        "input_bytes": 11,
+        "normal_reaps": 1,
+        "rescues": 0,
+        "transcript_bytes": 74
+      },
+      "transcript": {
+        "bytes": 74,
+        "sha256": "377911e0c5970caa7fd0229fea105ddbf6bdcea10f2091588629cb0b51da5a95"
+      }
+    },
+    {
+      "k": 10,
+      "mode": "backpressure",
+      "name": "backpressure-k10",
+      "outcome": "COMPLETE",
+      "result": {
+        "bytes": 635,
+        "sha256": "155e7ed57ffb77c3ef19fd7a9a9b2e8fe9fb2d69c831e7295b29232c3a7034c0"
+      },
+      "status": "PASS",
+      "stderr": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "summary": {
+        "accepted": 1025,
+        "actions": 521,
+        "arms": 520,
+        "batches": 416,
+        "calls": 1024,
+        "child_exit": 0,
+        "detach": 1,
+        "flushes": 1,
+        "input_bytes": 146440,
+        "joins": 1,
+        "maximum_batch_calls": 4,
+        "maximum_entry_prefix": 2,
+        "normal_reaps": 1,
+        "owners": {
+          "closed": 1004,
+          "sampled": 20
+        },
+        "rescues": 0,
+        "sampled": 20,
+        "stop_reason": "EpochLimit",
+        "transcript_bytes": 138001,
+        "unsampled": 1004,
+        "write_blocked_at_finalize": 72118
+      },
+      "transcript": {
+        "bytes": 138001,
+        "sha256": "ec5a38eeae8f57e284ee128e08a8233fd0a69d1510d9e4a99d2772d4e22644ec"
+      }
+    }
+  ],
+  "versions": {
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "gcc": "gcc (GCC) 11.5.0 20240719 (Red Hat 11.5.0-15)",
+    "git": "git version 2.52.0",
+    "ld": "GNU ld version 2.35.2-72.el9",
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "readelf": "GNU readelf version 2.35.2-72.el9",
+    "rust": {
+      "commit-hash": "8bab26f4f68e0e26f0bb7960be334d5b520ea452",
+      "host": "x86_64-unknown-linux-gnu",
+      "release": "1.97.1"
+    },
+    "strip": "GNU strip version 2.35.2-72.el9"
+  },
+  "wait_diagnostics": {
+    "cohort": {
+      "bytes": 589,
+      "sha256": "9fe76a8d991c7d9646a6a60be9306966dd9ccd070ca4c69ec259e41c43e536fb"
+    },
+    "failed": 5,
+    "passed": 0,
+    "planned_cases": 5,
+    "reproduce": {
+      "cases": [
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "command": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/rapid-profiler/normal-work/session_driver.py",
+        "--binary",
+        "$REPO/target/release/ordinary-interval",
+        "--candidate",
+        "$FIXTURE/candidate.so",
+        "--trusted",
+        "$FIXTURE/final.so",
+        "--elf-va",
+        "4096",
+        "--length",
+        "41",
+        "--k",
+        "10",
+        "--mode",
+        "full",
+        "--output",
+        "$RAW/case-$CASE/child"
+      ],
+      "cpu_seconds": 20,
+      "cwd": "$REPO",
+      "file_bytes": 4194304,
+      "fixture": "Fresh verify_normal_interval.py prerequisite at the recorded revision; use its strnlen-prerequisite directory. Do not mutate the complete subject ELF.",
+      "helper": [
+        "$PYTHON",
+        "-B",
+        "$REPO/tools/unwind-oracle/bounded_command.py",
+        "--request",
+        "$RAW/case-$CASE/request.json",
+        "--receipt",
+        "$RAW/case-$CASE/receipt.json"
+      ],
+      "revision": "8e7144c8a63a00638061956bdb5ef92c628c0323",
+      "wall_seconds": 30
+    },
+    "scope": "Requested/observed sleep intervals at missed polls; no identified OS cause. Complete fixed cohort, no retry-until-pass.",
+    "single_preceding_diagnostic_run": {
+      "base": "36deb0c3e1cc71441b477233db7349ea5791957e",
+      "outer": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "bea6296bc237d998ddde2a4bb1cf05a5043648aa4a8c620e0f9d563e7c68cf76",
+        "reaped_descendants": 0,
+        "seconds": 5.742525040870532,
+        "start_utc": "2026-10-28T16:37:14.536369+00:00",
+        "termination": null
+      },
+      "scope": "One earlier full K10 diagnostic run; inconclusive for intermittency.",
+      "status": "PASS",
+      "subsequently_committed_source": "8e7144c8a63a00638061956bdb5ef92c628c0323",
+      "working_source_sha256": {
+        "tools/rapid-profiler/ordinary-interval/normal/session.rs": "e89486758a07be3f4374a9b3ebc5889ba2eeaf805e8bc17f26411bdcb9c9a471"
+      }
+    }
+  }
+}

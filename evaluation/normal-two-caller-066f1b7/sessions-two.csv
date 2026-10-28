@@ -1,0 +1,7 @@
+case,outcome,k,epochs,arms,actions,accepted,calls,admitted,retained,dropped,unsampled,batches,flushes,cancelled,unfinished,detaches,joins,worker1_calls,worker2_calls,maximum_entry_prefix,maximum_batch_calls,write_blocked_at_finalize,input_bytes,transcript_bytes,child_exit,normal_reaps,rescues
+full-k10,COMPLETE,10,520,520,521,45,40,18,18,0,22,25,5,0,0,2,2,20,20,513,3,0,29551,32596,0,1,0
+full-k1000,COMPLETE,1000,520,520,521,45,40,40,40,0,0,28,5,0,0,2,2,20,20,513,4,0,29551,34439,0,1,0
+stop-k10,COMPLETE,10,520,1,2,64,64,10,10,0,54,38,0,0,0,2,2,32,32,2,4,0,9157,8478,0,1,0
+duplicate-k10,EXPECTED_REFUSAL,10,520,,,,,,,,,,,,,,,,,,,,21,129,1,1,0
+eof-k10,EXPECTED_REFUSAL,10,520,,,,,,,,,,,,,,,,,,,,11,129,1,1,0
+backpressure-k10,COMPLETE,10,520,520,521,1025,1024,22,20,2,1002,963,1,0,0,2,2,512,512,2,4,72078,146440,151200,0,1,0

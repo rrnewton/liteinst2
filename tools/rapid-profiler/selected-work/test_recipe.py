@@ -118,6 +118,15 @@ class Recipe(unittest.TestCase):
         self.assertEqual(check.census(listed, b''), names)
         run = b'\nrunning 2 tests\ntest module::one ... ok\ntest module::two ... ok\n\ntest result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.00s\n\n'
         self.assertEqual(check.controls(run, b'', names[:2], names)['passed'], 2)
+        one = b'\nrunning 1 test\ntest module::one ... ok\n\ntest result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 2 filtered out; finished in 0.00s\n\n'
+        self.assertEqual(check.controls(one, b'', names[:1], names)['passed'], 1)
+        for bad in (one.replace(b'running 1 test\n', b'running 1 tests\n'),
+                one.replace(b'2 filtered', b'1 filtered'), one.replace(b'1 passed', b'0 passed'),
+                one.replace(b'module::one', b'module::two'),
+                one.replace(b'... ok', b'... ignored'), one + b'extra\n'):
+            with self.assertRaises(AssertionError): check.controls(bad, b'', names[:1], names)
+        with self.assertRaises(AssertionError):
+            check.controls(run.replace(b'running 2 tests\n', b'running 2 test\n'), b'', names[:2], names)
         for bad in (run.replace(b'module::two', b'module::one'), run.replace(b'module::two', b'module::bad'),
                 run.replace(b'1 filtered', b'2 filtered'), run.replace(b'0 failed', b'1 failed'),
                 run.replace(b'... ok', b'... ignored', 1), run.replace(b'test module::two ... ok\n', b'')):

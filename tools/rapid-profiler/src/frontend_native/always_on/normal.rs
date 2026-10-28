@@ -3,6 +3,8 @@
 //! caller checkpoint acknowledges return. Neither acknowledgement observes C3
 //! execution or grants executable reclamation. All code owners are process-lived.
 use super::*;
+mod two_callers;
+pub use two_callers::PreparedTwoCallerNormalController;
 
 const CALLS: usize = EVENTS / 2;
 
@@ -47,9 +49,12 @@ struct Cursor {
 
 /// Complete immutable transfer, including all 512 journal words. Ordinals,
 /// totals and sampled completion sequences are lifetime values; rows are local.
-/// This profile uses finite legacy history (prefix <= 256), not streaming history.
+/// Construction selects finite legacy history or opt-in absolute history. An
+/// absolute prefix must be joined with contiguous HistoryBatches from this stream.
 #[derive(Debug, Eq, PartialEq)]
 pub struct NormalBatch {
+    stream: Option<HistoryStream>,
+    history_end: Option<u64>,
     pid: u32,
     tid: u64,
     registration: u64,
@@ -62,6 +67,16 @@ pub struct NormalBatch {
     journal: Vec<u64>,
 }
 impl NormalBatch {
+    /// None is the unchanged legacy format. This opaque identity owns no epoch,
+    /// Session or executable mapping and does not acknowledge external export.
+    pub fn history_stream(&self) -> Option<&HistoryStream> {
+        self.stream.as_ref()
+    }
+    /// Absolute mode only: committed action bound captured before transfer.
+    /// This is not proof that a consumer retained or replayed those actions.
+    pub fn history_high_water(&self) -> Option<u64> {
+        self.history_end
+    }
     pub fn pid(&self) -> u32 {
         self.pid
     }
@@ -106,13 +121,38 @@ impl PreparedNormalController {
         function: FunctionId,
         limits: Limits,
     ) -> Result<Self, BridgeError> {
+        Self::prepare(site, install, function, limits, HistoryMode::Legacy)
+    }
+    /// Opt in to bounded resident history with absolute entry prefixes. Requires
+    /// activate_concurrent. Limits.actions bounds resident actions; the caller
+    /// must explicitly drain and retain history before that capacity is exhausted.
+    /// Draining history never acknowledges a native return or releases its owner.
+    pub fn new_streaming_history(
+        site: site::ordinary::InstalledNormalSite,
+        install: u64,
+        function: FunctionId,
+        limits: Limits,
+    ) -> Result<Self, BridgeError> {
+        Self::prepare(site, install, function, limits, HistoryMode::Absolute)
+    }
+    fn prepare(
+        site: site::ordinary::InstalledNormalSite,
+        install: u64,
+        function: FunctionId,
+        limits: Limits,
+        mode: HistoryMode,
+    ) -> Result<Self, BridgeError> {
         if !site.site.is_normal() || limits.threads != 1 || limits.depth != 1 {
             return Err(error(Cause::Identity));
         }
         if !timing::supported() {
             return Err(error(Cause::ClockProfile));
         }
-        PreparedIntervalController::new(
+        let constructor = match mode {
+            HistoryMode::Legacy => PreparedIntervalController::new,
+            HistoryMode::Absolute => PreparedIntervalController::new_streaming_history,
+        };
+        constructor(
             site::InstalledIntervalSite { site: site.site },
             install,
             function,
@@ -233,7 +273,7 @@ struct NormalState {
 
 // A lost/failed handle and actual TLS teardown must not cancel a pending model
 // frame or release a FunctionClosed permit. Explicit empty detach is the only
-// path that takes/drops this allocation. At most one lifetime registration exists.
+// path that takes/drops this allocation. Each TLS contains at most one attachment.
 struct Storage(Option<Box<NormalState>>);
 impl Drop for Storage {
     fn drop(&mut self) {
@@ -277,6 +317,16 @@ impl NormalClient {
         if !timing::supported() {
             return Err(error(Cause::ClockProfile));
         }
+        self.attach_ready(registration, stack, journal)
+    }
+    // Both public unsafe routes have authenticated their immutable profile,
+    // process, limits, journal and clock under a live ControllerScope first.
+    fn attach_ready(
+        &self,
+        registration: u64,
+        stack: ReadableStack,
+        journal: IntervalJournal,
+    ) -> Result<NormalThread, BridgeError> {
         NORMAL
             .try_with(|cell| {
                 if NORMAL_POISON.get() {
@@ -319,6 +369,11 @@ impl NormalClient {
     }
 }
 
+fn normal_binding_matches(binding: &Binding) -> bool {
+    (binding.site.is_normal() && binding.limits.threads == 1 && binding.limits.depth == 1)
+        || two_callers::binding_matches(binding)
+}
+
 fn stack_word_ok(stack: &ReadableStack, rsp: u64, word: u64) -> bool {
     rsp >= stack.start
         && rsp & 15 == 8
@@ -343,7 +398,10 @@ fn acknowledgement_ok(ack: NormalAcknowledgement, ordinal: u64) -> bool {
         NormalAcknowledgement::CallerCheckpoint => true,
     }
 }
-fn record_words(record: &NormalRecord) -> Result<([u64; 7], [u64; 7]), BridgeError> {
+fn record_words(
+    record: &NormalRecord,
+    mode: HistoryMode,
+) -> Result<([u64; 7], [u64; 7]), BridgeError> {
     let prefix = record.history_prefix;
     let (kind, generation, invocation, reason) = match record.raw.owner {
         RawIntervalOwner::Sampled {
@@ -359,7 +417,11 @@ fn record_words(record: &NormalRecord) -> Result<([u64; 7], [u64; 7]), BridgeErr
         RawIntervalOwner::Removed { generation } => (3, generation, 0, 2),
         RawIntervalOwner::FunctionClosed { generation } => (3, generation, 0, 3),
     };
-    if prefix > 256
+    let limit = match mode {
+        HistoryMode::Legacy => 256,
+        HistoryMode::Absolute => crate::frontend::MAX_HISTORY_POSITION,
+    };
+    if prefix > limit
         || invocation > 4096
         || (kind == 1 && invocation == 0)
         || ((reason == 1) != (generation == 0))
@@ -368,7 +430,7 @@ fn record_words(record: &NormalRecord) -> Result<([u64; 7], [u64; 7]), BridgeErr
     {
         return Err(error(Cause::Invariant));
     }
-    let bits = invocation | (prefix << 13) | (reason << 22);
+    let bits = invocation | ((prefix & 0x1ff) << 13) | (reason << 22) | ((prefix >> 9) << 24);
     let entry = [
         kind,
         record.raw.ordinal,
@@ -391,6 +453,27 @@ fn record_words(record: &NormalRecord) -> Result<([u64; 7], [u64; 7]), BridgeErr
 }
 
 impl NormalState {
+    fn history_bound(&self) -> u64 {
+        match self.binding.session.history_mode() {
+            HistoryMode::Legacy => self.binding.limits.actions as u64,
+            HistoryMode::Absolute => self.binding.session.history_committed_end(),
+        }
+    }
+    fn history_prefix(&self, bits: u64) -> Result<u64, BridgeError> {
+        let prefix = match self.binding.session.history_mode() {
+            HistoryMode::Legacy if bits >> 24 == 0 => (bits >> 13) & 0x1ff,
+            HistoryMode::Absolute => {
+                history::decode_absolute(bits, self.history_bound())
+                    .ok_or(error(Cause::Invariant))?
+                    .1
+            }
+            _ => return Err(error(Cause::Invariant)),
+        };
+        if prefix > self.history_bound() {
+            return Err(error(Cause::Invariant));
+        }
+        Ok(prefix)
+    }
     fn new(
         binding: Arc<Binding>,
         registration: u64,
@@ -468,7 +551,7 @@ impl NormalState {
         entry: bool,
     ) -> Result<u64, BridgeError> {
         self.binding.process()?;
-        if !self.binding.site.is_normal()
+        if !normal_binding_matches(&self.binding)
             || self.actual_thread != thread::current().id()
             || self.tid != tid()
             || context.stack_pointer < self.stack.start
@@ -595,6 +678,7 @@ impl NormalState {
         let summary = p.summary.ok_or(error(Cause::Invariant))?;
         let raw = p.returned.ok_or(error(Cause::Return))?;
         let (_, _, bits) = history::packed_for(&self.binding, summary)?;
+        let history_prefix = self.history_prefix(bits)?;
         if self.len >= CALLS
             || self.records[self.len].is_some()
             || p.slot.identity != p.ordinal
@@ -610,7 +694,6 @@ impl NormalState {
             || raw.start != p.start
             || raw.owner != timing::owner(summary)
             || !stack_word_ok(&self.stack, p.rsp, p.word)
-            || ((bits >> 13) & 0x1ff) > self.binding.limits.actions as u64
             || !acknowledgement_ok(acknowledgement, p.ordinal)
         {
             return Err(error(Cause::Invariant));
@@ -619,10 +702,10 @@ impl NormalState {
             raw,
             entry_rsp: p.rsp,
             return_word: p.word,
-            history_prefix: (bits >> 13) & 0x1ff,
+            history_prefix,
             acknowledgement,
         };
-        let (entry, exit) = record_words(&record)?;
+        let (entry, exit) = record_words(&record, self.binding.session.history_mode())?;
         let at = 4 + self.len * 14;
         if self.journal.page.0[at..at + 7] != entry || self.journal.page.0[at + 7..at + 14] != exit
         {
@@ -712,7 +795,7 @@ impl NormalState {
                 .confirmed
                 .checked_add(i as u64 + 1)
                 .ok_or(error(Cause::Capacity))?;
-            let (entry, exit) = record_words(&record)?;
+            let (entry, exit) = record_words(&record, self.binding.session.history_mode())?;
             let at = 4 + i * 14;
             sampled += usize::from(matches!(record.raw.owner, RawIntervalOwner::Sampled { .. }));
             if record.raw.ordinal != expected
@@ -721,7 +804,7 @@ impl NormalState {
                         ordinal: expected.checked_add(1).ok_or(error(Cause::Capacity))?,
                     })
                 || !stack_word_ok(&self.stack, record.entry_rsp, record.return_word)
-                || record.history_prefix > self.binding.limits.actions as u64
+                || record.history_prefix > self.history_bound()
                 || self.journal.page.0[at..at + 7] != entry
                 || self.journal.page.0[at + 7..at + 14] != exit
             {
@@ -757,6 +840,8 @@ impl NormalState {
             return Err(error(Cause::Capacity));
         }
         let (totals, count, number) = self.transfer_check()?;
+        let stream = history::stream_for(&self.binding);
+        let history_end = stream.as_ref().map(|_| self.history_bound());
         if count == 0 {
             return Ok(None);
         }
@@ -781,6 +866,8 @@ impl NormalState {
             sequence: totals.completed,
         };
         let batch = NormalBatch {
+            stream,
+            history_end,
             pid: self.binding.pid,
             tid: self.tid,
             registration: self.registration,
@@ -813,7 +900,7 @@ impl NormalThread {
             && s.tid == self.tid
             && s.actual_thread == self.thread
             && Arc::ptr_eq(&self.key, &s.binding.key)
-            && s.binding.site.is_normal()
+            && normal_binding_matches(&s.binding)
     }
     /// Snapshot only; a pending pre-RET remains pending and holds its owner.
     pub fn totals(&self) -> Result<NormalTotals, BridgeError> {

@@ -119,7 +119,8 @@ def controls(stdout, stderr, expected, inventory):
     assert stderr == b'' and len(expected) == len(set(expected)) > 0
     assert set(expected).issubset(inventory) and len(inventory) == len(set(inventory))
     count, filtered = len(expected), len(inventory) - len(expected)
-    prefix = f'\nrunning {count} tests\n'
+    noun = 'test' if count == 1 else 'tests'
+    prefix = f'\nrunning {count} {noun}\n'
     text = stdout.decode('ascii')
     assert 0 < len(stdout) <= MIB and text.startswith(prefix)
     body = text[len(prefix):].split('\n')

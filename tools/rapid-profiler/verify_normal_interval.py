@@ -27,7 +27,10 @@ RUNTIME = ('pending_ret_is_not_completion_and_k1_next_entry_finishes_before_admi
     'checkpoint_validates_whole_journal_and_pending_identity_before_finish',
     'allocation_refusal_and_caught_busy_unwind_keep_pending_first_error',
     'transfer_reuses_buffers_without_resetting_absolute_identity_or_model_sequence',
-    'gated_site_cannot_be_relabelled_into_normal_preparation')
+    'gated_site_cannot_be_relabelled_into_normal_preparation',
+    'streaming_normal_pending_owner_survives_600_actions_without_return_acknowledgement',
+    'streaming_normal_closed_and_removed_records_join_after_repeated_idle_drains',
+    'streaming_normal_upper_prefix_corruption_refuses_before_consuming_pending_owner')
 CALLER = ('normal_caller_literal_body_and_every_changed_byte_refuse',
     'normal_caller_dynamic_refuses_load_time_execution_and_dependencies',
     'normal_caller_mapping_requires_complete_exact_rx_owner',

@@ -42,6 +42,7 @@ struct Role {
 enum SiteKind {
     Legacy,
     NormalCaller,
+    NormalTwoCallers,
 }
 pub(super) struct Site {
     kind: SiteKind,
@@ -52,6 +53,9 @@ pub(super) struct Site {
 impl Site {
     pub(super) fn is_normal(&self) -> bool {
         self.kind == SiteKind::NormalCaller
+    }
+    pub(super) fn is_normal_two_callers(&self) -> bool {
+        self.kind == SiteKind::NormalTwoCallers
     }
     pub(super) fn matches(&self, pc: u64, control: ControlIdentity<'_>, entry: bool) -> bool {
         self.roles
@@ -548,6 +552,23 @@ unsafe fn check_source(owner: &mut Owner, expected: &[u8]) -> Result<(), SiteErr
         return Err(SiteError::Correspondence);
     }
     Ok(())
+}
+
+#[cfg(test)]
+pub(super) fn synthetic_normal_site(two: bool) -> InstalledIntervalSite {
+    // Metadata-only profile controls: no executable or publication authority.
+    InstalledIntervalSite {
+        site: Arc::new(Site {
+            kind: if two {
+                SiteKind::NormalTwoCallers
+            } else {
+                SiteKind::NormalCaller
+            },
+            roles: roles(0x1000, &[0, 18]),
+            terminal: 0,
+            gate: None,
+        }),
+    }
 }
 
 #[cfg(test)]

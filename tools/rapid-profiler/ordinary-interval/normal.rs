@@ -12,6 +12,7 @@ use super::strnlen::cases;
 use caller::{CallerOwner, Request};
 use cases::{CASES, LABEL};
 mod lifecycle;
+pub(super) mod session;
 
 #[derive(Clone, Copy, Eq, PartialEq)]
 pub(super) enum Mode {

@@ -1,5 +1,8 @@
 use super::*;
 
+mod schedule;
+pub use schedule::{Schedule, ScheduleDecision};
+
 /// Caller runs this value on its independent controller thread. It owns no
 /// JoinHandle and never calls application code, a sink callback, or blocking I/O.
 /// The mutable owner remains available after failure for bounded recovery.
