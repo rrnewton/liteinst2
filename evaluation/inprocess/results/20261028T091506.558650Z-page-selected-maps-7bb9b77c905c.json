@@ -1,0 +1,1687 @@
+{
+  "artifact_sha256": "0ab09dfa93a92280a49a5cc2b30a4743622be6e002e3d24f8be7c19fcdb477cf",
+  "bounds": {
+    "build": [
+      120,
+      2147483648,
+      134217728,
+      150
+    ],
+    "fixture_link": [
+      5,
+      536870912,
+      16777216,
+      15
+    ],
+    "inspect": [
+      10,
+      268435456,
+      4194304,
+      20
+    ],
+    "metadata": [
+      30,
+      536870912,
+      67108864,
+      60
+    ],
+    "native": [
+      5,
+      536870912,
+      16777216,
+      15
+    ]
+  },
+  "build_status": "passed",
+  "cases_sha256": "526f8f4e07a729f3de63a531ffab421b837ebde8f30ac11dc864b5ccefbf24d7",
+  "command_count": 76,
+  "commands_sha256": "cbd285f8a9b4a7b2985bb02439f8b63d8ad0b985d7c59572a50d975212e06571",
+  "cpu": 6,
+  "environment": {
+    "LANG": "C",
+    "LC_ALL": "C",
+    "PATH": "/usr/bin:/bin",
+    "PYTHONDONTWRITEBYTECODE": "1",
+    "TZ": "UTC"
+  },
+  "expected_revision": "7bb9b77c905cece21ca77a271a7c2ed905579641",
+  "failure_type": null,
+  "final_error_count": 0,
+  "hardware": {
+    "affinity_cpu_count": 1,
+    "architecture": "x86_64",
+    "cpu family": "26",
+    "isa_flags": [
+      "fpu",
+      "vme",
+      "de",
+      "pse",
+      "tsc",
+      "msr",
+      "pae",
+      "mce",
+      "cx8",
+      "apic",
+      "sep",
+      "mtrr",
+      "pge",
+      "mca",
+      "cmov",
+      "pat",
+      "pse36",
+      "clflush",
+      "mmx",
+      "fxsr",
+      "sse",
+      "sse2",
+      "ht",
+      "syscall",
+      "nx",
+      "mmxext",
+      "fxsr_opt",
+      "pdpe1gb",
+      "rdtscp",
+      "lm",
+      "constant_tsc",
+      "rep_good",
+      "amd_lbr_v2",
+      "nopl",
+      "xtopology",
+      "nonstop_tsc",
+      "cpuid",
+      "extd_apicid",
+      "aperfmperf",
+      "rapl",
+      "pni",
+      "pclmulqdq",
+      "monitor",
+      "ssse3",
+      "fma",
+      "cx16",
+      "pcid",
+      "sse4_1",
+      "sse4_2",
+      "x2apic",
+      "movbe",
+      "popcnt",
+      "aes",
+      "xsave",
+      "avx",
+      "f16c",
+      "rdrand",
+      "lahf_lm",
+      "cmp_legacy",
+      "svm",
+      "extapic",
+      "cr8_legacy",
+      "abm",
+      "sse4a",
+      "misalignsse",
+      "3dnowprefetch",
+      "osvw",
+      "ibs",
+      "skinit",
+      "wdt",
+      "tce",
+      "topoext",
+      "perfctr_core",
+      "perfctr_nb",
+      "bpext",
+      "perfctr_llc",
+      "mwaitx",
+      "cpuid_fault",
+      "cpb",
+      "cat_l3",
+      "cdp_l3",
+      "hw_pstate",
+      "ssbd",
+      "mba",
+      "perfmon_v2",
+      "ibrs",
+      "ibpb",
+      "stibp",
+      "ibrs_enhanced",
+      "vmmcall",
+      "fsgsbase",
+      "tsc_adjust",
+      "bmi1",
+      "avx2",
+      "smep",
+      "bmi2",
+      "erms",
+      "invpcid",
+      "cqm",
+      "rdt_a",
+      "avx512f",
+      "avx512dq",
+      "rdseed",
+      "adx",
+      "smap",
+      "avx512ifma",
+      "clflushopt",
+      "clwb",
+      "avx512cd",
+      "sha_ni",
+      "avx512bw",
+      "avx512vl",
+      "xsaveopt",
+      "xsavec",
+      "xgetbv1",
+      "xsaves",
+      "cqm_llc",
+      "cqm_occup_llc",
+      "cqm_mbm_total",
+      "cqm_mbm_local",
+      "avx_vnni",
+      "avx512_bf16",
+      "clzero",
+      "irperf",
+      "xsaveerptr",
+      "rdpru",
+      "wbnoinvd",
+      "amd_ppin",
+      "cppc",
+      "arat",
+      "npt",
+      "lbrv",
+      "svm_lock",
+      "nrip_save",
+      "tsc_scale",
+      "vmcb_clean",
+      "flushbyasid",
+      "decodeassists",
+      "pausefilter",
+      "pfthreshold",
+      "avic",
+      "v_vmsave_vmload",
+      "vgif",
+      "x2avic",
+      "v_spec_ctrl",
+      "vnmi",
+      "avx512vbmi",
+      "umip",
+      "pku",
+      "ospke",
+      "avx512_vbmi2",
+      "gfni",
+      "vaes",
+      "vpclmulqdq",
+      "avx512_vnni",
+      "avx512_bitalg",
+      "avx512_vpopcntdq",
+      "la57",
+      "rdpid",
+      "bus_lock_detect",
+      "movdiri",
+      "movdir64b",
+      "overflow_recov",
+      "succor",
+      "smca",
+      "fsrm",
+      "avx512_vp2intersect",
+      "flush_l1d",
+      "debug_swap",
+      "amd_lbr_pmc_freeze"
+    ],
+    "kernel_release_sha256": "549727bb276577a43b738c4d3e8167ceb8d3d54f317035ae91560f869cf7f60d",
+    "kernel_version": "7.1.3",
+    "microcode": "0xb101066",
+    "model": "17",
+    "model name": "AMD EPYC 9D85 158-Core Processor",
+    "probe_cpu": 6,
+    "runner_cap_eff": "0000000000000000",
+    "runner_euid": 212630,
+    "runner_is_root": false,
+    "runner_seccomp_mode": 0,
+    "stepping": "0",
+    "vendor_id": "AuthenticAMD"
+  },
+  "input_sha256": "cf3d348c429fe09e5ac30d63b3d9bdf442c0481e08c821ce95b467af1fee6abc",
+  "maps_cases": [
+    {
+      "accepted": true,
+      "acquisition_tags": [
+        {
+          "acquisition_id": 5,
+          "handler_id": 1,
+          "io_performed": 0,
+          "kind": 2,
+          "mutation_epoch": 89
+        },
+        {
+          "acquisition_id": 5,
+          "handler_id": 1,
+          "io_performed": 0,
+          "kind": 2,
+          "mutation_epoch": 89
+        },
+        {
+          "acquisition_id": 6,
+          "handler_id": 1,
+          "io_performed": 1,
+          "kind": 1,
+          "mutation_epoch": 100
+        }
+      ],
+      "actual_exit": 0,
+      "actual_signals": 0,
+      "adapter_injections": 0,
+      "events": 1,
+      "mode": 0,
+      "name": "shared-rows-unknown-call",
+      "operation_completed": true,
+      "operation_failed": false,
+      "record": {
+        "bytes": 200784,
+        "sha256": "a8bb7594bb4fe536e53973f356f0d7694897eff158eb2aa07c686dcc1ff79e79"
+      },
+      "source_changes": 0,
+      "stats": [
+        {
+          "acquisitions": 4,
+          "active": 1,
+          "fresh_calls": 4,
+          "handler_id": 1,
+          "invalidations": 80,
+          "mutation_epoch": 80,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 3,
+          "valid": 1
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 6,
+          "active": 1,
+          "fresh_calls": 6,
+          "handler_id": 1,
+          "invalidations": 100,
+          "mutation_epoch": 100,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 5,
+          "valid": 1
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 6,
+          "active": 0,
+          "fresh_calls": 6,
+          "handler_id": 1,
+          "invalidations": 103,
+          "mutation_epoch": 103,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 5,
+          "valid": 0
+        }
+      ],
+      "supplied_state_injections": 0
+    },
+    {
+      "accepted": true,
+      "acquisition_tags": [
+        {
+          "acquisition_id": 5,
+          "handler_id": 1,
+          "io_performed": 0,
+          "kind": 2,
+          "mutation_epoch": 89
+        },
+        {
+          "acquisition_id": 6,
+          "handler_id": 1,
+          "io_performed": 1,
+          "kind": 1,
+          "mutation_epoch": 100
+        }
+      ],
+      "actual_exit": 125,
+      "actual_signals": 0,
+      "adapter_injections": 0,
+      "events": 1,
+      "mode": 1,
+      "name": "actual-protection-change",
+      "operation_completed": false,
+      "operation_failed": true,
+      "record": {
+        "bytes": 200784,
+        "sha256": "660ce60bef49c55718d6ba5bfb057b6cdefb39c177738c6b73274a9e6a372c6f"
+      },
+      "source_changes": 0,
+      "stats": [
+        {
+          "acquisitions": 4,
+          "active": 1,
+          "fresh_calls": 4,
+          "handler_id": 1,
+          "invalidations": 80,
+          "mutation_epoch": 80,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 3,
+          "valid": 1
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 6,
+          "active": 1,
+          "fresh_calls": 6,
+          "handler_id": 1,
+          "invalidations": 100,
+          "mutation_epoch": 100,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 1
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 6,
+          "active": 0,
+          "fresh_calls": 6,
+          "handler_id": 1,
+          "invalidations": 103,
+          "mutation_epoch": 103,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        }
+      ],
+      "supplied_state_injections": 0
+    },
+    {
+      "accepted": true,
+      "acquisition_tags": [
+        {
+          "acquisition_id": 5,
+          "handler_id": 1,
+          "io_performed": 0,
+          "kind": 2,
+          "mutation_epoch": 89
+        },
+        {
+          "acquisition_id": 5,
+          "handler_id": 1,
+          "io_performed": 0,
+          "kind": 2,
+          "mutation_epoch": 89
+        },
+        {
+          "acquisition_id": 6,
+          "handler_id": 0,
+          "io_performed": 1,
+          "kind": 0,
+          "mutation_epoch": 101
+        },
+        {
+          "acquisition_id": 7,
+          "handler_id": 0,
+          "io_performed": 1,
+          "kind": 0,
+          "mutation_epoch": 110
+        }
+      ],
+      "actual_exit": 125,
+      "actual_signals": 0,
+      "adapter_injections": 0,
+      "events": 1,
+      "mode": 2,
+      "name": "actual-partial-mprotect",
+      "operation_completed": false,
+      "operation_failed": true,
+      "record": {
+        "bytes": 200784,
+        "sha256": "757c9ee3fff8f15d6c124b9c6452c84c8187e8add94e448e2b390eb7507e4f58"
+      },
+      "source_changes": 0,
+      "stats": [
+        {
+          "acquisitions": 4,
+          "active": 1,
+          "fresh_calls": 4,
+          "handler_id": 1,
+          "invalidations": 80,
+          "mutation_epoch": 80,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 3,
+          "valid": 1
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 7,
+          "active": 0,
+          "fresh_calls": 7,
+          "handler_id": 1,
+          "invalidations": 110,
+          "mutation_epoch": 110,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 5,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 7,
+          "active": 0,
+          "fresh_calls": 7,
+          "handler_id": 1,
+          "invalidations": 113,
+          "mutation_epoch": 113,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 5,
+          "valid": 0
+        }
+      ],
+      "supplied_state_injections": 0
+    },
+    {
+      "accepted": true,
+      "acquisition_tags": [
+        {
+          "acquisition_id": 5,
+          "handler_id": 1,
+          "io_performed": 0,
+          "kind": 2,
+          "mutation_epoch": 89
+        },
+        {
+          "acquisition_id": 6,
+          "handler_id": 1,
+          "io_performed": 1,
+          "kind": 1,
+          "mutation_epoch": 100
+        },
+        {
+          "acquisition_id": 7,
+          "handler_id": 2,
+          "io_performed": 1,
+          "kind": 1,
+          "mutation_epoch": 112
+        }
+      ],
+      "actual_exit": 0,
+      "actual_signals": 0,
+      "adapter_injections": 0,
+      "events": 2,
+      "mode": 3,
+      "name": "actual-execution-boundary",
+      "operation_completed": true,
+      "operation_failed": false,
+      "record": {
+        "bytes": 200784,
+        "sha256": "863ee0b729bcc8151d5464f23171e097a417d8327cb49c3c506dfa1506ff55fd"
+      },
+      "source_changes": 0,
+      "stats": [
+        {
+          "acquisitions": 4,
+          "active": 1,
+          "fresh_calls": 4,
+          "handler_id": 1,
+          "invalidations": 80,
+          "mutation_epoch": 80,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 3,
+          "valid": 1
+        },
+        {
+          "acquisitions": 6,
+          "active": 1,
+          "fresh_calls": 6,
+          "handler_id": 1,
+          "invalidations": 100,
+          "mutation_epoch": 100,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 1
+        },
+        {
+          "acquisitions": 6,
+          "active": 0,
+          "fresh_calls": 6,
+          "handler_id": 1,
+          "invalidations": 101,
+          "mutation_epoch": 101,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        },
+        {
+          "acquisitions": 6,
+          "active": 1,
+          "fresh_calls": 6,
+          "handler_id": 2,
+          "invalidations": 103,
+          "mutation_epoch": 103,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 7,
+          "active": 0,
+          "fresh_calls": 7,
+          "handler_id": 2,
+          "invalidations": 115,
+          "mutation_epoch": 115,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        }
+      ],
+      "supplied_state_injections": 0
+    },
+    {
+      "accepted": true,
+      "acquisition_tags": [
+        {
+          "acquisition_id": 5,
+          "handler_id": 1,
+          "io_performed": 0,
+          "kind": 2,
+          "mutation_epoch": 89
+        }
+      ],
+      "actual_exit": 125,
+      "actual_signals": 1,
+      "adapter_injections": 0,
+      "events": 2,
+      "mode": 4,
+      "name": "actual-nested-signal",
+      "operation_completed": false,
+      "operation_failed": true,
+      "record": {
+        "bytes": 200784,
+        "sha256": "45433d02da5f2d766a7154235d29922528c429e1518b1096437bc74a31a1c589"
+      },
+      "source_changes": 0,
+      "stats": [
+        {
+          "acquisitions": 4,
+          "active": 1,
+          "fresh_calls": 4,
+          "handler_id": 1,
+          "invalidations": 80,
+          "mutation_epoch": 80,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 3,
+          "valid": 1
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 1
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 0,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 91,
+          "mutation_epoch": 91,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 0,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 94,
+          "mutation_epoch": 94,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        }
+      ],
+      "supplied_state_injections": 0
+    },
+    {
+      "accepted": true,
+      "acquisition_tags": [
+        {
+          "acquisition_id": 5,
+          "handler_id": 1,
+          "io_performed": 0,
+          "kind": 2,
+          "mutation_epoch": 89
+        }
+      ],
+      "actual_exit": 125,
+      "actual_signals": 0,
+      "adapter_injections": 0,
+      "events": 1,
+      "mode": 5,
+      "name": "actual-source-corruption",
+      "operation_completed": false,
+      "operation_failed": true,
+      "record": {
+        "bytes": 200784,
+        "sha256": "c3da08a5be731d17136f880adc36bb595cf6f25b0a95bdaba1db8a1597818d29"
+      },
+      "source_changes": 1,
+      "stats": [
+        {
+          "acquisitions": 4,
+          "active": 1,
+          "fresh_calls": 4,
+          "handler_id": 1,
+          "invalidations": 80,
+          "mutation_epoch": 80,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 3,
+          "valid": 1
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 6,
+          "active": 0,
+          "fresh_calls": 6,
+          "handler_id": 1,
+          "invalidations": 105,
+          "mutation_epoch": 105,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 3,
+          "valid": 0
+        }
+      ],
+      "supplied_state_injections": 0
+    },
+    {
+      "accepted": true,
+      "acquisition_tags": [
+        {
+          "acquisition_id": 5,
+          "handler_id": 1,
+          "io_performed": 0,
+          "kind": 2,
+          "mutation_epoch": 89
+        },
+        {
+          "acquisition_id": 6,
+          "handler_id": 0,
+          "io_performed": 1,
+          "kind": 0,
+          "mutation_epoch": 101
+        }
+      ],
+      "actual_exit": 125,
+      "actual_signals": 0,
+      "adapter_injections": 1,
+      "events": 1,
+      "mode": 6,
+      "name": "nonissued-adapter-error",
+      "operation_completed": false,
+      "operation_failed": true,
+      "record": {
+        "bytes": 200784,
+        "sha256": "ebd54650c0550e4bbc40f597ae4db564d3f2af240872f61004e45f51b266057e"
+      },
+      "source_changes": 0,
+      "stats": [
+        {
+          "acquisitions": 4,
+          "active": 1,
+          "fresh_calls": 4,
+          "handler_id": 1,
+          "invalidations": 80,
+          "mutation_epoch": 80,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 3,
+          "valid": 1
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 6,
+          "active": 0,
+          "fresh_calls": 6,
+          "handler_id": 1,
+          "invalidations": 101,
+          "mutation_epoch": 101,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 6,
+          "active": 0,
+          "fresh_calls": 6,
+          "handler_id": 1,
+          "invalidations": 104,
+          "mutation_epoch": 104,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        }
+      ],
+      "supplied_state_injections": 0
+    },
+    {
+      "accepted": true,
+      "acquisition_tags": [
+        {
+          "acquisition_id": 5,
+          "handler_id": 1,
+          "io_performed": 0,
+          "kind": 2,
+          "mutation_epoch": 89
+        },
+        {
+          "acquisition_id": 0,
+          "handler_id": 0,
+          "io_performed": 0,
+          "kind": 0,
+          "mutation_epoch": 0
+        }
+      ],
+      "actual_exit": 125,
+      "actual_signals": 0,
+      "adapter_injections": 0,
+      "events": 1,
+      "mode": 7,
+      "name": "invalidation-counter-saturation",
+      "operation_completed": false,
+      "operation_failed": true,
+      "record": {
+        "bytes": 200784,
+        "sha256": "40430f64877f68fd50d3a1a3732b0eb5326273c21e0c2f7e7ae4b4e0f779d766"
+      },
+      "source_changes": 0,
+      "stats": [
+        {
+          "acquisitions": 4,
+          "active": 1,
+          "fresh_calls": 4,
+          "handler_id": 1,
+          "invalidations": 80,
+          "mutation_epoch": 80,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 3,
+          "valid": 1
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 1
+        },
+        {
+          "acquisitions": 5,
+          "active": 0,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 18446744073709551615,
+          "mutation_epoch": 91,
+          "poisoned": 1,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 0,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 18446744073709551615,
+          "mutation_epoch": 91,
+          "poisoned": 1,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 0,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 18446744073709551615,
+          "mutation_epoch": 94,
+          "poisoned": 1,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        }
+      ],
+      "supplied_state_injections": 1
+    },
+    {
+      "accepted": true,
+      "acquisition_tags": [
+        {
+          "acquisition_id": 5,
+          "handler_id": 1,
+          "io_performed": 0,
+          "kind": 2,
+          "mutation_epoch": 89
+        },
+        {
+          "acquisition_id": 0,
+          "handler_id": 0,
+          "io_performed": 0,
+          "kind": 0,
+          "mutation_epoch": 0
+        }
+      ],
+      "actual_exit": 125,
+      "actual_signals": 0,
+      "adapter_injections": 0,
+      "events": 1,
+      "mode": 8,
+      "name": "mutation-epoch-saturation",
+      "operation_completed": false,
+      "operation_failed": true,
+      "record": {
+        "bytes": 200784,
+        "sha256": "25c5d45d438b946ad907b69ed63f01aa5049271bb388fa5fb28ad484fcd4afc4"
+      },
+      "source_changes": 0,
+      "stats": [
+        {
+          "acquisitions": 4,
+          "active": 1,
+          "fresh_calls": 4,
+          "handler_id": 1,
+          "invalidations": 80,
+          "mutation_epoch": 80,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 3,
+          "valid": 1
+        },
+        {
+          "acquisitions": 5,
+          "active": 1,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 89,
+          "mutation_epoch": 89,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 1
+        },
+        {
+          "acquisitions": 5,
+          "active": 0,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 91,
+          "mutation_epoch": 18446744073709551615,
+          "poisoned": 1,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 0,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 91,
+          "mutation_epoch": 18446744073709551615,
+          "poisoned": 1,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        },
+        {
+          "acquisitions": 0,
+          "active": 0,
+          "fresh_calls": 0,
+          "handler_id": 0,
+          "invalidations": 0,
+          "mutation_epoch": 0,
+          "poisoned": 0,
+          "reserved": 0,
+          "reuses": 0,
+          "valid": 0
+        },
+        {
+          "acquisitions": 5,
+          "active": 0,
+          "fresh_calls": 5,
+          "handler_id": 1,
+          "invalidations": 94,
+          "mutation_epoch": 18446744073709551615,
+          "poisoned": 1,
+          "reserved": 0,
+          "reuses": 4,
+          "valid": 0
+        }
+      ],
+      "supplied_state_injections": 1
+    }
+  ],
+  "old_negative_cases": [
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "corrupt-hit",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "non-rx-hit",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "wrong-plan",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "released-borrow",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "wrong-publication",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "source-mutation",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "premature-reset",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "failed-reset",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "protected-mprotect",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "brk-hole",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "raw-rx-error",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "raw-sync-error",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "nested-writing",
+      "operation_completed": false,
+      "operation_status": "failed"
+    },
+    {
+      "accepted": true,
+      "actual_exit": 125,
+      "name": "raw-allocation-error",
+      "operation_completed": false,
+      "operation_status": "failed"
+    }
+  ],
+  "old_negative_operations_completed": 0,
+  "private_receipt": {
+    "bytes": 1020142,
+    "sha256": "e6f718fbddde9575960cf102dc931a2d47126906c134257298fd94cf63ecdbfd"
+  },
+  "profile": "page-selected-maps-v1",
+  "reproduce": [
+    "python3",
+    "evaluation/inprocess/page_selected_maps.py",
+    "--expect-revision",
+    "7bb9b77c905cece21ca77a271a7c2ed905579641"
+  ],
+  "schema_version": 1,
+  "scope": "Nine actual component-handler maps cases plus unchanged four cache-positive/capacity and fourteen failed-operation controls. Macro enabled; all complete private state retained. Component NOP/JMP is source execution, not a direct product-handler/generated-cache phase oracle. Connected and performance qualification remain separate.",
+  "source": {
+    "head_sources_match": true,
+    "revision": "7bb9b77c905cece21ca77a271a7c2ed905579641",
+    "source_manifest_sha256": "d353888697cc6506d424761496a7a92fb15436aa4f36e7660202d2e3749d7b97",
+    "tracked_clean": true,
+    "tree": "8d4ba5e0f829f7d870f7480adbeea062d881062c"
+  },
+  "source_unchanged": true,
+  "started_utc": "20261028T091506.558650Z",
+  "status": "passed",
+  "tool_hashes": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "cp": {
+      "bytes": 144400,
+      "sha256": "4080d68ca4c0e0b5441501722465cb8aeee55e18e5ac446823178fe6b1a51fb2"
+    },
+    "gdb": {
+      "bytes": 17179552,
+      "sha256": "cf8ae9d5192667cf681eabedf50ef39ecd11fac784c15cea6e3961880d3a16ed"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "mkdir": {
+      "bytes": 69752,
+      "sha256": "da3bde12d5b5f917f33c06b9227a83628620b4900dd39029443eac6c91801993"
+    },
+    "nm": {
+      "bytes": 45792,
+      "sha256": "b90a7f7a9c52c5c8a0bbac21e8c9f2d025a76e1941f075831d3c12b2fe8ed01c"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "rustup": {
+      "bytes": 21113232,
+      "sha256": "dda7234360b7f578ca8b0ddcb80145646fa61a67c1720a5abc7051b35c9fcb71"
+    },
+    "sh": {
+      "bytes": 1389072,
+      "sha256": "97995faa249e5706dd0b0373c9da547709bf7349755d5fc8e52f97a4bd04feaf"
+    }
+  },
+  "tool_versions": {
+    "cargo": [
+      1,
+      97,
+      1
+    ],
+    "cc": [
+      11,
+      5,
+      0
+    ],
+    "python": [
+      3,
+      12,
+      15
+    ],
+    "rustc": [
+      1,
+      97,
+      1
+    ]
+  },
+  "totals": {
+    "maps_cases": 9,
+    "maps_failed_operations": 7,
+    "maps_successes": 2,
+    "negative": {
+      "actual_injected_signals": 1,
+      "completed_operations": 0,
+      "executed_refusal_checks": 658,
+      "explicit_raw_failure_injections": 3,
+      "failed_operations": 14,
+      "generated_executions": 0,
+      "native_reference_captures": 12,
+      "refusal_encodings": 47,
+      "startup_pairs": 14,
+      "verified_failure_controls": 14
+    },
+    "new_actual_nested_signals": 1,
+    "new_actual_partial_errors": 1,
+    "new_actual_source_corruptions": 1,
+    "new_nonissued_raw_errors": 1,
+    "new_supplied_counter_saturations": 2,
+    "positive": {
+      "capacity_fallbacks": 1,
+      "capacity_hit_after_full": 1,
+      "capacity_publications": 64,
+      "capacity_record_hashes_checked": 3,
+      "capacity_rows": 64,
+      "executed_refusal_checks": 188,
+      "fallback_trace_events": 2,
+      "full_capacity_records": 5,
+      "full_semantic_records": 18,
+      "generated_trace_events": 0,
+      "native_references": 83,
+      "refusal_encodings": 47,
+      "semantic_hits": 9,
+      "semantic_misses": 9,
+      "semantic_pairs": 18,
+      "startup_pairs": 4
+    }
+  }
+}
