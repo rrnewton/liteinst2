@@ -26,7 +26,9 @@ def compile_owner(kind,group,argv,selected,builder,pin,binary,run,state,pending,
     owner=dict(status='failed',translation_unit=str(tu),source=fact(tu),owner_source=fact(pin(selected/'step_owner.c')),
                argv=command)
     state.setdefault('equal_owners',[]).append(owner)
-    headers(label+'-headers',command,builder,pin,run,owner,required=[selected/'step_owner.c',tu])
+    required=[selected/'step_owner.c',tu]
+    if kind=='repeat':required += [selected/'repeat_owner.h',selected/'repeat_owner.inc']
+    headers(label+'-headers',command,builder,pin,run,owner,required=required)
     compile_retained(label+'-build',command,run,binary,builder,pending,errors)
     owner['object']=fact(output)
     linked=list(argv);linked[linked.index(str(tu))]=str(output)
@@ -113,7 +115,6 @@ def build_group(kind,builder,products,root,private,pin,binary,run,state,leaf,bod
         state.setdefault('recipes',[]).append(dict(original=original,adapted=argv))
         label='header-dependencies'if kind=='repeat'else'fixture-'+str(group)+'-headers'
         required=[adapted]
-        if kind=='repeat':required += [selected/'repeat_owner.h',selected/'repeat_owner.inc']
         deps=headers(label,argv,builder,pin,run,state,required)
         if kind=='generic':need(str(selected/'tests/generic/fixture.c')not in deps,'no unadapted scalar definition consumed')
         compile_retained('fixture-build'if kind=='repeat'else'fixture-'+str(group)+'-build',argv,run,binary,builder,pending,errors)
