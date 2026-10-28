@@ -25,7 +25,14 @@ FIXED = dict(stop_reason='epoch-limit', worker_detached='true', export_synced='t
     scope='finite-functional-raw-uncalibrated', mandatory_hooks='on')
 
 
-def parse_terminal(data, k, export_bytes):
+def parse_terminal(data, k, export_bytes, worker_backpressure=False):
+    assert type(worker_backpressure) is bool
+    if worker_backpressure:
+        # Authenticate the complete opt-in line before removing its exact suffix;
+        # the unchanged default grammar and predicates then validate all fields.
+        suffix = b' worker_backpressure=bounded-wait\n'
+        assert 0 < len(data) <= 4096 and data.endswith(suffix) and b'\r' not in data
+        data = data[:-len(suffix)] + b'\n'
     assert type(k) is int and k in (10, 1000) and type(export_bytes) is int
     assert 0 < len(data) <= 4096 and data.endswith(b'\n') and b'\r' not in data
     words = data[:-1].decode('ascii').split(' ')
@@ -53,6 +60,7 @@ def parse_terminal(data, k, export_bytes):
     assert (n+3)//4 <= row['call_batches'] <= n
     assert row['accepted_exports'] == row['written_exports'] == row['call_batches'] + 521 + 520
     assert 0 < row['written_bytes'] == export_bytes <= 64*MIB and row['actual_threads_joined'] == 3
+    if worker_backpressure: row['worker_backpressure'] = 'bounded-wait'
     return row
 
 
@@ -76,6 +84,7 @@ def profile(artifact, test):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__); ap.add_argument('--revision', required=True)
+    ap.add_argument('--worker-backpressure', action='store_true')
     for key in ('raw', 'toolchain', 'user-home', 'cargo-home'): ap.add_argument('--'+key, type=Path, required=True)
     a = ap.parse_args(); repo = Path(__file__).resolve().parents[3]; raw = a.raw
     assert Path(__file__).resolve() == repo/'tools/rapid-profiler/backoff-work/verify.py'
@@ -90,6 +99,10 @@ def main():
         reproduce=['$PYTHON', '-B', '$REPO/tools/rapid-profiler/backoff-work/verify.py', '--revision', a.revision,
             '--raw', '$RAW', '--toolchain', '$TOOLCHAIN', '--user-home', '$USER_HOME', '--cargo-home', '$CARGO_HOME'],
         scope='finite functional driver/metadata qualification; input/journal/return checks and Report counts are source-attested; no complete independent history/Report replay, new inflight-stop/full-state, cheap-off, timing-accuracy, throughput or indefinite-service credit')
+    if a.worker_backpressure:
+        receipt['worker_backpressure'] = 'bounded-wait'
+        receipt['reproduce'].append('--worker-backpressure')
+    command = 'backoff-work-wait' if a.worker_backpressure else 'backoff-work'
     save = lambda p, v: p.write_text(json.dumps(v, indent=2, sort_keys=True, allow_nan=False)+'\n')
     try:
         cpus = sorted(os.sched_getaffinity(0))[:4]; assert len(cpus) == 4
@@ -189,8 +202,8 @@ def main():
             k = case['k']; label = f'backoff-k{k}'; receipt['stage'] = label; case['status'] = 'FAILED'; products_stable()
             directory = raw/label; directory.mkdir(); (directory/'tmp').mkdir()
             export = directory/'export.txt'
-            argv = [str(binary), 'backoff-work', str(candidate), str(trusted), str(k), '520', '100000', str(export)]
-            receipt['commands'].append(['$REPO/target/release/ordinary-interval', 'backoff-work', '$RAW/prerequisite/candidate.so',
+            argv = [str(binary), command, str(candidate), str(trusted), str(k), '520', '100000', str(export)]
+            receipt['commands'].append(['$REPO/target/release/ordinary-interval', command, '$RAW/prerequisite/candidate.so',
                 '$RAW/prerequisite/trusted.so', str(k), '520', '100000', '$RAW/'+label+'/export.txt'])
             request = dict(argv=argv, cwd=str(repo), env=dict(env, TMPDIR=str(directory/'tmp')), stdout=str(directory/'stdout.txt'),
                 stderr=str(directory/'stderr.txt'), cpu_seconds=20, wall_seconds=30, file_bytes=64*MIB)
@@ -207,7 +220,7 @@ def main():
             assert digest(directory/'stderr.txt')['bytes'] == 0
             exported = digest(export)
             with (directory/'stdout.txt').open('rb') as stream: data = stream.read(4097)
-            case.update(parse_terminal(data, k, exported['bytes']))
+            case.update(parse_terminal(data, k, exported['bytes'], worker_backpressure=a.worker_backpressure))
             products_stable()
             case.update(status='PASS', export=exported, request=digest(directory/'request.json'), receipt=digest(directory/'receipt.json'),
                 parent=digest(parent_dir/'parent-closed.json'), operation_seconds=closed['seconds'], cpu_seconds=20, wall_seconds=30, file_bytes=64*MIB)
@@ -217,6 +230,7 @@ def main():
         (raw/'failure.txt').write_text(traceback.format_exc())
         receipt['error_class'] = type(error).__name__
     columns = ['k', 'status', *[k for k in FIELDS if k != 'k']]
+    if a.worker_backpressure: columns.append('worker_backpressure')
     with (public/'cases.csv').open('x', newline='') as stream:
         writer = csv.DictWriter(stream, fieldnames=columns, extrasaction='ignore', lineterminator='\n')
         writer.writeheader(); writer.writerows(receipt['cases'])

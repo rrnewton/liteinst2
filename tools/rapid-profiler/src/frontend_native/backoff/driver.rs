@@ -266,14 +266,19 @@ impl Driver {
     /// or that the caller joined either native worker or sink OS threads.
     pub fn run(&mut self, start: Instant) -> Result<RunSummary, Error> {
         if self.started {
+            self.shared.controller_failed.store(true, Ordering::Release);
             return Err(Error::AlreadyStarted);
         }
         self.started = true;
         if self.shared.start.set(start).is_err() {
+            self.shared.controller_failed.store(true, Ordering::Release);
             return Err(Error::AlreadyStarted);
         }
         let result = self.run_inner(start);
         if result.is_err() {
+            // A retained receiver does not imply that run() will drain again.
+            // Publish before close/recovery, which can itself wait on metadata.
+            self.shared.controller_failed.store(true, Ordering::Release);
             self.shared.stop.store(true, Ordering::Release);
             // Reserve capacity was maintained by draining after every arm. Keep
             // any final Removed action resident if export is already blocked.
@@ -557,5 +562,7 @@ pub(super) fn finished_ok(status: Option<WorkerStatus>) -> Result<(), Error> {
     }
 }
 
+#[cfg(test)]
+mod backpressure_tests;
 #[cfg(test)]
 mod tests;

@@ -58,6 +58,7 @@ fn absolute_deadline_does_not_drift_or_catch_up() {
 fn stop_is_shared_sticky_and_does_not_forge_worker_completion() {
     let shared = Arc::new(Shared {
         stop: AtomicBool::new(false),
+        controller_failed: AtomicBool::new(false),
         attached: AtomicBool::new(false),
         start: OnceLock::new(),
         finished: OnceLock::new(),

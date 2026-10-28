@@ -40,6 +40,7 @@ pub enum Error {
     Deadline,
     Full,
     Disconnected,
+    ControllerFailed,
     Sequence,
     Owner,
     Worker,
@@ -58,6 +59,7 @@ pub struct Policy {
     k: usize,
     epochs: u32,
     calls: u64,
+    worker_backpressure: bool,
 }
 impl Policy {
     /// K10 or K1000, 10ms periods, at most 4096 epochs and 1,000,000 calls.
@@ -70,7 +72,23 @@ impl Policy {
         {
             return Err(Error::Policy);
         }
-        Ok(Self { k, epochs, calls })
+        Ok(Self {
+            k,
+            epochs,
+            calls,
+            worker_backpressure: false,
+        })
+    }
+    /// Opt in to waiting only for a full worker-to-controller queue, after a
+    /// completed native drain. The original absolute end+shutdown is the cap;
+    /// controller failure/disconnection refuses and retains the unsent packet.
+    /// Controller-to-sink Full remains fatal. The default stays immediate.
+    pub fn with_worker_backpressure(mut self) -> Self {
+        self.worker_backpressure = true;
+        self
+    }
+    pub fn worker_backpressure(&self) -> bool {
+        self.worker_backpressure
     }
     pub fn retained(&self) -> usize {
         self.k
@@ -113,6 +131,7 @@ impl StopHandle {
 }
 struct Shared {
     stop: AtomicBool,
+    controller_failed: AtomicBool,
     attached: AtomicBool,
     start: OnceLock<Instant>,
     finished: OnceLock<WorkerStatus>,
@@ -193,6 +212,7 @@ pub unsafe fn prepare(
     let stream = controller.history_window()?.stream().clone();
     let shared = Arc::new(Shared {
         stop: AtomicBool::new(false),
+        controller_failed: AtomicBool::new(false),
         attached: AtomicBool::new(false),
         start: OnceLock::new(),
         finished: OnceLock::new(),

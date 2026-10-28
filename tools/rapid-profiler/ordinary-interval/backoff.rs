@@ -177,7 +177,35 @@ pub(super) fn run(
     calls: u64,
     path: &Path,
 ) {
+    run_mode(candidate, trusted, k, epochs, calls, path, false);
+}
+
+pub(super) fn run_wait(
+    candidate: &Path,
+    trusted: &Path,
+    k: usize,
+    epochs: u32,
+    calls: u64,
+    path: &Path,
+) {
+    run_mode(candidate, trusted, k, epochs, calls, path, true);
+}
+
+fn run_mode(
+    candidate: &Path,
+    trusted: &Path,
+    k: usize,
+    epochs: u32,
+    calls: u64,
+    path: &Path,
+    worker_backpressure: bool,
+) {
     let policy = api::Policy::ten_ms(k, epochs, calls).expect("finite backoff policy");
+    let policy = if worker_backpressure {
+        policy.with_worker_backpressure()
+    } else {
+        policy
+    };
     single_main();
     let [worker_cpu, controller_cpu, sink_cpu, main_cpu] = cpus();
     let bytes = expected_file(candidate, trusted);
@@ -378,8 +406,13 @@ pub(super) fn run(
     let ns = |time: Option<Duration>| {
         time.map_or_else(|| "none".to_string(), |d| d.as_nanos().to_string())
     };
+    let policy_suffix = if policy.worker_backpressure() {
+        " worker_backpressure=bounded-wait"
+    } else {
+        ""
+    };
     println!(
-        "backoff-work COMPLETE originals={} k={k} calls={calls} arms={} reports={} actions={} sampled={} unsampled={} initial={} closed={} removed={} max_entry_prefix={} sampled_after_closed={} epoch_limit={epochs} call_limit={} stop_reason={stop_reason} max_arm_late_ns={} stop_ack_ns={} removed_ns={} controller_done_ns={} call_batches={} history_batches={} accepted_exports={} written_exports={} written_bytes={} worker_detached=true actual_threads_joined=3 export_synced=true result_input_rsp_checked=true scope=finite-functional-raw-uncalibrated mandatory_hooks=on",
+        "backoff-work COMPLETE originals={} k={k} calls={calls} arms={} reports={} actions={} sampled={} unsampled={} initial={} closed={} removed={} max_entry_prefix={} sampled_after_closed={} epoch_limit={epochs} call_limit={} stop_reason={stop_reason} max_arm_late_ns={} stop_ack_ns={} removed_ns={} controller_done_ns={} call_batches={} history_batches={} accepted_exports={} written_exports={} written_bytes={} worker_detached=true actual_threads_joined=3 export_synced=true result_input_rsp_checked=true scope=finite-functional-raw-uncalibrated mandatory_hooks=on{policy_suffix}",
         LENGTHS.len(),
         summary.arms,
         summary.reports,

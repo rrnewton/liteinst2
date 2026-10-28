@@ -1,5 +1,59 @@
 use super::*;
 
+// Private transport seam: production supplies Instant::now/sleep; controls use
+// the same real capacity-two channel with deterministic observations/waits.
+// This is called only after drain_completed returned an owned, post-RET packet.
+fn transfer<T>(
+    tx: &mpsc::SyncSender<T>,
+    mut value: T,
+    policy: Policy,
+    shared: &Shared,
+    mut now: impl FnMut() -> Instant,
+    mut wait: impl FnMut(Duration),
+) -> Result<(), (Error, T)> {
+    if !policy.worker_backpressure() {
+        return send(tx, value);
+    }
+    let Some(start) = shared.start.get() else {
+        return Err((Error::NotStarted, value));
+    };
+    let Some(cutoff) = policy
+        .period()
+        .checked_mul(policy.epoch_limit())
+        .and_then(|duration| start.checked_add(duration))
+        .and_then(|end| end.checked_add(policy.shutdown()))
+    else {
+        return Err((Error::Deadline, value));
+    };
+    // Observe failure before the first send and after every wait. The cutoff
+    // never depends on Full, a new packet, or the current clock observation.
+    let checkpoint = |now: &mut dyn FnMut() -> Instant| {
+        if shared.controller_failed.load(Ordering::Acquire) {
+            return Err(Error::ControllerFailed);
+        }
+        cutoff
+            .checked_duration_since(now())
+            .filter(|left| !left.is_zero())
+            .ok_or(Error::Deadline)
+    };
+    loop {
+        if let Err(error) = checkpoint(&mut now) {
+            return Err((error, value));
+        }
+        value = match send(tx, value) {
+            Ok(()) => return Ok(()),
+            Err((Error::Full, retained)) => retained,
+            Err(error) => return Err(error),
+        };
+        // Recheck after the failed send so its duration cannot enlarge sleep.
+        let left = match checkpoint(&mut now) {
+            Ok(left) => left,
+            Err(error) => return Err((error, value)),
+        };
+        wait(POLL.min(left));
+    }
+}
+
 /// Moves to the worker before attachment. Deliberately not Clone.
 pub struct Client {
     pub(super) client: IntervalClient,
@@ -87,8 +141,9 @@ impl Thread {
         self.shared.stop.store(true, Ordering::Release);
         e
     }
-    /// Flush idle work explicitly. Full/disconnected export retains exactly the
+    /// Flush idle work explicitly. Terminal export failure retains exactly the
     /// drained packet; no later invocation can overwrite it or reset the error.
+    /// Opt-in worker backpressure waits only here, outside native/TLS locks.
     pub fn flush(&mut self) -> Result<(), Error> {
         if self.pending.is_some() {
             return Err(self.error.unwrap_or(Error::Full));
@@ -116,7 +171,14 @@ impl Thread {
             self.pending = Some(packet);
             return Err(self.fail(Error::Sequence));
         }
-        match send(&self.tx, packet) {
+        match transfer(
+            &self.tx,
+            packet,
+            self.policy,
+            &self.shared,
+            Instant::now,
+            std::thread::sleep,
+        ) {
             Ok(()) => Ok(()),
             Err((e, packet)) => {
                 self.pending = Some(packet);
@@ -219,6 +281,9 @@ impl Thread {
         }
     }
 }
+#[cfg(test)]
+mod tests;
+
 impl Drop for Thread {
     fn drop(&mut self) {
         if !self.finished {

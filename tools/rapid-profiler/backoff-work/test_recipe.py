@@ -92,5 +92,38 @@ class BackoffRecipe(unittest.TestCase):
                 change(VALID, 'sampled_after_closed', '1'), VALID+b'\xff', b'x'*4097):
             with self.subTest(size=len(bad)): self.refuse(bad)
 
+    def test_wait_mode_is_explicit_and_keeps_default_protocol_separate(self):
+        waiting = VALID[:-1] + b' worker_backpressure=bounded-wait\n'
+        got = recipe.parse_terminal(waiting, 10, 4000000, worker_backpressure=True)
+        self.assertEqual(got['worker_backpressure'], 'bounded-wait')
+        self.assertEqual({k: v for k, v in got.items() if k != 'worker_backpressure'},
+            recipe.parse_terminal(VALID, 10, 4000000))
+        other = change(waiting, 'k', 1000)
+        self.assertEqual(recipe.parse_terminal(other, 1000, 4000000, True)['k'], 1000)
+        self.refuse(waiting)  # Default cannot silently opt in via the output.
+        self.assertNotIn('worker_backpressure', recipe.parse_terminal(VALID, 10, 4000000))
+        with self.assertRaises(AssertionError): recipe.parse_terminal(VALID, 10, 4000000, True)
+        for mode in (None, 1, 'bounded-wait'):
+            with self.assertRaises(AssertionError): recipe.parse_terminal(waiting, 10, 4000000, mode)
+
+    def test_wait_marker_cannot_hide_bad_fields_extra_output_or_another_policy(self):
+        waiting = VALID[:-1] + b' worker_backpressure=bounded-wait\n'
+        for bad in (VALID, waiting + waiting, waiting + b'FAILED\n',
+                change(waiting, 'worker_backpressure', 'immediate'),
+                change(waiting, 'worker_backpressure', 'unbounded'),
+                change(waiting, 'worker_backpressure', 'true'),
+                change(waiting, 'worker_backpressure', 'bounded-wait-extra'),
+                waiting.replace(b' worker_backpressure=bounded-wait',
+                    b' worker_backpressure=bounded-wait worker_backpressure=bounded-wait'),
+                change(waiting, 'calls', 0), change(waiting, 'max_arm_late_ns', 2000001),
+                change(waiting, 'controller_done_ns', 7200000000),
+                change(waiting, 'written_bytes', 3999999),
+                change(waiting, 'sampled_after_closed', 'false'),
+                waiting.replace(b'backoff-work ', b'backoff-work-wait '),
+                b'x' * 4096 + b' worker_backpressure=bounded-wait\n'):
+            with self.subTest(size=len(bad)):
+                with self.assertRaises((AssertionError, UnicodeDecodeError)):
+                    recipe.parse_terminal(bad, 10, 4000000, True)
+
 
 if __name__ == '__main__': unittest.main()

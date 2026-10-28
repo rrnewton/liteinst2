@@ -16,6 +16,17 @@ receivers alive through worker join on errors, then recover queued/pending
 records and the separately qualified terminal history window. Report readiness,
 queue acceptance and detach are not OS join or physical-RET proofs.
 
+`Policy::ten_ms` retains immediate worker Full refusal by default. Explicit
+`with_worker_backpressure()` enables bounded waiting only after a real return
+and completed drain, while retaining the single unsent owned packet. The
+worker checks controller failure and the original start + periods + 2 s cap
+before sending and after every wait; no Full renews it. Normal cooperative
+stop permits the final flush while the controller still drains. Controller
+failure is published before its cleanup, and terminal failures keep the first
+error and unsent packet. Controller-to-sink Full still refuses immediately.
+The earlier controller shutdown deadline and actual thread joins are unchanged.
+OS sleep/send scheduling is not a hard real-time transfer guarantee.
+
 The unsafe ordinary readonly-leaf ABI, source/stack/input lifetimes,
 no-reentry/signal/fork/nonlocal-exit/CET restrictions and normal termination
 remain required. Keep source/generated code process-lived. K closes sampling,
@@ -31,8 +42,16 @@ and a fresh directory under the checkout's `ignored` tree:
 ```sh
 env -u PYTHONOPTIMIZE python3 -B tools/rapid-profiler/backoff-work/verify.py \
   --revision "$REVISION" --raw "$REPO/ignored/backoff-run" \
-  --toolchain "$TOOLCHAIN" --user-home "$USER_HOME" --cargo-home "$CARGO_HOME"
+  --toolchain "$TOOLCHAIN" --user-home "$USER_HOME" --cargo-home "$CARGO_HOME" \
+  --worker-backpressure
 ```
+
+Omit `--worker-backpressure` to preserve the existing immediate-refusal
+`backoff-work` command, original terminal, parser and CSV grammar. The explicit
+flag instead selects `backoff-work-wait`; only that mode emits and requires the
+additional `worker_backpressure=bounded-wait` field. Both keep the same fixed
+workload and all qualification predicates. An output marker alone cannot opt
+in the parser or change the requested policy.
 
 The wrapper first runs the unchanged `verify_ordinary_interval.py` with all six
 prerequisite flags. All 27 existing stages, populations, comparators and child
@@ -42,8 +61,12 @@ actual release artifacts are authenticated before reuse. Cargo cache hits are
 permitted and recorded; no rebuild is inferred. Release optimization is 3,
 debug info 0, with assertions and overflow checks enabled.
 
-Two new fresh children then run the existing C-checksum `backoff-work` client:
-K10 and K1000, each with 520 ten-millisecond periods and a 100000-call ceiling.
+Two fresh children then run the existing C-checksum client, K10 and K1000,
+each with 520 ten-millisecond periods and a 100000-call ceiling. The opt-in
+`backoff-work-wait` command selects `with_worker_backpressure()`; its terminal,
+CSV and receipt require `worker_backpressure=bounded-wait`. Waiting may change
+the actual call population, which is still measured without an offered-work or
+performance claim. Earlier immediate-refusal attempts stay FAILED.
 The application uses its existing independent 23-call bursts, 250 us spacing
 and 3 ms idle gaps. Calls are measured, not tied to epoch boundaries. Parent
 and build use four allowed CPUs; the native worker, controller, sink and joining
@@ -53,7 +76,8 @@ counts underlying file writes and explicitly flushes before sync.
 
 Each new child has 20 CPU seconds, 30 wall seconds and a 64 MiB file limit,
 inside a 55-second/1 MiB parent. These bounds are fixed before observations;
-there is no retry, deadline extension or shortened-population fallback. The
+there is no workload retry, deadline extension or shortened-population fallback.
+The named opt-in worker transport may retry Full only within its original cap. The
 helper requires ECHILD, unchanged request/helper inputs, authenticated streams,
 no unexpected descendants/cleanup events, and zero rescued descendants in the
 parent. The wrapper separately authenticates subject/source/tool contents.
