@@ -1,0 +1,669 @@
+{
+  "all_qualifications_pass": false,
+  "allocation": {
+    "allocator_revision": "d0c2867be75b495eb64239e664c6306af9747783",
+    "allocator_sources": {
+      "py/dagrun/cgroup.py": "916aa030a03abf4a1709afbc46196a4147577471ef1a97d39501603e63d69d76",
+      "py/dagrun/cpuset_allocator.py": "61715797fca6a3c3ba17668eb5f3a820ac0b42b4bf092b6fb815b58c1ed800da",
+      "py/dagrun/reservation.py": "df55f994921fcca2250dc0b19646ede2ecc90875de8bfc6bca977310546dcd88"
+    },
+    "cpus": [
+      1,
+      6,
+      25,
+      40
+    ],
+    "exclusive_host": false,
+    "method": "cpuset-alloc cooperative ledger and hard AllowedCPUs",
+    "roles": {
+      "controller": 1,
+      "producer": 40,
+      "single_worker": 6,
+      "two_workers": [
+        6,
+        25
+      ]
+    }
+  },
+  "attempts": [
+    {
+      "after": [
+        29.94,
+        34.16,
+        37.52
+      ],
+      "attempt": 1,
+      "before": [
+        27.32,
+        35.5,
+        38.35
+      ],
+      "diagnostics": [],
+      "failed_delegations": [
+        {
+          "closed": {
+            "bytes": 344,
+            "sha256": "64032a7a935efd3f75ff8c2f0e57ee884b0fbb6bac9f36fcbdc722a74cf65ca6"
+          },
+          "custody": "Root-hashed child result after outer cleanup; parent published no successful child-result hash.",
+          "exit_code": 1,
+          "level": "single-prerequisite",
+          "log": {
+            "bytes": 58,
+            "sha256": "96174a536866d93d999320d4cceaf28fc45fee17a0cf60c539d0e92fba3cbb58"
+          },
+          "log_unavailable": false,
+          "request": {
+            "bytes": 1492,
+            "sha256": "d2ebd46d985dbb471130722cc97e2d0f4d37b03c993ecef5c90c4cb9e0a55e73"
+          },
+          "result": {
+            "bytes": 7461,
+            "sha256": "a5e8ec77e0959a4a5c3a8d047b4f43c547ebfc03aeea22c8c4c27bbfd598165a"
+          }
+        }
+      ],
+      "result": {
+        "bytes": 6339,
+        "sha256": "cba17fadc7564b60ebb9487f9f5690fac17404ef5ffd779e5ec45dcb749702c7"
+      },
+      "seconds": 121.29309984017164,
+      "stage": "single-prerequisite",
+      "status": "FAILED"
+    },
+    {
+      "after": [
+        29.54,
+        33.4,
+        37.02
+      ],
+      "attempt": 2,
+      "before": [
+        29.94,
+        34.16,
+        37.52
+      ],
+      "diagnostics": [],
+      "failed_delegations": [
+        {
+          "closed": {
+            "bytes": 343,
+            "sha256": "18c0d4ce1e7907e0dfa7c3e6fa959818f94998f672c9493ec61fff05c575e673"
+          },
+          "custody": "Root-hashed child result after outer cleanup; parent published no successful child-result hash.",
+          "exit_code": 1,
+          "level": "single-prerequisite",
+          "log": {
+            "bytes": 58,
+            "sha256": "96174a536866d93d999320d4cceaf28fc45fee17a0cf60c539d0e92fba3cbb58"
+          },
+          "log_unavailable": false,
+          "request": {
+            "bytes": 1492,
+            "sha256": "5e12e7eafdf5e206e4f7de3848b7627809a09f0905ae3e62f267ebe0f87fbcd4"
+          },
+          "result": {
+            "bytes": 7461,
+            "sha256": "9d6cc5eabfbde62adafd8a1c75d4d688de3dd698cfe8cd297d79d7de236ec6d7"
+          }
+        }
+      ],
+      "result": {
+        "bytes": 6339,
+        "sha256": "cba17fadc7564b60ebb9487f9f5690fac17404ef5ffd779e5ec45dcb749702c7"
+      },
+      "seconds": 69.74407063797116,
+      "stage": "single-prerequisite",
+      "status": "FAILED"
+    },
+    {
+      "after": [
+        31.17,
+        33.25,
+        36.73
+      ],
+      "attempt": 3,
+      "before": [
+        29.54,
+        33.4,
+        37.02
+      ],
+      "diagnostics": [],
+      "failed_delegations": [
+        {
+          "closed": {
+            "bytes": 343,
+            "sha256": "6f552b598c30e831f1f22094b7c1e3a15f09db56e395929e10a17208f1097b48"
+          },
+          "custody": "Root-hashed child result after outer cleanup; parent published no successful child-result hash.",
+          "exit_code": 1,
+          "level": "single-prerequisite",
+          "log": {
+            "bytes": 58,
+            "sha256": "96174a536866d93d999320d4cceaf28fc45fee17a0cf60c539d0e92fba3cbb58"
+          },
+          "log_unavailable": false,
+          "request": {
+            "bytes": 1492,
+            "sha256": "ef620f0296fdc46b4fa7878f438a1fcbcacbe458ed82dd63395b9c1a247489c5"
+          },
+          "result": {
+            "bytes": 7461,
+            "sha256": "ade8cc2168e607e3d894d31876acb84b9e2997474355778d4f610d1a386248ef"
+          }
+        }
+      ],
+      "result": {
+        "bytes": 6339,
+        "sha256": "cba17fadc7564b60ebb9487f9f5690fac17404ef5ffd779e5ec45dcb749702c7"
+      },
+      "seconds": 67.14978147204965,
+      "stage": "single-prerequisite",
+      "status": "FAILED"
+    },
+    {
+      "after": [
+        32.15,
+        33.17,
+        36.45
+      ],
+      "attempt": 4,
+      "before": [
+        31.17,
+        33.25,
+        36.73
+      ],
+      "diagnostics": [],
+      "failed_delegations": [
+        {
+          "closed": {
+            "bytes": 343,
+            "sha256": "abf563ac99674a97b4b5feb1b4b87a495c12a1fed0b5d177d90c529d17598314"
+          },
+          "custody": "Root-hashed child result after outer cleanup; parent published no successful child-result hash.",
+          "exit_code": 1,
+          "level": "single-prerequisite",
+          "log": {
+            "bytes": 58,
+            "sha256": "96174a536866d93d999320d4cceaf28fc45fee17a0cf60c539d0e92fba3cbb58"
+          },
+          "log_unavailable": false,
+          "request": {
+            "bytes": 1492,
+            "sha256": "414be71cf14bb2bce4fe7d8fd19035839a07fff43b48b03bfaccffb0c126ad98"
+          },
+          "result": {
+            "bytes": 7461,
+            "sha256": "5bc558b0a98c45fb0034140b677556cb31e0e37f1cdc59a128959bd3ccf8bd1a"
+          }
+        }
+      ],
+      "result": {
+        "bytes": 6339,
+        "sha256": "cba17fadc7564b60ebb9487f9f5690fac17404ef5ffd779e5ec45dcb749702c7"
+      },
+      "seconds": 67.96907815197483,
+      "stage": "single-prerequisite",
+      "status": "FAILED"
+    },
+    {
+      "after": [
+        27.9,
+        31.91,
+        35.8
+      ],
+      "attempt": 5,
+      "before": [
+        32.15,
+        33.17,
+        36.45
+      ],
+      "diagnostics": [],
+      "failed_delegations": [
+        {
+          "closed": {
+            "bytes": 343,
+            "sha256": "32226578b7cf2c877131b757823e4e5142b57d598fce116001a3f23ed1a2267f"
+          },
+          "custody": "Root-hashed child result after outer cleanup; parent published no successful child-result hash.",
+          "exit_code": 1,
+          "level": "single-prerequisite",
+          "log": {
+            "bytes": 58,
+            "sha256": "96174a536866d93d999320d4cceaf28fc45fee17a0cf60c539d0e92fba3cbb58"
+          },
+          "log_unavailable": false,
+          "request": {
+            "bytes": 1492,
+            "sha256": "cc051e9c4a6c0e7c50390e5650d0c69bde05344c2e3d91cc05ad592cc461f267"
+          },
+          "result": {
+            "bytes": 7461,
+            "sha256": "464159d801e1c77da9a572588c263f174008de1d42ab269fe08e136e863cbf79"
+          }
+        }
+      ],
+      "result": {
+        "bytes": 6339,
+        "sha256": "cba17fadc7564b60ebb9487f9f5690fac17404ef5ffd779e5ec45dcb749702c7"
+      },
+      "seconds": 68.99024621699937,
+      "stage": "single-prerequisite",
+      "status": "FAILED"
+    }
+  ],
+  "bounds": {
+    "arm_lateness_ns": 2000000,
+    "attempt_output_bytes": 8388608,
+    "attempt_wall_seconds": 1200,
+    "campaign_wall_seconds": 7200,
+    "epochs": 520,
+    "period_ns": 10000000
+  },
+  "campaign": {
+    "bytes": 10693,
+    "sha256": "c1a10a80327153120edf9e6c4496fee7f7155b483c1fc2a68bc4352e05f7507a"
+  },
+  "checks": [
+    {
+      "check": "fmt",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "passed": 0,
+      "seconds": 6.662552976980805,
+      "status": "PASS"
+    },
+    {
+      "check": "clippy",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "cfd83920adffc7d947117dac977fac80ba565e9956867f9f9d45bdeb1ad21f17",
+      "passed": 0,
+      "seconds": 24.56067230599001,
+      "status": "PASS"
+    },
+    {
+      "check": "check",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "d2707879b57590841107e9dbc72c60447b6baefba48a2dddf42cb0994bfe38f1",
+      "passed": 0,
+      "seconds": 4.949849205091596,
+      "status": "PASS"
+    },
+    {
+      "check": "workspace-default",
+      "failed": 0,
+      "ignored": 36,
+      "log_sha256": "b9305f25f9033713f3f61b36f2819692359f03743f3229ab10758081a27c487e",
+      "passed": 3081,
+      "seconds": 343.7590075309854,
+      "status": "PASS"
+    },
+    {
+      "check": "serial-launch",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "048dde78e9a2e394d795782ec884d5e9b2a8f33371bb6dd656ae4d9bc3daead6",
+      "passed": 1039,
+      "seconds": 123.91952327406034,
+      "status": "PASS"
+    },
+    {
+      "check": "staged-allocation",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "f3af379d877f4eeaa926095833915354dde6f8a8a09bf31307ba807dadb8e8e5",
+      "passed": 3,
+      "seconds": 0.03440348897129297,
+      "status": "PASS"
+    },
+    {
+      "check": "prefixed-pun",
+      "failed": 0,
+      "ignored": 0,
+      "log_sha256": "cdc4b592cea23e5448566591a2be29a0c28d49b423e06bd3455ccb9f3f515057",
+      "passed": 36,
+      "seconds": 1.270674972096458,
+      "status": "PASS"
+    }
+  ],
+  "claim": 4,
+  "command": [
+    "$PYTHON",
+    "-B",
+    "$AGENT_UTILS/py/dagrun/cpuset_allocator.py",
+    "run",
+    "--cores",
+    "4",
+    "--sample-s",
+    "1",
+    "--tag",
+    "li2core-normal-exact-five-50e5bd2",
+    "--",
+    "$PYTHON",
+    "-B",
+    "$REPO/evaluation/ordinary-exact-campaign/run.py",
+    "--revision",
+    "50e5bd2b32ce4c0e0a4e13216f098b506f8b05f9",
+    "--raw",
+    "$RAW",
+    "--toolchain",
+    "$TOOLCHAIN",
+    "--user-home",
+    "$USER_HOME",
+    "--cargo-home",
+    "$CARGO_HOME"
+  ],
+  "custom_workspace_harnesses": [
+    "tests/exec_backing_cleanup.rs",
+    "tests/precontext_native.rs"
+  ],
+  "development_history": [
+    {
+      "check": "epoch-storage-format-v1",
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "private_receipt": {
+        "bytes": 2836,
+        "sha256": "fd1524e24b917cfeab04d7881f472762f5a5dc929ad5dce9cc8827f1b0421431"
+      },
+      "scope": "Development observation; precommit working trees are not claimed to be the exact final revision.",
+      "seconds": 6.692833665991202,
+      "status": "PASS"
+    },
+    {
+      "check": "epoch-storage-library-v1",
+      "exit_code": 0,
+      "log_sha256": "057393f207717d87186a933fb51ad1117b5c96a2229cee8b74c3fa2685800ac6",
+      "private_receipt": {
+        "bytes": 2869,
+        "sha256": "b187a9e4c863a3aa136590678ea5305fdcdaba2c149f2ab75f6c3d6827889e5d"
+      },
+      "scope": "Development observation; precommit working trees are not claimed to be the exact final revision.",
+      "seconds": 7.741657488048077,
+      "status": "PASS"
+    },
+    {
+      "check": "epoch-storage-consumer-v1",
+      "exit_code": 0,
+      "log_sha256": "23dc2f001324f56bc8c3a067b42ebd7643edb677f752b69fd2b6c2f6051c57fd",
+      "private_receipt": {
+        "bytes": 2894,
+        "sha256": "bf500bad73d9d8c5ea8f78b411b0604f6a0351088c6956cc47d24c2a08b35b3c"
+      },
+      "scope": "Development observation; precommit working trees are not claimed to be the exact final revision.",
+      "seconds": 4.874669271055609,
+      "status": "PASS"
+    },
+    {
+      "check": "epoch-storage-clippy-v1",
+      "exit_code": 101,
+      "log_sha256": "5e57ff9fc4265314b2e681bf2d68667fe0dbb87b3723c48a020b65c5cf85cc56",
+      "private_receipt": {
+        "bytes": 2926,
+        "sha256": "80563771df6eeb50af63040b58a5132e97613219c0be247e4056a7c62eb6bf3b"
+      },
+      "scope": "Development observation; precommit working trees are not claimed to be the exact final revision.",
+      "seconds": 5.901559997815639,
+      "status": "FAILED"
+    },
+    {
+      "check": "epoch-storage-clippy-v2",
+      "exit_code": 101,
+      "log_sha256": "2657a669537f45d19557297ac18c8a0122175e0d83a41858a4148696757e5348",
+      "private_receipt": {
+        "bytes": 2926,
+        "sha256": "ce55c848640733c1b49e63d682b1eece9f88414526d207cd49a8e82378eb970c"
+      },
+      "scope": "Development observation; precommit working trees are not claimed to be the exact final revision.",
+      "seconds": 5.877110602101311,
+      "status": "FAILED"
+    },
+    {
+      "check": "epoch-storage-clippy-v3",
+      "exit_code": 0,
+      "log_sha256": "d5725ebe18d36e9a23a6ac78fd8397610a9748480d5b38463ad546f804c81817",
+      "private_receipt": {
+        "bytes": 2924,
+        "sha256": "abd397d4e792a50862748892f4b2dc63c33f08fa304c6703ad220e60113af810"
+      },
+      "scope": "Development observation; precommit working trees are not claimed to be the exact final revision.",
+      "seconds": 2.915382695151493,
+      "status": "PASS"
+    },
+    {
+      "check": "normal-epoch-storage-1b86b6f-gates-v1",
+      "exit_code": 1,
+      "log_sha256": "e6dbb83a56ea578b5412e24c6d90260d1ec6b9d1c7f8c158ba117f4a7938cccf",
+      "private_receipt": {
+        "bytes": 894,
+        "sha256": "c5e79cf2633e089aac3306c415954c36f0c8161f7e7810ad7e6c9970f964def6"
+      },
+      "scope": "Development observation; precommit working trees are not claimed to be the exact final revision.",
+      "seconds": 7.092785673914477,
+      "status": "FAILED"
+    },
+    {
+      "check": "epoch-storage-format-v2",
+      "exit_code": 0,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "private_receipt": {
+        "bytes": 616,
+        "sha256": "e158c9ffa433689aee24664621c87e4f64b50227efab04a9468c3f169b596817"
+      },
+      "scope": "Development observation; precommit working trees are not claimed to be the exact final revision.",
+      "seconds": 6.996437930967659,
+      "status": "PASS"
+    }
+  ],
+  "development_history_scope": "Two large-owned-error Clippy failures resolved by documented local size-lint allowances; formatting failure resolved by comment line splitting. Runtime predicates and original qualification thresholds are unchanged.",
+  "ended_utc": "2026-10-28T22:07:53.200295+00:00",
+  "exact_cohort_statuses": {
+    "UNRUN": 40
+  },
+  "failure_analysis": {
+    "outcome": "All five fail the unchanged exact session test census before timed sessions; four added required controls omitted from recipe.",
+    "revision": "50e5bd2b32ce4c0e0a4e13216f098b506f8b05f9",
+    "rows": [
+      {
+        "additional_tests": [
+          "normal::session::epoch_storage::tests::consuming_error_restores_original_owner_before_propagation",
+          "normal::session::epoch_storage::tests::fresh_generation_requires_new_report_and_rejects_stale_or_duplicate_marks",
+          "normal::session::epoch_storage::tests::output_refusal_keeps_obligation_and_token_without_retry_or_reclaim",
+          "normal::session::epoch_storage::tests::shared_owner_repeats_keep_one_report_output_and_exact_token_until_success"
+        ],
+        "attempt": 1,
+        "failure_sha256": "fb51c217cef0879666be7d49db4a813bfd1c7eb90f8f3536dcbd536f7a659205",
+        "listing_sha256": "3a62a8d3d3cdc1b4b62b61af273931f5f8657d828194d3b80163148f890f2998",
+        "missing_required": [],
+        "observed_count": 14,
+        "required_count": 10
+      },
+      {
+        "additional_tests": [
+          "normal::session::epoch_storage::tests::consuming_error_restores_original_owner_before_propagation",
+          "normal::session::epoch_storage::tests::fresh_generation_requires_new_report_and_rejects_stale_or_duplicate_marks",
+          "normal::session::epoch_storage::tests::output_refusal_keeps_obligation_and_token_without_retry_or_reclaim",
+          "normal::session::epoch_storage::tests::shared_owner_repeats_keep_one_report_output_and_exact_token_until_success"
+        ],
+        "attempt": 2,
+        "failure_sha256": "fb51c217cef0879666be7d49db4a813bfd1c7eb90f8f3536dcbd536f7a659205",
+        "listing_sha256": "3a62a8d3d3cdc1b4b62b61af273931f5f8657d828194d3b80163148f890f2998",
+        "missing_required": [],
+        "observed_count": 14,
+        "required_count": 10
+      },
+      {
+        "additional_tests": [
+          "normal::session::epoch_storage::tests::consuming_error_restores_original_owner_before_propagation",
+          "normal::session::epoch_storage::tests::fresh_generation_requires_new_report_and_rejects_stale_or_duplicate_marks",
+          "normal::session::epoch_storage::tests::output_refusal_keeps_obligation_and_token_without_retry_or_reclaim",
+          "normal::session::epoch_storage::tests::shared_owner_repeats_keep_one_report_output_and_exact_token_until_success"
+        ],
+        "attempt": 3,
+        "failure_sha256": "fb51c217cef0879666be7d49db4a813bfd1c7eb90f8f3536dcbd536f7a659205",
+        "listing_sha256": "3a62a8d3d3cdc1b4b62b61af273931f5f8657d828194d3b80163148f890f2998",
+        "missing_required": [],
+        "observed_count": 14,
+        "required_count": 10
+      },
+      {
+        "additional_tests": [
+          "normal::session::epoch_storage::tests::consuming_error_restores_original_owner_before_propagation",
+          "normal::session::epoch_storage::tests::fresh_generation_requires_new_report_and_rejects_stale_or_duplicate_marks",
+          "normal::session::epoch_storage::tests::output_refusal_keeps_obligation_and_token_without_retry_or_reclaim",
+          "normal::session::epoch_storage::tests::shared_owner_repeats_keep_one_report_output_and_exact_token_until_success"
+        ],
+        "attempt": 4,
+        "failure_sha256": "fb51c217cef0879666be7d49db4a813bfd1c7eb90f8f3536dcbd536f7a659205",
+        "listing_sha256": "3a62a8d3d3cdc1b4b62b61af273931f5f8657d828194d3b80163148f890f2998",
+        "missing_required": [],
+        "observed_count": 14,
+        "required_count": 10
+      },
+      {
+        "additional_tests": [
+          "normal::session::epoch_storage::tests::consuming_error_restores_original_owner_before_propagation",
+          "normal::session::epoch_storage::tests::fresh_generation_requires_new_report_and_rejects_stale_or_duplicate_marks",
+          "normal::session::epoch_storage::tests::output_refusal_keeps_obligation_and_token_without_retry_or_reclaim",
+          "normal::session::epoch_storage::tests::shared_owner_repeats_keep_one_report_output_and_exact_token_until_success"
+        ],
+        "attempt": 5,
+        "failure_sha256": "fb51c217cef0879666be7d49db4a813bfd1c7eb90f8f3536dcbd536f7a659205",
+        "listing_sha256": "3a62a8d3d3cdc1b4b62b61af273931f5f8657d828194d3b80163148f890f2998",
+        "missing_required": [],
+        "observed_count": 14,
+        "required_count": 10
+      }
+    ],
+    "source_sha256": "7fb4c6a89369858558652f10bcbd7a967d20e3efd5a4258f0581f159d4113bf2"
+  },
+  "fixed_attempts": 5,
+  "hardware": {
+    "label": "AMD EPYC Zen 5 dev host"
+  },
+  "limitations": "Separate fixed post-change campaign; not a controlled causal comparison. Earlier failures remain failed. Successful sessions have no numeric maximum lateness. Failed nested observations without a successful ancestor hash are root-hashed partial evidence, not independent qualification. UNAVAILABLE planned slots are not inferred UNRUN results. No whole-session native-state, throughput, PMU/perf accuracy, or full-A5 claim.",
+  "manifest": {
+    "bytes": 4712,
+    "sha256": "e34bec2a7c59993957b8a219f8246b7167d08f06287f03fd4763d149ee7755db"
+  },
+  "metadata_origin": "Attempt 1 only; no selection of a later successful attempt. Missing setup metadata is null/unavailable.",
+  "metadata_unavailable": [
+    "hardware",
+    "versions",
+    "binary"
+  ],
+  "outer": {
+    "cleanup_complete": true,
+    "exit_code": 1,
+    "rescues": 0,
+    "seconds": 397.07583905314095
+  },
+  "outer_log": {
+    "bytes": 4499,
+    "sha256": "6602ba38196eafb4e47fa10f62c3863675dca68ef224057e4e92071fbb7dcc73"
+  },
+  "outer_request": {
+    "bytes": 2806,
+    "sha256": "57c0ede671774261b99864429a5078903499c8719230045464e00ca604b6e136"
+  },
+  "planned_stage_statuses": {
+    "PASS": 265,
+    "UNRUN": 180
+  },
+  "prior_campaign": "../ordinary-exact-five-30c8645/README.md",
+  "protocol": {
+    "bytes": 2200,
+    "sha256": "40592c2618f1c3ddd0dc35f6f7bb43a1a74335a3239df5983a13361b91d00a35"
+  },
+  "qualified_exact_calls": 0,
+  "release_binary": null,
+  "revision": "50e5bd2b32ce4c0e0a4e13216f098b506f8b05f9",
+  "schema": 1,
+  "source_manifest": {
+    "count": 514,
+    "manifest": {
+      "bytes": 81682,
+      "sha256": "fe82aadbede517c73ecb0915858eb655d2721b26e5e186fc951685c0cadf4091"
+    }
+  },
+  "source_manifest_files_authenticated": 514,
+  "source_review": {
+    "campaign": "be54b50cf5dbb248a390dcb7cb717fa3e3414592a441dc587db5e34b65d33054",
+    "consumer": "19ecc959de53e94ac8a1243be04030d06ef8c355d53f03090373bebffd4d60f3",
+    "core_and_facade": "9cfc98deae11251ebe904657f6dd219d69568243f26d9c4d74b1d769359ebcb9",
+    "scope": "Independent source-only reviews, no execution or latency credit."
+  },
+  "started_utc": "2026-10-28T22:01:17.776844+00:00",
+  "status": "COMPLETE_WITH_FAILURES",
+  "tools": {
+    "as": {
+      "bytes": 727360,
+      "sha256": "2870525fb59869f6f4c51cae67ffc6124f6635129db00a7d0818b84f7d069c56"
+    },
+    "cargo": {
+      "bytes": 42839824,
+      "sha256": "828980723df339d62434390e9fb8ef8831036583343ae2316b7ab5646b5c1953"
+    },
+    "cc1": {
+      "bytes": 28991152,
+      "sha256": "43d76c430f9bac83a34f06094bd7a8d9d66c1a155cfd978489024afbdaf1faf5"
+    },
+    "collect2": {
+      "bytes": 349536,
+      "sha256": "9520e6fb1ad7d606c35241a6b4032247a492675fb355687830756a6644912f8e"
+    },
+    "gcc": {
+      "bytes": 1093144,
+      "sha256": "546023eae5ff58287b1d987e059d38e2733dfe49eda827282d6942707c4c25d0"
+    },
+    "git": {
+      "bytes": 4397400,
+      "sha256": "55c09f77ea636d99e0c163c1e406ce44dfb125dd70a01c6ed6b5bbecd5f4b240"
+    },
+    "ld": {
+      "bytes": 1791600,
+      "sha256": "ac6bbc7393b95278ffa294cbdf18c65b5003d4e15dc805ce24a8146a8a154c42"
+    },
+    "python": {
+      "bytes": 13542408,
+      "sha256": "995bf1c07a8b210d5725cd21ae1e9c2a6c8abac87cea0653e54dd47c468b785b"
+    },
+    "readelf": {
+      "bytes": 683296,
+      "sha256": "51bc80f3a187e54e0b267fe6e64de09129f7761aafe615177d9d0be2229afcff"
+    },
+    "rustc": {
+      "bytes": 645000,
+      "sha256": "d3a664c970a9fd8361b64194861bebc1ae37b9054e5ee3400dc1c9e691797eea"
+    },
+    "strip": {
+      "bytes": 189816,
+      "sha256": "23c760f0b4478d7b0bf5516c1a0a23ad1bea74036924c7fbeb65ab9173337e84"
+    }
+  },
+  "validation_environment": {
+    "command": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only",
+    "hardware": {
+      "available_affinity_cpus": 316,
+      "observed_cpu": {
+        "cpu family": "26",
+        "model": "17",
+        "stepping": "0",
+        "vendor_id": "AuthenticAMD"
+      },
+      "owner_label": "AMD EPYC Zen 5 dev host"
+    },
+    "kernel_version": "7.1.3",
+    "origin": "Full checks immediately preceding the campaign at the same revision; top-level campaign setup metadata remains unavailable.",
+    "receipt": {
+      "bytes": 21875,
+      "sha256": "b805da4a96ec29ea0ea91fbd3f42928d60cfba7b74e3f8c3038ab53abb7a6b05"
+    },
+    "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)"
+  },
+  "versions": null,
+  "workspace_count_method": "Final summary per Cargo Running target; all rustdoc batches; nested child summaries excluded. Functional command durations, not performance."
+}
