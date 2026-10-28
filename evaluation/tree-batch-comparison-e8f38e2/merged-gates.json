@@ -1,0 +1,141 @@
+{
+  "checks": [
+    {
+      "command": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "name": "fmt",
+      "passed": 0,
+      "status": "PASS",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 6.34920844482258
+    },
+    {
+      "command": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "name": "clippy",
+      "passed": 0,
+      "status": "PASS",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 5.1973659079521894
+    },
+    {
+      "command": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "name": "check",
+      "passed": 0,
+      "status": "PASS",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 3.2971284391824156
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "failed": 0,
+      "ignored": 33,
+      "name": "workspace-default",
+      "passed": 2887,
+      "status": "PASS",
+      "wall_limit_seconds": 360,
+      "wall_seconds": 326.13291859510355
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "name": "serial-launch",
+      "passed": 1039,
+      "status": "PASS",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 123.80531029286794
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "name": "staged-allocation",
+      "passed": 3,
+      "status": "PASS",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 0.03366757114417851
+    },
+    {
+      "command": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "failed": 0,
+      "ignored": 0,
+      "name": "prefixed-pun",
+      "passed": 36,
+      "status": "PASS",
+      "wall_limit_seconds": 180,
+      "wall_seconds": 1.4079981709364802
+    }
+  ],
+  "compiler_jobs": 4,
+  "count_policy": "Last terminal of each Cargo Running group excludes nested children; every independent Doc-tests terminal counts, including positive/compile-only and separate compile-fail suites.",
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "main_parent": "43d7a40e5d112beac436ab646b834f4a6f9bce86",
+  "measured_revision": "e8f38e278864cb4d7b2bfb2e4c83d99cfc1286ee",
+  "parallelism": "No affinity change or RUST_TEST_THREADS override; libtest uses its default except explicitly serial-launch.",
+  "private_receipt_sha256": "9a9be51f70a81c159f028bcfcacb59352f07fae81db0406ac914e30d2b9ed9e8",
+  "recipe": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only",
+  "rescues": 0,
+  "revision": "a53140f5e9b298bb37641c858b796b6935788fc0",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "scope": "Functional validation; command durations are operational, not performance measurements.",
+  "status": "PASS"
+}

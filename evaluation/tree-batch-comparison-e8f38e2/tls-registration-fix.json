@@ -1,0 +1,190 @@
+{
+  "affinity_cpus": 316,
+  "command": [
+    "cargo",
+    "test",
+    "-p",
+    "rapid-profiler",
+    "--lib"
+  ],
+  "failed_merge": {
+    "log": {
+      "bytes": 319666,
+      "sha256": "226e7f6b05e932cac8dce756d3b014cf296a6dc1cb75e29629c3df8d5eddaeec"
+    },
+    "observed_reservations": 1,
+    "receipt": {
+      "bytes": 14851,
+      "sha256": "223827d66f4118fa30093aa816e33bcecb3d5c2d54d7892059d68ce02916244d"
+    },
+    "revision": "cd92902dda8965d3d07c3071b73186aa3d7c6dcc",
+    "status": "FAILED",
+    "test_expected_reservations": 2
+  },
+  "fix": "Wait for both Ready handshakes before either Start; require actual depth1 before Entered. Both reservations still overlap; all previous exact completion/record assertions, K1/M2 and two-second waits remain.",
+  "hardware": "AMD EPYC Zen 5 dev host",
+  "parallelism": "Default libtest parallelism, no affinity restriction or RUST_TEST_THREADS override",
+  "repetitions": 10,
+  "revision": "a53140f5e9b298bb37641c858b796b6935788fc0",
+  "root_cause": "Setup could overlap nonblocking admission: registration holds registry lock, acquire uses try_lock, observe executes body even on refusal. Entered did not prove admission.",
+  "runs": [
+    {
+      "failed": 0,
+      "ignored": 28,
+      "log": {
+        "bytes": 44005,
+        "sha256": "acb9bf68a31627c330e93d31c39b8a6e7d4d17bbf513332c5e76dd123071f3b8"
+      },
+      "passed": 356,
+      "receipt": {
+        "bytes": 704,
+        "sha256": "864d75f244ba6b3ab6cb81b83382dcd2f7d1120fe0b49a20bcb57b9116efdf7d"
+      },
+      "run": 1,
+      "status": "PASS"
+    },
+    {
+      "failed": 0,
+      "ignored": 28,
+      "log": {
+        "bytes": 43885,
+        "sha256": "2ffc62a139f06273f80adb93385a4312c3e1002aa2ef64891c02c1110efd3a40"
+      },
+      "passed": 356,
+      "receipt": {
+        "bytes": 706,
+        "sha256": "18674fb96b568fbb6f880cece8219089339810f8787bbfd9ba3575b21581dc15"
+      },
+      "run": 2,
+      "status": "PASS"
+    },
+    {
+      "failed": 0,
+      "ignored": 28,
+      "log": {
+        "bytes": 43885,
+        "sha256": "9aa314c2f18a89f8accf6a6a8856805453263786e5724da38ce8a7d29db5052d"
+      },
+      "passed": 356,
+      "receipt": {
+        "bytes": 706,
+        "sha256": "73f5eb0fe402c8e43569129638cdf3629de2d72dda6a49d0d2354d5a3d032ebf"
+      },
+      "run": 3,
+      "status": "PASS"
+    },
+    {
+      "failed": 0,
+      "ignored": 28,
+      "log": {
+        "bytes": 43885,
+        "sha256": "0168bb60fd4a90146dcf72a4b4e5f7e1100606ddc92cd237932b899f5d56b152"
+      },
+      "passed": 356,
+      "receipt": {
+        "bytes": 707,
+        "sha256": "577d2f46426876503be9abcd8c0cd7915897cb6fccf1af7a232447a98c3c13f2"
+      },
+      "run": 4,
+      "status": "PASS"
+    },
+    {
+      "failed": 0,
+      "ignored": 28,
+      "log": {
+        "bytes": 43885,
+        "sha256": "7b8d19781f162e7f7c7946bd2812e36f2d81f7ff9f1fda5534a795404ecb5d99"
+      },
+      "passed": 356,
+      "receipt": {
+        "bytes": 706,
+        "sha256": "b49935f28d71a3be7416038aefc9a821940906ceffc132ceb8e0fa9e922b98d0"
+      },
+      "run": 5,
+      "status": "PASS"
+    },
+    {
+      "failed": 0,
+      "ignored": 28,
+      "log": {
+        "bytes": 43885,
+        "sha256": "3017dc81200d5aa2effe3fbc0ce64b4543ce5c781fb9aed49ded792f95ae8349"
+      },
+      "passed": 356,
+      "receipt": {
+        "bytes": 707,
+        "sha256": "8733de6062b8667451d7164de9ee85e7b68552b16b3b384cae8d42da0608a719"
+      },
+      "run": 6,
+      "status": "PASS"
+    },
+    {
+      "failed": 0,
+      "ignored": 28,
+      "log": {
+        "bytes": 43885,
+        "sha256": "139d5459b6f14aa490a71adbd1a58624b68ce3b160879596112e1382494fe460"
+      },
+      "passed": 356,
+      "receipt": {
+        "bytes": 706,
+        "sha256": "0dd04330ee41fb40304976619b20b5bd3d67c4129c638edf35a578119780c35d"
+      },
+      "run": 7,
+      "status": "PASS"
+    },
+    {
+      "failed": 0,
+      "ignored": 28,
+      "log": {
+        "bytes": 43885,
+        "sha256": "2ebcc38f6d6df99c0a838a51d47bf1ad488dbfea75d1914be2d0d5c9b8569c05"
+      },
+      "passed": 356,
+      "receipt": {
+        "bytes": 706,
+        "sha256": "726e25ed3738ee76a8c4e86b73c0eb72e0f54e643e656338bf56ca0950780a20"
+      },
+      "run": 8,
+      "status": "PASS"
+    },
+    {
+      "failed": 0,
+      "ignored": 28,
+      "log": {
+        "bytes": 43885,
+        "sha256": "b5ceaa7df74ab10106c859849ef75320a58ea186f57b098708e01466f9aa9cc6"
+      },
+      "passed": 356,
+      "receipt": {
+        "bytes": 706,
+        "sha256": "bdb0cf9f416ecd1236571be185f6640cdde1e427bb4c77df0a300793641cd414"
+      },
+      "run": 9,
+      "status": "PASS"
+    },
+    {
+      "failed": 0,
+      "ignored": 28,
+      "log": {
+        "bytes": 43885,
+        "sha256": "bbd5b1a0bc91da22158bc358f17b5c2639d8d6a0fa848ef7cbbfad82f26dcd44"
+      },
+      "passed": 356,
+      "receipt": {
+        "bytes": 706,
+        "sha256": "223bfc1fff6275d06fef161ca2189a8f44f91b45593a890afacdc6c8dc3d3564"
+      },
+      "run": 10,
+      "status": "PASS"
+    }
+  ],
+  "scope": "Test-fixture ordering only. No production code or benchmark observation changed; prior failed gate remains failed. Durations are not performance measurements.",
+  "source": {
+    "bytes": 32257,
+    "sha256": "d6d4ae9181285748eb9bf3a91ddeb6e0714d78809b8fa8b4728a7ed539af4778"
+  },
+  "source_join": "Checks ran on merged cd92902 plus this exact sole source edit; Git a53140f records identical checked bytes",
+  "status": "SOURCE_FIX_WITH_DEFAULT_PARALLEL_CHECKS",
+  "test": "tools/rapid-profiler/src/frontend_tls/tests.rs::tls_p2_two_reservations_keep_one_k_winner_and_one_dropped_completion"
+}

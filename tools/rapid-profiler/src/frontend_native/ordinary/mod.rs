@@ -13,7 +13,9 @@ use std::os::unix::fs::MetadataExt;
 use std::path::Path;
 
 mod cfg;
+mod selection;
 mod tree;
+pub use selection::TrustedFunctionSelection;
 pub(in crate::frontend_native) use tree::TreeSourceProof;
 pub use tree::{
     CallTreeCertificate, LoadedCallTree, TreeCallEdge, TreeContract, TreeRootCertificate,
@@ -152,6 +154,17 @@ fn parse_admitted(
     name: &str,
     admit_code: fn(&[u8], u64) -> Result<(), SetupRefusal>,
 ) -> Result<Parsed, SetupRefusal> {
+    parse_admitted_selection(bytes, name, None, admit_code)
+}
+
+// Named callers keep their complete old predicate order below. Only the new
+// trusted scalar descriptor supplies a range; it cannot supply an admit callback.
+fn parse_admitted_selection(
+    bytes: &[u8],
+    name: &str,
+    range: Option<(u64, usize)>,
+    admit_code: fn(&[u8], u64) -> Result<(), SetupRefusal>,
+) -> Result<Parsed, SetupRefusal> {
     if bytes.len() > 1024 * 1024
         || bytes.get(..7) != Some(b"\x7fELF\x02\x01\x01")
         || u16_at(bytes, 16)? != 3
@@ -253,7 +266,7 @@ fn parse_admitted(
     }
     // This dlopen-only profile never invokes e_entry. A nonzero value is
     // nevertheless constrained to one real executable file interval; the
-    // selected dynamic symbol below remains the only admitted callable entry.
+    // explicit selection below remains the only admitted callable entry.
     if elf_entry != 0
         && loads
             .iter()
@@ -306,25 +319,37 @@ fn parse_admitted(
     if file.sections().any(|s| s.relocations().next().is_some()) {
         return Err(SetupRefusal::Relocation);
     }
-    let rows: Vec<_> = file
-        .dynamic_symbols()
-        .filter(|s| s.name() == Ok(name) && s.is_definition())
-        .collect();
-    if rows.len() != 1
-        || rows[0].kind() != SymbolKind::Text
-        || !(1..=256).contains(&rows[0].size())
-        || !matches!(
-            rows[0].flags(),
-            SymbolFlags::Elf {
-                st_info: 0x12,
-                st_other: 0 | 3
-            }
-        )
-    {
-        return Err(SetupRefusal::SymbolOwner);
-    }
-    let entry = rows[0].address();
-    let length = usize::try_from(rows[0].size()).map_err(|_| SetupRefusal::Format)?;
+    let (entry, length) = if let Some((entry, length)) = range {
+        // Do not silently broaden this profile to sectionless ELF: the same
+        // inspectable symbol/section metadata must remain available to the
+        // relocation, IFUNC and contradictory-definition checks. The subject
+        // itself need not appear in either symbol table.
+        if file.dynamic_symbol_table().is_none() || !(1..=256).contains(&length) {
+            return Err(SetupRefusal::SymbolOwner);
+        }
+        (entry, length)
+    } else {
+        let rows: Vec<_> = file
+            .dynamic_symbols()
+            .filter(|s| s.name() == Ok(name) && s.is_definition())
+            .collect();
+        if rows.len() != 1
+            || rows[0].kind() != SymbolKind::Text
+            || !(1..=256).contains(&rows[0].size())
+            || !matches!(
+                rows[0].flags(),
+                SymbolFlags::Elf {
+                    st_info: 0x12,
+                    st_other: 0 | 3
+                }
+            )
+        {
+            return Err(SetupRefusal::SymbolOwner);
+        }
+        let entry = rows[0].address();
+        let length = usize::try_from(rows[0].size()).map_err(|_| SetupRefusal::Format)?;
+        (entry, length)
+    };
     let end = entry
         .checked_add(length as u64)
         .ok_or(SetupRefusal::Format)?;
@@ -340,10 +365,17 @@ fn parse_admitted(
         if !s.is_definition() || matches!(s.kind(), SymbolKind::Section | SymbolKind::File) {
             continue;
         }
-        let selected = s.name() == Ok(name)
-            && s.address() == entry
-            && s.size() == length as u64
-            && s.kind() == SymbolKind::Text;
+        let selected = match range {
+            None => {
+                s.name() == Ok(name)
+                    && s.address() == entry
+                    && s.size() == length as u64
+                    && s.kind() == SymbolKind::Text
+            }
+            Some(_) => {
+                s.address() == entry && s.size() == length as u64 && s.kind() == SymbolKind::Text
+            }
+        };
         let other_end = s
             .address()
             .checked_add(s.size())

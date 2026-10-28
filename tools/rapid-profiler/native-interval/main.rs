@@ -996,6 +996,25 @@ fn main() {
         }
         return;
     }
+    if args.get(1).and_then(|s| s.to_str()) == Some("selected-state") {
+        assert_eq!(
+            args.len(),
+            7,
+            "selected-state CANDIDATE FINAL ELF_VA LENGTH OUTPUT"
+        );
+        let arguments = oracle::native_ordinary::selected::Arguments::parse(
+            args[4].to_str().unwrap(),
+            args[5].to_str().unwrap(),
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[6]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        ordinary::selected::run(&subject, &expected, arguments, &output);
+        return;
+    }
     if args.get(1).and_then(|s| s.to_str()) == Some("ordinary-state") {
         assert_eq!(
             args.len(),

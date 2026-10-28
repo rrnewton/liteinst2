@@ -1,0 +1,5 @@
+seed,case,status,children,calls_per_child,full_indices,comparisons,original_visits,original_steps,candidate_steps,selected0_original_steps,selected0_candidate_steps,selected7_original_steps,selected7_candidate_steps,hardware_stops_original,hardware_stops_candidate,tree_transfers,outer_calls,outer_returns,normal_reaps,source_attested_finishes,candidate_rows,candidate_events,candidate_report_records,value
+1311768467139281696,fit2,PASS,2,8,0+7,686,664,716,11098,343,5526,343,5542,38,38,48,16,16,2,2,16,32,16,13455538007910626262
+1311768467139281696,conflict3,PASS,2,8,0+7,686,664,716,11098,343,5526,343,5542,38,38,48,16,16,2,2,16,32,16,18114441086748040058
+18364758542526924135,fit2,PASS,2,8,0+7,686,664,716,11098,343,5526,343,5542,38,38,48,16,16,2,2,16,32,16,14448916110156114966
+18364758542526924135,conflict3,PASS,2,8,0+7,686,664,716,11098,343,5526,343,5542,38,38,48,16,16,2,2,16,32,16,6122101979721109698

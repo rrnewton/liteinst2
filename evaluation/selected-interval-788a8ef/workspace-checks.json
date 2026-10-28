@@ -1,0 +1,1020 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "cargo",
+        "fmt",
+        "--check"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "reaped_descendants": 0,
+        "seconds": 6.25406216387637,
+        "start_utc": "2026-10-28T13:46:32.922141+00:00",
+        "termination": null
+      },
+      "name": "fmt",
+      "terminal_observations": [],
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "clippy",
+        "--workspace",
+        "--all-targets",
+        "--all-features",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "6f33dcb0d7976d42ae7afbb3bdaf303e8df8cf90e88c30702d827892855a4265",
+        "reaped_descendants": 0,
+        "seconds": 30.623197655892,
+        "start_utc": "2026-10-28T13:46:39.190871+00:00",
+        "termination": null
+      },
+      "name": "clippy",
+      "terminal_observations": [],
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "check",
+        "--workspace",
+        "--all-features",
+        "--all-targets"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "3999a985bfb8669748362f8778bd966560e2bcfdd7a6a3182bc59cec4875e026",
+        "reaped_descendants": 0,
+        "seconds": 3.730501843849197,
+        "start_utc": "2026-10-28T13:47:09.830304+00:00",
+        "termination": null
+      },
+      "name": "check",
+      "terminal_observations": [],
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "--workspace"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "d677510b8e90f2acbe419aa507b157c476abf88d81f15b92d9ad32e75cccca49",
+        "reaped_descendants": 0,
+        "seconds": 327.9703632541932,
+        "start_utc": "2026-10-28T13:47:13.576056+00:00",
+        "termination": null
+      },
+      "name": "workspace-default",
+      "terminal_observations": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 21,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 20,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 745,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 23,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 50,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 24,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 86,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 19,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 24,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 23,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 1,
+          "passed": 254,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 49,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 36,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 36,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 13,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 36,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 36,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 13,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 37,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 38,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 9,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 37,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 80,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 36,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 36,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 39,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 36,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 3,
+          "passed": 4,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 40,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 36,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 28,
+          "passed": 363,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 71,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 1,
+          "passed": 98,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 43,
+          "result": "ok"
+        }
+      ],
+      "wall_limit_seconds": 360
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst-launch",
+        "--",
+        "--test-threads=1",
+        "--nocapture"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "63741dd5c38b5e5cfd9996c72060636349ca101941476b4762de85b4b16e531d",
+        "reaped_descendants": 0,
+        "seconds": 127.59088383009657,
+        "start_utc": "2026-10-28T13:52:41.565788+00:00",
+        "termination": null
+      },
+      "name": "serial-launch",
+      "terminal_observations": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 745,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 23,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 15,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 8,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 11,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 50,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 7,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 24,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 17,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16,
+          "result": "ok"
+        },
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0,
+          "result": "ok"
+        }
+      ],
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--lib",
+        "staged"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "533277dde9980fe1ea141b4a733d5cde5514642758efb7a4839fadaab38ab84d",
+        "reaped_descendants": 0,
+        "seconds": 0.03575040097348392,
+        "start_utc": "2026-10-28T13:54:49.177016+00:00",
+        "termination": null
+      },
+      "name": "staged-allocation",
+      "terminal_observations": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 3,
+          "result": "ok"
+        }
+      ],
+      "wall_limit_seconds": 180
+    },
+    {
+      "argv": [
+        "cargo",
+        "test",
+        "-p",
+        "liteinst2",
+        "--test",
+        "prefixed_pun_oracle"
+      ],
+      "closed": {
+        "child_discovery_strategy": "pidfd_authenticated_proc_candidates",
+        "cleanup_complete": true,
+        "exit_code": 0,
+        "private_log_sha256": "4358c0a4bd824e8dcb9c1501be5b9847aac3eb7119487001296a2f447fe39ac8",
+        "reaped_descendants": 0,
+        "seconds": 1.294439994962886,
+        "start_utc": "2026-10-28T13:54:49.227674+00:00",
+        "termination": null
+      },
+      "name": "prefixed-pun",
+      "terminal_observations": [
+        {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 36,
+          "result": "ok"
+        }
+      ],
+      "wall_limit_seconds": 180
+    }
+  ],
+  "compiler_jobs": 4,
+  "hardware": {
+    "available_affinity_cpus": 316,
+    "observed_cpu": {
+      "cpu family": "26",
+      "model": "17",
+      "stepping": "0",
+      "vendor_id": "AuthenticAMD"
+    },
+    "owner_label": "AMD EPYC Zen 5 dev host"
+  },
+  "helper_sha256": "0dfc4f40943252950e122c9e9fffb837448cba12140d0614acfa9d3621f2e31f",
+  "kernel_version": "7.1.3",
+  "parallelism": "No affinity change or RUST_TEST_THREADS override; libtest uses its default except explicitly serial-launch.",
+  "recipe": "python3 -B evaluation/admission/check_exec_identity.py --toolchain \"$TOOLCHAIN\" --cargo-home \"$CARGO_HOME\" --output \"$REPO/ignored/NEW_RUN\" --checks-only",
+  "revision": "788a8ef154630246f0e600b7738b053a5f7c2793",
+  "runner_sha256": "fa46e1b25720e73ee0e9321f091d48860cf9c23325428f991c449de1a9096ad5",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "schema": 1,
+  "scope": "Functional validation. Seconds are command wall durations, not throughput or profiler accuracy. Seven merge checks only; no repeated issue-specific campaign.",
+  "status": "PASS"
+}

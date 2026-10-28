@@ -437,3 +437,6 @@ fn run_profile(mode: &str, candidate: &Path, expected: &Path, collect: bool) {
         m.loop_wall_lower, m.loop_wall_upper, m.loop_cpu).unwrap();
     out.flush().unwrap(); // Timing terminal itself is outside both regions.
 }
+
+// Separate opt-in route; all historical mode bodies and protocols stay literal.
+pub(crate) mod batch;

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Release qualification of nineteen real source-batch owners; no timing claim."""
+"""Release qualification of nineteen owner cases plus an accessor-first case; no timing claim."""
 import argparse
 import csv
 import importlib.util
@@ -13,6 +13,19 @@ import tempfile
 import traceback
 
 MIB = 1048576
+PURE_PREFIX = 'frontend_native::always_on::tree::batch::tests::'
+PURE_TESTS = (
+    'source_batch_latch_requires_exact_count_and_cannot_reenter_busy',
+    'source_batch_first_failure_retains_exact_error_across_abandonment',
+    'source_batch_caught_unwind_leaves_owner_busy_until_abandoned',
+    'source_batch_input_snapshots_reject_every_changed_byte_extent_and_alignment',
+    'source_batch_cumulative_delta_preserves_sampled_and_closed_partitions',
+    'source_batch_observation_preserves_every_count_and_call_finish_threshold',
+    'source_batch_observation_refuses_closed_busy_and_invalid_counts',
+    'source_batch_observation_completion_requires_the_same_busy_count',
+    'source_batch_observation_retains_first_error_through_repeat_and_drop',
+    'source_batch_observation_caught_unwind_never_reopens_owner',
+)
 PREFIX = 'frontend_native::always_on::tests::concurrent_native::tree_native::batch_owner_native::'
 CASES = [
     ('finish_reuse_capacity', 16, 32, 6, 'AdmissionCapacityPermit', 0, False),
@@ -27,6 +40,8 @@ for kind in ('original', 'installed'):
         CASES.append((kind+'_'+suffix, n if kind == 'original' else 0,
             n if kind == 'installed' else 0, 0, reason, 0, kind == 'installed'))
 CASES = tuple(CASES)
+TOTALS_CASE = ('installed_totals_first_error', 0, 1, 0, 'ControllerReentry', 0, True)
+ALL_CASES = CASES + (TOTALS_CASE,)
 
 
 def expected(case):
@@ -36,13 +51,24 @@ def expected(case):
 
 
 def parse(case, stdout, stderr):
-    assert case in CASES and stderr == b'' and 0 < len(stdout) <= MIB
+    assert case in ALL_CASES and stderr == b'' and 0 < len(stdout) <= MIB
     text = stdout.decode('ascii')
     start = '\nrunning 1 test\ntest '+PREFIX+case[0]+' ... '+expected(case)+'\nok\n\n'
     end = r'test result: ok\. 1 passed; 0 failed; 0 ignored; 0 measured; [0-9]+ filtered out; finished in [0-9]+\.[0-9]+s\n\n'
     assert re.fullmatch(re.escape(start)+end, text)
     return dict(status='PASS', case=case[0], original_roots=case[1], installed_roots=case[2],
         successful_batch_finishes=case[3], expected_refusal=case[4], helper_joins=case[5], retained_poison=case[6])
+
+
+def parse_pure(stdout, stderr):
+    assert stderr == b'' and 0 < len(stdout) <= MIB
+    prefix = re.escape(PURE_PREFIX.encode('ascii'))
+    match = re.fullmatch(rb'\nrunning 10 tests\n((?:test '+prefix+rb'[a-z_]+ \.\.\. ok\n){10})'
+        rb'\ntest result: ok\. 10 passed; 0 failed; 0 ignored; 0 measured; 374 filtered out; finished in [0-9]+\.[0-9]+s\n\n', stdout)
+    assert match is not None
+    names = [line.split()[1][len(PURE_PREFIX):] for line in match[1].decode('ascii').splitlines()]
+    assert len(names) == len(set(names)) == 10 and set(names) == set(PURE_TESTS)
+    return dict(status='PASS', passed=10, failed=0, ignored=0, filtered=374, names=names)
 
 
 def load(name, path):
@@ -70,13 +96,13 @@ def main():
     a.raw.mkdir(parents=True)
     assert a.raw.resolve(strict=True) == a.raw
     result = dict(schema_version=1, revision=a.revision, status='FAILED', stage='setup',
-        scope='Nineteen fresh-process public-owner controls, plus the unchanged one-call owner prerequisite. No full-register-state, performance, Busy-unwind or abandoned-original seal-runtime claim.',
+        scope='Nineteen retained fresh-process public-owner controls plus one accessor-first refusal and the unchanged one-call owner prerequisite. Actual totals reads add no finish, Busy-unwind or full-state credit. No performance or abandoned-original seal-runtime claim.',
         command=['python3', '-B', 'tools/rapid-profiler/tree-work/verify_batch_owners.py',
             '--revision', a.revision, '--raw', '$RAW', '--toolchain', '$TOOLCHAIN',
             '--user-home', '$USER_HOME', '--cargo-home', '$CARGO_HOME'],
         limits=dict(native_cpu_seconds=10, native_wall_seconds=15, native_file_bytes=MIB,
             existing_controller_wait_seconds=2, build_jobs=4),
-        stages=[], cases=[dict(case=c[0], status='UNRUN') for c in CASES])
+        stages=[], cases=[dict(case=c[0], status='UNRUN') for c in ALL_CASES])
     def save_private(path, value):
         with path.open('x') as stream:
             json.dump(value, stream, indent=2, sort_keys=True, allow_nan=False)
@@ -230,21 +256,28 @@ def main():
         assert all(product['profile'][key] is True for key in ('test', 'debug_assertions', 'overflow_checks'))
         artifacts[binary] = digest(binary)
         result['artifacts'] = dict(test_binary=artifacts[binary], profile=product['profile'], cargo_fresh=product['fresh'], dso=dso)
+        pure = stage('batch-pure-controls', [str(binary), PURE_PREFIX, '--test-threads=1'], 10, 15, MIB)
+        result['batch_pure_controls'] = parse_pure((pure/'stdout.txt').read_bytes(), (pure/'stderr.txt').read_bytes())
         native_env = dict(RAPID_TREE_CANDIDATE=str(candidate), RAPID_TREE_EXPECTED=str(trusted))
         def run_native(name, test):
             return stage(name, [str(binary), test, '--exact', '--ignored', '--nocapture', '--test-threads=1'], 10, 15, MIB, native_env)
         old = run_native('old-owner-prerequisite', shared.TREE_OWNER_TEST)
         result['old_owner_prerequisite'] = shared.tree_owner_output((old/'stdout.txt').read_bytes(), (old/'stderr.txt').read_bytes())
-        for index, case in enumerate(CASES):
+        for index, case in enumerate(ALL_CASES):
             result['cases'][index]['status'] = 'FAILED'
             directory = run_native(case[0], PREFIX+case[0])
             result['cases'][index] = parse(case, (directory/'stdout.txt').read_bytes(), (directory/'stderr.txt').read_bytes())
             unchanged()
             print(case[0]+' PASS', flush=True)
-        assert len(result['cases']) == 19 and all(c['status'] == 'PASS' for c in result['cases'])
-        counts = {key: sum(c[key] for c in result['cases']) for key in ('original_roots', 'installed_roots', 'successful_batch_finishes', 'helper_joins')}
+        assert len(result['cases']) == 20 and all(c['status'] == 'PASS' for c in result['cases'])
+        legacy = result['cases'][:-1]
+        assert len(legacy) == 19 and [c['case'] for c in legacy] == [c[0] for c in CASES]
+        counts = {key: sum(c[key] for c in legacy) for key in ('original_roots', 'installed_roots', 'successful_batch_finishes', 'helper_joins')}
         assert counts == dict(original_roots=29, installed_roots=61, successful_batch_finishes=8, helper_joins=2)
-        result.update(status='PASS', stage='complete', totals=counts)
+        assert result['cases'][-1]['case'] == TOTALS_CASE[0]
+        all_counts = {key: sum(c[key] for c in result['cases']) for key in counts}
+        assert all_counts == dict(original_roots=29, installed_roots=62, successful_batch_finishes=8, helper_joins=2)
+        result.update(status='PASS', stage='complete', totals=all_counts, legacy_totals=counts)
     except BaseException as error:
         result['error_type'] = type(error).__name__
         (a.raw/'failure.txt').write_text(traceback.format_exc())

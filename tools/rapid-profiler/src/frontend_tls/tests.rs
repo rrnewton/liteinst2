@@ -393,6 +393,7 @@ fn tls_p2_two_reservations_keep_one_k_winner_and_one_dropped_completion() {
                 .unwrap();
                 assert_eq!(receive(&steps), Step::Start);
                 let (value, outcome) = registration.observe(INSTALL, A, 10 + number, || {
+                    assert_eq!(depth(&registration), 1);
                     send.send(Event::Entered).unwrap();
                     assert_eq!(receive(&steps), Step::Finish);
                     (100 + number, Observation::Value(20 + number))
@@ -414,6 +415,11 @@ fn tls_p2_two_reservations_keep_one_k_winner_and_one_dropped_completion() {
         assert_ne!(actual, thread::current().id());
         actual_threads.push(actual);
         ids.push(id);
+    }
+    // Registration holds the session registry lock; observe deliberately refuses
+    // busy admission and still runs its body. Finish both setup handshakes before
+    // either observation so Entered cannot race the other worker's registration.
+    for worker in &workers {
         worker.go.send(Step::Start).unwrap();
         assert!(matches!(receive(&worker.events), Event::Entered));
     }

@@ -74,6 +74,30 @@ impl Latch {
             _ => Err(TreeSourceBatchError::Unfinished),
         }
     }
+    // Observation borrows the same owner but never admits/finishes a call.
+    // Busy precedes every scope/TLS/gate check so an unwind cannot expose Open.
+    fn begin_observation(&mut self) -> Result<usize, TreeSourceBatchError> {
+        match self {
+            Self::Open(n) if *n <= CALLS => {
+                let n = *n;
+                *self = Self::Busy(n);
+                Ok(n)
+            }
+            Self::Open(_) => Err(TreeSourceBatchError::CallCount),
+            Self::Failed(e) => Err(e.clone()),
+            _ => Err(TreeSourceBatchError::Unfinished),
+        }
+    }
+    fn complete_observation(&mut self, expected: usize) -> Result<(), TreeSourceBatchError> {
+        match self {
+            Self::Busy(n) if *n == expected && expected <= CALLS => {
+                *self = Self::Open(expected);
+                Ok(())
+            }
+            Self::Failed(e) => Err(e.clone()),
+            _ => Err(TreeSourceBatchError::Unfinished),
+        }
+    }
     fn completed_call(&mut self) {
         // Only the successful path after start(false), with no user callback.
         if let Self::Busy(n) = self {
@@ -384,6 +408,33 @@ impl TreeThread {
     }
 }
 impl TreeSourceBatch<'_> {
+    /// Copy actual lifetime counters between successful calls of this batch.
+    ///
+    /// Accepts only an open guard with zero through eight completed calls. The
+    /// actual thread, healthy empty TLS, last successful return and idle gate
+    /// are authenticated, then the same cumulative batch delta is checked.
+    /// Repeated observations preserve the completed-call count and consume no
+    /// invocation, ID, sequence, row or owner. Callers may compare the returned
+    /// sampled/unsampled partition with their own exact K policy.
+    ///
+    /// This does not revalidate source/input provenance, finish the batch, grant
+    /// drain/retirement authority or return an owner/reference. Explicit finish
+    /// remains required after exactly eight calls. Errors retain the first cause;
+    /// an unwind during observation leaves the owner busy and cannot reopen it.
+    pub fn totals(&mut self) -> Result<TreeTotals, TreeSourceBatchError> {
+        let result = (|| {
+            let n = self.thread.batch.begin_observation()?;
+            let _scope = ControllerScope::enter()?;
+            let actual = self.thread.checkpoint_totals()?;
+            totals(self.before, actual, n)?;
+            self.thread.batch.complete_observation(n)?;
+            Ok(actual)
+        })();
+        match result {
+            Ok(actual) => Ok(actual),
+            Err(e) => Err(self.thread.batch.fail(e)),
+        }
+    }
     /// Invoke exactly the next input/ID; per-call real receipt completion remains.
     /// # Safety
     /// The complete begin contract has held continuously, including all gaps.
@@ -613,5 +664,179 @@ mod tests {
         overflow.roots = u64::MAX;
         assert!(totals(overflow, before, 1).is_err());
         assert!(totals(before, before, CALLS + 1).is_err());
+    }
+
+    #[test]
+    fn source_batch_observation_preserves_every_count_and_call_finish_threshold() {
+        for n in 0..=CALLS {
+            let mut latch = Latch::Open(n);
+            for _ in 0..3 {
+                assert_eq!(latch.begin_observation().unwrap(), n);
+                assert!(matches!(latch, Latch::Busy(actual) if actual == n));
+                assert!(latch.closed().is_err());
+                assert!(matches!(
+                    latch.start(false),
+                    Err(TreeSourceBatchError::Unfinished)
+                ));
+                assert!(matches!(
+                    latch.start(true),
+                    Err(TreeSourceBatchError::Unfinished)
+                ));
+                assert!(matches!(
+                    latch.begin_observation(),
+                    Err(TreeSourceBatchError::Unfinished)
+                ));
+                latch.complete_observation(n).unwrap();
+                assert!(matches!(latch, Latch::Open(actual) if actual == n));
+                assert!(latch.closed().is_err()); // an observation is never finish
+            }
+            if n < CALLS {
+                assert!(matches!(
+                    latch.start(true),
+                    Err(TreeSourceBatchError::CallCount)
+                ));
+                assert_eq!(latch.start(false).unwrap(), n);
+                latch.completed_call();
+                assert!(matches!(latch, Latch::Open(actual) if actual == n + 1));
+            } else {
+                assert!(matches!(
+                    latch.start(false),
+                    Err(TreeSourceBatchError::CallCount)
+                ));
+                assert_eq!(latch.start(true).unwrap(), CALLS);
+                assert!(matches!(latch, Latch::Busy(CALLS)));
+            }
+        }
+    }
+
+    #[test]
+    fn source_batch_observation_refuses_closed_busy_and_invalid_counts() {
+        let mut closed = Latch::Closed;
+        assert!(matches!(
+            closed.begin_observation(),
+            Err(TreeSourceBatchError::Unfinished)
+        ));
+        assert!(matches!(closed, Latch::Closed));
+        for n in [0, 1, CALLS, CALLS + 1, usize::MAX] {
+            let mut busy = Latch::Busy(n);
+            assert!(matches!(
+                busy.begin_observation(),
+                Err(TreeSourceBatchError::Unfinished)
+            ));
+            assert!(matches!(busy, Latch::Busy(actual) if actual == n));
+        }
+        for n in [CALLS + 1, usize::MAX] {
+            let mut invalid = Latch::Open(n);
+            let error = invalid.begin_observation().unwrap_err();
+            assert!(matches!(error, TreeSourceBatchError::CallCount));
+            assert!(matches!(invalid, Latch::Open(actual) if actual == n));
+            let _ = invalid.fail(error); // same error path as the public accessor
+            assert!(matches!(
+                invalid.begin_observation(),
+                Err(TreeSourceBatchError::CallCount)
+            ));
+            assert!(matches!(
+                invalid,
+                Latch::Failed(TreeSourceBatchError::CallCount)
+            ));
+        }
+    }
+
+    #[test]
+    fn source_batch_observation_completion_requires_the_same_busy_count() {
+        for n in 0..=CALLS {
+            let mut latch = Latch::Open(n);
+            let expected = latch.begin_observation().unwrap();
+            for wrong in [n + 1, CALLS + 1, usize::MAX] {
+                assert!(matches!(
+                    latch.complete_observation(wrong),
+                    Err(TreeSourceBatchError::Unfinished)
+                ));
+                assert!(matches!(latch, Latch::Busy(actual) if actual == n));
+            }
+            latch.complete_observation(expected).unwrap();
+            assert!(matches!(
+                latch.complete_observation(expected),
+                Err(TreeSourceBatchError::Unfinished)
+            ));
+            assert!(matches!(latch, Latch::Open(actual) if actual == n));
+        }
+        let mut closed = Latch::Closed;
+        assert!(matches!(
+            closed.complete_observation(0),
+            Err(TreeSourceBatchError::Unfinished)
+        ));
+        assert!(matches!(closed, Latch::Closed));
+        let mut invalid = Latch::Busy(CALLS + 1);
+        assert!(matches!(
+            invalid.complete_observation(CALLS + 1),
+            Err(TreeSourceBatchError::Unfinished)
+        ));
+        assert!(matches!(invalid, Latch::Busy(n) if n == CALLS + 1));
+    }
+
+    #[test]
+    fn source_batch_observation_retains_first_error_through_repeat_and_drop() {
+        let first = Rc::new(TreeError::Gate(GateError::Completion));
+        let mut latch = Latch::Open(3);
+        assert_eq!(latch.begin_observation().unwrap(), 3);
+        let TreeSourceBatchError::Call(actual) =
+            latch.fail(TreeSourceBatchError::Call(Rc::clone(&first)))
+        else {
+            panic!("first error not retained");
+        };
+        assert!(Rc::ptr_eq(&actual, &first));
+        for _ in 0..3 {
+            let Err(TreeSourceBatchError::Call(actual)) = latch.begin_observation() else {
+                panic!("failed owner reopened");
+            };
+            assert!(Rc::ptr_eq(&actual, &first));
+            let Err(TreeSourceBatchError::Call(actual)) = latch.complete_observation(3) else {
+                panic!("observation completed after failure");
+            };
+            assert!(Rc::ptr_eq(&actual, &first));
+            let TreeSourceBatchError::Call(actual) = latch.fail(TreeSourceBatchError::Unfinished)
+            else {
+                panic!("replacement erased first cause");
+            };
+            assert!(Rc::ptr_eq(&actual, &first));
+            latch.abandon();
+            let Err(TreeSourceBatchError::Call(actual)) = latch.closed() else {
+                panic!("drop erased first cause");
+            };
+            assert!(Rc::ptr_eq(&actual, &first));
+        }
+    }
+
+    #[test]
+    fn source_batch_observation_caught_unwind_never_reopens_owner() {
+        for n in 0..=CALLS {
+            let mut latch = Latch::Open(n);
+            assert!(
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    assert_eq!(latch.begin_observation().unwrap(), n);
+                    panic!("scripted observation check unwind");
+                }))
+                .is_err()
+            );
+            assert!(matches!(latch, Latch::Busy(actual) if actual == n));
+            assert!(latch.closed().is_err());
+            assert!(latch.start(false).is_err());
+            assert!(latch.start(true).is_err());
+            assert!(matches!(
+                latch.begin_observation(),
+                Err(TreeSourceBatchError::Unfinished)
+            ));
+            latch.abandon();
+            assert!(matches!(
+                latch.begin_observation(),
+                Err(TreeSourceBatchError::Abandoned)
+            ));
+            assert!(matches!(
+                latch.complete_observation(n),
+                Err(TreeSourceBatchError::Abandoned)
+            ));
+            assert!(latch.closed().is_err());
+        }
     }
 }
