@@ -23,23 +23,52 @@ EXPECTED = dict(version=1, record_capacity=8192, record_bytes=64, appends=8192, 
                 whole_records_and_counts_unchanged=1, linear_and_literal_equal=1)
 # Exact reviewed production lookup and unmodified whole-TU oracle/recipe.
 INPUTS = {
-    'lifecycle_loader.c':'cc25a232a3a8c5fda27eae439b63c1bb4b7e58c7e17f0bfe6261ee18929139ec',
+    'lifecycle_loader.c':'5958d99d3a5aa1f38eb825ccac5d9e15a8b9bd4afa6e30be565ac6a6fc8da257',
     'tests/current_lookup/oracle.c':'684da2d92582b65acc0d1186e003372e8e9e70e9e7262d7a18a0fbd6b3d5337e',
     'tests/current_lookup/build.sh':'ee4077e450cc4feac2c059e17419f59e8a8092652f4f4a41e2a6f764ff371039',
     'tests/current_lookup/EXPECTED.json':'5033984bdf067cefb5ee1f8980ec3c6f39bf06545526bcbc5b0311096fde1f23',
 }
 
+# The only alternate profile is this fixed, reviewed RX alias-query oracle.
+MAPS_EXPECTED = {'version': 1, 'checks': 120, 'refusals': 15, 'memo_hits': 38, 'direct_calls': 80, 'supplied_acquisitions': 22, 'real_cases': 9, 'real_acquisitions': 9, 'old_and_literal_equal': 1, 'inputs_unchanged': 1, 'same_page_scans': 2, 'same_page_hits': 6}
+MAPS_INPUTS = {
+    'lifecycle_loader.c':'5958d99d3a5aa1f38eb825ccac5d9e15a8b9bd4afa6e30be565ac6a6fc8da257',
+    'tests/maps_query_reuse/oracle.c':'ec3e43b442a0d688a1c5eafae3111fdce62e1167e6d4f0528a121d375aa5ed1b',
+    'tests/maps_query_reuse/build.sh':'2474a064f09beccc29160f61c4999106c2e3857a510d0f0891036bd6ebdca3e9',
+    'tests/maps_query_reuse/EXPECTED.json':'f99ca93ae3bf140916800a3319509d66c7e1ee0ac914aea41d20327476f408fb',
+    'tests/maps_query_reuse/check.py':'e2f7a45eff11cb0827fe66eb302aa53eac303d440113bf64eba65ad94d25fea6',
+    'tests/maps_query_reuse/README.md':'b44cac57f9efd36247b1d513f611e40191cbf7c5da215e0c39d66b173d0bb3db',
+}
+RECIPE_MACROS = ('LI2_TF_HANDOFF','LI2_REGISTER_RUN','LI2_MAPS_PHASE_REUSE','LI2_RSEQ_INACTIVE',
+                 'LI2_NATIVE_PAGES','LI2_FAST_MEMSET','LI2_FAST_EQUAL','LI2_ONESHOT_PUBLICATION')
+
+def fixed_profile(maps_query_reuse=False):
+    if maps_query_reuse:
+        return dict(name='page-maps-query-reuse', fixture=SELECTED/'tests/maps_query_reuse',
+            executable='maps-query-reuse', inputs=MAPS_INPUTS, expected=MAPS_EXPECTED,
+            symbol='li2_alias_query_oracle', symbol_kind='t', body_limit=4096,
+            macros=RECIPE_MACROS+('LI2_ALIAS_QUERY_TEST',), macro_label='exact nine recipe macros',
+            scope='Actual RX alias memo versus the unchanged direct predicate and literal results; supplied tables and real sealed-memfd maps operations remain distinct. Complete input state is conserved. No timing or application-speed qualification.',
+            meaning={'memo_hits':'successful exact-query memo results','direct_calls':'original predicate calls; initial overflow refuses before either counter'},
+            flags=['--maps-query-reuse'])
+    return dict(name='page-current-lookup', fixture=FIXTURE, executable='current-lookup',
+        inputs=INPUTS, expected=EXPECTED, symbol='li2_current_oracle', symbol_kind='T', body_limit=512,
+        macros=RECIPE_MACROS, macro_label='exact eight recipe macros',
+        scope='Actual current() versus the unchanged reverse scan and literal slots, with full records/counts conserved. Hits/misses count positive/null results, not memo hits. No timing or application-speed qualification.',
+        meaning={'hits':'positive results','misses':'null results'}, flags=[])
+
 def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
-def exact_result(raw):
+def exact_result(raw, expected=EXPECTED):
     result = decode(raw)
-    need(type(result) is dict and set(result) == set(EXPECTED) and
-         all(type(result[k]) is int and result[k] == v for k,v in EXPECTED.items()), 'complete literal oracle result')
+    need(type(result) is dict and set(result) == set(expected) and
+         all(type(result[k]) is int and result[k] == v for k,v in expected.items()), 'complete literal oracle result')
     return result
 
 def project(r, receipt_fact):
     """Numeric success/failure prefixes; actual means a retained Popen PID."""
+    profile = fixed_profile(r['profile'] == 'page-maps-query-reuse-v1')
     native = [c for c in r['commands'] if c['profile'] == 'native']
     actual = [c for c in native if type(c.get('pid')) is int and c['pid'] > 0]
     closed = [c for c in actual if c.get('reaped') is True and not c.get('timed_out') and
@@ -48,11 +77,11 @@ def project(r, receipt_fact):
     return dict(schema=1,profile=r['profile'],status=r['status'],revision=r['expected_revision'],
         started_utc=r['started_utc'],hardware=r.get('hardware'),source_unchanged=r['source_unchanged'],
         scope=r['scope'],rust_archive_used=False,bounds=BOUNDS,build_status=r['build_status'],
-        result=r['result'],lookup_result_meaning={'hits':'positive results','misses':'null results'},
+        result=r['result'],lookup_result_meaning=profile['meaning'],
         oracle_processes=dict(attempted=len(native),actual=len(actual),closed=len(closed),
                               accepted=int(r['status']=='passed' and len(closed)==1 and
                                            type(closed[0].get('exit')) is int and closed[0]['exit']==0 and
-                                           r['result']==EXPECTED)),
+                                           r['result']==profile['expected'])),
         commands=len(r['commands']),command_exits=[c.get('exit') for c in r['commands']],
         body={k:r['body'][k] for k in ('bytes','sha256')} if 'body' in r else None,
         private_receipt=receipt_fact,inputs=len(r['inputs']),inputs_sha256=digest(r['inputs']),
@@ -60,21 +89,23 @@ def project(r, receipt_fact):
         commands_sha256=digest(r['commands']),tool_versions=r['versions'],
         failure_type=r['error'].split(':',1)[0] if r['error'] else ('FinalObservationError' if r['final_errors'] else None),
         final_error_count=len(r['final_errors']),
-        reproduce=['python3','evaluation/inprocess/page_current_lookup.py','--expect-revision',r['expected_revision']])
+        reproduce=['python3','evaluation/inprocess/page_current_lookup.py','--expect-revision',r['expected_revision']]+profile['flags'])
 
 
 def main():
-    ap = argparse.ArgumentParser(description=__doc__);ap.add_argument('--expect-revision', required=True);args = ap.parse_args()
+    ap = argparse.ArgumentParser(description=__doc__);ap.add_argument('--expect-revision', required=True)
+    ap.add_argument('--maps-query-reuse', action='store_true', help='run the fixed RX alias-query oracle')
+    args = ap.parse_args();profile = fixed_profile(args.maps_query_reuse);fixture = profile['fixture']
     need(not sys.flags.optimize and re.fullmatch('[0-9a-f]{40}', args.expect_revision) and
          len(os.sched_getaffinity(0)) == 1, 'exact revision, enabled checks and one reserved CPU')
     os.chdir(ROOT);cpu = next(iter(os.sched_getaffinity(0)));stamp = datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S.%fZ')
-    stem = stamp+'-page-current-lookup-'+args.expect_revision[:12]
+    stem = stamp+'-'+profile['name']+'-'+args.expect_revision[:12]
     private = ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True, exist_ok=False)
     public = ROOT/'evaluation/inprocess/results'/(stem+'.json');build = private/'build';build.mkdir()
-    executable = build/'current-lookup'
-    r = dict(profile='page-current-lookup-v1', status='failed', expected_revision=args.expect_revision,
+    executable = build/profile['executable']
+    r = dict(profile=profile['name']+'-v1', status='failed', expected_revision=args.expect_revision,
         started_utc=stamp, cpu=cpu, source=None, source_unchanged=False, commands=[], result=None, error=None, final_errors=[],
-        scope='Actual current() versus the unchanged reverse scan and literal slots, with full records/counts conserved. Hits/misses count positive/null results, not memo hits. No timing or application-speed qualification.',
+        scope=profile['scope'],
         rust_archive_used=False, build_status='not_started')
     pins, aliases, artifacts, tools, versions, presence, link_inputs = {}, {}, {}, {}, {}, {}, {}
     env = dict(ENV);pending = []
@@ -116,9 +147,9 @@ def main():
         for module in tuple(sys.modules.values()):
             path = getattr(module,'__file__',None)
             if path and Path(path).resolve().is_relative_to(ROOT):pin(path)
-        for name,want in INPUTS.items():
+        for name,want in profile['inputs'].items():
             need(fact(pin(SELECTED/name))['sha256'] == want, 'exact reviewed lookup/oracle input '+name)
-        exact_result((FIXTURE/'EXPECTED.json').read_bytes())
+        exact_result((fixture/'EXPECTED.json').read_bytes(), profile['expected'])
         for name in ('cc','nm','objdump'):tools[name] = pin(shutil.which(name,path=ENV['PATH']))
         tools['python'] = pin(sys.executable)
         for name in ('cc1','collect2','as','ld'):
@@ -141,35 +172,34 @@ def main():
             presence[path] = Path(path).exists()
             if presence[path]:pin(path)
         need(not presence['/etc/ld.so.preload'],'no global preload')
-        lines = [x.strip() for x in (FIXTURE/'build.sh').read_text().replace('\\\n',' ').splitlines() if x.strip().startswith('"$cc_bin" ')]
+        lines = [x.strip() for x in (fixture/'build.sh').read_text().replace('\\\n',' ').splitlines() if x.strip().startswith('"$cc_bin" ')]
         need(len(lines) == 1,'one exact whole-TU C recipe');argv = []
         values = {'$cc_bin':str(tools['cc']),'$owner_context':str(SELECTED),'$selected_context':str(SELECTED),
-                  '$parent_context':str(SELECTED.parent),'$fixture_dir':str(FIXTURE),'$output_dir':str(build)}
+                  '$parent_context':str(SELECTED.parent),'$fixture_dir':str(fixture),'$output_dir':str(build)}
         for word in shlex.split(lines[0]):
             for old,new in values.items():word = word.replace(old,new)
             need('$' not in word and '`' not in word,'closed compiler recipe');argv.append(word)
-        need(argv[0] == str(tools['cc']) and argv[-3:] == [str(FIXTURE/'oracle.c'),'-o',str(executable)] and
+        need(argv[0] == str(tools['cc']) and argv[-3:] == [str(fixture/'oracle.c'),'-o',str(executable)] and
              '-O2' in argv and '-mgeneral-regs-only' in argv and '-Wall' in argv and '-Wextra' in argv and '-Werror' in argv,
              'actual unchanged release recipe and oracle output')
         need([x for x in argv if x.startswith('-DLI2_')] == ['-D'+x+'=1' for x in
-             ('LI2_TF_HANDOFF','LI2_REGISTER_RUN','LI2_MAPS_PHASE_REUSE','LI2_RSEQ_INACTIVE',
-              'LI2_NATIVE_PAGES','LI2_FAST_MEMSET','LI2_FAST_EQUAL','LI2_ONESHOT_PUBLICATION')], 'exact eight recipe macros')
-        r['recipe'] = dict(script=fact(FIXTURE/'build.sh'), arguments=[str(SELECTED),str(SELECTED),str(build)],
+             profile['macros']], profile['macro_label'])
+        r['recipe'] = dict(script=fact(fixture/'build.sh'), arguments=[str(SELECTED),str(SELECTED),str(build)],
                            expanded_argv=argv)
         builder = SimpleNamespace(tools=tools, environment=env)
-        headers('headers',argv,builder,pin,run,r,required=[FIXTURE/'oracle.c',SELECTED/'lifecycle_loader.c',
+        headers('headers',argv,builder,pin,run,r,required=[fixture/'oracle.c',SELECTED/'lifecycle_loader.c',
                 SELECTED/'maps_phase.inc',SELECTED/'native_lifecycle.inc',SELECTED/'oneshot_lifecycle.inc'])
         r['build_status'] = 'started'
         _,out,err = compile_retained('fixture-link',argv,run,binary,builder,pending,r['final_errors'])
         need(out == err == b'' and artifacts[str(executable)]['mode'] & 0o111,'quiet actual executable link')
         _,symbols,err = run('symbols',[tools['nm'],'-S','--defined-only',executable]);need(not err,'symbols stderr')
-        address,size = symbol(symbols,'li2_current_oracle','T');data,head,ph = elf(executable)
+        address,size = symbol(symbols,profile['symbol'],profile['symbol_kind']);data,head,ph = elf(executable)
         need(head[1] in (2,3) and all(p[0] != 1 or p[1]&3 != 3 for p in ph) and
              any(p[0] == 0x6474e551 and not p[1]&1 for p in ph), 'hosted ELF, no WX or executable stack')
         owners = [p for p in ph if p[0] == 1 and p[1]&1 and p[3] <= address and address+size <= p[3]+p[5]]
-        need(len(owners) == 1 and 0 < size <= 512,'one complete actual lookup wrapper');p = owners[0]
+        need(len(owners) == 1 and 0 < size <= profile['body_limit'],'one complete actual lookup wrapper');p = owners[0]
         body = data[p[2]+address-p[3]:p[2]+address-p[3]+size]
-        _,out,err = run('body',[tools['objdump'],'-d','-w','--disassemble=li2_current_oracle',executable]);need(not err,'body stderr')
+        _,out,err = run('body',[tools['objdump'],'-d','-w','--disassemble='+profile['symbol'],executable]);need(not err,'body stderr')
         at = address;observed = bytearray()
         for line in out.decode().splitlines():
             m = re.fullmatch(r'\s*([0-9a-f]+):\s*((?:[0-9a-f]{2}\s)+)\s*\S.*',line)
@@ -182,7 +212,7 @@ def main():
         loader = pin(os.fsdecode(value[:-1]));_,out,err = run('libraries',[loader,'--list',executable]);need(not err,'loader inspection stderr')
         r['libraries'] = closed_libraries(ROOT,executable,loader,out,link_inputs,pin)
         r['build_status'] = 'passed'
-        _,out,err = run('native',[executable],'native');need(not err,'oracle stderr');r['result'] = exact_result(out)
+        _,out,err = run('native',[executable],'native');need(not err,'oracle stderr');r['result'] = exact_result(out, profile['expected'])
         need(len(r['commands']) == 31 and sum(c['profile'] == 'native' for c in r['commands']) == 1,'complete metadata/build and one oracle')
         r['status'] = 'passed'
     except BaseException as exc:r['error'] = type(exc).__name__+': '+str(exc)
