@@ -10,6 +10,7 @@ mod optional;
 #[path = "../../../tests/support/native_interval_oracle.rs"]
 mod oracle;
 mod ordinary;
+mod reference;
 
 use liteinst2::contracts::*;
 use liteinst2::controls::{ControlledAction, ProbeControl};
@@ -857,6 +858,21 @@ fn permission_refusals(leaf: &mut LoadedLeaf, output: &Path) {
 
 fn main() {
     let args: Vec<_> = std::env::args_os().collect();
+    if args.get(1).and_then(|s| s.to_str()) == Some("exact-reference-state") {
+        assert_eq!(
+            args.len(),
+            5,
+            "exact-reference-state CANDIDATE_ELF TRUSTED_EXPECTED_ELF NEW_OUTPUT_DIRECTORY"
+        );
+        let subject = PathBuf::from(&args[2]).canonicalize().unwrap();
+        let expected = PathBuf::from(&args[3]).canonicalize().unwrap();
+        let output = PathBuf::from(&args[4]);
+        assert!(output.is_absolute() && !output.exists());
+        std::fs::create_dir(&output).unwrap();
+        assert_eq!(output.canonicalize().unwrap(), output);
+        reference::run(&subject, &expected, &output);
+        return;
+    }
     if matches!(
         args.get(1).and_then(|s| s.to_str()),
         Some("optional-fast-state" | "optional-slow-state")

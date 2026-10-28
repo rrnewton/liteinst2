@@ -211,6 +211,7 @@ def main():
     ap.add_argument('--stream-history', action='store_true', help='also require the finite native absolute-history/old-owner control; requires --streamed-epochs')
     ap.add_argument('--optional-frontend', action='store_true', help='also require real optional Fast/Slow state pairs and finite reuse; requires --stream-history')
     ap.add_argument('--optional-backoff-control', action='store_true', help='also require the deterministic real optional driver control; requires --optional-frontend')
+    ap.add_argument('--reference-timing', action='store_true', help='also require reference-reader state pairs and one paired raw timing population; requires --optional-backoff-control')
     a = ap.parse_args(); repo = Path(__file__).resolve().parents[2]; raw = a.raw
     assert Path(__file__).resolve() == repo/'tools/rapid-profiler/verify_ordinary_interval.py'
     assert re.fullmatch('[0-9a-f]{40}', a.revision)
@@ -224,6 +225,7 @@ def main():
     assert not a.stream_history or a.streamed_epochs
     assert not a.optional_frontend or a.stream_history
     assert not a.optional_backoff_control or a.optional_frontend
+    assert not a.reference_timing or a.optional_backoff_control
     raw.mkdir(mode=0o700); result = dict(schema=1, status='FAILED', revision=a.revision, stage='preflight', exact_work_requested=a.exact_work, concurrent_epochs_requested=a.concurrent_epochs,
         native_setup='Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.',
         scope='uncalibrated functional raw-TSC observations; no timing accuracy or throughput claim', native_state_qualification='PENDING: gate entry through post-POP; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim')
@@ -233,6 +235,10 @@ def main():
     result['stream_history_requested'] = a.stream_history
     result['optional_frontend_requested'] = a.optional_frontend
     result['optional_backoff_control_requested'] = a.optional_backoff_control
+    result['reference_timing_requested'] = a.reference_timing
+    if a.reference_timing:
+        result['reference_timing'] = dict(status='UNRUN', native_state='UNRUN', untraced='UNRUN',
+            scope='separate real-CALL enclosing TSC endpoints and inner callback endpoints, with exact invocation/work joins; no frequency, calibration, accuracy or performance claim')
     if a.optional_backoff_control:
         result['optional_backoff_control'] = dict(status='UNRUN',
             scope='one deterministic 13-call real driver-operation/queue control; not a timed scheduler trial, new full-state cohort or performance result',
@@ -346,6 +352,20 @@ def main():
                 'tools/rapid-profiler/optional-backoff-work/check_output.py',
                 'tools/rapid-profiler/optional-backoff-work/test_recipe.py',
                 'tools/rapid-profiler/optional-backoff-work/README.md'])
+        if a.reference_timing:
+            names.extend(['tools/rapid-profiler/src/frontend_native/always_on/gate/reference.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/gate/reference/hardware.rs',
+                'tools/rapid-profiler/src/frontend_native/always_on/gate/reference/tests.rs',
+                'tools/rapid-profiler/native-interval/reference.rs',
+                'tools/rapid-profiler/native-interval/calibrations.rs',
+                'tests/support/native_reference.rs',
+                'tests/support/native_reference/tests.rs',
+                'tools/rapid-profiler/ordinary-interval/exact/reference.rs',
+                'tools/rapid-profiler/ordinary-interval/exact/reference/join.rs',
+                'tools/rapid-profiler/ordinary-interval/exact/reference/join/tests.rs',
+                'tools/rapid-profiler/reference-work/check_output.py',
+                'tools/rapid-profiler/reference-work/test_recipe.py',
+                'tools/rapid-profiler/reference-work/README.md'])
         def sources():
             assert git('rev-parse', '--show-toplevel').strip() == str(repo) and git('rev-parse', 'HEAD').strip() == a.revision
             assert git('status', '--porcelain', '--untracked-files=no') == ''
@@ -637,6 +657,60 @@ def main():
             control.update(status='PASS', protocol=parsed, fresh_processes=1)
             with (raw/'optional-backoff-control.csv').open('x', newline='') as stream:
                 writer = csv.DictWriter(stream, fieldnames=list(parsed), lineterminator='\n'); writer.writeheader(); writer.writerow(parsed)
+        if a.reference_timing:
+            reference = result['reference_timing']; reference['status'] = 'FAILED'
+            exact_stable(); assert digest(test_binary) == test_hash
+            spec = importlib.util.spec_from_file_location('reference_check', repo/'tools/rapid-profiler/reference-work/check_output.py')
+            checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(checker)
+            calibration_args = ['test', '--locked', '--offline', '--release', '--jobs', '4', '-p', 'rapid-profiler',
+                '--test', 'frontend-native-calibrations', '--no-run', '--message-format=json-render-diagnostics']
+            result['commands'].append(['$CARGO', *calibration_args])
+            built = stage('reference-calibration-build', [str(tools['cargo']), *calibration_args], 120, 180, 128*MIB)
+            messages = [json.loads(line) for line in (built/'stdout.txt').read_text().splitlines()]
+            assert messages[-1] == dict(reason='build-finished', success=True)
+            products = [m for m in messages if m.get('reason') == 'compiler-artifact' and m['target']['name'] == 'frontend-native-calibrations']
+            assert len(products) == 1; product = products[0]
+            calibration_binary = Path(product['executable']); assert calibration_binary.resolve(strict=True) == calibration_binary
+            assert calibration_binary.parent == repo/'target/release/deps' and re.fullmatch('frontend_native_calibrations-[0-9a-f]+', calibration_binary.name)
+            assert product['manifest_path'] == str(repo/'tools/rapid-profiler/Cargo.toml')
+            assert product['target']['src_path'] == str(repo/'tools/rapid-profiler/native-interval/calibrations.rs')
+            assert product['target']['kind'] == ['test'] and product['target']['crate_types'] == ['bin']
+            assert product['profile'] == dict(opt_level='3', debuginfo=0, test=True, debug_assertions=True, overflow_checks=True)
+            assert type(product['profile']['debuginfo']) is int and type(product['fresh']) is bool
+            assert all(product['profile'][key] is True for key in ('test', 'debug_assertions', 'overflow_checks'))
+            calibration_hash = digest(calibration_binary)
+            reference['calibration_artifact'] = dict(binary=calibration_hash, profile=product['profile'], cargo_fresh=product['fresh'])
+            result['commands'].append(['$REFERENCE_CALIBRATIONS'])
+            observed = stage('reference-calibrations', [str(calibration_binary)], 20, 30, MIB)
+            checker.calibrations((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            assert digest(calibration_binary) == calibration_hash
+            reference['calibrations'] = dict(status='PASS', passed=43, failed=0, ignored=0,
+                scope='actual state-validator mutation controls, including all inherited controls; not clock calibration')
+            exact_stable(); assert digest(test_binary) == test_hash
+            directory = raw/'reference-oracle-output'; reference['native_state'] = dict(status='FAILED')
+            result['commands'].append(['$REPO/target/release/frontend-native-oracle', 'exact-reference-state', '$RAW/exact-candidate.so', '$RAW/exact-trusted.so', '$RAW/reference-oracle-output'])
+            observed = stage('reference-oracle', [str(binaries['frontend-native-oracle']), 'exact-reference-state', str(exact_candidate), str(exact_trusted), str(directory)], 90, 90, MIB)
+            table = (directory/'reference-pairs.csv').read_bytes()
+            pairs = checker.pairs(table, (observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            exact_stable(); assert digest(test_binary) == test_hash and digest(calibration_binary) == calibration_hash
+            (raw/'reference-state-pairs.csv').write_bytes(table)
+            reference['native_state'] = dict(status='PASS', pairs=4, children=8, comparisons=872,
+                reader_checks=16, timestamp_joins=16, returned_records=8, subject_returns=8, real_outer_returns=8,
+                original_instructions=800, conditional_branches=130, taken_branches=126, input_reads=130, return_reads=4,
+                rows=pairs, affinity_cpus=1,
+                scope='unchanged full-state comparator over restored application/wrapper points and both same-child readers, expanded application stack, actual RDTSCP outputs joined to stores and postflight records; no timing-accuracy result')
+            # This mode executes only after every required native reference pair.
+            reference['untraced'] = dict(status='FAILED')
+            result['commands'].append(['$REPO/target/release/ordinary-interval', 'exact-reference', '$RAW/exact-candidate.so', '$RAW/exact-trusted.so'])
+            observed = stage('reference-native', [str(binary), 'exact-reference', str(exact_candidate), str(exact_trusted)], 20, 30, MIB)
+            rows, table = checker.functional((observed/'stdout.txt').read_bytes(), (observed/'stderr.txt').read_bytes())
+            exact_stable(); assert digest(test_binary) == test_hash and digest(calibration_binary) == calibration_hash
+            (raw/'reference-rows.csv').write_bytes(table)
+            reference['untraced'] = dict(status='PASS', originals=24, installed=24, raw_rows=24, sampled=24,
+                report_records=24, original_instructions=4800, installed_instructions=4800, same_thread=True,
+                detached=True, input_unchanged=True, affinity_cpus=1, csv='reference-rows.csv', csv_digest=digest(raw/'reference-rows.csv'),
+                scope='48 serial real CALLs with distinct legs, exact IDs/work/Report joins and uncalibrated enclosing/inner TSC endpoints; no accuracy, frequency or performance claim')
+            reference['status'] = 'PASS'
         after = sources(); save(raw/'sources-after.json', after); assert after == before and {n: digest(p) for n, p in tools.items()} == tool_hashes
         result.update(status='PASS', stage='complete')
     except BaseException:

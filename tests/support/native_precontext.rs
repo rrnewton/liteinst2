@@ -362,6 +362,7 @@ fn prepare(f: &Fixture, candidate: bool, selector: &PreContextSelector) -> (Read
     assert_eq!(bundle.plan().final_bytes(), composition.final_bytes());
     assert_eq!(bundle.images().len(), 3);
     let mut ready = Ready {
+        profile: super::Profile::Legacy,
         entry,
         gate: gate(),
         continuation: gate() + 25,
@@ -848,6 +849,7 @@ fn ready(child: &Tracee, c: &Channels, initial: bool) -> (Ready, [u64; 12], u64)
     (r, details, helper)
 }
 fn details(r: &Ready, d: &[u64; 12]) {
+    assert_eq!(r.profile, super::Profile::Legacy);
     let mut all = BTreeSet::new();
     for (i, role) in [r.entry, r.entry + 20, r.entry + 27]
         .into_iter()
