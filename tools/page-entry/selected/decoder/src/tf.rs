@@ -152,6 +152,10 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // Exact observed unmasked EVEX.512 load, ZMM17 <- 64 bytes at [RDI].
         // No other EVEX, mask, width, register, address or added prefix is granted.
         if source[..instruction.len()] != [0x62, 0xe1, 0xfe, 0x48, 0x6f, 0x0f] { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512 {
+        // Exact observed unmasked register form: K0[i] = (ZMM17.byte[i] == 0).
+        // Other destinations, sources, masks, widths and memory forms stay closed.
+        if source[..instruction.len()] != [0x62, 0xb2, 0x76, 0x40, 0x26, 0xc1] { return Ok(out); }
     } else if instruction.code() == Code::Pmaxud_xmm_xmmm128 {
         if !canonical_pmaxud(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Xgetbv {
@@ -438,6 +442,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // Exact unmasked EVEX512 broadcast, checked before this Code arm.
         | Code::EVEX_Vpbroadcastb_zmm_k1z_r32
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
+        | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
         | Code::Pmovmskb_r32_xmm
         // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.
         | Code::Movlpd_xmm_m64 | Code::Movlpd_m64_xmm
