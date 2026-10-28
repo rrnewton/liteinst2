@@ -14,10 +14,10 @@ GREG=(13,14,12,11,15,10,9,8,0,1,2,3,4,5,6,7)
 # Independently transcribed original case scripts and actual selected head
 # offsets. These are literal reply bindings, not a second semantic model.
 LITERALS=(
- ('masked_cpuid_random',((4096,'0fa2',1,[0,0,0,0],0),(4125,'0fa2',1,[0,0,0,0],0),(4134,'0fc7f0',2,[0x99887766,0,0,0],1),(4144,'0fc7fa',3,[0,0,0,0],0))),
- ('timestamps_processor_syscall',((4096,'0f31',5,[0x8877665544332211,0,0,0],0),(4142,'0f01f9',6,[0x123456789abcdef0,0xabbacafe,0,0],0),(4152,'f3410fc7f9',4,[0xfacebabe,0,0,0],0),(4174,'0f05',7,[173,0,0,0],0))),
- ('prefixed_suffix',((4096,'66410fc7f1',2,[0xbeef,0,0,0],1),(4108,'480fc7fb',3,[0,0,0,0],0),(4119,'f30fc7fa',4,[0xaabbccdd,0,0,0],0),(4120,'0fc7fa',3,[0x12345678,0,0,0],1))),
- ('embedded_alternate',((4113,'0f31',5,[0x1122334455667788,0,0,0],0),(4099,'0fc7f8',3,[0xfedcba98,0,0,0],1),(4113,'0f31',5,[0x8877665544332211,0,0,0],0))),
+ ('masked_cpuid_random',((4097,'0fa2',1,[0,0,0,0],0),(4126,'0fa2',1,[0,0,0,0],0),(4135,'0fc7f0',2,[0x99887766,0,0,0],1),(4145,'0fc7fa',3,[0,0,0,0],0))),
+ ('timestamps_processor_syscall',((4097,'0f31',5,[0x8877665544332211,0,0,0],0),(4143,'0f01f9',6,[0x123456789abcdef0,0xabbacafe,0,0],0),(4153,'f3410fc7f9',4,[0xfacebabe,0,0,0],0),(4175,'0f05',7,[173,0,0,0],0))),
+ ('prefixed_suffix',((4097,'66410fc7f1',2,[0xbeef,0,0,0],1),(4109,'480fc7fb',3,[0,0,0,0],0),(4120,'f30fc7fa',4,[0xaabbccdd,0,0,0],0),(4121,'0fc7fa',3,[0x12345678,0,0,0],1))),
+ ('embedded_alternate',((4114,'0f31',5,[0x1122334455667788,0,0,0],0),(4100,'0fc7f8',3,[0xfedcba98,0,0,0],1),(4114,'0f31',5,[0x8877665544332211,0,0,0],0))),
  ('cross_page_call',((8192,'f30fc7fa',4,[0x12345678,0,0,0],0),(8203,'0f31',5,[0x9988776655443322,0,0,0],0))),
 )
 TYPES=(( (0,16),(0,16),(32,0),(32,2) ),
@@ -36,7 +36,7 @@ def reference(data):
         nonlocal at
         need(type(n)is int and 0<=n<=len(data)-at,'complete reference extent');b=data[at:at+n];at+=n;return b
     h=struct.unpack('<12Q',take(96));version,count,slen,nh,nb,marker,base,db,dn,stack,flags,mask=h
-    need(version==1 and 2<=count<=4 and (slen,base,db,dn,stack,flags,mask)==(20480,BASE,DATA,N,STACK,FLAGS,MASK) and marker==BASE+4095 and 1<=nb<=nh<=128,'exact reference geometry')
+    need(version==1 and 2<=count<=4 and (slen,base,db,dn,stack,flags,mask)==(20480,BASE,DATA,N,STACK,FLAGS,MASK) and marker==BASE+4096 and 1<=nb<=nh<=128,'exact reference geometry')
     source=take(slen);heads=struct.unpack('<'+'Q'*nh,take(8*nh));blocks=struct.unpack('<'+'Q'*nb,take(8*nb))
     need(tuple(sorted(set(heads)))==heads and tuple(sorted(set(blocks)))==blocks and set(blocks)<=set(heads),'exact finite head/block census')
     def state():

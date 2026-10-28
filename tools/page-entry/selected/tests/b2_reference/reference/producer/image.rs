@@ -64,7 +64,7 @@ impl Builder {
     pub(super) fn new(pages: usize) -> Self {
         assert!((2..=4).contains(&pages));
         let mut this=Self { bytes:vec![0;SOURCE_LEN],heads:BTreeSet::new(),blocks:BTreeSet::new(),
-            cursor:SETUP,marker:BASE+PAGE as u64-1,pages };
+            cursor:SETUP,marker:BASE+PAGE as u64,pages };
         // Identical seed instructions/values to the old fixture. The fixed clean
         // setup page can execute natively without weakening TF instruction gates.
         this.mov(4,STACK);
@@ -75,9 +75,9 @@ impl Builder {
         // The old raw observer still stops at marker+1, before the first real
         // trajectory instruction. Neither jump nor NOP changes seeded state.
         this.branch(0xe9,this.marker);
-        this.bytes[PAGE-1]=0x90; this.heads.insert(this.marker);
-        this.blocks.remove(&this.marker); this.blocks.insert(BASE+PAGE as u64);
-        this.cursor=PAGE; this
+        this.bytes[PAGE]=0x90; this.heads.insert(this.marker);
+        this.blocks.remove(&this.marker); this.blocks.insert(this.marker+1);
+        this.cursor=PAGE+1; this
     }
     pub(super) fn pc(&self)->u64 { BASE+self.cursor as u64 }
     pub(super) fn emit(&mut self, bytes:&[u8])->u64 {
