@@ -467,7 +467,7 @@ class Main813InventoryTests(unittest.TestCase):
                           len(metadata['WORK_CONTROLS'])), (24, 4, 7))
 
         self.assertEqual(main813.digest(main813.before_0a8(actual)), main813.CURRENT0DF8)
-        current_rows = actual['harness_test_counts']['workspace_tests']
+        current_rows = main813.before_09fe(actual)['harness_test_counts']['workspace_tests']
         self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
                           sum(x['ignored'] for x in current_rows.values())), (103, 2964, 33))
         self.assertEqual(sum(len(x) for x in main813.MAIN0A8['added_methods'].values()), 19)
@@ -513,6 +513,54 @@ class Main813InventoryTests(unittest.TestCase):
                     main813.source_before_0a8(path, bad, 'changed')
 
         self.assertEqual(sum(len(x) for x in main813.MAIN0A8['doctests'].values()), 0)
+
+        self.assertEqual(main813.digest(main813.before_09fe(actual)), main813.CURRENT0A8)
+        current_rows = actual['harness_test_counts']['workspace_tests']
+        self.assertEqual((len(current_rows), sum(x['tests'] for x in current_rows.values()),
+                          sum(x['ignored'] for x in current_rows.values())), (103, 2990, 33))
+        self.assertEqual(sum(len(x) for x in main813.MAIN09FE['added_methods'].values()), 24)
+        self.assertEqual(sum(len(main813.MAIN09FE['methods'][p]['all']) * len(v)
+                             for p, v in main813.MAIN09FE['instances'].items()), 24)
+        self.assertEqual(main813.MAIN09FE['declared_delta'],
+                         {'rust_tests': 24, 'rust_declarations': 24, 'doctests': 2, 'ignored': 0, 'harnesses': 0})
+        with self.assertRaises(parsing.InvalidEvidence):
+            inventory.require_current(main813.before_09fe(actual))
+        for name, change in main813.MAIN09FE['workspace_changes'].items():
+            self.assertEqual(current_rows[name], change['current'])
+            for value in (change['current']['tests'] - 1, change['current']['tests'] + 1,
+                          True, float(change['current']['tests'])):
+                changed = copy.deepcopy(actual)
+                changed['harness_test_counts']['workspace_tests'][name]['tests'] = value
+                with self.subTest(main09fe_count=(name, value)), self.assertRaises(parsing.InvalidEvidence):
+                    inventory.require_current(changed)
+            changed = copy.deepcopy(actual)
+            del changed['harness_test_counts']['workspace_tests'][name]
+            with self.subTest(main09fe_missing=name), self.assertRaises(parsing.InvalidEvidence):
+                inventory.require_current(changed)
+        for key in actual:
+            changed = copy.deepcopy(actual); changed[key] = None
+            with self.subTest(main09fe_field=key), self.assertRaises(parsing.InvalidEvidence):
+                main813.before_09fe(changed)
+        for path in main813.MAIN09FE['sources']:
+            for missing in (False, True):
+                def changed(candidate):
+                    if candidate == main813.ROOT / path:
+                        if missing:
+                            raise FileNotFoundError(path)
+                        return read_bytes(candidate) + b'\n'
+                    return read_bytes(candidate)
+                with self.subTest(main09fe_source=path, missing=missing), patch.object(Path, 'read_bytes', changed):
+                    with self.assertRaises(parsing.InvalidEvidence):
+                        inventory.require_current(actual)
+        for path, row in main813.MAIN09FE['projections'].items():
+            raw = (main813.ROOT / path).read_bytes()
+            restored = main813.source_before_09fe(path, raw, 'changed')
+            self.assertEqual(hashlib.sha256(restored).hexdigest(), row['previous_sha256'])
+            for bad in (raw + b'\n', raw[:-1], restored):
+                with self.subTest(main09fe_inverse=path), self.assertRaisesRegex(parsing.InvalidEvidence, '^changed$'):
+                    main813.source_before_09fe(path, bad, 'changed')
+
+        self.assertEqual(sum(len(x) for x in main813.MAIN09FE['doctests'].values()), 2)
 
     def test_exact_precontext_header_scope_and_old_bytes(self):
         old = header('example') + '\nrunning 1 test\n' + summary(1) + '\n'
@@ -715,4 +763,46 @@ class Main813InventoryTests(unittest.TestCase):
         failed = doc.replace(summary(43), summary(42, failed=1))
         row = parsing.parse_harnesses(failed, expected, 1)[0]
         self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']), ('FAILED', 44, 1))
+        self.assertEqual(row['partitions'][1]['summary']['failed'], 1)
+
+        # Exact incoming 47-doc cohort; retain the complete 38-doc controls above.
+        doc = '\n'.join(('   Doc-tests rapid_profiler', 'running 2 tests', summary(2),
+                         'running 45 tests', summary(45),
+                         'all doctests ran in 0.51s; merged doctests compilation took 0.21s'))
+        expected = {'doc/rapid_profiler': counts(47)}
+        row = parsing.parse_harnesses(doc, expected, 0)[0]
+        self.assertEqual(row['outer'], dict(passed=47, failed=0, ignored=0, measured=0, filtered=0, result='ok'))
+        self.assertEqual(row['declared_outer_tests'], 2)
+        self.assertEqual([p['declared_tests'] for p in row['partitions']], [2, 45])
+        self.assertEqual([p['summary']['passed'] for p in row['partitions']], [2, 45])
+        self.assertEqual((row['nested_starts'], row['unmatched_nested_starts']), (0, 0))
+        changes = [doc.replace('rapid_profiler', 'example'),
+                   doc.replace('running 2 tests', 'running 3 tests'),
+                   doc.replace('running 45 tests', 'running 44 tests'),
+                   doc.replace('running 45 tests', 'running 46 tests'),
+                   doc.replace(summary(2), summary(1)),
+                   doc.replace(summary(45), summary(44)),
+                   doc.replace(summary(2), summary(2, filtered=1)),
+                   doc.replace(summary(45), summary(45, filtered=1)),
+                   doc.replace(summary(45), summary(44, ignored=1)),
+                   doc.replace(summary(45), summary(44, measured=1)),
+                   doc.replace(summary(45), summary(44, failed=1)),
+                   doc.replace(summary(45), summary(45, result='FAILED')),
+                   doc.replace('running 45 tests', 'running 45 tests\nrunning 45 tests'),
+                   doc.replace(summary(2), summary(2)+'\n'+summary(2)),
+                   doc.replace(summary(45), ''),
+                   doc.replace(summary(2), ''),
+                   '\n'.join(doc.splitlines()[:-1]),
+                   doc+'\n'+doc.splitlines()[-1],
+                   doc+'\nrunning 1 test\n'+summary(1),
+                   doc.replace('all doctests ran in 0.51s;', 'all doctests ran in NaNs;')]
+        for bad in changes:
+            with self.subTest(doc_partition=bad), self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(bad, expected, 0)
+        for total, ignored in ((46, 0), (48, 0), (47, 1)):
+            with self.assertRaises(parsing.InvalidEvidence):
+                parsing.parse_harnesses(doc, {'doc/rapid_profiler': counts(total, ignored)}, 0)
+        failed = doc.replace(summary(45), summary(44, failed=1))
+        row = parsing.parse_harnesses(failed, expected, 1)[0]
+        self.assertEqual((row['outer']['result'], row['outer']['passed'], row['outer']['failed']), ('FAILED', 46, 1))
         self.assertEqual(row['partitions'][1]['summary']['failed'], 1)

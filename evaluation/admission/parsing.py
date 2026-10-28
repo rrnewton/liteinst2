@@ -147,7 +147,7 @@ def parse_harnesses(output, expected, exit_code):
                                      r"merged doctests compilation took \d+(?:\.\d+)?s", line)
                         and current["outer"] is None and not stack
                         and [p["declared_tests"] for p in current["partitions"]]
-                        == {38: [2, 36], 45: [2, 43]}[current["expected_tests"]]
+                        == {38: [2, 36], 45: [2, 43], 47: [2, 45]}[current["expected_tests"]]
                         and all(p["summary"] is not None for p in current["partitions"]),
                         "incomplete_doc_partitions")
                 summaries = [p["summary"] for p in current["partitions"]]
@@ -168,7 +168,8 @@ def parse_harnesses(output, expected, exit_code):
                     current["declared_outer_tests"] = count
                     if (current["id"], current["expected_tests"], current["expected_ignored"], count) in (
                             ("doc/rapid_profiler", 38, 0, 2),
-                            ("doc/rapid_profiler", 45, 0, 2)):
+                            ("doc/rapid_profiler", 45, 0, 2),
+                            ("doc/rapid_profiler", 47, 0, 2)):
                         # Retain actual declarations/summaries; the outer counts
                         # are aggregated only after both and rustdoc's terminal.
                         current["partitions"] = [{"declared_tests": 2, "summary": None}]
@@ -177,7 +178,7 @@ def parse_harnesses(output, expected, exit_code):
                 elif "partitions" in current:
                     require(not stack and len(current["partitions"]) == 1
                             and current["partitions"][0]["summary"] is not None
-                            and count == {38: 36, 45: 43}[current["expected_tests"]],
+                            and count == {38: 36, 45: 43, 47: 45}[current["expected_tests"]],
                             "changed_doc_partition")
                     current["partitions"].append({"declared_tests": count, "summary": None})
                 else:
