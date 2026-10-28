@@ -9,7 +9,7 @@ from parsing import require
 
 ROOT = Path(__file__).resolve().parents[2]
 RAW = Path(__file__).with_suffix('.json').read_bytes()
-require(hashlib.sha256(RAW).hexdigest() == '9ecef3e5bd508ebf227befe07f072e4f6fadfb2041029e20f98c6fe019431b8b', 'main813_inventory_data_differs')
+require(hashlib.sha256(RAW).hexdigest() == '9b4f0691c42c5767181d8ec98e997884f6c88c5f43a54673dd40c352c5c9bdca', 'main813_inventory_data_differs')
 DATA = json.loads(RAW)
 CURRENT = DATA['current_corpus_sha256']
 MAIN690 = DATA['main690']
@@ -19,7 +19,9 @@ CURRENTC0 = MAINC0['current_corpus_sha256']
 MAINC1 = DATA['mainc1']
 CURRENTC1 = MAINC1['current_corpus_sha256']
 MAINE797 = DATA['maine797']
-LATEST = MAINE797['current_corpus_sha256']
+CURRENTE797 = MAINE797['current_corpus_sha256']
+MAINF0EF = DATA['mainf0ef']
+LATEST = MAINF0EF['current_corpus_sha256']
 PREVIOUS = DATA['previous_corpus_sha256']
 PYTHON_CURRENT = DATA['python_current_sha256']
 PYTHON_PREVIOUS = DATA['python_previous_sha256']
@@ -30,8 +32,58 @@ def digest(value):
     return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':'), allow_nan=False).encode()).hexdigest()
 
 
+def source_before_f0ef(path, data, error):
+    """Only the fixed f0ef whole blob may reach its exact historical source."""
+    if path not in MAINF0EF['projections']:
+        return data
+    row = MAINF0EF['projections'][path]
+    require(type(data) is bytes and hashlib.sha256(data).hexdigest() == row['current_sha256'], error)
+    last = len(data)
+    for start, end, old in reversed(row['edits']):
+        require(0 <= start <= end <= last, error)
+        data = data[:start] + old.encode() + data[end:]
+        last = start
+    require(hashlib.sha256(data).hexdigest() == row['previous_sha256'], error)
+    return data
+
+
+def require_f0ef_sources(error='mainf0ef_source_inventory_differs'):
+    for path, expected in MAINF0EF['sources'].items():
+        try:
+            raw = (ROOT / path).read_bytes()
+        except OSError:
+            require(False, error)
+        require(hashlib.sha256(raw).hexdigest() == expected, error)
+        if path in MAINF0EF['methods']:
+            found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
+            row = MAINF0EF['methods'][path]
+            require([name for _, name in found] == row['all'] and
+                    [name for attrs, name in found if re.search(r'#\[ignore(?:\]|\s*=)', attrs)] == row['ignored'] and
+                    raw.count(b'#[test]') == len(found), error)
+
+
+def before_f0ef(declared, error='mainf0ef_inventory_differs', source_error='mainf0ef_source_inventory_differs'):
+    require(type(declared) is dict and digest(declared) == LATEST, error)
+    require_f0ef_sources(source_error)
+    old = copy.deepcopy(declared)
+    rows = old['harness_test_counts']['workspace_tests']
+    for name, change in MAINF0EF['workspace_changes'].items():
+        require(rows[name] == change['current'], error)
+        if change['previous'] is None:
+            del rows[name]
+        else:
+            rows[name] = copy.deepcopy(change['previous'])
+    require(digest(old) == MAINF0EF['previous_corpus_sha256'] == CURRENTE797, error)
+    return old
+
+
+def peel_f0ef(declared, error, source_error):
+    return before_f0ef(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+
+
 def source_before_e797(path, data, error):
     """Only the fixed e797 whole blob may reach its exact historical source."""
+    data = source_before_f0ef(path, data, error)
     if path not in MAINE797['projections']:
         return data
     row = MAINE797['projections'][path]
@@ -46,11 +98,13 @@ def source_before_e797(path, data, error):
 
 
 def require_e797_sources(error='maine797_source_inventory_differs'):
+    require_f0ef_sources(error)
     for path, expected in MAINE797['sources'].items():
         try:
             raw = (ROOT / path).read_bytes()
         except OSError:
             require(False, error)
+        raw = source_before_f0ef(path, raw, error)
         require(hashlib.sha256(raw).hexdigest() == expected, error)
         if path in MAINE797['methods']:
             found = re.findall(r'#\[test\]\s*((?:#\[[^\n]*\]\s*)*)(?:unsafe\s+)?fn\s+(\w+)\s*\(', raw.decode())
@@ -65,7 +119,8 @@ def require_e797_sources(error='maine797_source_inventory_differs'):
 
 
 def before_e797(declared, error='maine797_inventory_differs', source_error='maine797_source_inventory_differs'):
-    require(type(declared) is dict and digest(declared) == LATEST, error)
+    declared = peel_f0ef(declared, error, source_error)
+    require(type(declared) is dict and digest(declared) == CURRENTE797, error)
     require_e797_sources(source_error)
     old = copy.deepcopy(declared)
     rows = old['harness_test_counts']['workspace_tests']
@@ -80,7 +135,8 @@ def before_e797(declared, error='maine797_inventory_differs', source_error='main
 
 
 def peel_e797(declared, error, source_error):
-    return before_e797(declared, error, source_error) if type(declared) is dict and digest(declared) == LATEST else declared
+    declared = peel_f0ef(declared, error, source_error)
+    return before_e797(declared, error, source_error) if type(declared) is dict and digest(declared) == CURRENTE797 else declared
 
 
 def source_before_c1(path, data, error):
