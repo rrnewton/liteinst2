@@ -2,8 +2,8 @@
   "claim": 4,
   "files": {
     "README.md": {
-      "bytes": 6705,
-      "sha256": "41f502c7b91d4a727d0b8f4bfec851cc4e3b335124bedb5a7777572d988e6916"
+      "bytes": 7287,
+      "sha256": "cfc2a9ee4b9f2425b841739ccf3392d415b5ca0b4bf8161cf339039da74c7ffa"
     },
     "clock-limit-observations.csv": {
       "bytes": 844,
@@ -17,6 +17,10 @@
       "bytes": 2056,
       "sha256": "4b329297967e805fd7a1671b76b0e13faa602288c7bfa7b3022f2e10cee2db5a"
     },
+    "continuity.json": {
+      "bytes": 310,
+      "sha256": "75040bfb38673cda344be9966f02d6097eb19245fa3d566b5244ad1f54bab863"
+    },
     "failed-attempts.json": {
       "bytes": 12652,
       "sha256": "842206d72874e93bbbea003d4b7c81f807514c52208dc779f2f5b5d3f8ac61ed"
@@ -24,6 +28,10 @@
     "gates.json": {
       "bytes": 3430,
       "sha256": "8dbdfa40078446030caf6034ed89d9849fad42ee4cc273c6cee63f2beeb1bb0d"
+    },
+    "merged-gates.json": {
+      "bytes": 3434,
+      "sha256": "076c59eca834b8056729a6b662f66f48803cd28d919a5a7f7477ee4b17145ca6"
     },
     "native-pairs.csv": {
       "bytes": 461,
@@ -50,6 +58,7 @@
       "sha256": "e91619b482990bbae2c0c102e75ab947bfc9032ea9c5262c275a7c86c48896b8"
     }
   },
+  "merged_revision": "695f1ef9af953a2a8071600a218453fb0473212e",
   "remaining": "SDK provenance cost remains high; full A5 performance/accuracy/workload qualification incomplete.",
   "reproduction_allocator": {
     "bin/cpuset-alloc": {

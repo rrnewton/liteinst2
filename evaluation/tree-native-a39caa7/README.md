@@ -102,6 +102,15 @@ an initial plan that double-counted the custom non-libtest harness; no test
 was removed. A separate closed-log comparison confirms those two target deltas
 and unchanged counts for every other target.
 
+The same seven checks also passed after merging main at
+`695f1ef9af953a2a8071600a218453fb0473212e` (`merged-gates.json`): workspace
+2,852/0/12 in 331.366 s; serial launch 1,039/0/0 in 124.074 s; staged
+allocation 3/0/0 and prefixed pun 36/0/0. Default parallelism, limits and
+comparators remain unchanged, with normal closure and zero rescues. All 170
+native campaign inputs have identical bytes, modes and Git blobs across the
+native and merged revisions (`continuity.json`). The native measurements stay
+at their recorded source revision; this is not a merged-tree native rerun.
+
 Reproduce these checks independently of the performance reservation:
 
 ```sh
