@@ -158,7 +158,7 @@ static unsigned decimal(const char *s) {
 static void chain_parse_environment(unsigned long *stack) {
     const char *const *env=(const void *)(stack+stack[0]+2);unsigned seen=0;
     for(size_t i=0;env[i];i++) {
-        if(length(env[i])>=14&&!memcmp(env[i],"LI2_CHAIN_CASE=",14)){need(!(seen&1),416);seen|=1;case_id=decimal(env[i]+14);}
+        if(length(env[i])>=15&&!memcmp(env[i],"LI2_CHAIN_CASE=",15)){need(!(seen&1),416);seen|=1;case_id=decimal(env[i]+15);}
         if(length(env[i])>=18&&!memcmp(env[i],"LI2_CHAIN_CONTROL=",18)){need(!(seen&2),417);seen|=2;mode=decimal(env[i]+18);}
     }
     need(case_id<CHAIN_CASES&&mode<=CTL_COUNT,418);
