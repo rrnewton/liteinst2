@@ -44,11 +44,14 @@ termination cleanup_complete reaped_descendants tests_passed harness_totals
 private_log_sha256""".split()
 COMMAND_COLUMNS = ["name", "profile", "exit", "expected_exit", "timed_out", "reaped",
                    "cleanup_error_count"]
+COMPLETE_PROFILES = {"page-selected-" + suffix for suffix in (
+    "lock-cmpxchg-oracle-v1", "lock-cmpxchg-rip-oracle-v1",
+    "rseq-application-v1", "rseq-real-v1")}
 PROFILES = {"page-selected-" + suffix for suffix in (
     "chain-oracle-v1", "chain-real-v1", "vmovdqu64-oracle-v1", "vpbroadcast-oracle-v1",
     "generic-oracle-v1", "maps-v1", "register-controls-v1", "register-connected-v1",
     "vptestnmb-oracle-v1", "kmovq-oracle-v1", "strrchr-short-v1", "write-footprint-v1",
-    "register-time-v1")} | {"inprocess-required-checks-v1"}
+    "register-time-v1")} | {"inprocess-required-checks-v1"} | COMPLETE_PROFILES
 
 
 def project(input_path):
@@ -65,10 +68,32 @@ def project(input_path):
     tables = {key: [] for key in ("sources", "hardware", "environments", "tools", "tool_files", "bounds", "scopes",
                                   "observation_keys", "observations", "operation_commands")}
 
+    typed_interning = False
+
     def intern(key, value):
+        if typed_interning:
+            identity = compact(value)
+            for index, stored in enumerate(tables[key]):
+                if compact(stored) == identity:
+                    return index
+            tables[key].append(value)
+            return len(tables[key]) - 1
         if value not in tables[key]:
             tables[key].append(value)
         return tables[key].index(value)
+
+    def pack_objects(value):
+        if isinstance(value, dict):
+            tables.setdefault("profile_field_names", [])
+            tables.setdefault("profile_object_keys", [])
+            tables.setdefault("profile_objects", [])
+            keys = sorted(value)
+            key_ids = [intern("profile_field_names", key) for key in keys]
+            packed = [intern("profile_object_keys", key_ids)] + [pack_objects(value[k]) for k in keys]
+            return [intern("profile_objects", packed)]
+        if isinstance(value, list):
+            return ["list"] + [pack_objects(item) for item in value]
+        return value
 
     runs, preflights, seen = [], [], set()
     for supplied in inputs["receipts"]:
@@ -91,6 +116,7 @@ def project(input_path):
         if mismatch and (receipt["status"] != "failed" or receipt["command_count"] != 0
                          or receipt.get("cases")):
             raise ValueError("unexpected source-guard prefix")
+        typed_interning = typed_interning or receipt["profile"] in COMPLETE_PROFILES
         row = selected(receipt, TOP)
         if "scope" in row:
             row["scope_index"] = intern("scopes", row.pop("scope"))
@@ -121,7 +147,7 @@ def project(input_path):
         if "cases" in receipt:
             if receipt["profile"] in ("page-selected-chain-oracle-v1", "page-selected-vmovdqu64-oracle-v1",
                                       "page-selected-vptestnmb-oracle-v1", "page-selected-kmovq-oracle-v1",
-                                      "page-selected-strrchr-short-v1"):
+                                      "page-selected-strrchr-short-v1") or receipt["profile"] in COMPLETE_PROFILES:
                 row["cases"] = receipt["cases"]  # Complete new observations, including failures.
             else:
                 row["cases"] = [selected(case, CASE) for case in receipt["cases"]]
@@ -156,6 +182,21 @@ def project(input_path):
                     values["cleanup_error_count"] = len(command.get("cleanup_errors", []))
                     outcomes.append([values.get(key) for key in COMMAND_COLUMNS])
             row["operation_commands_index"] = intern("operation_commands", outcomes)
+        if receipt["profile"] in COMPLETE_PROFILES:
+            # Preserve new results, bindings and recipes; artifact inspection
+            # details remain in the bound receipt, as for existing profiles.
+            handled = set(TOP) | {"expected_revision", "source", "hardware",
+                "environment", "bounds", "tool_versions", "tool_hashes", "toolchain",
+                "private_receipt", "commands_sha256", "command_rows_sha256",
+                "interpretation", "cases", "maps_cases", "old_negative_cases", "native_commands",
+                "build_artifacts", "fixtures", "elf"}
+            tables.setdefault("profile_details", [])
+            row["profile_details_index"] = intern("profile_details", pack_objects(
+                {key: value for key, value in receipt.items() if key not in handled}))
+            row["profile_objects_packed"] = True
+            for field in ("native_commands", "totals", "catalogue"):
+                if field in row:
+                    row[field] = pack_objects(row[field])
         # Lossless interning of repeated finite observations; keep each actual
         # record binding on its run. No values are recomputed or normalized.
         for field in ("cases", "maps_cases", "old_negative_cases"):
@@ -185,7 +226,13 @@ def project(input_path):
                     references.append(ref)
                 row[field] = references
         (preflights if mismatch else runs).append(row)
-    return {"schema_version": 1, "profile": "trace-vmov-milestone-v1",
+    if "profile_details" in tables:
+        tables["observations"] = [[row[0]] + [pack_objects(value) for value in row[1:]]
+                                  for row in tables["observations"]]
+    return {**({"packed_observation_values": True,
+                "profile_object_layout": "Unpack each observation value, leaving record references unchanged. [n] selects profile_objects[n]=[keys_index,value...]; keys resolve through profile_object_keys to profile_field_names. [\"list\",...] is an original list; scalars are unchanged. Packed-profile totals, catalogue, native_commands and profile_details use the same encoding."}
+               if "profile_details" in tables else {}),
+            "schema_version": 1, "profile": "trace-vmov-milestone-v1",
             "scope": "Projection of original evaluator receipts; no new validation or performance verdict.",
             "projection_script_sha256": sha(Path(__file__).read_bytes()),
             "input_manifest_sha256": sha(raw), "summary_reader_sha256": inputs["summary_reader_sha256"],

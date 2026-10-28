@@ -1,0 +1,59 @@
+{
+  "receipts": [
+    {
+      "bytes": 26657,
+      "kind": "run",
+      "name": "20261028T032258.621895Z-page-selected-lock-cmpxchg-rip-c75a2816482c.json",
+      "sha256": "aed39d9de7b3e8893cfe6f2d25b0ae76db2a8c585a5592aed90c9c44a0422ebe"
+    },
+    {
+      "bytes": 24202,
+      "kind": "run",
+      "name": "20261028T032312.317860Z-page-selected-lock-cmpxchg-c75a2816482c.json",
+      "sha256": "add09918016978a5f1dadd5d309ddfda14618b334f7335f3c3a1377897cf4adb"
+    },
+    {
+      "bytes": 15035,
+      "kind": "run",
+      "name": "20261028T032323.826612Z-page-selected-write-footprint-c75a2816482c.json",
+      "sha256": "dbda391a39c5a5f4542164b6eb9972767e9d1829a4ae90b7c3df15d93d3a9b7e"
+    },
+    {
+      "bytes": 20794,
+      "kind": "run",
+      "name": "20261028T032330.737552Z-page-selected-rseq-application-c75a2816482c.json",
+      "sha256": "f958f90c3a02094d0596f4fad63cde729491bd3ae5cb3ec72aaf570b613fe5dd"
+    },
+    {
+      "bytes": 16110,
+      "kind": "run",
+      "name": "20261028T032352.670138Z-page-selected-rseq-real-c75a2816482c.json",
+      "sha256": "36eac5feed1b85695abb8e4036c6f6376e35e2d76480225cf33bfd4232099488"
+    },
+    {
+      "bytes": 11012,
+      "kind": "run",
+      "name": "20261028T032557.269414Z-checks-c75a2816482c.json",
+      "sha256": "84481857f1bd008804c7d1172d4bce70c5abba859309ca5f5cad0d10f50a635e"
+    },
+    {
+      "bytes": 25794,
+      "kind": "run",
+      "name": "20261028T032838.932156Z-page-selected-chain-oracle-c75a2816482c.json",
+      "sha256": "4f58fd4d86a6db900502a54ee825103d53de7481e2c7d3d939578376aa835805"
+    },
+    {
+      "bytes": 16232,
+      "kind": "run",
+      "name": "20261028T032857.213848Z-page-selected-generic-oracle-c75a2816482c.json",
+      "sha256": "8f91547d10f15f27c0dde99ae882d29ce886358eefa4fe6df21a7b127f0845ec"
+    },
+    {
+      "bytes": 40018,
+      "kind": "run",
+      "name": "20261028T032906.227551Z-page-selected-maps-c75a2816482c.json",
+      "sha256": "4d7dfcabea0a548d8db533e343f9598e997498543b4982fd7446f3a8ffb88565"
+    }
+  ],
+  "summary_reader_sha256": "3e478b2016050245cd0ba37eb874a74c5ad0661ecf25a3532573f607a517ef97"
+}
