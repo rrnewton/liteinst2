@@ -137,3 +137,9 @@ path = "tools/software-preemption/main.rs"
 test = true
 bench = false
 doc = false
+
+# Additive fixed optional-profile native oracle, on a fresh single main thread.
+[[test]]
+name = "precontext_native"
+path = "tests/precontext_native.rs"
+harness = false

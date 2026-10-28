@@ -866,3 +866,7 @@ mod tests {
         assert!(std::panic::catch_unwind(|| assert_state(&expected, &changed)).is_err());
     }
 }
+
+// Separate scratch ABI; all existing adapter bodies and populations stay literal.
+#[path = "native_precontext.rs"]
+pub mod precontext;
