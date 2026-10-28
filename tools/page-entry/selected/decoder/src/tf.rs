@@ -164,6 +164,15 @@ fn canonical_vpcmpb(instruction: &Instruction, bytes: &[u8]) -> bool {
                 && (*p2 & 0xf0) == 0x40 && (*m & 0xc0) == 0xc0 && *imm < 8)
 }
 
+// Canonical EVEX.512.W0 register VPTESTMB. Destination K extension bits,
+// zeroing/broadcast encodings, other widths, memory and added prefixes stay closed.
+fn canonical_vptestmb(instruction: &Instruction, bytes: &[u8]) -> bool {
+    instruction.code() == Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
+        && matches!(bytes, [0x62, p0, p1, p2, 0x26, m]
+            if (*p0 & 0x9f) == 0x92 && (*p1 & 0x87) == 0x05
+                && (*p2 & 0xf0) == 0x40 && (*m & 0xc0) == 0xc0)
+}
+
 pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
     let decoded = crate::decode::one(pc, source)?;
     let mut out = Classification { pc, next_pc: decoded.next_pc,
@@ -194,6 +203,8 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // Exact observed unmasked register form: K0[i] = (ZMM17.byte[i] == 0).
         // Other destinations, sources, masks, widths and memory forms stay closed.
         if source[..instruction.len()] != [0x62, 0xb2, 0x76, 0x40, 0x26, 0xc1] { return Ok(out); }
+    } else if instruction.code() == Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512 {
+        if !canonical_vptestmb(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8 {
         if !canonical_vpcmpb(&instruction, &source[..instruction.len()]) {
             return Ok(out);
@@ -498,6 +509,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::EVEX_Vpbroadcastb_zmm_k1z_r32
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
+        | Code::EVEX_Vptestmb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpeqb_kr_k1_zmm_zmmm512
         | Code::EVEX_Vpcmpb_kr_k1_zmm_zmmm512_imm8
         | Code::VEX_Kmovq_r64_kr

@@ -122,7 +122,7 @@ def observations(data, group, header):
 
 def queries(data, group):
     need(len(data) == 9024, 'complete actual-before footprint trailer')
-    need(struct.unpack_from('<8Q',data) == (0x315146435056324c,1,9024,group,40,73,0,0),
+    need(struct.unpack_from('<8Q',data) == (0x315146435056324c,1,9024,group,40,72,0,0),
          'exact query header and unsupported encoding count')
     rows=[]
     for index in range(20):
@@ -139,7 +139,7 @@ def queries(data, group):
         need(pair[0] == pair[1], 'native/TF query inputs and instruction identity exact')
         rows.append(pair)
     return dict(bytes=len(data),sha256=hashlib.sha256(data).hexdigest(),actual_before_queries=40,
-                unsupported_encoding_queries=73,rows_sha256=digest(rows),memory_write_ranges=0)
+                unsupported_encoding_queries=72,rows_sha256=digest(rows),memory_write_ranges=0)
 
 
 def publish(path, record, receipt):
@@ -203,7 +203,7 @@ def main():
     private.mkdir(parents=True, exist_ok=False)
     public = REPO/'evaluation/inprocess/results'/(name+'.json')
     record = {'schema_version': 1, 'profile': 'page-selected-vpcmpb-oracle-v1', 'status': 'failed',
-        'scope': 'Canonical EVEX512.W0 register-only VPCMPB Code3891. Nine21-pair cohorts:180 new plus9 startup, all eight signed predicates, all vector/K indices and opmask zeroing/aliases. Complete unchanged native/TF/kernelFP/liveXSAVE/GPR/flags/memory comparisons; 360 actual-before NONE footprint queries and657 unsupported query controls. All47 generic+33 exact prior VPT+40 new supplied refusals per cohort. No data-memory operand/fault or other EVEX authority, real-program completion, speedup or full-B2 claim.',
+        'scope': 'Canonical EVEX512.W0 register-only VPCMPB Code3891. Nine21-pair cohorts:180 new plus9 startup, all eight signed predicates, all vector/K indices and opmask zeroing/aliases. Complete unchanged native/TF/kernelFP/liveXSAVE/GPR/flags/memory comparisons; 360 actual-before NONE footprint queries and648 unsupported query controls. All47 generic+32 exact prior VPT+40 new supplied refusals and1 mandatory typed SIMD/NONE promotion per cohort. No data-memory operand/fault or other EVEX authority, real-program completion, speedup or full-B2 claim.',
         'expected_revision': args.expect_revision, 'started_utc': stamp, 'cpu': cpu,
         'source': None, 'source_unchanged': False, 'commands': [], 'cases': [],
         'error': None, 'final_errors': [], 'bounds': PROFILES,
@@ -211,7 +211,7 @@ def main():
                    'supplied_refusal_encodings': 0, 'old_refusal_encodings': 0,
                    'new_refusal_encodings': 0, 'mask_pairs': 0,
                    'new_page_ending_pairs': 0, 'new_crossing_pairs': 0,
-                   'executed_refusal_checks': 0, 'footprint_queries': 0, 'footprint_refusals': 0},
+                   'executed_refusal_checks': 0, 'footprint_queries': 0, 'footprint_refusals': 0, 'promoted_encoding_checks': 0, 'promoted_footprint_queries': 0},
         'reproduce': ['python3', 'evaluation/inprocess/page_selected_vpcmpb.py',
                       '--expect-revision', args.expect_revision]}
     pins, binaries = {}, {}
@@ -285,7 +285,7 @@ def main():
                  file_size_bytes=16 << 20, wall_seconds=15, cpu_affinity_count=1),
              'exact broadcast names, environments, exits, header schema and bounds')
         need(fact(FIXTURE/'OUTCOMES.json')['sha256'] ==
-             '33004db118729a242c1555ca40eecba93178bba38d325419fc6b223e7e619283',
+             '2edb8dd9284639f0481a1cdfaf4d9e1ead0f84f934477879e5374ac1ce5628c4',
              'exact reviewed nine-command outcomes')
         for case in outcomes['commands']:
             name = case['name']
@@ -322,14 +322,17 @@ def main():
             record['totals']['new_crossing_pairs'] += record['catalogue']['groups'][int(name[-1])]['crossing']
             record['totals']['executed_refusal_checks'] += header['refusals']
             record['totals']['footprint_queries'] += 40
-            record['totals']['footprint_refusals'] += 73
-            record['totals'].update(supplied_refusal_encodings=120,
-                old_refusal_encodings=80, new_refusal_encodings=40)
+            record['totals']['footprint_refusals'] += 72
+            record['totals']['promoted_encoding_checks'] += 1
+            record['totals']['promoted_footprint_queries'] += 1
+            record['totals'].update(supplied_refusal_encodings=119,
+                old_refusal_encodings=79, new_refusal_encodings=40)
             result['accepted'] = True
         need(record['totals'] == dict(positive_pairs=189, generic_pairs=180, mask_pairs=180,
-                 positive_selftest_pairs=9, supplied_refusal_encodings=120, old_refusal_encodings=80,
+                 positive_selftest_pairs=9, supplied_refusal_encodings=119, old_refusal_encodings=79,
                  new_refusal_encodings=40, new_page_ending_pairs=25, new_crossing_pairs=155,
-                 executed_refusal_checks=1080, footprint_queries=360, footprint_refusals=657) and len(record['cases']) == 9 and
+                 executed_refusal_checks=1071, footprint_queries=360, footprint_refusals=648,
+                 promoted_encoding_checks=9, promoted_footprint_queries=9) and len(record['cases']) == 9 and
              all(c['accepted'] for c in record['cases']),
              'complete nine21-pair mask-test cohorts; original fault suites remain separate')
         record['status'] = 'passed'

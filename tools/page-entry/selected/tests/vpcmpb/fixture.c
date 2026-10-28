@@ -223,16 +223,35 @@ static void vpb_pair(struct sample *s,unsigned index) {
     need(!li2_lifecycle_fetch_release(&s->ref),106);s->step_fetch=*li2_lifecycle_fetch_progress();
     ++result.completed;
 }
+static unsigned promoted_count;
+static void promoted_encoding(const struct vpb_refusal *v) {
+    static const unsigned char exact[]={0x62,0xb2,0x75,0x40,0x26,0xc1};
+    need(v->n==sizeof(exact)&&!memcmp(v->b,exact,sizeof(exact))&&
+         !result.decoder_result&&refused_last.abi_version==1&&
+         refused_last.pc==0x1000&&refused_last.next_pc==0x1006&&
+         refused_last.policy==1&&refused_last.flow==LI2_TF_FALLTHROUGH&&
+         refused_last.family==LI2_TF_SIMD&&refused_last.code==2785&&refused_last.length==6,1194);
+    struct li2_write_registers registers={0};struct li2_write_footprint footprint={0};
+    need(!li2_decoder_write_footprint(0x1000,v->b,v->n,&registers,&footprint)&&
+         footprint.abi_version==1&&footprint.policy==LI2_WRITE_NONE&&
+         footprint.code==2785&&footprint.length==6&&footprint.pc==0x1000&&
+         footprint.next_pc==0x1006&&!footprint.first&&!footprint.end,1195);
+    ++promoted_count;
+}
 static void vpb_refusals(void) {
     for(size_t i=0;i<sizeof(vpb_refused)/sizeof(vpb_refused[0]);i++) {
         const struct vpb_refusal *v=&vpb_refused[i];result.failed_refusal=47+i;
         result.decoder_result=li2_decoder_tf_classify(0x1000,v->b,v->n,&refused_last);
-        need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
-             !refused_last.policy&&!refused_last.flow&&!refused_last.family,1140+(unsigned)i);
-        struct li2_write_registers registers={0};struct li2_write_footprint footprint={0};
-        need(!li2_decoder_write_footprint(0x1000,v->b,v->n,&registers,&footprint)&&
-             footprint.abi_version==1&&!footprint.policy&&!footprint.first&&!footprint.end,1193);
-        ++vpc_queries.refusals;++result.refusals;
+        if(i==17) {
+            promoted_encoding(v);
+        } else {
+            need(!result.decoder_result&&refused_last.abi_version==1&&refused_last.pc==0x1000&&
+                 !refused_last.policy&&!refused_last.flow&&!refused_last.family,1140+(unsigned)i);
+            struct li2_write_registers registers={0};struct li2_write_footprint footprint={0};
+            need(!li2_decoder_write_footprint(0x1000,v->b,v->n,&registers,&footprint)&&
+                 footprint.abi_version==1&&!footprint.policy&&!footprint.first&&!footprint.end,1193);
+            ++vpc_queries.refusals;++result.refusals;
+        }
     }
     result.failed_refusal=SIZE_MAX;
 }
@@ -249,13 +268,13 @@ int fixture_main(unsigned long *stack) {
     need(!rc&&complete==li2_tf_refusal_count()&&complete==47&&failed==SIZE_MAX&&!decoder_result,1182);
     vpc_queries.magic=UINT64_C(0x315146435056324c);vpc_queries.version=1;
     vpc_queries.bytes=sizeof(vpc_queries);vpc_queries.group=VPC_GROUP;
-    vpb_refusals();need(result.refusals==120&&vpc_queries.refusals==73,1183);
+    vpb_refusals();need(result.refusals==119&&vpc_queries.refusals==72&&promoted_count==1,1183);
     vpb_seed();prepare_case(&samples[0],0);run_pair(&samples[0]);need(session.self_test_complete,131);
     vpb_effects(&samples[0],0);
     for(unsigned i=0;i<VPB_COUNT;i++){vpb_prepare(&samples[i+1],i);vpb_pair(&samples[i+1],i+1);}
     need(result.completed==VPB_PAIRS&&vpb_observations.checked==VPB_PAIRS&&dump()&&
          vpc_queries.checked==40&&write_all(3,&vpb_observations,sizeof(vpb_observations))&&
          write_all(3,&vpc_queries,sizeof(vpc_queries)),1184);
-    output("LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=80 new_refusal_bytes=40 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n");
+    output("LI2_VPCMPB_TF_PASS pairs=21 mask_tests=20 selftest=1 old_refusal_bytes=79 new_refusal_bytes=40 promoted_encoding_checks=1 promoted_footprint_queries=1 footprint_queries=40 full_state=21 full_memory=21 live_endpoints=21\n");
     return 0;
 }
