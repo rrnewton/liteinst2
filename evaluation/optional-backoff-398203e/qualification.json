@@ -1,0 +1,297 @@
+{
+  "authority": {
+    "closed_manifest": {
+      "bytes": 15293,
+      "sha256": "c14b8fa6a50185f47597a9774828777b3bb05c94f08a5bb11175c79ef8a75606"
+    },
+    "prerequisite_result": {
+      "bytes": 59885,
+      "sha256": "d67f2af470ce0afc973fa08e65f704a35f5ba8d416a676468d7dda50936d1314"
+    },
+    "root_failure_summary": {
+      "bytes": 769,
+      "sha256": "430c49a90293b58bdd41f40abb837730332e039f7af4f4c82337f1f2d23a1340"
+    },
+    "source_descriptors_checked_against_git": 93
+  },
+  "gates": {
+    "scope": "Separate validation evidence; no gate outcome inferred here.",
+    "status": "NOT_INCLUDED"
+  },
+  "native_setup": "Required original owner validation and candidate publication/attachment precede readiness; continuous 20000 steps after readiness, absolute 15-second deadline includes setup. Earlier original-preflight step-budget failures remain failures; prelude accounting is not equivalent.",
+  "native_state_qualification": "PASS: gate entry through post-POP; full inherited GPR/flags/XSAVE/data and exact [S-128, stack_end) comparisons; real outer return after own harness-context restoration; no whole-64KiB stack or timing-accuracy claim",
+  "optional_control": {
+    "protocol_in": "receipt.json#/optional_control/protocol",
+    "source_attested": "actual stable post-disable Fast bracket, later sampled rearm and retained B owner across C rearm; whole input, full journals, reports and real worker join",
+    "status": "PASS"
+  },
+  "prerequisites": {
+    "counts": {
+      "checksum": {
+        "calls": 8,
+        "completed": 6,
+        "originals": 8,
+        "reports": [
+          4,
+          2
+        ],
+        "unsampled": 2
+      },
+      "completed_drain": {
+        "batches": 2,
+        "calls": 64,
+        "capacity_refusals": 2,
+        "empty_drains": 3,
+        "events": 128,
+        "originals": 64,
+        "report_records": 64,
+        "sampled": 64
+      },
+      "concurrent_state": {
+        "children": 8,
+        "comparisons": 844,
+        "pairs": 4,
+        "scope": "concurrent activation without a competing controller; same complete original-state comparator and truth checks"
+      },
+      "exact_populations": {
+        "calls": 288,
+        "closed": 148,
+        "fresh_processes": 12,
+        "originals": 288,
+        "sampled": 140
+      },
+      "exact_state": {
+        "children": 8,
+        "comparisons": 844,
+        "conditional_branches": 130,
+        "input_reads": 130,
+        "original_instructions": 800,
+        "pairs": 4,
+        "return_reads": 4,
+        "taken_branches": 126
+      },
+      "forced_concurrent": {
+        "calls": 6,
+        "closed": 1,
+        "inflight_rearm": 1,
+        "registry_contentions": 0,
+        "removed": 1,
+        "sampled": 4,
+        "writer_contentions": 2
+      },
+      "history": {
+        "actions": 600,
+        "calls": 2,
+        "epochs": 300,
+        "history_batches": 77,
+        "new_prefix": 599,
+        "old_prefix": 1,
+        "retired": 300,
+        "sampled": 2
+      },
+      "optional_functional": {
+        "actions": 5,
+        "batches": 3,
+        "calls": 96,
+        "capacity_refusals": 2,
+        "detached": true,
+        "empty_drains": 3,
+        "epochs": 2,
+        "events": 128,
+        "fast": 32,
+        "fresh_processes": 1,
+        "helper_joins": 1,
+        "input_unchanged": true,
+        "originals": 96,
+        "registrations": 1,
+        "report_records": 64,
+        "rows": 64,
+        "sampled": 64,
+        "short_ret_refusals": 1,
+        "slow": 64,
+        "status": "PASS",
+        "unsampled": 0
+      },
+      "optional_state": {
+        "fast": {
+          "children": 8,
+          "comparisons": 978,
+          "controller_transitions": 4,
+          "helper_joins": 4,
+          "observer_entries": 0,
+          "pairs": 4,
+          "status": "PASS"
+        },
+        "slow": {
+          "children": 8,
+          "comparisons": 978,
+          "controller_transitions": 4,
+          "helper_joins": 4,
+          "observer_entries": 8,
+          "pairs": 4,
+          "status": "PASS"
+        }
+      },
+      "ordinary_state": {
+        "children": 8,
+        "comparisons": 978,
+        "pairs": 4
+      },
+      "retirement": [
+        {
+          "actions": 32,
+          "calls": 16,
+          "case": "sixteen-epochs",
+          "epochs": 16,
+          "events": 32,
+          "joined": true,
+          "originals": 16,
+          "registrations": 1,
+          "report_permit_refusals": 16,
+          "rows": 16,
+          "sampled": 16,
+          "status": "PASS"
+        },
+        {
+          "actions": 2,
+          "calls": 2,
+          "case": "function-closed",
+          "closed": 1,
+          "events": 4,
+          "joined": true,
+          "originals": 2,
+          "post_return_stage": true,
+          "receipt_permit_refusal": 1,
+          "report_ready_before_return": true,
+          "rows": 2,
+          "sampled": 1,
+          "status": "PASS"
+        }
+      ],
+      "streamed": {
+        "batches": 40,
+        "calls": 160,
+        "coverage": [
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2,
+          6,
+          2
+        ],
+        "epochs": 20,
+        "events": 320,
+        "originals": 160,
+        "replacements": 17,
+        "sampled": 120,
+        "slots": 3,
+        "unsampled": 40
+      },
+      "timed": {
+        "calls": 24,
+        "coverage": [
+          6,
+          2,
+          6,
+          2,
+          6,
+          2
+        ],
+        "originals": 24,
+        "sampled": 18,
+        "unsampled": 6
+      }
+    },
+    "failed": 0,
+    "passed": 31,
+    "unrun": 0
+  },
+  "revision": "398203e80d7784b3ee62c7ed84933c09e0e56b73",
+  "schema": 1,
+  "scope": "Projection of pinned CLOSED JSON/CSV metadata and source hashes, not independent stream/state replay. Whole input, journal, Report and return checks in controls are source-attested; timed trials check journal contents and Report counts.",
+  "status": "PREREQUISITES_PASS_TIMED_CAMPAIGN_FAILED",
+  "timed_trial_failure": {
+    "case": "optional-backoff-k10",
+    "closure": {
+      "helper": {
+        "absence_proof": "ECHILD",
+        "cleanup_events": [],
+        "elapsed_seconds": 1.6537714251317084,
+        "exit": 101,
+        "inputs_unchanged": true,
+        "unexpected_descendants": [],
+        "wall_timeout": false
+      },
+      "helper_receipt": {
+        "bytes": 590,
+        "sha256": "7806f7d095ea7cf5924a06b10ace6f63016abf58878271f1b45c3e759876fcad"
+      },
+      "parent": {
+        "cleanup_complete": true,
+        "exit_code": 1,
+        "reaped_descendants": 0,
+        "seconds": 1.6959095830097795,
+        "termination": null
+      },
+      "parent_receipt": {
+        "bytes": 344,
+        "sha256": "7bb6a3e2f90cefa9eddb5e02e255e42384ff578cc7836bf91af27d02bb4cc03e"
+      }
+    },
+    "current_generation": 149,
+    "deadline_diagnostic": null,
+    "error": "Full",
+    "fast": 1839,
+    "k1000": "UNRUN",
+    "pending_packet": 861,
+    "phase": "controller-to-sink Calls export",
+    "physical": 3441,
+    "revision": "398203e80d7784b3ee62c7ed84933c09e0e56b73",
+    "sampled": 1487,
+    "scope": "Root-read failure summary; no OS scheduling cause or successful complete window inferred.",
+    "slow": 1602,
+    "status": "FAILED",
+    "stderr": {
+      "bytes": 9852,
+      "sha256": "d06fb1d177ba9dafafe5bade0ba26bf912e4b26178c743e0f773816cc398ced3"
+    },
+    "unsampled": 115,
+    "worker_detached": true,
+    "worker_error": null,
+    "worker_unexported": false
+  }
+}
