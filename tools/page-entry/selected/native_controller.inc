@@ -45,8 +45,14 @@ static int selected_native_fetch(int sig,siginfo_t *si,ucontext_t *uc) {
     if((uintptr_t)si->si_addr!=pc)return 0;
     const struct li2_rseq_state *rseq=li2_rseq_snapshot();
     checked(rseq->initialized && !rseq->first_error,1434,0);
+#ifdef LI2_RSEQ_NATIVE
+    if(rseq->registered) {
+        checked(rseq->registered==1 && rseq->held==1 && rseq->phase==LI2_RSEQ_ACTIVE,1434,1);
+    } else checked(!rseq->held && rseq->phase==LI2_RSEQ_IDLE,1434,1);
+#else
     if(rseq->registered)return 0;
     checked(!rseq->held && rseq->phase==LI2_RSEQ_IDLE,1434,1);
+#endif
     if(!li2_lifecycle_native_admit(pc))return 0;
     if(image_code(&original_main,pc)) {
         checked(native_main_admissions!=UINT64_MAX,1436,1);++native_main_admissions;

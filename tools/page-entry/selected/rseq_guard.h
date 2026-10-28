@@ -64,4 +64,42 @@ int li2_rseq_after_syscall(long,const long[6]);
 int li2_rseq_check_instruction(const struct li2_decoded *,const ucontext_t *);
 struct li2_run_plan;
 int li2_rseq_check_run(const struct li2_run_plan *,const ucontext_t *);
+
+#ifdef LI2_RSEQ_NATIVE
+#if LI2_RSEQ_NATIVE != 1 || !defined(LI2_NATIVE_PAGES) || !defined(LI2_RSEQ_INACTIVE) || \
+    !defined(LI2_MAPS_PHASE_REUSE) || !defined(LI2_TF_HANDOFF) || \
+    !defined(LI2_REGISTER_RUN) || !defined(LI2_CPUID_NX_ONLY)
+#error "Registered native epochs require the complete CPUID-NX native-page profile"
+#endif
+#ifdef LI2_ONESHOT_PUBLICATION
+#error "Registered native epochs are a separate native-page profile"
+#endif
+enum li2_rseq_native_phase { LI2_RN_IDLE,LI2_RN_PREPARED,LI2_RN_EXECUTING,
+    LI2_RN_CLOSING,LI2_RN_FAILED };
+enum li2_rseq_native_error { LI2_RN_STATE=1470,LI2_RN_PIN,LI2_RN_WORD,
+    LI2_RN_ENTRY,LI2_RN_CLOSE,LI2_RN_TLS,LI2_RN_OVERFLOW,LI2_RN_REENTRY };
+/* Separate private epoch. The old inactive-owner layout and every old guard
+   remain unchanged; exit zero does not prove nonpublication during execution. */
+struct li2_rseq_native_state {
+    volatile sig_atomic_t phase,checking;
+    unsigned first_error,unsafe_terminal,entry_checked;
+    long first_detail,pid,tid;
+    uint64_t attempts,admissions,preentries,entries,closed,tls_refreshes;
+    uintptr_t pc,address,page;
+    uint64_t registration_epoch,native_admissions_before,native_closed_before;
+    uint32_t length,signature;
+    uint64_t word_before,word_entry,word_after;
+    uint64_t fs_before,gs_before,fs_after,gs_after;
+    uint16_t fs_selector_entry,gs_selector_entry,fs_selector_after,gs_selector_after;
+    struct li2_rseq_data before,after;
+};
+const struct li2_rseq_native_state *li2_rseq_native_snapshot(void);
+/* First handler statement, before even generic checked()/fatal cleanup. Pure
+   retained-pin/word observation; contradictions use only nonreturning exit. */
+void li2_rseq_native_preentry(void);
+int li2_rseq_native_prepare(uintptr_t);
+int li2_rseq_native_publish(uintptr_t);
+int li2_rseq_native_enter(int,siginfo_t *,const ucontext_t *);
+int li2_rseq_native_closed(void);
+#endif
 #endif

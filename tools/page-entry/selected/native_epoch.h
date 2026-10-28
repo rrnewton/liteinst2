@@ -43,7 +43,8 @@ void li2_lifecycle_native_close_abort(void);
 /* Initialize after the existing real session/self-test; whole bridge storage
    is protected by runtime_arm. A native epoch may be enabled only by a separate
    qualified scanner/admission owner preserving TF-clear execution, singleton
-   custody, no registered rseq, and the qualified execution-mode envelope.
+   custody, no registered rseq in the default profile (or the separate
+   LI2_RSEQ_NATIVE transition contract), and the qualified execution-mode envelope.
    RF is normalized for the next instruction start, not reconstructed before
    the native epoch; the actual fault frame is retained unchanged. This module
    does not establish the scanner or execution-mode policy.
