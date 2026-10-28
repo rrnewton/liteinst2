@@ -1,11 +1,21 @@
 /* Explicit configured profile only; ordinary builds do not include this file. */
 #include "provider_policy.h"
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+#include "provider_builtin_policy.h"
+#endif
 struct selected_provider_binding {
     li2_selected_callback random;
     li2_selected_cpuid_callback cpuid;
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+    li2_selected_clock_callback clock;
+    li2_selected_syscall_callback syscall;
+#endif
 };
 static const struct selected_provider_binding selected_provider_binding={
     li2_policy_mask_random_v1,li2_policy_cpuid_mask_v1
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+    ,li2_policy_clock_v1,li2_policy_syscall_v1
+#endif
 };
 static struct {
     unsigned initialized,mode;
@@ -19,6 +29,9 @@ static struct {
         struct li2_selected_cpuid_result result;
     } cpuid;
 } selected_provider_state;
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+#include "selected_provider_builtins.inc"
+#endif
 static void selected_provider_configure(void) {
     checked(!selected_provider_state.initialized,1600,0);
     const char *const *env=bridge_environment();
@@ -34,6 +47,13 @@ static void selected_provider_configure(void) {
         size_t n=0;while(n<sizeof(mode)-1 && value[n]==mode[n])++n;
         if(n==sizeof(mode)-1 && !value[n])configured=1;
         else {
+#ifdef LI2_SELECTED_PROVIDER_BUILTINS
+            const char builtins[]="deterministic-builtins-v1";
+            n=0;while(n<sizeof(builtins)-1 && value[n]==builtins[n])++n;
+            if(n==sizeof(builtins)-1 && !value[n]) {
+                configured=1;selected_provider_builtins_enabled=1;continue;
+            }
+#endif
             const char native[]="native";
             n=0;while(n<sizeof(native)-1 && value[n]==native[n])++n;
             checked(n==sizeof(native)-1 && !value[n],1600,3);
@@ -90,6 +110,11 @@ static void selected_provider_cpuid_committed(void) {
 static void selected_provider_report(unsigned status,unsigned code) {
     if(!selected_provider_state.mode)return; /* default native report stays exact */
     struct writer w={.used=0};
+    #ifdef LI2_SELECTED_PROVIDER_BUILTINS
+    if(selected_provider_builtins_enabled)
+        text(&w,"LI2_PROVIDER {\"version\":1,\"scope\":\"configured_cpuid_random_id\",\"policy\":\"deterministic-builtins-v1\"");
+    else
+    #endif
     text(&w,"LI2_PROVIDER {\"version\":1,\"scope\":\"configured_cpuid_random_id\",\"policy\":\"mask-random-v1\"");
     field(&w,",\"status\":",status);field(&w,",\"failure_code\":",code);
     field(&w,",\"initialized\":",selected_provider_state.initialized);

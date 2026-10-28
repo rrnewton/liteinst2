@@ -114,7 +114,7 @@ def execute(carrier, argv):
 def execute_loader(carrier, original, roots, directory, argv, fork_fds=None, child_failure=0, disable_rseq=False, provider_policy=None):
     # This separate command intentionally supplies a private namespace and a
     # closed environment. The original fixture's make/exec path is unchanged.
-    if provider_policy not in (None, "mask-random-v1"):
+    if provider_policy not in (None, "mask-random-v1", "deterministic-builtins-v1"):
         raise ValueError("unknown selected provider policy")
     import namespace
     with carrier.open("rb") as stream:
@@ -184,7 +184,7 @@ def main():
     loader.add_argument("--library-root", action="append", type=Path, required=True)
     loader.add_argument("--namespace", type=Path, required=True)
     loader.add_argument("--disable-rseq", action="store_true", help="explicit glibc.pthread.rseq=0 workload")
-    loader.add_argument("--provider-policy", choices=("mask-random-v1",),
+    loader.add_argument("--provider-policy", choices=("mask-random-v1", "deterministic-builtins-v1"),
                         help="explicit configured selected-provider policy; native behavior remains the default")
     loader.add_argument("carrier", type=Path)
     loader.add_argument("original", type=Path)

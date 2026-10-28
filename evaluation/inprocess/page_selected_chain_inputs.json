@@ -191,9 +191,9 @@
       "sha256": "c046df2d3398e9ee28fc64041db51fca7e2fe7bf84dfc4ea3766709dfb065dab"
     },
     {
-      "bytes": 26706,
+      "bytes": 28605,
       "path": "tools/page-entry/selected/runtime_loader.c",
-      "sha256": "feacc097a77367c976548b968567af20699544765bad523016337769b4ed8e8c"
+      "sha256": "65100cec00fed8a9f41e3bfdb9107ed5c034a9a39fc25b36709d2f7c08e2e39e"
     },
     {
       "bytes": 4648,
@@ -201,9 +201,9 @@
       "sha256": "aa628e331cf54cb1dea86c87b44656b543c6856d91a2a4637195bda35802ef0c"
     },
     {
-      "bytes": 32155,
+      "bytes": 32527,
       "path": "tools/page-entry/selected/selected_controller.inc",
-      "sha256": "9605e573c0ad4f5938da387583aa33514fa285468a7344c4beb3dc21c54172d6"
+      "sha256": "3a20f3b9942f0a64157875d57c623780949b2dd15349c6790c2a6af4dc9fc705"
     },
     {
       "bytes": 4784,

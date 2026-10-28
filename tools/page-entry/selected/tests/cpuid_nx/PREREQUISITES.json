@@ -47,15 +47,15 @@
     {
       "path": "tools/page-entry/selected/runtime_loader.c",
       "fact": {
-        "bytes": 26706,
-        "sha256": "feacc097a77367c976548b968567af20699544765bad523016337769b4ed8e8c"
+        "bytes": 28605,
+        "sha256": "65100cec00fed8a9f41e3bfdb9107ed5c034a9a39fc25b36709d2f7c08e2e39e"
       }
     },
     {
       "path": "tools/page-entry/selected/selected_controller.inc",
       "fact": {
-        "bytes": 32155,
-        "sha256": "9605e573c0ad4f5938da387583aa33514fa285468a7344c4beb3dc21c54172d6"
+        "bytes": 32527,
+        "sha256": "3a20f3b9942f0a64157875d57c623780949b2dd15349c6790c2a6af4dc9fc705"
       }
     },
     {
@@ -68,8 +68,8 @@
     {
       "path": "tools/page-entry/selected/selected_provider.inc",
       "fact": {
-        "bytes": 5974,
-        "sha256": "0627535af9a8a18357846f05b7f19f4fe46c1ac8d94a546e0a964e9a04d87b50"
+        "bytes": 6921,
+        "sha256": "1aa2b4c381f7407e210aa15d507ec043edf44fa7ed26ffb0b49c0535bc1009f9"
       }
     }
   ]
