@@ -264,9 +264,9 @@
       "sha256": "52e76bbd11bc6bc78ff0e16158c3d7230d657af1c54a805310cdfc9f7345157f"
     },
     {
-      "bytes": 36855,
+      "bytes": 36919,
       "path": "tools/page-entry/selected/lifecycle_loader.c",
-      "sha256": "569aecdecb70d4254d63ab721a22e9048ed045cbdfc4794d49d0204e3dac1047"
+      "sha256": "6d64e5a40f165e6e793777e3bc5477b0f563827534fb1b2c6889ffe58e1b9352"
     },
     {
       "bytes": 5426,
