@@ -578,6 +578,7 @@ enum li2_tf_entry_route li2_tf_entry_route(const struct li2_decoded *d) {
     case 3210: /* EVEX_Vpbroadcastb_zmm_k1z_r32; classifier still exact 62e27d487ac6 */
     case 1605: /* EVEX_Vmovdqu64_zmm_k1z_zmmm512; classifier still exact 62e1fe486f0f */
     case 2791: /* EVEX_Vptestnmb_kr_k1_zmm_zmmm512; classifier still exact 62b2764026c1 */
+    case 1933: /* VEX_Kmovq_r64_kr; classifier still exact c4e1fb93f0 */
         return LI2_TF_ENTRY_PLAIN;
     default:return LI2_TF_ENTRY_UNKNOWN;
     }

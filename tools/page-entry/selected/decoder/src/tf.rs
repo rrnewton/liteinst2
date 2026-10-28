@@ -156,6 +156,10 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         // Exact observed unmasked register form: K0[i] = (ZMM17.byte[i] == 0).
         // Other destinations, sources, masks, widths and memory forms stay closed.
         if source[..instruction.len()] != [0x62, 0xb2, 0x76, 0x40, 0x26, 0xc1] { return Ok(out); }
+    } else if instruction.code() == Code::VEX_Kmovq_r64_kr {
+        // Exact observed register transfer: RSI[63:0] <- K0[63:0].
+        // No other VEX, direction, width, destination, source or memory form.
+        if source[..instruction.len()] != [0xc4, 0xe1, 0xfb, 0x93, 0xf0] { return Ok(out); }
     } else if instruction.code() == Code::Pmaxud_xmm_xmmm128 {
         if !canonical_pmaxud(&instruction, &source[..instruction.len()]) { return Ok(out); }
     } else if instruction.code() == Code::Xgetbv {
@@ -443,6 +447,7 @@ pub(crate) fn one(pc: u64, source: &[u8]) -> Result<Classification, u32> {
         | Code::EVEX_Vpbroadcastb_zmm_k1z_r32
         | Code::EVEX_Vmovdqu64_zmm_k1z_zmmm512
         | Code::EVEX_Vptestnmb_kr_k1_zmm_zmmm512
+        | Code::VEX_Kmovq_r64_kr
         | Code::Pmovmskb_r32_xmm
         // Legacy m64 half moves only. Other XMM lanes and upper vectors survive.
         | Code::Movlpd_xmm_m64 | Code::Movlpd_m64_xmm

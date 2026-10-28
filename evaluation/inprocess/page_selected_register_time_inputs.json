@@ -240,10 +240,10 @@
       "sha256": "c413a1e4596328d6e82ee57e7ea2678344b6a29822597aca5eae6ac1e09671b7"
     },
     {
-      "bytes": 27727,
-      "origin": "c3c42b67b35a plus reviewed exact VPBROADCASTB composition 2a599b1f; exact VMOVDQU64 leaf55898638 + shared PLAIN1605; exact VPTESTNMB self-register Code2791 successor",
+      "bytes": 28061,
+      "origin": "c3c42b67b35a plus reviewed exact VPBROADCASTB composition 2a599b1f; exact VMOVDQU64 leaf55898638 + shared PLAIN1605; exact VPTESTNMB self-register Code2791 successor; exact KMOVQ RSI,K0 Code1933 successor",
       "path": "tools/page-entry/selected/decoder/src/tf.rs",
-      "sha256": "3243af41d7705eff02ad0ba4a869e98730f861d6bcc260a2848ee19d20b8fcdf"
+      "sha256": "917e3b89a5e2403ead4d0128dd1845c0f98407e0fc77ba34bb746d94ea315166"
     },
     {
       "bytes": 2900,
