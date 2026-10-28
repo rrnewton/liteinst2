@@ -810,3 +810,72 @@ fn function_closed_receipts_retain_epoch_through_child_ack_and_root_finish() {
     // Both exported batches remain alive and contain no epoch owner permit.
     assert_eq!((first.rows().len(), second.rows().len()), (2, 2));
 }
+
+#[test]
+fn source_batch_admission_is_nonreserving_and_checks_all_ids_and_storage_bounds() {
+    let mut f = Fixture::new();
+    let ids = [1, 2, 3, 4, 5, 6, 7, 8];
+    assert_eq!(f.state.check_source_batch(&ids), Ok(()));
+    assert_eq!(f.state.last_external, 0);
+    assert_eq!(f.state.next, 1);
+    assert_eq!(f.state.len, 0);
+    assert_eq!(f.state.journal.used(), 0);
+    assert_eq!(f.state.totals, TreeTotals::default());
+    assert!(f.state.active.is_none());
+    for i in 0..8 {
+        let mut bad = ids;
+        bad[i] = 0;
+        assert_eq!(
+            f.state.check_source_batch(&bad),
+            Err(error(Cause::Capacity))
+        );
+        if i != 0 {
+            bad = ids;
+            bad[i] = bad[i - 1];
+            assert_eq!(
+                f.state.check_source_batch(&bad),
+                Err(error(Cause::Capacity))
+            );
+        }
+    }
+    f.state.last_external = 1;
+    assert_eq!(
+        f.state.check_source_batch(&ids),
+        Err(error(Cause::Capacity))
+    );
+    f.state.last_external = 0;
+    for len in 0..=33 {
+        f.state.len = len;
+        assert_eq!(f.state.check_source_batch(&ids).is_ok(), len <= 16);
+    }
+    f.state.len = 0;
+    for used in 0..=65 {
+        f.state.journal.word(0, used);
+        assert_eq!(f.state.check_source_batch(&ids).is_ok(), used <= 32);
+    }
+    f.state.journal.word(0, 0);
+    for field in 0..7 {
+        let old_next = f.state.next;
+        let old_base = f.state.gate_base;
+        let old = f.state.totals;
+        match field {
+            0 => f.state.next = u64::MAX - 15,
+            1 => f.state.gate_base = u64::MAX - 7,
+            2 => f.state.totals.roots = u64::MAX - 7,
+            3 => f.state.totals.pairs.entries = u64::MAX - 15,
+            4 => f.state.totals.pairs.returns = u64::MAX - 15,
+            5 => f.state.totals.pairs.completed = u64::MAX - 15,
+            6 => f.state.totals.pairs.unsampled = u64::MAX - 15,
+            _ => unreachable!(),
+        }
+        assert_eq!(
+            f.state.check_source_batch(&ids),
+            Err(error(Cause::Capacity))
+        );
+        f.state.next = old_next;
+        f.state.gate_base = old_base;
+        f.state.totals = old;
+    }
+    assert_eq!(f.state.check_source_batch(&ids), Ok(()));
+    assert_eq!(f.state.begin(1, 10), Ok(())); // batch admission consumed no ID
+}

@@ -14,6 +14,7 @@ use std::path::Path;
 
 mod cfg;
 mod tree;
+pub(in crate::frontend_native) use tree::TreeSourceProof;
 pub use tree::{
     CallTreeCertificate, LoadedCallTree, TreeCallEdge, TreeContract, TreeRootCertificate,
 };
@@ -612,8 +613,21 @@ fn verify_expected_bodies(
     expected: &[u8],
     additional: Option<BodyOverlay<'_>>,
 ) -> Result<(), SetupRefusal> {
+    verify_source_provenance(owner, parsed, entry, source_start, expected.len())?;
+    let whole = expected_source_page(parsed, entry, source_start, expected, additional)?;
+    // SAFETY: retained readable mapping contract and current complete provenance.
+    unsafe { verify_live_source(source_start, &whole) }
+}
+
+fn verify_source_provenance(
+    owner: &mut Retained,
+    parsed: &Parsed,
+    entry: u64,
+    source_start: u64,
+    expected_len: usize,
+) -> Result<(), SetupRefusal> {
     if owner.pid != std::process::id()
-        || expected.len() != parsed.code.len()
+        || expected_len != parsed.code.len()
         || stamp(&owner.file)? != owner.original
         || bounded_read(&mut owner.file)? != owner.expected
         || stamp(&owner.file)? != owner.original
@@ -672,6 +686,16 @@ fn verify_expected_bodies(
         Some("r-xp"),
         Some(parsed.page_offset),
     )?;
+    Ok(())
+}
+
+fn expected_source_page(
+    parsed: &Parsed,
+    entry: u64,
+    source_start: u64,
+    expected: &[u8],
+    additional: Option<BodyOverlay<'_>>,
+) -> Result<Vec<u8>, SetupRefusal> {
     let mut whole = parsed.source.clone();
     let at = usize::try_from(entry - source_start).map_err(|_| SetupRefusal::Format)?;
     whole
@@ -703,8 +727,13 @@ fn verify_expected_bodies(
             .ok_or(SetupRefusal::Format)?
             .copy_from_slice(body.expected);
     }
-    // SAFETY: caller's retained readable mapping contract, plus complete
-    // current file-backed page ownership/protection validation above.
+    Ok(whole)
+}
+
+// The actual retained owner must keep this entire mapping readable. Endpoint
+// provenance and a byte comparison cannot protect against forbidden unmapping.
+unsafe fn verify_live_source(source_start: u64, whole: &[u8]) -> Result<(), SetupRefusal> {
+    // SAFETY: the private caller holds the complete continuing mapping contract.
     if unsafe { std::slice::from_raw_parts(source_start as usize as *const u8, whole.len()) }
         != whole
     {

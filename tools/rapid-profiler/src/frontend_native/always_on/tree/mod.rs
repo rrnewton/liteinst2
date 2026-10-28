@@ -3,11 +3,16 @@ pub use super::gate::tree::{OriginalTreeCallResult, TreeCallGate, TreeCallResult
 pub use super::site::SiteError;
 use super::*;
 use liteinst2::controls::ManagedCallback;
+mod batch;
 mod drain;
 mod postflight;
 mod prepared;
 mod runtime;
 mod site;
+pub use batch::{
+    OriginalTreeSourceBatch, TreeSourceBatch, TreeSourceBatchError, TreeSourceBatchRequest,
+    TreeSourceBatchVerification,
+};
 pub use drain::TreeBatch;
 pub use prepared::PreparedTreeCall;
 pub use site::{InstalledTreeSite, PreparedOriginalTreeCall, TreeSitePreparation};
@@ -394,6 +399,7 @@ pub struct TreeThread {
     active: bool,
     finished: Option<TreeTotals>,
     cursor: drain::Cursor,
+    batch: batch::Latch,
     _local: PhantomData<Rc<()>>,
 }
 thread_local! {
@@ -457,6 +463,7 @@ impl TreeClient {
                     active: true,
                     finished: Some(TreeTotals::default()),
                     cursor: drain::Cursor::default(),
+                    batch: batch::Latch::Closed,
                     _local: PhantomData,
                 })
             })
@@ -475,6 +482,11 @@ impl TreeThread {
             && Arc::ptr_eq(&self.binding.key, &state.binding.key)
     }
     pub fn totals(&self) -> Result<TreeTotals, BridgeError> {
+        self.batch.closed().map_err(|_| error(Cause::Outstanding))?;
+        self.checkpoint_totals()
+    }
+    // Only private batch operations may check healthy state while its latch is open.
+    fn checkpoint_totals(&self) -> Result<TreeTotals, BridgeError> {
         TREE_STATE
             .try_with(|cell| {
                 let s = cell.try_borrow().map_err(|_| error(Cause::Attachment))?;
@@ -510,6 +522,7 @@ impl TreeThread {
         bytes: &'call [u8],
         external_id: u64,
     ) -> Result<PreparedTreeCall<'call>, TreeError> {
+        self.batch.closed().map_err(|_| error(Cause::Outstanding))?;
         let input = input_copy(bytes)?;
         let before = self.totals()?;
         {
@@ -546,6 +559,7 @@ impl TreeThread {
         input: [u8; 1024],
         external_id: u64,
         before: TreeTotals,
+        source: batch::SourceAuthority<'_>,
     ) -> Result<TreeCallResult, TreeError> {
         let gate = Arc::clone(&self.binding.site.gate);
         let (stack, sequence) = TREE_STATE
@@ -579,7 +593,13 @@ impl TreeThread {
                 pending.map_err(TreeError::Gate),
                 || {
                     let _scope = ControllerScope::enter()?;
-                    self.live.verify().map_err(TreeError::Site)
+                    match source {
+                        batch::SourceAuthority::Full => self.live.verify(),
+                        batch::SourceAuthority::Batch(proof) => {
+                            self.live.verify_source_proof(proof)
+                        }
+                    }
+                    .map_err(TreeError::Site)
                 },
                 || {
                     if bytes == input {

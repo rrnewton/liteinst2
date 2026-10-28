@@ -378,3 +378,22 @@ fn elf_entry_requires_one_nonempty_executable_file_interval() {
     ph(&mut bad, 2, 1, 5, 0x1000, 1); // two real RX owners must not be merged
     assert_eq!(parse(&bad, "checksum").err(), Some(SetupRefusal::Format));
 }
+
+#[test]
+fn full_live_page_comparison_rejects_every_mutation_without_masks() {
+    let mut actual: [u8; 4096] = std::array::from_fn(|i| (i / 17) as u8);
+    let expected = actual;
+    let address = actual.as_ptr() as usize as u64;
+    // SAFETY: ordinary readable allocated data only; no native execution/mapping credit.
+    assert_eq!(unsafe { verify_live_source(address, &expected) }, Ok(()));
+    for (i, &byte) in expected.iter().enumerate() {
+        actual[i] = byte ^ 1;
+        assert_eq!(
+            unsafe { verify_live_source(address, &expected) },
+            Err(SetupRefusal::SourceBytes)
+        );
+        actual[i] = byte;
+    }
+    assert_eq!(actual, expected);
+    assert_eq!(unsafe { verify_live_source(address, &expected) }, Ok(()));
+}

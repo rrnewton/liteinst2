@@ -235,7 +235,49 @@ pub struct LoadedCallTree {
     certificate: CallTreeCertificate,
     source_start: u64,
 }
+// Private expected bytes bound to the actual retained owner; never independent
+// execution or mapping authority. A batch also borrows that owner exclusively.
+pub(in crate::frontend_native) struct TreeSourceProof {
+    owner: usize,
+    pid: u32,
+    start: u64,
+    expected: Vec<u8>,
+}
 impl LoadedCallTree {
+    // Only the tree facade supplies a whole page after its exact full verifier.
+    pub(in crate::frontend_native) fn source_proof(
+        &self,
+        expected: &[u8],
+    ) -> Result<TreeSourceProof, SetupRefusal> {
+        if expected.len() != 4096 || self.parsed.source.len() != 4096 {
+            return Err(SetupRefusal::SourceBytes);
+        }
+        let proof = TreeSourceProof {
+            owner: core::ptr::from_ref(self) as usize,
+            pid: std::process::id(),
+            start: self.source_start,
+            expected: expected.to_vec(),
+        };
+        self.verify_source_proof(&proof)?;
+        Ok(proof)
+    }
+    pub(in crate::frontend_native) fn verify_source_proof(
+        &self,
+        proof: &TreeSourceProof,
+    ) -> Result<(), SetupRefusal> {
+        if proof.owner != core::ptr::from_ref(self) as usize
+            || proof.pid != std::process::id()
+            || self.owner.pid != proof.pid
+            || proof.start != self.source_start
+            || proof.expected.len() != 4096
+            || self.parsed.source.len() != 4096
+        {
+            return Err(SetupRefusal::SourceBytes);
+        }
+        // SAFETY: exclusive batch borrow plus the continuous unsafe load/batch
+        // contracts retain all 4096 readable bytes, including between calls.
+        unsafe { super::verify_live_source(self.source_start, &proof.expected) }
+    }
     /// Authenticate both named protected symbols and retain one ordinary loader
     /// owner. Calling or publishing requires the separate tree execution profile.
     ///

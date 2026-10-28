@@ -132,7 +132,9 @@ pub use always_on::optional::{
 /// Closed depth-two ordinary call tree with original CALL/return-word geometry.
 /// Distinct from leaf admission; no recursion, tail calls or timing accuracy.
 pub use always_on::tree::{
-    InstalledTreeSite, OriginalTreeCallResult, PreparedOriginalTreeCall, PreparedTreeCall,
-    PreparedTreeController, TreeBatch, TreeCallGate, TreeCallResult, TreeClient, TreeController,
-    TreeError, TreeRecord, TreeSitePreparation, TreeThread, TreeTotals,
+    InstalledTreeSite, OriginalTreeCallResult, OriginalTreeSourceBatch, PreparedOriginalTreeCall,
+    PreparedTreeCall, PreparedTreeController, TreeBatch, TreeCallGate, TreeCallResult, TreeClient,
+    TreeController, TreeError, TreeRecord, TreeSitePreparation, TreeSourceBatch,
+    TreeSourceBatchError, TreeSourceBatchRequest, TreeSourceBatchVerification, TreeThread,
+    TreeTotals,
 };
