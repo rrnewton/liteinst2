@@ -27,14 +27,16 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 19,
-        "refusals": 135,
+        "refusals": 128,
         "version": 1
       },
       "kind": "leaf",
       "name": "leaf0",
       "process_outcome": "completed original-PC native/TF instruction pairs",
+      "promoted_encoding_checks": 7,
+      "promoted_footprint_queries": 7,
       "stderr": "",
-      "stdout": "LI2_SHORT_LEAF_PASS group=0 pairs=19\n"
+      "stdout": "LI2_SHORT_LEAF_PASS group=0 pairs=19 promoted_encoding_checks=7 promoted_footprint_queries=7\n"
     },
     {
       "argv": [
@@ -56,14 +58,16 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 135,
+        "refusals": 128,
         "version": 1
       },
       "kind": "leaf",
       "name": "leaf1",
       "process_outcome": "completed original-PC native/TF instruction pairs",
+      "promoted_encoding_checks": 7,
+      "promoted_footprint_queries": 7,
       "stderr": "",
-      "stdout": "LI2_SHORT_LEAF_PASS group=1 pairs=21\n"
+      "stdout": "LI2_SHORT_LEAF_PASS group=1 pairs=21 promoted_encoding_checks=7 promoted_footprint_queries=7\n"
     },
     {
       "argv": [
@@ -85,14 +89,16 @@
         "owner_detail_negative": 0,
         "owner_failure": 0,
         "pairs": 21,
-        "refusals": 135,
+        "refusals": 128,
         "version": 1
       },
       "kind": "leaf",
       "name": "leaf2",
       "process_outcome": "completed original-PC native/TF instruction pairs",
+      "promoted_encoding_checks": 7,
+      "promoted_footprint_queries": 7,
       "stderr": "",
-      "stdout": "LI2_SHORT_LEAF_PASS group=2 pairs=21\n"
+      "stdout": "LI2_SHORT_LEAF_PASS group=2 pairs=21 promoted_encoding_checks=7 promoted_footprint_queries=7\n"
     },
     {
       "argv": [
@@ -171,7 +177,7 @@
   ],
   "record_header_format": "<17Q",
   "required_existing_suites": [
-    "page_selected_kmovq.py: unchanged21pairs/80refusals",
+    "page_selected_kmovq.py: unchanged21pairs;75refusals plus5 typed encoding/NONE promotions",
     "page_selected_chain_oracle.py: unchanged12programs+11failed operations",
     "all other currently required native suites and six workspace checks"
   ],
@@ -184,7 +190,8 @@
     "connected_route_checks_per_process": 15,
     "connected_startups": 2,
     "individual_pairs": 61,
-    "individual_refusals_per_process": 135,
+    "individual_promoted_encoding_checks_per_process": 7,
+    "individual_refusals_per_process": 128,
     "individual_startups": 3,
     "new_instruction_pairs": 58
   }

@@ -1,0 +1,301 @@
+{
+  "actual_before_queries_per_group": 40,
+  "bounds": {
+    "address_space_bytes": 536870912,
+    "cpu_affinity_count": 1,
+    "cpu_seconds": 5,
+    "file_size_bytes": 16777216,
+    "wall_seconds": 15
+  },
+  "commands": [
+    {
+      "actual_before_queries": 40,
+      "argv": [
+        "kmovq-register-0"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 0,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 91,
+        "version": 1
+      },
+      "name": "group0",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 5,
+      "promoted_footprint_queries": 5,
+      "stderr": "",
+      "stdout": "LI2_KMR_TF_PASS pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=28 new_refusal_bytes=16 promoted_encoding_checks=5 promoted_footprint_queries=5 actual_before_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "actual_before_queries": 40,
+      "argv": [
+        "kmovq-register-1"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 1,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 91,
+        "version": 1
+      },
+      "name": "group1",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 5,
+      "promoted_footprint_queries": 5,
+      "stderr": "",
+      "stdout": "LI2_KMR_TF_PASS pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=28 new_refusal_bytes=16 promoted_encoding_checks=5 promoted_footprint_queries=5 actual_before_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "actual_before_queries": 40,
+      "argv": [
+        "kmovq-register-2"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 2,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 91,
+        "version": 1
+      },
+      "name": "group2",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 5,
+      "promoted_footprint_queries": 5,
+      "stderr": "",
+      "stdout": "LI2_KMR_TF_PASS pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=28 new_refusal_bytes=16 promoted_encoding_checks=5 promoted_footprint_queries=5 actual_before_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "actual_before_queries": 40,
+      "argv": [
+        "kmovq-register-3"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 3,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 91,
+        "version": 1
+      },
+      "name": "group3",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 5,
+      "promoted_footprint_queries": 5,
+      "stderr": "",
+      "stdout": "LI2_KMR_TF_PASS pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=28 new_refusal_bytes=16 promoted_encoding_checks=5 promoted_footprint_queries=5 actual_before_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "actual_before_queries": 40,
+      "argv": [
+        "kmovq-register-4"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 4,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 91,
+        "version": 1
+      },
+      "name": "group4",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 5,
+      "promoted_footprint_queries": 5,
+      "stderr": "",
+      "stdout": "LI2_KMR_TF_PASS pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=28 new_refusal_bytes=16 promoted_encoding_checks=5 promoted_footprint_queries=5 actual_before_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "actual_before_queries": 40,
+      "argv": [
+        "kmovq-register-5"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 5,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 91,
+        "version": 1
+      },
+      "name": "group5",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 5,
+      "promoted_footprint_queries": 5,
+      "stderr": "",
+      "stdout": "LI2_KMR_TF_PASS pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=28 new_refusal_bytes=16 promoted_encoding_checks=5 promoted_footprint_queries=5 actual_before_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "actual_before_queries": 40,
+      "argv": [
+        "kmovq-register-6"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 6,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 91,
+        "version": 1
+      },
+      "name": "group6",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 5,
+      "promoted_footprint_queries": 5,
+      "stderr": "",
+      "stdout": "LI2_KMR_TF_PASS pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=28 new_refusal_bytes=16 promoted_encoding_checks=5 promoted_footprint_queries=5 actual_before_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    },
+    {
+      "actual_before_queries": 40,
+      "argv": [
+        "kmovq-register-7"
+      ],
+      "environment_delta": {},
+      "exit": 0,
+      "group": 7,
+      "header_equals": {
+        "completed": 21,
+        "control": 0,
+        "decoder_result": 0,
+        "expected_failure_verified": 0,
+        "failed_refusal": 18446744073709551615,
+        "fixture_failure": 0,
+        "header_bytes": 136,
+        "magic": 3550605999948051020,
+        "owner_detail_abs": 0,
+        "owner_detail_negative": 0,
+        "owner_failure": 0,
+        "pairs": 21,
+        "refusals": 91,
+        "version": 1
+      },
+      "name": "group7",
+      "process_outcome": "completed finite native/TF pair cohort",
+      "promoted_encoding_checks": 5,
+      "promoted_footprint_queries": 5,
+      "stderr": "",
+      "stdout": "LI2_KMR_TF_PASS pairs=21 register_moves=20 selftest=1 old_refusal_bytes=47 retained_refusal_bytes=28 new_refusal_bytes=16 promoted_encoding_checks=5 promoted_footprint_queries=5 actual_before_queries=40 full_state=21 full_memory=21 live_endpoints=21\n"
+    }
+  ],
+  "literal_effects": "Actual selected K source copies all64 bits into the literal non-RSP GPR. All other GPR/K/ZMM/flags/memory remain exact; stale destination differs.120 pairings plus40 width/geometry controls.",
+  "native_pairs_per_group": [
+    21,
+    21,
+    21,
+    21,
+    21,
+    21,
+    21,
+    21
+  ],
+  "negative_endpoint": "No data memory operand.91 encoding refusals and5 typed promotions each group; all8 RSP destinations remain refused.",
+  "new_refusal_count": 44,
+  "new_register_move_pairs_total": 160,
+  "old_refusal_count": 47,
+  "promoted_encoding_checks_per_group": 5,
+  "prospective_only": true,
+  "record_extent": "136+22*actual_ELF_sample_bytes+40+5176+2048; negative sample zero; actual observed query trailer.",
+  "record_header_fields": [
+    "magic",
+    "version",
+    "header_bytes",
+    "sample_bytes",
+    "pairs",
+    "completed",
+    "control",
+    "xcr0",
+    "xsave_bytes",
+    "refusals",
+    "failed_refusal",
+    "decoder_result",
+    "expected_failure_verified",
+    "fixture_failure",
+    "owner_failure",
+    "owner_detail_abs",
+    "owner_detail_negative"
+  ],
+  "record_header_format": "<17Q",
+  "record_limit_bytes": 16777216,
+  "schema_version": 1,
+  "scope": "Canonical Code1933 KMOVQ non-RSP r64,K.120 register pairings plus40 width/geometry controls. Original full-state native/TF comparison; no memory operand, RSP, reverse direction, real-program or performance claim."
+}

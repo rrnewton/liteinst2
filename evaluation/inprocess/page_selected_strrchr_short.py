@@ -21,7 +21,7 @@ HERE=Path(__file__).resolve().parent
 SELECTED=ROOT/'tools/page-entry/selected'
 FIXTURE=SELECTED/'tests/strrchr_short'
 PROFILES=dict(BUILD_PROFILES,fixture_link=[5,512<<20,16<<20,15],native=[5,512<<20,16<<20,15])
-OUTCOMES_SHA='44f8b7f287fa6d2a8199fecdcdc96a39326d487643e7933e4c557fad5b3e94c4'
+OUTCOMES_SHA='14f67939cce61c219f3cfbcafe76c3b123ef7bd560b68056100f3aa27e828748'
 
 
 def publish(path,r,private):
@@ -57,12 +57,13 @@ def main():
     private=ROOT/'target/evaluation/inprocess'/stem;private.mkdir(parents=True,exist_ok=False)
     public=HERE/'results'/(stem+'.json');need(not public.exists(),'unique receipt')
     r=dict(schema=1,profile='page-selected-strrchr-short-v1',status='failed',
-        scope='Only three exact register encodings and two literal29-byte return programs.61 original-PC native/TF pairs and two three-lane programs, including five startup pairs total. Existing full-state C predicates and old80 KMOV refusals remain. No general EVEX/VEX/BMI, memory-form, rseq, longer path, real-program completion or performance claim.',
+        scope='Only three exact register encodings and two literal29-byte return programs.61 original-PC native/TF pairs and two three-lane programs, including five startup pairs total. Existing full-state C predicates remain; each leaf retains128 refusals and7 exact typed1933/NONE promotions, with every old supplied byte row retained. No general EVEX/VEX/BMI, memory-form, rseq, longer path, real-program completion or performance claim.',
         expected_revision=args.expect_revision,started_utc=stamp,cpu=cpu,source=None,source_unchanged=False,
         bounds=PROFILES,reproduce=['python3','evaluation/inprocess/page_selected_strrchr_short.py','--expect-revision',args.expect_revision],
         commands=[],cases=[],error=None,final_errors=[],
         totals=dict(individual_pairs=0,new_instruction_pairs=0,connected_programs=0,connected_lanes=0,
-                    startup_pairs=0,refusal_checks=0,route_checks=0,genuine_trace_handoffs=0))
+                    startup_pairs=0,refusal_checks=0,route_checks=0,genuine_trace_handoffs=0,
+                    promoted_encoding_checks=0,promoted_footprint_queries=0))
     pins,binaries,aliases={},{},{}
     def pin(path):
         lexical=str(Path(path).absolute());p=Path(path).resolve(strict=True);value=fact(p)
@@ -162,14 +163,18 @@ def main():
             need(fact(path)=={k:captured[k]for k in ('bytes','sha256')},'complete actual capture binding');item['record']=fact(path)
             value=leaf(path.read_bytes(),expected,samples[expected['argv'][0]])if expected['kind']=='leaf'else connected(path.read_bytes(),layouts['short-connected'],expected)
             need(value['operation']=='completed','no failed operation relabelled completed')
-            if expected['kind']=='leaf':r['totals']['individual_pairs']+=value['pairs'];r['totals']['new_instruction_pairs']+=value['new_pairs']
+            if expected['kind']=='leaf':
+                r['totals']['individual_pairs']+=value['pairs'];r['totals']['new_instruction_pairs']+=value['new_pairs']
+                need(expected['promoted_encoding_checks']==expected['promoted_footprint_queries']==7,'exact supplied promotion protocol')
+                r['totals']['promoted_encoding_checks']+=7;r['totals']['promoted_footprint_queries']+=7
             else:
                 r['totals']['connected_programs']+=1;r['totals']['connected_lanes']+=3;r['totals']['route_checks']+=15
                 r['totals']['genuine_trace_handoffs']+=value['genuine_trace_handoffs']
             r['totals']['startup_pairs']+=1;r['totals']['refusal_checks']+=value['refusals']
             item.update(status='accepted_observation',outcome=value)
         need(r['totals']==dict(individual_pairs=61,new_instruction_pairs=58,connected_programs=2,connected_lanes=6,
-            startup_pairs=5,refusal_checks=499,route_checks=30,genuine_trace_handoffs=12) and
+            startup_pairs=5,refusal_checks=478,route_checks=30,genuine_trace_handoffs=12,
+            promoted_encoding_checks=21,promoted_footprint_queries=21) and
             len(r['cases'])==5 and all(c['status']=='accepted_observation'for c in r['cases']),'whole exact five-command cohort')
         r['status']='passed'
     except BaseException as exc:r['error']=type(exc).__name__+': '+str(exc)
