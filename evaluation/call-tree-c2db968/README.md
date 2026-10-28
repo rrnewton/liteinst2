@@ -90,3 +90,13 @@ both independent rustdoc suites (two positive/compile-only and 36 compile-fail
 checks) and excludes five nested child summaries. An initial private summary
 misclassified the positive rustdoc suite as nested and was rejected; correcting
 the counting rule changed no source, test or gate.
+
+After merging main `defa45be2fc7515e65a3a0befcd52b1beb84669a`, all seven
+checks passed again at `efdfc7816db6a76e292900c03764334b1ade84dd`, with the
+same **2,824 / 0 / 12** workspace total and **1,039 / 0 / 0** serial launch
+total. `merged-gates.json` records that separate exact-revision run. All 145
+recorded native source inputs are byte-identical between the native revision
+and this merge; no merged-revision native rerun is claimed. An intervening
+run was interrupted to correct the unpublished merge's author metadata;
+its source tree did not change, cleanup rescued five descendants, and its
+record remains FAILED without a complete workspace total.
