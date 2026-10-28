@@ -625,3 +625,13 @@ python3 evaluation/inprocess/summarize_trace_vmov.py \
 Results: `results/20261028-coreac-trace-vmov-milestone.json`; input bindings:
 `results/20261028-coreac-trace-vmov-inputs.json`. This merge validation adds no
 selected-profile real-program completion or performance claim.
+
+### VPTESTNMB and KMOVQ admission — claims 1, 2 and 4
+
+ADDS original-address execution of the observed VPTESTNMB K0,ZMM17,ZMM17 and KMOVQ RSI,K0 instructions in the in-process page gate. The exact encodings retain the existing first-entry and TRACE handoff checks. This is a narrow vector/mask capability, not completion of B2.
+
+At `0dacc7e8f299442cd4c62b8a30f6372ae52f2e20`, VPTESTNMB passes 19 complete native/TF state pairs and 80 refusals; KMOVQ passes 21 pairs and 80 refusals. Every instruction-byte split across pages is covered. Existing VMOVDQU64, VPBROADCASTB, generic, TRACE, mapping and failure-control cohorts pass; the connected cohort passes only its finite scope. The four required workspace checks pass, with 2,571 tests passed and eight unchanged ignores; recorder tests pass 340 and serial launch passes 1,039.
+
+The real-program and timing profiles remain failed. Default true/ls refuse rseq registration. With rseq disabled, true reaches the next unsupported VPCMPEQB (`62b1754074c8`); ls is killed without a final report. No real-program completion or first-touch/steady-state timing is claimed. The earlier `8f647dc162ea47b6ef2689dcbeeb1713f545ffa9` VPTESTNMB success and following KMOVQ refusal are retained separately.
+
+The [compact receipt](results/20261028-vector-mask-milestone.json) preserves 14 original run outcomes, complete new case observations, exact revisions, hardware, reproduction commands and finite timing values. [Inputs](results/20261028-vector-mask-inputs.json) bind every original receipt. Reproduce the projection with `python3 evaluation/inprocess/summarize_trace_vmov.py --inputs evaluation/inprocess/results/20261028-vector-mask-inputs.json --output target/vector-mask-milestone.json`; the original evaluator commands are recorded in the receipt. All executable source was frozen during qualification; the later publication commit changes only this note, the compact records and the existing projector's two additional profiles.

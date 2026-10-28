@@ -47,6 +47,7 @@ COMMAND_COLUMNS = ["name", "profile", "exit", "expected_exit", "timed_out", "rea
 PROFILES = {"page-selected-" + suffix for suffix in (
     "chain-oracle-v1", "chain-real-v1", "vmovdqu64-oracle-v1", "vpbroadcast-oracle-v1",
     "generic-oracle-v1", "maps-v1", "register-controls-v1", "register-connected-v1",
+    "vptestnmb-oracle-v1", "kmovq-oracle-v1",
     "register-time-v1")} | {"inprocess-required-checks-v1"}
 
 
@@ -118,7 +119,8 @@ def project(input_path):
             if key in receipt:
                 row[key] = receipt[key]
         if "cases" in receipt:
-            if receipt["profile"] in ("page-selected-chain-oracle-v1", "page-selected-vmovdqu64-oracle-v1"):
+            if receipt["profile"] in ("page-selected-chain-oracle-v1", "page-selected-vmovdqu64-oracle-v1",
+                                      "page-selected-vptestnmb-oracle-v1", "page-selected-kmovq-oracle-v1"):
                 row["cases"] = receipt["cases"]  # Complete new observations, including failures.
             else:
                 row["cases"] = [selected(case, CASE) for case in receipt["cases"]]
