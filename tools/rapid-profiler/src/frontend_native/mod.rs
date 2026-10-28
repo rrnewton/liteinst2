@@ -43,3 +43,6 @@ pub use always_on::{
     CallGate, CallResult, GateError, OriginalCallResult, RawInterval, RawIntervalOwner,
     RawTimestamp,
 };
+
+/// Finite independent backoff control with bounded owned exports; hooks stay on.
+pub mod backoff;

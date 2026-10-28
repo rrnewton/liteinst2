@@ -1204,3 +1204,39 @@ unsafe extern "C" fn exit_callback(context: *mut HookContext, control: ControlId
 
 #[cfg(test)]
 mod tests;
+
+// Narrow sibling-test facade. These functions grant no native publication or
+// execution authority and are absent from non-test builds.
+#[cfg(test)]
+pub(super) fn backoff_test_site() -> site::InstalledIntervalSite {
+    site::synthetic_site()
+}
+#[cfg(test)]
+pub(super) fn backoff_test_transport(stream: HistoryStream, marker: u64) -> IntervalBatch {
+    drain::backoff_transport_sentinel(stream, marker)
+}
+#[cfg(test)]
+pub(super) fn backoff_test_retained(controller: &IntervalController) -> usize {
+    controller.binding.session.retained_epochs()
+}
+#[cfg(test)]
+pub(super) fn backoff_test_after_mutation(
+    controller: &IntervalController,
+    epoch: &IntervalEpoch,
+) -> Result<(), BridgeError> {
+    let _scope = ControllerScope::enter()?;
+    let owner = controller.owner(epoch)?;
+    controller
+        .binding
+        .session
+        .publish(owner, FailurePoint::AfterMutation)
+        .map_err(|e| error(Cause::Control(e)))
+}
+#[cfg(test)]
+pub(super) fn backoff_test_control_error(cause: ControlError) -> BridgeError {
+    error(Cause::Control(cause))
+}
+#[cfg(test)]
+pub(super) fn backoff_test_epoch_limit() -> BridgeError {
+    error(Cause::Setup(SetupError::EpochLimit))
+}

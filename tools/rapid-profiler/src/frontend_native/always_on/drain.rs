@@ -369,3 +369,29 @@ impl IntervalThread {
 
 #[cfg(test)]
 mod tests;
+
+/// Deliberately invalid transport sentinel, not a drain/native receipt. No test
+/// may admit this value through the driver cursor or count it as worker success.
+#[cfg(test)]
+pub(super) fn backoff_transport_sentinel(stream: HistoryStream, marker: u64) -> IntervalBatch {
+    IntervalBatch {
+        stream: Some(stream),
+        history_end: Some(0),
+        pid: 0,
+        tid: 0,
+        registration: 0,
+        install: 0,
+        function: FunctionId(0),
+        before: Cursor::default(),
+        after: Cursor {
+            number: marker,
+            ..Cursor::default()
+        },
+        next: 0,
+        gate_sequence: 0,
+        raw_range: 0..0,
+        event_range: 0..0,
+        rows: Vec::new(),
+        journal: vec![marker; 512],
+    }
+}
