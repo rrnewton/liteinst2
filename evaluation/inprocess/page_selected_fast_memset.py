@@ -80,7 +80,11 @@ def body_check(path, symbols, text, mode, symbol_name='li2_test_memset'):
     for line in text.decode().splitlines():
         m = re.fullmatch(r'\s*([0-9a-f]+):\s*((?:[0-9a-f]{2}\s)+)\s*(\S.*)', line)
         if m and address <= int(m[1], 16) < address+size:
-            insns.append((int(m[1], 16), bytes.fromhex(m[2]), m[3].strip()))
+            code, spelling = bytes.fromhex(m[2]), m[3].strip()
+            # Binutils versions spell the same one-byte near return ret/retq.
+            # Normalize only that authenticated opcode, not other return forms.
+            if code == b'\xc3' and spelling == 'retq':spelling = 'ret'
+            insns.append((int(m[1], 16), code, spelling))
     at = address
     for pc, b, _ in insns:
         need(pc == at and b, 'contiguous emitted instructions');at += len(b)
